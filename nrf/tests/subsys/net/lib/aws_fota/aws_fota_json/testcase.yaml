@@ -1,0 +1,4 @@
+tests:
+  net.lib.fota.json:
+    platform_whitelist: native_posix nrf52840_pca10056 nrf9160_pca10090
+    tags: aws fota json

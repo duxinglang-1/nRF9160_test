@@ -1,0 +1,23 @@
+# Copyright (c) 2018, Aapo Vienamo
+# SPDX-License-Identifier: Apache-2.0
+
+description: SX1509B GPIO node
+
+compatible: "semtech,sx1509b"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    ngpios:
+      required: true
+      const: 16
+
+gpio-cells:
+  - pin
+  - flags

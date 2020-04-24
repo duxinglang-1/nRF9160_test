@@ -1,0 +1,13 @@
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments temperature and humidity sensor (e.g. HDC1008)
+
+compatible: "ti,hdc"
+
+include: i2c-device.yaml
+
+properties:
+    drdy-gpios:
+      type: phandle-array
+      required: false

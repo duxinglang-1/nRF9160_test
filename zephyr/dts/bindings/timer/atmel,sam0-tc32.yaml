@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 basic timer counter (TC) operating in 32-bit wide mode
+
+compatible: "atmel,sam0-tc32"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  label:
+    required: true

@@ -1,0 +1,20 @@
+# Copyright (c) 2019 Karsten Koenig
+# SPDX-License-Identifier: Apache-2.0
+
+description: MCP2515 SPI CAN controller
+
+compatible: "microchip,mcp2515"
+
+include: [spi-device.yaml, can-controller.yaml]
+
+properties:
+    osc-freq:
+      type: int
+      required: true
+      description: Frequency of the external oscillator
+    int-gpios:
+      type: phandle-array
+      required: true
+    reg:
+      type: array
+      required: true

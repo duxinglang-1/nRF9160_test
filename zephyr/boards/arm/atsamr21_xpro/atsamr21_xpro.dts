@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2019 Benjamin Valentin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samr21.dtsi>
+
+/ {
+	model = "SAM R21 Xplained Pro";
+	compatible = "atsamr21,xpro", "atmel,samr21g18a", "atmel,samr21";
+
+	chosen {
+		zephyr,console = &sercom0;
+		zephyr,shell-uart = &sercom0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&porta 19 0>;
+			label = "Yellow LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&porta 28 (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW)>;
+			label = "SW0";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	label = "I2C_0";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	/*
+	 *	CS-PB31; MOSI-PB30; MISO-PC19; SCLK-PC18
+	 *	PAD[1]; PAD[2]; PAD[0]; PAD[3]
+	 */
+	dipo = <0>;
+	dopo = <1>;
+	label = "SPI_RF2XX";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cs-gpios = <&portb 31 0>;
+
+	rf2xx@0 {
+		compatible = "atmel,rf2xx";
+		reg = <0x0>;
+		label = "RF2XX_0";
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&portb 0 0>;
+		reset-gpios = <&portb 15 0>;
+		slptr-gpios = <&porta 20 0>;
+		dig2-gpios = <&portb 17 0>;
+		status = "okay";
+	};
+};
+
+&sercom5 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
+	label = "SPI_0";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};

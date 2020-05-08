@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <dk_buttons_and_leds.h>
 
 /* Interval in milliseconds between each time status LEDs are updated. */

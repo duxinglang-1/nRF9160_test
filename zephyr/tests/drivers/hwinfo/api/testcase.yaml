@@ -1,4 +1,0 @@
-tests:
-  drivers.device_id:
-    tags: driver
-    depends_on: hwinfo

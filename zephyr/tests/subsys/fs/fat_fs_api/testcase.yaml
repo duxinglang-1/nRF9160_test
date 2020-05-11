@@ -1,4 +1,0 @@
-tests:
-  filesystem.fat.api:
-    platform_whitelist: native_posix
-    tags: filesystem

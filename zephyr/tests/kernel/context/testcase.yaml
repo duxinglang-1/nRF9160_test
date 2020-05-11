@@ -1,4 +1,0 @@
-tests:
-  kernel.common:
-    tags: kernel
-    min_ram: 20

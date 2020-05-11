@@ -1,5 +1,0 @@
-tests:
-  drivers.spi:
-    depends_on: spi
-    tags: drivers spi
-    harness: loopback

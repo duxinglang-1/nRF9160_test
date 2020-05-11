@@ -1,4 +1,0 @@
-tests:
-  drivers.flash.flash_simulator:
-    platform_whitelist: qemu_x86
-    tags: driver

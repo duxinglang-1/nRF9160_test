@@ -1,5 +1,0 @@
-tests:
-  crypto.tinycrypt:
-    tags: tinycrypt crypto aes ccm
-    timeout: 300
-    platform_whitelist: native_posix

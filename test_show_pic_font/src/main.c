@@ -22,7 +22,7 @@ static const struct spi_config spi_cfg = {
 	.slave = 0,
 };
 
-extern struct device * spi_devl;
+struct device * spi_devl;
 
 static void spi_init(void)
 {

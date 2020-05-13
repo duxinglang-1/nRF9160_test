@@ -15,18 +15,19 @@ extern uint16_t  POINT_COLOR;//默认红色
 extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
-#define	CS 				NRF_GPIO_PIN_MAP(0,4)	
-#define	RST				NRF_GPIO_PIN_MAP(0,28)
-#define	RS				NRF_GPIO_PIN_MAP(0,29)
-#define	SCL				NRF_GPIO_PIN_MAP(0,30)
-#define	SDA				NRF_GPIO_PIN_MAP(0,31)
+#define LCD_PORT	"GPIO_0"
+#define CS		4
+#define	RST		28
+#define	RS		29
+#define	SCL		30
+#define	SDA		31
 
 //TP 
-#define TP_0			NRF_GPIO_PIN_MAP(1,12)
-#define TP_1			NRF_GPIO_PIN_MAP(1,12)
+#define TP_0			12
+#define TP_1			12
 
 //LEDK(LED背光)
-#define LEDK			NRF_GPIO_PIN_MAP(0,3)
+#define LEDK			3
 
 #define X_min 0x0043		 //TP测试范围常量定义
 #define X_max 0x07AE

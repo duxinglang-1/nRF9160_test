@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
+
 #include "lcd.h"
 #include "font.h" 
 
@@ -11,26 +12,44 @@
 #include "LCD_LH096TIG11G_ST7735SV.h"
 
 #define SPI_DEV "SPI_3"
+#define SPI_BUF_LEN	8
 
-struct device *spi_devl;
+struct device * spi_devl;
+struct device *spi_lcd;
 struct device *lcd_gpio;
 
-static const struct spi_config spi_cfg = {
-  .operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
-		     SPI_MODE_CPOL | SPI_MODE_CPHA,
-  .frequency = 4000000,
-  .slave = 0,
-};
+static struct spi_config spi_cfg;
+static struct spi_cs_control spi_cs_ctr;
+
+
+
+bool lcd_is_sleeping = true;
 
 static void spi_init(void)
 {
-	spi_devl = device_get_binding(SPI_DEV);
-
-	if (!SPI_DEV) 
+	printk("spi_init");
+	
+	spi_lcd = device_get_binding(SPI_DEV);
+	if (!spi_lcd) 
 	{
 		printk("Could not get %s device\n", SPI_DEV);
 		return;
 	}
+
+	spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA;
+	spi_cfg.frequency = 4000000;
+	spi_cfg.slave = 0;
+
+	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
+	if (!spi_cs_ctr.gpio_dev)
+	{
+		printk("Unable to get GPIO SPI CS device");
+		return;
+	}
+
+	spi_cs_ctr.gpio_pin = CS;
+	spi_cs_ctr.delay = 0U;
+	spi_cfg.cs = &spi_cs_ctr;
 }
 
 //LCD延时函数
@@ -46,7 +65,6 @@ void Write_Data(uint8_t i)
 	int err;
 	static u8_t tx_buffer[1] = {0};
 	static u8_t rx_buffer[1] = {0};
-
 
 	tx_buffer[0] = i;
 
@@ -242,6 +260,17 @@ void DispFrame(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
+bool LCD_CheckID(void)
+{
+	WriteComm(0x04);
+	Delay(10); 
+
+	if(m_rx_buf[0] == 0x89 && m_rx_buf[1] == 0xF0)
+		return true;
+	else
+		return false;
+}
+
 //清屏函数
 //color:要清屏的填充色
 void LCD_Clear(uint16_t color)
@@ -281,13 +310,45 @@ void LCD_SleepOut(void)
 //LCD初始化函数
 void LCD_Init(void)
 {
+	int err;
+
+	printk("system_init");
+	
   	//端口初始化
   	lcd_gpio = device_get_binding(LCD_PORT);
-	gpio_pin_configure(lcd_gpio, CS, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, LEDK, GPIO_DIR_OUT);
+	if(!lcd_gpio)
+	{
+		//LOG_ERR("Cannot bind gpio device");
+		return;
+	}
 
-	gpio_pin_configure(lcd_gpio, RST, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, RS, GPIO_DIR_OUT);
+	err = gpio_pin_configure(lcd_gpio, LEDK, GPIO_DIR_OUT);
+	if(err)
+	{
+		//LOG_ERR("Cannot configure LEDK gpio");
+		return;
+	}
+	
+	err = gpio_pin_configure(lcd_gpio, CS, GPIO_DIR_OUT);
+	if(err)
+	{
+		//LOG_ERR("Cannot configure CS gpio");
+		return;
+	}
+	
+	err = gpio_pin_configure(lcd_gpio, RST, GPIO_DIR_OUT);
+	if(err)
+	{
+		//LOG_ERR("Cannot configure RST gpio");
+		return;
+	}
+	
+	err = gpio_pin_configure(lcd_gpio, RS, GPIO_DIR_OUT);
+	if(err)
+	{
+		//LOG_ERR("Cannot configure RS gpio");
+		return;
+	}
 
 	spi_init();
 
@@ -406,7 +467,7 @@ void LCD_Init(void)
 	//点亮背光
 	gpio_pin_write(lcd_gpio, LEDK, 0);
 
-	LCD_Clear(BLACK);		//清屏为黑色
+	LCD_Clear(WHITE);		//清屏为黑色
 }
 
 #endif

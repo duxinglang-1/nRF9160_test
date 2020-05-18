@@ -19,8 +19,15 @@ uint16_t POINT_COLOR=WHITE;	//画笔颜色
 uint16_t BACK_COLOR=BLACK;  //背景色 
 
 //默认字体大小
+#ifdef FONT_16
 system_font_size system_font = FONT_SIZE_16;
-
+#elif defined(FONT_24)
+system_font_size system_font = FONT_SIZE_24;
+#elif defined(FONT_32)
+system_font_size system_font = FONT_SIZE_32;
+#else
+system_font_size system_font = FONT_SIZE_16;
+#endif
 
 //快速画点
 //x,y:坐标
@@ -169,12 +176,36 @@ void LCD_dis_pic(uint16_t x,uint16_t y,unsigned int *color)
 	}		  
 }
 
+//指定位置显示图片,带透明色过滤
+//color:图片数据指针
+//x:图片显示X坐标
+//y:图片显示Y坐标
+void LCD_dis_trans_pic(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans)
+{  
+	uint16_t h,w;
+	uint16_t i,j;
+	
+	w=255*color[2]+color[3]; 			//获取图片宽度
+	h=255*color[4]+color[5];			//获取图片高度
+
+ 	for(i=0;i<h;i++)
+	{
+		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+		for(j=0;j<w;j++)
+		{
+			if(trans != color[8+i*w+j])
+				WriteOneDot(color[8+i*w+j]);	//显示不透明的颜色 
+		}
+	}		  
+}
+
+
 //指定位置旋转角度显示图片
 //color:图片数据指针
 //x:图片显示X坐标
 //y:图片显示Y坐标
 //rotate:旋转角度,0,90,180,270,
-void LCD_dis_pic_offset_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigned int rotate)
+void LCD_dis_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigned int rotate)
 {
 	uint16_t w,h;
 	uint16_t i,j;
@@ -222,6 +253,83 @@ void LCD_dis_pic_offset_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigne
 	}
 }
 
+//指定位置旋转角度显示图片,带透明色过滤
+//color:图片数据指针
+//x:图片显示X坐标
+//y:图片显示Y坐标
+//rotate:旋转角度,0,90,180,270,
+void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans,unsigned int rotate)
+{
+	uint16_t w,h;
+	uint16_t i,j;
+	
+	w=255*color[2]+color[3]; 			//获取图片宽度
+	h=255*color[4]+color[5];			//获取图片高度
+
+	switch(rotate)
+	{
+	case 0:
+		for(i=0;i<h;i++)
+		{
+			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+			for(j=0;j<w;j++)
+			{
+				if(trans != color[8+i*w+j])
+				{
+					BlockWrite(x+j,y+i,1,1);	  	//设置刷新位置
+					WriteOneDot(color[8+i*w+j]);	//显示颜色
+				}
+			}
+		}	
+		break;
+		
+	case 90:
+		for(i=0;i<w;i++)
+		{
+			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+			for(j=0;j<h;j++)
+			{
+				if(trans != color[8+(i+w*(h-1)-j*w)])
+				{
+					BlockWrite(x+j,y+i,1,1);	  	//设置刷新位置
+					WriteOneDot(color[8+(i+w*(h-1)-j*w)]);	//显示颜色 
+				}
+			}
+		}
+		break;
+		
+	case 180:
+		for(i=0;i<h;i++)
+		{
+			//BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+			for(j=0;j<w;j++)
+			{
+				if(trans != color[8+(w*h-1)-w*i-j])
+				{
+					BlockWrite(x+j,y+i,1,1);	  	//设置刷新位置
+					WriteOneDot(color[8+(w*h-1)-w*i-j]);	//显示颜色 
+				}
+			}
+		}		
+		break;
+		
+	case 270:
+		for(i=0;i<w;i++)
+		{
+			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+			for(j=0;j<h;j++)
+			{
+				if(trans != color[8+(w-1-i+w*j)])
+				{
+					BlockWrite(x+j,y+i,1,1);	  	//设置刷新位置
+					WriteOneDot(color[8+(w-1-i+w*j)]);	//显示颜色 
+				}
+			}
+		}		
+		break;
+	}
+}
+
 //在指定位置显示一个字符
 //x,y:起始坐标
 //num:要显示的字符:" "--->"~"
@@ -237,15 +345,21 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	{   
 		switch(system_font)
 		{
+		#ifdef FONT_16
 			case FONT_SIZE_16:
 				temp=asc2_1608[num][t]; 	 	//调用1608字体
 				break;
+		#endif
+		#ifdef FONT_24
 			case FONT_SIZE_24:
 				temp=asc2_2412[num][t];			//调用2412字体
 				break;
+		#endif
+		#ifdef FONT_32
 			case FONT_SIZE_32:
 				temp=asc2_3216[num][t];			//调用3216字体
 				break;
+		#endif
 			default:
 				return;							//没有的字库
 		}
@@ -284,15 +398,21 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 	{	
 		switch(system_font)
 		{
+		#ifdef FONT_16
 			case FONT_SIZE_16:
 				temp=chinese_1616[index][t]; 	 	//调用1616字体
 				break;
+		#endif
+		#ifdef FONT_24
 			case FONT_SIZE_24:
 				temp=chinese_2424[index][t];		//调用2424字体
 				break;
+		#endif
+		#ifdef FONT_32
 			case FONT_SIZE_32:
-				//temp=chinese_3232[index][t];		//调用3232字体
-				//break;
+				temp=chinese_3232[index][t];		//调用3232字体
+				break;
+		#endif
 			default:
 				return;								//没有的字库
 		}	

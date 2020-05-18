@@ -2,7 +2,6 @@
 
 #ifdef LCD_R154101_ST7796S
 
-#include "boards.h"
 
 //接口定义
 //extern xdata unsigned char buffer[512];
@@ -15,30 +14,32 @@ extern uint16_t  POINT_COLOR;//默认红色
 extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
-#define	CS0 			NRF_GPIO_PIN_MAP(1,13)	
-#define	RST				NRF_GPIO_PIN_MAP(1,8)
-#define	RS				NRF_GPIO_PIN_MAP(1,14)
-#define	WR0				NRF_GPIO_PIN_MAP(1,15)
-#define	RD0				NRF_GPIO_PIN_MAP(0,02)
+#define LCD_PORT	"GPIO_0"
+
+#define	CS 				11	
+#define	RST				28
+#define	RS				12
+#define	WR				13
+#define	RD				20
 
 //DB0~7
-#define DB0				NRF_GPIO_PIN_MAP(1,06)
-#define DB1				NRF_GPIO_PIN_MAP(1,07)
-#define DB2				NRF_GPIO_PIN_MAP(1,05)
-#define DB3				NRF_GPIO_PIN_MAP(0,27)
-#define DB4				NRF_GPIO_PIN_MAP(1,04)
-#define DB5				NRF_GPIO_PIN_MAP(1,03)
-#define DB6				NRF_GPIO_PIN_MAP(0,26)
-#define DB7				NRF_GPIO_PIN_MAP(1,02)
+#define DB0				26
+#define DB1				27
+#define DB2				25
+#define DB3				31
+#define DB4				24
+#define DB5				23
+#define DB6				30
+#define DB7				22
 
 #define DBS_LIST { DB0, DB1, DB2, DB3, DB4, DB5, DB6, DB7 }
 
 //TP 
-#define TP_CS			NRF_GPIO_PIN_MAP(1,12)
+#define TP_CS			10
 
 //LEDK(LED背光)
-#define LEDK_1          NRF_GPIO_PIN_MAP(1,10)
-#define LEDK_2          NRF_GPIO_PIN_MAP(1,11)
+#define LEDK_1          0
+#define LEDK_2          1
 
 #define X_min 0x0043		 //TP测试范围常量定义
 #define X_max 0x07AE

@@ -62,6 +62,8 @@ void LCD_SetFontSize(uint8_t font_size);
 void LCD_MeasureString(uint8_t *p, uint16_t *width,uint16_t *height);
 void LCD_get_pic_size(unsigned int *color, uint16_t *width, uint16_t *height);
 void LCD_dis_pic(uint16_t x,uint16_t y,unsigned int *color);
-void LCD_dis_pic_offset_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigned int rotate);
+void LCD_dis_trans_pic(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans);
+void LCD_dis_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigned int rotate);
+void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans,unsigned int rotate);
 
 #endif

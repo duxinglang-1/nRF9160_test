@@ -63,8 +63,28 @@ typedef struct _PALETTE
 仅在256色模式下存在调色板数据结构,调色板数据结构紧跟在数据结构HEADGRAY之后。
 */
 
-extern unsigned int peppa_pig_160X160[];	//小猪佩奇图片
-extern unsigned int peppa_pig_80X160[];	//小猪佩奇图片
-extern unsigned int clock_31X31[];
+//extern unsigned int peppa_pig_160X160[];	//小猪佩奇图片
+//extern unsigned int peppa_pig_80X160[];	//小猪佩奇图片
+extern unsigned int clock_hour_1_31X31[];
+extern unsigned int clock_hour_2_31X31[];
+extern unsigned int clock_hour_3_31X31[];
+extern unsigned int clock_hour_4_31X31[];
+extern unsigned int clock_min_1_31X31[];
+extern unsigned int clock_min_2_31X31[];
+extern unsigned int clock_min_3_31X31[];
+extern unsigned int clock_min_4_31X31[];
+extern unsigned int clock_min_5_31X31[];
+extern unsigned int clock_min_6_31X31[];
+extern unsigned int clock_min_7_31X31[];
+extern unsigned int clock_min_8_31X31[];
+extern unsigned int clock_min_9_31X31[];
+extern unsigned int clock_min_10_31X31[];
+extern unsigned int clock_min_11_31X31[];
+extern unsigned int clock_min_12_31X31[];
+extern unsigned int clock_min_13_31X31[];
+extern unsigned int clock_min_14_31X31[];
+extern unsigned int clock_min_15_31X31[];
+extern unsigned int clock_min_16_31X31[];
+extern unsigned int clock_bg_80X160[];
 
 #endif/*__FONT_H__*/

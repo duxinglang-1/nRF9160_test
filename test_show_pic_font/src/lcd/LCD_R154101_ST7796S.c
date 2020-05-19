@@ -13,7 +13,7 @@ uint8_t m_db_list[8] = DBS_LIST;	//定义屏幕数据接口数组
 //LCD延时函数
 void Delay(unsigned int dly)
 {
-	k_sleep(dly);
+	k_sleep(K_MSEC(dly));
 }
 
 //数据接口函数

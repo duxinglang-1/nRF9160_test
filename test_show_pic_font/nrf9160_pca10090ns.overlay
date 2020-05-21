@@ -1,5 +1,6 @@
-&spi3 {
-	status = "ok";
+&spi3{
+	#compatible = "nordic,nrf-spim";
+	status = "okay";
 	sck-pin = <18>;
 	mosi-pin = <19>;
 	miso-pin = <19>;

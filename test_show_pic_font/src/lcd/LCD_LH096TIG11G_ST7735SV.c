@@ -1,12 +1,8 @@
-#include <stdlib.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
 
 #include "lcd.h"
 #include "font.h" 
-
-//#include "nrf_log.h"
-//#include "nrf_delay.h"
 
 #ifdef LCD_LH096TIG11G_ST7735SV
 #include "LCD_LH096TIG11G_ST7735SV.h"
@@ -14,20 +10,20 @@
 #define SPI_DEV "SPI_3"
 #define SPI_BUF_LEN	8
 
-struct device * spi_devl;
 struct device *spi_lcd;
-struct device *lcd_gpio;
+struct device *gpio_lcd;
 
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
-
+static u8_t tx_buffer[SPI_BUF_LEN] = {0};
+static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
 bool lcd_is_sleeping = true;
 
 static void spi_init(void)
 {
-	printk("spi_init");
+	printk("spi_init\n");
 	
 	spi_lcd = device_get_binding(SPI_DEV);
 	if (!spi_lcd) 
@@ -43,7 +39,7 @@ static void spi_init(void)
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
 	if (!spi_cs_ctr.gpio_dev)
 	{
-		printk("Unable to get GPIO SPI CS device");
+		printk("Unable to get GPIO SPI CS device\n");
 		return;
 	}
 
@@ -55,7 +51,7 @@ static void spi_init(void)
 //LCD延时函数
 void Delay(unsigned int dly)
 {
-	k_sleep(dly);
+	k_sleep(K_MSEC(dly));
 }
 
 //数据接口函数
@@ -63,14 +59,12 @@ void Delay(unsigned int dly)
 void Write_Data(uint8_t i) 
 {	
 	int err;
-	static u8_t tx_buffer[1] = {0};
-	static u8_t rx_buffer[1] = {0};
 
 	tx_buffer[0] = i;
 
 	const struct spi_buf tx_buf = {
 		  .buf = tx_buffer,
-		  .len = sizeof(tx_buffer)
+		  .len = 1
 		};
 	const struct spi_buf_set tx = {
 		  .buffers = &tx_buf,
@@ -86,16 +80,15 @@ void Write_Data(uint8_t i)
 		  .count = 1
 		};
 
-	err = spi_transceive(spi_devl, &spi_cfg, &tx, &rx);
+	err = spi_transceive(spi_lcd, &spi_cfg, &tx, &rx);
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
 	}
 	else
 	{
-		printk("TX sent: %x\n", tx_buffer[0]);
-		printk("RX recv: %x\n", rx_buffer[0]);
-		tx_buffer[0]++;
+		//printk("Write_Data sent: %x\n", tx_buffer[0]);
+		//printk("Write_Data recv: %x\n", rx_buffer[0]);
 	}	
 }
 
@@ -104,24 +97,24 @@ void Write_Data(uint8_t i)
 //i:寄存器值
 void WriteComm(unsigned int i)
 {
-	//gpio_pin_write(lcd_gpio, CS, 0);//CS置0
-	gpio_pin_write(lcd_gpio, RS, 0);//RS清0
+	//gpio_pin_write(gpio_lcd, CS, 0);//CS置0
+	gpio_pin_write(gpio_lcd, RS, 0);//RS清0
 
 	Write_Data(i);  
 
-	//gpio_pin_write(lcd_gpio, CS, 1);
+	//gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 //写LCD数据
 //i:要写入的值
 void WriteData(unsigned int i)
 {
-	//gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RS, 1);
+	//gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
 		
 	Write_Data(i);  
 
-	//gpio_pin_write(lcd_gpio, CS, 0);
+	//gpio_pin_write(gpio_lcd, CS, 0);
 }
 
 void WriteDispData(unsigned char DataH,unsigned char DataL)
@@ -134,13 +127,13 @@ void WriteDispData(unsigned char DataH,unsigned char DataL)
 //color:要填充的颜色
 void WriteOneDot(unsigned int color)
 { 
-	//gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RS, 1);
+	//gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
 	Write_Data(color>>8);  
 	Write_Data(color);  
 
-	//gpio_pin_write(lcd_gpio, CS, 1);
+	//gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 ////////////////////////////////////////////////测试函数//////////////////////////////////////////
@@ -170,7 +163,7 @@ void DispColor(unsigned int color)
 
 	BlockWrite(0,0,COL-1,ROW-1);
 
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
 	for(i=0;i<ROW;i++)
 	{
@@ -192,7 +185,7 @@ void DispBand(void)
 
   BlockWrite(0,0,COL-1,ROW-1);
 
-  gpio_pin_write(lcd_gpio, RS, 1);
+  gpio_pin_write(gpio_lcd, RS, 1);
 
   for(i=0;i<8;i++)
   {
@@ -222,7 +215,7 @@ void DispFrame(void)
 
 	BlockWrite(0,0,COL-1,ROW-1);
 
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
 	Write_Data(0xf8);  
 	Write_Data(0x00);  
@@ -265,7 +258,7 @@ bool LCD_CheckID(void)
 	WriteComm(0x04);
 	Delay(10); 
 
-	if(m_rx_buf[0] == 0x89 && m_rx_buf[1] == 0xF0)
+	if(rx_buffer[0] == 0x89 && rx_buffer[1] == 0xF0)
 		return true;
 	else
 		return false;
@@ -275,14 +268,14 @@ bool LCD_CheckID(void)
 //color:要清屏的填充色
 void LCD_Clear(uint16_t color)
 {
-	uint32_t index=0;      
-	uint32_t totalpoint=ROW;
+	u32_t index=0;      
+	u32_t totalpoint=ROW;
 
 	totalpoint*=COL; 			//得到总点数
 
 	BlockWrite(0,0,COL-1,ROW-1);//定位
 
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
 	for(index=0;index<totalpoint;index++)
 	{
@@ -294,17 +287,33 @@ void LCD_Clear(uint16_t color)
 //屏幕睡眠
 void LCD_SleepIn(void)
 {
-	WriteComm(0x28);	
+	if(lcd_is_sleeping)
+		return;
+	
+    WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
-	Delay(120);                  //延时120ms
+	Delay(120);             //延时120ms
+
+	//关闭背光
+	gpio_pin_write(gpio_lcd, LEDK, 1);
+
+	lcd_is_sleeping = true;
 }
 
 //屏幕唤醒
 void LCD_SleepOut(void)
 {
+	if(!lcd_is_sleeping)
+		return;
+	
 	WriteComm(0x11);  		//Sleep out	
-	Delay(120);                  //延时120ms
-	WriteComm(0x29);
+	Delay(120);             //延时120ms
+    WriteComm(0x29);
+
+	//点亮背光
+	gpio_pin_write(gpio_lcd, LEDK, 0);
+                                                                                                                  
+	lcd_is_sleeping = false;
 }
 
 //LCD初始化函数
@@ -312,51 +321,51 @@ void LCD_Init(void)
 {
 	int err;
 
-	printk("system_init");
+	printk("LCD_Init\n");
 	
   	//端口初始化
-  	lcd_gpio = device_get_binding(LCD_PORT);
-	if(!lcd_gpio)
+  	gpio_lcd = device_get_binding(LCD_PORT);
+	if(!gpio_lcd)
 	{
-		//LOG_ERR("Cannot bind gpio device");
+		printk("Cannot bind gpio device\n");
 		return;
 	}
 
-	err = gpio_pin_configure(lcd_gpio, LEDK, GPIO_DIR_OUT);
+	err = gpio_pin_configure(gpio_lcd, LEDK, GPIO_DIR_OUT);
 	if(err)
 	{
-		//LOG_ERR("Cannot configure LEDK gpio");
+		printk("Cannot configure LEDK gpio\n");
 		return;
 	}
 	
-	err = gpio_pin_configure(lcd_gpio, CS, GPIO_DIR_OUT);
+	err = gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
 	if(err)
 	{
-		//LOG_ERR("Cannot configure CS gpio");
+		printk("Cannot configure CS gpio\n");
 		return;
 	}
 	
-	err = gpio_pin_configure(lcd_gpio, RST, GPIO_DIR_OUT);
+	err = gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
 	if(err)
 	{
-		//LOG_ERR("Cannot configure RST gpio");
+		printk("Cannot configure RST gpio\n");
 		return;
 	}
 	
-	err = gpio_pin_configure(lcd_gpio, RS, GPIO_DIR_OUT);
+	err = gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
 	if(err)
 	{
-		//LOG_ERR("Cannot configure RS gpio");
+		printk("Cannot configure RS gpio\n");
 		return;
 	}
 
 	spi_init();
 
-	gpio_pin_write(lcd_gpio, RST, 1);
+	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(10);
-	gpio_pin_write(lcd_gpio, RST, 0);
+	gpio_pin_write(gpio_lcd, RST, 0);
 	Delay(10);
-	gpio_pin_write(lcd_gpio, RST, 1);
+	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(120);
 
 	WriteComm(0x11);     //Sleep out
@@ -465,9 +474,11 @@ void LCD_Init(void)
 	WriteComm(0x29);     //Display on
 
 	//点亮背光
-	gpio_pin_write(lcd_gpio, LEDK, 0);
+	gpio_pin_write(gpio_lcd, LEDK, 0);
 
-	LCD_Clear(WHITE);		//清屏为黑色
+	lcd_is_sleeping = false;
+
+	LCD_Clear(BLACK);		//清屏为黑色
 }
 
 #endif

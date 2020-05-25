@@ -63,8 +63,8 @@ typedef struct _PALETTE
 仅在256色模式下存在调色板数据结构,调色板数据结构紧跟在数据结构HEADGRAY之后。
 */
 
-//extern unsigned int peppa_pig_160X160[];	//小猪佩奇图片
-//extern unsigned int peppa_pig_80X160[];	//小猪佩奇图片
+extern unsigned int peppa_pig_160X160[];	//小猪佩奇图片
+extern unsigned int peppa_pig_80X160[];	//小猪佩奇图片
 extern unsigned int clock_hour_1_31X31[];
 extern unsigned int clock_hour_2_31X31[];
 extern unsigned int clock_hour_3_31X31[];

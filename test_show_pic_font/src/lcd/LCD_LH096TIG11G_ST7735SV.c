@@ -32,7 +32,7 @@ static void spi_init(void)
 		return;
 	}
 
-	spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA;
+	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	spi_cfg.frequency = 4000000;
 	spi_cfg.slave = 0;
 
@@ -58,44 +58,21 @@ void Delay(unsigned int dly)
 //i:8位数据
 void Write_Data(uint8_t i) 
 {	
-	int err;
+	struct spi_buf_set tx_bufs;
+	struct spi_buf tx_buff;
+	u8_t buff = i;
 
-	tx_buffer[0] = i;
-
-	const struct spi_buf tx_buf = {
-		  .buf = tx_buffer,
-		  .len = 1
-		};
-	const struct spi_buf_set tx = {
-		  .buffers = &tx_buf,
-		  .count = 1
-		};
-
-	struct spi_buf rx_buf = {
-		  .buf = rx_buffer,
-		  .len = sizeof(rx_buffer),
-		};
-	const struct spi_buf_set rx = {
-		  .buffers = &rx_buf,
-		  .count = 1
-		};
-
-	err = spi_transceive(spi_lcd, &spi_cfg, &tx, &rx);
-	if(err)
-	{
-		printk("SPI error: %d\n", err);
-	}
-	else
-	{
-		//printk("Write_Data sent: %x\n", tx_buffer[0]);
-		//printk("Write_Data recv: %x\n", rx_buffer[0]);
-	}	
+	tx_buff.buf = &buff;
+	tx_buff.len = 1;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+	spi_write(spi_lcd, &spi_cfg, &tx_bufs);	
 }
 
 //----------------------------------------------------------------------
 //写寄存器函数
 //i:寄存器值
-void WriteComm(unsigned int i)
+void WriteComm(u8_t i)
 {
 	//gpio_pin_write(gpio_lcd, CS, 0);//CS置0
 	gpio_pin_write(gpio_lcd, RS, 0);//RS清0
@@ -107,17 +84,17 @@ void WriteComm(unsigned int i)
 
 //写LCD数据
 //i:要写入的值
-void WriteData(unsigned int i)
+void WriteData(u8_t i)
 {
 	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
 		
 	Write_Data(i);  
 
-	//gpio_pin_write(gpio_lcd, CS, 0);
+	//gpio_pin_write(gpio_lcd, CS, 1);
 }
 
-void WriteDispData(unsigned char DataH,unsigned char DataL)
+void WriteDispData(u8_t DataH,u8_t DataL)
 {
 	Write_Data(DataH);  
 	Write_Data(DataL);  

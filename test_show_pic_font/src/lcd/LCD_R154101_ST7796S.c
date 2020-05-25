@@ -221,7 +221,7 @@ void LCD_Init(void)
 ////////////////////////////////////////////////²âÊÔº¯Êý//////////////////////////////////////////
 void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
 {
-	//ILI9327
+	//ST7796
 	WriteComm(0x2A);             
 	WriteData(x>>8);             
 	WriteData(x);             

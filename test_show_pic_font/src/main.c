@@ -488,24 +488,26 @@ void test_show_image(void)
 {
 	u8_t i=0;
 	u16_t x,y,w,h;
+
+	printk("test_show_image\n");
 	
 	LCD_Clear(BLACK);
-	LCD_get_pic_size(clock_bg_80X160, &w, &h);
+	LCD_get_pic_size(clock_hour_1_31X31, &w, &h);
 	while(1)
 	{
 		switch(i)
 		{
 			case 0:
-				LCD_dis_pic(w*0,h*0,clock_bg_80X160);
+				LCD_dis_pic(w*0,h*0,clock_hour_1_31X31);
 				break;
 			case 1:
-				LCD_dis_pic(w*1,h*0,clock_bg_80X160);
+				LCD_dis_pic(w*1,h*0,clock_hour_1_31X31);
 				break;
 			case 2:
-				LCD_dis_pic(w*1,h*1,clock_bg_80X160);
+				LCD_dis_pic(w*1,h*1,clock_hour_1_31X31);
 				break;
 			case 3:
-				LCD_dis_pic(w*0,h*1,clock_bg_80X160);
+				LCD_dis_pic(w*0,h*1,clock_hour_1_31X31);
 				break;
 			case 4:
 				LCD_Fill(w*0,h*0,w,h,BLACK);
@@ -573,50 +575,32 @@ void test_show_string(void)
 	LCD_ShowString(x,y,"2020-01-03 16:30:45");
 }
 
-/**@brief Callback for button events from the DK buttons and LEDs library. */
-static void button_handler(u32_t button_state, u32_t has_changed)
-{
-  u32_t buttons = (button_state & has_changed);
-
-  if (buttons & BUTTON_1) 
-  {
-  }
-
-  if (buttons & BUTTON_2) 
-  {
-  }
-}
-
 /**@brief Initializes buttons and LEDs, using the DK buttons and LEDs
  * library.
  */
 static void buttons_leds_init(void)
 {
-  int err;
+	int err;
 
-  err = dk_buttons_init(button_handler);
-  if (err)
-  {
-    printk("Could not initialize buttons, err code: %d\n", err);
-  }
+	err = dk_leds_init();
+	if (err)
+	{
+		printk("Could not initialize leds, err code: %d\n", err);
+	}
 
-  err = dk_leds_init();
-  if (err)
-  {
-    printk("Could not initialize leds, err code: %d\n", err);
-  }
-
-  err = dk_set_leds_state(0x00, DK_ALL_LEDS_MSK);
-  if (err)
-  {
-    printk("Could not set leds state, err code: %d\n", err);
-  }
+	err = dk_set_leds_state(0x00, DK_ALL_LEDS_MSK);
+	if (err)
+	{
+		printk("Could not set leds state, err code: %d\n", err);
+	}
 }
 
 void system_init(void)
 {
 	buttons_leds_init();
 
+	key_init();
+	
 	LCD_Init();	
 }
 
@@ -634,8 +618,8 @@ int main(void)
 	system_init();
 	dk_set_led(DK_LED1,1);
 	
-//	test_show_string();
-	test_show_image();
+	test_show_string();
+//	test_show_image();
 //	test_show_analog_clock();
 //	test_show_digital_clock();
 	
@@ -665,4 +649,3 @@ int main(void)
 		}
 	}
 }
-

@@ -16,7 +16,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
 #define LCD_PORT	"GPIO_0"
-#define CS		15
+#define CS		30
 #define	RST		16
 #define	RS		17
 #define	SCL		18
@@ -27,7 +27,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define TP_1			12
 
 //LEDK(LED背光)
-#define LEDK	14
+#define LEDK	31
 
 #define X_min 0x0043		 //TP测试范围常量定义
 #define X_max 0x07AE

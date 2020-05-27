@@ -58,15 +58,20 @@ void Delay(unsigned int dly)
 //i:8位数据
 void Write_Data(uint8_t i) 
 {	
+	int ret;
 	struct spi_buf_set tx_bufs;
 	struct spi_buf tx_buff;
-	u8_t buff = i;
 
-	tx_buff.buf = &buff;
+	tx_buffer[0] = i;
+	tx_buff.buf = tx_buffer;
 	tx_buff.len = 1;
 	tx_bufs.buffers = &tx_buff;
 	tx_bufs.count = 1;
-	spi_write(spi_lcd, &spi_cfg, &tx_bufs);	
+	ret = spi_write(spi_lcd, &spi_cfg, &tx_bufs);
+	if(ret)
+	{
+		printk("Write_Data FAIL %d\n", ret);
+	}
 }
 
 //----------------------------------------------------------------------
@@ -96,8 +101,22 @@ void WriteData(u8_t i)
 
 void WriteDispData(u8_t DataH,u8_t DataL)
 {
-	Write_Data(DataH);  
-	Write_Data(DataL);  
+	int ret;
+	struct spi_buf_set tx_bufs;
+	struct spi_buf tx_buff;
+
+	tx_buffer[0] = DataH;
+	tx_buffer[1] = DataL;
+	
+	tx_buff.buf = tx_buffer;
+	tx_buff.len = 2;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+	ret = spi_write(spi_lcd, &spi_cfg, &tx_bufs);
+	if(ret)
+	{
+		printk("WriteDispData FAIL %d\n", ret);
+	}
 }
 
 //LCD画点函数
@@ -107,8 +126,7 @@ void WriteOneDot(unsigned int color)
 	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
 
-	Write_Data(color>>8);  
-	Write_Data(color);  
+	WriteDispData(color>>8, color);
 
 	//gpio_pin_write(gpio_lcd, CS, 1);
 }
@@ -140,49 +158,52 @@ void DispColor(unsigned int color)
 
 	BlockWrite(0,0,COL-1,ROW-1);
 
+	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
 
 	for(i=0;i<ROW;i++)
 	{
 		for(j=0;j<COL;j++)
 		{    
-			Write_Data(color>>8);  
-			Write_Data(color);  
+			WriteDispData(color>>8, color);
 		}
 	}
+
+	//gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 //测试函数（显示RGB条纹）
 void DispBand(void)	 
 {
-  unsigned int i,j,k;
-  //unsigned int color[8]={0x001f,0x07e0,0xf800,0x07ff,0xf81f,0xffe0,0x0000,0xffff};
-  unsigned int color[8]={0xf800,0xf800,0x07e0,0x07e0,0x001f,0x001f,0xffff,0xffff};//0x94B2
-  //unsigned int gray16[]={0x0000,0x1082,0x2104,0x3186,0x42,0x08,0x528a,0x630c,0x738e,0x7bcf,0x9492,0xa514,0xb596,0xc618,0xd69a,0xe71c,0xffff};
+	unsigned int i,j,k;
+	//unsigned int color[8]={0x001f,0x07e0,0xf800,0x07ff,0xf81f,0xffe0,0x0000,0xffff};
+	unsigned int color[8]={0xf800,0xf800,0x07e0,0x07e0,0x001f,0x001f,0xffff,0xffff};//0x94B2
+	//unsigned int gray16[]={0x0000,0x1082,0x2104,0x3186,0x42,0x08,0x528a,0x630c,0x738e,0x7bcf,0x9492,0xa514,0xb596,0xc618,0xd69a,0xe71c,0xffff};
 
-  BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL-1,ROW-1);
 
-  gpio_pin_write(gpio_lcd, RS, 1);
+	//gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
-  for(i=0;i<8;i++)
-  {
-    for(j=0;j<ROW/8;j++)
-    {
-      for(k=0;k<COL;k++)
-      {
-        Write_Data(color[i]>>8);  
-        Write_Data(color[i]);  
-      } 
-    }
-  }
-  for(j=0;j<(ROW%8);j++)
-  {
-    for(k=0;k<COL;k++)
-    {
-      Write_Data(color[7]>>8);  
-      Write_Data(color[7]);  
-    } 
-  }
+	for(i=0;i<8;i++)
+	{
+		for(j=0;j<ROW/8;j++)
+		{
+			for(k=0;k<COL;k++)
+			{
+				WriteDispData(color[i]>>8, color[i]);
+			} 
+		}
+	}
+	for(j=0;j<(ROW%8);j++)
+	{
+		for(k=0;k<COL;k++)
+		{
+			WriteDispData(color[7]>>8, color[7]);
+		} 
+	}
+
+	//gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 //测试函数（画边框）
@@ -192,41 +213,40 @@ void DispFrame(void)
 
 	BlockWrite(0,0,COL-1,ROW-1);
 
+	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
 
-	Write_Data(0xf8);  
-	Write_Data(0x00);  
+	WriteDispData(0xf8, 0x00);
 
 	for(i=0;i<COL-2;i++)
 	{
-		Write_Data(0xFF);  
-		Write_Data(0xFF);  
+		WriteDispData(0xFF, 0xFF);
 	}
-	Write_Data(0x00);  
-	Write_Data(0x1F);  
+	
+	WriteDispData(0x00, 0x1F);
 
 	for(j=0;j<ROW-2;j++)
 	{
-		Write_Data(0xf8);  
-		Write_Data(0x00);  
+		WriteDispData(0xf8, 0x00);
+ 
 		for(i=0;i<COL-2;i++)
 		{
-			Write_Data(0x00);  
-			Write_Data(0x00);  
+			WriteDispData(0x00, 0x00);
 		}
-		Write_Data(0x00);  
-		Write_Data(0x1f);  
+
+		WriteDispData(0x00, 0x1f);
 	}
 
-	Write_Data(0xf8);  
-	Write_Data(0x00);  
+	WriteDispData(0xf8, 0x00);
+ 
 	for(i=0;i<COL-2;i++)
 	{
-		Write_Data(0xff);  
-		Write_Data(0xff);  
+		WriteDispData(0xff, 0xff);
 	}
-	Write_Data(0x00);  
-	Write_Data(0x1f);  
+
+	WriteDispData(0x00, 0x1f);
+
+	//gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -252,13 +272,15 @@ void LCD_Clear(uint16_t color)
 
 	BlockWrite(0,0,COL-1,ROW-1);//定位
 
+	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
 
 	for(index=0;index<totalpoint;index++)
 	{
-		Write_Data(color>>8);
-		Write_Data(color);  
+		WriteDispData(color>>8, color);
 	}
+
+	//gpio_pin_write(gpio_lcd, CS, 1);
 } 
 
 //屏幕睡眠
@@ -267,7 +289,7 @@ void LCD_SleepIn(void)
 	if(lcd_is_sleeping)
 		return;
 	
-    WriteComm(0x28);	
+	WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
 	Delay(120);             //延时120ms
 
@@ -285,7 +307,7 @@ void LCD_SleepOut(void)
 	
 	WriteComm(0x11);  		//Sleep out	
 	Delay(120);             //延时120ms
-    WriteComm(0x29);
+	WriteComm(0x29);
 
 	//点亮背光
 	gpio_pin_write(gpio_lcd, LEDK, 0);
@@ -308,33 +330,10 @@ void LCD_Init(void)
 		return;
 	}
 
-	err = gpio_pin_configure(gpio_lcd, LEDK, GPIO_DIR_OUT);
-	if(err)
-	{
-		printk("Cannot configure LEDK gpio\n");
-		return;
-	}
-	
-	err = gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
-	if(err)
-	{
-		printk("Cannot configure CS gpio\n");
-		return;
-	}
-	
-	err = gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
-	if(err)
-	{
-		printk("Cannot configure RST gpio\n");
-		return;
-	}
-	
-	err = gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
-	if(err)
-	{
-		printk("Cannot configure RS gpio\n");
-		return;
-	}
+	gpio_pin_configure(gpio_lcd, LEDK, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
 
 	spi_init();
 

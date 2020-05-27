@@ -87,19 +87,12 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		break;		
 	}
 
-	if(key_type == KEY_LONG_PRESS)
-	{
-		dk_set_leds_state(DK_ALL_LEDS_MSK,DK_NO_LEDS_MSK);
-	}
-	
 	if(key_type == KEY_UP)
 	{
-		dk_set_leds_state(DK_NO_LEDS_MSK,DK_ALL_LEDS_MSK);
-		
-		//if(lcd_is_sleeping)
-		//	lcd_sleep_out = 1;
-		//else
-		//	lcd_sleep_in = 1;
+		if(lcd_is_sleeping)
+			lcd_sleep_out = 1;
+		else
+			lcd_sleep_in = 1;
 	}
 }
 

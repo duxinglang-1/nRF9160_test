@@ -7,6 +7,8 @@
 #include "LCD_R154101_ST7796S.h"
 #elif defined(LCD_LH096TIG11G_ST7735SV)
 #include "LCD_LH096TIG11G_ST7735SV.h"
+#elif defined(LCD_ORCT012210N_ST7789V2)
+#include "LCD_ORCT012210N_ST7789V2.h"
 #endif 
 
 

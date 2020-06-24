@@ -16,6 +16,8 @@
 #define KEY_2			BIT(1)
 #define KEY_3			BIT(2)
 #define KEY_4			BIT(3)
+#define KEY_5			BIT(4)	//SOS 26
+#define KEY_6			BIT(5)	//power 15
 
 extern bool lcd_sleep_in;
 extern bool lcd_sleep_out;
@@ -28,6 +30,9 @@ static u32_t keytype;
 
 static void key_event_handler(uint8_t key_code, uint8_t key_type)
 {
+	printk("key_code:%d, key_type:%d, KEY_1:%d,KEY_2:%d,KEY_3:%d,KEY_4:%d,KEY_5:%d,KEY_6:%d\n", 
+							key_code, key_type,
+							KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6);
 	switch(key_code)
 	{
 	case KEY_1:
@@ -84,7 +89,37 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		case KEY_LONG_PRESS:
 			break;
 		}
-		break;		
+		break;
+	case KEY_5:
+		switch(key_type)
+		{
+		case KEY_DOWN:
+			dk_set_led(DK_LED1,1);
+			dk_set_led(DK_LED2,1);	
+			break;
+		case KEY_UP:
+			dk_set_led(DK_LED1,0);
+			dk_set_led(DK_LED2,0);	
+			break;
+		case KEY_LONG_PRESS:
+			break;
+		}
+		break;
+	case KEY_6:
+		switch(key_type)
+		{
+		case KEY_DOWN:
+			dk_set_led(DK_LED3,1);
+			dk_set_led(DK_LED4,1);	
+			break;
+		case KEY_UP:
+			dk_set_led(DK_LED3,0);
+			dk_set_led(DK_LED4,0);
+			break;
+		case KEY_LONG_PRESS:
+			break;
+		}
+		break;	
 	}
 
 	if(key_type == KEY_UP)

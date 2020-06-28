@@ -300,10 +300,12 @@ void LCD_Init(void)
 	gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
 	gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
 	gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
-	//gpio_pin_configure(gpio_lcd, SCL, GPIO_DIR_OUT);
-	//gpio_pin_configure(gpio_lcd, SDA, GPIO_DIR_OUT);
-	//gpio_pin_configure(gpio_lcd, VDD, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, SCL, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, SDA, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, VDD, GPIO_DIR_OUT);
 
+	gpio_pin_write(gpio_lcd, VDD, 1);
+	
 	spi_init();
 
 	gpio_pin_write(gpio_lcd, RST, 1);

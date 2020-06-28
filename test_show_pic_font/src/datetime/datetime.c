@@ -11,8 +11,22 @@
 ******************************************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
+#include <fs/nvs.h>
+#include <drivers/flash.h>
 #include "datetime.h"
-//#include "nrf_nvmc.h"
+
+#define MAX_REBOOT 400
+#define SLEEP_TIME 100
+
+#define ADDRESS_ID 1
+#define KEY_ID 2
+#define RBT_CNT_ID 3
+#define STRING_ID 4
+#define LONG_ID 5
+
+
+static struct nvs_fs fs;
+struct flash_pages_info info;
 
 uint8_t GetWeekDayByDate(sys_date_timer_t date)
 {
@@ -58,46 +72,36 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 
 void SetSystemDateTime(sys_date_timer_t systime)
 {
-	uint32_t date,time,week;								
-	uint8_t tmpbuf[20] = {0};
-	
-	//nrf_nvmc_page_erase(SYSTEM_DATE_TIME_ADDR);				//擦除页
-#if 1
-	//nrf_nvmc_write_bytes(SYSTEM_DATE_TIME_ADDR, (uint8_t *)&systime, sizeof(sys_date_timer_t));
-#else	
-	sprintf((char*)tmpbuf,"%04d%02d%02d",systime.year,systime.month,systime.day);
-	date = atoi((char*)tmpbuf);
-	nrf_nvmc_write_word(SYSTEM_DATE_ADDR,date);		//写入日期
-	
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf((char*)tmpbuf,"%02d%02d%02d",systime.hour,systime.minute,systime.second);
-	time = atoi((char*)tmpbuf);
-	nrf_nvmc_write_word(SYSTEM_TIME_ADDR,time);		//写入时间
-	
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf((char*)tmpbuf,"%02d",systime.week);
-	week = atoi((char*)tmpbuf);
-	nrf_nvmc_write_word(SYSTEM_WEEK_ADDR,week);		//写入星期
-#endif
+	printk("systime: %04d-%02d-%02d, %02d:%02d:%02d\n", systime.year,systime.month,systime.day,systime.hour,systime.minute,systime.second);
+	nvs_write(&fs, ADDRESS_ID, &systime, sizeof(sys_date_timer_t));
+	printk("systime set ok!\n");
 }
 
 void GetSystemDateTime(sys_date_timer_t *systime)
 {
-	uint32_t *pdat;
+	int err = 0;
 	sys_date_timer_t mytime = {0};
+	char buf[16];
+
+	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
+	err = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME), fs.offset, &info);
+	if(err)
+	{
+	    printk("Unable to get page info\n");
+	}
+
+	fs.sector_size = info.size;
+	fs.sector_count = 3U;
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	if(err)
+	{
+	    printk("Flash Init failed\n");
+	}
+
+	err = nvs_read(&fs, ADDRESS_ID, &mytime, sizeof(sys_date_timer_t));
+	printk("mytime: %04d-%02d-%02d, %02d:%02d:%02d\n", mytime.year,mytime.month,mytime.day,mytime.hour,mytime.minute,mytime.second);
 	
 	memset(systime, 0, sizeof(sys_date_timer_t));
-	
-	pdat = (uint32_t *)SYSTEM_DATE_TIME_ADDR;
-	mytime.year = 0x0000ffff&(*pdat);
-	mytime.month = 0x000000ff&((*pdat)>>16);
-	mytime.day = 0x000000ff&((*pdat)>>24);
-	
-	pdat += 1;
-	mytime.hour = 0x000000ff&(*pdat);
-	mytime.minute = 0x000000ff&((*pdat)>>8);
-	mytime.second = 0x000000ff&((*pdat)>>16);
-	mytime.week = 0x000000ff&((*pdat)>>24);
 	
 	if(!CheckSystemDateTimeIsValid(mytime))
 	{

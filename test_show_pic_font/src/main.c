@@ -33,7 +33,7 @@ static u8_t show_pic_count = 0;//图片显示顺序
 static sys_date_timer_t date_time = {0};
 static sys_date_timer_t last_date_time = {0};
 
-static u8_t language_mode = 0;//0:chinese  1:english
+static u8_t language_mode = 1;//0:chinese  1:english
 static u8_t clock_mode = 0;//0:analog  1:digital
 static u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 
@@ -203,7 +203,8 @@ void idle_show_digital_clock(void)
 	u8_t str_time[20] = {0};
 	u8_t str_date[20] = {0};
 	u8_t str_week[20] = {0};
-	u8_t *week[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+	u8_t *week_cn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
 	
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
@@ -211,7 +212,10 @@ void idle_show_digital_clock(void)
 	
 	sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
 	sprintf((char*)str_date, "%04d/%02d/%02d", date_time.year, date_time.month, date_time.day);
-	strcpy((char*)str_week, (const char*)week[date_time.week]);
+	if(language_mode == 0)
+		strcpy((char*)str_week, (const char*)week_cn[date_time.week]);
+	else
+		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
 	
 	LCD_MeasureString(str_time,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
@@ -226,7 +230,7 @@ void idle_show_digital_clock(void)
 		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
 		y = y+(h+5);
 		LCD_ShowString(x,y,str_date);//日期
-
+	
 		LCD_MeasureString(str_week,&w,&h);
 		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
 		y = y+(h+5);
@@ -323,7 +327,6 @@ void idle_show_clock_background(void)
 	if(clock_mode == 0)
 	{
 		LCD_dis_pic(0,0,clock_bg_80X160);
-		LCD_ShowString(40,120,"88");
 	}
 }
 

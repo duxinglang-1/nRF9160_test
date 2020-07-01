@@ -1,86 +1,239 @@
-/* * Copyright (c) 2018 Laczen * * SPDX-License-Identifier: Apache-2.0 */
+/*
+* Copyright (c) 2019 Nordic Semiconductor ASA
+*
+* SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
+*/
 
-#include <fs/nvs.h>
-#include <drivers/flash.h>
+#include <nrf9160.h>
+#include <zephyr.h>
 #include <device.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <sys/printk.h>
+#include <drivers/spi.h>
+#include <drivers/gpio.h>
+#include <dk_buttons_and_leds.h>
+#include "lcd.h"
+#include "font.h"
+#include "img.h"
+#include "inner_flash.h"
+#include "external_flash.h"
 
-#define value1  "53.760241,-5.147095,1.023,11:20:22"
-#define value2  "53.760241,-5.147095,1.023,11:20:23"
-#define value3  "53.760241,-5.147095,1.023,11:20:24"
-#define value4  "53.760241,-5.147095,1.023,11:20:25"
-#define value5  "53.760241,-5.147095,1.023,11:20:26"
-#define value6  "53.760241,-5.147095,1.023,11:20:27"
-#define value7  "53.760241,-5.147095,1.023,11:20:28"
-#define value8  "53.760241,-5.147095,1.023,11:20:29"
-#define value9  "53.760241,-5.147095,1.023,11:20:30"
-#define value10  "53.760241,-5.147095,1.023,11:20:31"
-#define value11  "53.760241,-5.147095,1.023,11:20:32"
-#define value12  "53.760241,-5.147095,1.023,11:20:33"
+bool lcd_sleep_in = false;
+bool lcd_sleep_out = false;
 
-static const char results[][60] = { value1,value2,value3,value4,value5,value6,value7,value8,value9,value10,value11,value12};
-static struct nvs_fs fs;
-struct flash_pages_info info;
 
-int nvs_setup(void)
-{	
-	int err;	
+void test_show_image(void)
+{
+	u8_t i=0;
+	u16_t x,y,w,h;
 
-	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;	
-	err = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME), fs.offset, &info);	
-	if(err)
-	{		
-		printk("Unable to get page info");	
-	}	
-
-	fs.sector_size = info.size;
-	fs.sector_count = 6U;
-	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	if(err)
+	printk("test_show_image\n");
+	
+	LCD_Clear(BLACK);
+	
+	LCD_get_pic_size(peppa_pig_80X160, &w, &h);
+	while(1)
 	{
-		printk("Flash Init failed\n");
+		switch(i)
+		{
+			case 0:
+				LCD_dis_pic(w*0,h*0,peppa_pig_80X160);
+				break;
+			case 1:
+				LCD_dis_pic(w*1,h*0,peppa_pig_80X160);
+				break;
+			case 2:
+				LCD_dis_pic(w*1,h*1,peppa_pig_80X160);
+				break;
+			case 3:
+				LCD_dis_pic(w*0,h*1,peppa_pig_80X160);
+				break;
+			case 4:
+				LCD_Fill(w*0,h*0,w,h,BLACK);
+				break;
+			case 5:
+				LCD_Fill(w*1,h*0,w,h,BLACK);
+				break;
+			case 6:
+				LCD_Fill(w*1,h*1,w,h,BLACK);
+				break;
+			case 7:
+				LCD_Fill(w*0,h*1,w,h,BLACK);
+				break;
+		}
+		
+		i++;
+		if(i>=8)
+			i=0;
+		
+		k_sleep(K_MSEC(1000));								//软件延时1000ms
 	}
-	err = nvs_clear(&fs);
-	if(err)
-	{
-		printk("nvs_clear failed\n");
-	}
-	return err;
 }
 
-void main(void)
+void test_show_color(void)
+{
+	u8_t i=0;
+
+	printk("test_show_image\n");
+	
+	while(1)
+	{
+		switch(i)
+		{
+			case 0:
+				LCD_Clear(WHITE);
+				break;
+			case 1:
+				LCD_Clear(BLACK);
+				break;
+			case 2:
+				LCD_Clear(BLUE);
+				break;
+			case 3:
+				LCD_Clear(BRED);
+				break;
+			case 4:
+				LCD_Clear(GRED);
+				break;
+			case 5:
+				LCD_Clear(GBLUE);
+				break;
+			case 6:
+				LCD_Clear(RED);
+				break;
+			case 7:
+				LCD_Clear(MAGENTA);
+				break;
+			case 8:
+				LCD_Clear(GREEN);
+				break;
+			case 9:
+				LCD_Clear(CYAN);
+				break;
+			case 10:
+				LCD_Clear(YELLOW);
+				break;
+			case 11:
+				LCD_Clear(BROWN);
+				break;
+			case 12:
+				LCD_Clear(BRRED);
+				break;
+			case 13:
+				LCD_Clear(GRAY);
+				break;					
+		}
+		
+		i++;
+		if(i>=14)
+			i=0;
+		
+		k_sleep(K_MSEC(1000));								//软件延时1000ms
+	}
+}
+
+void test_show_string(void)
+{
+	u16_t x,y,w,h;
+	
+	//LCD_Clear(BLACK);								//清屏
+	
+	POINT_COLOR=WHITE;								//画笔颜色
+	BACK_COLOR=BLACK;  								//背景色 
+
+#ifdef FONT_16
+	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
+#endif
+	LCD_MeasureString("深圳市奥科斯数码有限公司",&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = 40;	
+	LCD_ShowString(x,y,"深圳市奥科斯数码有限公司");
+	
+	LCD_MeasureString("2015-2020 August International Ltd. All Rights Reserved.",&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 10;	
+	LCD_ShowString(x,y,"2015-2020 August International Ltd. All Rights Reserved.");
+
+#ifdef FONT_24
+	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
+#endif
+	LCD_MeasureString("Rawmec Business Park, Plumpton Road, Hoddesdon",&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 10;	
+	LCD_ShowString(x,y,"Rawmec Business Park, Plumpton Road, Hoddesdon");
+	
+	LCD_MeasureString("深圳市龙华观澜环观南路凯美广场A座",&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 10;	
+	LCD_ShowString(x,y,"深圳市龙华观澜环观南路凯美广场A座");
+
+#ifdef FONT_32
+	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小
+#endif
+	LCD_MeasureString("2020-01-03 16:30:45",&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 10;	
+	LCD_ShowString(x,y,"2020-01-03 16:30:45");
+}
+
+/**@brief Initializes buttons and LEDs, using the DK buttons and LEDs
+ * library.
+ */
+static void buttons_leds_init(void)
 {
 	int err;
-	char nvs_rx_buff[39] = {0};
-	ssize_t bytes_written,bytes_read,freespace;
-	
-	err = nvs_setup();
-	if(err)
+
+	err = dk_leds_init();
+	if (err)
 	{
-		printk("nvs_setup failed\n");
+		printk("Could not initialize leds, err code: %d\n", err);
 	}
 
-	freespace = nvs_calc_free_space(&fs);
-	printk("Remaining free space in nvs sector is %d Bytes\n", freespace);
-	
-	for(int i=0; i<ARRAY_SIZE(results); i++)
+	err = dk_set_leds_state(0x00, DK_ALL_LEDS_MSK);
+	if (err)
 	{
-		printk("Writing %s to NVS\n", results[i]);
-		bytes_written = nvs_write(&fs, i, results[i], strlen(results[i]));
-		printk("Bytes written to nvs: %d at ID %d\n", bytes_written, i);
-
-		freespace = nvs_calc_free_space(&fs);
-		printk("Remaining free space in nvs sector is %d Bytes\n", freespace);
+		printk("Could not set leds state, err code: %d\n", err);
 	}
+}
 
-	k_sleep(K_MSEC(5000));
+void system_init(void)
+{
+	buttons_leds_init();
+	key_init();
+	LCD_Init();
+}
 
-	for(int i=0; i<ARRAY_SIZE(results); i++)
+/***************************************************************************
+* 描  述 : main函数 
+* 入  参 : 无 
+* 返回值 : int 类型
+**************************************************************************/
+int main(void)
+{
+	bool count = false;
+
+	printk("main\n");
+
+	system_init();
+	dk_set_led(DK_LED1,1);
+
+//	test_nvs();
+	test_flash();
+
+	test_show_string();
+	
+	while(true)
 	{
-		bytes_read = nvs_read(&fs, i, nvs_rx_buff, sizeof(nvs_rx_buff));
-		printk("Bytes read from nvs: %d at ID %d\n", bytes_read, i);
-		printk("Data read from nvs: %s at ID %d\n", nvs_rx_buff, i);
+		if(lcd_sleep_in)
+		{
+			lcd_sleep_in = false;
+			LCD_SleepIn();
+		}
+
+		if(lcd_sleep_out)
+		{
+			lcd_sleep_out = false;
+			LCD_SleepOut();
+		}
 	}
 }

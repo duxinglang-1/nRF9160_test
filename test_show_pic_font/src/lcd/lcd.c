@@ -242,12 +242,13 @@ void LCD_dis_trans_pic(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans)
 
  	for(i=0;i<h;i++)
 	{
-		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
-
 		for(j=0;j<w;j++)
 		{
 			if(trans != color[8+i*w+j])
+			{
+				BlockWrite(x+j,y+i,1,1);	  	//设置刷新位置
 				WriteOneDot(color[8+i*w+j]);	//显示不透明的颜色 
+			}
 		}
 	}		  
 }
@@ -380,7 +381,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 0:
 		for(i=0;i<h;i++)
 		{
-			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
 			for(j=0;j<w;j++)
 			{
 				if(trans != color[8+i*w+j])
@@ -395,7 +395,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 90:
 		for(i=0;i<w;i++)
 		{
-			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
 			for(j=0;j<h;j++)
 			{
 				if(trans != color[8+(i+w*(h-1)-j*w)])
@@ -410,7 +409,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 180:
 		for(i=0;i<h;i++)
 		{
-			//BlockWrite(x,y+i,w,1);	  	//设置刷新位置
 			for(j=0;j<w;j++)
 			{
 				if(trans != color[8+(w*h-1)-w*i-j])
@@ -425,7 +423,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 270:
 		for(i=0;i<w;i++)
 		{
-			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
 			for(j=0;j<h;j++)
 			{
 				if(trans != color[8+(w-1-i+w*j)])
@@ -444,14 +441,14 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 //num:要显示的字符:" "--->"~"
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
-{  							  
+{
     uint8_t temp,t1,t;
 	uint16_t y0=y;
 	uint8_t csize=(system_font/8+((system_font%8)?1:0))*(system_font/2);		//得到字体一个字符对应点阵集所占的字节数	
  	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
 	for(t=0;t<csize;t++)
-	{   
+	{
 		switch(system_font)
 		{
 		#ifdef FONT_16
@@ -475,16 +472,24 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 								
 		for(t1=0;t1<8;t1++)
 		{			    
-			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
-			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
+			if(temp&0x80)
+				LCD_Fast_DrawPoint(x,y,POINT_COLOR);
+			else if(mode==0)
+				LCD_Fast_DrawPoint(x,y,BACK_COLOR);
+
 			temp<<=1;
 			y++;
-			if(y>=LCD_HEIGHT)return;		//超区域了
+			
+			if(y>=LCD_HEIGHT)
+				return;		//超区域了
+				
 			if((y-y0)==system_font)
 			{
 				y=y0;
 				x++;
-				if(x>=LCD_WIDTH)return;	//超区域了
+				if(x>=LCD_WIDTH)
+					return;	//超区域了
+					
 				break;
 			}
 		}  	 

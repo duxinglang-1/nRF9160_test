@@ -63,7 +63,7 @@ void LCD_Color_Fill(uint16_t x,uint16_t y,uint16_t w,uint16_t h,unsigned int *co
 
  	for(i=0;i<h;i++)
 	{
-		BlockWrite(x,y+i,w,h-i);	  
+		BlockWrite(x,y+i,w,h-i);
 		for(j=0;j<w;j++)
 			WriteOneDot(color[i*w+j]);	//显示颜色 
 	}		  
@@ -166,15 +166,31 @@ void LCD_dis_pic(uint16_t x,uint16_t y,unsigned int *color)
 {  
 	uint16_t h,w;
 	uint16_t i,j;
+	u8_t databuf[2*COL] = {0};
 	
 	w=255*color[2]+color[3]; 			//获取图片宽度
 	h=255*color[4]+color[5];			//获取图片高度
-
+	if(w > COL)
+		w = COL;
+	if(h > ROW)
+		h = ROW;
+	
  	for(i=0;i<h;i++)
 	{
 		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+
+	#ifdef LCD_TYPE_SPI
+		for(j=0;j<w;j++)
+		{
+			databuf[2*j] = color[8+i*w+j]>>8;
+			databuf[2*j+1] = color[8+i*w+j];
+		}
+
+		DispDate(2*w, databuf);
+	#else
 		for(j=0;j<w;j++)
 			WriteOneDot(color[8+i*w+j]);	//显示颜色 
+	#endif
 	}		  
 }
 
@@ -189,10 +205,15 @@ void LCD_dis_trans_pic(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans)
 	
 	w=255*color[2]+color[3]; 			//获取图片宽度
 	h=255*color[4]+color[5];			//获取图片高度
+	if(w > COL)
+		w = COL;
+	if(h > ROW)
+		h = ROW;
 
  	for(i=0;i<h;i++)
 	{
 		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+
 		for(j=0;j<w;j++)
 		{
 			if(trans != color[8+i*w+j])
@@ -214,42 +235,98 @@ void LCD_dis_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigned int r
 	
 	w=255*color[2]+color[3]; 			//获取图片宽度
 	h=255*color[4]+color[5];			//获取图片高度
+	if(w > COL)
+		w = COL;
+	if(h > ROW)
+		h = ROW;
 
 	switch(rotate)
 	{
 	case 0:
 		for(i=0;i<h;i++)
 		{
+			u8_t databuf[2*COL] = {0};
+			
 			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<w;j++)
+			{
+				databuf[2*j] = color[8+i*w+j]>>8;
+				databuf[2*j+1] = color[8+i*w+j];
+			}
+
+			DispDate(2*w, databuf);
+		#else
 			for(j=0;j<w;j++)
 				WriteOneDot(color[8+i*w+j]);	//显示颜色 
+		#endif
 		}	
 		break;
 		
 	case 90:
 		for(i=0;i<w;i++)
 		{
+			u8_t databuf[2*ROW] = {0};
+			
 			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<h;j++)
+			{
+				databuf[2*j] = color[8+(i+w*(h-1)-j*w)]>>8;
+				databuf[2*j+1] = color[8+(i+w*(h-1)-j*w)];
+			}
+
+			DispDate(2*h, databuf);
+		#else
 			for(j=0;j<h;j++)
 				WriteOneDot(color[8+(i+w*(h-1)-j*w)]);	//显示颜色 
+		#endif	
 		}
 		break;
 		
 	case 180:
 		for(i=0;i<h;i++)
 		{
+			u8_t databuf[2*COL] = {0};
+			
 			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+			
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<w;j++)
+			{
+				databuf[2*j] = color[8+(w*h-1)-w*i-j]>>8;
+				databuf[2*j+1] = color[8+(w*h-1)-w*i-j];
+			}
+
+			DispDate(2*w, databuf);
+		#else
 			for(j=0;j<w;j++)
 				WriteOneDot(color[8+(w*h-1)-w*i-j]);	//显示颜色 
+		#endif	
 		}		
 		break;
 		
 	case 270:
 		for(i=0;i<w;i++)
 		{
+			u8_t databuf[2*ROW] = {0};
+			
 			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<h;j++)
+			{
+				databuf[2*j] = color[8+(w-1-i+w*j)]>>8;
+				databuf[2*j+1] = color[8+(w-1-i+w*j)];
+			}
+
+			DispDate(2*h, databuf);
+		#else
 			for(j=0;j<h;j++)
 				WriteOneDot(color[8+(w-1-i+w*j)]);	//显示颜色 
+		#endif		
 		}		
 		break;
 	}

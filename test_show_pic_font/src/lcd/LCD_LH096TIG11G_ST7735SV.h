@@ -7,8 +7,9 @@
 //接口定义
 //extern xdata unsigned char buffer[512];
 //------------------------------------------------------
-#define ROW 160			//显示的行、
-#define COL 80			//列数
+#define COL 80			//宽
+#define ROW 160			//高
+
 
 //LCD的画笔颜色和背景色	   
 extern uint16_t  POINT_COLOR;//默认红色    

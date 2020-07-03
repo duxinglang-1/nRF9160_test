@@ -147,6 +147,8 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 void DispColor(u32_t total, u16_t color)
 {
 	u32_t i,remain;      
+
+	gpio_pin_write(gpio_lcd, RS, 1);
 	
 	while(1)
 	{
@@ -202,10 +204,6 @@ void DispBand(void)
 {
 	u32_t i;
 	unsigned int color[8]={0xf800,0x07e0,0x001f,0xFFE0,0XBC40,0X8430,0x0000,0xffff};//0x94B2
-
-	BlockWrite(0,0,COL-1,ROW-1);
-
-	gpio_pin_write(gpio_lcd, RS, 1);
 
 	for(i=0;i<8;i++)
 	{
@@ -272,8 +270,6 @@ bool LCD_CheckID(void)
 void LCD_Clear(uint16_t color)
 {
 	BlockWrite(0,0,COL-1,ROW-1);//¶¨Î»
-
-	gpio_pin_write(gpio_lcd, RS, 1);
 
 	DispColor(COL*ROW, color);
 } 

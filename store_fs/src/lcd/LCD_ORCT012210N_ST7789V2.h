@@ -1,3 +1,4 @@
+#include <zephyr\types.h>
 #include "lcd.h"
 
 #ifdef LCD_ORCT012210N_ST7789V2
@@ -7,8 +8,9 @@
 //接口定义
 //extern xdata unsigned char buffer[512];
 //------------------------------------------------------
-#define ROW 240			//显示的行、
-#define COL 240			//列数
+#define COL 240			//宽
+#define ROW 240			//高
+
 
 //LCD的画笔颜色和背景色	   
 extern uint16_t  POINT_COLOR;//默认红色    
@@ -41,7 +43,12 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define X_max 0x07AE
 #define Y_min 0x00A1
 #define Y_max 0x0759
+
+#define LCD_DATA_LEN 2048
+
 //------------------------------------------------------
+
+extern u8_t lcd_data_buffer[2*LCD_DATA_LEN];
 
 extern void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h);
 extern void WriteOneDot(unsigned int color);

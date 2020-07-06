@@ -8,6 +8,10 @@
 //#define LCD_LH096TIG11G_ST7735SV
 #define LCD_ORCT012210N_ST7789V2
 
+//#define LCD_TYPE_PARALLEL		//并口
+//#define LCD_TYPE_I2C			//I2C
+#define LCD_TYPE_SPI			//SPI
+
 //LCD的宽度和高度
 extern uint16_t  LCD_WIDTH;
 extern uint16_t  LCD_HEIGHT;

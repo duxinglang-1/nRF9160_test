@@ -22,13 +22,13 @@ typedef enum
 
 //Ó¢ÎÄ×Ö¿â
 #ifdef FONT_16
-extern const unsigned char asc2_1608[95][16];
+extern const unsigned char asc2_1608[96][16];
 #endif
 #ifdef FONT_24
-extern const unsigned char asc2_2412[95][36];
+extern const unsigned char asc2_2412[96][48];
 #endif
 #ifdef FONT_32
-extern const unsigned char asc2_3216[95][64];
+extern const unsigned char asc2_3216[96][64];
 #endif
 //ÖÐÎÄ×Ö¿â
 #ifdef FONT_16

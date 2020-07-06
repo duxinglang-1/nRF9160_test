@@ -13,16 +13,20 @@
 struct device *spi_lcd;
 struct device *gpio_lcd;
 
-static struct k_timer lcd_sleep_timer;
+struct spi_buf_set tx_bufs,rx_bufs;
+struct spi_buf tx_buff,rx_buff;
+
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
+u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
+
 bool lcd_is_sleeping = true;
 
-static void spi_init(void)
+static void LCD_SPI_Init(void)
 {
 	printk("spi_init\n");
 	
@@ -49,6 +53,28 @@ static void spi_init(void)
 	spi_cfg.cs = &spi_cs_ctr;
 }
 
+static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t rxbuflen)
+{
+	int err;
+	
+	tx_buff.buf = txbuf;
+	tx_buff.len = txbuflen;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+
+	rx_buff.buf = rxbuf;
+	rx_buff.len = rxbuflen;
+	rx_bufs.buffers = &rx_buff;
+	rx_bufs.count = 1;
+
+	err = spi_transceive(spi_lcd, &spi_cfg, &tx_bufs, &rx_bufs);
+	if(err)
+	{
+		printk("SPI error: %d\n", err);
+	}
+
+}
+
 //LCD延时函数
 void Delay(unsigned int dly)
 {
@@ -59,15 +85,9 @@ void Delay(unsigned int dly)
 //i:8位数据
 void Write_Data(uint8_t i) 
 {	
-	struct spi_buf_set tx_bufs;
-	struct spi_buf tx_buff;
-
-	tx_buffer[0] = i;
-	tx_buff.buf = tx_buffer;
-	tx_buff.len = 1;
-	tx_bufs.buffers = &tx_buff;
-	tx_bufs.count = 1;
-	spi_write(spi_lcd, &spi_cfg, &tx_bufs);
+	lcd_data_buffer[0] = i;
+	
+	LCD_SPI_Transceive(lcd_data_buffer, 1, NULL, 0);
 }
 
 //----------------------------------------------------------------------
@@ -89,17 +109,10 @@ void WriteData(u8_t i)
 
 void WriteDispData(u8_t DataH,u8_t DataL)
 {
-	struct spi_buf_set tx_bufs;
-	struct spi_buf tx_buff;
-
-	tx_buffer[0] = DataH;
-	tx_buffer[1] = DataL;
+	lcd_data_buffer[0] = DataH;
+	lcd_data_buffer[1] = DataL;
 	
-	tx_buff.buf = tx_buffer;
-	tx_buff.len = 2;
-	tx_bufs.buffers = &tx_buff;
-	tx_bufs.count = 1;
-	spi_write(spi_lcd, &spi_cfg, &tx_bufs);
+	LCD_SPI_Transceive(lcd_data_buffer, 2, NULL, 0);
 }
 
 //LCD画点函数
@@ -131,50 +144,73 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	WriteComm(0x2c);
 }
 
-void DispColor(unsigned int color)
+void DispColor(u32_t total, u16_t color)
 {
-	unsigned int i,j;
-
-	BlockWrite(0,0,COL-1,ROW-1);
+	u32_t i,remain;      
 
 	gpio_pin_write(gpio_lcd, RS, 1);
-
-	for(i=0;i<ROW;i++)
+	
+	while(1)
 	{
-		for(j=0;j<COL;j++)
-		{    
-			WriteDispData(color>>8, color);
+		if(total <= LCD_DATA_LEN)
+			remain = total;
+		else
+			remain = LCD_DATA_LEN;
+		
+		for(i=0;i<remain;i++)
+		{
+			lcd_data_buffer[2*i] = color>>8;
+			lcd_data_buffer[2*i+1] = color;
 		}
+		
+		LCD_SPI_Transceive(lcd_data_buffer, 2*remain, NULL, 0);
+
+		if(remain == total)
+			break;
+
+		total -= remain;
+	}
+}
+
+void DispDate(u32_t total, u8_t *data)
+{
+	u32_t i,remain;      
+
+	gpio_pin_write(gpio_lcd, RS, 1);
+	
+	while(1)
+	{
+		if(total <= 2*LCD_DATA_LEN)
+			remain = total;
+		else
+			remain = 2*LCD_DATA_LEN;
+		
+		for(i=0;i<remain;i++)
+		{
+			lcd_data_buffer[i] = data[i];
+		}
+		
+		LCD_SPI_Transceive(lcd_data_buffer, remain, NULL, 0);
+
+		if(remain == total)
+			break;
+
+		total -= remain;
 	}
 }
 
 //测试函数（显示RGB条纹）
 void DispBand(void)	 
 {
-	unsigned int i,j,k;
-	unsigned int color[8]={0xf800,0xf800,0x07e0,0x07e0,0x001f,0x001f,0xffff,0xffff};//0x94B2
-
-	BlockWrite(0,0,COL-1,ROW-1);
-
-	gpio_pin_write(gpio_lcd, RS, 1);
+	u32_t i;
+	unsigned int color[8]={0xf800,0x07e0,0x001f,0xFFE0,0XBC40,0X8430,0x0000,0xffff};//0x94B2
 
 	for(i=0;i<8;i++)
 	{
-		for(j=0;j<ROW/8;j++)
-		{
-			for(k=0;k<COL;k++)
-			{
-				WriteDispData(color[i]>>8, color[i]);
-			} 
-		}
+		DispColor(COL*(ROW/8), color[i]);
 	}
-	for(j=0;j<(ROW%8);j++)
-	{
-		for(k=0;k<COL;k++)
-		{
-			WriteDispData(color[7]>>8, color[7]);
-		} 
-	}
+
+	DispColor(COL*(ROW%8), color[7]);
 }
 
 //测试函数（画边框）
@@ -218,13 +254,6 @@ void DispFrame(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-static void lcd_sleep_timer_handler(struct k_timer *timer)
-{
-	printk("clock_timer_handler\n");
-
-    LCD_SleepIn();
-}
-
 bool LCD_CheckID(void)
 {
 	WriteComm(0x04);
@@ -240,19 +269,9 @@ bool LCD_CheckID(void)
 //color:要清屏的填充色
 void LCD_Clear(uint16_t color)
 {
-	u32_t index=0;      
-	u32_t totalpoint=ROW;
-
-	totalpoint*=COL; 			//得到总点数
-
 	BlockWrite(0,0,COL-1,ROW-1);//定位
 
-	gpio_pin_write(gpio_lcd, RS, 1);
-
-	for(index=0;index<totalpoint;index++)
-	{
-		WriteDispData(color>>8, color);
-	}
+	DispColor(COL*ROW, color);
 } 
 
 //屏幕睡眠
@@ -289,6 +308,11 @@ void LCD_SleepOut(void)
 	lcd_is_sleeping = false;
 }
 
+//屏幕显示数据
+void LCD_Show()
+{
+
+}
 //LCD初始化函数
 void LCD_Init(void)
 {
@@ -312,7 +336,7 @@ void LCD_Init(void)
 
 	gpio_pin_write(gpio_lcd, VDD, 1);
 	
-	spi_init();
+	LCD_SPI_Init();
 
 	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(10);

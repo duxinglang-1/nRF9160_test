@@ -49,9 +49,14 @@ void LCD_Fill(uint16_t x,uint16_t y,uint16_t w,uint16_t h,uint16_t color)
 
 	for(i=y;i<=(y+h);i++)
 	{
-		BlockWrite(x,i,w,y+h-i);	  
+		BlockWrite(x,i,w,y+h-i);
+		
+	#ifdef LCD_TYPE_SPI
+		DispColor(w, color);
+	#else
 		for(j=0;j<w;j++)
-			WriteOneDot(color);	//显示颜色 
+			WriteOneDot(color); //显示颜色 
+	#endif
 	}	 
 }  
 //在指定区域内填充指定颜色块	(显示图片)		 
@@ -63,9 +68,14 @@ void LCD_Color_Fill(uint16_t x,uint16_t y,uint16_t w,uint16_t h,unsigned int *co
 
  	for(i=0;i<h;i++)
 	{
-		BlockWrite(x,y+i,w,h-i);	  
+		BlockWrite(x,y+i,w,h-i);
+		
+	#ifdef LCD_TYPE_SPI
+		DispColor(w, color[i*w+j]);
+	#else
 		for(j=0;j<w;j++)
 			WriteOneDot(color[i*w+j]);	//显示颜色 
+	#endif		
 	}		  
 } 
 
@@ -106,6 +116,7 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 		} 
 	}  
 }    
+
 //画矩形	  
 //(x1,y1),(x2,y2):矩形的对角坐标
 void LCD_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
@@ -166,15 +177,31 @@ void LCD_dis_pic(uint16_t x,uint16_t y,unsigned int *color)
 {  
 	uint16_t h,w;
 	uint16_t i,j;
+	u8_t databuf[2*COL] = {0};
 	
 	w=255*color[2]+color[3]; 			//获取图片宽度
 	h=255*color[4]+color[5];			//获取图片高度
-
+	if(w > COL)
+		w = COL;
+	if(h > ROW)
+		h = ROW;
+	
  	for(i=0;i<h;i++)
 	{
 		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+
+	#ifdef LCD_TYPE_SPI
+		for(j=0;j<w;j++)
+		{
+			databuf[2*j] = color[8+i*w+j]>>8;
+			databuf[2*j+1] = color[8+i*w+j];
+		}
+
+		DispDate(2*w, databuf);
+	#else
 		for(j=0;j<w;j++)
 			WriteOneDot(color[8+i*w+j]);	//显示颜色 
+	#endif
 	}		  
 }
 
@@ -189,14 +216,20 @@ void LCD_dis_trans_pic(uint16_t x,uint16_t y,unsigned int *color,uint16_t trans)
 	
 	w=255*color[2]+color[3]; 			//获取图片宽度
 	h=255*color[4]+color[5];			//获取图片高度
+	if(w > COL)
+		w = COL;
+	if(h > ROW)
+		h = ROW;
 
  	for(i=0;i<h;i++)
 	{
-		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
 		for(j=0;j<w;j++)
 		{
 			if(trans != color[8+i*w+j])
+			{
+				BlockWrite(x+j,y+i,1,1);	  	//设置刷新位置
 				WriteOneDot(color[8+i*w+j]);	//显示不透明的颜色 
+			}
 		}
 	}		  
 }
@@ -214,42 +247,98 @@ void LCD_dis_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,unsigned int r
 	
 	w=255*color[2]+color[3]; 			//获取图片宽度
 	h=255*color[4]+color[5];			//获取图片高度
+	if(w > COL)
+		w = COL;
+	if(h > ROW)
+		h = ROW;
 
 	switch(rotate)
 	{
 	case 0:
 		for(i=0;i<h;i++)
 		{
+			u8_t databuf[2*COL] = {0};
+			
 			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<w;j++)
+			{
+				databuf[2*j] = color[8+i*w+j]>>8;
+				databuf[2*j+1] = color[8+i*w+j];
+			}
+
+			DispDate(2*w, databuf);
+		#else
 			for(j=0;j<w;j++)
 				WriteOneDot(color[8+i*w+j]);	//显示颜色 
+		#endif
 		}	
 		break;
 		
 	case 90:
 		for(i=0;i<w;i++)
 		{
+			u8_t databuf[2*ROW] = {0};
+			
 			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<h;j++)
+			{
+				databuf[2*j] = color[8+(i+w*(h-1)-j*w)]>>8;
+				databuf[2*j+1] = color[8+(i+w*(h-1)-j*w)];
+			}
+
+			DispDate(2*h, databuf);
+		#else
 			for(j=0;j<h;j++)
 				WriteOneDot(color[8+(i+w*(h-1)-j*w)]);	//显示颜色 
+		#endif	
 		}
 		break;
 		
 	case 180:
 		for(i=0;i<h;i++)
 		{
+			u8_t databuf[2*COL] = {0};
+			
 			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+			
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<w;j++)
+			{
+				databuf[2*j] = color[8+(w*h-1)-w*i-j]>>8;
+				databuf[2*j+1] = color[8+(w*h-1)-w*i-j];
+			}
+
+			DispDate(2*w, databuf);
+		#else
 			for(j=0;j<w;j++)
 				WriteOneDot(color[8+(w*h-1)-w*i-j]);	//显示颜色 
+		#endif	
 		}		
 		break;
 		
 	case 270:
 		for(i=0;i<w;i++)
 		{
+			u8_t databuf[2*ROW] = {0};
+			
 			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+
+		#ifdef LCD_TYPE_SPI
+			for(j=0;j<h;j++)
+			{
+				databuf[2*j] = color[8+(w-1-i+w*j)]>>8;
+				databuf[2*j+1] = color[8+(w-1-i+w*j)];
+			}
+
+			DispDate(2*h, databuf);
+		#else
 			for(j=0;j<h;j++)
 				WriteOneDot(color[8+(w-1-i+w*j)]);	//显示颜色 
+		#endif		
 		}		
 		break;
 	}
@@ -273,7 +362,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 0:
 		for(i=0;i<h;i++)
 		{
-			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
 			for(j=0;j<w;j++)
 			{
 				if(trans != color[8+i*w+j])
@@ -288,7 +376,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 90:
 		for(i=0;i<w;i++)
 		{
-			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
 			for(j=0;j<h;j++)
 			{
 				if(trans != color[8+(i+w*(h-1)-j*w)])
@@ -303,7 +390,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 180:
 		for(i=0;i<h;i++)
 		{
-			//BlockWrite(x,y+i,w,1);	  	//设置刷新位置
 			for(j=0;j<w;j++)
 			{
 				if(trans != color[8+(w*h-1)-w*i-j])
@@ -318,7 +404,6 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 	case 270:
 		for(i=0;i<w;i++)
 		{
-			//BlockWrite(x,y+i,h,1);	  	//设置刷新位置
 			for(j=0;j<h;j++)
 			{
 				if(trans != color[8+(w-1-i+w*j)])
@@ -337,14 +422,16 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 //num:要显示的字符:" "--->"~"
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
-{  							  
-    uint8_t temp,t1,t;
-	uint16_t y0=y;
-	uint8_t csize=(system_font/8+((system_font%8)?1:0))*(system_font/2);		//得到字体一个字符对应点阵集所占的字节数	
- 	
+{
+    u8_t temp,t1,t,i=0;
+	u16_t y0=y,x0=x;
+	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
+	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
+ 	u8_t databuf[2*COL] = {0};
+	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
 	for(t=0;t<csize;t++)
-	{   
+	{
 		switch(system_font)
 		{
 		#ifdef FONT_16
@@ -365,22 +452,72 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			default:
 				return;							//没有的字库
 		}
-								
+
+	#ifdef LCD_TYPE_SPI
+		BlockWrite(x0,y,(system_font/2),1);	  	//设置刷新位置
+	#endif
+	
 		for(t1=0;t1<8;t1++)
-		{			    
+		{
+		#ifdef LCD_TYPE_SPI
+			if(temp&0x80)
+			{
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				DispDate(2*i, databuf);
+				i=0;
+
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+
+			}
+			if((x-x0)==(system_font/2))
+			{
+				DispDate(2*i, databuf);
+				i=0;
+				
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				break;
+			}
+		#else
 			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
 			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
 			temp<<=1;
-			y++;
-			if(y>=LCD_HEIGHT)return;		//超区域了
-			if((y-y0)==system_font)
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				y=y0;
-				x++;
-				if(x>=LCD_WIDTH)return;	//超区域了
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;				
+			}
+			if((x-x0)==(system_font/2))
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return; 	//超区域了
 				break;
 			}
-		}  	 
+		#endif
+		}	
 	}  	    	   	 	  
 }   
 
@@ -390,12 +527,14 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 {  							  
-	uint8_t temp,t1,t;
-	uint16_t y0=y;
-	uint16_t index=0;
-	
-	uint8_t csize=(system_font/8+((system_font%8)?1:0))*(system_font);		//得到字体一个字符对应点阵集所占的字节数	
- 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
+	u8_t temp,t1,t,i=0;
+	u16_t x0=x,y0=y;
+	u16_t index=0;
+	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//行扫描，每个字符每一行占用的字节数
+	u8_t csize=cbyte*(system_font);		//得到字体一个字符对应点阵集所占的字节数	
+	u8_t databuf[2*COL] = {0};
+
+	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
 	for(t=0;t<csize;t++)
 	{	
 		switch(system_font)
@@ -419,20 +558,69 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 				return;								//没有的字库
 		}	
 
+	#ifdef LCD_TYPE_SPI
+		BlockWrite(x0,y,system_font,1);	  	//设置刷新位置
+	#endif
+	
 		for(t1=0;t1<8;t1++)
-		{			    
+		{
+		#ifdef LCD_TYPE_SPI
+			if(temp&0x80)
+			{
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				DispDate(2*i, databuf);
+				i=0;
+
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+			}
+			if((x-x0)==(system_font))
+			{
+				DispDate(2*i, databuf);
+				i=0;
+				
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				break;
+			}			
+		#else
 			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
 			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
 			temp<<=1;
-			y++;
-			if(y>=LCD_HEIGHT)return;		//超区域了
-			if((y-y0)==system_font)
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				y=y0;
-				x++;
-				if(x>=LCD_WIDTH)return;	//超区域了
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;			
+			}
+			if((x-x0)==system_font)
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				break;
 			}
+		#endif
 		} 
 	}  	    	   	 	  
 }   

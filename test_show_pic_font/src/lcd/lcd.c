@@ -86,43 +86,24 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
 	uint16_t t; 
 	int xerr=0,yerr=0,delta_x,delta_y,distance; 
-	int incx,incy,uRow,uCol;
-	
+	int incx,incy,uRow,uCol; 
 	delta_x=x2-x1; //计算坐标增量 
 	delta_y=y2-y1; 
 	uRow=x1; 
 	uCol=y1; 
-	
-	if(delta_x>0)
-		incx=1; //设置单步方向 
-	else if(delta_x==0)
-		incx=0;//垂直线 
-	else 
-	{
-		incx=-1;
-		delta_x=-delta_x;
-	} 
-
-	if(delta_y>0)
-		incy=1; 
-	else if(delta_y==0)
-		incy=0;//水平线 
-	else
-	{
-		incy=-1;
-		delta_y=-delta_y;
-	} 
-
-	if(delta_x>delta_y)
-		distance=delta_x; //选取基本增量坐标轴 
-	else 
-		distance=delta_y; 
-
+	if(delta_x>0)incx=1; //设置单步方向 
+	else if(delta_x==0)incx=0;//垂直线 
+	else {incx=-1;delta_x=-delta_x;} 
+	if(delta_y>0)incy=1; 
+	else if(delta_y==0)incy=0;//水平线 
+	else{incy=-1;delta_y=-delta_y;} 
+	if( delta_x>delta_y)distance=delta_x; //选取基本增量坐标轴 
+	else distance=delta_y; 
 	for(t=0;t<=distance+1;t++ )//画线输出 
 	{  
 		LCD_Fast_DrawPoint(uRow,uCol,POINT_COLOR);//画点 
-		xerr+=delta_x; 
-		yerr+=delta_y; 
+		xerr+=delta_x ; 
+		yerr+=delta_y ; 
 		if(xerr>distance) 
 		{ 
 			xerr-=distance; 
@@ -134,7 +115,7 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 			uCol+=incy; 
 		} 
 	}  
-}
+}    
 
 //画矩形	  
 //(x1,y1),(x2,y2):矩形的对角坐标
@@ -442,10 +423,12 @@ void LCD_dis_trans_pic_rotate(uint16_t x,uint16_t y,unsigned int *color,uint16_t
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
-    uint8_t temp,t1,t;
-	uint16_t y0=y;
-	uint8_t csize=(system_font/8+((system_font%8)?1:0))*(system_font/2);		//得到字体一个字符对应点阵集所占的字节数	
- 	
+    u8_t temp,t1,t,i=0;
+	u16_t y0=y,x0=x;
+	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
+	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
+ 	u8_t databuf[2*COL] = {0};
+	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
 	for(t=0;t<csize;t++)
 	{
@@ -469,30 +452,65 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			default:
 				return;							//没有的字库
 		}
-								
-		for(t1=0;t1<8;t1++)
-		{			    
-			if(temp&0x80)
-				LCD_Fast_DrawPoint(x,y,POINT_COLOR);
-			else if(mode==0)
-				LCD_Fast_DrawPoint(x,y,BACK_COLOR);
 
-			temp<<=1;
-			y++;
-			
-			if(y>=LCD_HEIGHT)
-				return;		//超区域了
-				
-			if((y-y0)==system_font)
+	#ifdef LCD_TYPE_SPI
+		BlockWrite(x0,y,(system_font/2),1);	  	//设置刷新位置
+	#endif
+	
+		for(t1=0;t1<8;t1++)
+		{
+		#ifdef LCD_TYPE_SPI
+			if(temp&0x80)
 			{
-				y=y0;
-				x++;
-				if(x>=LCD_WIDTH)
-					return;	//超区域了
-					
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				DispDate(2*i, databuf);
+				i=0;
+
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+
+			}
+			if((x-x0)==(system_font/2))
+			{
+				DispDate(2*i, databuf);
+				i=0;
+				
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				break;
 			}
-		}  	 
+		#else
+			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
+			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
+			temp<<=1;
+			x++;
+			if(x>=LCD_WIDTH)return;		//超区域了
+			if((x-x0)==(system_font/2))
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return; //超区域了
+				break;
+			}
+		#endif
+		}	
 	}  	    	   	 	  
 }   
 
@@ -502,12 +520,14 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 {  							  
-	uint8_t temp,t1,t;
-	uint16_t y0=y;
-	uint16_t index=0;
-	
-	uint8_t csize=(system_font/8+((system_font%8)?1:0))*(system_font);		//得到字体一个字符对应点阵集所占的字节数	
- 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
+	u8_t temp,t1,t,i=0;
+	u16_t x0=x,y0=y;
+	u16_t index=0;
+	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//行扫描，每个字符每一行占用的字节数
+	u8_t csize=cbyte*(system_font);		//得到字体一个字符对应点阵集所占的字节数	
+	u8_t databuf[2*COL] = {0};
+
+	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
 	for(t=0;t<csize;t++)
 	{	
 		switch(system_font)
@@ -531,20 +551,62 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 				return;								//没有的字库
 		}	
 
+	#ifdef LCD_TYPE_SPI
+		BlockWrite(x0,y,system_font,1);	  	//设置刷新位置
+	#endif
+	
 		for(t1=0;t1<8;t1++)
-		{			    
+		{
+		#ifdef LCD_TYPE_SPI
+			if(temp&0x80)
+			{
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)	//超出行区域，直接显示下一行
+			{
+				DispDate(2*i, databuf);
+				i=0;
+
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+			}
+			if((x-x0)==(system_font))
+			{
+				DispDate(2*i, databuf);
+				i=0;
+				
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				break;
+			}			
+		#else
 			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
 			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
 			temp<<=1;
-			y++;
-			if(y>=LCD_HEIGHT)return;		//超区域了
-			if((y-y0)==system_font)
+			x++;
+			if(x>=LCD_WIDTH)return;		//超区域了
+			if((x-x0)==system_font)
 			{
-				y=y0;
-				x++;
-				if(x>=LCD_WIDTH)return;	//超区域了
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				break;
 			}
+		#endif
 		} 
 	}  	    	   	 	  
 }   

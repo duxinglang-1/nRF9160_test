@@ -501,12 +501,19 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
 			temp<<=1;
 			x++;
-			if(x>=LCD_WIDTH)return;		//超区域了
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;				
+			}
 			if((x-x0)==(system_font/2))
 			{
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return; //超区域了
+				if(y>=LCD_HEIGHT)return; 	//超区域了
 				break;
 			}
 		#endif
@@ -572,7 +579,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 			temp<<=1;
 			i++;
 			x++;
-			if(x>=LCD_WIDTH)	//超出行区域，直接显示下一行
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
 				DispDate(2*i, databuf);
 				i=0;
@@ -598,7 +605,14 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
 			temp<<=1;
 			x++;
-			if(x>=LCD_WIDTH)return;		//超区域了
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;			
+			}
 			if((x-x0)==system_font)
 			{
 				x=x0;

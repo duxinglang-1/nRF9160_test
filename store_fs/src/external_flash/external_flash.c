@@ -15,9 +15,6 @@
 #include <string.h>
 #include "external_flash.h"
 
-#define FLASH_TEST_REGION_OFFSET 0xff000
-#define FLASH_SECTOR_SIZE        4096
-
 struct device *spi_flash;
 struct device *gpio_flash;
 
@@ -27,15 +24,25 @@ static uint8_t    spi_tx_buf[6] = {0};
 static uint8_t    spi_rx_buf[6] = {0};  
 
 //SPI发送缓存数组，使用EasyDMA时一定要定义为static类型
-static uint8_t    my_tx_buf[4096] = {0};  
+static uint8_t    my_tx_buf[4096] = {0};
 //SPI发送缓存数组，使用EasyDMA时一定要定义为static类型
-static uint8_t    my_rx_buf[4096] = {0};  
+static uint8_t    my_rx_buf[4096] = {0};
 
 static struct spi_buf_set tx_bufs,rx_bufs;
 static struct spi_buf tx_buff,rx_buff;
 
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
+
+void SpiFlash_CS_LOW(void)
+{
+	gpio_pin_write(gpio_flash, CS, 0);
+}
+
+void SpiFlash_CS_HIGH(void)
+{
+	gpio_pin_write(gpio_flash, CS, 1);
+}
 
 /*****************************************************************************
 ** 描  述：写入一个字节
@@ -52,7 +59,9 @@ void Spi_WriteOneByte(uint8_t Dat)
 	tx_bufs.buffers = &tx_buff;
 	tx_bufs.count = 1;
 
+	SpiFlash_CS_LOW();
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	SpiFlash_CS_HIGH();	
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
@@ -72,9 +81,9 @@ static void SpiFlash_Write_Enable(void)
 	Spi_WriteOneByte(SPIFlash_WriteEnable);
 }
 /*****************************************************************************
-** 描  述：读取W25Q128芯片ID
+** 描  述：读取W25Q64FW芯片ID
 ** 参  数：无
-** 返回值：16位ID，W25Q128芯片ID为：0xEF17
+** 返回值：16位ID，W25Q64FW芯片ID为：0xEF16
 ******************************************************************************/
 uint16_t SpiFlash_ReadID(void)
 {
@@ -101,7 +110,10 @@ uint16_t SpiFlash_ReadID(void)
 	rx_bufs.buffers = &rx_buff;
 	rx_bufs.count = 1;
 
+	SpiFlash_CS_LOW();
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, &rx_bufs);
+	SpiFlash_CS_HIGH();
+	
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
@@ -133,17 +145,19 @@ uint16_t SpiFlash_ReadID(void)
 		printk("flash ID: %x\n", dat);
 	}
 
+
+
 	return dat;
 }
 /*****************************************************************************
-** 描  述：读取W25Q128状态寄存器
+** 描  述：读取W25Q64FW状态寄存器
 ** 参  数：无
 ** 返回值：
 ******************************************************************************/
 static uint8_t SpiFlash_ReadSR(void)
 {
 	int err;
-	
+
 	spi_tx_buf[0] = SPIFlash_ReadStatusReg;
 	spi_tx_buf[1] = 0x00;
 	tx_buff.buf = spi_tx_buf;
@@ -157,7 +171,10 @@ static uint8_t SpiFlash_ReadSR(void)
 	rx_bufs.buffers = &rx_buff;
 	rx_bufs.count = 1;
 
+	SpiFlash_CS_LOW();
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, &rx_bufs);
+	SpiFlash_CS_HIGH();
+	
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
@@ -166,24 +183,24 @@ static uint8_t SpiFlash_ReadSR(void)
 	{
 		printk("StatusReg: %x\n", spi_rx_buf[1]);
 	}
-
+	
 	return spi_rx_buf[1];
 }
 
-//等待W25Q128就绪
+//等待W25Q64FW就绪
 void SpiFlash_Wait_Busy(void)   
 {   
 	while((SpiFlash_ReadSR()&0x01)==0x01);  		// 等待BUSY位清空
 } 
 /*****************************************************************************
-** 描  述：擦除扇区，W25Q128FVSIG最小的擦除单位是扇区
+** 描  述：擦除扇区，W25Q64FW最小的擦除单位是扇区
 ** 参  数：[in]SecAddr：扇区地址
 ** 返回值：无
 ******************************************************************************/
 void SPIFlash_Erase_Sector(uint32_t SecAddr)
 {
 	int err;
-	
+
 	//发送写使能命令
 	SpiFlash_Write_Enable();
 
@@ -199,17 +216,19 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	tx_bufs.buffers = &tx_buff;
 	tx_bufs.count = 1;
 
+	SpiFlash_CS_LOW();
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	SpiFlash_CS_HIGH();	
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
 	}
-
-	//等待W25Q128FV完成操作
+	
+	//等待W25Q64FW完成操作
 	SpiFlash_Wait_Busy();
 }
 /*****************************************************************************
-** 描  述：全片擦除W25Q128FV，全片擦除所需的时间典型值为：40秒
+** 描  述：全片擦除W25Q64FW，全片擦除所需的时间典型值为：40秒
 ** 参  数：无
 ** 返回值：无
 ******************************************************************************/
@@ -227,7 +246,10 @@ void SPIFlash_Erase_Chip(void)
 	tx_bufs.buffers = &tx_buff;
 	tx_bufs.count = 1;
 
+	SpiFlash_CS_LOW();
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	SpiFlash_CS_HIGH();
+	
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
@@ -265,31 +287,34 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	spi_tx_buf[1] = (uint8_t)((WriteAddr&0x00ff0000)>>16);
 	spi_tx_buf[2] = (uint8_t)((WriteAddr&0x0000ff00)>>8);
 	spi_tx_buf[3] = (uint8_t)WriteAddr;
-	spi_tx_buf[4] = *pBuffer;
 
 	tx_buff.buf = spi_tx_buf;
-	tx_buff.len = SPIFLASH_CMD_LENGTH+1;
+	tx_buff.len = SPIFLASH_CMD_LENGTH;
 	tx_bufs.buffers = &tx_buff;
 	tx_bufs.count = 1;
 
-	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
-	if(err)
-	{
-		printk("SPI error: %d\n", err);
-	}
-
-	tx_buff.buf = (pBuffer+1);
-	tx_buff.len = (size-1);
-	tx_bufs.buffers = &tx_buff;
-	tx_bufs.count = 1;
-
-	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
-	if(err)
-	{
-		printk("SPI error: %d\n", err);
-	}
+	SpiFlash_CS_LOW();
 	
-	//等待W25Q128FV完成操作
+	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	if(err)
+	{
+		printk("SPI error: %d\n", err);
+	}
+
+	tx_buff.buf = pBuffer;
+	tx_buff.len = size;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+
+	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	if(err)
+	{
+		printk("SPI error: %d\n", err);
+	}
+
+	SpiFlash_CS_HIGH();
+	
+	//等待W25Q64FW完成操作
 	SpiFlash_Wait_Busy();
 
 	return true;
@@ -367,6 +392,8 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 	tx_bufs.buffers = &tx_buff;
 	tx_bufs.count = 1;
 
+	SpiFlash_CS_LOW();
+	
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
@@ -400,13 +427,15 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 		
 		pBuffer += read_size;
 	}
+
+	SpiFlash_CS_HIGH();
 	
     return true;
 }
 
 
 /*****************************************************************************
-** 描  述：配置用于驱动W25Q128的管脚
+** 描  述：配置用于驱动W25Q64FW的管脚,特别注意写的过程中CS要一直有效，不能交给SPI自动控制
 ** 入  参：无
 ** 返回值：无
 ******************************************************************************/
@@ -424,18 +453,6 @@ void SPI_Flash_Init(void)
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	spi_cfg.frequency = 4000000;
 	spi_cfg.slave = 0;
-
-	spi_cs_ctr.gpio_dev = device_get_binding(FLASH_PORT);
-	if (!spi_cs_ctr.gpio_dev)
-	{
-		printk("Unable to get GPIO SPI CS device\n");
-		return;
-	}
-
-	spi_cs_ctr.gpio_pin = CS;
-	spi_cs_ctr.delay = 0U;
-	spi_cfg.cs = &spi_cs_ctr;
-
 }
 
 void flash_init(void)
@@ -454,21 +471,31 @@ void flash_init(void)
 
 void test_flash(void)
 {
-	uint16_t flash_id = 0x00;
-	uint16_t len = 0;
-
+	uint16_t flash_id;
+	uint16_t len;
+	u8_t tmpbuf[128] = {0};
+	
 	flash_init();
 
 	flash_id = SpiFlash_ReadID();
-	printk("flash_id: %x\n", flash_id);
+	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
+	LCD_ShowString(0,60,tmpbuf);
 
-	strcpy(my_tx_buf, "xiebiao is a good man!");
-	len = strlen("xiebiao is a good man!") + 1;
+	strcpy(my_tx_buf, "深圳市龙华观澜环观南路凯美广场A座");
+	len = strlen("深圳市龙华观澜环观南路凯美广场A座")+1;
+
 	//写之前需要先执行擦除操作
 	SPIFlash_Erase_Sector(0);
+	SpiFlash_Read(my_rx_buf,0,len);
+	LCD_ShowString(0,80,"FLASH首先擦除");
+	
 	//写入数据
-	SpiFlash_Write_Page(my_tx_buf,0,len); 
+	SpiFlash_Write_Page(my_tx_buf,0,len);
+	LCD_ShowString(0,100,"FLASH写入数据:");
+	LCD_ShowString(0,120,my_tx_buf);
+	
 	//读出数据
 	SpiFlash_Read(my_rx_buf,0,len);
-	printk("len: %x\n", len);
+	LCD_ShowString(0,140,"FLASH读出数据:");
+	LCD_ShowString(0,160,my_rx_buf);
 }

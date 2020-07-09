@@ -109,6 +109,8 @@ void WriteData(u8_t i)
 
 void WriteDispData(u8_t DataH,u8_t DataL)
 {
+	gpio_pin_write(gpio_lcd, RS, 1);
+
 	lcd_data_buffer[0] = DataH;
 	lcd_data_buffer[1] = DataL;
 	
@@ -119,7 +121,6 @@ void WriteDispData(u8_t DataH,u8_t DataL)
 //color:ÒªÌî³äµÄÑÕÉ«
 void WriteOneDot(unsigned int color)
 { 
-	gpio_pin_write(gpio_lcd, RS, 1);
 	WriteDispData(color>>8, color);
 }
 
@@ -219,8 +220,6 @@ void DispFrame(void)
 	unsigned int i,j;
 
 	BlockWrite(0,0,COL-1,ROW-1);
-
-	gpio_pin_write(gpio_lcd, RS, 1);
 
 	WriteDispData(0xf8, 0x00);
 

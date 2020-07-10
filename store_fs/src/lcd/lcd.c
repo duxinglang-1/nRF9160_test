@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include "lcd.h"
 #include "font.h"
- 
+#include "external_flash.h"
+
 #if defined(LCD_R154101_ST7796S)
 #include "LCD_R154101_ST7796S.h"
 #elif defined(LCD_LH096TIG11G_ST7735SV)
@@ -180,6 +181,21 @@ void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height)
 	*height = 256*color[4]+color[5];
 }
 
+//获取flash中的图片尺寸
+//color:图片数据指针
+//width:获取到的图片宽度输出地址
+//height:获取到的图片高度输出地址
+void LCD_get_pic_size_from_flash(u32_t pic_addr, uint16_t *width, uint16_t *height)
+{
+	u8_t databuf[8] = {0};
+
+	SpiFlash_Read(databuf, pic_addr, 8);
+	
+	*width = 256*databuf[2]+databuf[3]; 			//获取图片宽度
+	*height = 256*databuf[4]+databuf[5];			//获取图片高度
+
+}
+
 //指定位置显示图片
 //color:图片数据指针
 //x:图片显示X坐标
@@ -208,6 +224,40 @@ void LCD_dis_pic(uint16_t x, uint16_t y, unsigned char *color)
 	#else
 		for(j=0;j<w;j++)
 			WriteDispData(color[8+2*(i*w+j)],color[8+2*(i*w+j)+1]);	//显示颜色 
+	#endif
+	}		  
+}
+
+
+//指定位置显示flash中的图片
+//pic_addr:图片在flash中的地址
+//x:图片显示X坐标
+//y:图片显示Y坐标
+void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
+{  
+	uint16_t h,w;
+	uint16_t i,j;
+	u8_t databuf[2*COL] = {0};
+
+	SpiFlash_Read(databuf, pic_addr, 8);
+	
+	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
+	h=256*databuf[4]+databuf[5];			//获取图片高度
+
+	pic_addr += 8;
+	
+ 	for(i=0;i<h;i++)
+	{
+		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+
+		memset(databuf, 0, 2*COL);
+		SpiFlash_Read(databuf, pic_addr+2*w*i, 2*w);
+		
+	#ifdef LCD_TYPE_SPI
+		DispDate(2*w, databuf);
+	#else
+		for(j=0;j<w;j++)
+			WriteDispData(databuf[2*j],databuf[2*j+1]);	//显示颜色 
 	#endif
 	}		  
 }

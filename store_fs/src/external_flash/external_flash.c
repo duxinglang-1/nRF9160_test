@@ -13,6 +13,7 @@
 #include <device.h>
 #include <stdio.h>
 #include <string.h>
+#include "img.h"
 #include "external_flash.h"
 
 struct device *spi_flash;
@@ -24,9 +25,9 @@ static uint8_t    spi_tx_buf[6] = {0};
 static uint8_t    spi_rx_buf[6] = {0};  
 
 //SPI发送缓存数组，使用EasyDMA时一定要定义为static类型
-static uint8_t    my_tx_buf[4096] = {0};
+//static uint8_t    my_tx_buf[4096] = {0};
 //SPI发送缓存数组，使用EasyDMA时一定要定义为static类型
-static uint8_t    my_rx_buf[4096] = {0};
+//static uint8_t    my_rx_buf[4096] = {0};
 
 static struct spi_buf_set tx_bufs,rx_bufs;
 static struct spi_buf tx_buff,rx_buff;
@@ -474,28 +475,43 @@ void test_flash(void)
 	uint16_t flash_id;
 	uint16_t len;
 	u8_t tmpbuf[128] = {0};
-	
+
 	flash_init();
+
+	LCD_ShowString(0,0,"FLASH测试开始");
 
 	flash_id = SpiFlash_ReadID();
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
-	LCD_ShowString(0,60,tmpbuf);
-
-	strcpy(my_tx_buf, "深圳市龙华观澜环观南路凯美广场A座");
-	len = strlen("深圳市龙华观澜环观南路凯美广场A座")+1;
+	LCD_ShowString(0,20,tmpbuf);
 
 	//写之前需要先执行擦除操作
+	LCD_ShowString(0,40,"FLASH开始擦除...");
+	SPIFlash_Erase_Chip();
 	SPIFlash_Erase_Sector(0);
-	SpiFlash_Read(my_rx_buf,0,len);
-	LCD_ShowString(0,80,"FLASH首先擦除");
+	LCD_ShowString(0,60,"FLASH擦除成功!");
 	
 	//写入数据
-	SpiFlash_Write_Page(my_tx_buf,0,len);
-	LCD_ShowString(0,100,"FLASH写入数据:");
-	LCD_ShowString(0,120,my_tx_buf);
+	LCD_ShowString(0,80,"FLASH写入图片1数据...");
+	SpiFlash_Write_Buf(peppa_pig_80X160, PEPPA_PIG_80X160_ADDR, PEPPA_PIG_80X160_SIZE);
+	LCD_ShowString(0,100,"FLASH写入图片1成功!");
+
+	//写入数据
+	LCD_ShowString(0,120,"FLASH写入图片2数据...");
+	SpiFlash_Write_Buf(peppa_pig_160X160, PEPPA_PIG_160X160_ADDR, PEPPA_PIG_160X160_SIZE);
+	LCD_ShowString(0,140,"FLASH写入图片2成功!");
+
+	//写入数据
+	//LCD_ShowString(0,160,"FLASH写入图片3数据...");
+	//SpiFlash_Write_Buf(peppa_pig_240X240, PEPPA_PIG_240X240_ADDR, PEPPA_PIG_240X240_SIZE);
+	//LCD_ShowString(0,180,"FLASH写入图片3成功!");
+
+	//写入数据
+	//LCD_ShowString(0,200,"FLASH写入图片4数据...");
+	//SpiFlash_Write_Buf(peppa_pig_320X320, PEPPA_PIG_320X320_ADDR, PEPPA_PIG_320X320_SIZE);
+	//LCD_ShowString(0,220,"FLASH写入图片4成功!");
 	
 	//读出数据
-	SpiFlash_Read(my_rx_buf,0,len);
-	LCD_ShowString(0,140,"FLASH读出数据:");
-	LCD_ShowString(0,160,my_rx_buf);
+	//SpiFlash_Read(my_rx_buf,0,len);
+	//LCD_ShowString(0,140,"FLASH读出数据:");
+	//LCD_ShowString(0,160,my_rx_buf);
 }

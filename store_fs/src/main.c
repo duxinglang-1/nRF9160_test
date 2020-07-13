@@ -25,28 +25,34 @@ bool lcd_sleep_out = false;
 void test_show_image(void)
 {
 	u8_t i=0;
-	u16_t x,y,w,h;
+	u16_t x,y,w=0,h=0;
 
 	printk("test_show_image\n");
 	
 	LCD_Clear(BLACK);
 	
-	LCD_get_pic_size(peppa_pig_80X160, &w, &h);
-	while(1)
+	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
+	LCD_get_pic_size_from_flash(IMG_PEPPA_240X240_ADDR, &w, &h);
+	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_240X240_ADDR);
+	while(0)
 	{
 		switch(i)
 		{
 			case 0:
-				LCD_dis_pic(w*0,h*0,peppa_pig_80X160);
+				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_240X240_ADDR);
+				//LCD_dis_pic_rotate(w*0,h*0,peppa_pig_160X160,0);
 				break;
 			case 1:
-				LCD_dis_pic(w*1,h*0,peppa_pig_80X160);
+				LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_240X240_ADDR);
+				//LCD_dis_pic_rotate(w*1,h*0,peppa_pig_160X160,90);
 				break;
 			case 2:
-				LCD_dis_pic(w*1,h*1,peppa_pig_80X160);
+				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_240X240_ADDR);
+				//LCD_dis_pic_rotate(w*1,h*1,peppa_pig_160X160,180);
 				break;
 			case 3:
-				LCD_dis_pic(w*0,h*1,peppa_pig_80X160);
+				LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_240X240_ADDR);
+				//LCD_dis_pic_rotate(w*0,h*1,peppa_pig_160X160,270);
 				break;
 			case 4:
 				LCD_Fill(w*0,h*0,w,h,BLACK);
@@ -201,6 +207,7 @@ void system_init(void)
 	buttons_leds_init();
 	key_init();
 	LCD_Init();
+	flash_init();
 }
 
 /***************************************************************************
@@ -210,18 +217,19 @@ void system_init(void)
 **************************************************************************/
 int main(void)
 {
-	bool count = false;
-
 	printk("main\n");
 
 	system_init();
 	dk_set_led(DK_LED1,1);
 
+//	test_show_string();
+	test_show_image();
 //	test_nvs();
-	test_flash();
 
-	test_show_string();
-	
+//	test_flash();
+
+
+
 	while(true)
 	{
 		if(lcd_sleep_in)

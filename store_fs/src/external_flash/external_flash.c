@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "img.h"
+#include "font.h"
 #include "external_flash.h"
 
 struct device *spi_flash;
@@ -475,8 +476,9 @@ void test_flash(void)
 	uint16_t flash_id;
 	uint16_t len;
 	u8_t tmpbuf[128] = {0};
+	
+	//flash_init();
 
-	flash_init();
 
 	LCD_ShowString(0,0,"FLASH测试开始");
 
@@ -484,31 +486,72 @@ void test_flash(void)
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
 	LCD_ShowString(0,20,tmpbuf);
 
+#if 0
 	//写之前需要先执行擦除操作
 	LCD_ShowString(0,40,"FLASH开始擦除...");
 	SPIFlash_Erase_Chip();
-	SPIFlash_Erase_Sector(0);
+	//SPIFlash_Erase_Sector(0);
 	LCD_ShowString(0,60,"FLASH擦除成功!");
-	
+#endif
+
+#if 0	
 	//写入数据
-	LCD_ShowString(0,80,"FLASH写入图片1数据...");
-	SpiFlash_Write_Buf(peppa_pig_80X160, PEPPA_PIG_80X160_ADDR, PEPPA_PIG_80X160_SIZE);
-	LCD_ShowString(0,100,"FLASH写入图片1成功!");
+	//LCD_ShowString(0,80,"FLASH写入图片1数据...");
+	//SpiFlash_Write_Buf(peppa_pig_80X160, IMG_PEPPA_80X160_ADDR, IMG_PEPPA_80X160_SIZE);
+	//LCD_ShowString(0,100,"FLASH写入图片1成功!");
 
 	//写入数据
-	LCD_ShowString(0,120,"FLASH写入图片2数据...");
-	SpiFlash_Write_Buf(peppa_pig_160X160, PEPPA_PIG_160X160_ADDR, PEPPA_PIG_160X160_SIZE);
-	LCD_ShowString(0,140,"FLASH写入图片2成功!");
+	//LCD_ShowString(0,120,"FLASH写入图片2数据...");
+	//SpiFlash_Write_Buf(peppa_pig_160X160, IMG_PEPPA_160X160_ADDR, IMG_PEPPA_160X160_SIZE);
+	//LCD_ShowString(0,140,"FLASH写入图片2成功!");
 
 	//写入数据
-	//LCD_ShowString(0,160,"FLASH写入图片3数据...");
-	//SpiFlash_Write_Buf(peppa_pig_240X240, PEPPA_PIG_240X240_ADDR, PEPPA_PIG_240X240_SIZE);
-	//LCD_ShowString(0,180,"FLASH写入图片3成功!");
+	LCD_ShowString(0,160,"FLASH写入图片3数据...");
+	//SpiFlash_Write_Buf(peppa_pig_240X240_1, IMG_PEPPA_240X240_ADDR, 57608);
+	SpiFlash_Write_Buf(peppa_pig_240X240_2, IMG_PEPPA_240X240_ADDR+57608, 57600);
+	LCD_ShowString(0,180,"FLASH写入图片3成功!");
 
 	//写入数据
 	//LCD_ShowString(0,200,"FLASH写入图片4数据...");
-	//SpiFlash_Write_Buf(peppa_pig_320X320, PEPPA_PIG_320X320_ADDR, PEPPA_PIG_320X320_SIZE);
+	//SpiFlash_Write_Buf(peppa_pig_320X320, IMG_PEPPA_320X320_ADDR, IMG_PEPPA_320X320_SIZE);
 	//LCD_ShowString(0,220,"FLASH写入图片4成功!");
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,160,"FLASH写入16X08英文字库...");
+	SpiFlash_Write_Buf(asc2_1608, FONT_ASC_1608_ADDR, FONT_ASC_1608_SIZE);
+	LCD_ShowString(0,180,"FLASH写入16X08英文成功");
+
+	//写入数据
+	LCD_ShowString(0,40,"FLASH写入24X12英文字库...");
+	SpiFlash_Write_Buf(asc2_2412, FONT_ASC_2412_ADDR, FONT_ASC_2412_SIZE);
+	LCD_ShowString(0,60,"FLASH写入24X12英文成功");
+
+	//写入数据
+	LCD_ShowString(0,80,"FLASH写入32X16英文字库...");
+	SpiFlash_Write_Buf(asc2_3216, FONT_ASC_3216_ADDR, FONT_ASC_3216_SIZE);
+	LCD_ShowString(0,100,"FLASH写入32X16英文成功");
+#endif
+
+#if 1
+	//写入数据
+	LCD_ShowString(0,120,"FLASH写入16X16中文字库...");
+	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+2726*0, 2726);
+	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+2726*1, 2726);
+	SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+2726*2, 2726);	
+	LCD_ShowString(0,140,"FLASH写入16X16中文成功");
+
+	//写入数据
+	//LCD_ShowString(0,160,"FLASH写入24X24中文字库...");
+	//SpiFlash_Write_Buf(chinese_2424, FONT_CHN_SM_2424_ADDR, FONT_CHN_SM_2424_SIZE);
+	//LCD_ShowString(0,180,"FLASH写入24X24中文成功");
+
+	//写入数据
+	//LCD_ShowString(0,200,"FLASH写入32X32中文字库...");
+	//SpiFlash_Write_Buf(chinese_3232, FONT_CHN_SM_3232_ADDR, FONT_CHN_SM_3232_SIZE);
+	//LCD_ShowString(0,220,"FLASH写入32X32中文成功");	
+#endif
 	
 	//读出数据
 	//SpiFlash_Read(my_rx_buf,0,len);

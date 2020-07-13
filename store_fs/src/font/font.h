@@ -2,8 +2,8 @@
 #define __FONT_H__
 
 #define FONT_16
-//#define FONT_24
-//#define FONT_32
+#define FONT_24
+#define FONT_32
 
 typedef enum
 {
@@ -22,23 +22,25 @@ typedef enum
 
 //Ó¢ÎÄ×Ö¿â
 #ifdef FONT_16
-extern const unsigned char asc2_1608[96][16];
+extern unsigned char asc2_1608[96][16];
 #endif
 #ifdef FONT_24
-extern const unsigned char asc2_2412[96][48];
+extern unsigned char asc2_2412[96][48];
 #endif
 #ifdef FONT_32
-extern const unsigned char asc2_3216[96][64];
+extern unsigned char asc2_3216[96][64];
 #endif
 //ÖÐÎÄ×Ö¿â
 #ifdef FONT_16
-extern const unsigned char chinese_1616[8178][32];
+//extern unsigned char chinese_1616_1[2726][32];
+//extern unsigned char chinese_1616_2[2726][32];
+extern unsigned char chinese_1616_3[2726][32];
 #endif
-#ifdef FONT_24
-extern const unsigned char chinese_2424[8178][72];
+#if 0//def FONT_24
+extern unsigned char chinese_2424[8178][72];
 #endif
-#ifdef FONT_32
-extern const unsigned char chinese_3232[8178][128];
+#if 0//def FONT_32
+extern unsigned char chinese_3232[8178][128];
 #endif
 
 #endif/*__FONT_H__*/

@@ -537,9 +537,9 @@ void test_flash(void)
 #if 1
 	//写入数据
 	LCD_ShowString(0,120,"FLASH写入16X16中文字库...");
-	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+2726*0, 2726);
-	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+2726*1, 2726);
-	SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+2726*2, 2726);	
+	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
+	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+(2726*32)*1, (2726*32));
+	SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
 	LCD_ShowString(0,140,"FLASH写入16X16中文成功");
 
 	//写入数据

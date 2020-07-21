@@ -1,0 +1,29 @@
+&spi2{
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <3>;
+	mosi-pin = <4>;
+	miso-pin = <5>;
+};
+
+&spi3{
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <22>;
+	mosi-pin = <20>;
+	miso-pin = <20>;
+};
+
+&uart0{
+	#compatible = "nordic,nrf-uarte";
+	#current-speed = <115200>;
+	status = "okay";
+	#tx-pin = <7>;
+	#rx-pin = <28>;
+	#rts-pin = <5>;
+	#cts-pin = <7>;
+};
+
+&uart1{
+	status = "ok";
+};

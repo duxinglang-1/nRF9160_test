@@ -225,9 +225,9 @@ int main(void)
 
 //	test_show_string();
 //	test_show_image();
-//	test_nvs();
+	test_nvs();
 //	test_flash();
-	test_uart_ble();
+//	test_uart_ble();
 
 	while(true)
 	{

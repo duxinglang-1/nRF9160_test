@@ -1,29 +1,19 @@
-&spi2{
-	compatible = "nordic,nrf-spim";
-	status = "okay";
-	sck-pin = <3>;
-	mosi-pin = <4>;
-	miso-pin = <5>;
-};
-
-&spi3{
-	compatible = "nordic,nrf-spim";
-	status = "okay";
-	sck-pin = <22>;
-	mosi-pin = <20>;
-	miso-pin = <20>;
-};
-
-&uart0{
-	#compatible = "nordic,nrf-uarte";
-	#current-speed = <115200>;
-	status = "okay";
-	#tx-pin = <7>;
-	#rx-pin = <28>;
-	#rts-pin = <5>;
-	#cts-pin = <7>;
-};
-
-&uart1{
-	status = "ok";
-};
+// SEGGER Embedded Studio auto generated
+&spi2 { compatible = "nordic,nrf-spim"; };
+&spi2 { status = "okay"; };
+&spi2 { sck-pin = < 3 >; };
+&spi2 { mosi-pin = < 4 >; };
+&spi2 { miso-pin = < 5 >; };
+&spi3 { compatible = "nordic,nrf-spim"; };
+&spi3 { status = "okay"; };
+&spi3 { sck-pin = < 22 >; };
+&spi3 { mosi-pin = < 20 >; };
+&spi3 { miso-pin = < 20 >; };
+&uart0 { #compatible = "nordic,nrf-uarte"; };
+&uart0 { #current-speed = < 115200 >; };
+&uart0 { status = "okay"; };
+&uart0 { #tx-pin = < 7 >; };
+&uart0 { #rx-pin = < 28 >; };
+&uart0 { #rts-pin = < 5 >; };
+&uart0 { #cts-pin = < 7 >; };
+&uart1 { status = "ok"; };

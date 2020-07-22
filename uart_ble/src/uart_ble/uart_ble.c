@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <drivers/uart.h>
-
+#include "Settings.h"
 
 #define UART_DEV	"UART_1"
 #define BUF_MAXSIZE	1024
@@ -75,6 +75,18 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 	else
 		BLE_is_connected = false;
+}
+
+void APP_set_time_24_format(u8_t *buf, u32_t len)
+{
+	printk("BLE status:%x\n", buf[7]);
+
+	if(buf[7] == 0x00)
+		global_settings.time_format = 0;//24 format
+	else if(buf[7] == 0x01)
+		global_settings.time_format = 1;//12 format
+	else
+		global_settings.time_format = 0;//24 format
 }
 
 /**********************************************************************************
@@ -162,6 +174,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case LANGUAGE_SETTING_ID:	//中英日文切换
 		break;
 	case TIME_24_SETTING_ID:	//12/24小时设置
+		APP_set_time_24_format(buf, len);
 		break;
 	case FIND_PHONE_ID:			//查找手机回复
 		break;

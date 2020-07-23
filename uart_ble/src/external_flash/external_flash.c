@@ -443,8 +443,6 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 ******************************************************************************/
 void SPI_Flash_Init(void)
 {
-	printk("spi_init\n");
-	
 	spi_flash = device_get_binding(FLASH_DEVICE);
 	if (!spi_flash) 
 	{
@@ -459,6 +457,8 @@ void SPI_Flash_Init(void)
 
 void flash_init(void)
 {
+	printk("flash_init\n");
+		
 	gpio_flash = device_get_binding(FLASH_PORT);
 	if(!gpio_flash)
 	{

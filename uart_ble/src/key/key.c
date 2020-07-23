@@ -170,6 +170,8 @@ void key_init(void)
 {
 	int err;
 
+	printk("key_init\n");
+	
 	err = dk_buttons_init(button_handler);
 	if (err)
 	{

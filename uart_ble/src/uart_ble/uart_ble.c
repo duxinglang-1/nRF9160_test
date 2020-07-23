@@ -283,6 +283,8 @@ static void uart_cb(struct device *x)
 
 void uart_init(void)
 {
+	printk("ble_init\n");
+	
 	uart_dev = device_get_binding(UART_DEV);
 	if(!uart_dev)
 	{

@@ -28,10 +28,8 @@ bool lcd_is_sleeping = true;
 
 static void LCD_SPI_Init(void)
 {
-	printk("spi_init\n");
-	
 	spi_lcd = device_get_binding(SPI_DEV);
-	if (!spi_lcd) 
+	if(!spi_lcd) 
 	{
 		printk("Could not get %s device\n", SPI_DEV);
 		return;

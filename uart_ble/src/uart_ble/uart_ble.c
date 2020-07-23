@@ -75,6 +75,11 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 	else
 		BLE_is_connected = false;
+
+	if(BLE_is_connected)
+		printk("BLE concected!\n");
+	else
+		printk("BLE disconcected!\n");
 }
 
 void APP_set_time_24_format(u8_t *buf, u32_t len)
@@ -276,16 +281,16 @@ static void uart_cb(struct device *x)
 	}
 }
 
-static void uart_init(void)
+void uart_init(void)
 {
 	uart_dev = device_get_binding(UART_DEV);
 	if(!uart_dev)
 	{
-		//LCD_ShowString(0,20,"UART初始化失败!");
+		printk("uart_init fail!\n");
 	}
 	else
 	{
-		//LCD_ShowString(0,20,"UART初始化成功!");
+		printk("uart_init success!\n");
 
 		uart_irq_callback_set(uart_dev, uart_cb);
 		uart_irq_rx_enable(uart_dev);
@@ -296,7 +301,6 @@ void test_uart_ble(void)
 {
 	printk("test_uart_ble\n");
 	
-	//LCD_ShowString(0,0,"UART开始测试");
 
 	uart_init();
 

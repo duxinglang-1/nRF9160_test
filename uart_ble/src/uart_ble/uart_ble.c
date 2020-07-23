@@ -286,22 +286,18 @@ void uart_init(void)
 	uart_dev = device_get_binding(UART_DEV);
 	if(!uart_dev)
 	{
-		printk("uart_init fail!\n");
+		printk("Could not get %s device\n", UART_DEV);
+		return;
 	}
-	else
-	{
-		printk("uart_init success!\n");
 
-		uart_irq_callback_set(uart_dev, uart_cb);
-		uart_irq_rx_enable(uart_dev);
-	}	
+	uart_irq_callback_set(uart_dev, uart_cb);
+	uart_irq_rx_enable(uart_dev);
 }
 
 void test_uart_ble(void)
 {
 	printk("test_uart_ble\n");
 	
-
 	uart_init();
 
 	while(1)

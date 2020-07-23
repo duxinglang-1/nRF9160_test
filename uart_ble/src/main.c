@@ -13,15 +13,493 @@
 #include <drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
+#include "datetime.h"
 #include "font.h"
 #include "img.h"
 #include "inner_flash.h"
 #include "external_flash.h"
 #include "uart_ble.h"
 
+//#define ANALOG_CLOCK
+#define DIGITAL_CLOCK
+
+#define PI 3.1415926
+
+static bool show_date_time_first = true;
+static bool update_date_time = false;
+
+static u8_t show_pic_count = 0;//图片显示顺序
+static sys_date_timer_t date_time = {0};
+static sys_date_timer_t last_date_time = {0};
+
+static u8_t language_mode = 1;//0:chinese  1:english
+static u8_t clock_mode = 0;//0:analog  1:digital
+static u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
+
+static struct k_timer clock_timer;
+
 bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
 
+#if defined(ANALOG_CLOCK)
+static void test_show_analog_clock(void);
+#elif defined(DIGITAL_CLOCK)
+static void test_show_digital_clock(void);
+#endif
+static void idle_show_time(void);
+
+
+//Timer时间回调函数
+static void clock_timer_handler(struct k_timer *timer)
+{
+	printk("clock_timer_handler\n");
+
+    update_date_time = true;
+}
+
+#ifdef ANALOG_CLOCK
+void ClearAnalogHourPic(int hour)
+{
+	u16_t offset_x=4,offset_y=4;
+	u16_t hour_x,hour_y,hour_w,hour_h;
+
+	LCD_get_pic_size(clock_hour_1_31X31,&hour_w,&hour_h);
+	hour_x = (LCD_WIDTH)/2;
+	hour_y = (LCD_HEIGHT)/2;
+
+	if((hour%12) == 3)
+		LCD_Fill(hour_x-offset_x,hour_y+offset_y-hour_h,hour_w,hour_h,BLACK);
+	else if((hour%12) == 6)
+		LCD_Fill(hour_x-offset_x,hour_y-offset_y,hour_w,hour_h,BLACK);
+	else if((hour%12) == 9)
+		LCD_Fill(hour_x+offset_x-hour_w,hour_y-offset_y,hour_w,hour_h,BLACK);
+	else if((hour%12) == 0)
+		LCD_Fill(hour_x+offset_x-hour_w,hour_y+offset_y-hour_h,hour_w,hour_h,BLACK);
+}
+
+void DrawAnalogHourPic(int hour)
+{
+	u16_t offset_x=4,offset_y=4;
+	u16_t hour_x,hour_y,hour_w,hour_h;
+	unsigned int *hour_pic[3] = {clock_hour_1_31X31,clock_hour_2_31X31,clock_hour_3_31X31};
+
+	LCD_get_pic_size(clock_hour_1_31X31,&hour_w,&hour_h);
+	hour_x = (LCD_WIDTH)/2;
+	hour_y = (LCD_HEIGHT)/2;
+
+	if((hour%12)<3)
+		LCD_dis_pic_rotate(hour_x-offset_x,hour_y+offset_y-hour_h,hour_pic[hour%3],0);
+	else if(((hour%12)>=3) && ((hour%12)<6))
+		LCD_dis_pic_rotate(hour_x-offset_x,hour_y-offset_y,hour_pic[hour%3],90);
+	else if(((hour%12)>=6) && ((hour%12)<9))
+		LCD_dis_pic_rotate(hour_x+offset_x-hour_w,hour_y-offset_y,hour_pic[hour%3],180);
+	else if(((hour%12)>=9) && ((hour%12)<12))
+		LCD_dis_pic_rotate(hour_x+offset_x-hour_w,hour_y+offset_y-hour_h,hour_pic[hour%3],270);
+}
+
+void ClearAnalogMinPic(int minute)
+{
+	u16_t offset_x=4,offset_y=4;
+	u16_t min_x,min_y,min_w,min_h;
+	
+	LCD_get_pic_size(clock_min_1_31X31,&min_w,&min_h);
+	min_x = (LCD_WIDTH)/2;
+	min_y = (LCD_HEIGHT)/2;
+
+	if(minute == 15)
+		LCD_Fill(min_x-offset_x,min_y+offset_y-min_h,min_w,min_h,BLACK);
+	else if(minute == 30)
+		LCD_Fill(min_x-offset_x,min_y-offset_y,min_w,min_h,BLACK);
+	else if(minute == 45)
+		LCD_Fill(min_x+offset_x-min_w,min_y-offset_y,min_w,min_h,BLACK);
+	else if(minute == 0)
+		LCD_Fill(min_x+offset_x-min_w,min_y+offset_y-min_h,min_w,min_h,BLACK);
+}
+
+void DrawAnalogMinPic(int hour, int minute)
+{
+	u16_t offset_x=4,offset_y=4;
+	u16_t min_x,min_y,min_w,min_h;
+	unsigned int *min_pic[15] = {clock_min_1_31X31,clock_min_2_31X31,clock_min_3_31X31,clock_min_4_31X31,clock_min_5_31X31,\
+								 clock_min_6_31X31,clock_min_7_31X31,clock_min_8_31X31,clock_min_9_31X31,clock_min_10_31X31,\
+								 clock_min_11_31X31,clock_min_12_31X31,clock_min_13_31X31,clock_min_14_31X31,clock_min_15_31X31};
+	
+	LCD_get_pic_size(clock_min_1_31X31,&min_w,&min_h);
+	min_x = (LCD_WIDTH)/2;
+	min_y = (LCD_HEIGHT)/2;
+
+	if(minute<15)
+	{
+		if((hour%12)<3)							//分针时针有重叠，透明显示
+		{
+			DrawAnalogHourPic(hour);
+			LCD_dis_trans_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
+		}
+		else if((hour%12)==3)		//临界点，分针不透明显示，但是不能遮盖时针
+		{
+			LCD_dis_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],0);
+			DrawAnalogHourPic(hour);
+		}
+		else
+			LCD_dis_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],0);
+	}
+	else if((minute>=15) && (minute<30))
+	{
+		if(((hour%12)>=3) && ((hour%12)<6))	//分针时针有重叠，透明显示
+		{
+			DrawAnalogHourPic(hour);
+			LCD_dis_trans_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
+		}
+		else if((hour%12)==6)		//临界点，分针不透明显示，但是不能遮盖时针
+		{
+			LCD_dis_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],90);
+			DrawAnalogHourPic(hour);
+		}
+		else
+			LCD_dis_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],90);
+	}
+	else if((minute>=30) && (minute<45))
+	{
+		if(((hour%12)>=6) && ((hour%12)<9))	//分针时针有重叠，透明显示
+		{
+			DrawAnalogHourPic(hour);
+			LCD_dis_trans_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
+		}
+		else if((hour%12)==9)		//临界点，分针不透明显示，但是不能遮盖时针
+		{
+			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],180);
+			DrawAnalogHourPic(hour);
+		}
+		else
+			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],180);
+	}
+	else if((minute>=45) && (minute<60))
+	{
+		if((hour%12)>=9)	//分针时针有重叠，透明显示
+		{
+			DrawAnalogHourPic(hour);
+			LCD_dis_trans_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
+		}
+		else if((hour%12)==0)		//临界点，分针不透明显示，但是不能遮盖时针
+		{
+			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],270);
+			DrawAnalogHourPic(hour);
+		}
+		else
+			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],270);
+	}
+}
+#endif
+
+/***************************************************************************
+* 描  述 : idle_show_digit_clock 待机界面显示数字时钟
+* 入  参 : 无 
+* 返回值 : 无
+**************************************************************************/
+void idle_show_digital_clock(void)
+{
+	u16_t x,y,w,h;
+	u8_t str_time[20] = {0};
+	u8_t str_date[20] = {0};
+	u8_t str_week[20] = {0};
+	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+	u8_t *week_cn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+	
+	POINT_COLOR=WHITE;
+	BACK_COLOR=BLACK;
+	LCD_SetFontSize(FONT_SIZE_16);
+	
+	sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
+	sprintf((char*)str_date, "%04d/%02d/%02d", date_time.year, date_time.month, date_time.day);
+	if(language_mode == 0)
+		strcpy((char*)str_week, (const char*)week_cn[date_time.week]);
+	else
+		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
+	
+	LCD_MeasureString(str_time,&w,&h);
+	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+	y = (LCD_HEIGHT > h) ? (LCD_HEIGHT-3*(h+5))/2 : 0;
+	LCD_ShowString(x,y,str_time);//时间
+	
+	if(show_date_time_first)
+	{
+		show_date_time_first = false;
+		
+		LCD_MeasureString(str_date,&w,&h);
+		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+		y = y+(h+5);
+		LCD_ShowString(x,y,str_date);//日期
+	
+		LCD_MeasureString(str_week,&w,&h);
+		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+		y = y+(h+5);
+		LCD_ShowString(x,y,str_week);//星期
+	}
+	else if((date_time_changed&0x38) != 0)//日期有改变
+	{
+		LCD_MeasureString(str_date,&w,&h);
+		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+		y = y+(h+5);
+		LCD_ShowString(x,y,str_date);//日期
+
+		LCD_MeasureString(str_week,&w,&h);
+		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+		y = y+(h+5);
+		LCD_ShowString(x,y,str_week);//星期
+		
+		date_time_changed = date_time_changed&0xC7;//清空日期变化标志位
+	}
+}
+
+#ifdef ANALOG_CLOCK
+/***************************************************************************
+* 描  述 : idle_show_analog_clock 待机界面显示模拟时钟
+* 入  参 : 无 
+* 返回值 : 无
+**************************************************************************/
+void idle_show_analog_clock(void)
+{
+	u8_t str_date[20] = {0};
+	u8_t str_week[20] = {0};
+	u8_t *week_cn[7] = {"周日", "周一", "周二", "周三", "周四", "周五", "周六"};
+	u8_t *week_en[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+	u16_t str_w,str_h;
+
+	POINT_COLOR=WHITE;								//画笔颜色
+	BACK_COLOR=BLACK;  								//背景色 
+	
+	LCD_SetFontSize(FONT_SIZE_16);
+
+	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
+	if(language_mode == 0)
+		strcpy(str_week, week_cn[date_time.week]);
+	else
+		strcpy(str_week, week_en[date_time.week]);
+	
+	if(show_date_time_first)
+	{
+		show_date_time_first = false;
+		DrawAnalogHourPic(date_time.hour);
+		DrawAnalogMinPic(date_time.hour, date_time.minute);
+
+		LCD_MeasureString(str_week, &str_w, &str_h);
+		LCD_ShowString((LCD_WIDTH-str_w)/2, 15, str_week);
+
+		LCD_MeasureString(str_date, &str_w, &str_h);
+		LCD_ShowString((LCD_WIDTH-str_w)/2, 33, str_date);
+	}
+	else if(date_time_changed != 0)
+	{
+		if((date_time_changed&0x04) != 0)
+		{
+			DrawAnalogHourPic(date_time.hour);
+			date_time_changed = date_time_changed&0xFB;
+		}	
+		if((date_time_changed&0x02) != 0)//分钟有变化
+		{
+			DrawAnalogHourPic(date_time.hour);
+			DrawAnalogMinPic(date_time.hour, date_time.minute);
+			date_time_changed = date_time_changed&0xFD;
+		}
+		if((date_time_changed&0x38) != 0)
+		{
+			LCD_MeasureString(str_week, &str_w, &str_h);
+			LCD_ShowString((LCD_WIDTH-str_w)/2, 15, str_week);
+
+			LCD_MeasureString(str_date, &str_w, &str_h);
+			LCD_ShowString((LCD_WIDTH-str_w)/2, 33, str_date);
+
+			date_time_changed = date_time_changed&0xC7;//清空日期变化标志位
+		}
+	}
+}
+#endif
+
+void idle_show_clock_background(void)
+{
+	LCD_Clear(BLACK);
+	BACK_COLOR=BLACK;
+	POINT_COLOR=WHITE;
+	
+	LCD_SetFontSize(FONT_SIZE_16);
+
+#ifdef ANALOG_CLOCK	
+	if(clock_mode == 0)
+	{
+		LCD_dis_pic(0,0,clock_bg_80X160);
+	}
+#endif
+}
+
+/***************************************************************************
+* 描  述 : idle_show_time 待机界面显示时间
+* 入  参 : 无 
+* 返回值 : 无
+**************************************************************************/
+void idle_show_time(void)
+{	
+	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
+	
+	date_time.second++;
+	if(date_time.second > 59)
+	{
+		date_time.second = 0;
+		date_time.minute++;
+		date_time_changed = date_time_changed|0x02;
+		//date_time_changed = date_time_changed|0x04;//分针在变动的同时，时针也会同步缓慢变动
+		if(date_time.minute > 59)
+		{
+			date_time.minute = 0;
+			date_time.hour++;
+			date_time_changed = date_time_changed|0x04;
+			if(date_time.hour > 23)
+			{
+				date_time.hour = 0;
+				date_time.day++;
+				date_time.week++;
+				if(date_time.week > 6)
+					date_time.week = 0;
+				date_time_changed = date_time_changed|0x08;
+				if(date_time.month == 1 \
+				|| date_time.month == 3 \
+				|| date_time.month == 5 \
+				|| date_time.month == 7 \
+				|| date_time.month == 8 \
+				|| date_time.month == 10 \
+				|| date_time.month == 12)
+				{
+					if(date_time.day > 31)
+					{
+						date_time.day = 1;
+						date_time.month++;
+						date_time_changed = date_time_changed|0x10;
+						if(date_time.month > 12)
+						{
+							date_time.month = 1;
+							date_time.year++;
+							date_time_changed = date_time_changed|0x20;
+						}
+					}
+				}
+				else if(date_time.month == 4 \
+					|| date_time.month == 6 \
+					|| date_time.month == 9 \
+					|| date_time.month == 11)
+				{
+					if(date_time.day > 30)
+					{
+						date_time.day = 1;
+						date_time.month++;
+						date_time_changed = date_time_changed|0x10;
+						if(date_time.month > 12)
+						{
+							date_time.month = 1;
+							date_time.year++;
+							date_time_changed = date_time_changed|0x20;
+						}
+					}
+				}
+				else
+				{
+					uint8_t Leap = date_time.year%4;
+					
+					if(date_time.day > (28+Leap))
+					{
+						date_time.day = 1;
+						date_time.month++;
+						date_time_changed = date_time_changed|0x10;
+						if(date_time.month > 12)
+						{
+							date_time.month = 1;
+							date_time.year++;
+							date_time_changed = date_time_changed|0x20;
+						}
+					}
+				}
+			}
+		}
+	}
+	date_time_changed = date_time_changed|0x01;		
+
+	//每分钟保存一次时间
+	if((date_time_changed&0x02) != 0)
+	{
+		SetSystemDateTime(date_time);
+	}
+
+	if(clock_mode == 0)
+	{
+	#ifdef ANALOG_CLOCK
+		if((date_time_changed&0x02) != 0)
+		{
+			ClearAnalogMinPic(date_time.minute);//擦除以前的分钟
+		}
+		if((date_time_changed&0x04) != 0)
+		{
+			ClearAnalogHourPic(date_time.hour);//擦除以前的时钟
+		}
+
+		idle_show_analog_clock();
+	#endif
+	}
+	else
+	{
+	#ifdef DIGITAL_CLOCK
+		if((date_time_changed&0x01) != 0)
+		{
+			date_time_changed = date_time_changed&0xFE;
+			BlockWrite((LCD_WIDTH-8*8)/2+6*8,(LCD_HEIGHT-16)/2,2*8,16);//擦除以前的秒钟
+		}
+		if((date_time_changed&0x02) != 0)
+		{
+			date_time_changed = date_time_changed&0xFD;
+			BlockWrite((LCD_WIDTH-8*8)/2+3*8,(LCD_HEIGHT-16)/2,2*8,16);//擦除以前的分钟
+		}
+		if((date_time_changed&0x04) != 0)
+		{
+			date_time_changed = date_time_changed&0xFB;
+			BlockWrite((LCD_WIDTH-8*8)/2,(LCD_HEIGHT-16)/2,2*8,16);//擦除以前的时钟
+		}
+		
+		if((date_time_changed&0x38) != 0)
+		{			
+			BlockWrite((LCD_WIDTH-10*8)/2,(LCD_HEIGHT-16)/2+30,10*8,16);
+		}
+		
+		idle_show_digital_clock();
+	#endif
+	}
+}
+
+void test_show_analog_clock(void)
+{
+	u32_t err_code;
+	
+	clock_mode = 0;
+	
+	GetSystemDateTime(&date_time);
+	
+	idle_show_clock_background();
+	idle_show_time();
+
+	k_timer_init(&clock_timer, clock_timer_handler, NULL);
+	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
+}
+
+void test_show_digital_clock(void)
+{
+	u32_t err_code;
+	
+	clock_mode = 1;
+	
+	GetSystemDateTime(&date_time);
+	
+	idle_show_clock_background();
+	idle_show_time();
+
+	k_timer_init(&clock_timer, clock_timer_handler, NULL);
+	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
+}
 
 void test_show_image(void)
 {
@@ -209,6 +687,9 @@ void system_init(void)
 	key_init();
 	LCD_Init();
 	flash_init();
+	uart_init();
+	
+	GetSystemDateTime(&date_time);
 }
 
 /***************************************************************************
@@ -218,6 +699,8 @@ void system_init(void)
 **************************************************************************/
 int main(void)
 {
+	bool count = false;
+
 	printk("main\n");
 
 	system_init();
@@ -225,12 +708,34 @@ int main(void)
 
 //	test_show_string();
 //	test_show_image();
-	test_nvs();
+//	test_nvs();
 //	test_flash();
 //	test_uart_ble();
+//	test_sensor();
+//	test_show_digital_clock();
 
 	while(true)
 	{
+		if(update_date_time)
+		{
+			update_date_time = false;
+			idle_show_time();
+
+			count = !count;
+			dk_set_led(DK_LED2,count);
+		}
+
+		if(lcd_sleep_in)
+		{
+			lcd_sleep_in = false;
+			LCD_SleepIn();
+		}
+
+		if(lcd_sleep_out)
+		{
+			lcd_sleep_out = false;
+			LCD_SleepOut();
+		}
 		k_cpu_idle();
 	}
 }

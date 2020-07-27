@@ -687,7 +687,7 @@ void system_init(void)
 	key_init();
 	LCD_Init();
 	flash_init();
-	uart_init();
+	ble_init();
 	
 	GetSystemDateTime(&date_time);
 }
@@ -713,6 +713,7 @@ int main(void)
 //	test_uart_ble();
 //	test_sensor();
 //	test_show_digital_clock();
+	test_sensor();
 
 	while(true)
 	{

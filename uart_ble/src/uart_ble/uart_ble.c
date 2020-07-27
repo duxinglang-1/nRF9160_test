@@ -281,7 +281,7 @@ static void uart_cb(struct device *x)
 	}
 }
 
-void uart_init(void)
+void ble_init(void)
 {
 	printk("ble_init\n");
 	
@@ -300,7 +300,7 @@ void test_uart_ble(void)
 {
 	printk("test_uart_ble\n");
 	
-	uart_init();
+	ble_init();
 
 	while(1)
 	{

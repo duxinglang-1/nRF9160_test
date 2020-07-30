@@ -49,7 +49,8 @@ uint8_t init_i2c(){
   }
 }
 
-static int32_t platform_write(void *handle, uint8_t reg, uint8_t* bufp, uint16_t len){
+static int32_t platform_write(void *handle, uint8_t reg, uint8_t* bufp, uint16_t len)
+{
   uint32_t rslt = 0;
   uint8_t data[len+1];
   data[0] = reg;
@@ -119,7 +120,7 @@ void test_sensor(void)
 
 	sensor_init();
 
-	while(0)
+	while(1)
 	{
 		uint16_t num = 0;
 		uint8_t waterm = 0;

@@ -202,18 +202,23 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case BLE_CONNECT_ID:		//BLE∂œ¡¨Ã·–—
 		ble_connect_or_disconnect_handle(buf, len);
 		break;
+	default:
+		printk("data_id is unknown! \n");
+		break;
 	}
 }
 
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
+	printk("ble_send_date_handle\n");
+
 	uart_fifo_fill(uart_dev, buf, len);
 	uart_irq_tx_enable(uart_dev); 
 }
 
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
-	//printk("rece_len:%d, rx_data:%x\n", rece_len, data);
+	//printk("rece_len:%d, data:%x\n", rece_len, data);
 
 	rx_buf[rece_len++] = data;
 	if(data == 0x88)	//receivive complete
@@ -230,7 +235,9 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 
 void uart_send_data(void)
 {
-	uart_fifo_fill(uart_dev, "Hello World", strlen("Hello World"));
+	printk("uart_send_data\n");
+	
+	uart_fifo_fill(uart_dev, "Hello World!", strlen("Hello World!"));
 	uart_irq_tx_enable(uart_dev); 
 }
 
@@ -304,7 +311,7 @@ void test_uart_ble(void)
 
 	while(1)
 	{
-		ble_send_date_handle("Hello World", strlen("Hello World"));
+		ble_send_date_handle("Hello World!", strlen("Hello World!"));
 		k_sleep(K_MSEC(1000));
 	}
 }

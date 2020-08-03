@@ -713,7 +713,9 @@ int main(void)
 //	test_uart_ble();
 //	test_sensor();
 //	test_show_digital_clock();
-	test_sensor();
+//	test_sensor();
+//	test_pmu();
+//	test_crypto();
 
 	while(true)
 	{
@@ -737,6 +739,7 @@ int main(void)
 			lcd_sleep_out = false;
 			LCD_SleepOut();
 		}
+
 		k_cpu_idle();
 	}
 }

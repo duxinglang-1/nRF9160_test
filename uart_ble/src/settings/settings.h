@@ -12,6 +12,15 @@ typedef enum{
 	TIME_FORMAT_MAX
 }TIME_FORMAT;
 
+typedef enum
+{
+	LANGUAGE_EN,	//English
+	LANGUAGE_CHS,	//simplified Chinese
+	LANGUAGE_CHT,	//Traditional Chinese
+	LANGUAGE_JPN,	//Japanese
+	LANGUAGE_MAX
+}LANGUAGE_SET;
+
 typedef struct{
 	bool is_on;
 	u8_t hour;
@@ -26,6 +35,7 @@ typedef struct{
 
 typedef struct{
 	TIME_FORMAT time_format;
+	LANGUAGE_SET language;
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen

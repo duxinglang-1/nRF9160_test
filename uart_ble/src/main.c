@@ -19,6 +19,7 @@
 #include "inner_flash.h"
 #include "external_flash.h"
 #include "uart_ble.h"
+#include "settings.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -26,13 +27,12 @@
 #define PI 3.1415926
 
 static bool show_date_time_first = true;
-static bool update_date_time = false;
+
 
 static u8_t show_pic_count = 0;//图片显示顺序
 static sys_date_timer_t date_time = {0};
 static sys_date_timer_t last_date_time = {0};
 
-static u8_t language_mode = 1;//0:chinese  1:english
 static u8_t clock_mode = 0;//0:analog  1:digital
 static u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 
@@ -40,6 +40,7 @@ static struct k_timer clock_timer;
 
 bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
+bool update_date_time = false;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -204,17 +205,37 @@ void idle_show_digital_clock(void)
 	u8_t str_week[20] = {0};
 	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 	u8_t *week_cn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+	u8_t *am_pm[2] = {"am", "pm"};
 	
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
-	LCD_SetFontSize(FONT_SIZE_16);
-	
-	sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
+	LCD_SetFontSize(FONT_SIZE_32);
+
+	switch(global_settings.time_format)
+	{
+	case TIME_FORMAT_24:
+		sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
+		break;
+	case TIME_FORMAT_12:
+		sprintf((char*)str_time, "%02d:%02d:%02d ", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
+		strcat((char*)str_time, (const char*)am_pm[date_time.hour/12]);
+		break;
+	}
+
 	sprintf((char*)str_date, "%04d/%02d/%02d", date_time.year, date_time.month, date_time.day);
-	if(language_mode == 0)
+	switch(global_settings.language)
+	{
+	case LANGUAGE_CHS:
 		strcpy((char*)str_week, (const char*)week_cn[date_time.week]);
-	else
+		break;
+	case LANGUAGE_CHT:
+		break;
+	case LANGUAGE_EN:
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
+		break;
+	case LANGUAGE_JPN:
+		break;
+	}
 	
 	LCD_MeasureString(str_time,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
@@ -712,7 +733,7 @@ int main(void)
 //	test_flash();
 //	test_uart_ble();
 //	test_sensor();
-//	test_show_digital_clock();
+	test_show_digital_clock();
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();

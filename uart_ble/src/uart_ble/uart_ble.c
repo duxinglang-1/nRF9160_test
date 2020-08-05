@@ -9,6 +9,8 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <drivers/uart.h>
+#include <dk_buttons_and_leds.h>
+
 #include "Settings.h"
 
 #define UART_DEV	"UART_1"
@@ -65,6 +67,8 @@ struct uart_data_t {
 
 bool BLE_is_connected = false;
 
+extern bool update_date_time;
+
 void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 {
 	printk("BLE status:%x\n", buf[6]);
@@ -77,14 +81,16 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 
 	if(BLE_is_connected)
-		printk("BLE concected!\n");
+		dk_set_led(DK_LED1,1);
+		//printk("BLE concected!\n");
 	else
-		printk("BLE disconcected!\n");
+		dk_set_led(DK_LED1,0);
+		//printk("BLE disconcected!\n");
 }
 
 void APP_set_time_24_format(u8_t *buf, u32_t len)
 {
-	printk("BLE status:%x\n", buf[7]);
+	printk("format:%x\n", buf[7]);
 
 	if(buf[7] == 0x00)
 		global_settings.time_format = 0;//24 format
@@ -92,6 +98,13 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 		global_settings.time_format = 1;//12 format
 	else
 		global_settings.time_format = 0;//24 format
+
+	if(global_settings.time_format)
+		printk("set time format 12-hour success!\n");
+	else
+		printk("set time format 24-hour success!\n");
+
+	update_date_time = true;
 }
 
 /**********************************************************************************

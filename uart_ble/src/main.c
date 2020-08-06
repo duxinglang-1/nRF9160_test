@@ -27,19 +27,18 @@
 #define PI 3.1415926
 
 static u8_t show_pic_count = 0;//图片显示顺序
-static sys_date_timer_t last_date_time = {0};
 
-static u8_t clock_mode = 0;//0:analog  1:digital
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
-
-static struct k_timer clock_timer;
 
 bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
+
+bool sys_time_count = false;
 bool show_date_time_first = true;
 bool update_time = false;
 bool update_date = false;
 bool update_date_time = false;
+
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -48,14 +47,6 @@ static void test_show_digital_clock(void);
 #endif
 static void idle_show_time(void);
 
-
-//Timer时间回调函数
-static void clock_timer_handler(struct k_timer *timer)
-{
-	printk("clock_timer_handler\n");
-
-    //update_time = true;
-}
 
 #ifdef ANALOG_CLOCK
 void ClearAnalogHourPic(int hour)
@@ -285,7 +276,7 @@ void idle_show_clock_background(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 
 #ifdef ANALOG_CLOCK	
-	if(clock_mode == 0)
+	if(global_settings.idle_colck_mode == CLOCK_MODE_ANALOG)
 	{
 		LCD_dis_pic(0,0,clock_bg_80X160);
 	}
@@ -299,96 +290,7 @@ void idle_show_clock_background(void)
 **************************************************************************/
 void idle_show_time(void)
 {	
-	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
-	
-	date_time.second++;
-	if(date_time.second > 59)
-	{
-		date_time.second = 0;
-		date_time.minute++;
-		date_time_changed = date_time_changed|0x02;
-		//date_time_changed = date_time_changed|0x04;//分针在变动的同时，时针也会同步缓慢变动
-		if(date_time.minute > 59)
-		{
-			date_time.minute = 0;
-			date_time.hour++;
-			date_time_changed = date_time_changed|0x04;
-			if(date_time.hour > 23)
-			{
-				date_time.hour = 0;
-				date_time.day++;
-				date_time.week++;
-				if(date_time.week > 6)
-					date_time.week = 0;
-				date_time_changed = date_time_changed|0x08;
-				if(date_time.month == 1 \
-				|| date_time.month == 3 \
-				|| date_time.month == 5 \
-				|| date_time.month == 7 \
-				|| date_time.month == 8 \
-				|| date_time.month == 10 \
-				|| date_time.month == 12)
-				{
-					if(date_time.day > 31)
-					{
-						date_time.day = 1;
-						date_time.month++;
-						date_time_changed = date_time_changed|0x10;
-						if(date_time.month > 12)
-						{
-							date_time.month = 1;
-							date_time.year++;
-							date_time_changed = date_time_changed|0x20;
-						}
-					}
-				}
-				else if(date_time.month == 4 \
-					|| date_time.month == 6 \
-					|| date_time.month == 9 \
-					|| date_time.month == 11)
-				{
-					if(date_time.day > 30)
-					{
-						date_time.day = 1;
-						date_time.month++;
-						date_time_changed = date_time_changed|0x10;
-						if(date_time.month > 12)
-						{
-							date_time.month = 1;
-							date_time.year++;
-							date_time_changed = date_time_changed|0x20;
-						}
-					}
-				}
-				else
-				{
-					uint8_t Leap = date_time.year%4;
-					
-					if(date_time.day > (28+Leap))
-					{
-						date_time.day = 1;
-						date_time.month++;
-						date_time_changed = date_time_changed|0x10;
-						if(date_time.month > 12)
-						{
-							date_time.month = 1;
-							date_time.year++;
-							date_time_changed = date_time_changed|0x20;
-						}
-					}
-				}
-			}
-		}
-	}
-	date_time_changed = date_time_changed|0x01;		
-
-	//每分钟保存一次时间
-	if((date_time_changed&0x02) != 0)
-	{
-		SetSystemDateTime(date_time);
-	}
-
-	if(clock_mode == 0)
+	if(global_settings.idle_colck_mode == CLOCK_MODE_ANALOG)
 	{
 	#ifdef ANALOG_CLOCK
 		if((date_time_changed&0x02) != 0)
@@ -436,30 +338,20 @@ void test_show_analog_clock(void)
 {
 	u32_t err_code;
 	
-	clock_mode = 0;
-	
-	GetSystemDateTime(&date_time);
+	global_settings.idle_colck_mode = CLOCK_MODE_ANALOG;
 	
 	idle_show_clock_background();
 	idle_show_time();
-
-	k_timer_init(&clock_timer, clock_timer_handler, NULL);
-	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
 }
 
 void test_show_digital_clock(void)
 {
 	u32_t err_code;
 	
-	clock_mode = 1;
-	
-	GetSystemDateTime(&date_time);
+	global_settings.idle_colck_mode == CLOCK_MODE_DIGITAL;
 	
 	idle_show_clock_background();
 	idle_show_time();
-
-	k_timer_init(&clock_timer, clock_timer_handler, NULL);
-	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
 }
 
 void test_show_image(void)
@@ -642,13 +534,12 @@ static void buttons_leds_init(void)
 
 void system_init(void)
 {
+	InitSystemSettings();
 	buttons_leds_init();
 	key_init();
 	LCD_Init();
 	flash_init();
 	ble_init();
-	
-	GetSystemDateTime(&date_time);
 }
 
 /***************************************************************************
@@ -671,7 +562,7 @@ int main(void)
 //	test_flash();
 //	test_uart_ble();
 //	test_sensor();
-	test_show_digital_clock();
+//	test_show_digital_clock();
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
@@ -680,9 +571,10 @@ int main(void)
 	{
 		if(update_time || update_date || update_date_time)
 		{
-			if(update_date_time)
+			if(update_date_time || show_date_time_first)
 			{
 				update_date_time = false;
+				show_date_time_first = false;
 				IdleShowSystemDateTime();
 			}
 			else if(update_date)
@@ -700,6 +592,24 @@ int main(void)
 			dk_set_led(DK_LED2,count);
 		}
 
+		if(sys_time_count)
+		{
+			sys_time_count = false;
+			UpdateSystemTime();
+		}
+
+		if(need_save_time)
+		{
+			need_save_time = false;
+			SaveSystemDateTime();
+		}
+
+		if(need_save_settings)
+		{
+			need_save_settings = false;
+			SaveSystemSettings();
+		}
+		
 		if(lcd_sleep_in)
 		{
 			lcd_sleep_in = false;

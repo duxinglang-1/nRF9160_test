@@ -121,6 +121,8 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;
 }
 
 
@@ -161,6 +163,8 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;
 }
 
 void APP_set_date_time(u8_t *buf, u32_t len)
@@ -179,11 +183,10 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 	if(CheckSystemDateTimeIsValid(datetime))
 	{
 		datetime.week = GetWeekDayByDate(datetime);
-		//SetSystemDateTime(datetime);
-
 		memcpy(&date_time, &datetime, sizeof(sys_date_timer_t));
 
 		update_date_time = true;
+		need_save_time = true;
 	}
 
 	//packet head

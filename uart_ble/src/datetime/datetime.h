@@ -32,11 +32,13 @@ typedef struct
 
 extern sys_date_timer_t date_time;
 
-extern void GetSystemDateTime(sys_date_timer_t *systime);
-extern void SetSystemDateTime(sys_date_timer_t systime);
+extern void InitSystemDateTime(void);
+extern void SaveSystemDateTime(void);
 extern void IdleShowSystemDate(void);
 extern void IdleShowSystemTime(void);
 extern void IdleShowSystemWeek(void);
 extern void IdleShowSystemDateTime(void);
+extern void StartSystemDateTime(void);
+extern void UpdateSystemTime(void);
 
 #endif/*__DATETIME_H__*/

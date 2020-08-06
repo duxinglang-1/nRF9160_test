@@ -28,6 +28,13 @@ typedef enum
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 
+typedef enum
+{
+	CLOCK_MODE_DIGITAL,
+	CLOCK_MODE_ANALOG,
+	CLOCK_MODE_MAX
+}CLOCK_MODE;
+
 typedef struct{
 	bool is_on;
 	u8_t hour;
@@ -44,12 +51,17 @@ typedef struct{
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
+	CLOCK_MODE idle_colck_mode;
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
 	alarm_settings_t alarm;
 }global_settings_t;
 
+extern bool need_save_time;
+extern bool need_save_settings;
 extern global_settings_t global_settings;
 
+extern void InitSystemSettings(void);
+extern void SaveSystemSettings(void);
 

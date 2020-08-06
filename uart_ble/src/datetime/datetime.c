@@ -11,28 +11,131 @@
 ******************************************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
-#include <fs/nvs.h>
 #include <drivers/flash.h>
 #include "datetime.h"
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
 
-#define MAX_REBOOT 400
-#define SLEEP_TIME 100
-
-#define ADDRESS_ID 1
-#define KEY_ID 2
-#define RBT_CNT_ID 3
-#define STRING_ID 4
-#define LONG_ID 5
-
-
-static struct nvs_fs fs;
-struct flash_pages_info info;
+static struct k_timer clock_timer;
 
 sys_date_timer_t date_time = {0};
+sys_date_timer_t last_date_time = {0};
 
+extern bool sys_time_count;
+extern bool update_time;
+extern bool update_date;
+extern bool update_date_time;
+
+extern u8_t date_time_changed;
+
+void UpdateSystemTime(void)
+{
+	printk("clock_timer_handler\n");
+
+   	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
+	
+	date_time.second++;
+	if(date_time.second > 59)
+	{
+		date_time.second = 0;
+		date_time.minute++;
+		date_time_changed = date_time_changed|0x02;
+		//date_time_changed = date_time_changed|0x04;//分针在变动的同时，时针也会同步缓慢变动
+		if(date_time.minute > 59)
+		{
+			date_time.minute = 0;
+			date_time.hour++;
+			date_time_changed = date_time_changed|0x04;
+			if(date_time.hour > 23)
+			{
+				date_time.hour = 0;
+				date_time.day++;
+				date_time.week++;
+				if(date_time.week > 6)
+					date_time.week = 0;
+				date_time_changed = date_time_changed|0x08;
+				if(date_time.month == 1 \
+				|| date_time.month == 3 \
+				|| date_time.month == 5 \
+				|| date_time.month == 7 \
+				|| date_time.month == 8 \
+				|| date_time.month == 10 \
+				|| date_time.month == 12)
+				{
+					if(date_time.day > 31)
+					{
+						date_time.day = 1;
+						date_time.month++;
+						date_time_changed = date_time_changed|0x10;
+						if(date_time.month > 12)
+						{
+							date_time.month = 1;
+							date_time.year++;
+							date_time_changed = date_time_changed|0x20;
+						}
+					}
+				}
+				else if(date_time.month == 4 \
+					|| date_time.month == 6 \
+					|| date_time.month == 9 \
+					|| date_time.month == 11)
+				{
+					if(date_time.day > 30)
+					{
+						date_time.day = 1;
+						date_time.month++;
+						date_time_changed = date_time_changed|0x10;
+						if(date_time.month > 12)
+						{
+							date_time.month = 1;
+							date_time.year++;
+							date_time_changed = date_time_changed|0x20;
+						}
+					}
+				}
+				else
+				{
+					uint8_t Leap = date_time.year%4;
+					
+					if(date_time.day > (28+Leap))
+					{
+						date_time.day = 1;
+						date_time.month++;
+						date_time_changed = date_time_changed|0x10;
+						if(date_time.month > 12)
+						{
+							date_time.month = 1;
+							date_time.year++;
+							date_time_changed = date_time_changed|0x20;
+						}
+					}
+				}
+
+				update_date_time = true;
+			}
+		}
+	}
+	date_time_changed = date_time_changed|0x01;
+	update_time = true;
+	
+	//每分钟保存一次时间
+	if((date_time_changed&0x02) != 0)
+	{
+		SaveSystemDateTime();
+	}	
+}
+
+static void clock_timer_handler(struct k_timer *timer)
+{
+	sys_time_count = true;
+}
+
+void StartSystemDateTime(void)
+{
+	k_timer_init(&clock_timer, clock_timer_handler, NULL);
+	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
+}
 
 uint8_t GetWeekDayByDate(sys_date_timer_t date)
 {
@@ -74,55 +177,6 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 	}
 	
 	return ret;
-}
-
-void SetSystemDateTime(sys_date_timer_t systime)
-{
-	printk("systime: %04d-%02d-%02d, %02d:%02d:%02d\n", systime.year,systime.month,systime.day,systime.hour,systime.minute,systime.second);
-	nvs_write(&fs, ADDRESS_ID, &systime, sizeof(sys_date_timer_t));
-	printk("systime set ok!\n");
-}
-
-void GetSystemDateTime(sys_date_timer_t *systime)
-{
-	int err = 0;
-	sys_date_timer_t mytime = {0};
-	char buf[16];
-
-	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
-	err = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME), fs.offset, &info);
-	if(err)
-	{
-	    printk("Unable to get page info\n");
-	}
-
-	fs.sector_size = info.size;
-	fs.sector_count = 3U;
-	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	if(err)
-	{
-	    printk("Flash Init failed\n");
-	}
-
-	err = nvs_read(&fs, ADDRESS_ID, &mytime, sizeof(sys_date_timer_t));
-	printk("mytime: %04d-%02d-%02d, %02d:%02d:%02d\n", mytime.year,mytime.month,mytime.day,mytime.hour,mytime.minute,mytime.second);
-	
-	memset(systime, 0, sizeof(sys_date_timer_t));
-	
-	if(!CheckSystemDateTimeIsValid(mytime))
-	{
-		mytime.year = SYSTEM_DEFAULT_YEAR;
-		mytime.month = SYSTEM_DEFAULT_MONTH;
-		mytime.day = SYSTEM_DEFAULT_DAY;
-		mytime.hour = SYSTEM_DEFAULT_HOUR;
-		mytime.minute = SYSTEM_DEFAULT_MINUTE;
-		mytime.second = SYSTEM_DEFAULT_SECOND;
-		mytime.week = GetWeekDayByDate(mytime);
-		
-		SetSystemDateTime(mytime);
-	}
-	
-	memcpy(systime, (sys_date_timer_t*)&mytime, sizeof(sys_date_timer_t));
 }
 
 void GetSystemDateStrings(u8_t *str_date)
@@ -195,7 +249,6 @@ void IdleShowSystemDate(void)
 	y = IDLE_DATE_SHOW_Y;
 	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
 	LCD_ShowString(x,y,str_date);
-
 }
 
 void IdleShowSystemTime(void)

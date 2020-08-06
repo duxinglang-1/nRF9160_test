@@ -10,7 +10,7 @@
 #include <string.h>
 #include <drivers/uart.h>
 #include <dk_buttons_and_leds.h>
-
+#include "datetime.h"
 #include "Settings.h"
 
 #define UART_DEV	"UART_1"
@@ -44,10 +44,10 @@
 #define	FACTORY_RESET_ID		0xFF53			//清除手环数据
 #define	ECG_ID					0xFF54			//心电
 #define	LOCATION_ID				0xFF55			//获取定位信息
-#define	BLE_CONNECT_ID			0xFF60			//BLE断连提醒
+#define	DATE_FORMAT_ID			0xFF56			//年月日格式设置
 
-#define BLE_CONNECTED			0x55			//BLE已经连接
-#define BLE_DSICONNECTED		0xAA			//BLE已经断开
+#define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
+
 
 static u32_t rece_len=0;
 
@@ -67,7 +67,12 @@ struct uart_data_t {
 
 bool BLE_is_connected = false;
 
+extern bool update_time;
+extern bool update_date;
 extern bool update_date_time;
+
+extern bool show_date_time_first;
+extern u8_t date_time_changed;
 
 void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 {
@@ -79,32 +84,129 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 	else
 		BLE_is_connected = false;
-
-	if(BLE_is_connected)
-		dk_set_led(DK_LED1,1);
-		//printk("BLE concected!\n");
-	else
-		dk_set_led(DK_LED1,0);
-		//printk("BLE disconcected!\n");
 }
 
 void APP_set_time_24_format(u8_t *buf, u32_t len)
 {
-	printk("format:%x\n", buf[7]);
-
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+	
 	if(buf[7] == 0x00)
-		global_settings.time_format = 0;//24 format
+		global_settings.time_format = TIME_FORMAT_24;//24 format
 	else if(buf[7] == 0x01)
-		global_settings.time_format = 1;//12 format
+		global_settings.time_format = TIME_FORMAT_12;//12 format
 	else
-		global_settings.time_format = 0;//24 format
+		global_settings.time_format = TIME_FORMAT_24;//24 format
 
-	if(global_settings.time_format)
-		printk("set time format 12-hour success!\n");
+	update_time = true;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (TIME_24_SETTING_ID>>8);		
+	reply[reply_len++] = (u8_t)(TIME_24_SETTING_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+
+void APP_set_date_format(u8_t *buf, u32_t len)
+{
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+	
+	if(buf[7] == 0x00)
+		global_settings.date_format = DATE_FORMAT_YYYYMMDD;
+	else if(buf[7] == 0x01)
+		global_settings.date_format = DATE_FORMAT_MMDDYYYY;
+	else if(buf[7] == 0x02)
+		global_settings.date_format = DATE_FORMAT_DDMMYYYY;
 	else
-		printk("set time format 24-hour success!\n");
+		global_settings.date_format = DATE_FORMAT_YYYYMMDD;
 
-	update_date_time = true;
+	update_date = true;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (DATE_FORMAT_ID>>8);		
+	reply[reply_len++] = (u8_t)(DATE_FORMAT_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void APP_set_date_time(u8_t *buf, u32_t len)
+{
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+	sys_date_timer_t datetime = {0};
+	
+	datetime.year = 256*buf[7]+buf[8];
+	datetime.month = buf[9];
+	datetime.day = buf[10];
+	datetime.hour = buf[11];
+	datetime.minute = buf[12];
+	datetime.second = buf[13];
+	
+	if(CheckSystemDateTimeIsValid(datetime))
+	{
+		datetime.week = GetWeekDayByDate(datetime);
+		//SetSystemDateTime(datetime);
+
+		memcpy(&date_time, &datetime, sizeof(sys_date_timer_t));
+
+		update_date_time = true;
+	}
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (TIME_SYNC_ID>>8);		
+	reply[reply_len++] = (u8_t)(TIME_SYNC_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
 }
 
 /**********************************************************************************
@@ -127,12 +229,12 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 *	例子如下表所示：
 *	Offset	Field		Size	Value(十六进制)		Description
 *	0		StarFrame	1		0xAB				起始帧
-*	1		Data length	2		0x0000-0xFFFF		数据长度
+*	1		Data length	2		0x0000-0xFFFF		数据长度,从ID开始一直到包尾
 *	3		Data ID		2		0x0000-0xFFFF	    ID
 *	5		Status		1		0x00-0xFF	        Status
 *	6		Control		1		0x00-0x01			控制
 *	7		Data0		1-14	0x00-0xFF			数据0
-*	8+n		CRC8		1		0x00-0xFF			数据校验
+*	8+n		CRC8		1		0x00-0xFF			数据校验,从包头开始到CRC前一位
 *	9+n		EndFrame	1		0x88				结束帧
 **********************************************************************************/
 void ble_receive_date_handle(u8_t *buf, u32_t len)
@@ -199,6 +301,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case WEATHER_INFOR_ID:		//天气信息下发
 		break;
 	case TIME_SYNC_ID:			//时间同步
+		APP_set_date_time(buf, len);
 		break;
 	case TARGET_STEPS_ID:		//目标步数
 		break;
@@ -211,6 +314,9 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case ECG_ID:				//心电
 		break;
 	case LOCATION_ID:			//获取定位信息
+		break;
+	case DATE_FORMAT_ID:		//年月日格式
+		APP_set_date_format(buf, len);
 		break;
 	case BLE_CONNECT_ID:		//BLE断连提醒
 		ble_connect_or_disconnect_handle(buf, len);
@@ -231,10 +337,8 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
-	//printk("rece_len:%d, data:%x\n", rece_len, data);
-
 	rx_buf[rece_len++] = data;
-	if(data == 0x88)	//receivive complete
+	if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	//receivive complete
 	{
 		ble_receive_date_handle(rx_buf, rece_len);
 

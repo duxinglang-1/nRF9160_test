@@ -12,6 +12,13 @@ typedef enum{
 	TIME_FORMAT_MAX
 }TIME_FORMAT;
 
+typedef enum{
+	DATE_FORMAT_YYYYMMDD,
+	DATE_FORMAT_MMDDYYYY,
+	DATE_FORMAT_DDMMYYYY,
+	DATE_FORMAT_MAX
+}DATE_FORMAT;
+
 typedef enum
 {
 	LANGUAGE_EN,	//English
@@ -36,6 +43,7 @@ typedef struct{
 typedef struct{
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
+	DATE_FORMAT date_format;
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen

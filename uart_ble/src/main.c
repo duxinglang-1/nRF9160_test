@@ -26,20 +26,19 @@
 
 #define PI 3.1415926
 
-static bool show_date_time_first = true;
-
-
 static u8_t show_pic_count = 0;//图片显示顺序
-static sys_date_timer_t date_time = {0};
 static sys_date_timer_t last_date_time = {0};
 
 static u8_t clock_mode = 0;//0:analog  1:digital
-static u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
+u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 
 static struct k_timer clock_timer;
 
 bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
+bool show_date_time_first = true;
+bool update_time = false;
+bool update_date = false;
 bool update_date_time = false;
 
 #if defined(ANALOG_CLOCK)
@@ -55,7 +54,7 @@ static void clock_timer_handler(struct k_timer *timer)
 {
 	printk("clock_timer_handler\n");
 
-    update_date_time = true;
+    //update_time = true;
 }
 
 #ifdef ANALOG_CLOCK
@@ -199,76 +198,17 @@ void DrawAnalogMinPic(int hour, int minute)
 **************************************************************************/
 void idle_show_digital_clock(void)
 {
-	u16_t x,y,w,h;
-	u8_t str_time[20] = {0};
-	u8_t str_date[20] = {0};
-	u8_t str_week[20] = {0};
-	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-	u8_t *week_cn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
-	u8_t *am_pm[2] = {"am", "pm"};
+	IdleShowSystemTime();
 	
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
-	LCD_SetFontSize(FONT_SIZE_32);
+	if(show_date_time_first || ((date_time_changed&0x38) != 0))
+	{
+		IdleShowSystemDate();
+		IdleShowSystemWeek();
 
-	switch(global_settings.time_format)
-	{
-	case TIME_FORMAT_24:
-		sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
-		break;
-	case TIME_FORMAT_12:
-		sprintf((char*)str_time, "%02d:%02d:%02d ", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
-		strcat((char*)str_time, (const char*)am_pm[date_time.hour/12]);
-		break;
-	}
-
-	sprintf((char*)str_date, "%04d/%02d/%02d", date_time.year, date_time.month, date_time.day);
-	switch(global_settings.language)
-	{
-	case LANGUAGE_CHS:
-		strcpy((char*)str_week, (const char*)week_cn[date_time.week]);
-		break;
-	case LANGUAGE_CHT:
-		break;
-	case LANGUAGE_EN:
-		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
-		break;
-	case LANGUAGE_JPN:
-		break;
-	}
-	
-	LCD_MeasureString(str_time,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = (LCD_HEIGHT > h) ? (LCD_HEIGHT-3*(h+5))/2 : 0;
-	LCD_ShowString(x,y,str_time);//时间
-	
-	if(show_date_time_first)
-	{
-		show_date_time_first = false;
-		
-		LCD_MeasureString(str_date,&w,&h);
-		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-		y = y+(h+5);
-		LCD_ShowString(x,y,str_date);//日期
-	
-		LCD_MeasureString(str_week,&w,&h);
-		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-		y = y+(h+5);
-		LCD_ShowString(x,y,str_week);//星期
-	}
-	else if((date_time_changed&0x38) != 0)//日期有改变
-	{
-		LCD_MeasureString(str_date,&w,&h);
-		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-		y = y+(h+5);
-		LCD_ShowString(x,y,str_date);//日期
-
-		LCD_MeasureString(str_week,&w,&h);
-		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-		y = y+(h+5);
-		LCD_ShowString(x,y,str_week);//星期
-		
-		date_time_changed = date_time_changed&0xC7;//清空日期变化标志位
+		if(show_date_time_first)
+			show_date_time_first = false;
+		if((date_time_changed&0x38) != 0)
+			date_time_changed = date_time_changed&0xC7;//清空日期变化标志位
 	}
 }
 
@@ -642,8 +582,6 @@ void test_show_string(void)
 {
 	u16_t x,y,w,h;
 	
-	//LCD_Clear(BLACK);								//清屏
-	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
 
@@ -740,11 +678,24 @@ int main(void)
 
 	while(true)
 	{
-		if(update_date_time)
+		if(update_time || update_date || update_date_time)
 		{
-			update_date_time = false;
-			idle_show_time();
-
+			if(update_date_time)
+			{
+				update_date_time = false;
+				IdleShowSystemDateTime();
+			}
+			else if(update_date)
+			{
+				update_date = false;
+				IdleShowSystemDate();
+			}
+			else
+			{
+				update_time = false;
+				IdleShowSystemTime();
+			}
+			
 			count = !count;
 			dk_set_led(DK_LED2,count);
 		}

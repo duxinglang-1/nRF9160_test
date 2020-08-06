@@ -10,8 +10,14 @@
 #define SYSTEM_DEFAULT_HOUR		23
 #define SYSTEM_DEFAULT_MINUTE	59
 #define SYSTEM_DEFAULT_SECOND	35
-
 #define SYSTEM_DATE_TIME_ADDR	0x000FF000
+
+#define IDLE_DATE_SHOW_X	0
+#define IDLE_DATE_SHOW_Y	101
+#define IDLE_TIME_SHOW_X	0
+#define IDLE_TIME_SHOW_Y	64
+#define IDLE_WEEK_SHOW_X	0
+#define IDLE_WEEK_SHOW_Y	138
 
 typedef struct
 {
@@ -24,7 +30,13 @@ typedef struct
     uint8_t  week;
 }sys_date_timer_t;
 
+extern sys_date_timer_t date_time;
+
 extern void GetSystemDateTime(sys_date_timer_t *systime);
 extern void SetSystemDateTime(sys_date_timer_t systime);
+extern void IdleShowSystemDate(void);
+extern void IdleShowSystemTime(void);
+extern void IdleShowSystemWeek(void);
+extern void IdleShowSystemDateTime(void);
 
 #endif/*__DATETIME_H__*/

@@ -37,6 +37,7 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 bool update_time = false;
 bool update_date = false;
+bool update_week = false;
 bool update_date_time = false;
 
 
@@ -569,7 +570,7 @@ int main(void)
 
 	while(true)
 	{
-		if(update_time || update_date || update_date_time)
+		if(update_time || update_date || update_week || update_date_time)
 		{
 			if(update_date_time || show_date_time_first)
 			{
@@ -581,6 +582,11 @@ int main(void)
 			{
 				update_date = false;
 				IdleShowSystemDate();
+			}
+			else if(update_week)
+			{
+				update_week = false;
+				IdleShowSystemWeek();
 			}
 			else
 			{

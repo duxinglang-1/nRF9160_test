@@ -675,38 +675,35 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*COL] = {0};
+	u8_t fontbuf[128] = {0};
 	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
-	for(t=0;t<csize;t++)
+	switch(system_font)
 	{
-		switch(system_font)
-		{
-		#ifdef FONT_16
-			case FONT_SIZE_16:
-				SpiFlash_Read(&temp, FONT_ASC_1608_ADDR+csize*num+t, 1);
-				//temp=asc2_1608[num][t]; 	 	//调用1608字体
-				break;
-		#endif
-		#ifdef FONT_24
-			case FONT_SIZE_24:
-				SpiFlash_Read(&temp, FONT_ASC_2412_ADDR+csize*num+t, 1);
-				//temp=asc2_2412[num][t];			//调用2412字体
-				break;
-		#endif
-		#ifdef FONT_32
-			case FONT_SIZE_32:
-				SpiFlash_Read(&temp, FONT_ASC_3216_ADDR+csize*num+t, 1);
-				//temp=asc2_3216[num][t];			//调用3216字体
-				break;
-		#endif
-			default:
-				return;							//没有的字库
-		}
-
-	#ifdef LCD_TYPE_SPI
-		BlockWrite(x0,y,(system_font/2),1);	  	//设置刷新位置
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			SpiFlash_Read(fontbuf, FONT_ASC_1608_ADDR+csize*num, csize);
+			break;
 	#endif
-	
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			SpiFlash_Read(fontbuf, FONT_ASC_2412_ADDR+csize*num, csize);
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			SpiFlash_Read(fontbuf, FONT_ASC_3216_ADDR+csize*num, csize);
+			break;
+	#endif
+		default:
+			return;							//没有的字库
+	}
+
+	for(t=0;t<csize;t++)
+	{		
+		BlockWrite(x0,y,(system_font/2),1); 	//设置刷新位置
+		
+		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
@@ -767,8 +764,8 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 				break;
 			}
 		#endif
-		}	
-	}  	    	   	 	  
+		}
+	}
 }   
 
 
@@ -890,38 +887,35 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//行扫描，每个字符每一行占用的字节数
 	u8_t csize=cbyte*(system_font);		//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*COL] = {0};
+	u8_t fontbuf[128] = {0};
 
 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
-	for(t=0;t<csize;t++)
-	{	
-		switch(system_font)
-		{
-		#ifdef FONT_16
-			case FONT_SIZE_16:
-				SpiFlash_Read(&temp, FONT_CHN_SM_1616_ADDR+csize*index+t, 1);
-				//temp=chinese_1616[index][t]; 	 	//调用1616字体
-				break;
-		#endif
-		#if 0//def FONT_24
-			case FONT_SIZE_24:
-				SpiFlash_Read(&temp, FONT_CHN_SM_2424_ADDR+csize*index+t, 1);
-				//temp=chinese_2424[index][t];		//调用2424字体
-				break;
-		#endif
-		#if 0//def FONT_32
-			case FONT_SIZE_32:
-				SpiFlash_Read(&temp, FONT_CHN_SM_3232_ADDR+csize*index+t, 1);
-				//temp=chinese_3232[index][t];		//调用3232字体
-				break;
-		#endif
-			default:
-				return;								//没有的字库
-		}	
-
-	#ifdef LCD_TYPE_SPI
-		BlockWrite(x0,y,system_font,1);	  	//设置刷新位置
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			SpiFlash_Read(fontbuf, FONT_CHN_SM_1616_ADDR+csize*index+t, csize);
+			break;
 	#endif
-	
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			SpiFlash_Read(fontbuf, FONT_CHN_SM_2424_ADDR+csize*index+t, csize);
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			SpiFlash_Read(fontbuf, FONT_CHN_SM_3232_ADDR+csize*index+t, csize);
+			break;
+	#endif
+		default:
+			return;								//没有的字库
+	}	
+
+	for(t=0;t<csize;t++)
+	{
+		BlockWrite(x0,y,system_font,1); 	//设置刷新位置
+
+		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI

@@ -195,17 +195,30 @@ void GetSystemDateStrings(u8_t *str_date)
 	}
 }
 
-void GetSystemTimeStrings(u8_t *str_time)
+void GetSysteAmPmStrings(u8_t *str_ampm)
 {
 	u8_t *am_pm[2] = {"am", "pm"};
 
 	switch(global_settings.time_format)
 	{
 	case TIME_FORMAT_24:
+		sprintf((char*)str_ampm, "  ");
+		break;
+	case TIME_FORMAT_12:
+		sprintf((char*)str_ampm, "%s", am_pm[date_time.hour/12]);
+		break;
+	}
+}
+
+void GetSystemTimeStrings(u8_t *str_time)
+{
+	switch(global_settings.time_format)
+	{
+	case TIME_FORMAT_24:
 		sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
 		break;
 	case TIME_FORMAT_12:
-		sprintf((char*)str_time, "%02d:%02d:%02d %s", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second, am_pm[date_time.hour/12]);
+		sprintf((char*)str_time, "%02d:%02d:%02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
 		break;
 	}
 }
@@ -255,6 +268,7 @@ void IdleShowSystemTime(void)
 {
 	u16_t x,y,w,h;
 	u8_t str_time[20] = {0};
+	u8_t str_ampm[5] = {0};
 
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
@@ -264,8 +278,13 @@ void IdleShowSystemTime(void)
 	LCD_MeasureString(str_time,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
 	y = IDLE_TIME_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
 	LCD_ShowString(x,y,str_time);
+
+	LCD_SetFontSize(FONT_SIZE_16);
+	GetSysteAmPmStrings(str_ampm);
+	x = x+w+5;
+	y = IDLE_TIME_SHOW_Y+14;
+	LCD_ShowString(x,y,str_ampm);	
 }
 
 void IdleShowSystemWeek(void)

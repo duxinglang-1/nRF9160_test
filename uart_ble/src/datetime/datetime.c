@@ -226,17 +226,13 @@ void GetSystemTimeStrings(u8_t *str_time)
 void GetSystemWeekStrings(u8_t *str_week)
 {
 	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-	u8_t *week_cns[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
-	u8_t *week_cnt[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};	
+	u8_t *week_chn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
 	u8_t *week_jpn[15] = {"にちようbaiび", "げつようび", "かようび", "すbaiいようび", "もくようび", "きんようび", "どようび"};
 
 	switch(global_settings.language)
 	{
-	case LANGUAGE_CHS:
-		strcpy((char*)str_week, (const char*)week_cns[date_time.week]);
-		break;
-	case LANGUAGE_CHT:
-		strcpy((char*)str_week, (const char*)week_cnt[date_time.week]);
+	case LANGUAGE_CHN:
+		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
 		break;
 	case LANGUAGE_EN:
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);

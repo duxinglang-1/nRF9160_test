@@ -69,6 +69,7 @@ bool BLE_is_connected = false;
 
 extern bool update_time;
 extern bool update_date;
+extern bool update_week;
 extern bool update_date_time;
 
 extern bool show_date_time_first;
@@ -84,6 +85,47 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 	else
 		BLE_is_connected = false;
+}
+
+void APP_set_language(u8_t *buf, u32_t len)
+{
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+	
+	if(buf[7] == 0x00)
+		global_settings.language = LANGUAGE_CHN;
+	else if(buf[7] == 0x01)
+		global_settings.language = LANGUAGE_EN;
+	else if(buf[7] == 0x02)
+		global_settings.language = LANGUAGE_JPN;
+	else
+		global_settings.language = LANGUAGE_EN;
+		
+	update_week = true;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (LANGUAGE_SETTING_ID>>8);		
+	reply[reply_len++] = (u8_t)(LANGUAGE_SETTING_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;
 }
 
 void APP_set_time_24_format(u8_t *buf, u32_t len)
@@ -295,6 +337,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SHAKE_PHOTO_ID:		//摇一摇拍照
 		break;
 	case LANGUAGE_SETTING_ID:	//中英日文切换
+		APP_set_language(buf, len);
 		break;
 	case TIME_24_SETTING_ID:	//12/24小时设置
 		APP_set_time_24_format(buf, len);

@@ -22,8 +22,7 @@ typedef enum{
 typedef enum
 {
 	LANGUAGE_EN,	//English
-	LANGUAGE_CHS,	//simplified Chinese
-	LANGUAGE_CHT,	//Traditional Chinese
+	LANGUAGE_CHN,	//Chinese
 	LANGUAGE_JPN,	//Japanese
 	LANGUAGE_MAX
 }LANGUAGE_SET;

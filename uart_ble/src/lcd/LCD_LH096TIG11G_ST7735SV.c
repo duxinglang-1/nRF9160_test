@@ -140,14 +140,14 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	WriteComm(0x2A);             
 	WriteData(x>>8);             
 	WriteData(x);             
-	WriteData((x+w)>>8);             
-	WriteData((x+w));             
+	WriteData((x+w-1)>>8);             
+	WriteData((x+w-1));             
 
 	WriteComm(0x2B);             
 	WriteData(y>>8);             
 	WriteData(y);             
-	WriteData((y+h)>>8);//	WriteData((Yend+1)>>8);             
-	WriteData((y+h));//	WriteData(Yend+1);   	
+	WriteData((y+h-1)>>8);//	WriteData((Yend+1)>>8);             
+	WriteData((y+h-1));//	WriteData(Yend+1);   	
 
 	WriteComm(0x2c);
 }
@@ -156,7 +156,7 @@ void DispColor(unsigned int color)
 {
 	unsigned int i,j;
 
-	BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL,ROW);
 
 	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
@@ -180,7 +180,7 @@ void DispBand(void)
 	unsigned int color[8]={0xf800,0xf800,0x07e0,0x07e0,0x001f,0x001f,0xffff,0xffff};//0x94B2
 	//unsigned int gray16[]={0x0000,0x1082,0x2104,0x3186,0x42,0x08,0x528a,0x630c,0x738e,0x7bcf,0x9492,0xa514,0xb596,0xc618,0xd69a,0xe71c,0xffff};
 
-	BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL,ROW);
 
 	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
@@ -211,7 +211,7 @@ void DispFrame(void)
 {
 	unsigned int i,j;
 
-	BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL,ROW);
 
 	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
@@ -270,7 +270,7 @@ void LCD_Clear(uint16_t color)
 
 	totalpoint*=COL; 			//得到总点数
 
-	BlockWrite(0,0,COL-1,ROW-1);//定位
+	BlockWrite(0,0,COL,ROW);//定位
 
 	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);

@@ -241,7 +241,7 @@ void DispColor(unsigned int color)
 {
 	unsigned int i,j;
 
-	BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL,ROW);
 
 	gpio_pin_write(lcd_gpio, CS, 0);
 	gpio_pin_write(lcd_gpio, RS, 1);
@@ -272,7 +272,7 @@ void DispBand(void)
 	unsigned int color[8]={0xf800,0xf800,0x07e0,0x07e0,0x001f,0x001f,0xffff,0xffff};//0x94B2
 	//unsigned int gray16[]={0x0000,0x1082,0x2104,0x3186,0x42,0x08,0x528a,0x630c,0x738e,0x7bcf,0x9492,0xa514,0xb596,0xc618,0xd69a,0xe71c,0xffff};
 
-   	BlockWrite(0,0,COL-1,ROW-1);
+   	BlockWrite(0,0,COL,ROW);
 
 	gpio_pin_write(lcd_gpio, CS, 0);
 	gpio_pin_write(lcd_gpio, RD, 1);
@@ -316,7 +316,7 @@ void DispFrame(void)
 {
 	unsigned int i,j;
 	
-	BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL,ROW);
 
 	gpio_pin_write(lcd_gpio, CS, 0);
 	gpio_pin_write(lcd_gpio, RD, 1);
@@ -418,7 +418,7 @@ void LCD_Clear(uint16_t color)
 	uint32_t totalpoint=ROW;
 	totalpoint*=COL; 			//得到总点数
 	
-	BlockWrite(0,0,COL-1,ROW-1);//定位
+	BlockWrite(0,0,COL,ROW);//定位
 
 	gpio_pin_write(lcd_gpio, CS, 0);
 	gpio_pin_write(lcd_gpio, RS, 1);

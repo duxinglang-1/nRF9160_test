@@ -381,7 +381,7 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 {
 	int err;
-	uint8_t read_size;
+	uint32_t read_size;
 	
 	spi_tx_buf[0] = SPIFlash_ReadData;
 	//24位地址，高地址在前

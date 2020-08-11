@@ -46,20 +46,23 @@ void LCD_Fast_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
 //color:要填充的颜色
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {          
-	uint16_t i,j;
+	u32_t i;
 
-	for(i=y;i<=(y+h);i++)
-	{
-		BlockWrite(x,i,w,y+h-i);
-		
-	#ifdef LCD_TYPE_SPI
-		DispColor(w, color);
-	#else
-		for(j=0;j<w;j++)
-			WriteOneDot(color); //显示颜色 
-	#endif
-	}	 
-}  
+	if((x+w)>LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	
+	BlockWrite(x,y,w,h);
+
+#ifdef LCD_TYPE_SPI
+	DispColor((w*h), color);
+#else
+	for(i=0;i<(w*h);i++)
+		WriteOneDot(color); //显示颜色 
+#endif
+}
+
 //在指定区域内填充指定颜色块	(显示图片)		 
 //(x,y),(w,h):填充矩形对角坐标,区域大小为:w*h   
 //color:要填充的颜色
@@ -234,32 +237,63 @@ void LCD_dis_pic(uint16_t x, uint16_t y, unsigned char *color)
 //x:图片显示X坐标
 //y:图片显示Y坐标
 void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
-{  
-	uint16_t h,w;
+{
+	uint16_t h,w,show_w,show_h;
 	uint16_t i,j;
-	u8_t databuf[2*COL] = {0};
-
-	SpiFlash_Read(databuf, pic_addr, 8);
+	u8_t databuf[4*1024]={0};
+	u32_t datelen,showlen=0,readlen=4*1024;
 	
+	SpiFlash_Read(databuf, pic_addr, 8);
+
 	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
 	h=256*databuf[4]+databuf[5];			//获取图片高度
 
 	pic_addr += 8;
-	
- 	for(i=0;i<h;i++)
-	{
-		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
 
-		memset(databuf, 0, 2*COL);
-		SpiFlash_Read(databuf, pic_addr+2*w*i, 2*w);
+	if((x+w)>LCD_WIDTH)
+		show_w = LCD_WIDTH-x;
+	else
+		show_w = w;
+	
+	if((y+h)>LCD_HEIGHT)
+		show_h = LCD_HEIGHT-y;
+	else
+		show_h = h;
+	
+	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+
+	datelen = 2*show_w*show_h;
+	if(show_w < w)
+		readlen = 2*show_w;
+	
+	while(datelen)
+	{
+		if(datelen < readlen)
+		{
+			readlen = datelen;
+			datelen = 0;
+		}
+		else
+		{
+			readlen = readlen;
+			datelen -= readlen;
+		}
 		
+		memset(databuf, 0, 4*1024);
+		SpiFlash_Read(databuf, pic_addr, readlen);
+		
+		if(show_w < w)
+			pic_addr += 2*w;
+		else
+			pic_addr += readlen;
+
 	#ifdef LCD_TYPE_SPI
-		DispDate(2*w, databuf);
+		DispDate(readlen, databuf);
 	#else
-		for(j=0;j<w;j++)
-			WriteDispData(databuf[2*j],databuf[2*j+1]);	//显示颜色 
+		for(i=0;i<(readlen/2);i++)
+			WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
 	#endif
-	}		  
+	}
 }
 
 //指定位置显示图片,带颜色过滤

@@ -367,7 +367,7 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	//LCD_get_pic_size_from_flash(IMG_PEPPA_160X160_ADDR, &w, &h);
+	LCD_get_pic_size_from_flash(IMG_PEPPA_160X160_ADDR, &w, &h);
 	//LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_160X160_ADDR);
 	while(1)
 	{
@@ -376,30 +376,30 @@ void test_show_image(void)
 			case 0:
 				//LCD_dis_pic(w*0,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
-				//LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
+				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
-				LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
+				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
 				//LCD_dis_pic(w*1,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
-				//LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
+				LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
-				LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
+				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
 				break;
 			case 2:
 				//LCD_dis_pic(w*1,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*1,peppa_pig_80X160,WHITE);
-				//LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_160X160_ADDR);
+				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
-				LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
+				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
 				//LCD_dis_pic(w*0,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*1,peppa_pig_80X160,WHITE);
-				//LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_160X160_ADDR);
+				LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
-				LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
+				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
 				break;
 			case 4:
 				LCD_Fill(w*0,h*0,w,h,BLACK);
@@ -582,7 +582,7 @@ int main(void)
 //	test_pmu();
 //	test_crypto();
 
-	while(0)
+	while(1)
 	{
 		if(update_time || update_date || update_week || update_date_time)
 		{

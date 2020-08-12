@@ -45,7 +45,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 //以上三色为PANEL的颜色 
  
 #define LIGHTGREEN     	 0X841F //浅绿色
-//#define LIGHTGRAY        0XEF5B //浅灰色(PANNEL)
+#define LIGHTGRAY        0XEF5B //浅灰色(PANNEL)
 #define LGRAY 			 0XC618 //浅灰色(PANNEL),窗体背景色
 
 #define LGRAYBLUE        0XA651 //浅灰蓝色(中间层颜色)

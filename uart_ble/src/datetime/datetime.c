@@ -96,7 +96,10 @@ void UpdateSystemTime(void)
 				}
 				else
 				{
-					uint8_t Leap = date_time.year%4;
+					uint8_t Leap = 0;
+
+					if(date_time.year%4 == 0)
+						Leap = 1;
 					
 					if(date_time.day > (28+Leap))
 					{
@@ -139,19 +142,64 @@ void StartSystemDateTime(void)
 
 uint8_t GetWeekDayByDate(sys_date_timer_t date)
 {
-	uint8_t index = 4;//1970年1月1日是星期四 0=sunday
+	uint8_t flag=0,index=SYSTEM_STARTING_WEEK;//1900年1月1日是星期一 0=sunday
 	uint32_t i,count=0;
 	
-	if(date.year < 1970)
+	if(date.year < SYSTEM_STARTING_YEAR)
 		return 0xff;
-	
-	for(i=1970;i<date.year;i++)
+
+	for(i=SYSTEM_STARTING_YEAR;i<date.year;i++)
 	{
 		if(i%4 == 0)	//闰年366天
 			count += 366;
 		else
 			count += 365;
 	}
+
+	if(date.year%4 == 0)
+		flag = 1;
+	
+	switch(date.month)
+	{
+	case 1:
+		count += 0;
+		break;
+	case 2:
+		count += 31;
+		break;
+	case 3:
+		count += (31+(28+flag));
+		break;
+	case 4:
+		count += (31+30+(28+flag));
+		break;
+	case 5:
+		count += (2*31+30+(28+flag));
+		break;
+	case 6:
+		count += (3*31+30+(28+flag));
+		break;
+	case 7:
+		count += (3*31+2*30+(28+flag));
+		break;
+	case 8:
+		count += (4*31+2*30+(28+flag));
+		break;
+	case 9:
+		count += (5*31+2*30+(28+flag));
+		break;
+	case 10:
+		count += (5*31+3*30+(28+flag));
+		break;
+	case 11:
+		count += (6*31+3*30+(28+flag));
+		break;
+	case 12:
+		count += (7*31+4*30+(28+flag));
+		break;			
+	}
+
+	count += (date.day-1);
 	
 	count = count%7;
 	index = (index+count)%7;
@@ -162,14 +210,14 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 {
 	bool ret = true;
-	
-	if((systime.year<1970 || systime.year>9999)
-		|| (systime.month==0 || systime.month>12) 
-		|| (systime.day==0 
-			|| ((systime.day>31)&&(systime.month==1||systime.month==3||systime.month==5||systime.month==7||systime.month==8||systime.month==10||systime.month==12))
-			|| ((systime.day>30)&&(systime.month==4||systime.month==6||systime.month==9||systime.month==11))
-			|| ((systime.day>29)&&(systime.month==2&&systime.year%4==0))
-			|| ((systime.day>28)&&(systime.month==2&&systime.year%4!=0)))
+
+	if((systime.year<SYSTEM_STARTING_YEAR || systime.year>9999)
+		|| ((systime.month==0)||(systime.month>12)) 
+		|| (systime.day==0) 
+		|| ((systime.day>31)&&((systime.month==1)||(systime.month==3)||(systime.month==5)||(systime.month==7)||(systime.month==8)||(systime.month==10)||(systime.month==12)))
+		|| ((systime.day>30)&&((systime.month==4)||(systime.month==6)||(systime.month==9)||(systime.month==11)))
+		|| ((systime.day>29)&&((systime.month==2)&&(systime.year%4==0)))
+		|| ((systime.day>28)&&((systime.month==2)&&(systime.year%4!=0)))
 		|| ((systime.hour>23)||(systime.minute>59)||(systime.second>59))
 		|| (systime.week>6))
 	{

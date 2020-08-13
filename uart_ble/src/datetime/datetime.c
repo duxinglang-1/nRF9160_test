@@ -275,7 +275,7 @@ void GetSystemWeekStrings(u8_t *str_week)
 {
 	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 	u8_t *week_chn[7] = {"佛豚晩", "佛豚匯", "佛豚屈", "佛豚眉", "佛豚膨", "佛豚励", "佛豚鎗"};
-	u8_t *week_jpn[15] = {"にちようbaiび", "げつようび", "かようび", "すbaiいようび", "もくようび", "きんようび", "どようび"};
+	u8_t *week_jpn[15] = {"にちようび", "げつようび", "かようび", "すいようび", "もくようび", "きんようび", "どようび"};
 
 	switch(global_settings.language)
 	{

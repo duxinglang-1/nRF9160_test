@@ -245,15 +245,19 @@ void GetSystemDateStrings(u8_t *str_date)
 
 void GetSysteAmPmStrings(u8_t *str_ampm)
 {
+	u8_t flag = 0;
 	u8_t *am_pm[2] = {"am", "pm"};
 
+	if(date_time.hour > 12)
+		flag = 1;
+	
 	switch(global_settings.time_format)
 	{
 	case TIME_FORMAT_24:
 		sprintf((char*)str_ampm, "  ");
 		break;
 	case TIME_FORMAT_12:
-		sprintf((char*)str_ampm, "%s", am_pm[date_time.hour/12]);
+		sprintf((char*)str_ampm, "%s", am_pm[flag]);
 		break;
 	}
 }

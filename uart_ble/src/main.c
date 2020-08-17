@@ -581,8 +581,9 @@ int main(void)
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
+	test_imei();
 
-	while(1)
+	while(0)
 	{
 		if(update_time || update_date || update_week || update_date_time)
 		{

@@ -10,6 +10,8 @@
 #include "LCD_LH096TIG11G_ST7735SV.h"
 #elif defined(LCD_ORCT012210N_ST7789V2)
 #include "LCD_ORCT012210N_ST7789V2.h"
+#elif defined(LCD_R108101_GC9307)
+#include "LCD_R108101_GC9307.h"
 #endif 
 
 
@@ -46,20 +48,23 @@ void LCD_Fast_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
 //color:要填充的颜色
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {          
-	uint16_t i,j;
+	u32_t i;
 
-	for(i=y;i<=(y+h);i++)
-	{
-		BlockWrite(x,i,w,y+h-i);
-		
-	#ifdef LCD_TYPE_SPI
-		DispColor(w, color);
-	#else
-		for(j=0;j<w;j++)
-			WriteOneDot(color); //显示颜色 
-	#endif
-	}	 
-}  
+	if((x+w)>LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	
+	BlockWrite(x,y,w,h);
+
+#ifdef LCD_TYPE_SPI
+	DispColor((w*h), color);
+#else
+	for(i=0;i<(w*h);i++)
+		WriteOneDot(color); //显示颜色 
+#endif
+}
+
 //在指定区域内填充指定颜色块	(显示图片)		 
 //(x,y),(w,h):填充矩形对角坐标,区域大小为:w*h   
 //color:要填充的颜色
@@ -98,7 +103,8 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
 	uint16_t t; 
 	int xerr=0,yerr=0,delta_x,delta_y,distance; 
-	int incx,incy,uRow,uCol; 
+	int incx,incy,uRow,uCol;
+	
 	delta_x=x2-x1; //计算坐标增量 
 	delta_y=y2-y1; 
 	uRow=x1; 
@@ -109,13 +115,13 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	if(delta_y>0)incy=1; 
 	else if(delta_y==0)incy=0;//水平线 
 	else{incy=-1;delta_y=-delta_y;} 
-	if( delta_x>delta_y)distance=delta_x; //选取基本增量坐标轴 
+	if(delta_x>delta_y)distance=delta_x; //选取基本增量坐标轴 
 	else distance=delta_y; 
 	for(t=0;t<=distance+1;t++ )//画线输出 
 	{  
 		LCD_Fast_DrawPoint(uRow,uCol,POINT_COLOR);//画点 
-		xerr+=delta_x ; 
-		yerr+=delta_y ; 
+		xerr+=delta_x;
+		yerr+=delta_y;
 		if(xerr>distance) 
 		{ 
 			xerr-=distance; 
@@ -202,30 +208,57 @@ void LCD_get_pic_size_from_flash(u32_t pic_addr, uint16_t *width, uint16_t *heig
 //y:图片显示Y坐标
 void LCD_dis_pic(uint16_t x, uint16_t y, unsigned char *color)
 {  
-	uint16_t h,w;
-	uint16_t i,j;
-	u8_t databuf[2*COL] = {0};
+	uint16_t h,w,show_w,show_h;
+	uint16_t i;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t offset=8,datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	w=256*color[2]+color[3]; 			//获取图片宽度
 	h=256*color[4]+color[5];			//获取图片高度
+
+	if((x+w)>LCD_WIDTH)
+		show_w = LCD_WIDTH-x;
+	else
+		show_w = w;
 	
- 	for(i=0;i<h;i++)
+	if((y+h)>LCD_HEIGHT)
+		show_h = LCD_HEIGHT-y;
+	else
+		show_h = h;
+
+	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+	datelen = 2*show_w*show_h;
+	if(show_w < w)
+		readlen = 2*show_w;
+	
+	while(datelen)
 	{
-		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+		if(datelen < readlen)
+		{
+			readlen = datelen;
+			datelen = 0;
+		}
+		else
+		{
+			readlen = readlen;
+			datelen -= readlen;
+		}
+		
+		memset(databuf, 0, LCD_DATA_LEN);
+		memcpy(databuf, &color[offset], readlen);
+		
+		if(show_w < w)
+			offset += 2*w;
+		else
+			offset += readlen;
 
 	#ifdef LCD_TYPE_SPI
-		for(j=0;j<w;j++)
-		{
-			databuf[2*j] = color[8+2*(i*w+j)];
-			databuf[2*j+1] = color[8+2*(i*w+j)+1];
-		}
-
-		DispDate(2*w, databuf);
+		DispDate(readlen, databuf);
 	#else
-		for(j=0;j<w;j++)
-			WriteDispData(color[8+2*(i*w+j)],color[8+2*(i*w+j)+1]);	//显示颜色 
+		for(i=0;i<(readlen/2);i++)
+			WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
 	#endif
-	}		  
+	}
 }
 
 
@@ -234,32 +267,63 @@ void LCD_dis_pic(uint16_t x, uint16_t y, unsigned char *color)
 //x:图片显示X坐标
 //y:图片显示Y坐标
 void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
-{  
-	uint16_t h,w;
-	uint16_t i,j;
-	u8_t databuf[2*COL] = {0};
-
-	SpiFlash_Read(databuf, pic_addr, 8);
+{
+	uint16_t h,w,show_w,show_h;
+	uint16_t i;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
+	SpiFlash_Read(databuf, pic_addr, 8);
+
 	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
 	h=256*databuf[4]+databuf[5];			//获取图片高度
 
 	pic_addr += 8;
-	
- 	for(i=0;i<h;i++)
-	{
-		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
 
-		memset(databuf, 0, 2*COL);
-		SpiFlash_Read(databuf, pic_addr+2*w*i, 2*w);
+	if((x+w)>LCD_WIDTH)
+		show_w = LCD_WIDTH-x;
+	else
+		show_w = w;
+	
+	if((y+h)>LCD_HEIGHT)
+		show_h = LCD_HEIGHT-y;
+	else
+		show_h = h;
+	
+	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+
+	datelen = 2*show_w*show_h;
+	if(show_w < w)
+		readlen = 2*show_w;
+	
+	while(datelen)
+	{
+		if(datelen < readlen)
+		{
+			readlen = datelen;
+			datelen = 0;
+		}
+		else
+		{
+			readlen = readlen;
+			datelen -= readlen;
+		}
 		
+		memset(databuf, 0, LCD_DATA_LEN);
+		SpiFlash_Read(databuf, pic_addr, readlen);
+		
+		if(show_w < w)
+			pic_addr += 2*w;
+		else
+			pic_addr += readlen;
+
 	#ifdef LCD_TYPE_SPI
-		DispDate(2*w, databuf);
+		DispDate(readlen, databuf);
 	#else
-		for(j=0;j<w;j++)
-			WriteDispData(databuf[2*j],databuf[2*j+1]);	//显示颜色 
+		for(i=0;i<(readlen/2);i++)
+			WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
 	#endif
-	}		  
+	}
 }
 
 //指定位置显示图片,带颜色过滤
@@ -268,43 +332,66 @@ void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
 //y:图片显示Y坐标
 void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans)
 {  
-	uint16_t h,w;
-	uint16_t i,j;
-	u8_t databuf[2*COL] = {0};
-	
+	uint16_t h,w,show_w,show_h;
+	uint16_t i;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t offset=8,datelen,showlen=0,readlen=LCD_DATA_LEN;
+
 	w=256*color[2]+color[3]; 			//获取图片宽度
 	h=256*color[4]+color[5];			//获取图片高度
 
- 	for(i=0;i<h;i++)
-	{
-		BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+	if((x+w)>LCD_WIDTH)
+		show_w = LCD_WIDTH-x;
+	else
+		show_w = w;
 
-	#ifdef LCD_TYPE_SPI
-		for(j=0;j<w;j++)
+	if((y+h)>LCD_HEIGHT)
+		show_h = LCD_HEIGHT-y;
+	else
+		show_h = h;
+
+	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+	datelen = 2*show_w*show_h;
+	if(show_w < w)
+		readlen = 2*show_w;
+
+	while(datelen)
+	{
+		if(datelen < readlen)
 		{
-			if(trans != (256*color[8+2*(i*w+j)]+color[8+2*(i*w+j)+1]))
+			readlen = datelen;
+			datelen = 0;
+		}
+		else
+		{
+			readlen = readlen;
+			datelen -= readlen;
+		}
+		
+		memset(databuf, 0, LCD_DATA_LEN);
+		memcpy(databuf, &color[offset], readlen);
+		
+		if(show_w < w)
+			offset += 2*w;
+		else
+			offset += readlen;
+
+		for(i=0;i<(readlen/2);i++)
+		{
+			if(trans == (256*databuf[2*i]+databuf[2*i+1]))
 			{
-				databuf[2*j] = color[8+2*(i*w+j)];
-				databuf[2*j+1] = color[8+2*(i*w+j)+1];
-			}
-			else
-			{
-				databuf[2*j] = BACK_COLOR>>8;
-				databuf[2*j+1] = BACK_COLOR;
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
 			}
 		}
 		
-		DispDate(2*w, databuf);
+	#ifdef LCD_TYPE_SPI
+		DispDate(readlen, databuf);
 	#else
-		for(j=0;j<w;j++)
-		{
-			if(trans != (256*color[8+2*(i*w+j)]+color[8+2*(i*w+j)+1]))
-				WriteDispData(color[8+2*(i*w+j)], color[8+2*(i*w+j)+1]);//显示不透明的颜色 
-			else
-				WriteDispData(BACK_COLOR>>8, BACK_COLOR);//显示不透明的颜色 
-		}
+		for(i=0;i<(readlen/2);i++)
+			WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
 	#endif
-	}		  
+	}
 }
 
 
@@ -315,9 +402,10 @@ void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t tr
 //rotate:旋转角度,0,90,180,270,
 void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned int rotate)
 {
-	uint16_t w,h;
-	uint16_t i,j;
-	u8_t databuf[2*COL] = {0};
+	uint16_t h,w,show_w,show_h;
+	uint32_t i,j=0;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t offset=8,datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	w=256*color[2]+color[3]; 			//获取图片宽度
 	h=256*color[4]+color[5];			//获取图片高度
@@ -325,83 +413,208 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 	switch(rotate)
 	{
 	case 0:
-		for(i=0;i<h;i++)
+		if((x+w)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = w;
+		
+		if((y+h)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = h;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < w)
+			readlen = 2*show_w;
+		
+		while(datelen)
 		{
-			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			memcpy(databuf, &color[offset], readlen);
+			
+			if(show_w < w)
+				offset += 2*w;
+			else
+				offset += readlen;
 
 		#ifdef LCD_TYPE_SPI
-			for(j=0;j<w;j++)
+			DispDate(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
+		#endif
+		}		
+		break;
+		
+	case 90:
+		offset += 2*w*(h-1);
+	
+		if((x+h)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = h;
+		
+		if((y+w)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = w;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < h)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			if(datelen < readlen)
 			{
-				databuf[2*j] = color[8+2*(i*w+j)];
-				databuf[2*j+1] = color[8+2*(i*w+j)+1];
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				databuf[2*i] = color[(offset+2*((j/h)-w*(j%h)))];
+				databuf[2*i+1] = color[(offset+2*((j/h)-w*(j%h)))+1];
 			}
 
-			DispDate(2*w, databuf);
+			if(show_w < h)
+			{
+				offset += 2;
+				j = 0;
+			}
+			
+		#ifdef LCD_TYPE_SPI
+			DispDate(readlen, databuf);
 		#else
-			for(j=0;j<w;j++)
-				WriteDispData(color[8+2*(i*w+j)], color[8+2*(i*w+j)+1]);//显示颜色 
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
 		#endif
 		}	
 		break;
 		
-	case 90:
-		for(i=0;i<w;i++)
-		{
-			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+	case 180:
+		offset += 2*(w*h-1);
+		
+		if((x+w)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = w;
+		
+		if((y+h)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = h;
 
-		#ifdef LCD_TYPE_SPI
-			for(j=0;j<h;j++)
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < w)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			if(datelen < readlen)
 			{
-				databuf[2*j] = color[8+2*(i+w*(h-1)-j*w)];
-				databuf[2*j+1] = color[8+2*(i+w*(h-1)-j*w)+1];
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				databuf[2*i] = color[(offset-2*j)];
+				databuf[2*i+1] = color[(offset-2*j)+1];
 			}
 
-			DispDate(2*h, databuf);
+			if(show_w < w)
+			{
+				offset -= 2*w;
+				j = 0;
+			}
+			
+		#ifdef LCD_TYPE_SPI
+			DispDate(readlen, databuf);
 		#else
-			for(j=0;j<h;j++)
-				WriteDispData(color[8+2*(i+w*(h-1)-j*w)], color[8+2*(i+w*(h-1)-j*w)+1]);//显示颜色 
-		#endif	
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
+		#endif
 		}
 		break;
 		
-	case 180:
-		for(i=0;i<h;i++)
+	case 270:
+		offset += 2*(w-1);
+			
+		if((x+h)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = h;
+		
+		if((y+w)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = w;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < h)
+			readlen = 2*show_w;
+		
+		while(datelen)
 		{
-			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				databuf[2*i] = color[(offset-2*(j/h)+2*w*(j%h))];
+				databuf[2*i+1] = color[(offset-2*(j/h)+2*w*(j%h))+1];
+			}
+
+			if(show_w < w)
+			{
+				offset -= 2;
+				j = 0;
+			}
 			
 		#ifdef LCD_TYPE_SPI
-			for(j=0;j<w;j++)
-			{
-				databuf[2*j] = color[8+2*((w*h-1)-w*i-j)];
-				databuf[2*j+1] = color[8+2*((w*h-1)-w*i-j)+1];
-			}
-
-			DispDate(2*w, databuf);
+			DispDate(readlen, databuf);
 		#else
-			for(j=0;j<w;j++)
-				WriteDispData(color[8+2*((w*h-1)-w*i-j)], color[8+2*((w*h-1)-w*i-j)+1]);//显示颜色 
-		#endif	
-		}		
-		break;
-		
-	case 270:
-		for(i=0;i<w;i++)
-		{
-			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
-
-		#ifdef LCD_TYPE_SPI
-			for(j=0;j<h;j++)
-			{
-				databuf[2*j] = color[8+2*(w-1-i+w*j)];
-				databuf[2*j+1] = color[8+2*(w-1-i+w*j)+1];
-			}
-
-			DispDate(2*h, databuf);
-		#else
-			for(j=0;j<h;j++)
-				WriteDispData(color[8+2*(w-1-i+w*j)], color[8+2*(w-1-i+w*j)+1]);//显示颜色 
-		#endif		
-		}		
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
+		#endif
+		}
 		break;
 	}
 }
@@ -413,9 +626,10 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 //rotate:旋转角度,0,90,180,270,
 void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate)
 {
-	uint16_t w,h;
-	uint16_t i,j;
-	u8_t databuf[2*COL] = {0};
+	uint16_t h,w,show_w,show_h;
+	uint32_t i,j=0;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t offset=8,datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	w=256*color[2]+color[3]; 			//获取图片宽度
 	h=256*color[4]+color[5];			//获取图片高度
@@ -423,135 +637,241 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 	switch(rotate)
 	{
 	case 0:
-		for(i=0;i<h;i++)
-		{
-			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+		if((x+w)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = w;
+		
+		if((y+h)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = h;
 
-		#ifdef LCD_TYPE_SPI
-			for(j=0;j<w;j++)
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < w)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			if(datelen < readlen)
 			{
-				if(trans != (256*color[8+2*(i*w+j)]+color[8+2*(i*w+j)+1]))
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			memcpy(databuf, &color[offset], readlen);
+			
+			if(show_w < w)
+				offset += 2*w;
+			else
+				offset += readlen;
+
+			for(i=0;i<(readlen/2);i++)
+			{
+				if(trans == (256*databuf[2*i]+databuf[2*i+1]))
 				{
-					databuf[2*j] = color[8+2*(i*w+j)];
-					databuf[2*j+1] = color[8+2*(i*w+j)+1];
-				}
-				else
-				{
-					databuf[2*j] = BACK_COLOR>>8;
-					databuf[2*j+1] = BACK_COLOR;
+					databuf[2*i] = BACK_COLOR>>8;
+					databuf[2*i+1] = BACK_COLOR;
 				}
 			}
 			
-			DispDate(2*w, databuf);
-		#else	
-			for(j=0;j<w;j++)
-			{
-				if(trans != (256*color[8+2*(i*w+j)]+color[8+2*(i*w+j)+1]))
-					WriteDispData(color[8+2*(i*w+j)], color[8+2*(i*w+j)+1]);
-				else
-					WriteDispData(BACK_COLOR>>8, BACK_COLOR);
-			}
+		#ifdef LCD_TYPE_SPI
+			DispDate(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
 		#endif
-		}	
+		}		
 		break;
 		
 	case 90:
-		for(i=0;i<w;i++)
+		offset += 2*w*(h-1);
+	
+		if((x+h)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = h;
+		
+		if((y+w)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = w;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < h)
+			readlen = 2*show_w;
+		
+		while(datelen)
 		{
-			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				databuf[2*i] = color[(offset+2*((j/h)-w*(j%h)))];
+				databuf[2*i+1] = color[(offset+2*((j/h)-w*(j%h)))+1];
+			}
 
+			if(show_w < h)
+			{
+				offset += 2;
+				j = 0;
+			}
+
+			for(i=0;i<(readlen/2);i++)
+			{
+				if(trans == (256*databuf[2*i]+databuf[2*i+1]))
+				{
+					databuf[2*i] = BACK_COLOR>>8;
+					databuf[2*i+1] = BACK_COLOR;
+				}
+			}
+					
 		#ifdef LCD_TYPE_SPI
-			for(j=0;j<h;j++)
-			{
-				if(trans != (256*color[8+2*(i+w*(h-1)-j*w)]+color[8+2*(i+w*(h-1)-j*w)+1]))
-				{
-					databuf[2*j] = color[8+2*(i+w*(h-1)-j*w)];
-					databuf[2*j+1] = color[8+2*(i+w*(h-1)-j*w)+1];
-				}
-				else
-				{
-					databuf[2*j] = BACK_COLOR>>8;
-					databuf[2*j+1] = BACK_COLOR;
-				}
-
-			}
-
-			DispDate(2*h, databuf);
+			DispDate(readlen, databuf);
 		#else
-			for(j=0;j<h;j++)
-			{
-				if(trans != (256*color[8+2*(i+w*(h-1)-j*w)]+color[8+2*(i+w*(h-1)-j*w)+1]))
-					WriteDispData(color[8+2*(i+w*(h-1)-j*w)], color[8+2*(i+w*(h-1)-j*w)+1]);
-				else
-					WriteDispData(BACK_COLOR>>8, BACK_COLOR);
-			}
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
 		#endif
 		}
 		break;
 		
 	case 180:
-		for(i=0;i<h;i++)
+		offset += 2*(w*h-1);
+		
+		if((x+w)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = w;
+		
+		if((y+h)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = h;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < w)
+			readlen = 2*show_w;
+		
+		while(datelen)
 		{
-			BlockWrite(x,y+i,w,1);	  	//设置刷新位置
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
 			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				databuf[2*i] = color[(offset-2*j)];
+				databuf[2*i+1] = color[(offset-2*j)+1];
+			}
+
+			if(show_w < w)
+			{
+				offset -= 2*w;
+				j = 0;
+			}
+
+			for(i=0;i<(readlen/2);i++)
+			{
+				if(trans == (256*databuf[2*i]+databuf[2*i+1]))
+				{
+					databuf[2*i] = BACK_COLOR>>8;
+					databuf[2*i+1] = BACK_COLOR;
+				}
+			}	
 		#ifdef LCD_TYPE_SPI
-			for(j=0;j<w;j++)
-			{
-				if(trans != (256*color[8+2*((w*h-1)-w*i-j)]+color[8+2*((w*h-1)-w*i-j)+1]))
-				{
-					databuf[2*j] = color[8+2*((w*h-1)-w*i-j)];
-					databuf[2*j+1] = color[8+2*((w*h-1)-w*i-j)+1];				
-				}
-				else
-				{
-					databuf[2*j] = BACK_COLOR>>8;
-					databuf[2*j+1] = BACK_COLOR;
-				}
-
-			}
-
-			DispDate(2*w, databuf);
+			DispDate(readlen, databuf);
 		#else
-			for(j=0;j<w;j++)
-			{
-				if(trans != (256*color[8+2*((w*h-1)-w*i-j)]+color[8+2*((w*h-1)-w*i-j)+1]))
-					WriteDispData(color[8+2*((w*h-1)-w*i-j)], color[8+2*((w*h-1)-w*i-j)+1]);
-				else
-					WriteDispData(BACK_COLOR>>8, BACK_COLOR);
-			}
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
 		#endif
 		}		
 		break;
 		
 	case 270:
-		for(i=0;i<w;i++)
+		offset += 2*(w-1);
+			
+		if((x+h)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = h;
+		
+		if((y+w)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = w;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < h)
+			readlen = 2*show_w;
+		
+		while(datelen)
 		{
-			BlockWrite(x,y+i,h,1);	  	//设置刷新位置
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				databuf[2*i] = color[(offset-2*(j/h)+2*w*(j%h))];
+				databuf[2*i+1] = color[(offset-2*(j/h)+2*w*(j%h))+1];
+			}
 
+			if(show_w < w)
+			{
+				offset -= 2;
+				j = 0;
+			}
+
+			for(i=0;i<(readlen/2);i++)
+			{
+				if(trans == (256*databuf[2*i]+databuf[2*i+1]))
+				{
+					databuf[2*i] = BACK_COLOR>>8;
+					databuf[2*i+1] = BACK_COLOR;
+				}
+			}
+					
 		#ifdef LCD_TYPE_SPI
-			for(j=0;j<h;j++)
-			{
-				if(trans != (256*color[8+2*(w-1-i+w*j)]+color[8+2*(w-1-i+w*j)+1]))
-				{
-					databuf[2*j] = color[8+2*(w-1-i+w*j)];
-					databuf[2*j+1] = color[8+2*(w-1-i+w*j)+1];			
-				}
-				else
-				{
-					databuf[2*j] = BACK_COLOR>>8;
-					databuf[2*j+1] = BACK_COLOR;
-				}
-			}
-
-			DispDate(2*h, databuf);
-		#else	
-			for(j=0;j<h;j++)
-			{
-				if(trans != (256*color[8+2*(w-1-i+w*j)]+color[8+2*(w-1-i+w*j)+1]))
-					WriteDispData(color[8+2*(w-1-i+w*j)], color[8+2*(w-1-i+w*j)+1]);
-				else
-					WriteDispData(BACK_COLOR>>8, BACK_COLOR);
-			}
+			DispDate(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
 		#endif
 		}		
 		break;
@@ -562,6 +882,7 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 //x,y:起始坐标
 //num:要显示的字符:" "--->"~"
 //mode:叠加方式(1)还是非叠加方式(0)
+#ifndef IMG_FONT_FROM_FLASH
 void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
     u8_t temp,t1,t,i=0;
@@ -661,6 +982,7 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 		}	
 	}  	    	   	 	  
 }   
+#endif
 
 //在指定位置显示flash中一个字符
 //x,y:起始坐标
@@ -668,43 +990,43 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
-    u8_t temp,t1,t,i=0;
-	u16_t y0=y,x0=x;
+	u8_t temp,t1,t;
 	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
- 	u8_t databuf[2*COL] = {0};
+ 	u8_t databuf[2*1024] = {0};
+	u8_t fontbuf[128] = {0};
+	u16_t y0=y,x0=x;
+	u32_t i=0;
 	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
-	for(t=0;t<csize;t++)
+	switch(system_font)
 	{
-		switch(system_font)
-		{
-		#ifdef FONT_16
-			case FONT_SIZE_16:
-				SpiFlash_Read(&temp, FONT_ASC_1608_ADDR+csize*num+t, 1);
-				//temp=asc2_1608[num][t]; 	 	//调用1608字体
-				break;
-		#endif
-		#ifdef FONT_24
-			case FONT_SIZE_24:
-				SpiFlash_Read(&temp, FONT_ASC_2412_ADDR+csize*num+t, 1);
-				//temp=asc2_2412[num][t];			//调用2412字体
-				break;
-		#endif
-		#ifdef FONT_32
-			case FONT_SIZE_32:
-				SpiFlash_Read(&temp, FONT_ASC_3216_ADDR+csize*num+t, 1);
-				//temp=asc2_3216[num][t];			//调用3216字体
-				break;
-		#endif
-			default:
-				return;							//没有的字库
-		}
-
-	#ifdef LCD_TYPE_SPI
-		BlockWrite(x0,y,(system_font/2),1);	  	//设置刷新位置
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			SpiFlash_Read(fontbuf, FONT_ASC_1608_ADDR+csize*num, csize);
+			break;
 	#endif
-	
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			SpiFlash_Read(fontbuf, FONT_ASC_2412_ADDR+csize*num, csize);
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			SpiFlash_Read(fontbuf, FONT_ASC_3216_ADDR+csize*num, csize);
+			break;
+	#endif
+		default:
+			return;							//没有的字库
+	}
+
+#ifdef LCD_TYPE_SPI
+	BlockWrite(x,y,(system_font/2),system_font); 	//设置刷新位置
+#endif
+
+	for(t=0;t<csize;t++)
+	{		
+		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
@@ -724,24 +1046,28 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
-				i=0;
-
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return;	//超区域了
+				if(y>=LCD_HEIGHT)
+				{
+					DispDate(2*i, databuf);
+					return;	//超区域了
+				}
+				
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 
 			}
 			if((x-x0)==(system_font/2))
 			{
-				DispDate(2*i, databuf);
-				i=0;
-				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return;	//超区域了
+				if(y>=LCD_HEIGHT)
+				{
+					DispDate(2*i, databuf);
+					return;	//超区域了
+				}
+				
 				break;
 			}
 		#else
@@ -765,8 +1091,12 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 				break;
 			}
 		#endif
-		}	
-	}  	    	   	 	  
+		}
+	}
+
+#ifdef LCD_TYPE_SPI
+	DispDate(2*i, databuf);
+#endif
 }   
 
 
@@ -774,6 +1104,7 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 //x,y:起始坐标
 //num:要显示的字符:" "--->"~"
 //mode:叠加方式(1)还是非叠加方式(0)
+#ifndef IMG_FONT_FROM_FLASH
 void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 {  							  
 	u8_t temp,t1,t,i=0;
@@ -873,6 +1204,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 		} 
 	}  	    	   	 	  
 }   
+#endif
 
 //在指定位置显示flash中一个中文字符
 //x,y:起始坐标
@@ -880,44 +1212,44 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 {  							  
-	u8_t temp,t1,t,i=0;
+	u8_t temp,t1,t;
 	u16_t x0=x,y0=y;
 	u16_t index=0;
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//行扫描，每个字符每一行占用的字节数
 	u8_t csize=cbyte*(system_font);		//得到字体一个字符对应点阵集所占的字节数	
-	u8_t databuf[2*COL] = {0};
-
-	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
-	for(t=0;t<csize;t++)
-	{	
-		switch(system_font)
-		{
-		#ifdef FONT_16
-			case FONT_SIZE_16:
-				SpiFlash_Read(&temp, FONT_CHN_SM_1616_ADDR+csize*index+t, 1);
-				//temp=chinese_1616[index][t]; 	 	//调用1616字体
-				break;
-		#endif
-		#if 0//def FONT_24
-			case FONT_SIZE_24:
-				SpiFlash_Read(&temp, FONT_CHN_SM_2424_ADDR+csize*index+t, 1);
-				//temp=chinese_2424[index][t];		//调用2424字体
-				break;
-		#endif
-		#if 0//def FONT_32
-			case FONT_SIZE_32:
-				SpiFlash_Read(&temp, FONT_CHN_SM_3232_ADDR+csize*index+t, 1);
-				//temp=chinese_3232[index][t];		//调用3232字体
-				break;
-		#endif
-			default:
-				return;								//没有的字库
-		}	
-
-	#ifdef LCD_TYPE_SPI
-		BlockWrite(x0,y,system_font,1);	  	//设置刷新位置
-	#endif
+	u8_t databuf[2*1024] = {0};
+	u8_t fontbuf[128] = {0};
+	u32_t i=0;
 	
+	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			SpiFlash_Read(fontbuf, FONT_CHN_SM_1616_ADDR+csize*index+t, csize);
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			SpiFlash_Read(fontbuf, FONT_CHN_SM_2424_ADDR+csize*index+t, csize);
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			SpiFlash_Read(fontbuf, FONT_CHN_SM_3232_ADDR+csize*index+t, csize);
+			break;
+	#endif
+		default:
+			return;								//没有的字库
+	}	
+
+#ifdef LCD_TYPE_SPI
+	BlockWrite(x0,y,system_font,system_font); 	//设置刷新位置
+#endif
+
+	for(t=0;t<csize;t++)
+	{
+		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
@@ -937,23 +1269,27 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
-				i=0;
-
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return;	//超区域了
+				if(y>=LCD_HEIGHT)
+				{
+					DispDate(2*i, databuf);
+					return;	//超区域了
+				}
+				
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 			}
 			if((x-x0)==(system_font))
 			{
-				DispDate(2*i, databuf);
-				i=0;
-				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return;	//超区域了
+				if(y>=LCD_HEIGHT)
+				{
+					DispDate(2*i, databuf);
+					return;	//超区域了
+				}
+				
 				break;
 			}			
 		#else
@@ -978,7 +1314,11 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 			}
 		#endif
 		} 
-	}  	    	   	 	  
+	} 
+
+#ifdef LCD_TYPE_SPI
+	DispDate(2*i, databuf);
+#endif	
 }   
 
 //在指定矩形区域内显示中英文字符串
@@ -998,7 +1338,11 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
         if(y>=height)break;//退出
 		if(*p<0x80)
 		{
+		#ifdef IMG_FONT_FROM_FLASH
+			LCD_ShowChar_from_flash(x,y,*p,0);
+		#else
 			LCD_ShowChar(x,y,*p,0);
+		#endif
 			x+=system_font/2;
 			p++;
 		}
@@ -1006,7 +1350,11 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
         {
 			phz = *p<<8;
 			phz += *(p+1);
+		#ifdef IMG_FONT_FROM_FLASH
+			LCD_ShowChineseChar_from_flash(x,y,phz,0);
+		#else
 			LCD_ShowChineseChar(x,y,phz,0);
+		#endif
 			x+=system_font;
 			p+=2;
 		}        
@@ -1075,12 +1423,22 @@ void LCD_ShowNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len)
 		{
 			if(temp==0)
 			{
+			#ifdef IMG_FONT_FROM_FLASH
+				LCD_ShowChar_from_flash(x+(system_font/2)*t,y,' ',0);
+			#else
 				LCD_ShowChar(x+(system_font/2)*t,y,' ',0);
+			#endif
 				continue;
-			}else enshow=1; 
+			}
+			else 
+				enshow=1; 
 		 	 
 		}
+	#ifdef IMG_FONT_FROM_FLASH
+		LCD_ShowChar_from_flash(x+(system_font/2)*t,y,temp+'0',0);
+	#else
 	 	LCD_ShowChar(x+(system_font/2)*t,y,temp+'0',0); 
+	#endif
 	}
 }
 
@@ -1103,13 +1461,33 @@ void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
 		{
 			if(temp==0)
 			{
-				if(mode&0X80)LCD_ShowChar(x+(system_font/2)*t,y,'0',mode&0X01);  
-				else LCD_ShowChar(x+(system_font/2)*t,y,' ',mode&0X01);  
+				if(mode&0X80)
+				{
+				#ifdef IMG_FONT_FROM_FLASH
+					LCD_ShowChar_from_flash(x+(system_font/2)*t,y,'0',mode&0X01);
+				#else
+					LCD_ShowChar(x+(system_font/2)*t,y,'0',mode&0X01);
+				#endif
+				}
+				else 
+				{
+				#ifdef IMG_FONT_FROM_FLASH
+					LCD_ShowChar_from_flash(x+(system_font/2)*t,y,' ',mode&0X01);
+				#else
+					LCD_ShowChar(x+(system_font/2)*t,y,' ',mode&0X01); 
+				#endif
+				}
+				
  				continue;
-			}else enshow=1; 
-		 	 
+			}
+			else 
+				enshow=1; 
 		}
-	 	LCD_ShowChar(x+(system_font/2)*t,y,temp+'0',mode&0X01); 
+	#ifdef IMG_FONT_FROM_FLASH
+		LCD_ShowChar_from_flash(x+(system_font/2)*t,y,temp+'0',mode&0X01);
+	#else
+	 	LCD_ShowChar(x+(system_font/2)*t,y,temp+'0',mode&0X01);
+	#endif
 	}
 } 
 

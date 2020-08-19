@@ -6,7 +6,8 @@
 
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
-#define LCD_ORCT012210N_ST7789V2
+//#define LCD_ORCT012210N_ST7789V2
+#define LCD_R108101_GC9307
 
 //#define LCD_TYPE_PARALLEL		//并口
 //#define LCD_TYPE_I2C			//I2C
@@ -45,7 +46,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 //以上三色为PANEL的颜色 
  
 #define LIGHTGREEN     	 0X841F //浅绿色
-//#define LIGHTGRAY        0XEF5B //浅灰色(PANNEL)
+#define LIGHTGRAY        0XEF5B //浅灰色(PANNEL)
 #define LGRAY 			 0XC618 //浅灰色(PANNEL),窗体背景色
 
 #define LGRAYBLUE        0XA651 //浅灰蓝色(中间层颜色)

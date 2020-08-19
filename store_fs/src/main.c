@@ -222,10 +222,9 @@ int main(void)
 	system_init();
 	dk_set_led(DK_LED1,1);
 
-	test_show_string();
-//	test_show_image();
+//	test_show_string();
+	test_show_image();
 //	test_nvs();
-
 //	test_flash();
 
 

@@ -41,7 +41,7 @@
 
 #define	SPIFlash_PAGE_SIZE		256
 #define	SPIFlash_SECTOR_SIZE	(1024*4)
-#define	SPI_TXRX_MAX_LEN		255
+#define	SPI_TXRX_MAX_LEN		(1024*4)	//255	(1024*2)
 
 #define	FLASH_BLOCK_NUMBLE		128
 #define	FLASH_PAGE_NUMBLE		32768

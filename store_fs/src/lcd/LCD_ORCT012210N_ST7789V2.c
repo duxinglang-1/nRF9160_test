@@ -28,10 +28,8 @@ bool lcd_is_sleeping = true;
 
 static void LCD_SPI_Init(void)
 {
-	printk("spi_init\n");
-	
 	spi_lcd = device_get_binding(SPI_DEV);
-	if (!spi_lcd) 
+	if(!spi_lcd) 
 	{
 		printk("Could not get %s device\n", SPI_DEV);
 		return;
@@ -133,14 +131,14 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	WriteComm(0x2A);             
 	WriteData(x>>8);             
 	WriteData(x);             
-	WriteData((x+w)>>8);             
-	WriteData((x+w));             
+	WriteData((x+w-1)>>8);             
+	WriteData((x+w-1));             
 
 	WriteComm(0x2B);             
 	WriteData(y>>8);             
 	WriteData(y);             
-	WriteData((y+h)>>8);//	WriteData((Yend+1)>>8);             
-	WriteData((y+h));//	WriteData(Yend+1);   	
+	WriteData((y+h-1)>>8);//	WriteData((Yend+1)>>8);             
+	WriteData((y+h-1));//	WriteData(Yend+1);   	
 
 	WriteComm(0x2c);
 }
@@ -219,7 +217,7 @@ void DispFrame(void)
 {
 	unsigned int i,j;
 
-	BlockWrite(0,0,COL-1,ROW-1);
+	BlockWrite(0,0,COL,ROW);
 
 	WriteDispData(0xf8, 0x00);
 
@@ -268,7 +266,7 @@ bool LCD_CheckID(void)
 //color:要清屏的填充色
 void LCD_Clear(uint16_t color)
 {
-	BlockWrite(0,0,COL-1,ROW-1);//定位
+	BlockWrite(0,0,COL,ROW);//定位
 
 	DispColor(COL*ROW, color);
 } 

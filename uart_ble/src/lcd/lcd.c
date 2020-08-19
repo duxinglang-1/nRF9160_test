@@ -10,6 +10,8 @@
 #include "LCD_LH096TIG11G_ST7735SV.h"
 #elif defined(LCD_ORCT012210N_ST7789V2)
 #include "LCD_ORCT012210N_ST7789V2.h"
+#elif defined(LCD_R108101_GC9307)
+#include "LCD_R108101_GC9307.h"
 #endif 
 
 

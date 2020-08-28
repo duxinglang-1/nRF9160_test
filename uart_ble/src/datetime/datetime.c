@@ -302,7 +302,14 @@ void IdleShowSystemDate(void)
 
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
+	
+#ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
+#elif FONT_24
+	LCD_SetFontSize(FONT_SIZE_24);
+#else
+	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 	GetSystemDateStrings(str_date);
 	LCD_MeasureString(str_date,&w,&h);
@@ -320,7 +327,14 @@ void IdleShowSystemTime(void)
 
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
+	
+#ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
+#elif FONT_24
+	LCD_SetFontSize(FONT_SIZE_24);
+#else
+	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 	GetSystemTimeStrings(str_time);
 	LCD_MeasureString(str_time,&w,&h);
@@ -342,7 +356,14 @@ void IdleShowSystemWeek(void)
 
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
+
+#ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
+#elif FONT_24
+	LCD_SetFontSize(FONT_SIZE_24);
+#else
+	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 	GetSystemWeekStrings(str_week);
 	LCD_MeasureString(str_week,&w,&h);

@@ -12,8 +12,8 @@
 #include <dk_buttons_and_leds.h>
 #include "datetime.h"
 #include "Settings.h"
+#include "Uart_ble.h"
 
-#define UART_DEV	"UART_1"
 #define BUF_MAXSIZE	1024
 
 #define PACKET_HEAD	0xAB
@@ -54,7 +54,7 @@ static u32_t rece_len=0;
 static u8_t rx_buf[BUF_MAXSIZE]={0};
 static u8_t tx_buf[BUF_MAXSIZE]={0};
 
-static struct device *uart_dev;
+static struct device *uart_ble;
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
@@ -377,8 +377,8 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 {
 	printk("ble_send_date_handle\n");
 
-	uart_fifo_fill(uart_dev, buf, len);
-	uart_irq_tx_enable(uart_dev); 
+	uart_fifo_fill(uart_ble, buf, len);
+	uart_irq_tx_enable(uart_ble); 
 }
 
 static void uart_receive_data(u8_t data, u32_t datalen)
@@ -400,8 +400,8 @@ void uart_send_data(void)
 {
 	printk("uart_send_data\n");
 	
-	uart_fifo_fill(uart_dev, "Hello World!", strlen("Hello World!"));
-	uart_irq_tx_enable(uart_dev); 
+	uart_fifo_fill(uart_ble, "Hello World!", strlen("Hello World!"));
+	uart_irq_tx_enable(uart_ble); 
 }
 
 static void uart_cb(struct device *x)
@@ -455,15 +455,15 @@ void ble_init(void)
 {
 	printk("ble_init\n");
 	
-	uart_dev = device_get_binding(UART_DEV);
-	if(!uart_dev)
+	uart_ble = device_get_binding(BLE_DEV);
+	if(!uart_ble)
 	{
-		printk("Could not get %s device\n", UART_DEV);
+		printk("Could not get %s device\n", BLE_DEV);
 		return;
 	}
 
-	uart_irq_callback_set(uart_dev, uart_cb);
-	uart_irq_rx_enable(uart_dev);
+	uart_irq_callback_set(uart_ble, uart_cb);
+	uart_irq_rx_enable(uart_ble);
 }
 
 void test_uart_ble(void)

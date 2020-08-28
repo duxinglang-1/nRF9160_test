@@ -7,7 +7,6 @@
 #ifdef LCD_R108101_GC9307
 #include "LCD_R108101_GC9307.h"
 
-#define SPI_DEV "SPI_3"
 #define SPI_BUF_LEN	8
 
 struct device *spi_lcd;
@@ -28,10 +27,10 @@ bool lcd_is_sleeping = true;
 
 static void LCD_SPI_Init(void)
 {
-	spi_lcd = device_get_binding(SPI_DEV);
+	spi_lcd = device_get_binding(LCD_DEV);
 	if(!spi_lcd) 
 	{
-		printk("Could not get %s device\n", SPI_DEV);
+		printk("Could not get %s device\n", LCD_DEV);
 		return;
 	}
 

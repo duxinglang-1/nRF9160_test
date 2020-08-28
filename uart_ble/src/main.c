@@ -20,6 +20,7 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
+#include "CST816.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -367,9 +368,9 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_PEPPA_160X160_ADDR, &w, &h);
-	//LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_160X160_ADDR);
-	while(1)
+	LCD_get_pic_size_from_flash(IMG_PEPPA_240X240_ADDR, &w, &h);
+	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_240X240_ADDR);
+	while(0)
 	{
 		switch(i)
 		{
@@ -581,10 +582,12 @@ int main(void)
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
-	test_imei();
+//	test_imei();
+	test_tp();
 
-	while(0)
+	while(1)
 	{
+	#if 0
 		if(update_time || update_date || update_week || update_date_time)
 		{
 			if(update_date_time || show_date_time_first)
@@ -612,7 +615,7 @@ int main(void)
 			count = !count;
 			dk_set_led(DK_LED2,count);
 		}
-
+	#endif
 		if(sys_time_count)
 		{
 			sys_time_count = false;
@@ -630,7 +633,13 @@ int main(void)
 			need_save_settings = false;
 			SaveSystemSettings();
 		}
-		
+	#if 1
+		if(tp_trige_flag)
+		{
+			tp_trige_flag = false;
+			CST816_interrupt_proc();
+		}
+	#endif	
 		if(lcd_sleep_in)
 		{
 			lcd_sleep_in = false;

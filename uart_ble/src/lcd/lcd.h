@@ -13,7 +13,7 @@
 //#define LCD_TYPE_I2C			//I2C
 #define LCD_TYPE_SPI			//SPI
 
-#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 //LCD的宽度和高度
 extern uint16_t  LCD_WIDTH;

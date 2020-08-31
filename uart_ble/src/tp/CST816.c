@@ -15,9 +15,6 @@
 #include <dk_buttons_and_leds.h>
 #include "cst816.h"
 
-#define CTP_PORT 	"GPIO_0"
-#define CTP_DEV 	"I2C_1"
-
 bool tp_trige_flag = false;
 
 struct device *i2c_ctp;
@@ -43,15 +40,11 @@ static u8_t init_i2c(void)
 
 static s32_t platform_write(u8_t reg, u8_t *bufp, u16_t len)
 {
-	u8_t i=0;
 	u8_t data[len+1];
 	u32_t rslt = 0;
 
 	data[0] = reg;
-	for(i=0;i<len;i++)
-	{
-		data[i+1] = bufp[i];
-	}
+	memcpy(&data[1], bufp, len);
 	rslt = i2c_write(i2c_ctp, data, len+1, CST816_I2C_ADDRESS);
 
 	return rslt;

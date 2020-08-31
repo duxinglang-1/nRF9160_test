@@ -13,6 +13,9 @@
 #include <device.h>
 #include <stdio.h>
 
+#define CTP_PORT 	"GPIO_0"
+#define CTP_DEV 	"I2C_1"
+
 #define CTP_RESET		16
 #define CTP_EINT		25
 #define CTP_SCL			1

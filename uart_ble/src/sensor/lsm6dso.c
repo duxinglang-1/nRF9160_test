@@ -53,10 +53,9 @@ static int32_t platform_write(void *handle, uint8_t reg, uint8_t* bufp, uint16_t
 {
   uint32_t rslt = 0;
   uint8_t data[len+1];
+  
   data[0] = reg;
-  for(uint8_t i = 0; i < len; i++){
-    data[i+1] = bufp[i];
-  }
+  memcpy(&data[1], bufp, len);
   rslt = i2c_write(LSM6DSO_I2C, data, len+1, LSM6DSO_I2C_ADD);
 
   return rslt;

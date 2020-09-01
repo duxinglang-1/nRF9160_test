@@ -20,7 +20,8 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
-#include "CST816.h"
+//#include "CST816.h"
+#include "Max20353.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -550,6 +551,7 @@ static void buttons_leds_init(void)
 
 void system_init(void)
 {
+	pmu_init();
 	InitSystemSettings();
 	buttons_leds_init();
 	key_init();
@@ -583,11 +585,11 @@ int main(void)
 //	test_pmu();
 //	test_crypto();
 //	test_imei();
-	test_tp();
+//	test_tp();
 
 	while(1)
 	{
-	#if 0
+	#if 1
 		if(update_time || update_date || update_week || update_date_time)
 		{
 			if(update_date_time || show_date_time_first)
@@ -633,13 +635,20 @@ int main(void)
 			need_save_settings = false;
 			SaveSystemSettings();
 		}
-	#if 1
+	#if 0
 		if(tp_trige_flag)
 		{
 			tp_trige_flag = false;
-			CST816_interrupt_proc();
+			tp_interrupt_proc();
 		}
 	#endif	
+	#if 1
+		if(pmu_trige_flag)
+		{
+			pmu_trige_flag = false;
+			pmu_interrupt_proc();
+		}
+	#endif
 		if(lcd_sleep_in)
 		{
 			lcd_sleep_in = false;

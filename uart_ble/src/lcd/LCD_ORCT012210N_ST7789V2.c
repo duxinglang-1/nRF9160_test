@@ -304,11 +304,6 @@ void LCD_SleepOut(void)
 	lcd_is_sleeping = false;
 }
 
-//屏幕显示数据
-void LCD_Show()
-{
-
-}
 //LCD初始化函数
 void LCD_Init(void)
 {

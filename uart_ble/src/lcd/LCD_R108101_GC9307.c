@@ -3,6 +3,10 @@
 
 #include "lcd.h"
 #include "font.h" 
+#include "settings.h"
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+#include "Max20353.h"
+#endif
 
 #ifdef LCD_R108101_GC9307
 #include "LCD_R108101_GC9307.h"
@@ -15,15 +19,22 @@ struct device *gpio_lcd;
 struct spi_buf_set tx_bufs,rx_bufs;
 struct spi_buf tx_buff,rx_buff;
 
+static struct k_timer backlight_timer;
+
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
+static u32_t bk_time = 0;
+
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
 bool lcd_is_sleeping = true;
+
+extern bool lcd_sleep_in;
+extern bool lcd_sleep_out;
 
 static void LCD_SPI_Init(void)
 {
@@ -76,6 +87,11 @@ static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t r
 void Delay(unsigned int dly)
 {
 	k_sleep(K_MSEC(dly));
+}
+
+static void backlight_timer_handler(struct k_timer *timer)
+{
+	lcd_sleep_in = true;
 }
 
 //数据接口函数
@@ -281,8 +297,12 @@ void LCD_SleepIn(void)
 	Delay(120);             //延时120ms
 
 	//关闭背光
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_Off();
+#else
 	//gpio_pin_write(gpio_lcd, LEDK, 1);
 	gpio_pin_write(gpio_lcd, LEDA, 0);
+#endif
 
 	lcd_is_sleeping = true;
 }
@@ -298,22 +318,49 @@ void LCD_SleepOut(void)
 	WriteComm(0x29);
 
 	//点亮背光
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_On();
+#else
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
 	gpio_pin_write(gpio_lcd, LEDA, 1);                                                                                                         
-	
+#endif
+
 	lcd_is_sleeping = false;
+
+	switch(global_settings.backlight_time)
+	{
+	case BACKLIGHT_15_SEC:
+		bk_time = 15;
+		break;
+	case BACKLIGHT_30_SEC:
+		bk_time = 30;
+		break;
+	case BACKLIGHT_1_MIN:
+		bk_time = 60;
+		break;
+	case BACKLIGHT_2_MIN:
+		bk_time = 120;
+		break;
+	case BACKLIGHT_5_MIN:
+		bk_time = 300;
+		break;
+	case BACKLIGHT_10_MIN:
+		bk_time = 600;
+		break;
+	case BACKLIGHT_ALWAYS_ON:
+		bk_time = 0;
+		break;
+	}
+	
+	if(bk_time > 0)
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));
 }
 
-//屏幕显示数据
-void LCD_Show()
-{
-
-}
 //LCD初始化函数
 void LCD_Init(void)
 {
 	int err;
-
+	
 	printk("LCD_Init\n");
 	
   	//端口初始化
@@ -344,7 +391,6 @@ void LCD_Init(void)
 	WriteComm(0x11);     //Sleep out
 	Delay(120);          //Delay 120ms
 
-#if 1
 	WriteComm(0xfe);
 	WriteComm(0xef);	
 			
@@ -429,92 +475,47 @@ void LCD_Init(void)
 	WriteComm(0x29);
 	WriteComm(0x2c);
 
-#else
-	//--ST7789S Frame rate setting--// 
-	//--Display Setting--//
-	WriteComm(0x36);
-	WriteData(0x00);
-	WriteComm(0x3a);
-	WriteData(0x55);
-	WriteComm(0x21);
-	WriteComm(0x2a);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0xef);
-	WriteComm(0x2b);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0xef);
-	//--ST7789V Frame rate setting--//
-	WriteComm(0xb2);
-	WriteData(0x0c);
-	WriteData(0x0c);
-	WriteData(0x00);
-	WriteData(0x33);
-	WriteData(0x33);
-	WriteComm(0xb7);
-	WriteData(0x35);
-	//--ST7789V Power setting--//
-	WriteComm(0xbb);
-	WriteData(0x1f);
-	WriteComm(0xc0);
-	WriteData(0x2c);
-	WriteComm(0xc2);
-	WriteData(0x01);
-	WriteComm(0xc3);
-	WriteData(0x12);
-	WriteComm(0xc4);
-	WriteData(0x20);
-	WriteComm(0xc6);
-	WriteData(0x0f);
-	WriteComm(0xd0);
-	WriteData(0xa4);
-	WriteData(0xa1);
-	//--ST7789V gamma setting--//
-	WriteComm(0xe0);
-	WriteData(0xd0);
-	WriteData(0x08);
-	WriteData(0x11);
-	WriteData(0x08);
-	WriteData(0x0c);
-	WriteData(0x15);
-	WriteData(0x39);
-	WriteData(0x33);
-	WriteData(0x50);
-	WriteData(0x36);
-	WriteData(0x13);
-	WriteData(0x14);
-	WriteData(0x29);
-	WriteData(0x2d);
-	WriteComm(0xe1);
-	WriteData(0xd0);
-	WriteData(0x08);
-	WriteData(0x10);
-	WriteData(0x08);
-	WriteData(0x06);
-	WriteData(0x06);
-	WriteData(0x39);
-	WriteData(0x44);
-	WriteData(0x51);
-	WriteData(0x0b);
-	WriteData(0x16);
-	WriteData(0x14);
-	WriteData(0x2f);
-	WriteData(0x31);
-	//WriteComm(0xE7);
-	WriteComm(0x29);
-	WriteComm(0x2C);
-#endif
-
 	//点亮背光
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_On();
+#else
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
 	gpio_pin_write(gpio_lcd, LEDA, 1);
+#endif
 
 	lcd_is_sleeping = false;
 
 	LCD_Clear(BLACK);		//清屏为黑色
+
+	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
+
+	switch(global_settings.backlight_time)
+	{
+	case BACKLIGHT_15_SEC:
+		bk_time = 15;
+		break;
+	case BACKLIGHT_30_SEC:
+		bk_time = 30;
+		break;
+	case BACKLIGHT_1_MIN:
+		bk_time = 60;
+		break;
+	case BACKLIGHT_2_MIN:
+		bk_time = 120;
+		break;
+	case BACKLIGHT_5_MIN:
+		bk_time = 300;
+		break;
+	case BACKLIGHT_10_MIN:
+		bk_time = 600;
+		break;
+	case BACKLIGHT_ALWAYS_ON:
+		bk_time = 0;
+		break;
+	}
+	
+	if(bk_time > 0)
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));	
 }
 
 #endif/*LCD_R108101_GC9307*/

@@ -34,6 +34,18 @@ typedef enum
 	CLOCK_MODE_MAX
 }CLOCK_MODE;
 
+typedef enum
+{
+	BACKLIGHT_ALWAYS_ON,
+	BACKLIGHT_15_SEC,
+	BACKLIGHT_30_SEC,
+	BACKLIGHT_1_MIN,
+	BACKLIGHT_2_MIN,
+	BACKLIGHT_5_MIN,
+	BACKLIGHT_10_MIN,
+	BACKLIGHT_MAX
+}BACKLIGHT_TIME;
+
 typedef struct{
 	bool is_on;
 	u8_t hour;
@@ -51,6 +63,7 @@ typedef struct{
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
 	CLOCK_MODE idle_colck_mode;
+	BACKLIGHT_TIME backlight_time;
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen

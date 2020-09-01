@@ -616,7 +616,7 @@ void MAX20353_Init(void)
 	MAX20353_BuckBoostConfig();
 
 	//MAX20353_LED1(2, 0);
-	Set_Screen_Backlight_On();
+	//Set_Screen_Backlight_On();
 	//Set_Screen_Backlight_Off();
 }
 
@@ -674,7 +674,7 @@ void pmu_init(void)
     MAX20353_InitRAM();
 #endif
 
-    while(1)
+    while(0)
     {  
 		k_sleep(K_MSEC(1000)); 
 		//printf("  counter_time:%d\r\n", counter_time++);

@@ -98,7 +98,7 @@ void CaptouchInterruptHandle(void)
 	tp_trige_flag = true;
 }
 
-void CST816_interrupt_proc(void)
+void tp_interrupt_proc(void)
 {
 	u8_t tmpbuf[128] = {0};
 	u8_t TP_type = TP_EVENT_MAX;

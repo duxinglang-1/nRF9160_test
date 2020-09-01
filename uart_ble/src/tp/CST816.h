@@ -84,6 +84,6 @@ typedef enum
 extern bool tp_trige_flag;
 
 extern void CST816_init(void);
-extern void CST816_interrupt_proc(void);
+extern void tp_interrupt_proc(void);
 
 #endif/*__CST816_H__*/

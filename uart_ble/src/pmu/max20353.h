@@ -103,7 +103,11 @@ typedef enum
 	REG_LDO2_CONFIG_READ  = 0x43
 }max20353_reg_t;
 
-void test_sensor(void);
+extern bool pmu_trige_flag;
+
+void test_pmu(void);
+void pmu_init(void);
+
 void MAX20353_Init(void);
 
 int MAX20353_Buck1Config(void);
@@ -128,6 +132,9 @@ int MAX20353_RAMPatStart(unsigned char RAMPatAddr);
 int MAX20353_Pattern1(int Mode);
 int MAX20353_Pattern2(int Mode);
 int MAX20353_DirectWrite(int Amplitude, int time); 
+
+extern void Set_Screen_Backlight_On(void);
+extern void Set_Screen_Backlight_Off(void);
 
 int8_t congig_LED_Direct(void); 
 int8_t LED0_on(void);

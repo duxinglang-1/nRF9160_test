@@ -14,7 +14,11 @@ u8_t i2cbuffer_[16];
 u8_t appdatainoutbuffer_[8];
 u8_t appcmdoutvalue_;
 
-struct device *i2c_pmu;
+static struct device *i2c_pmu;
+static struct device *gpio_pmu;
+static struct gpio_callback gpio_cb;
+
+bool pmu_trige_flag = false;
 
 static bool init_i2c(void)
 {
@@ -130,10 +134,10 @@ int MAX20353_Buck1Config(void)
     int32_t ret = 0;
 	
     appcmdoutvalue_ = 0x35;
-    appdatainoutbuffer_[0] = 0x00;  //
-    appdatainoutbuffer_[1] = 0x2A;  // 0x28    0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
-    appdatainoutbuffer_[2] = 0x3F;  //0x2F  01 = 20mA, Use for 1V < Buck1VSet < 1.8V
-    appdatainoutbuffer_[3] = 0x01;  // Enable
+    appdatainoutbuffer_[0] = 0x00;  	//
+    appdatainoutbuffer_[1] = 0x2C;  	//0x28    0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
+    appdatainoutbuffer_[2] = 0x3F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x01;  	// Enable
     ret = MAX20353_AppWrite(4);
 	
     printf(" MAX20353_Buck1Config \r\n" );
@@ -147,8 +151,8 @@ int MAX20353_Buck2Config(void)
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
     appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
-    appdatainoutbuffer_[2] = 0x3F;	//  0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
-    appdatainoutbuffer_[3] = 0x01;	// Enable
+    appdatainoutbuffer_[2] = 0x3F;		//  0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x01;		// Enable
     ret = MAX20353_AppWrite(4);
 
     return ret;
@@ -172,7 +176,7 @@ int MAX20353_LDO2Config(void)
 	
     appcmdoutvalue_ = 0x42;
     appdatainoutbuffer_[0] = 0x01;
-    appdatainoutbuffer_[1] = 0x15;     // 0.9V + (0.1V * number)   =  4V 
+    appdatainoutbuffer_[1] = 0x13;     // 0.9V + (0.1V * number)   =  2.8V 
     ret = MAX20353_AppWrite(2);
 
     return ret;
@@ -218,6 +222,46 @@ int MAX20353_BuckBoostConfig(void)
     return ret;
 }
 
+/**************************************************
+*Name:	MAX20353_LED1
+*Function: LED 控制
+*Parameter:
+*			IStep = 0-2
+*			Amplitude:0-31
+*return: 
+***************************************************/
+int MAX20353_LED1(int IStep, int Amplitude)
+{ 
+	int ret = 0;
+	
+	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
+	//Bit7: LED2Open, Bit6: LED1Open, Bit6: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
+	ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x20|(Amplitude&0x1F)); 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+}
+
+void Set_Screen_Backlight_On(void)
+{
+	int ret = 0;
+	
+	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  2&0x03);
+	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
+	ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x20|(31&0x1F)); 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+
+}
+
+void Set_Screen_Backlight_Off(void)
+{
+	int ret = 0;
+	
+	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  2&0x03);
+	//Bit7: LED2Open, Bit6: LED1Open, Bit6: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
+	ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x00); 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+
+}
+
 unsigned char Pattern[256] = 
 {	
 	//0: 128 bytes[0-0x7F], no repeat, total 640ms; 3 sine wave; Address 0x00
@@ -250,27 +294,27 @@ unsigned char Pattern[256] =
 int MAX20353_InitRAM(void)
 {
 	int ret;
-//	unsigned char nLSx = 0x01;	// bit7-6: 01: not the last sample
-//	unsigned char Dur  = 0x01;	// bit4-0: 00001 = 5ms
-//	unsigned char Wait = 0x00;	// bit4-0: 00000 = 0ms
-//	unsigned char RPTx = 0x00;	// bit3-0: 0000
-	
+	//	unsigned char nLSx = 0x01;	// bit7-6: 01: not the last sample
+	//	unsigned char Dur  = 0x01;	// bit4-0: 00001 = 5ms
+	//	unsigned char Wait = 0x00;	// bit4-0: 00000 = 0ms
+	//	unsigned char RPTx = 0x00;	// bit3-0: 0000
+
 	int i;
 	ret = 0;
-	
+
 	// Enable Pattern RAM
 	ret |= MAX20353_WriteReg( REG_HPT_DIRECT1,  0x40);//0x310 = RAM disabled.												// 1 = RAM enabled	//hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptrvMode=0x12
 
 	for(i=0; i<256; i++)
 	{
-        appdatainoutbuffer_[0] = i;
-        appdatainoutbuffer_[1] = 0x40|(Pattern[i]>>2);	// nLSx[1:0]=01(not last sample); Amp[7:2]
-        appdatainoutbuffer_[2] = (Pattern[i]<<6)|0x02;	// Amp[1:0];Dur[4:0]=1(5ms);Wait[4]=0;
-        appdatainoutbuffer_[3] = 0x00;					// Wait[3:0]=0;RPTx[3:0]=0;
-        ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);//0x28
-        k_sleep(K_MSEC(10));
+		appdatainoutbuffer_[0] = i;
+		appdatainoutbuffer_[1] = 0x40|(Pattern[i]>>2);	// nLSx[1:0]=01(not last sample); Amp[7:2]
+		appdatainoutbuffer_[2] = (Pattern[i]<<6)|0x02;	// Amp[1:0];Dur[4:0]=1(5ms);Wait[4]=0;
+		appdatainoutbuffer_[3] = 0x00;					// Wait[3:0]=0;RPTx[3:0]=0;
+		ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);//0x28
+		k_sleep(K_MSEC(10));
 	}
-	
+
 	// Pattern 0 ending
 	//0: 128 bytes[0-0x7F], no repeat, total 640ms; soft start/stop/long; Address 0x00
 	i = 0x7F;	// Last byte, dur = 5ms, no repeat
@@ -280,7 +324,7 @@ int MAX20353_InitRAM(void)
 	appdatainoutbuffer_[3] = 0x00;									// Wait[3:0]=0;RPTx[3:0]=0;
 	ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);
 	k_sleep(K_MSEC(10));
-	
+
 	// Pattern 1 ending
 	//1: 64 bytes[0-0x3F], repeat 1 to 2 times, last byte delay 80ms, total (320ms+80ms)*(1 or 2)=400 or 800ms; soft start/stop/short; Address 0x80
 	i = 0xBF; // Last byte, dur = 85ms, extra 80ms, repeat 2 times
@@ -290,7 +334,7 @@ int MAX20353_InitRAM(void)
 	appdatainoutbuffer_[3] = 0x02;									// Wait[3:0]=0;RPTx[3:0]=2;
 	ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);
 	k_sleep(K_MSEC(10));
-	
+
 	// Pattern 2 ending
 	//2: 32 bytes[0-0x1F], repeat 1 to 2 times, last byte delay 40ms, total (160ms+40: soft start/stop/1 time very short; Address 0xC0
 	i = 0xDF; // Last byte, dur = 45ms, extra 40ms, no repeat
@@ -300,7 +344,7 @@ int MAX20353_InitRAM(void)
 	appdatainoutbuffer_[3] = 0x00;									// Wait[3:0]=0;RPTx[3:0]=2;
 	ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);
 	k_sleep(K_MSEC(10));
-	
+
 	// Pattern 3 ending
 	//3: 32 bytes[0-0x0F], total 100ms*6=600ms; Address 0xE0
 	i = 0xE4; // delay 85ms
@@ -346,10 +390,10 @@ int MAX20353_InitRAM(void)
 	appdatainoutbuffer_[3] = 0x00;									// Wait[3:0]=0;RPTx[3:0]=15;
 	ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);
 	k_sleep(K_MSEC(10));
-    k_sleep(K_MSEC(10));	
-	
+	k_sleep(K_MSEC(10));	
+
 	return ret;
-	
+
 }
 
 int MAX20353_AppWrite(uint8_t dataoutlen)
@@ -570,11 +614,40 @@ void MAX20353_Init(void)
 
 	MAX20353_ChargePumpConfig();
 	MAX20353_BuckBoostConfig();
+
+	//MAX20353_LED1(2, 0);
+	Set_Screen_Backlight_On();
+	//Set_Screen_Backlight_Off();
+}
+
+void pmu_interrupt_proc(void)
+{
+	printk("pmu_interrupt_proc\n");
+}
+
+void PmuInterruptHandle(void)
+{
+	pmu_trige_flag = true;
 }
 
 void pmu_init(void)
 {
 	bool rst;
+	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
+
+  	//端口初始化
+  	gpio_pmu = device_get_binding(PMU_PORT);
+	if(!gpio_pmu)
+	{
+		printk("Cannot bind gpio device\n");
+		return;
+	}
+
+	gpio_pin_configure(gpio_pmu, PMU_EINT, flag);
+	gpio_pin_disable_callback(gpio_pmu, PMU_EINT);
+	gpio_init_callback(&gpio_cb, PmuInterruptHandle, BIT(PMU_EINT));
+	gpio_add_callback(gpio_pmu, &gpio_cb);
+	gpio_pin_enable_callback(gpio_pmu, PMU_EINT);
 	
 	rst = init_i2c();
 	if(!rst)

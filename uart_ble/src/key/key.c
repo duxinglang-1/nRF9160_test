@@ -16,8 +16,8 @@
 #define KEY_2			BIT(1)
 #define KEY_3			BIT(2)
 #define KEY_4			BIT(3)
-#define KEY_5			BIT(4)	//SOS 26
-#define KEY_6			BIT(5)	//power 15
+#define KEY_SOS			BIT(4)	//SOS 26
+#define KEY_PWR			BIT(5)	//power 15
 
 extern bool lcd_sleep_in;
 extern bool lcd_sleep_out;
@@ -44,7 +44,6 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 			break;
 		case KEY_UP:
 			dk_set_led(DK_LED1,0);
-			uart_send_data();
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -92,7 +91,7 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 			break;
 		}
 		break;
-	case KEY_5:
+	case KEY_SOS:
 		switch(key_type)
 		{
 		case KEY_DOWN:
@@ -102,13 +101,12 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		case KEY_UP:
 			dk_set_led(DK_LED1,0);
 			dk_set_led(DK_LED2,0);
-			uart_send_data();
 			break;
 		case KEY_LONG_PRESS:
 			break;
 		}
 		break;
-	case KEY_6:
+	case KEY_PWR:
 		switch(key_type)
 		{
 		case KEY_DOWN:
@@ -125,13 +123,7 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		break;	
 	}
 
-	//if(key_type == KEY_UP)
-	//{
-	//	if(lcd_is_sleeping)
-	//		lcd_sleep_out = 1;
-	//	else
-	//		lcd_sleep_in = 1;
-	//}
+	lcd_sleep_out = 1;
 }
 
 static void button_handler(u32_t button_state, u32_t has_changed)

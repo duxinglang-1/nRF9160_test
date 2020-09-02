@@ -34,7 +34,7 @@ u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表
 
 bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
-
+bool sys_pwr_off = false;
 bool sys_time_count = false;
 bool show_date_time_first = true;
 bool update_time = false;
@@ -641,7 +641,8 @@ int main(void)
 			tp_trige_flag = false;
 			tp_interrupt_proc();
 		}
-	#endif	
+	#endif
+	
 	#if 1
 		if(pmu_trige_flag)
 		{
@@ -649,6 +650,7 @@ int main(void)
 			pmu_interrupt_proc();
 		}
 	#endif
+	
 		if(lcd_sleep_in)
 		{
 			lcd_sleep_in = false;
@@ -660,7 +662,13 @@ int main(void)
 			lcd_sleep_out = false;
 			LCD_SleepOut();
 		}
-
+		
+		if(sys_pwr_off)
+		{
+			sys_pwr_off = false;
+			SystemShutDown();
+		}
+		
 		k_cpu_idle();
 	}
 }

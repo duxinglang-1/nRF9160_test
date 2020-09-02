@@ -5,6 +5,7 @@
 #include <sys/printk.h>
 #include <dk_buttons_and_leds.h>
 #include "key.h"
+#include "Max20353.h"
 
 #define TIMER_FOR_LONG_PRESSED 1000
 
@@ -22,6 +23,7 @@
 extern bool lcd_sleep_in;
 extern bool lcd_sleep_out;
 extern bool lcd_is_sleeping;
+extern bool sys_pwr_off;
 
 static struct k_timer g_long_press_timer_id;
 static u8_t flag;
@@ -40,10 +42,8 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			dk_set_led(DK_LED1,1);
 			break;
 		case KEY_UP:
-			dk_set_led(DK_LED1,0);
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -54,10 +54,8 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			dk_set_led(DK_LED2,1);
 			break;
 		case KEY_UP:
-			dk_set_led(DK_LED2,0);
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -68,10 +66,8 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			dk_set_led(DK_LED3,1);
 			break;
 		case KEY_UP:
-			dk_set_led(DK_LED3,0);
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -82,10 +78,8 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			dk_set_led(DK_LED4,1);	
 			break;
 		case KEY_UP:
-			dk_set_led(DK_LED4,0);
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -95,12 +89,8 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			dk_set_led(DK_LED1,1);
-			dk_set_led(DK_LED2,1);	
 			break;
 		case KEY_UP:
-			dk_set_led(DK_LED1,0);
-			dk_set_led(DK_LED2,0);
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -110,19 +100,17 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			dk_set_led(DK_LED3,1);
-			dk_set_led(DK_LED4,1);	
 			break;
 		case KEY_UP:
-			dk_set_led(DK_LED3,0);
-			dk_set_led(DK_LED4,0);
 			break;
 		case KEY_LONG_PRESS:
+			sys_pwr_off = true;
 			break;
 		}
 		break;	
 	}
 
+	//Any key will wakeup lcd
 	lcd_sleep_out = 1;
 }
 

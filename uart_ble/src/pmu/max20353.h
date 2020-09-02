@@ -135,6 +135,7 @@ int MAX20353_DirectWrite(int Amplitude, int time);
 
 extern void Set_Screen_Backlight_On(void);
 extern void Set_Screen_Backlight_Off(void);
+extern void SystemShutDown(void);
 
 int8_t congig_LED_Direct(void); 
 int8_t LED0_on(void);

@@ -222,6 +222,39 @@ int MAX20353_BuckBoostConfig(void)
     return ret;
 }
 
+int MAX20353_PowerOffConfig(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x80;
+    appdatainoutbuffer_[0] = 0xB2;
+    ret = MAX20353_AppWrite(1);
+
+    return ret;
+}
+
+int MAX20353_SoftResetConfig(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x81;
+    appdatainoutbuffer_[0] = 0xB3;
+    ret = MAX20353_AppWrite(1);
+
+    return ret;
+}
+
+int MAX20353_HardResetConfig(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x82;
+    appdatainoutbuffer_[0] = 0xB4;
+    ret = MAX20353_AppWrite(1);
+
+    return ret;
+}
+
 /**************************************************
 *Name:	MAX20353_LED1
 *Function: LED ¿ØÖÆ
@@ -254,12 +287,16 @@ void Set_Screen_Backlight_On(void)
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
-	
+
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  2&0x03);
 	//Bit7: LED2Open, Bit6: LED1Open, Bit6: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x00); 
 	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+}
 
+void SystemShutDown(void)
+{
+	MAX20353_PowerOffConfig();
 }
 
 unsigned char Pattern[256] = 

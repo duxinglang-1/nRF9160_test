@@ -17,15 +17,15 @@
 &i2c1{
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <0>;
-	scl-pin = <1>;
+	sda-pin = <30>;
+	scl-pin = <31>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <7>;
+	tx-pin = <29>;
 	rx-pin = <28>;
 	#rts-pin = <14>;
 	#cts-pin = <15>;

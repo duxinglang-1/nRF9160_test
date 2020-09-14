@@ -551,10 +551,10 @@ static void buttons_leds_init(void)
 
 void system_init(void)
 {
-	pmu_init();
 	InitSystemSettings();
 	buttons_leds_init();
 	key_init();
+	pmu_init();
 	LCD_Init();
 	flash_init();
 	ble_init();

@@ -1131,7 +1131,7 @@ void MAX20353_SOCInit(void)
 	handle_model(LOAD_MODEL);
 
 	//设置SOC变化1%报警，电量小于4%报警
-	//WriteWord(0x0C, 0x97, 0x5C);
+	WriteWord(0x0C, 0x97, 0x5C);
 }
 #endif
 

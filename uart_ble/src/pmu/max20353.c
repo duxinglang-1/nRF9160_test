@@ -12,6 +12,7 @@ static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb;
 
 bool pmu_trige_flag = false;
+bool pmu_alert_flag = true;
 
 maxdev_ctx_t dev_ctx;
 
@@ -78,8 +79,8 @@ void SystemShutDown(void)
 
 void ReInitCharger(void)
 {
-    MAX20353_ChargerCfg();
-    MAX20353_ChargerCtrl();
+	MAX20353_ChargerCfg();
+	MAX20353_ChargerCtrl();
 }
 
 void pmu_interrupt_proc(void)
@@ -88,7 +89,6 @@ void pmu_interrupt_proc(void)
 	uint8_t Int0, Status0,Status1;
 
 	printk("pmu_interrupt_proc\n");
-
 
 	ret |= MAX20353_ReadReg(REG_INT0, &Int0);
 	if(Int0 & 0x08)
@@ -119,6 +119,21 @@ void PmuInterruptHandle(void)
 	pmu_trige_flag = true;
 }
 
+void pmu_alert_proc(void)
+{
+	float bat_soc;
+
+	printk("pmu_alert_proc\n");
+
+	bat_soc = MAX20353_CalculateSOC();
+	printk("bat_soc:%f\n", bat_soc);
+}
+
+void PmuAlertHandle(void)
+{
+	pmu_alert_flag = true;
+}
+
 void pmu_init(void)
 {
 	bool rst;
@@ -142,7 +157,7 @@ void pmu_init(void)
 	//alert interrupt
 	gpio_pin_configure(gpio_pmu, PMU_ALRTB, flag);
 	gpio_pin_disable_callback(gpio_pmu, PMU_ALRTB);
-	gpio_init_callback(&gpio_cb, PmuInterruptHandle, BIT(PMU_ALRTB));
+	gpio_init_callback(&gpio_cb, PmuAlertHandle, BIT(PMU_ALRTB));
 	gpio_add_callback(gpio_pmu, &gpio_cb);
 	gpio_pin_enable_callback(gpio_pmu, PMU_ALRTB);
 

@@ -684,9 +684,12 @@ void MAX20353_Init(void)
 	MAX20353_InputCurCfg();
 	MAX20353_ChargerCfg();
 	MAX20353_ChargerCtrl();
-
-	//中断配置
+	
+	//充电中断配置
 	MAX20353_IntInit();
+
+	//电量计
+	MAX20353_SOCInit();
 }
 
 #if 1
@@ -709,18 +712,18 @@ int MAX20353_UpdateRCOMP(void)
 	return (result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
 }
 
-float MAX20353_CalculateSOC(u8_t INI_bits)
+float MAX20353_CalculateSOC(void)
 {
 	float SOC_percent;
 	
 	ReadWord(0x04, &SOC_1, &SOC_2);
 	SOC = (SOC_1 << 8) + SOC_2;
 	
-	if(INI_bits == 18)
+	if(BITS == 18)
 	{
 		SOC_percent = ((SOC_1 << 8) + SOC_2) / 256;
 	}
-	else if(INI_bits == 19)
+	else if(BITS == 19)
 	{
 		SOC_percent = ((SOC_1 << 8) + SOC_2) / 512;
 	}
@@ -809,6 +812,9 @@ void MAX20353_NewInitVoltage(void)
 
 void prepare_to_load_model(void)
 {
+	u8_t unlock_test_OCV_1, unlock_test_OCV_2;
+
+step_1:	
 	/******************************************************************************
 	Step 1. Unlock Model Access
 	This enables access to the OCV and table registers
@@ -832,7 +838,7 @@ void prepare_to_load_model(void)
 	*/
 	if((original_OCV_1 == 0xFF) && (original_OCV_2 == 0xFF))
 	{
-		//Goto Step 1
+		goto step_1;
 	}
 	
 	/******************************************************************************
@@ -842,8 +848,6 @@ void prepare_to_load_model(void)
 	for best Fuel Gauge
 	performance. Step 2.5.1 is not required for version 0x0012.
 	*/
-	u8_t unlock_test_OCV_1, unlock_test_OCV_2;
-	
 	do
 	{
 		WriteWord(0xFE, 0x54, 0x00); //Send POR command
@@ -856,14 +860,14 @@ void prepare_to_load_model(void)
 	Step 3. Write OCV (MAX17040/1/3/4 only)
 	Find OCVTest_High_Byte and OCVTest_Low_Byte values in INI file
 	*/
-	WriteWord(0x0E, INI_OCVTEST_HIGH_BYTE, INI_OCVTEST_LOW_BYTE);
+	//WriteWord(0x0E, INI_OCVTEST_HIGH_BYTE, INI_OCVTEST_LOW_BYTE);
 	
 	/******************************************************************************
 	Step 4. Write RCOMP to its Maximum Value (MAX17040/1/3/4 only)
 	Make the fuel-gauge respond as slowly as possible (MSB = 0xFF), and disable
 	alerts during model loading (LSB = 0x00)
 	*/
-	WriteWord(0x0C, 0xFF, 0x00);
+	//WriteWord(0x0C, 0xFF, 0x00);
 }
 
 void load_model(void)
@@ -871,16 +875,9 @@ void load_model(void)
 	int k;
 	u8_t databuf[10] = {0};
 	u8_t addr_mem;
-	/******************************************************************************
-	Step 5. Write the Model
-	Once the model is unlocked, the host software must write the 64 byte model
-	to the device. The model is located between memory 0x40 and 0x7F.
-	The model is available in the INI file provided with your performance
-	report. See the end of this document for an explanation of the INI file.
-	Note that the table registers are write-only and will always read
-	0xFF. Step 9 will confirm the values were written correctly.
-	*/
-
+	u32_t RCOMPSeg = 0x0080;
+	unsigned char RCOMPSeg_MSB = (RCOMPSeg >> 8) & 0xFF;
+	unsigned char RCOMPSeg_LSB = RCOMPSeg & 0xFF;	
 	u8_t model_data[64] = 
 	{
 		// Fill in your model data here from the INI file
@@ -892,8 +889,17 @@ void load_model(void)
 		0x74,0x50,0x6E,0xE0,0x2F,0x80,0x32,0x30,0x0C,0x10,
 		0x24,0xB0,0x16,0x00,0x24,0x10,0x19,0x00,0x11,0x90,
 		0x0E,0x30,0x0E,0x30
-	};
-	
+	};	
+	/******************************************************************************
+	Step 5. Write the Model
+	Once the model is unlocked, the host software must write the 64 byte model
+	to the device. The model is located between memory 0x40 and 0x7F.
+	The model is available in the INI file provided with your performance
+	report. See the end of this document for an explanation of the INI file.
+	Note that the table registers are write-only and will always read
+	0xFF. Step 9 will confirm the values were written correctly.
+	*/
+
 	/* Perform these I2C tasks:
 	START
 	Send Slave Address (0x6C)
@@ -906,7 +912,7 @@ void load_model(void)
 	addr_mem = 0x40;
 	for(k=0;k<0x40;k++)
 	{
-		dev_ctx.write_reg(dev_ctx.handle, addr_mem, model_data[k], 1);
+		dev_ctx.write_reg(dev_ctx.handle, addr_mem, &model_data[k], 1);
 		addr_mem++;
 	}
 	
@@ -918,10 +924,6 @@ void load_model(void)
 	written along with the default model. For INI files without RCOMPSeg
 	specified, use RCOMPSeg = 0x0080.
 	*/
-
-	u32_t RCOMPSeg = 0x0080;
-	unsigned char RCOMPSeg_MSB = (RCOMPSeg >> 8) & 0xFF;
-	unsigned char RCOMPSeg_LSB = RCOMPSeg & 0xFF;
 
 	/* Perform I2C:
 	Send Memory Location (0x80)
@@ -948,7 +950,7 @@ bool verify_model_is_correct(void)
 	This delay must be at least 150mS, but the upper limit is not critical
 	in this step.
 	*/
-	delay_ms(150);
+	//delay_ms(150);
 	
 	/******************************************************************************
 	Step 7. Write OCV
@@ -1022,6 +1024,7 @@ void cleanup_model_load(void)
 	model was verified.
 	*/
 	// Restore your desired value of HIBRT
+	WriteWord(0x0A, 0xFF, 0xFF);
 	
 	/******************************************************************************
 	Step 11. Lock Model Access
@@ -1040,9 +1043,9 @@ void cleanup_model_load(void)
 	Check for normal update of SOC after OCV restore
 	*/
 	//if(SOC < SOCCHECKA)
-		//model was loaded successfully
+	//	model was loaded successfully
 	//else
-		//goto step C1 and reload model
+	//	goto step C1 and reload model
 }
 
 /* All registers of the ModelGauge devices must be written as a complete word.
@@ -1097,6 +1100,7 @@ handle_model(VERIFY_AND_FIX);
 void handle_model(int load_or_verify)
 {
 	bool model_load_ok = false;
+	u8_t retry = 5;
 	
 	do
 	{
@@ -1109,15 +1113,25 @@ void handle_model(int load_or_verify)
 		}
 		
 		//Steps 6-9
-		model_load_ok = verify_model_correct();
+		model_load_ok = verify_model_is_correct();
 		if(!model_load_ok)
 		{
 			load_or_verify = LOAD_MODEL;
 		}
-	}while(!model_load_ok);
+
+		retry--;
+	}while((!model_load_ok)&&(retry>0));
 	
 	// Steps 10-11
 	cleanup_model_load();
+}
+
+void MAX20353_SOCInit(void)
+{
+	handle_model(LOAD_MODEL);
+
+	//设置SOC变化1%报警，电量小于4%报警
+	//WriteWord(0x0C, 0x97, 0x5C);
 }
 #endif
 

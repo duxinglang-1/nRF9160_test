@@ -587,7 +587,9 @@ int main(void)
 //	test_imei();
 //	test_tp();
 
-	while(1)
+	pmu_alert_proc();
+
+	while(0)
 	{
 	#if 1
 		if(update_time || update_date || update_week || update_date_time)
@@ -648,6 +650,11 @@ int main(void)
 		{
 			pmu_trige_flag = false;
 			pmu_interrupt_proc();
+		}
+		if(pmu_alert_flag)
+		{
+			pmu_alert_flag = false;
+			pmu_alert_proc();
 		}
 	#endif
 	

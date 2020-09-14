@@ -1,5 +1,5 @@
-#ifndef __MAX20353_H__
-#define __MAX20353_H__
+#ifndef __MAX20353_REG_H__
+#define __MAX20353_REG_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,4 +147,4 @@ extern void MAX20353_Init(void);
 }
 #endif
 
-#endif/*__MAX20353_H__*/
+#endif/*__MAX20353_REG_H__*/

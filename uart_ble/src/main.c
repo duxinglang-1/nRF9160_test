@@ -21,7 +21,7 @@
 #include "uart_ble.h"
 #include "settings.h"
 //#include "CST816.h"
-#include "Max20353.h"
+//#include "Max20353.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -554,12 +554,13 @@ void system_init(void)
 	InitSystemSettings();
 	buttons_leds_init();
 	key_init();
-	pmu_init();
+	//pmu_init();
 	LCD_Init();
 	flash_init();
 	ble_init();
 }
 
+extern void motion_sensor_msg_proc(void);
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 
@@ -581,17 +582,17 @@ int main(void)
 //	test_uart_ble();
 //	test_sensor();
 //	test_show_digital_clock();
-//	test_sensor();
+	test_sensor();
 //	test_pmu();
 //	test_crypto();
 //	test_imei();
 //	test_tp();
 
-	pmu_alert_proc();
+//	pmu_alert_proc();
 
-	while(0)
+	while(1)
 	{
-	#if 1
+	#if 0
 		if(update_time || update_date || update_week || update_date_time)
 		{
 			if(update_date_time || show_date_time_first)
@@ -645,7 +646,7 @@ int main(void)
 		}
 	#endif
 	
-	#if 1
+	#if 0
 		if(pmu_trige_flag)
 		{
 			pmu_trige_flag = false;
@@ -669,13 +670,16 @@ int main(void)
 			lcd_sleep_out = false;
 			LCD_SleepOut();
 		}
-		
+	#if 0	
 		if(sys_pwr_off)
 		{
 			sys_pwr_off = false;
 			SystemShutDown();
 		}
-		
+	#endif	
+
+		motion_sensor_msg_proc();
+	
 		k_cpu_idle();
 	}
 }

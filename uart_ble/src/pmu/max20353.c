@@ -9,7 +9,7 @@
 
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
-static struct gpio_callback gpio_cb;
+static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool pmu_trige_flag = false;
 bool pmu_alert_flag = true;
@@ -150,15 +150,15 @@ void pmu_init(void)
 	//charger interrupt
 	gpio_pin_configure(gpio_pmu, PMU_EINT, flag);
 	gpio_pin_disable_callback(gpio_pmu, PMU_EINT);
-	gpio_init_callback(&gpio_cb, PmuInterruptHandle, BIT(PMU_EINT));
-	gpio_add_callback(gpio_pmu, &gpio_cb);
+	gpio_init_callback(&gpio_cb1, PmuInterruptHandle, BIT(PMU_EINT));
+	gpio_add_callback(gpio_pmu, &gpio_cb1);
 	gpio_pin_enable_callback(gpio_pmu, PMU_EINT);
 
 	//alert interrupt
 	gpio_pin_configure(gpio_pmu, PMU_ALRTB, flag);
 	gpio_pin_disable_callback(gpio_pmu, PMU_ALRTB);
-	gpio_init_callback(&gpio_cb, PmuAlertHandle, BIT(PMU_ALRTB));
-	gpio_add_callback(gpio_pmu, &gpio_cb);
+	gpio_init_callback(&gpio_cb2, PmuAlertHandle, BIT(PMU_ALRTB));
+	gpio_add_callback(gpio_pmu, &gpio_cb2);
 	gpio_pin_enable_callback(gpio_pmu, PMU_ALRTB);
 
 	rst = init_i2c();

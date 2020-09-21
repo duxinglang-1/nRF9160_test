@@ -22,7 +22,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&uart1 {
+&uart1{
 	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <29>;

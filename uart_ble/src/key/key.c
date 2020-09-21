@@ -9,7 +9,7 @@
 #include <logging/log.h>
 #include <nrfx.h>
 #include "key.h"
-//#include "Max20353.h"
+#include "Max20353.h"
 
 static u8_t flag;
 static u32_t keycode;

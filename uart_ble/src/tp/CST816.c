@@ -13,7 +13,8 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
-#include "cst816.h"
+#include "CST816.h"
+#include "CST816_update.h"
 
 bool tp_trige_flag = false;
 
@@ -46,6 +47,7 @@ static s32_t platform_write(u8_t reg, u8_t *bufp, u16_t len)
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
 	rslt = i2c_write(i2c_ctp, data, len+1, CST816_I2C_ADDRESS);
+	printf("rslt:%d\n", rslt);
 
 	return rslt;
 }
@@ -59,8 +61,211 @@ static s32_t platform_read(u8_t reg, u8_t *bufp, u16_t len)
 	{
 		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
 	}
-	
+	printf("rslt:%d\n", rslt);
 	return rslt;
+}
+
+static s32_t platform_write_word(u16_t reg, u8_t *bufp, u16_t len)
+{
+	u8_t data[len+2];
+	u32_t rslt = 0;
+
+#if 1
+	data[0] = reg&0xFF;
+	data[1] = reg>>8;
+#else
+	data[0] = reg>>8;
+	data[1] = reg&0xFF;
+#endif
+
+	memcpy(&data[2], bufp, len);
+	rslt = i2c_write(i2c_ctp, data, len+2, CST816_I2C_ADDRESS);
+	printf("rslt:%d\n", rslt);
+
+	return rslt;
+}
+
+static s32_t platform_read_word(u16_t reg, u8_t *bufp, u16_t len)
+{
+	u8_t data[2];
+	u32_t rslt = 0;
+
+#if 1
+	data[0] = reg&0xFF;
+	data[1] = reg>>8;
+#else
+	data[0] = reg>>8;
+	data[1] = reg&0xFF;
+#endif
+
+	rslt = i2c_write(i2c_ctp, data, 2, CST816_I2C_ADDRESS);
+	printf("rslt:%d\n", rslt);
+
+	if(rslt == 0)
+	{
+		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
+	}
+
+	printf("rslt:%d\n", rslt);
+	return rslt;
+}
+
+static int cst816s_enter_bootmode(void)
+{
+	u8_t retryCnt = 50;
+	u8_t cmd[3] = {0};
+
+	gpio_pin_write(gpio_ctp, CTP_RESET, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_write(gpio_ctp, CTP_RESET, 1);
+	k_sleep(K_MSEC(10));
+
+	while(retryCnt--)
+	{
+		cmd[0] = 0xAB;
+		platform_write_word(0xA001,cmd,1);
+		k_sleep(K_MSEC(10));
+		platform_read_word(0xA003,cmd,1);
+		
+		if(cmd[0] != 0x55)
+		{
+			k_sleep(K_MSEC(10));
+			continue;
+		}
+		else
+		{
+			return 0;
+		}
+		k_sleep(K_MSEC(10));
+
+	}
+	return -1;
+}
+
+#define PER_LEN	512
+
+static int cst816s_update(u16_t startAddr, u16_t len, const unsigned char *src)
+{
+	u8_t cmd[10];
+	u8_t data_send[PER_LEN];
+	u32_t sum_len;
+	u32_t i,k_data=0,b_data=0;
+
+	sum_len = 0;
+	k_data=len/PER_LEN;
+	for(i=0;i<k_data;i++)
+	{
+		cmd[0] = startAddr&0xFF;
+		cmd[1] = startAddr>>8;
+		platform_write_word(0xA014,cmd,2);
+		//TP_HRS_WriteBytes_updata(0x6A<<1,0xA014,cmd,2,REG_LEN_2B);
+		memcpy(data_send,src,PER_LEN);
+		platform_write_word(0xA018,data_send,PER_LEN);
+		//TP_HRS_WriteBytes_updata(0x6A<<1,0xA018,data_send,PER_LEN,REG_LEN_2B);
+		k_sleep(K_MSEC(10));
+		//nrf_delay_ms(10);
+		cmd[0] = 0xEE;
+		platform_write_word(0xA004,cmd,1);
+		//TP_HRS_WriteBytes_updata(0x6A<<1,0xA004,cmd,1,REG_LEN_2B);
+		k_sleep(K_MSEC(50));
+		//nrf_delay_ms(50);
+
+		{
+			uint8_t retrycnt = 50;
+			while(retrycnt--)
+			{
+				cmd[0] = 0;
+				platform_read_word(0xA005,cmd,1);
+				//TP_HRS_read_updata(0x6A<<1,0xA005,cmd,1,REG_LEN_2B);
+				if(cmd[0] == 0x55)
+				{
+					cmd[0] = 0;
+					break;
+				}
+				k_sleep(K_MSEC(10));
+				//nrf_delay_ms(10);
+			}
+		}
+		startAddr += PER_LEN;
+		src += PER_LEN;
+		sum_len += PER_LEN;
+
+	}
+
+	// exit program mode
+	cmd[0] = 0x00;
+	platform_write_word(0xA003,cmd,1);
+	//TP_HRS_WriteBytes_updata(0x6A<<1,0xA003,cmd,1,REG_LEN_2B);
+	return 0;
+}
+
+static u32_t cst816s_read_checksum(void)
+{
+	union
+	{
+		u32_t sum;
+		u8_t buf[4];
+	}checksum;
+	
+	u8_t cmd[3];
+	char readback[4] = {0};
+
+	if(cst816s_enter_bootmode() == -1)
+	{
+		return -1;
+	}
+
+	cmd[0] = 0;
+	platform_write_word(0xA003,cmd,1);
+	//TP_HRS_WriteBytes_updata(0x6A<<1,0xA003,cmd,1,REG_LEN_2B);
+	k_sleep(K_MSEC(500));
+	//nrf_delay_ms(500);
+
+	checksum.sum = 0;
+	platform_read_word(0xA008,checksum.buf,2);
+	//TP_HRS_read_updata(0x6A<<1,0xA008,checksum.buf,2,REG_LEN_2B);
+	//LOG(LEVEL_INFO,"checksum.sum=%x \r\n",checksum.sum);
+
+	return checksum.sum;
+}
+
+
+bool ctp_hynitron_update(void)
+{
+	u8_t lvalue;
+	u8_t write_data[2];
+	u8_t tmpbuf[128]={0};
+	bool temp_result = true;
+
+	if(cst816s_enter_bootmode() == 0)
+	{
+		LCD_ShowString(20,120,"enter bootmode!");
+		
+		if(sizeof(app_bin)>10)
+		{
+			u16_t startAddr = app_bin[1];
+			u16_t length = app_bin[3];					
+			u16_t checksum = app_bin[5];
+			
+			startAddr <<= 8; startAddr |= app_bin[0];
+			length <<= 8; length |= app_bin[2];
+			checksum <<= 8; checksum |= app_bin[4];  
+
+			LCD_ShowString(20,140,"check if need update!");
+			
+			if(cst816s_read_checksum()!= checksum)
+			{
+				LCD_ShowString(20,160,"start update!");
+				
+				cst816s_update(startAddr, length, &app_bin[6]);
+				cst816s_read_checksum();
+
+				LCD_ShowString(20,180,"complete update!");
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 void touch_panel_event_handle(tp_event tp_type, u16_t x_pos, u16_t y_pos)
@@ -181,6 +386,8 @@ void CST816_init(void)
 
 	sprintf(tmpbuf, "CTP ID:%x", tp_temp_id);
 	LCD_ShowString(20,100,tmpbuf);
+
+	//ctp_hynitron_update();
 }
 
 

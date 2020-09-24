@@ -318,32 +318,43 @@ void tp_interrupt_proc(void)
 	switch(tp_temp[0])
 	{
 	case GESTURE_NONE:
+		sprintf(tmpbuf, "GESTURE_NONE        ");
 		break;
 	case GESTURE_MOVING_UP:
 		TP_type = TP_EVENT_MOVING_UP;
+		sprintf(tmpbuf, "MOVING_UP   ");
 		break;
 	case GESTURE_MOVING_DOWN:
 		TP_type = TP_EVENT_MOVING_DOWN;
+		sprintf(tmpbuf, "MOVING_DOWN ");
 		break;
 	case GESTURE_MOVING_LEFT:
 		TP_type = TP_EVENT_MOVING_LEFT;
+		sprintf(tmpbuf, "MOVING_LEFT ");
 		break;
 	case GESTURE_MOVING_RIGHT:
 		TP_type = TP_EVENT_MOVING_RIGHT;
+		sprintf(tmpbuf, "MOVING_RIGHT");
 		break;
 	case GESTURE_SINGLE_CLICK:
 		TP_type = TP_EVENT_SINGLE_CLICK;
+		sprintf(tmpbuf, "SINGLE_CLICK");
 		break;
 	case GESTURE_DOUBLE_CLICK:
 		TP_type = TP_EVENT_DOUBLE_CLICK;
+		sprintf(tmpbuf, "DOUBLE_CLICK");
 		break;
 	case GESTURE_LONG_PRESS:
 		TP_type = TP_EVENT_LONG_PRESS;
+		sprintf(tmpbuf, "LONG_PRESS  ");
 		break;
 	}
 
-	sprintf(tmpbuf, "TP_type:%d, x:%03d, y:%03d", TP_type, tp_temp[2], tp_temp[3]);
 	LCD_ShowString(20,120,tmpbuf);
+	
+	sprintf(tmpbuf, "x:%03d, y:%03d", tp_temp[2], tp_temp[3]);
+	LCD_ShowString(20,140,tmpbuf);
+	
 	if(TP_type != TP_EVENT_MAX)
 	{
 		touch_panel_event_handle(TP_type, tp_temp[2], tp_temp[3]);

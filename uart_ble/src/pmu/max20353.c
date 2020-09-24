@@ -12,7 +12,7 @@ static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool pmu_trige_flag = false;
-bool pmu_alert_flag = true;
+bool pmu_alert_flag = false;
 
 maxdev_ctx_t dev_ctx;
 

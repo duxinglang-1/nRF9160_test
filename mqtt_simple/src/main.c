@@ -377,6 +377,14 @@ static int fds_init(struct mqtt_client *c)
  */
 static void modem_configure(void)
 {
+#if 1 //xb test 20200927
+	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
+	{
+		printk("AT_CMD write fail!\n");
+		return;
+	}
+#endif
+
 #if defined(CONFIG_LTE_LINK_CONTROL)
 	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT)) {
 		/* Do nothing, modem is already turned on

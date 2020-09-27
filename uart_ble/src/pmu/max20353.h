@@ -1,6 +1,9 @@
 #ifndef __MAX20353_H__
 #define __MAX20353_H__
 
+#define BATTERY_VOLTAGE_LOW_NOTIFY	(3.55)
+#define BATTERY_VOLTAGE_SHUTDOWN	(3.40)
+
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
 

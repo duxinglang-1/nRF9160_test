@@ -607,9 +607,26 @@ int MAX20353_InputCurCfg(void)
 	int32_t ret = 0;
 
 	appcmdoutvalue_ = 0x10;
-	appdatainoutbuffer_[0] = 0x1C;  
+	appdatainoutbuffer_[0] = 0x1C;  //最大输入电流300ma(充电电流+系统工作电流,不是充电电流，充电电流由F3的电阻决定，目前设置为160ma),截断时间10ms
 	ret = MAX20353_AppWrite(1);
 
+	return ret;
+}
+
+int InitCharger(void)
+{ 
+	int32_t ret = 0; 
+
+	appcmdoutvalue_ = 0x14; 
+	appdatainoutbuffer_[0] = 0x10; // Maintain charge b01:15min, FastCharge b00:75min, for 1C charging, PreCharge b00: 30min for dead battery 
+	appdatainoutbuffer_[1] = 0x65; // Precharge to b110:3.0V, b01:0.1IFChg for dead battery, ChgDone b01: 0.1IFChg 
+	appdatainoutbuffer_[2] = 0xC3; // 0xC6;Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0011: 4.2V, b0110:4.35 
+	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
+	ret |= MAX20353_AppWrite(4);
+	
+	appcmdoutvalue_ = 0x1A; 
+	appdatainoutbuffer_[0] = 0x01; // Thermal EN, Charger EN 
+	ret |= MAX20353_AppWrite(1); 
 	return ret;
 }
 

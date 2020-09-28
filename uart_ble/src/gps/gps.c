@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <modem/at_cmd.h>
 #include <modem/at_notif.h>
+#include "lcd.h"
 
 #ifdef CONFIG_SUPL_CLIENT_LIB
 #include <supl_os_client.h>
@@ -234,6 +235,7 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 	u8_t tracked = 0;
 	u8_t in_fix = 0;
 	u8_t unhealthy = 0;
+	u8_t tmpbuf[512] = {0};
 	int i;
 
 	for(i = 0; i < NRF_GNSS_MAX_SATELLITES; ++i)
@@ -261,6 +263,8 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 {
 	u8_t tmpbuf[512] = {0};
+
+	LCD_Fill(0,20,240,200,BLACK);
 	
 	printf("Longitude:  %f\n", pvt_data->pvt.longitude);
 	sprintf(tmpbuf, "Longitude:  %f", pvt_data->pvt.longitude);
@@ -298,10 +302,11 @@ static void print_nmea_data(void)
 	int i;
 	
 	printk("\n");
-
+	
 	for(i = 0; i < nmea_string_cnt; ++i)
 	{
 		printk("%s", nmea_strings[i]);
+		//LCD_ShowString(0,28+20*i,nmea_strings[i]);
 	}
 }
 
@@ -468,7 +473,7 @@ int test_gps(void)
 			//print_satellite_stats(&gps_data);
 
 			//printk("---------------------------------\n");
-			//print_pvt_data(&last_fix);
+			print_pvt_data(&last_fix);
 			//printk("\n");
 			//print_nmea_data();
 			//printk("---------------------------------");

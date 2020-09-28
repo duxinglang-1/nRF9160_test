@@ -27,7 +27,6 @@ static bool init_i2c(void)
 	else
 	{
 		i2c_configure(i2c_pmu, I2C_SPEED_SET(I2C_SPEED_FAST));
-		printf("I2C CONFIGURED\r\n");
 		return true;
 	}
 }

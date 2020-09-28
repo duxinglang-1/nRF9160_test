@@ -150,7 +150,6 @@ int MAX20353_Buck1Config(void)
     appdatainoutbuffer_[3] = 0x01;  	// Enable
     ret = MAX20353_AppWrite(4);
 	
-    printf(" MAX20353_Buck1Config \r\n" );
     return ret;
 }
 
@@ -405,7 +404,6 @@ int MAX20353_AppWrite(uint8_t dataoutlen)
 
 	k_sleep(K_MSEC(10));
 	ret |= MAX20353_ReadReg(REG_AP_RESPONSE, &appcmdoutvalue_);//0x18
-	printf(" appcmdoutvalue:%0x \r\n",appcmdoutvalue_ );
 
 	if(ret != 0)
 		ret = MAX20353_ERROR;

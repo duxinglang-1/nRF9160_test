@@ -554,10 +554,10 @@ void system_init(void)
 	InitSystemSettings();
 	buttons_leds_init();
 	key_init();
-	//pmu_init();
+	pmu_init();
 	LCD_Init();
 	flash_init();
-	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
+	//ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 }
 
 extern void motion_sensor_msg_proc(void);

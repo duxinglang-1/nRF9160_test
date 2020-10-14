@@ -13,3 +13,12 @@ project(mqtt-simple)
 # NORDIC SDK APP START
 target_sources(app PRIVATE src/main.c)
 # NORDIC SDK APP END
+
+add_subdirectory(src/datetime)
+add_subdirectory(src/font)
+add_subdirectory(src/lcd)
+add_subdirectory(src/key)
+add_subdirectory(src/settings)
+add_subdirectory(src/inner_flash)
+add_subdirectory(src/external_flash)
+add_subdirectory(src/pmu)

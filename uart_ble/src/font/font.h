@@ -2,8 +2,8 @@
 #define __FONT_H__
 
 #define FONT_16
-//#define FONT_24
-//#define FONT_32
+#define FONT_24
+#define FONT_32
 
 typedef enum
 {

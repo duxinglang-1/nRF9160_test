@@ -31,7 +31,7 @@ extern u8_t date_time_changed;
 
 void UpdateSystemTime(void)
 {
-	printk("clock_timer_handler\n");
+	//printk("clock_timer_handler\n");
 
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
 	
@@ -125,7 +125,7 @@ void UpdateSystemTime(void)
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
 	{
-		SaveSystemDateTime();
+		//SaveSystemDateTime();
 	}	
 }
 

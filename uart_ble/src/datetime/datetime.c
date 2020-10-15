@@ -305,7 +305,7 @@ void IdleShowSystemDate(void)
 	
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
-#elif FONT_24
+#elif defined(FONT_24)
 	LCD_SetFontSize(FONT_SIZE_24);
 #else
 	LCD_SetFontSize(FONT_SIZE_16);
@@ -330,7 +330,7 @@ void IdleShowSystemTime(void)
 	
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
-#elif FONT_24
+#elif defined(FONT_24)
 	LCD_SetFontSize(FONT_SIZE_24);
 #else
 	LCD_SetFontSize(FONT_SIZE_16);
@@ -359,7 +359,7 @@ void IdleShowSystemWeek(void)
 
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
-#elif FONT_24
+#elif defined(FONT_24)
 	LCD_SetFontSize(FONT_SIZE_24);
 #else
 	LCD_SetFontSize(FONT_SIZE_16);

@@ -458,30 +458,30 @@ int test_gps(void)
 		if(!got_first_fix)
 		{
 			cnt++;
-			//printk("\033[1;1H");
-			//printk("\033[2J");
-			//print_satellite_stats(&gps_data);
-			//printk("\nScanning [%c] ",
-			//		update_indicator[cnt%4]);
+			printk("\033[1;1H");
+			printk("\033[2J");
+			print_satellite_stats(&gps_data);
+			printk("\nScanning [%c] ",
+					update_indicator[cnt%4]);
 		}
 
 		if(((k_uptime_get() - fix_timestamp) >= 1) && (got_first_fix))
 		{
-			//printk("\033[1;1H");
-			//printk("\033[2J");
+			printk("\033[1;1H");
+			printk("\033[2J");
 
-			//print_satellite_stats(&gps_data);
+			print_satellite_stats(&gps_data);
 
-			//printk("---------------------------------\n");
+			printk("---------------------------------\n");
 			print_pvt_data(&last_fix);
-			//printk("\n");
-			//print_nmea_data();
-			//printk("---------------------------------");
+			printk("\n");
+			print_nmea_data();
+			printk("---------------------------------");
 
 			update_terminal = false;
 		}
 
-		//print_nmea_data();
+		print_nmea_data();
 		k_sleep(K_MSEC(500));
 	}
 

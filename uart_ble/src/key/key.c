@@ -72,7 +72,14 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	}
 
 	//Any key will wakeup lcd
-	lcd_sleep_out = 1;
+	if(key_type == KEY_UP)
+	{
+		if(lcd_is_sleeping)
+			lcd_sleep_out = true;
+		else
+			lcd_sleep_in = true;
+	}
+	
 }
 
 static void button_handler(u32_t button_state, u32_t has_changed)

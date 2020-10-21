@@ -72,7 +72,13 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	}
 
 	//Any key will wakeup lcd
-	lcd_sleep_out = 1;
+	if(key_type == KEY_UP)
+	{
+		if(lcd_is_sleeping)
+			lcd_sleep_out = true;
+		else
+			lcd_sleep_in = true;
+	}
 }
 
 static void button_handler(u32_t button_state, u32_t has_changed)
@@ -236,8 +242,8 @@ static int set_trig_mode(int trig_mode)
 {
 	int err = 0;
 	int flags = (IS_ENABLED(CONFIG_DK_LIBRARY_INVERT_BUTTONS) ?
-		(GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW) :
-		(GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH));
+				(GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW) :
+				(GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH));
 	flags |= (GPIO_DIR_IN | GPIO_INT | trig_mode);
 
 	for(size_t i = 0; (i < ARRAY_SIZE(button_pins)) && !err; i++)

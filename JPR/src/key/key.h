@@ -15,11 +15,18 @@ extern "C" {
 #define DK_BTN2_MSK      BIT(DK_BTN2)
 #define DK_ALL_BTNS_MSK  (DK_BTN1_MSK | DK_BTN2_MSK)
 
-#define KEY_DOWN 		1
+//#define KEY_ACTIVE_HIGH		//xb add 20201013 按键高电平有效
+
+#ifdef KEY_ACTIVE_HIGH
+#define KEY_UP 			1
+#define KEY_DOWN 		0
+#else
 #define KEY_UP 			0
+#define KEY_DOWN 		1
+#endif
 #define KEY_LONG_PRESS	2
 
-#define TIMER_FOR_LONG_PRESSED 3000
+#define TIMER_FOR_LONG_PRESSED 5*1000
 
 typedef struct{
 	const char * const port;

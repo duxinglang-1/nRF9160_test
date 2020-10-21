@@ -415,6 +415,7 @@ int inject_agps_type(void *agps,
 int test_gps(void)
 {
 	u8_t tmpbuf[128] = {0};
+	u16_t w,h;
 	nrf_gnss_data_frame_t gps_data;
 	u8_t		      cnt = 0;
 
@@ -443,8 +444,8 @@ int test_gps(void)
 #endif
 
 	printk("Getting GPS data...\n");
-	sprintf(tmpbuf, "Getting GPS data...");
-	LCD_ShowString(0,0,tmpbuf);
+	LCD_MeasureString("Start GPS test!", &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,120,"Start GPS test!");
 
 	while(1)
 	{

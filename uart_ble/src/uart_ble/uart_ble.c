@@ -13,6 +13,7 @@
 #include "datetime.h"
 #include "Settings.h"
 #include "Uart_ble.h"
+#include "CST816.h"
 
 #define BUF_MAXSIZE	1024
 
@@ -47,7 +48,7 @@
 #define	DATE_FORMAT_ID			0xFF56			//年月日格式设置
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
-
+#define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
 
 static u32_t rece_len=0;
 
@@ -85,6 +86,38 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 	else
 		BLE_is_connected = false;
+}
+
+void APP_find_device(u8_t *buf, u32_t len)
+{
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+	
+	update_week = true;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (FIND_DEVICE_ID>>8);		
+	reply[reply_len++] = (u8_t)(FIND_DEVICE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;	
 }
 
 void APP_set_language(u8_t *buf, u32_t len)
@@ -254,6 +287,56 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);	
 }
 
+void CTP_notify_handle(u8_t *buf, u32_t len)
+{
+	u8_t tmpbuf[128] = {0};
+	u8_t tp_type = TP_EVENT_MAX;
+	u16_t tp_x,tp_y;
+	
+	printk("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	switch(buf[5])
+	{
+	case GESTURE_NONE:
+		sprintf(tmpbuf, "GESTURE_NONE        ");
+		break;
+	case GESTURE_MOVING_UP:
+		tp_type = TP_EVENT_MOVING_UP;
+		sprintf(tmpbuf, "MOVING_UP   ");
+		break;
+	case GESTURE_MOVING_DOWN:
+		tp_type = TP_EVENT_MOVING_DOWN;
+		sprintf(tmpbuf, "MOVING_DOWN ");
+		break;
+	case GESTURE_MOVING_LEFT:
+		tp_type = TP_EVENT_MOVING_LEFT;
+		sprintf(tmpbuf, "MOVING_LEFT ");
+		break;
+	case GESTURE_MOVING_RIGHT:
+		tp_type = TP_EVENT_MOVING_RIGHT;
+		sprintf(tmpbuf, "MOVING_RIGHT");
+		break;
+	case GESTURE_SINGLE_CLICK:
+		tp_type = TP_EVENT_SINGLE_CLICK;
+		sprintf(tmpbuf, "SINGLE_CLICK");
+		break;
+	case GESTURE_DOUBLE_CLICK:
+		tp_type = TP_EVENT_DOUBLE_CLICK;
+		sprintf(tmpbuf, "DOUBLE_CLICK");
+		break;
+	case GESTURE_LONG_PRESS:
+		tp_type = TP_EVENT_LONG_PRESS;
+		sprintf(tmpbuf, "LONG_PRESS  ");
+		break;
+	}
+
+	if(tp_type != TP_EVENT_MAX)
+	{
+		tp_x = buf[7]*0x100+buf[8];
+		tp_y = buf[9]*0x100+buf[10];
+		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	}
+}
+
 /**********************************************************************************
 *Name: ble_receive_date_handle
 *Function:  处理蓝牙接收到的数据
@@ -278,7 +361,7 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 *	3		Data ID		2		0x0000-0xFFFF	    ID
 *	5		Status		1		0x00-0xFF	        Status
 *	6		Control		1		0x00-0x01			控制
-*	7		Data0		1-14	0x00-0xFF			数据0
+*	7		Data0		1-14            0x00-0xFF			数据0
 *	8+n		CRC8		1		0x00-0xFF			数据校验,从包头开始到CRC前一位
 *	9+n		EndFrame	1		0x88				结束帧
 **********************************************************************************/
@@ -321,6 +404,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
 	case FIND_DEVICE_ID:		//查找手环
+		APP_find_device(buf, len);
 		break;
 	case SMART_NOTIFY_ID:		//智能提醒
 		break;
@@ -366,6 +450,9 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		break;
 	case BLE_CONNECT_ID:		//BLE断连提醒
 		ble_connect_or_disconnect_handle(buf, len);
+		break;
+	case CTP_NOTIFY_ID:
+		CTP_notify_handle(buf, len);
 		break;
 	default:
 		printk("data_id is unknown! \n");
@@ -470,7 +557,7 @@ void test_uart_ble(void)
 {
 	printk("test_uart_ble\n");
 	
-	ble_init();
+	//ble_init();
 
 	while(1)
 	{

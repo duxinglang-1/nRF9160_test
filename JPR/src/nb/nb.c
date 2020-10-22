@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <drivers/uart.h>
 #include <string.h>
+#include "lcd.h"
 
 #include <net/mqtt.h>
 #include <net/socket.h>
@@ -412,9 +413,12 @@ static void modem_configure(void)
 
 void test_nb(void)
 {
+	u16_t w,h;
 	int err;
 
 	printk("The MQTT simple sample started\n");
+	LCD_MeasureString("Start NB-IoT test!", &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,120,"Start NB-IoT test!");
 
 	modem_configure();
 

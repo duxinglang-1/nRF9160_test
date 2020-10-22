@@ -13,6 +13,7 @@
 #include "datetime.h"
 #include "Settings.h"
 #include "Uart_ble.h"
+#include "CST816.h"
 
 #define BUF_MAXSIZE	1024
 
@@ -47,7 +48,7 @@
 #define	DATE_FORMAT_ID			0xFF56			//年月日格式设置
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
-
+#define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
 
 static u32_t rece_len=0;
 
@@ -286,6 +287,56 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);	
 }
 
+void CTP_notify_handle(u8_t *buf, u32_t len)
+{
+	u8_t tmpbuf[128] = {0};
+	u8_t tp_type = TP_EVENT_MAX;
+	u16_t tp_x,tp_y;
+	
+	printk("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	switch(buf[5])
+	{
+	case GESTURE_NONE:
+		sprintf(tmpbuf, "GESTURE_NONE        ");
+		break;
+	case GESTURE_MOVING_UP:
+		tp_type = TP_EVENT_MOVING_UP;
+		sprintf(tmpbuf, "MOVING_UP   ");
+		break;
+	case GESTURE_MOVING_DOWN:
+		tp_type = TP_EVENT_MOVING_DOWN;
+		sprintf(tmpbuf, "MOVING_DOWN ");
+		break;
+	case GESTURE_MOVING_LEFT:
+		tp_type = TP_EVENT_MOVING_LEFT;
+		sprintf(tmpbuf, "MOVING_LEFT ");
+		break;
+	case GESTURE_MOVING_RIGHT:
+		tp_type = TP_EVENT_MOVING_RIGHT;
+		sprintf(tmpbuf, "MOVING_RIGHT");
+		break;
+	case GESTURE_SINGLE_CLICK:
+		tp_type = TP_EVENT_SINGLE_CLICK;
+		sprintf(tmpbuf, "SINGLE_CLICK");
+		break;
+	case GESTURE_DOUBLE_CLICK:
+		tp_type = TP_EVENT_DOUBLE_CLICK;
+		sprintf(tmpbuf, "DOUBLE_CLICK");
+		break;
+	case GESTURE_LONG_PRESS:
+		tp_type = TP_EVENT_LONG_PRESS;
+		sprintf(tmpbuf, "LONG_PRESS  ");
+		break;
+	}
+
+	if(tp_type != TP_EVENT_MAX)
+	{
+		tp_x = buf[7]*0x100+buf[8];
+		tp_y = buf[9]*0x100+buf[10];
+		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	}
+}
+
 /**********************************************************************************
 *Name: ble_receive_date_handle
 *Function:  处理蓝牙接收到的数据
@@ -399,6 +450,9 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		break;
 	case BLE_CONNECT_ID:		//BLE断连提醒
 		ble_connect_or_disconnect_handle(buf, len);
+		break;
+	case CTP_NOTIFY_ID:
+		CTP_notify_handle(buf, len);
 		break;
 	default:
 		printk("data_id is unknown! \n");

@@ -339,7 +339,7 @@ void LCD_SleepOut(void)
 	}
 	
 	if(bk_time > 0)
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), NULL);
 
 	if(!lcd_is_sleeping)
 		return;
@@ -518,7 +518,7 @@ void LCD_Init(void)
 	}
 	
 	if(bk_time > 0)
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));	
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), NULL);	
 }
 
 #endif/*LCD_R108101_GC9307*/

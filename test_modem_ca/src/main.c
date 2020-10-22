@@ -542,9 +542,11 @@ void main(void)
 		return;
 	}
 
-	while (1) {
+	while (1)
+	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
-		if (err < 0) {
+		if(err < 0)
+		{
 			printk("ERROR: poll %d\n", errno);
 			sprintf(tmpbuf, "ERROR: poll %d", errno);
 			show_infor(tmpbuf);
@@ -552,16 +554,19 @@ void main(void)
 		}
 
 		err = mqtt_live(&client);
-		if ((err != 0) && (err != -EAGAIN)) {
+		if((err != 0) && (err != -EAGAIN))
+		{
 			printk("ERROR: mqtt_live %d\n", err);
 			sprintf(tmpbuf, "ERROR: mqtt_live %d", err);
 			show_infor(tmpbuf);
 			break;
 		}
 
-		if ((fds.revents & POLLIN) == POLLIN) {
+		if((fds.revents & POLLIN) == POLLIN)
+		{
 			err = mqtt_input(&client);
-			if (err != 0) {
+			if (err != 0)
+			{
 				printk("ERROR: mqtt_input %d\n", err);
 				sprintf(tmpbuf, "ERROR: mqtt_input %d", err);
 				show_infor(tmpbuf);
@@ -569,13 +574,15 @@ void main(void)
 			}
 		}
 
-		if ((fds.revents & POLLERR) == POLLERR) {
+		if((fds.revents & POLLERR) == POLLERR)
+		{
 			printk("POLLERR\n");
 			show_infor("POLLERR");
 			break;
 		}
 
-		if ((fds.revents & POLLNVAL) == POLLNVAL) {
+		if((fds.revents & POLLNVAL) == POLLNVAL)
+		{
 			printk("POLLNVAL\n");
 			show_infor("POLLNVAL");
 			break;
@@ -586,9 +593,41 @@ void main(void)
 	show_infor("Disconnecting MQTT client...");
 
 	err = mqtt_disconnect(&client);
-	if (err) {
+	if (err)
+	{
 		printk("Could not disconnect MQTT client. Error: %d\n", err);
 		sprintf(tmpbuf, "Could not disconnect MQTT client. Error: %d", err);
 		show_infor(tmpbuf);
+	}
+
+	while(1)
+	{
+		if(pmu_trige_flag)
+		{
+			pmu_trige_flag = false;
+			pmu_interrupt_proc();
+		}
+		if(pmu_alert_flag)
+		{
+			pmu_alert_flag = false;
+			pmu_alert_proc();
+		}
+		if(sys_pwr_off)
+		{
+			sys_pwr_off = false;
+			SystemShutDown();
+		}	
+		if(lcd_sleep_in)
+		{
+			lcd_sleep_in = false;
+			LCD_SleepIn();
+		}
+		if(lcd_sleep_out)
+		{
+			lcd_sleep_out = false;
+			LCD_SleepOut();
+		}
+	
+		k_cpu_idle();
 	}
 }

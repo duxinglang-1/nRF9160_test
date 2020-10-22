@@ -2,7 +2,11 @@
 #include <drivers/gpio.h>
 
 #include "lcd.h"
-#include "font.h" 
+#include "font.h"
+#include "settings.h"
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+#include "Max20353.h"
+#endif
 
 #ifdef LCD_ORCT012210N_ST7789V2
 #include "LCD_ORCT012210N_ST7789V2.h"
@@ -15,15 +19,22 @@ struct device *gpio_lcd;
 struct spi_buf_set tx_bufs,rx_bufs;
 struct spi_buf tx_buff,rx_buff;
 
+static struct k_timer backlight_timer;
+
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
+static u32_t bk_time = 0;
+
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
 bool lcd_is_sleeping = true;
+
+extern bool lcd_sleep_in;
+extern bool lcd_sleep_out;
 
 static void LCD_SPI_Init(void)
 {
@@ -76,6 +87,11 @@ static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t r
 void Delay(unsigned int dly)
 {
 	k_sleep(K_MSEC(dly));
+}
+
+static void backlight_timer_handler(struct k_timer *timer)
+{
+	lcd_sleep_in = true;
 }
 
 //数据接口函数
@@ -275,14 +291,18 @@ void LCD_SleepIn(void)
 {
 	if(lcd_is_sleeping)
 		return;
-	
+
+	//关闭背光
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_Off();
+#else
+	//gpio_pin_write(gpio_lcd, LEDK, 1);
+	gpio_pin_write(gpio_lcd, LEDA, 0);
+#endif
+
 	WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
 	Delay(120);             //延时120ms
-
-	//关闭背光
-	//gpio_pin_write(gpio_lcd, LEDK, 1);
-	gpio_pin_write(gpio_lcd, LEDA, 0);
 
 	lcd_is_sleeping = true;
 }
@@ -290,6 +310,37 @@ void LCD_SleepIn(void)
 //屏幕唤醒
 void LCD_SleepOut(void)
 {
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+
+	switch(global_settings.backlight_time)
+	{
+	case BACKLIGHT_15_SEC:
+		bk_time = 15;
+		break;
+	case BACKLIGHT_30_SEC:
+		bk_time = 30;
+		break;
+	case BACKLIGHT_1_MIN:
+		bk_time = 60;
+		break;
+	case BACKLIGHT_2_MIN:
+		bk_time = 120;
+		break;
+	case BACKLIGHT_5_MIN:
+		bk_time = 300;
+		break;
+	case BACKLIGHT_10_MIN:
+		bk_time = 600;
+		break;
+	case BACKLIGHT_ALWAYS_ON:
+		bk_time = 0;
+		break;
+	}
+	
+	if(bk_time > 0)
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));
+
 	if(!lcd_is_sleeping)
 		return;
 	
@@ -298,8 +349,13 @@ void LCD_SleepOut(void)
 	WriteComm(0x29);
 
 	//点亮背光
+	//点亮背光
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_On();
+#else
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
-	gpio_pin_write(gpio_lcd, LEDA, 1);                                                                                                         
+	gpio_pin_write(gpio_lcd, LEDA, 1);                                                                                                           
+#endif	
 	
 	lcd_is_sleeping = false;
 }
@@ -417,12 +473,46 @@ void LCD_Init(void)
 	WriteComm(0x2C);
 
 	//点亮背光
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_On();
+#else
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
 	gpio_pin_write(gpio_lcd, LEDA, 1);
-
+#endif
+	
 	lcd_is_sleeping = false;
 
 	LCD_Clear(BLACK);		//清屏为黑色
+
+	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
+
+	switch(global_settings.backlight_time)
+	{
+	case BACKLIGHT_15_SEC:
+		bk_time = 15;
+		break;
+	case BACKLIGHT_30_SEC:
+		bk_time = 30;
+		break;
+	case BACKLIGHT_1_MIN:
+		bk_time = 60;
+		break;
+	case BACKLIGHT_2_MIN:
+		bk_time = 120;
+		break;
+	case BACKLIGHT_5_MIN:
+		bk_time = 300;
+		break;
+	case BACKLIGHT_10_MIN:
+		bk_time = 600;
+		break;
+	case BACKLIGHT_ALWAYS_ON:
+		bk_time = 0;
+		break;
+	}
+	
+	if(bk_time > 0)
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));	
 }
 
 #endif

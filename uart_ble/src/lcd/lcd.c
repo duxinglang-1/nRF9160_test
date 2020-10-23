@@ -878,6 +878,85 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 	}
 }
 
+/*********************************************************************************************************************
+* Name:LCD_Show_Ex_Char
+* Function:显示fontmaker工具生成的bin格式的点阵字库
+* Description:
+* 	检索表: 
+* 	从00000010h 开始，每 4 个字节表示一个字符的检索信息， 且从字符 0x0 开始。故空格字符（' '，编码为 0x20）的检索信息
+* 	（文件头的长度+字符编码*4 = 0x10 + 0x20 *4 = 0x90， 即 000000090h）为：10 04 00 10，即得出一个 32 位数为： 
+* 	0x10000410（十六进制） --- （00010000 00000000 00000100 00010000）. 
+* 	高 6 位，表示当前字符的宽度。 故得出 000100 -- 4 （字库宽度为 4 ）
+* 	低 26 位，表示当期字符的点阵数据的偏移地址。故得出 00 00000000 00000100 00010000 -- 0x410 （点阵信息的起始地址为 0x410) 
+* 
+* 	点阵数据 
+* 	由于空格字符的起始地址为 0x410，且数据长度为：（（字体宽度+7）/8）* 字体高度 = ((4+7)/8)*16 = 16. 
+* 	故取如下 16 字节，即为空格字符的点阵数据。
+*********************************************************************************************************************/
+u8_t LCD_Show_Ex_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
+{
+	u8_t temp,t1,t,i=0;
+	u16_t y0=y,x0=x;
+	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
+	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
+ 	u8_t databuf[2*COL] = {0};
+	u32_t index_addr,font_addr=0;
+
+	index_addr = FONT_MBCS_HEAD_LEN+4*num;
+	font_addr = asc2_16_rm[index_addr]+0x100*asc2_16_rm[index_addr+1]+0x10000*asc2_16_rm[index_addr+2];
+	cbyte = asc2_16_rm[index_addr+3]>>2;
+	csize = ((cbyte+7)/8)*system_font;
+
+	for(t=0;t<csize;t++)
+	{
+		temp=asc2_16_rm[font_addr+t];
+
+		BlockWrite(x0,y,(cbyte),1);	  	//设置刷新位置
+
+		for(t1=0;t1<8;t1++)
+		{
+			if(temp&0x80)
+			{
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				DispDate(2*i, databuf);
+				i=0;
+
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return cbyte;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+
+			}
+			if((x-x0)==(cbyte))
+			{
+				DispDate(2*i, databuf);
+				i=0;
+				
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return cbyte;	//超区域了
+				break;
+			}
+		}	
+	}  	 
+
+	return cbyte;
+}
+ 
 //在指定位置显示一个字符
 //x,y:起始坐标
 //num:要显示的字符:" "--->"~"
@@ -1367,24 +1446,31 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 {
 	uint8_t x0=x;
+	uint8_t width;
 	uint16_t phz=0;
-	
-    while(*p)
-    {       
-        if(x>=LCD_WIDTH)break;//退出
-        if(y>=LCD_HEIGHT)break;//退出
+
+	while(*p)
+	{       
+		if(x>=LCD_WIDTH)break;//退出
+		if(y>=LCD_HEIGHT)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
 			LCD_ShowChar_from_flash(x,y,*p,0);
 		#else
+		  #ifdef FONTMAKER_FONT
+			width = LCD_Show_Ex_Char(x,y,*p,0);
+		  	x += width;
+		  #else
 			LCD_ShowChar(x,y,*p,0);
+		  	x += system_font/2;
+		  #endif
 		#endif
-			x+=system_font/2;
+			
 			p++;
 		}
 		else if(*(p+1))
-        {
+		{
 			phz = *p<<8;
 			phz += *(p+1);
 		#ifdef IMG_FONT_FROM_FLASH	
@@ -1395,7 +1481,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 			x+=system_font;
 			p+=2;
 		}        
-    }
+	}
 }
 
 //m^n函数
@@ -1491,6 +1577,42 @@ void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
 	}
 } 
 
+//根据字体测量字符的宽度
+//p:字符指针
+//width,height:返回的字符串宽度和高度变量地址
+u8_t LCD_MeasureByte(u8_t byte)
+{
+	u8_t width, *ptr_font;
+	u32_t index_addr,font_addr=0;
+
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			ptr_font=asc2_16_rm; 	 	//调用1608字体
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			ptr_font=asc2_24_rm;			//调用2412字体
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			ptr_font=asc2_32_rm;			//调用3216字体
+			break;
+	#endif
+		default:
+			return 0;							//没有的字库
+	}
+	
+	index_addr = FONT_MBCS_HEAD_LEN+4*byte;
+	font_addr = ptr_font[index_addr]+0x100*ptr_font[index_addr+1]+0x10000*ptr_font[index_addr+2];
+	width = ptr_font[index_addr+3]>>2;
+	
+	return width;
+}
+
 //根据字体测量字符串的长度和高度
 //p:字符串指针
 //width,height:返回的字符串宽度和高度变量地址
@@ -1510,7 +1632,11 @@ void LCD_MeasureString(uint8_t *p, uint16_t *width,uint16_t *height)
     {       
 		if(*p<0x80)
 		{
+		#ifdef FONTMAKER_FONT
+			(*width) += LCD_MeasureByte(*p);
+		#else
 			(*width) += system_font/2;
+		#endif
 			p++;
 		}
 		else if(*(p+1))

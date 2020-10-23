@@ -13,9 +13,24 @@
 //#define LCD_TYPE_I2C			//I2C
 #define LCD_TYPE_SPI			//SPI
 
-#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 //#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
+
+#define FONTMAKER_FONT		//fontmake根据RM提供的矢量字库转换成的点阵字库数据
+#ifdef FONTMAKER_FONT
+#define FONT_MBCS_HEAD_FLAG_0	0x4D
+#define FONT_MBCS_HEAD_FLAG_1	0x46
+#define FONT_MBCS_HEAD_FLAG_1	0x4C
+#define FONT_MBCS_HEAD_FLAG_1	0x11
+#define FONT_MBCS_HEAD_LEN		16
+
+#define FONT_UNICODE_HEAD_FLAG_0	0x55
+#define FONT_UNICODE_HEAD_FLAG_1	0x46
+#define FONT_UNICODE_HEAD_FLAG_1	0x4C
+#define FONT_UNICODE_HEAD_FLAG_1	0x11
+#define FONT_UNICODE_HEAD_LEN		16
+#endif
 
 //LCD的宽度和高度
 extern uint16_t  LCD_WIDTH;

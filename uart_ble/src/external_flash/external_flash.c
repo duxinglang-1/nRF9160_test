@@ -573,7 +573,14 @@ void test_flash(void)
 	SpiFlash_Write_Buf(chinese_3232_12, FONT_CHN_SM_3232_ADDR+(700*128)*11, (478*128));
 	LCD_ShowString(0,220,"FLASH写入32X32中文成功");	
 #endif
-	
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,160,"FLASH写入RM16X08英文字库...");
+	SpiFlash_Write_Buf(asc2_16_rm, FONT_RM_ASC_16_ADDR, FONT_RM_ASC_16_SIZE);
+	LCD_ShowString(0,180,"FLASH写入RM16X08英文成功");	
+#endif
+
 	//读出数据
 	//SpiFlash_Read(my_rx_buf,0,len);
 	//LCD_ShowString(0,140,"FLASH读出数据:");

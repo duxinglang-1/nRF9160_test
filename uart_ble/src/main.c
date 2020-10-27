@@ -20,7 +20,7 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
-//#include "CST816.h"
+#include "CST816.h"
 //#include "Max20353.h"
 
 //#define ANALOG_CLOCK
@@ -504,7 +504,7 @@ void test_show_string(void)
 	
 	LCD_MeasureString("2015-2020 August International Ltd. All Rights Reserved.",&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 10;	
+	y = y + h + 10;
 	LCD_ShowString(x,y,"2015-2020 August International Ltd. All Rights Reserved.");
 
 #ifdef FONT_24
@@ -557,7 +557,7 @@ void system_init(void)
 	//pmu_init();
 	LCD_Init();
 	flash_init();
-	ble_init();
+	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 }
 
 extern void motion_sensor_msg_proc(void);
@@ -569,30 +569,31 @@ extern void motion_sensor_msg_proc(void);
 int main(void)
 {
 	bool count = false;
-
+	u16_t w,h;
+	
 	printk("main\n");
 
 	system_init();
 	dk_set_led(DK_LED1,1);
 
-//	test_show_string();
+	test_show_string();
 //	test_show_image();
 //	test_nvs();
 //	test_flash();
 //	test_uart_ble();
 //	test_sensor();
 //	test_show_digital_clock();
-	test_sensor();
+//	test_sensor();
 //	test_pmu();
 //	test_crypto();
 //	test_imei();
 //	test_tp();
+//	test_gps();
+//	test_nb();
 
-//	pmu_alert_proc();
-
-	while(1)
+	while(0)
 	{
-	#if 0
+	#if 1
 		if(update_time || update_date || update_week || update_date_time)
 		{
 			if(update_date_time || show_date_time_first)
@@ -657,6 +658,11 @@ int main(void)
 			pmu_alert_flag = false;
 			pmu_alert_proc();
 		}
+		if(sys_pwr_off)
+		{
+			sys_pwr_off = false;
+			SystemShutDown();
+		}	
 	#endif
 	
 		if(lcd_sleep_in)
@@ -670,15 +676,7 @@ int main(void)
 			lcd_sleep_out = false;
 			LCD_SleepOut();
 		}
-	#if 0	
-		if(sys_pwr_off)
-		{
-			sys_pwr_off = false;
-			SystemShutDown();
-		}
-	#endif	
-
-		motion_sensor_msg_proc();
+		//motion_sensor_msg_proc();
 	
 		k_cpu_idle();
 	}

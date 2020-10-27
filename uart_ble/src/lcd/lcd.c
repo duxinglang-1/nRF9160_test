@@ -983,6 +983,7 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	}  	    	   	 	  
 }
 
+#ifdef FONTMAKER_FONT
 /*********************************************************************************************************************
 * Name:LCD_Show_Ex_Char
 * Function:显示fontmaker工具生成的bin格式的点阵字库
@@ -1104,7 +1105,8 @@ u8_t LCD_Show_Ex_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 
 	return cbyte;
 }
-#endif
+#endif/*FONTMAKER_FONT*/
+#endif/*IMG_FONT_FROM_FLASH*/
 
 //在指定位置显示flash中一个字符
 //x,y:起始坐标
@@ -1221,6 +1223,7 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 #endif
 }   
 
+#ifdef FONTMAKER_FONT
 /*********************************************************************************************************************
 * Name:LCD_Show_Ex_Char
 * Function:显示fontmaker工具生成的bin格式的点阵字库
@@ -1354,7 +1357,7 @@ u8_t LCD_Show_Ex_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 
 	return cbyte;
 }
-
+#endif/*FONTMAKER_FONT*/
 
 //在指定位置显示一个中文字符
 //x,y:起始坐标
@@ -1760,9 +1763,9 @@ void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
 	}
 } 
 
+#ifdef FONTMAKER_FONT
 //根据字体测量字符的宽度
-//p:字符指针
-//width,height:返回的字符串宽度和高度变量地址
+//byte:字符
 u8_t LCD_MeasureByte(u8_t byte)
 {
 	u8_t width, *ptr_font;
@@ -1824,6 +1827,7 @@ u8_t LCD_MeasureByte(u8_t byte)
 
 	return width;
 }
+#endif/*FONTMAKER_FONT*/
 
 //根据字体测量字符串的长度和高度
 //p:字符串指针

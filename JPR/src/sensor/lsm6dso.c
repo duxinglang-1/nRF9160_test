@@ -41,7 +41,7 @@ typedef union{
 static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;
 
-stmdev_ctx_t dev_ctx;
+stmdev_ctx_t imu_dev_ctx;
 lsm6dso_pin_int1_route_t int1_route;
 lsm6dso_pin_int2_route_t int2_route;
 lsm6dso_all_sources_t all_source;
@@ -139,46 +139,46 @@ uint8_t init_gpio(void)
 
 void sensor_init(void)
 {
-	lsm6dso_device_id_get(&dev_ctx, &whoamI);
+	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
 	if(whoamI != LSM6DSO_ID)
 		while(1);
 
-	lsm6dso_reset_set(&dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	do
 	{
-		lsm6dso_reset_get(&dev_ctx, &rst);
+		lsm6dso_reset_get(&imu_dev_ctx, &rst);
 	}while(rst);
 
-	lsm6dso_i3c_disable_set(&dev_ctx, LSM6DSO_I3C_DISABLE);
+	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
 
-	lsm6dso_xl_full_scale_set(&dev_ctx, LSM6DSO_2g);
-	lsm6dso_gy_full_scale_set(&dev_ctx, LSM6DSO_250dps);
-	lsm6dso_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
+	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
+	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
 
-	lsm6dso_xl_data_rate_set(&dev_ctx, LSM6DSO_XL_ODR_417Hz);
-	lsm6dso_gy_data_rate_set(&dev_ctx, LSM6DSO_GY_ODR_417Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_417Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_417Hz);
 
-	lsm6dso_tap_detection_on_z_set(&dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_tap_detection_on_y_set(&dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_tap_detection_on_x_set(&dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_tap_detection_on_x_set(&imu_dev_ctx, PROPERTY_ENABLE);
 
-	lsm6dso_tap_threshold_x_set(&dev_ctx, 0x09);
-	lsm6dso_tap_threshold_y_set(&dev_ctx, 0x09);
-	lsm6dso_tap_threshold_z_set(&dev_ctx, 0x09);
+	lsm6dso_tap_threshold_x_set(&imu_dev_ctx, 0x09);
+	lsm6dso_tap_threshold_y_set(&imu_dev_ctx, 0x09);
+	lsm6dso_tap_threshold_z_set(&imu_dev_ctx, 0x09);
 
-	lsm6dso_tap_quiet_set(&dev_ctx, 0x03);
-	lsm6dso_tap_shock_set(&dev_ctx, 0x03);
+	lsm6dso_tap_quiet_set(&imu_dev_ctx, 0x03);
+	lsm6dso_tap_shock_set(&imu_dev_ctx, 0x03);
 
-	lsm6dso_tap_mode_set(&dev_ctx, LSM6DSO_ONLY_SINGLE);
+	lsm6dso_tap_mode_set(&imu_dev_ctx, LSM6DSO_ONLY_SINGLE);
 
-	lsm6dso_tilt_sens_set(&dev_ctx, PROPERTY_ENABLE); 
+	lsm6dso_tilt_sens_set(&imu_dev_ctx, PROPERTY_ENABLE); 
 
-	lsm6dso_pedo_sens_set(&dev_ctx, LSM6DSO_PEDO_BASE_MODE);
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_PEDO_BASE_MODE);
 
-	lsm6dso_pin_int2_route_get(&dev_ctx, &int2_route);
+	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
 	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
 	int2_route.emb_func_int2.int2_tilt = PROPERTY_ENABLE;
-	lsm6dso_pin_int2_route_set(&dev_ctx, &int2_route);
+	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	printf("Sensor Init Done\r\n");
 }
@@ -193,18 +193,18 @@ void test_sensor(void)
 	init_i2c();
 	init_gpio();
 	
-	dev_ctx.write_reg = platform_write;
-	dev_ctx.read_reg = platform_read;
-	dev_ctx.handle = &LSM6DSO_I2C;  
+	imu_dev_ctx.write_reg = platform_write;
+	imu_dev_ctx.read_reg = platform_read;
+	imu_dev_ctx.handle = &LSM6DSO_I2C;  
 
 	sensor_init();
-	lsm6dso_steps_reset(&dev_ctx); //reset step counter
+	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	
-	while(0)
+	while(1)
 	{
 		if(single_tap_event)
 		{		
-			lsm6dso_tilt_flag_data_ready_get(&dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
+			lsm6dso_tilt_flag_data_ready_get(&imu_dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
 			if (is_tilt)
 			{
 				printf("tilt detected\n");	//检测到翻到
@@ -218,7 +218,7 @@ void test_sensor(void)
 
 		if(button_flag)
 		{
-			lsm6dso_number_of_steps_get(&dev_ctx, (uint8_t*)&steps);
+			lsm6dso_number_of_steps_get(&imu_dev_ctx, (uint8_t*)&steps);
 			printf("steps :%d\r\n", steps);
 			button_flag = false;
 		}
@@ -234,7 +234,7 @@ void motion_sensor_msg_proc(void)
 	{		
 		single_tap_event = false;
 		
-		lsm6dso_tilt_flag_data_ready_get(&dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
+		lsm6dso_tilt_flag_data_ready_get(&imu_dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
 		if(is_tilt)
 		{
 			printf("tilt detected\n");	//检测到翻到
@@ -254,7 +254,7 @@ void motion_sensor_msg_proc(void)
 	{
 		button_flag = false;
 		
-		lsm6dso_number_of_steps_get(&dev_ctx, (uint8_t*)&steps);
+		lsm6dso_number_of_steps_get(&imu_dev_ctx, (uint8_t*)&steps);
 		printf("steps :%d\r\n", steps);
 
 		sprintf(tmpbuf, "step is:%d", steps);

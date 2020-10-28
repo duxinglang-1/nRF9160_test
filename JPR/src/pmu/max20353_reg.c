@@ -61,7 +61,7 @@ static unsigned char Pattern[256] =
 	0x00,0x4E,0x7B,0x7F,0x7F,0x7B,0x4E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 };
 
-extern maxdev_ctx_t dev_ctx;
+extern maxdev_ctx_t pmu_dev_ctx;
 
 void prepare_to_load_model();
 void load_model();
@@ -417,7 +417,7 @@ int MAX20353_WriteRegMulti(max20353_reg_t reg, uint8_t *value, uint8_t len)
 {
 	s32_t ret;
 
-	ret = dev_ctx.write_reg(dev_ctx.handle, reg, value, len);
+	ret = pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, reg, value, len);
 	if(ret != 0)
 	{
 		ret = MAX20353_ERROR; 
@@ -434,7 +434,7 @@ int MAX20353_WriteReg(max20353_reg_t reg, uint8_t value)
 { 
     s32_t ret;
 
-	ret = dev_ctx.write_reg(dev_ctx.handle, reg, &value, 1);
+	ret = pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, reg, &value, 1);
 	if(ret != 0)
 	{
 		ret = MAX20353_ERROR;  
@@ -454,7 +454,7 @@ int MAX20353_ReadReg(max20353_reg_t reg, uint8_t *value)
 {
     s32_t ret;
 
-	ret = dev_ctx.read_reg(dev_ctx.handle, reg, value, 1);
+	ret = pmu_dev_ctx.read_reg(pmu_dev_ctx.handle, reg, value, 1);
     if(ret != 0)
     {
         ret = MAX20353_ERROR;
@@ -474,7 +474,7 @@ int MAX20353_ReadRegMulti(max20353_reg_t reg, uint8_t *value, uint8_t len)
 {
     s32_t ret;
 
-	ret = dev_ctx.read_reg(dev_ctx.handle, reg, value, len);
+	ret = pmu_dev_ctx.read_reg(pmu_dev_ctx.handle, reg, value, len);
     if(ret != 0)
         ret = MAX20353_ERROR;
     else
@@ -927,7 +927,7 @@ void load_model(void)
 	addr_mem = 0x40;
 	for(k=0;k<0x40;k++)
 	{
-		dev_ctx.write_reg(dev_ctx.handle, addr_mem, &model_data[k], 1);
+		pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, addr_mem, &model_data[k], 1);
 		addr_mem++;
 	}
 	
@@ -952,7 +952,7 @@ void load_model(void)
 		/* Send Data Byte (RCOMPSeg_MSB)
 		Send Data Byte (RCOMPSeg_LSB)
 		*/
-		dev_ctx.write_reg(dev_ctx.handle, addr_mem, databuf, 2);
+		pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, addr_mem, databuf, 2);
 		addr_mem+2;
 	}
 	/* I2C STOP */
@@ -1070,7 +1070,7 @@ void ReadWord(u8_t memory_location, u8_t *output_MSB, u8_t *output_LSB)
 {
 	u8_t databuf[2] = {0};
 
-	dev_ctx.read_reg(dev_ctx.handle, memory_location, databuf, 2);
+	pmu_dev_ctx.read_reg(pmu_dev_ctx.handle, memory_location, databuf, 2);
 	*output_MSB = databuf[0];
 	*output_LSB = databuf[1];
 
@@ -1095,7 +1095,7 @@ void WriteWord(u8_t memory_location, u8_t MSB, u8_t LSB)
 
 	databuf[0] = MSB;
 	databuf[1] = LSB;
-	dev_ctx.write_reg(dev_ctx.handle, memory_location, databuf, 2);
+	pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, memory_location, databuf, 2);
 	
 	/* Perform these I2C tasks:
 	START

@@ -43,11 +43,11 @@ static bool connected;
 /* File descriptor */
 static struct pollfd fds;
 
-static u8_t tmpbuf[128] = {0};
-
 //#define TEST_BNT_LED   //liming
 
 #ifdef SHOW_LOG_IN_SCREEN
+static u8_t tmpbuf[128] = {0};
+
 void show_infor(u8_t *strbuf)
 {
 	LCD_Fill(20,90,200,50,BLACK);
@@ -515,6 +515,14 @@ static void modem_configure(void)
 {
 #ifdef SHOW_LOG_IN_SCREEN
 	show_infor("modem_configure");
+#endif
+
+#if 1 //xb test 20200927
+	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
+	{
+		printk("AT_CMD write fail!\n");
+		return;
+	}
 #endif
 
 #if defined(CONFIG_LTE_LINK_CONTROL)

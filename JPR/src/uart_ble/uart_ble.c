@@ -368,7 +368,7 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 void ble_receive_date_handle(u8_t *buf, u32_t len)
 {
 	u8_t CRC_data,data_status;
-	static u16_t data_len,data_ID;
+	u16_t data_len,data_ID;
 	u32_t i;
 	
 	if((buf[0] != PACKET_HEAD) || (buf[len-1] != PACKET_END))	//format is error
@@ -557,7 +557,7 @@ void test_uart_ble(void)
 {
 	printk("test_uart_ble\n");
 	
-	ble_init();
+	//ble_init();
 
 	while(1)
 	{

@@ -18,6 +18,8 @@
 #include "supl_support.h"
 #endif
 
+#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将GPS测试状态LOG信息显示在屏幕上
+
 #define AT_XSYSTEMMODE      "AT\%XSYSTEMMODE=1,0,1,0"
 #define AT_ACTIVATE_GPS     "AT+CFUN=31"
 #define AT_ACTIVATE_LTE     "AT+CFUN=21"
@@ -56,9 +58,24 @@ nrf_gnss_data_frame_t last_fix;
 
 K_SEM_DEFINE(lte_ready, 0, 1);
 
+#ifdef SHOW_LOG_IN_SCREEN
+static u8_t tmpbuf[128] = {0};
+
+static void show_infor(u8_t *strbuf)
+{
+	LCD_Fill(25,50,190,160,BLACK);
+	LCD_ShowStringInRect(30,50,180,160,strbuf);
+}
+#endif
+
 void bsd_recoverable_error_handler(uint32_t error)
 {
 	printf("Err: %lu\n", (unsigned long)error);
+#ifdef SHOW_LOG_IN_SCREEN	
+	sprintf(tmpbuf, "Err: %lu", (unsigned long)error);
+	show_infor(tmpbuf);
+#endif
+	
 }
 
 static int setup_modem(void)
@@ -95,24 +112,31 @@ static void wait_for_lte(void *context, const char *response)
 
 static int activate_lte(bool activate)
 {
-	if (activate) {
-		if (at_cmd_write(AT_ACTIVATE_LTE, NULL, 0, NULL) != 0) {
+	if(activate)
+	{
+		if(at_cmd_write(AT_ACTIVATE_LTE, NULL, 0, NULL) != 0)
+		{
 			return -1;
 		}
 
 		at_notif_register_handler(NULL, wait_for_lte);
-		if (at_cmd_write("AT+CEREG=2", NULL, 0, NULL) != 0) {
+		if(at_cmd_write("AT+CEREG=2", NULL, 0, NULL) != 0)
+		{
 			return -1;
 		}
 
 		k_sem_take(&lte_ready, K_FOREVER);
 
 		at_notif_deregister_handler(NULL, wait_for_lte);
-		if (at_cmd_write("AT+CEREG=0", NULL, 0, NULL) != 0) {
+		if(at_cmd_write("AT+CEREG=0", NULL, 0, NULL) != 0)
+		{
 			return -1;
 		}
-	} else {
-		if (at_cmd_write(AT_DEACTIVATE_LTE, NULL, 0, NULL) != 0) {
+	}
+	else
+	{
+		if(at_cmd_write(AT_DEACTIVATE_LTE, NULL, 0, NULL) != 0)
+		{
 			return -1;
 		}
 	}
@@ -140,13 +164,20 @@ static int gnss_ctrl(uint32_t ctrl)
 				     NRF_SOCK_DGRAM,
 				     NRF_PROTO_GNSS);
 
-		if (gnss_fd >= 0)
+		if(gnss_fd >= 0)
 		{
 			printk("GPS Socket created\n");
+		#ifdef SHOW_LOG_IN_SCREEN	
+			show_infor("GPS Socket created");
+		#endif	
 		}
 		else
 		{
 			printk("Could not init socket (err: %d)\n", gnss_fd);
+		#ifdef SHOW_LOG_IN_SCREEN	
+			sprintf(tmpbuf, "Could not init socket (err: %d)", gnss_fd);
+			show_infor(tmpbuf);
+		#endif
 			return -1;
 		}
 
@@ -158,6 +189,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to set fix retry value\n");
+		#ifdef SHOW_LOG_IN_SCREEN	
+			show_infor("Failed to set fix retry value");
+		#endif
 			return -1;
 		}
 
@@ -169,6 +203,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to set fix interval value\n");
+		#ifdef SHOW_LOG_IN_SCREEN	
+			show_infor("Failed to set fix interval value");
+		#endif	
 			return -1;
 		}
 
@@ -180,6 +217,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to set nmea mask\n");
+		#ifdef SHOW_LOG_IN_SCREEN	
+			show_infor("Failed to set nmea mask");
+		#endif	
 			return -1;
 		}
 	}
@@ -194,6 +234,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to start GPS\n");
+		#ifdef SHOW_LOG_IN_SCREEN	
+			show_infor("Failed to start GPS");
+		#endif	
 			return -1;
 		}
 	}
@@ -208,6 +251,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to stop GPS\n");
+		#ifdef SHOW_LOG_IN_SCREEN	
+			show_infor("Failed to stop GPS");
+		#endif	
 			return -1;
 		}
 	}
@@ -222,6 +268,9 @@ static int init_app(void)
 	if(setup_modem() != 0)
 	{
 		printk("Failed to initialize modem\n");
+	#ifdef SHOW_LOG_IN_SCREEN	
+		show_infor("Failed to initialize modem");
+	#endif	
 		return -1;
 	}
 
@@ -258,6 +307,11 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 
 	printk("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
 	printk("\nSeconds since last fix %lld\n", (k_uptime_get() - fix_timestamp) / 1000);
+#ifdef SHOW_LOG_IN_SCREEN
+	//sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
+	//				tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
+	//show_infor(tmpbuf);
+#endif	
 }
 
 static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
@@ -267,34 +321,31 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 	LCD_Fill(0,20,240,200,BLACK);
 	
 	printf("Longitude:  %f\n", pvt_data->pvt.longitude);
-	sprintf(tmpbuf, "Longitude:  %f", pvt_data->pvt.longitude);
-	LCD_ShowString(0,20,tmpbuf);	
 	printf("Latitude:   %f\n", pvt_data->pvt.latitude);
-	sprintf(tmpbuf, "Latitude:   %f", pvt_data->pvt.latitude);
-	LCD_ShowString(0,40,tmpbuf);
 	printf("Altitude:   %f\n", pvt_data->pvt.altitude);
-	sprintf(tmpbuf, "Altitude:   %f", pvt_data->pvt.altitude);
-	LCD_ShowString(0,60,tmpbuf);	
 	printf("Speed:      %f\n", pvt_data->pvt.speed);
-	sprintf(tmpbuf, "Speed:      %f", pvt_data->pvt.speed);
-	LCD_ShowString(0,80,tmpbuf);	
 	printf("Heading:    %f\n", pvt_data->pvt.heading);
-	sprintf(tmpbuf, "Heading:    %f", pvt_data->pvt.heading);
-	LCD_ShowString(0,100,tmpbuf);	
-	printk("Date:       %02u-%02u-%02u", pvt_data->pvt.datetime.day,
+	printk("Date:       %02u-%02u-%02u", pvt_data->pvt.datetime.year,
 					       					pvt_data->pvt.datetime.month,
-					       					pvt_data->pvt.datetime.year);
-	sprintf(tmpbuf, "Date:       %02u-%02u-%02u", pvt_data->pvt.datetime.day,
-					       					pvt_data->pvt.datetime.month,
-					       					pvt_data->pvt.datetime.year);
-	LCD_ShowString(0,120,tmpbuf);	
+					       					pvt_data->pvt.datetime.day);
 	printk("Time (UTC): %02u:%02u:%02u", pvt_data->pvt.datetime.hour,
 					       					pvt_data->pvt.datetime.minute,
 					      					pvt_data->pvt.datetime.seconds);
-	sprintf(tmpbuf, "Time (UTC): %02u:%02u:%02u", pvt_data->pvt.datetime.hour,
-					       					pvt_data->pvt.datetime.minute,
-					      					pvt_data->pvt.datetime.seconds);
-	LCD_ShowString(0,140,tmpbuf);	
+#ifdef SHOW_LOG_IN_SCREEN
+	sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u", 
+					pvt_data->pvt.longitude,
+					pvt_data->pvt.latitude,
+					pvt_data->pvt.altitude,
+					pvt_data->pvt.speed,
+					pvt_data->pvt.heading,
+					pvt_data->pvt.datetime.year,
+					pvt_data->pvt.datetime.month,
+					pvt_data->pvt.datetime.day,
+					pvt_data->pvt.datetime.hour,
+					pvt_data->pvt.datetime.minute,
+					pvt_data->pvt.datetime.seconds);
+	show_infor(tmpbuf);
+#endif	
 }
 
 static void print_nmea_data(void)
@@ -306,7 +357,6 @@ static void print_nmea_data(void)
 	for(i = 0; i < nmea_string_cnt; ++i)
 	{
 		printk("%s", nmea_strings[i]);
-		//LCD_ShowString(0,28+20*i,nmea_strings[i]);
 	}
 }
 
@@ -361,14 +411,27 @@ int process_gps_data(nrf_gnss_data_frame_t *gps_data)
 			printk("\033[2J");
 			printk("New AGPS data requested, contacting SUPL server, flags %d\n",
 			       gps_data->agps.data_flags);
+		#ifdef SHOW_LOG_IN_SCREEN
+			sprintf(tmpbuf, "New AGPS data requested, contacting SUPL server, flags %d", gps_data->agps.data_flags);
+			show_infor(tmpbuf);
+		#endif
 			gnss_ctrl(GNSS_STOP);
 			activate_lte(true);
 			printk("Established LTE link\n");
+		#ifdef SHOW_LOG_IN_SCREEN
+			show_infor("Established LTE link");
+		#endif	
 			if(open_supl_socket() == 0)
 			{
 				printf("Starting SUPL session\n");
+			#ifdef SHOW_LOG_IN_SCREEN
+				show_infor("Starting SUPL session");
+			#endif	
 				supl_session(&gps_data->agps);
 				printk("Done\n");
+			#ifdef SHOW_LOG_IN_SCREEN
+				show_infor("Done");
+			#endif	
 				close_supl_socket();
 			}
 			activate_lte(false);
@@ -399,14 +462,23 @@ int inject_agps_type(void *agps,
 				&type,
 				sizeof(type));
 
-	if (retval != 0) {
+	if(retval != 0)
+	{
 		printk("Failed to send AGNSS data, type: %d (err: %d)\n",
 		       type,
 		       errno);
+	#ifdef SHOW_LOG_IN_SCREEN
+		sprintf(tmpbuf, "Failed to send AGNSS data, type: %d (err: %d)", type, errno);
+		show_infor(tmpbuf);
+	#endif	
 		return -1;
 	}
 
 	printk("Injected AGPS data, flags: %d, size: %d\n", type, agps_size);
+#ifdef SHOW_LOG_IN_SCREEN
+	sprintf(tmpbuf, "Injected AGPS data, flags: %d, size: %d", type, agps_size);
+	show_infor(tmpbuf);
+#endif
 
 	return 0;
 }
@@ -429,6 +501,9 @@ int test_gps(void)
 #endif
 
 	printk("Staring GPS application\n");
+#ifdef SHOW_LOG_IN_SCREEN
+	show_infor("Staring GPS application");
+#endif
 
 	if (init_app() != 0) {
 		return -1;
@@ -443,8 +518,9 @@ int test_gps(void)
 #endif
 
 	printk("Getting GPS data...\n");
-	sprintf(tmpbuf, "Getting GPS data...");
-	LCD_ShowString(0,0,tmpbuf);
+#ifdef SHOW_LOG_IN_SCREEN
+	show_infor("Getting GPS data...");
+#endif
 
 	while(1)
 	{
@@ -463,6 +539,10 @@ int test_gps(void)
 			print_satellite_stats(&gps_data);
 			printk("\nScanning [%c] ",
 					update_indicator[cnt%4]);
+		#ifdef SHOW_LOG_IN_SCREEN
+			sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
+			show_infor(tmpbuf);
+		#endif	
 		}
 
 		if(((k_uptime_get() - fix_timestamp) >= 1) && (got_first_fix))

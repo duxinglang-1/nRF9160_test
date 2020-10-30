@@ -14,7 +14,7 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 bool pmu_trige_flag = false;
 bool pmu_alert_flag = false;
 
-maxdev_ctx_t dev_ctx;
+maxdev_ctx_t pmu_dev_ctx;
 
 static bool init_i2c(void)
 {
@@ -164,9 +164,9 @@ void pmu_init(void)
 	if(!rst)
 		return;
 
-	dev_ctx.write_reg = platform_write;
-	dev_ctx.read_reg  = platform_read;
-	dev_ctx.handle    = i2c_pmu;
+	pmu_dev_ctx.write_reg = platform_write;
+	pmu_dev_ctx.read_reg  = platform_read;
+	pmu_dev_ctx.handle    = i2c_pmu;
 
 	MAX20353_Init();
 }

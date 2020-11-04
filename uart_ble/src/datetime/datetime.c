@@ -2,7 +2,7 @@
 ** File name:			     datetime.c
 ** Last modified Date:          
 ** Last Version:		   
-** Descriptions:		   使用的SDK版本-SDK_15.2
+** Descriptions:		   使用的ncs版本-1.2.0
 **						
 ** Created by:			谢彪
 ** Created date:		2019-12-31
@@ -126,6 +126,7 @@ void UpdateSystemTime(void)
 	if((date_time_changed&0x02) != 0)
 	{
 		//SaveSystemDateTime();
+		AlarmRemindCheck(date_time);
 	}	
 }
 

@@ -31,6 +31,7 @@
 #define GNSS_INIT_AND_START 1
 #define GNSS_STOP           2
 #define GNSS_RESTART        3
+#define GNSS_CLOSE        	4
 
 #define AT_CMD_SIZE(x) (sizeof(x) - 1)
 
@@ -100,10 +101,25 @@ void bsd_recoverable_error_handler(uint32_t error)
 static int setup_modem(void)
 {
 	int i;
-		
+
 	for(i = 0; i < ARRAY_SIZE(at_commands_activate_gps); i++)
 	{
 		if(at_cmd_write(at_commands_activate_gps[i], NULL, 0, NULL) != 0)
+		{
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int reset_modem(void)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(at_commands_deactivate_gps); i++)
+	{
+		if(at_cmd_write(at_commands_deactivate_gps[i], NULL, 0, NULL) != 0)
 		{
 			return -1;
 		}
@@ -273,6 +289,16 @@ static int gnss_ctrl(uint32_t ctrl)
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("Failed to stop GPS");
 		#endif	
+			return -1;
+		}
+	}
+
+	if(ctrl == GNSS_CLOSE)
+	{
+		retval = nrf_close(gnss_fd);
+		if(retval != 0)
+		{
+			printk("Failed to close GPS\n");
 			return -1;
 		}
 	}
@@ -505,14 +531,15 @@ int inject_agps_type(void *agps,
 
 void gps_off(void)
 {
-	int i;
-		
-	for(i = 0; i < ARRAY_SIZE(at_commands_deactivate_gps); i++)
+	gnss_ctrl(GNSS_STOP);
+	gnss_ctrl(GNSS_CLOSE);
+
+	if(reset_modem() != 0)
 	{
-		if(at_cmd_write(at_commands_deactivate_gps[i], NULL, 0, NULL) != 0)
-		{
-			return -1;
-		}
+		printk("Failed to reset modem\n");
+	#ifdef SHOW_LOG_IN_SCREEN	
+		show_infor("Failed to reset modem");
+	#endif	
 	}
 
 	got_first_fix = false;
@@ -605,8 +632,8 @@ void gps_on(void)
 				if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
 					k_timer_stop(&app_wait_gps_timer);
 
-				//APP_wait_gps = false;
-				//gps_off();
+				APP_wait_gps = false;
+				gps_off();
 
 				//UTC date&time
 				//year
@@ -682,7 +709,7 @@ void APP_Ask_GPS_Data_timerout(void)
 	
 	APP_wait_gps = false;
 
-	//gps_off();
+	gps_off();
 
 	//UTC date&time
 	//year
@@ -742,13 +769,13 @@ void APP_Ask_GPS_Data_timerout(void)
 
 void APP_Ask_GPS_Data(void)
 {
-	//gps_on();
-	//app_gps_on = true;
-	//APP_wait_gps = true;
+#if 0
+	app_gps_on = true;
+	APP_wait_gps = true;
 
-	//k_timer_init(&app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
-	//k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), NULL);
-
+	k_timer_init(&app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
+	k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
+#else
 	last_fix.pvt.datetime.year = 2020;
 	last_fix.pvt.datetime.month = 11;
 	last_fix.pvt.datetime.day = 4;
@@ -759,6 +786,7 @@ void APP_Ask_GPS_Data(void)
 	last_fix.pvt.latitude = 22.667808;
 
 	APP_Ask_GPS_Data_timerout();
+#endif
 }
 
 void test_gps(void)

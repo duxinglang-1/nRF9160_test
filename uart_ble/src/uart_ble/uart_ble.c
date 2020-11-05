@@ -14,6 +14,9 @@
 #include "Settings.h"
 #include "Uart_ble.h"
 #include "CST816.h"
+#include "gps.h"
+
+#define BLE_DEV	"UART_1"
 
 #define BUF_MAXSIZE	1024
 
@@ -60,19 +63,21 @@ static struct device *uart_ble;
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
 
-struct uart_data_t {
+struct uart_data_t
+{
 	void  *fifo_reserved;
 	u8_t    data[BUF_MAXSIZE];
 	u16_t   len;
 };
 
 bool BLE_is_connected = false;
+bool APP_wait_gps = false;
 
 extern bool update_time;
 extern bool update_date;
 extern bool update_week;
 extern bool update_date_time;
-
+extern bool app_gps_on;
 extern bool show_date_time_first;
 extern u8_t date_time_changed;
 
@@ -287,6 +292,195 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);	
 }
 
+void APP_set_alarm(u8_t *buf, u32_t len)
+{
+	u8_t result=0,reply[256] = {0};
+	u32_t i,index,reply_len = 0;
+	alarm_infor_t infor = {0};
+
+	index = buf[7];
+	if(index <= 7)
+	{
+		infor.is_on = buf[8];	//on\off
+		infor.hour = buf[9];	//hour
+		infor.minute = buf[10];//minute
+		infor.repeat = buf[11];//repeat from monday to sunday, for example:0x1111100 means repeat in workday
+
+		if((buf[9]<=23)&&(buf[10]<=59)&&(buf[11]<=0x7f))
+		{
+			result = 0x80;
+			memcpy((alarm_infor_t*)&global_settings.alarm[index], (alarm_infor_t*)&infor, sizeof(alarm_infor_t));
+			need_save_settings = true;
+		}
+	}
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (ALARM_SETTING_ID>>8);		
+	reply[reply_len++] = (u8_t)(ALARM_SETTING_ID&0x00ff);
+	//status
+	reply[reply_len++] = result;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
+}
+
+void APP_set_PHD_interval(u8_t *buf, u32_t len)
+{
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+	
+	if(buf[6] == 1)
+		global_settings.phd_infor.is_on = true;
+	else
+		global_settings.phd_infor.is_on = false;
+
+	global_settings.phd_infor.interval = buf[7];
+	need_save_settings = true;
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (MEASURE_HOURLY_ID>>8);		
+	reply[reply_len++] = (u8_t)(MEASURE_HOURLY_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;	
+}
+
+void APP_get_current_data(u8_t *buf, u32_t len)
+{
+	u8_t wake,reply[256] = {0};
+	u16_t steps,calorie,distance,shallow_sleep,deep_sleep;	
+	u32_t i,reply_len = 0;
+
+	wake = 8;
+	steps = 8878;
+	calorie = 11034;
+	distance = 9901;
+	shallow_sleep = 45;
+	deep_sleep = 560;
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x11;
+	//data ID
+	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+	reply[reply_len++] = (u8_t)(PULL_REFRESH_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//Step
+	reply[reply_len++] = (steps>>8);
+	reply[reply_len++] = (u8_t)(steps&0x00ff);
+	//Calorie
+	reply[reply_len++] = (calorie>>8);
+	reply[reply_len++] = (u8_t)(calorie&0x00ff);
+	//Distance
+	reply[reply_len++] = (distance>>8);
+	reply[reply_len++] = (u8_t)(distance&0x00ff);
+	//Shallow Sleep
+	reply[reply_len++] = (shallow_sleep>>8);
+	reply[reply_len++] = (u8_t)(shallow_sleep&0x00ff);
+	//Deep Sleep
+	reply[reply_len++] = (deep_sleep>>8);
+	reply[reply_len++] = (u8_t)(deep_sleep&0x00ff);
+	//Wake
+	reply[reply_len++] = wake;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void APP_get_location_data(u8_t *buf, u32_t len)
+{
+	APP_Ask_GPS_Data();
+}
+
+void APP_get_location_data_reply(u8_t *buf, u32_t len)
+{
+	u8_t reply[256] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x15;
+	//data ID
+	reply[reply_len++] = (LOCATION_ID>>8);		
+	reply[reply_len++] = (u8_t)(LOCATION_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//UTC data&time
+	reply[reply_len++] = buf[0];//h-byte year
+	reply[reply_len++] = buf[1];//l-byte year
+	reply[reply_len++] = buf[2];//month
+	reply[reply_len++] = buf[3];//day
+	reply[reply_len++] = buf[4];//hour
+	reply[reply_len++] = buf[5];//minute
+	reply[reply_len++] = buf[6];//seconds
+	//longitude
+	reply[reply_len++] = buf[7];//direction	E\W
+	reply[reply_len++] = buf[8];//degree int
+	reply[reply_len++] = buf[9];//degree dot1~2
+	reply[reply_len++] = buf[10];//degree dot3~4
+	reply[reply_len++] = buf[11];//degree dot5~6
+	//latitude
+	reply[reply_len++] = buf[12];//direction	N\S
+	reply[reply_len++] = buf[13];//degree int
+	reply[reply_len++] = buf[14];//degree dot1~2
+	reply[reply_len++] = buf[15];//degree dot3~4
+	reply[reply_len++] = buf[16];//degree dot5~6
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
 void CTP_notify_handle(u8_t *buf, u32_t len)
 {
 	u8_t tmpbuf[128] = {0};
@@ -361,7 +555,7 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 *	3		Data ID		2		0x0000-0xFFFF	    ID
 *	5		Status		1		0x00-0xFF	        Status
 *	6		Control		1		0x00-0x01			控制
-*	7		Data0		1-14            0x00-0xFF			数据0
+*	7		Data0		1-14	0x00-0xFF			数据0
 *	8+n		CRC8		1		0x00-0xFF			数据校验,从包头开始到CRC前一位
 *	9+n		EndFrame	1		0x88				结束帧
 **********************************************************************************/
@@ -400,6 +594,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case ONE_KEY_MEASURE_ID:	//一键测量
 		break;
 	case PULL_REFRESH_ID:		//下拉刷新
+		APP_get_current_data(buf, len);
 		break;
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
@@ -409,6 +604,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SMART_NOTIFY_ID:		//智能提醒
 		break;
 	case ALARM_SETTING_ID:		//闹钟设置
+		APP_set_alarm(buf, len);
 		break;
 	case USER_INFOR_ID:			//用户信息
 		break;
@@ -417,6 +613,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SHAKE_SCREEN_ID:		//抬手亮屏
 		break;
 	case MEASURE_HOURLY_ID:		//整点测量设置
+		APP_set_PHD_interval(buf, len);
 		break;
 	case SHAKE_PHOTO_ID:		//摇一摇拍照
 		break;
@@ -444,6 +641,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case ECG_ID:				//心电
 		break;
 	case LOCATION_ID:			//获取定位信息
+		APP_get_location_data(buf, len);
 		break;
 	case DATE_FORMAT_ID:		//年月日格式
 		APP_set_date_format(buf, len);

@@ -19,7 +19,7 @@ extern "C" {
 
 extern struct device *max20353_I2C;
 
-#define PMU_DEV "I2C_1"
+#define PMU_DEV "I2C_2"
 #define PMU_PORT "GPIO_0"
 
 #define PMU_ALRTB		7

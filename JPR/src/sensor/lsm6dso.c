@@ -15,11 +15,7 @@ typedef union{
   uint8_t u8bit[6];
 } axis3bit16_t;
 
-#ifdef CONFIG_SOC_NRF9160
-#define I2C_DEV "I2C_1"
-#else
-#define I2C_DEV "I2C_1"
-#endif
+#define I2C_DEV "I2C_2"
 
 #define LSM6DSO_I2C_ADD     LSM6DSO_I2C_ADD_L >> 1 //need to shift 1 bit to the right.
 
@@ -60,8 +56,17 @@ struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct gpio_callback gpio_cb2;
 
+static struct k_timer get_steps_timer;
+
 volatile bool single_tap_event = false;
 volatile bool button_flag = false;
+
+bool read_imu_steps = false;
+bool reset_imu_steps = false;
+
+u16_t g_steps = 0;
+u16_t g_calorie = 0;
+u16_t g_distance = 0;
 
 uint8_t init_i2c(void)
 {
@@ -187,15 +192,14 @@ void test_sensor(void)
 {
 	u8_t tmpbuf[128] = {0};
 
-	sprintf(tmpbuf, "test_motion");
-	LCD_ShowString(20,80,tmpbuf);
+	LCD_ShowString(20,80,"test_motion");
 	
 	init_i2c();
 	init_gpio();
-	
+
 	imu_dev_ctx.write_reg = platform_write;
 	imu_dev_ctx.read_reg = platform_read;
-	imu_dev_ctx.handle = &LSM6DSO_I2C;  
+	imu_dev_ctx.handle = &LSM6DSO_I2C;
 
 	sensor_init();
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
@@ -203,15 +207,17 @@ void test_sensor(void)
 	while(1)
 	{
 		if(single_tap_event)
-		{		
+		{
 			lsm6dso_tilt_flag_data_ready_get(&imu_dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
 			if (is_tilt)
 			{
 				printf("tilt detected\n");	//¼ì²âµ½·­µ½
+				LCD_ShowString(20,100,"test_motion");
 			}
 			else
 			{
 				printf("tap detected\n");	//¼ì²âµ½´¥Åö
+				LCD_ShowString(20,100,"test_motion");
 			}
 			single_tap_event = false;
 		}
@@ -220,6 +226,8 @@ void test_sensor(void)
 		{
 			lsm6dso_number_of_steps_get(&imu_dev_ctx, (uint8_t*)&steps);
 			printf("steps :%d\r\n", steps);
+			sprintf(tmpbuf, "steps :%d\r\n", steps);
+			LCD_ShowString(20,120,tmpbuf);
 			button_flag = false;
 		}
 	}
@@ -260,4 +268,47 @@ void motion_sensor_msg_proc(void)
 		sprintf(tmpbuf, "step is:%d", steps);
 		LCD_ShowString(20,100,tmpbuf);
 	}
+}
+
+void ReSetImuSteps(void)
+{
+	lsm6dso_steps_reset(&imu_dev_ctx);
+}
+
+void GetImuSteps(void)
+{
+	lsm6dso_number_of_steps_get(&imu_dev_ctx, &g_steps);
+
+	g_distance = 0.7*g_steps;
+	g_calorie = 0.8214*60*(g_distance/1000);
+}
+
+void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
+{
+	*steps = g_steps;
+	*calorie = g_calorie;
+	*distance = g_distance;
+}
+
+void ImuAutoReadTimeout(struct k_timer *timer)
+{
+	read_imu_steps = true;
+}
+
+void IMU_init(void)
+{
+	if(init_i2c() != 0)
+		return;
+	
+	init_gpio();
+
+	imu_dev_ctx.write_reg = platform_write;
+	imu_dev_ctx.read_reg = platform_read;
+	imu_dev_ctx.handle = &LSM6DSO_I2C;
+
+	sensor_init();
+	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
+
+	k_timer_init(&get_steps_timer, ImuAutoReadTimeout, NULL);
+	k_timer_start(&get_steps_timer, K_MSEC(2500), K_MSEC(5000));
 }

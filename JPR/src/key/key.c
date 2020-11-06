@@ -10,6 +10,7 @@
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
+#include "Alarm.h"
 
 static u8_t flag;
 static u32_t keycode;
@@ -39,6 +40,10 @@ extern bool lcd_sleep_in;
 extern bool lcd_sleep_out;
 extern bool lcd_is_sleeping;
 extern bool sys_pwr_off;
+extern bool app_gps_on;
+
+extern void APP_Ask_GPS_Data(void);
+extern void GetImuSteps(void);
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
@@ -52,6 +57,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			//APP_Ask_GPS_Data();
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -72,12 +78,22 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	}
 
 	//Any key will wakeup lcd
-	if(key_type == KEY_UP)
+	if((key_code == KEY_PWR) && (key_type == KEY_UP))
 	{
 		if(lcd_is_sleeping)
 			lcd_sleep_out = true;
 		else
 			lcd_sleep_in = true;
+	}
+
+	if(alarm_is_running)
+	{
+		AlarmRemindStop();
+	}
+
+	if(find_is_running)
+	{
+		FindDeviceStop();
 	}
 }
 

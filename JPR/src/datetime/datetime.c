@@ -2,7 +2,7 @@
 ** File name:			     datetime.c
 ** Last modified Date:          
 ** Last Version:		   
-** Descriptions:		   使用的SDK版本-SDK_15.2
+** Descriptions:		   使用的ncs版本-1.2.0
 **						
 ** Created by:			谢彪
 ** Created date:		2019-12-31
@@ -16,6 +16,7 @@
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
+#include "lsm6dso.h"
 
 static struct k_timer clock_timer;
 
@@ -126,7 +127,15 @@ void UpdateSystemTime(void)
 	if((date_time_changed&0x02) != 0)
 	{
 		//SaveSystemDateTime();
-	}	
+		date_time_changed = date_time_changed&0xFD;
+		AlarmRemindCheck(date_time);
+	}
+
+	if((date_time_changed&0x08) != 0)
+	{
+		date_time_changed = date_time_changed&0xF7;
+		reset_imu_steps = true;
+	}
 }
 
 static void clock_timer_handler(struct k_timer *timer)
@@ -302,7 +311,7 @@ void IdleShowSystemDate(void)
 
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
-	
+
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
 #elif defined(FONT_24)
@@ -321,7 +330,7 @@ void IdleShowSystemDate(void)
 
 void IdleShowSystemTime(void)
 {
-	u16_t x,y,w,h;
+	u16_t x,y,w,h,offset;
 	u8_t str_time[20] = {0};
 	u8_t str_ampm[5] = {0};
 
@@ -330,10 +339,13 @@ void IdleShowSystemTime(void)
 	
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);
+	offset = 16;
 #elif defined(FONT_24)
 	LCD_SetFontSize(FONT_SIZE_24);
+	offset = 8;
 #else
 	LCD_SetFontSize(FONT_SIZE_16);
+	offset = 0;
 #endif
 
 	GetSystemTimeStrings(str_time);
@@ -345,7 +357,7 @@ void IdleShowSystemTime(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 	GetSysteAmPmStrings(str_ampm);
 	x = x+w+5;
-	y = IDLE_TIME_SHOW_Y+14;
+	y = IDLE_TIME_SHOW_Y+offset;
 	LCD_ShowString(x,y,str_ampm);	
 }
 
@@ -366,10 +378,18 @@ void IdleShowSystemWeek(void)
 #endif
 
 	GetSystemWeekStrings(str_week);
+
+	//xb add 2020-11-06
+	if(global_settings.language == LANGUAGE_CHN)
+		strcpy(str_week,"It has no chinese font!");
+	else if(global_settings.language == LANGUAGE_JPN)
+		strcpy(str_week,"It has no japanese font!");
+	//xb end
+	
 	LCD_MeasureString(str_week,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
 	y = IDLE_WEEK_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);		
+	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
 	LCD_ShowString(x,y,str_week);
 }
 

@@ -11,6 +11,7 @@
 #include <modem/at_cmd.h>
 #include <modem/at_notif.h>
 #include "lcd.h"
+#include "uart_ble.h"
 
 #ifdef CONFIG_SUPL_CLIENT_LIB
 #include <supl_os_client.h>
@@ -20,41 +21,60 @@
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将GPS测试状态LOG信息显示在屏幕上
 
-#define AT_XSYSTEMMODE      "AT\%XSYSTEMMODE=1,0,1,0"
+#define AT_XSYSTEMMODE_GPSON      "AT\%XSYSTEMMODE=0,1,1,0"
+#define AT_XSYSTEMMODE_GPSOFF     "AT\%XSYSTEMMODE=0,1,0,0"
 #define AT_ACTIVATE_GPS     "AT+CFUN=31"
+#define AT_DEACTIVATE_GPS	"AT+CFUN=30"
 #define AT_ACTIVATE_LTE     "AT+CFUN=21"
 #define AT_DEACTIVATE_LTE   "AT+CFUN=20"
 
 #define GNSS_INIT_AND_START 1
 #define GNSS_STOP           2
 #define GNSS_RESTART        3
+#define GNSS_CLOSE        	4
 
 #define AT_CMD_SIZE(x) (sizeof(x) - 1)
 
 #ifdef CONFIG_BOARD_NRF9160_PCA10090NS
-#define AT_MAGPIO      "AT\%XMAGPIO=1,0,0,1,1,1574,1577"
-#define AT_COEX0       "AT\%XCOEX0=1,1,1570,1580"
+#define AT_MAGPIO			"AT\%XMAGPIO=1,0,0,1,1,1574,1577"
+#define AT_MAGPIO_CANCEL	"AT%XMAGPIO"
+#define AT_COEX0			"AT\%XCOEX0=1,1,1570,1580"
+#define AT_COEX0_CANCEL		"AT\%XCOEX0"
 #endif
 
+static struct k_timer app_wait_gps_timer;
+
 static const char update_indicator[] = {'\\', '|', '/', '-'};
-static const char at_commands[][31]  = 
+static const char at_commands_activate_gps[][31]  = 
 {
-	AT_XSYSTEMMODE,
+	AT_XSYSTEMMODE_GPSON,
 #ifdef CONFIG_BOARD_NRF9160_PCA10090NS
 	AT_MAGPIO,
 	AT_COEX0,
 #endif
 	AT_ACTIVATE_GPS
 };
+static const char at_commands_deactivate_gps[][31]  = 
+{
+	AT_DEACTIVATE_GPS,
+#ifdef CONFIG_BOARD_NRF9160_PCA10090NS
+	AT_COEX0_CANCEL,
+	AT_MAGPIO_CANCEL,
+#endif
+	AT_XSYSTEMMODE_GPSOFF
+};
 
 static int gnss_fd;
 static char nmea_strings[10][NRF_GNSS_NMEA_MAX_LEN];
 static u32_t nmea_string_cnt;
 
-static bool got_first_fix;
 static bool update_terminal;
 static u64_t fix_timestamp;
+
+bool got_first_fix = false;
 nrf_gnss_data_frame_t last_fix;
+
+extern bool app_gps_on;
 
 K_SEM_DEFINE(lte_ready, 0, 1);
 
@@ -81,10 +101,25 @@ void bsd_recoverable_error_handler(uint32_t error)
 static int setup_modem(void)
 {
 	int i;
-		
-	for(i = 0; i < ARRAY_SIZE(at_commands); i++)
+
+	for(i = 0; i < ARRAY_SIZE(at_commands_activate_gps); i++)
 	{
-		if(at_cmd_write(at_commands[i], NULL, 0, NULL) != 0)
+		if(at_cmd_write(at_commands_activate_gps[i], NULL, 0, NULL) != 0)
+		{
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int reset_modem(void)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(at_commands_deactivate_gps); i++)
+	{
+		if(at_cmd_write(at_commands_deactivate_gps[i], NULL, 0, NULL) != 0)
 		{
 			return -1;
 		}
@@ -189,7 +224,7 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to set fix retry value\n");
-		#ifdef SHOW_LOG_IN_SCREEN	
+		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("Failed to set fix retry value");
 		#endif
 			return -1;
@@ -254,6 +289,16 @@ static int gnss_ctrl(uint32_t ctrl)
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("Failed to stop GPS");
 		#endif	
+			return -1;
+		}
+	}
+
+	if(ctrl == GNSS_CLOSE)
+	{
+		retval = nrf_close(gnss_fd);
+		if(retval != 0)
+		{
+			printk("Failed to close GPS\n");
 			return -1;
 		}
 	}
@@ -484,7 +529,23 @@ int inject_agps_type(void *agps,
 }
 #endif
 
-int test_gps(void)
+void gps_off(void)
+{
+	gnss_ctrl(GNSS_STOP);
+	gnss_ctrl(GNSS_CLOSE);
+
+	if(reset_modem() != 0)
+	{
+		printk("Failed to reset modem\n");
+	#ifdef SHOW_LOG_IN_SCREEN	
+		show_infor("Failed to reset modem");
+	#endif	
+	}
+
+	got_first_fix = false;
+}
+
+void gps_on(void)
 {
 	u8_t tmpbuf[128] = {0};
 	nrf_gnss_data_frame_t gps_data;
@@ -505,15 +566,17 @@ int test_gps(void)
 	show_infor("Staring GPS application");
 #endif
 
-	if (init_app() != 0) {
-		return -1;
+	if(init_app() != 0)
+	{
+		return;
 	}
 
 #ifdef CONFIG_SUPL_CLIENT_LIB
 	int rc = supl_init(&supl_api);
 
-	if (rc != 0) {
-		return rc;
+	if (rc != 0)
+	{
+		return;
 	}
 #endif
 
@@ -559,11 +622,174 @@ int test_gps(void)
 			printk("---------------------------------");
 
 			update_terminal = false;
+
+			if(((k_uptime_get() - fix_timestamp) >= 5) && (APP_wait_gps))
+			{
+				u8_t str_gps[20] = {0};
+				u32_t tmp1;
+				double tmp2;
+
+				if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
+					k_timer_stop(&app_wait_gps_timer);
+
+				APP_wait_gps = false;
+				gps_off();
+
+				//UTC date&time
+				//year
+				str_gps[0] = last_fix.pvt.datetime.year>>8;
+				str_gps[1] = (u8_t)(last_fix.pvt.datetime.year&0x00FF);
+				//month
+				str_gps[2] = last_fix.pvt.datetime.month;
+				//day
+				str_gps[3] = last_fix.pvt.datetime.day;
+				//hour
+				str_gps[4] = last_fix.pvt.datetime.hour;
+				//minute
+				str_gps[5] = last_fix.pvt.datetime.minute;
+				//seconds
+				str_gps[6] = last_fix.pvt.datetime.seconds;
+
+				//longitude
+				str_gps[7] = 'E';
+				if(last_fix.pvt.longitude < 0)
+				{
+					str_gps[7] = 'W';
+					last_fix.pvt.longitude = -last_fix.pvt.longitude;
+				}
+
+				tmp1 = (u32_t)(last_fix.pvt.longitude);	//经度整数部分
+				tmp2 = last_fix.pvt.longitude - tmp1;	//经度小数部分
+				
+				str_gps[8] = tmp1;//整数部分
+				tmp1 = (u32_t)(tmp2*1000000);
+				str_gps[9] = (u8_t)(tmp1/10000);
+				tmp1 = tmp1%10000;
+				str_gps[10] = (u8_t)(tmp1/100);
+				tmp1 = tmp1%100;
+				str_gps[11] = (u8_t)(tmp1);
+				
+				//latitude
+				str_gps[12] = 'N';
+				if(last_fix.pvt.latitude < 0)
+				{
+					str_gps[12] = 'S';
+					last_fix.pvt.latitude = -last_fix.pvt.latitude;
+				}
+
+				tmp1 = (u32_t)(last_fix.pvt.latitude);	//经度整数部分
+				tmp2 = last_fix.pvt.latitude - tmp1;	//经度小数部分
+				
+				str_gps[13] = tmp1;//整数部分
+				tmp1 = (u32_t)(tmp2*1000000);
+				str_gps[14] = (u8_t)(tmp1/10000);
+				tmp1 = tmp1%10000;
+				str_gps[15] = (u8_t)(tmp1/100);
+				tmp1 = tmp1%100;
+				str_gps[16] = (u8_t)(tmp1);
+
+				APP_get_location_data_reply(str_gps, 17);
+
+				return;
+			}
 		}
 
 		print_nmea_data();
 		k_sleep(K_MSEC(500));
 	}
 
-	return 0;
+	return;
+}
+
+void APP_Ask_GPS_Data_timerout(void)
+{
+	u8_t str_gps[20] = {0};
+	u32_t tmp1;
+	double tmp2;
+	
+	APP_wait_gps = false;
+
+	gps_off();
+
+	//UTC date&time
+	//year
+	str_gps[0] = last_fix.pvt.datetime.year>>8;
+	str_gps[1] = (u8_t)(last_fix.pvt.datetime.year&0x00FF);
+	//month
+	str_gps[2] = last_fix.pvt.datetime.month;
+	//day
+	str_gps[3] = last_fix.pvt.datetime.day;
+	//hour
+	str_gps[4] = last_fix.pvt.datetime.hour;
+	//minute
+	str_gps[5] = last_fix.pvt.datetime.minute;
+	//seconds
+	str_gps[6] = last_fix.pvt.datetime.seconds;
+
+	//longitude
+	str_gps[7] = 'E';
+	if(last_fix.pvt.longitude < 0)
+	{
+		str_gps[7] = 'W';
+		last_fix.pvt.longitude = -last_fix.pvt.longitude;
+	}
+
+	tmp1 = (u32_t)(last_fix.pvt.longitude);	//经度整数部分
+	tmp2 = last_fix.pvt.longitude - tmp1;	//经度小数部分
+	
+	str_gps[8] = tmp1;//整数部分
+	tmp1 = (u32_t)(tmp2*1000000);
+	str_gps[9] = (u8_t)(tmp1/10000);
+	tmp1 = tmp1%10000;
+	str_gps[10] = (u8_t)(tmp1/100);
+	tmp1 = tmp1%100;
+	str_gps[11] = (u8_t)(tmp1);
+	
+	//latitude
+	str_gps[12] = 'N';
+	if(last_fix.pvt.latitude < 0)
+	{
+		str_gps[12] = 'S';
+		last_fix.pvt.latitude = -last_fix.pvt.latitude;
+	}
+
+	tmp1 = (u32_t)(last_fix.pvt.latitude);	//经度整数部分
+	tmp2 = last_fix.pvt.latitude - tmp1;	//经度小数部分
+	
+	str_gps[13] = tmp1;//整数部分
+	tmp1 = (u32_t)(tmp2*1000000);
+	str_gps[14] = (u8_t)(tmp1/10000);
+	tmp1 = tmp1%10000;
+	str_gps[15] = (u8_t)(tmp1/100);
+	tmp1 = tmp1%100;
+	str_gps[16] = (u8_t)(tmp1);
+
+	APP_get_location_data_reply(str_gps, 17);
+}
+
+void APP_Ask_GPS_Data(void)
+{
+#if 0
+	app_gps_on = true;
+	APP_wait_gps = true;
+
+	k_timer_init(&app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
+	k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
+#else
+	last_fix.pvt.datetime.year = 2020;
+	last_fix.pvt.datetime.month = 11;
+	last_fix.pvt.datetime.day = 4;
+	last_fix.pvt.datetime.hour = 2;
+	last_fix.pvt.datetime.minute = 20;
+	last_fix.pvt.datetime.seconds = 40;
+	last_fix.pvt.longitude = 114.025254;
+	last_fix.pvt.latitude = 22.667808;
+
+	APP_Ask_GPS_Data_timerout();
+#endif
+}
+
+void test_gps(void)
+{
+	gps_on();
 }

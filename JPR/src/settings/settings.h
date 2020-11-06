@@ -29,6 +29,14 @@ typedef enum
 
 typedef enum
 {
+	SCREEN_IDLE,
+	SCREEN_ALARM,
+	SCREEN_FIND_DEVICE,
+	SCREEN_MAX
+}SCREEN_STATUS;
+
+typedef enum
+{
 	CLOCK_MODE_DIGITAL,
 	CLOCK_MODE_ANALOG,
 	CLOCK_MODE_MAX
@@ -54,24 +62,27 @@ typedef struct{
 }alarm_infor_t;
 
 typedef struct{
-	u8_t count;
-	alarm_infor_t infor[ALARM_MAX];
-}alarm_settings_t;
+	bool is_on;
+	u8_t interval;
+}phd_measure_t;
 
 typedef struct{
+	bool hr_is_on;	//heart rate
+	bool bp_is_on;	//blood pressure
+	bool bo_is_on;	//blood oxygen
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
 	CLOCK_MODE idle_colck_mode;
 	BACKLIGHT_TIME backlight_time;
-	bool hr_is_on;	//heart rate
-	bool bp_is_on;	//blood pressure
-	bool bo_is_on;	//blood oxygen
-	alarm_settings_t alarm;
+	phd_measure_t phd_infor;
+	alarm_infor_t alarm[ALARM_MAX];
 }global_settings_t;
 
 extern bool need_save_time;
 extern bool need_save_settings;
+extern u8_t screen_id;
+
 extern global_settings_t global_settings;
 
 extern void InitSystemSettings(void);

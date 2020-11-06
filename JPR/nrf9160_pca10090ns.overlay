@@ -14,7 +14,7 @@
 	miso-pin = <20>;
 };
 
-&i2c1{
+&i2c2{
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	sda-pin = <30>;

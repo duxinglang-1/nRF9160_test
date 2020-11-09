@@ -24,6 +24,7 @@
 #include "Max20353.h"
 #include "lsm6dso.h"
 #include "Alarm.h"
+#include "gps.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -44,6 +45,7 @@ bool update_date = false;
 bool update_week = false;
 bool update_date_time = false;
 bool app_gps_on = false;
+bool app_gps_off = false;
 bool app_find_device = false;
 
 #if defined(ANALOG_CLOCK)
@@ -687,6 +689,16 @@ int main(void)
 		{
 			app_gps_on = false;
 			gps_on();
+		}
+		if(app_gps_off)
+		{
+			app_gps_off = false;
+			gps_off();
+		}
+		if(gps_data_incoming)
+		{
+			gps_data_incoming = false;
+			gps_data_receive();
 		}
 		
 		if(vibrate_start_flag)

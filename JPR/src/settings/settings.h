@@ -30,6 +30,7 @@ typedef enum
 typedef enum
 {
 	SCREEN_IDLE,
+	SCREEN_GPS,
 	SCREEN_ALARM,
 	SCREEN_FIND_DEVICE,
 	SCREEN_MAX

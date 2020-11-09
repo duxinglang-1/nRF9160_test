@@ -14,6 +14,7 @@ target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/fs/nvs)
 
 add_subdirectory(src/datetime)
+add_subdirectory(src/alarm)
 add_subdirectory(src/font)
 add_subdirectory(src/image)
 add_subdirectory(src/lcd)

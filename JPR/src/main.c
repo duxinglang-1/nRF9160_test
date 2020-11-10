@@ -667,7 +667,7 @@ int main(void)
 		}
 	#endif
 	
-	#if 0
+	#if 1
 		if(pmu_trige_flag)
 		{
 			pmu_trige_flag = false;

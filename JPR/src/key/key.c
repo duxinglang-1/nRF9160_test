@@ -23,10 +23,10 @@ static sys_slist_t button_handlers;
 
 #define KEY_SOS			BIT(0)
 #define KEY_PWR			BIT(1)
-static const gpio_pin button_pins[] = 
+static const key_cfg button_pins[] = 
 {
-	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 26},
-	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15},
+	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 26, ACTIVE_LOW},
+	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15, ACTIVE_HIGH},
 };
 
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
@@ -47,7 +47,7 @@ extern void GetImuSteps(void);
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	printk("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
+	//printk("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
 
 	switch(key_code)
 	{
@@ -151,6 +151,7 @@ static int callback_ctrl(bool enable)
 
 static u32_t get_buttons(void)
 {
+	bool actived_low;
 	u32_t ret = 0;
 	
 	for(size_t i = 0; i < ARRAY_SIZE(button_pins); i++)
@@ -162,9 +163,19 @@ static u32_t get_buttons(void)
 			printk("Cannot read gpio pin");
 			return 0;
 		}
-		
-		if((val && !IS_ENABLED(CONFIG_DK_LIBRARY_INVERT_BUTTONS)) ||
-		    (!val && IS_ENABLED(CONFIG_DK_LIBRARY_INVERT_BUTTONS)))
+
+		switch(button_pins[i].active_flag)
+		{
+		case ACTIVE_LOW:
+			actived_low = true;
+			break;
+		case ACTIVE_HIGH:
+			actived_low = false;
+			break;
+		}
+
+		if((!val && actived_low)||
+			(val && !actived_low))
 		{
 			ret |= 1U << i;
 		}

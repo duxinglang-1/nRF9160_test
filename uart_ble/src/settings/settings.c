@@ -8,6 +8,7 @@
 #include <dk_buttons_and_leds.h>
 #include "settings.h"
 #include "datetime.h"
+#include "alarm.h"
 
 #define DATETIME_ID 1
 #define SETTINGS_ID 2
@@ -16,6 +17,8 @@ static bool nvs_init_flag = false;
 
 static struct nvs_fs fs;
 static struct flash_pages_info info;
+
+u8_t screen_id = SCREEN_IDLE;
 
 bool need_save_settings = false;
 bool need_save_time = false;
@@ -101,7 +104,6 @@ void InitSystemDateTime(void)
 	
 	memcpy(&date_time, &mytime, sizeof(sys_date_timer_t));
 	SaveSystemDateTime();
-	
 	StartSystemDateTime();
 }
 
@@ -129,6 +131,7 @@ void InitSystemSettings(void)
 	memcpy(&global_settings, &settings, sizeof(global_settings_t));
 
 	InitSystemDateTime();
+	AlarmRemindInit();
 }
 
 void SaveSystemSettings(void)

@@ -78,6 +78,7 @@ extern bool update_date;
 extern bool update_week;
 extern bool update_date_time;
 extern bool app_gps_on;
+extern bool app_find_device;
 extern bool show_date_time_first;
 extern u8_t date_time_changed;
 
@@ -98,8 +99,6 @@ void APP_find_device(u8_t *buf, u32_t len)
 	u8_t reply[256] = {0};
 	u32_t i,reply_len = 0;
 	
-	update_week = true;
-
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
@@ -122,7 +121,7 @@ void APP_find_device(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
-	need_save_settings = true;	
+	app_find_device = true;	
 }
 
 void APP_set_language(u8_t *buf, u32_t len)
@@ -381,10 +380,9 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	u16_t steps,calorie,distance,shallow_sleep,deep_sleep;	
 	u32_t i,reply_len = 0;
 
+	GetSportData(&steps,&calorie,&distance);
+	
 	wake = 8;
-	steps = 8878;
-	calorie = 11034;
-	distance = 9901;
 	shallow_sleep = 45;
 	deep_sleep = 560;
 	
@@ -442,7 +440,7 @@ void APP_get_location_data_reply(u8_t *buf, u32_t len)
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x15;
+	reply[reply_len++] = 0x17;
 	//data ID
 	reply[reply_len++] = (LOCATION_ID>>8);		
 	reply[reply_len++] = (u8_t)(LOCATION_ID&0x00ff);

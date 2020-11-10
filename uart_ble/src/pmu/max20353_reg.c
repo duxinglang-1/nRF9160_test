@@ -11,6 +11,7 @@
 #include <zephyr.h>
 #include <drivers/i2c.h>
 #include "max20353_reg.h"
+#include "max20353.h"
 
 #define VERIFY_AND_FIX 1
 #define LOAD_MODEL !(VERIFY_AND_FIX)
@@ -76,6 +77,61 @@ void delay_ms(uint32_t period)
     k_sleep(K_MSEC(period));
 }
 
+#ifdef MOTOR_TYPE_ERM
+int MAX20303_HapticConfigDCMotor(void)
+{
+	int32_t i,j,ret=0;
+
+	//Config 0
+	appcmdoutvalue_ = 0xA0;
+	appdatainoutbuffer_[0] = 0x0A; //0x0F; // EmfEn(resonance detection)/HptSel(ERM)/ALC/ZeroCrossHysteresis
+	appdatainoutbuffer_[1] = 0xDA; //0x9F; // Initial guess of Back EMF frequency = 25.6M/64/IniGss =235/205; IniGss = 0x6A6/0x79F
+	appdatainoutbuffer_[2] = 0x16; //0x87; // ZccSlowEn=0/FltrCntrEn=0
+	appdatainoutbuffer_[3] = 0x00; //0x00; // Skip periods before BEMF measuring
+	appdatainoutbuffer_[4] = 0x07; //0x05; // Wide Window for BEMF zero crossing
+	appdatainoutbuffer_[5] = 0x02; //0x01; // Narrow Window for BEMF zero crossing
+	ret |= MAX20353_AppWrite(6);
+
+	//Config 1
+	appcmdoutvalue_ = 0xA2;
+	appdatainoutbuffer_[0] = 0xF0; //0x01; // EmfSkipCyc
+	appdatainoutbuffer_[1] = 0x88; //0x00; // BlankWdw, zero corssing comparator blanking time after enable(1/25.6MHz)
+	appdatainoutbuffer_[2] = 0x00; //0x02; // BlankWdw, zero corssing comparator blanking time after enable(1/25.6MHz)
+	appdatainoutbuffer_[3] = 0xFF; //0x5D; // Vpp_Sine_max = 5.65V, Vpp_Square_max = 4V, VFS= Vpp/2 = 2V, Max_VFS = 5.5V, set VFS = 2/5.5*255 = 92 = 0x5C(square), Sine: VFS=2.8/5.5*255=0x82
+	appdatainoutbuffer_[4] = 0xE6; //0xE6; // ETRGOdAmp, Overdrive amplitude, LSB = 0.78%VFS, 98%
+	appdatainoutbuffer_[5] = 0x10; //0x10; // ETRGOdDur, Overdrive period, LSB = 5ms, 80ms
+	ret |= MAX20353_AppWrite(6);
+
+	//Config 2
+	appcmdoutvalue_ = 0xA4;
+	appdatainoutbuffer_[0] = 0xC0; //0xC0; // ETRGActAmp, normal amplitude, , LSB = 0.78%VFS, don't care
+	appdatainoutbuffer_[1] = 0xFF; //0xFF; // ETRGActDur, normal period, LSB = 10ms, don't care
+	appdatainoutbuffer_[2] = 0xCD; //0xCD; // ETRGActAmp, braking amplitude, , LSB = 0.78%VFS, 80*VFS
+	appdatainoutbuffer_[3] = 0x14; //0x14; // ETRGActDur, breaking period, LSB = 5ms, 60ms
+	appdatainoutbuffer_[4] = 0x23; //0x15; // narrow window gain, wide window gain = 1
+	appdatainoutbuffer_[5] = 0x06; //0x00; // periods from wide to narrow
+	ret |= MAX20353_AppWrite(6);
+
+	//==============================================
+	// Sys UVLO threshold = 1.6V
+	appcmdoutvalue_ = 0xA6;
+	appdatainoutbuffer_[0] = 0x4A; //Sys UVLO threshold = 1.6V
+	ret |= MAX20353_AppWrite(1);
+	if(ret != 0)
+		return MAX20353_ERROR;
+
+	ret |= MAX20353_WriteReg( REG_HPT_DIRECT1,  0x00); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x12, disable HptDrvEn
+	if(ret != 0)
+		return MAX20353_ERROR;
+	
+	if(ret != 0)
+		return MAX20353_ERROR;
+
+	return MAX20353_NO_ERROR;
+}
+#endif
+
+#ifdef MOTOR_TYPE_LRA
 int MAX20353_HapticConfig(void)
 {
 	int32_t i,  ret = 0;
@@ -137,6 +193,27 @@ int MAX20353_HapticConfig(void)
 		return MAX20353_ERROR;
 
 	return MAX20353_NO_ERROR;
+}
+#endif
+
+void VibrateStart(void)
+{
+#ifdef MOTOR_TYPE_ERM
+	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3f);	//振幅控制，从0x00到0x7f
+	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x26); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x06
+#else defined(MOTOR_TYPE_LRA)
+	appcmdoutvalue_ = 0xAC;
+	MAX20353_WriteReg( REG_AP_CMDOUT,  appcmdoutvalue_);//0x17	//Pattern RAM Address
+#endif
+}
+
+void VibrateStop(void)
+{
+#ifdef MOTOR_TYPE_ERM
+	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x00); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x12
+#else defined(MOTOR_TYPE_LRA)
+	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x00);
+#endif
 }
 
 int MAX20353_Buck1Config(void) 
@@ -692,8 +769,12 @@ void MAX20353_Init(void)
 	MAX20353_BuckBoostConfig();
 
 	//马达驱动
-	MAX20353_HapticConfig(); 	//马达驱动参数进行初始化   
+#ifdef MOTOR_TYPE_ERM
+	MAX20303_HapticConfigDCMotor();
+#else defined(MOTOR_TYPE_LRA)
+	MAX20353_HapticConfig();	//线性马达驱动参数进行初始化  
 	//MAX20353_InitRAM();  		//马达振动模式
+#endif
 
 	//充电配置
 	MAX20353_InputCurCfg();
@@ -707,7 +788,7 @@ void MAX20353_Init(void)
 	MAX20353_SOCInit();
 }
 
-#if 1
+#if 1	//xb add 2020-11-05 增加有关电量计的代码
 u8_t SOC_1, SOC_2;
 u16_t SOC;
 u8_t original_OCV_1, original_OCV_2;

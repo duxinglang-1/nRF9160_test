@@ -22,6 +22,9 @@
 #include "settings.h"
 #include "CST816.h"
 //#include "Max20353.h"
+#include "lsm6dso.h"
+#include "Alarm.h"
+#include "gps.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -41,7 +44,9 @@ bool update_time = false;
 bool update_date = false;
 bool update_week = false;
 bool update_date_time = false;
-
+bool app_gps_on = false;
+bool app_gps_off = false;
+bool app_find_device = false;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -49,7 +54,6 @@ static void test_show_analog_clock(void);
 static void test_show_digital_clock(void);
 #endif
 static void idle_show_time(void);
-
 
 #ifdef ANALOG_CLOCK
 void ClearAnalogHourPic(int hour)
@@ -555,49 +559,30 @@ void system_init(void)
 	buttons_leds_init();
 	key_init();
 	//pmu_init();
+	IMU_init();
 	LCD_Init();
 	flash_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 }
 
-extern void motion_sensor_msg_proc(void);
-/***************************************************************************
-* 描  述 : main函数 
-* 入  参 : 无 
-* 返回值 : int 类型
-**************************************************************************/
-int main(void)
+void IdleReshowDatetime(void)
+{
+	IdleShowSystemDateTime();
+}
+
+void IdleShowDateTime(void)
 {
 	bool count = false;
-	u16_t w,h;
 	
-	printk("main\n");
-
-	system_init();
-	dk_set_led(DK_LED1,1);
-
-	test_show_string();
-//	test_show_image();
-//	test_nvs();
-//	test_flash();
-//	test_uart_ble();
-//	test_sensor();
-//	test_show_digital_clock();
-//	test_sensor();
-//	test_pmu();
-//	test_crypto();
-//	test_imei();
-//	test_tp();
-//	test_gps();
-//	test_nb();
-
-	while(0)
+	if(screen_id == SCREEN_IDLE)
 	{
-	#if 1
 		if(update_time || update_date || update_week || update_date_time)
 		{
 			if(update_date_time || show_date_time_first)
 			{
+				if(show_date_time_first)
+					LCD_Clear(BLACK);
+				
 				update_date_time = false;
 				show_date_time_first = false;
 				IdleShowSystemDateTime();
@@ -621,7 +606,41 @@ int main(void)
 			count = !count;
 			dk_set_led(DK_LED2,count);
 		}
-	#endif
+	}
+}
+
+extern void motion_sensor_msg_proc(void);
+/***************************************************************************
+* 描  述 : main函数 
+* 入  参 : 无 
+* 返回值 : int 类型
+**************************************************************************/
+int main(void)
+{
+//	printk("main\n");
+
+	system_init();
+	dk_set_led(DK_LED1,1);
+
+//	test_show_string();
+//	test_show_image();
+//	test_nvs();
+//	test_flash();
+//	test_uart_ble();
+//	test_sensor();
+//	test_show_digital_clock();
+//	test_sensor();
+//	test_pmu();
+//	test_crypto();
+//	test_imei();
+//	test_tp();
+//	test_gps();
+//	test_nb();
+
+	while(0)
+	{
+		IdleShowDateTime();
+		
 		if(sys_time_count)
 		{
 			sys_time_count = false;
@@ -639,6 +658,7 @@ int main(void)
 			need_save_settings = false;
 			SaveSystemSettings();
 		}
+
 	#if 0
 		if(tp_trige_flag)
 		{
@@ -664,7 +684,53 @@ int main(void)
 			SystemShutDown();
 		}	
 	#endif
-	
+
+		if(app_gps_on)
+		{
+			app_gps_on = false;
+			gps_on();
+		}
+		if(app_gps_off)
+		{
+			app_gps_off = false;
+			gps_off();
+		}
+		if(gps_data_incoming)
+		{
+			gps_data_incoming = false;
+			gps_data_receive();
+		}
+		
+		if(vibrate_start_flag)
+		{
+			vibrate_start_flag = false;
+			//VibrateStart();
+		}
+		
+		if(vibrate_stop_flag)
+		{
+			vibrate_stop_flag = false;
+			//VibrateStop();
+		}
+
+		if(read_imu_steps)
+		{
+			read_imu_steps = false;
+			GetImuSteps();
+		}
+
+		if(reset_imu_steps)
+		{
+			reset_imu_steps = false;
+			ReSetImuSteps();
+		}
+
+		if(app_find_device)
+		{
+			app_find_device = false;
+			FindDeviceEntryScreen();
+		}
+		
 		if(lcd_sleep_in)
 		{
 			lcd_sleep_in = false;
@@ -676,7 +742,6 @@ int main(void)
 			lcd_sleep_out = false;
 			LCD_SleepOut();
 		}
-		//motion_sensor_msg_proc();
 	
 		k_cpu_idle();
 	}

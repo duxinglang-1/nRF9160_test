@@ -4,6 +4,9 @@
 #define BATTERY_VOLTAGE_LOW_NOTIFY	(3.55)
 #define BATTERY_VOLTAGE_SHUTDOWN	(3.40)
 
+#define MOTOR_TYPE_ERM	//转子马达
+//#define MOTOR_TYPE_LRA	//线性马达
+
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
 

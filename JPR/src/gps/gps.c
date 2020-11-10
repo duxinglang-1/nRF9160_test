@@ -608,7 +608,7 @@ void APP_Ask_GPS_Data(void)
 {
 	static u8_t time_init = false;
 
-#if 0
+#if 1
 	app_gps_on = true;
 	APP_wait_gps = true;
 

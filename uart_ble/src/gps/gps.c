@@ -12,6 +12,7 @@
 #include <modem/at_notif.h>
 #include "lcd.h"
 #include "uart_ble.h"
+#include "Settings.h"
 
 #ifdef CONFIG_SUPL_CLIENT_LIB
 #include <supl_os_client.h>
@@ -43,7 +44,9 @@
 #endif
 
 static struct k_timer app_wait_gps_timer;
+static struct k_timer gps_data_timer;
 
+static u8_t cnt = 0;
 static const char update_indicator[] = {'\\', '|', '/', '-'};
 static const char at_commands_activate_gps[][31]  = 
 {
@@ -68,13 +71,20 @@ static int gnss_fd;
 static char nmea_strings[10][NRF_GNSS_NMEA_MAX_LEN];
 static u32_t nmea_string_cnt;
 
+static bool gps_is_inited = false;
+static bool gps_is_on = false;
 static bool update_terminal;
+
 static u64_t fix_timestamp;
 
 bool got_first_fix = false;
+bool gps_data_incoming = false;
+
 nrf_gnss_data_frame_t last_fix;
 
 extern bool app_gps_on;
+extern bool app_gps_off;
+extern bool show_date_time_first;
 
 K_SEM_DEFINE(lte_ready, 0, 1);
 
@@ -91,11 +101,10 @@ static void show_infor(u8_t *strbuf)
 void bsd_recoverable_error_handler(uint32_t error)
 {
 	printf("Err: %lu\n", (unsigned long)error);
-#ifdef SHOW_LOG_IN_SCREEN	
+#ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "Err: %lu", (unsigned long)error);
 	show_infor(tmpbuf);
 #endif
-	
 }
 
 static int setup_modem(void)
@@ -202,9 +211,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(gnss_fd >= 0)
 		{
 			printk("GPS Socket created\n");
-		#ifdef SHOW_LOG_IN_SCREEN	
+		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("GPS Socket created");
-		#endif	
+		#endif
 		}
 		else
 		{
@@ -286,9 +295,9 @@ static int gnss_ctrl(uint32_t ctrl)
 		if(retval != 0)
 		{
 			printk("Failed to stop GPS\n");
-		#ifdef SHOW_LOG_IN_SCREEN	
+		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("Failed to stop GPS");
-		#endif	
+		#endif
 			return -1;
 		}
 	}
@@ -390,7 +399,7 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 					pvt_data->pvt.datetime.minute,
 					pvt_data->pvt.datetime.seconds);
 	show_infor(tmpbuf);
-#endif	
+#endif
 }
 
 static void print_nmea_data(void)
@@ -529,179 +538,7 @@ int inject_agps_type(void *agps,
 }
 #endif
 
-void gps_off(void)
-{
-	gnss_ctrl(GNSS_STOP);
-	gnss_ctrl(GNSS_CLOSE);
-
-	if(reset_modem() != 0)
-	{
-		printk("Failed to reset modem\n");
-	#ifdef SHOW_LOG_IN_SCREEN	
-		show_infor("Failed to reset modem");
-	#endif	
-	}
-
-	got_first_fix = false;
-}
-
-void gps_on(void)
-{
-	u8_t tmpbuf[128] = {0};
-	nrf_gnss_data_frame_t gps_data;
-	u8_t		      cnt = 0;
-
-#ifdef CONFIG_SUPL_CLIENT_LIB
-	static struct supl_api supl_api = {
-		.read       = supl_read,
-		.write      = supl_write,
-		.handler    = inject_agps_type,
-		.logger     = supl_logger,
-		.counter_ms = k_uptime_get
-	};
-#endif
-
-	printk("Staring GPS application\n");
-#ifdef SHOW_LOG_IN_SCREEN
-	show_infor("Staring GPS application");
-#endif
-
-	if(init_app() != 0)
-	{
-		return;
-	}
-
-#ifdef CONFIG_SUPL_CLIENT_LIB
-	int rc = supl_init(&supl_api);
-
-	if (rc != 0)
-	{
-		return;
-	}
-#endif
-
-	printk("Getting GPS data...\n");
-#ifdef SHOW_LOG_IN_SCREEN
-	show_infor("Getting GPS data...");
-#endif
-
-	while(1)
-	{
-		do
-		{
-			/* Loop until we don't have more
-			 * data to read
-			 */
-		}while(process_gps_data(&gps_data) > 0);
-
-		if(!got_first_fix)
-		{
-			cnt++;
-			printk("\033[1;1H");
-			printk("\033[2J");
-			print_satellite_stats(&gps_data);
-			printk("\nScanning [%c] ",
-					update_indicator[cnt%4]);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
-			show_infor(tmpbuf);
-		#endif	
-		}
-
-		if(((k_uptime_get() - fix_timestamp) >= 1) && (got_first_fix))
-		{
-			printk("\033[1;1H");
-			printk("\033[2J");
-
-			print_satellite_stats(&gps_data);
-
-			printk("---------------------------------\n");
-			print_pvt_data(&last_fix);
-			printk("\n");
-			print_nmea_data();
-			printk("---------------------------------");
-
-			update_terminal = false;
-
-			if(((k_uptime_get() - fix_timestamp) >= 5) && (APP_wait_gps))
-			{
-				u8_t str_gps[20] = {0};
-				u32_t tmp1;
-				double tmp2;
-
-				if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
-					k_timer_stop(&app_wait_gps_timer);
-
-				APP_wait_gps = false;
-				gps_off();
-
-				//UTC date&time
-				//year
-				str_gps[0] = last_fix.pvt.datetime.year>>8;
-				str_gps[1] = (u8_t)(last_fix.pvt.datetime.year&0x00FF);
-				//month
-				str_gps[2] = last_fix.pvt.datetime.month;
-				//day
-				str_gps[3] = last_fix.pvt.datetime.day;
-				//hour
-				str_gps[4] = last_fix.pvt.datetime.hour;
-				//minute
-				str_gps[5] = last_fix.pvt.datetime.minute;
-				//seconds
-				str_gps[6] = last_fix.pvt.datetime.seconds;
-
-				//longitude
-				str_gps[7] = 'E';
-				if(last_fix.pvt.longitude < 0)
-				{
-					str_gps[7] = 'W';
-					last_fix.pvt.longitude = -last_fix.pvt.longitude;
-				}
-
-				tmp1 = (u32_t)(last_fix.pvt.longitude);	//经度整数部分
-				tmp2 = last_fix.pvt.longitude - tmp1;	//经度小数部分
-				
-				str_gps[8] = tmp1;//整数部分
-				tmp1 = (u32_t)(tmp2*1000000);
-				str_gps[9] = (u8_t)(tmp1/10000);
-				tmp1 = tmp1%10000;
-				str_gps[10] = (u8_t)(tmp1/100);
-				tmp1 = tmp1%100;
-				str_gps[11] = (u8_t)(tmp1);
-				
-				//latitude
-				str_gps[12] = 'N';
-				if(last_fix.pvt.latitude < 0)
-				{
-					str_gps[12] = 'S';
-					last_fix.pvt.latitude = -last_fix.pvt.latitude;
-				}
-
-				tmp1 = (u32_t)(last_fix.pvt.latitude);	//经度整数部分
-				tmp2 = last_fix.pvt.latitude - tmp1;	//经度小数部分
-				
-				str_gps[13] = tmp1;//整数部分
-				tmp1 = (u32_t)(tmp2*1000000);
-				str_gps[14] = (u8_t)(tmp1/10000);
-				tmp1 = tmp1%10000;
-				str_gps[15] = (u8_t)(tmp1/100);
-				tmp1 = tmp1%100;
-				str_gps[16] = (u8_t)(tmp1);
-
-				APP_get_location_data_reply(str_gps, 17);
-
-				return;
-			}
-		}
-
-		print_nmea_data();
-		k_sleep(K_MSEC(500));
-	}
-
-	return;
-}
-
-void APP_Ask_GPS_Data_timerout(void)
+void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 {
 	u8_t str_gps[20] = {0};
 	u32_t tmp1;
@@ -769,11 +606,18 @@ void APP_Ask_GPS_Data_timerout(void)
 
 void APP_Ask_GPS_Data(void)
 {
-#if 0
+	static u8_t time_init = false;
+
+#if 1
 	app_gps_on = true;
 	APP_wait_gps = true;
 
-	k_timer_init(&app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
+	if(time_init == false)
+	{
+		time_init = true;
+		k_timer_init(&app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
+	}
+	
 	k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
 #else
 	last_fix.pvt.datetime.year = 2020;
@@ -785,8 +629,249 @@ void APP_Ask_GPS_Data(void)
 	last_fix.pvt.longitude = 114.025254;
 	last_fix.pvt.latitude = 22.667808;
 
-	APP_Ask_GPS_Data_timerout();
+	APP_Ask_GPS_Data_timerout(NULL);
 #endif
+}
+
+void APP_Ask_GPS_off(void)
+{
+	app_gps_off = true;
+}
+
+void gps_data_receive(void)
+{
+	nrf_gnss_data_frame_t gps_data;
+
+	do
+	{
+		/* Loop until we don't have more
+		 * data to read
+		 */
+	}while(process_gps_data(&gps_data) > 0);
+
+	if(!got_first_fix)
+	{
+		cnt++;
+		printk("\033[1;1H");
+		printk("\033[2J");
+		print_satellite_stats(&gps_data);
+		printk("\nScanning [%c] ",
+				update_indicator[cnt%4]);
+	#ifdef SHOW_LOG_IN_SCREEN
+		sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
+		show_infor(tmpbuf);
+	#endif	
+	}
+
+	if(((k_uptime_get() - fix_timestamp) >= 1) && (got_first_fix))
+	{
+		printk("\033[1;1H");
+		printk("\033[2J");
+
+		print_satellite_stats(&gps_data);
+
+		printk("---------------------------------\n");
+		print_pvt_data(&last_fix);
+		printk("\n");
+		print_nmea_data();
+		printk("---------------------------------");
+
+		update_terminal = false;
+
+		if(((k_uptime_get() - fix_timestamp) >= 5) && (APP_wait_gps))
+		{
+			u8_t str_gps[20] = {0};
+			u32_t tmp1;
+			double tmp2;
+
+			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
+				k_timer_stop(&app_wait_gps_timer);
+
+			APP_wait_gps = false;
+			gps_off();
+
+			//UTC date&time
+			//year
+			str_gps[0] = last_fix.pvt.datetime.year>>8;
+			str_gps[1] = (u8_t)(last_fix.pvt.datetime.year&0x00FF);
+			//month
+			str_gps[2] = last_fix.pvt.datetime.month;
+			//day
+			str_gps[3] = last_fix.pvt.datetime.day;
+			//hour
+			str_gps[4] = last_fix.pvt.datetime.hour;
+			//minute
+			str_gps[5] = last_fix.pvt.datetime.minute;
+			//seconds
+			str_gps[6] = last_fix.pvt.datetime.seconds;
+
+			//longitude
+			str_gps[7] = 'E';
+			if(last_fix.pvt.longitude < 0)
+			{
+				str_gps[7] = 'W';
+				last_fix.pvt.longitude = -last_fix.pvt.longitude;
+			}
+
+			tmp1 = (u32_t)(last_fix.pvt.longitude);	//经度整数部分
+			tmp2 = last_fix.pvt.longitude - tmp1;	//经度小数部分
+			
+			str_gps[8] = tmp1;//整数部分
+			tmp1 = (u32_t)(tmp2*1000000);
+			str_gps[9] = (u8_t)(tmp1/10000);
+			tmp1 = tmp1%10000;
+			str_gps[10] = (u8_t)(tmp1/100);
+			tmp1 = tmp1%100;
+			str_gps[11] = (u8_t)(tmp1);
+			
+			//latitude
+			str_gps[12] = 'N';
+			if(last_fix.pvt.latitude < 0)
+			{
+				str_gps[12] = 'S';
+				last_fix.pvt.latitude = -last_fix.pvt.latitude;
+			}
+
+			tmp1 = (u32_t)(last_fix.pvt.latitude);	//经度整数部分
+			tmp2 = last_fix.pvt.latitude - tmp1;	//经度小数部分
+			
+			str_gps[13] = tmp1;//整数部分
+			tmp1 = (u32_t)(tmp2*1000000);
+			str_gps[14] = (u8_t)(tmp1/10000);
+			tmp1 = tmp1%10000;
+			str_gps[15] = (u8_t)(tmp1/100);
+			tmp1 = tmp1%100;
+			str_gps[16] = (u8_t)(tmp1);
+
+			APP_get_location_data_reply(str_gps, 17);
+
+			return;
+		}
+	}
+
+	if(!gps_is_on)
+	{
+	#ifdef SHOW_LOG_IN_SCREEN
+		show_infor("GPS is been turn off, return");
+	#endif
+		return;
+	}
+	
+	print_nmea_data();
+}
+
+void gps_data_wait_timerout(struct k_timer *timer)
+{
+	gps_data_incoming = true;
+}
+
+void gps_init(void)
+{
+	if(init_app() != 0)
+	{
+		return;
+	}
+
+	gps_is_inited = true;
+
+	k_timer_init(&gps_data_timer, gps_data_wait_timerout, NULL);
+}
+
+void gps_restart(void)
+{
+	gnss_ctrl(GNSS_RESTART);
+}
+
+void gps_off(void)
+{
+	if(!gps_is_on)
+	{
+		printk("gps is been truned off\n");
+	#ifdef SHOW_LOG_IN_SCREEN	
+		show_infor("gps is been truned off");
+	#endif
+		return;
+	}
+	
+	gps_is_on = false;
+	got_first_fix = false;
+	gps_data_incoming = false;
+
+	k_timer_stop(&gps_data_timer);
+	k_timer_stop(&app_wait_gps_timer);
+	
+	gnss_ctrl(GNSS_STOP);
+	//gnss_ctrl(GNSS_CLOSE);
+
+	//if(reset_modem() != 0)
+	//{
+	//	printk("Failed to reset modem\n");
+	//#ifdef SHOW_LOG_IN_SCREEN	
+	//	show_infor("Failed to reset modem");
+	//#endif	
+	//}
+
+	screen_id = SCREEN_IDLE;
+	show_date_time_first = true;
+}
+
+void gps_on(void)
+{
+	u8_t tmpbuf[128] = {0};
+
+
+#ifdef CONFIG_SUPL_CLIENT_LIB
+	static struct supl_api supl_api = {
+		.read       = supl_read,
+		.write      = supl_write,
+		.handler    = inject_agps_type,
+		.logger     = supl_logger,
+		.counter_ms = k_uptime_get
+	};
+#endif
+
+	if(gps_is_on)
+	{
+		printk("gps is been truned on\n");
+	#ifdef SHOW_LOG_IN_SCREEN	
+		show_infor("gps is been truned on");
+	#endif
+		return;
+	}
+
+	screen_id = SCREEN_GPS;
+
+	printk("Staring GPS application\n");
+#ifdef SHOW_LOG_IN_SCREEN
+	show_infor("Staring GPS application");
+#endif
+
+	if(gps_is_inited == false)
+	{
+		gps_init();
+	}
+	else
+	{
+		gps_restart();
+	}
+
+	cnt = 0;
+	gps_is_on = true;
+	
+#ifdef CONFIG_SUPL_CLIENT_LIB
+	int rc = supl_init(&supl_api);
+	if (rc != 0)
+	{
+		//return;
+	}
+#endif
+
+	printk("Getting GPS data...\n");
+#ifdef SHOW_LOG_IN_SCREEN
+	show_infor("Getting GPS data...");
+#endif
+
+	k_timer_start(&gps_data_timer, K_MSEC(500), K_MSEC(1000));
 }
 
 void test_gps(void)

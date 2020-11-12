@@ -138,6 +138,8 @@ void pmu_init(void)
 	bool rst;
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
 
+	printk("pmu_init\n");
+
   	//¶Ë¿Ú³õÊ¼»¯
   	gpio_pmu = device_get_binding(PMU_PORT);
 	if(!gpio_pmu)

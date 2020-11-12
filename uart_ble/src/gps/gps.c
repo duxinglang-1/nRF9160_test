@@ -545,8 +545,7 @@ void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 	double tmp2;
 	
 	APP_wait_gps = false;
-
-	gps_off();
+	app_gps_off = true;
 
 	//UTC date&time
 	//year
@@ -790,6 +789,8 @@ void gps_off(void)
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("gps is been truned off");
 	#endif
+		screen_id = SCREEN_IDLE;
+		show_date_time_first = true;
 		return;
 	}
 	

@@ -576,15 +576,17 @@ void IdleShowDateTime(void)
 	
 	if(screen_id == SCREEN_IDLE)
 	{
-		if(update_time || update_date || update_week || update_date_time)
+		if(update_time || update_date || update_week || update_date_time || show_date_time_first)
 		{
 			if(update_date_time || show_date_time_first)
 			{
 				if(show_date_time_first)
+				{
+					show_date_time_first = false;
 					LCD_Clear(BLACK);
+				}
 				
 				update_date_time = false;
-				show_date_time_first = false;
 				IdleShowSystemDateTime();
 			}
 			else if(update_date)

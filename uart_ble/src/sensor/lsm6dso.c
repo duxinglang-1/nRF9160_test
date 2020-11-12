@@ -79,7 +79,6 @@ uint8_t init_i2c(void)
 	else
 	{
 		i2c_configure(LSM6DSO_I2C, I2C_SPEED_SET(I2C_SPEED_FAST));
-		printf("I2C CONFIGURED\r\n");
 		return 0;
 	}
 }
@@ -136,8 +135,6 @@ uint8_t init_gpio(void)
 
 	gpio_pin_enable_callback(gpiob, BUT_PIN);
 	gpio_pin_enable_callback(interrupt,LSM6DSO_INT2_PIN);
-
-	printf("GPIO Init Done\r\n");
 
 	return 0;
 }
@@ -297,6 +294,8 @@ void ImuAutoReadTimeout(struct k_timer *timer)
 
 void IMU_init(void)
 {
+	printk("IMU_init\n");
+	
 	if(init_i2c() != 0)
 		return;
 	

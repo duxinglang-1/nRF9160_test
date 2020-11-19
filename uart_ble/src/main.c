@@ -640,7 +640,7 @@ int main(void)
 	dk_set_led(DK_LED1,1);
 
 //	test_show_string();
-	test_show_image();
+//	test_show_image();
 //	test_nvs();
 //	test_flash();
 //	test_uart_ble();
@@ -654,7 +654,7 @@ int main(void)
 //	test_gps();
 //	test_nb();
 
-	while(0)
+	while(1)
 	{
 		IdleShowDateTime();
 		

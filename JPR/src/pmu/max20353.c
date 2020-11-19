@@ -94,8 +94,8 @@ void pmu_interrupt_proc(void)
 	ret |= MAX20353_ReadReg(REG_INT0, &Int0);
 	if(Int0 & 0x08)
 	{
-		ret |= MAX20353_ReadReg( REG_STATUS0, &Status0);
-		ret |= MAX20353_ReadReg( REG_STATUS1, &Status1);
+		ret |= MAX20353_ReadReg(REG_STATUS0, &Status0);
+		ret |= MAX20353_ReadReg(REG_STATUS1, &Status1);
 		printf("Status0=0x%02X, Status1=0x%02X,", Status0, Status1); 
 
 		if(((Status1&0x08)==0x08) && ((Status0&0x07)==0x00))

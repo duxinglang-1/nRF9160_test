@@ -364,18 +364,7 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 #ifdef SHOW_LOG_IN_SCREEN
 	//sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
 	//				tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
-	sprintf(tmpbuf, "Tracking:%02d,Using:%02d   ", tracked, in_fix);
-	for(i = 0; i < NRF_GNSS_MAX_SATELLITES; ++i)
-	{
-		if ((pvt_data->pvt.sv[i].sv > 0) && (pvt_data->pvt.sv[i].sv < 33))
-		{
-			u8_t sate_single[128] = {0};
-			
-			sprintf(sate_single, "NO:%02d,CN0:%d;", pvt_data->pvt.sv[i].sv, pvt_data->pvt.sv[i].cn0);
-			strcat(tmpbuf,sate_single);
-		}
-	}
-	show_infor(tmpbuf);	
+	//show_infor(tmpbuf);
 #endif	
 }
 
@@ -396,7 +385,7 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 	printk("Time (UTC): %02u:%02u:%02u", pvt_data->pvt.datetime.hour,
 					       					pvt_data->pvt.datetime.minute,
 					      					pvt_data->pvt.datetime.seconds);
-#if 0//def SHOW_LOG_IN_SCREEN
+#ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u", 
 					pvt_data->pvt.longitude,
 					pvt_data->pvt.latitude,
@@ -668,8 +657,8 @@ void gps_data_receive(void)
 		printk("\nScanning [%c] ",
 				update_indicator[cnt%4]);
 	#ifdef SHOW_LOG_IN_SCREEN
-		//sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
-		//show_infor(tmpbuf);
+		sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
+		show_infor(tmpbuf);
 	#endif	
 	}
 
@@ -698,7 +687,7 @@ void gps_data_receive(void)
 				k_timer_stop(&app_wait_gps_timer);
 
 			APP_wait_gps = false;
-			//gps_off();
+			gps_off();
 
 			//UTC date&time
 			//year
@@ -753,7 +742,7 @@ void gps_data_receive(void)
 			tmp1 = tmp1%100;
 			str_gps[16] = (u8_t)(tmp1);
 
-			//APP_get_location_data_reply(str_gps, 17);
+			APP_get_location_data_reply(str_gps, 17);
 
 			return;
 		}

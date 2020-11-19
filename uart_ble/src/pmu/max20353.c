@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <zephyr.h>
 #include <drivers/i2c.h>
-#include <sys/printk.h>
-#include <dk_buttons_and_leds.h>
 #include "max20353_reg.h"
+
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -87,7 +89,7 @@ void pmu_interrupt_proc(void)
 	int ret = 0;
 	uint8_t Int0, Status0,Status1;
 
-	printk("pmu_interrupt_proc\n");
+	LOG_INF("pmu_interrupt_proc\n");
 
 	ret |= MAX20353_ReadReg(REG_INT0, &Int0);
 	if(Int0 & 0x08)
@@ -122,10 +124,10 @@ void pmu_alert_proc(void)
 {
 	float bat_soc;
 
-	printk("pmu_alert_proc\n");
+	LOG_INF("pmu_alert_proc\n");
 
 	bat_soc = MAX20353_CalculateSOC();
-	printk("bat_soc:%f\n", bat_soc);
+	LOG_INF("bat_soc:%f\n", bat_soc);
 }
 
 void PmuAlertHandle(void)
@@ -138,13 +140,13 @@ void pmu_init(void)
 	bool rst;
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
 
-	printk("pmu_init\n");
+	LOG_INF("pmu_init\n");
 
   	//¶Ë¿Ú³õÊ¼»¯
   	gpio_pmu = device_get_binding(PMU_PORT);
 	if(!gpio_pmu)
 	{
-		printk("Cannot bind gpio device\n");
+		LOG_INF("Cannot bind gpio device\n");
 		return;
 	}
 

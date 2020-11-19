@@ -1588,14 +1588,14 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 {
 	uint8_t x0=x;
 	uint16_t phz=0;
-	
+
 	width+=x;
 	height+=y;
-    while(*p)
-    {       
-        if(x>=width){x=x0;y+=system_font;}
+	while(*p)
+	{       
+		if(x>=width){x=x0;y+=system_font;}
 		if(*p=='\n'){x=x0;y+=system_font;p++;}
-        if(y>=height)break;//退出
+		if(y>=height)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
@@ -1607,7 +1607,7 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 			p++;
 		}
 		else if(*(p+1))
-        {
+		{
 			phz = *p<<8;
 			phz += *(p+1);
 		#ifdef IMG_FONT_FROM_FLASH
@@ -1618,7 +1618,7 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 			x+=system_font;
 			p+=2;
 		}        
-    }
+	}
 }
 
 //显示中英文字符串
@@ -1836,17 +1836,17 @@ u8_t LCD_MeasureByte(u8_t byte)
 void LCD_MeasureString(uint8_t *p, uint16_t *width,uint16_t *height)
 {
 	uint8_t font_size;
-	
+
 	*width = 0;
 	*height = 0;
-	
+
 	if(p == NULL || strlen((const char *)p) == 0)
 		return;
-	
+
 	(*height) = system_font;
-	
+
 	while(*p)
-    {       
+	{       
 		if(*p<0x80)
 		{
 		#ifdef FONTMAKER_FONT
@@ -1857,11 +1857,11 @@ void LCD_MeasureString(uint8_t *p, uint16_t *width,uint16_t *height)
 			p++;
 		}
 		else if(*(p+1))
-        {
+		{
 			(*width) += system_font;
 			p += 2;
 		}        
-    }  
+	}  
 }
 
 //设置系统字体

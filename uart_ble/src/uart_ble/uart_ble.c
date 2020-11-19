@@ -16,7 +16,11 @@
 #include "CST816.h"
 #include "gps.h"
 
-#define BLE_DEV	"UART_1"
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
+
+#define BLE_DEV	"UART_0"
 
 #define BUF_MAXSIZE	1024
 
@@ -84,7 +88,7 @@ extern u8_t date_time_changed;
 
 void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 {
-	printk("BLE status:%x\n", buf[6]);
+	LOG_INF("BLE status:%x\n", buf[6]);
 	
 	if(buf[6] == 0x01)				//�鿴controlֵ
 		BLE_is_connected = true;
@@ -485,7 +489,7 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 	u8_t tp_type = TP_EVENT_MAX;
 	u16_t tp_x,tp_y;
 	
-	printk("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
 	switch(buf[5])
 	{
 	case GESTURE_NONE:
@@ -565,7 +569,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	
 	if((buf[0] != PACKET_HEAD) || (buf[len-1] != PACKET_END))	//format is error
 	{
-		printk("format is error! HEAD:%x, END:%x\n", buf[0], buf[len-1]);
+		LOG_INF("format is error! HEAD:%x, END:%x\n", buf[0], buf[len-1]);
 		return;
 	}
 
@@ -574,7 +578,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 
 	if(CRC_data != buf[len-2])									//crc is error
 	{
-		printk("CRC is error! data:%x, CRC:%x\n", buf[len-2], CRC_data);
+		LOG_INF("CRC is error! data:%x, CRC:%x\n", buf[len-2], CRC_data);
 		return;
 	}
 
@@ -651,14 +655,14 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		CTP_notify_handle(buf, len);
 		break;
 	default:
-		printk("data_id is unknown! \n");
+		LOG_INF("data_id is unknown! \n");
 		break;
 	}
 }
 
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
-	printk("ble_send_date_handle\n");
+	LOG_INF("ble_send_date_handle\n");
 
 	uart_fifo_fill(uart_ble, buf, len);
 	uart_irq_tx_enable(uart_ble); 
@@ -681,7 +685,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 
 void uart_send_data(void)
 {
-	printk("uart_send_data\n");
+	LOG_INF("uart_send_data\n");
 	
 	uart_fifo_fill(uart_ble, "Hello World!", strlen("Hello World!"));
 	uart_irq_tx_enable(uart_ble); 
@@ -736,12 +740,12 @@ static void uart_cb(struct device *x)
 
 void ble_init(void)
 {
-	printk("ble_init\n");
+	LOG_INF("ble_init\n");
 	
 	uart_ble = device_get_binding(BLE_DEV);
 	if(!uart_ble)
 	{
-		printk("Could not get %s device\n", BLE_DEV);
+		LOG_INF("Could not get %s device\n", BLE_DEV);
 		return;
 	}
 
@@ -751,7 +755,7 @@ void ble_init(void)
 
 void test_uart_ble(void)
 {
-	printk("test_uart_ble\n");
+	LOG_INF("test_uart_ble\n");
 	
 	//ble_init();
 

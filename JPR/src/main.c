@@ -26,6 +26,10 @@
 #include "Alarm.h"
 #include "gps.h"
 
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
+
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
 
@@ -47,6 +51,7 @@ bool update_date_time = false;
 bool app_gps_on = false;
 bool app_gps_off = false;
 bool app_find_device = false;
+bool app_nb_on = false;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -366,7 +371,7 @@ void test_show_image(void)
 	u8_t i=0;
 	u16_t x,y,w=0,h=0;
 
-	printk("test_show_image\n");
+	LOG_INF("test_show_image\n");
 	
 	LCD_Clear(BLACK);
 	
@@ -433,7 +438,7 @@ void test_show_color(void)
 {
 	u8_t i=0;
 
-	printk("test_show_image\n");
+	LOG_INF("test_show_image\n");
 	
 	while(1)
 	{
@@ -494,43 +499,53 @@ void test_show_color(void)
 void test_show_string(void)
 {
 	u16_t x,y,w,h;
+	u8_t cnbuf[128] = {0};
+	u8_t enbuf[128] = {0};
 	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
 
+	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
+	strcpy(enbuf, "2015-2020 August International Ltd. All Rights Reserved.");
+
 #ifdef FONT_16
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
-	LCD_MeasureString("深圳市奥科斯数码有限公司",&w,&h);
+	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = 40;	
-	LCD_ShowString(x,y,"深圳市奥科斯数码有限公司");
+	y = 20;	
+	LCD_ShowString(x,y,cnbuf);
 	
-	LCD_MeasureString("2015-2020 August International Ltd. All Rights Reserved.",&w,&h);
+	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 10;
-	LCD_ShowString(x,y,"2015-2020 August International Ltd. All Rights Reserved.");
+	y = y + h + 2;
+	LCD_ShowString(x,y,enbuf);
 
 #ifdef FONT_24
 	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
 #endif
-	LCD_MeasureString("Rawmec Business Park, Plumpton Road, Hoddesdon",&w,&h);
+	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 10;	
-	LCD_ShowString(x,y,"Rawmec Business Park, Plumpton Road, Hoddesdon");
+	y = y + h + 2;	
+	LCD_ShowString(x,y,cnbuf);
 	
-	LCD_MeasureString("深圳市龙华观澜环观南路凯美广场A座",&w,&h);
+	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 10;	
-	LCD_ShowString(x,y,"深圳市龙华观澜环观南路凯美广场A座");
+	y = y + h + 2;	
+	LCD_ShowString(x,y,enbuf);
 
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小
 #endif
-	LCD_MeasureString("2020-01-03 16:30:45",&w,&h);
+	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 10;	
-	LCD_ShowString(x,y,"2020-01-03 16:30:45");
+	y = y + h + 2;	
+	LCD_ShowString(x,y,cnbuf);
+	
+	LCD_MeasureString(enbuf,&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 2;
+	LCD_ShowString(x,y,enbuf);
 }
 
 /**@brief Initializes buttons and LEDs, using the DK buttons and LEDs
@@ -543,13 +558,13 @@ static void buttons_leds_init(void)
 	err = dk_leds_init();
 	if (err)
 	{
-		printk("Could not initialize leds, err code: %d\n", err);
+		LOG_INF("Could not initialize leds, err code: %d\n", err);
 	}
 
 	err = dk_set_leds_state(0x00, DK_ALL_LEDS_MSK);
 	if (err)
 	{
-		printk("Could not set leds state, err code: %d\n", err);
+		LOG_INF("Could not set leds state, err code: %d\n", err);
 	}
 }
 
@@ -561,7 +576,7 @@ void system_init(void)
 	pmu_init();
 	IMU_init();
 	LCD_Init();
-	//flash_init();
+	flash_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 }
 
@@ -701,6 +716,12 @@ int main(void)
 		{
 			gps_data_incoming = false;
 			gps_data_receive();
+		}
+
+		if(app_nb_on)
+		{
+			app_nb_on = false;
+			test_nb();
 		}
 		
 		if(vibrate_start_flag)

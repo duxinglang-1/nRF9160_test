@@ -10,6 +10,10 @@
 #include "datetime.h"
 #include "alarm.h"
 
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(settings, CONFIG_LOG_DEFAULT_LEVEL);
+
 #define DATETIME_ID 1
 #define SETTINGS_ID 2
 
@@ -53,7 +57,7 @@ static int nvs_setup(void)
 	err = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME), fs.offset, &info);	
 	if(err)
 	{		
-		printk("Unable to get page info");
+		//LOG_INF("Unable to get page info");
 		return err;
 	}	
 
@@ -62,7 +66,7 @@ static int nvs_setup(void)
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
 	if(err)
 	{
-		printk("Flash Init failed\n");
+		//LOG_INF("Flash Init failed\n");
 		return err;
 	}
 
@@ -85,12 +89,12 @@ void InitSystemDateTime(void)
 	err = nvs_read(&fs, DATETIME_ID, &mytime, sizeof(sys_date_timer_t));
 	if(err < 0)
 	{
-		printk("get datetime err:%d\n", err);
+		LOG_INF("get datetime err:%d\n", err);
 	}
 	
-	printk("mytime: %04d-%02d-%02d, %02d:%02d:%02d\n", mytime.year,mytime.month,mytime.day,mytime.hour,mytime.minute,mytime.second);
+	LOG_INF("mytime: %04d-%02d-%02d, %02d:%02d:%02d\n", mytime.year,mytime.month,mytime.day,mytime.hour,mytime.minute,mytime.second);
 	
-	memset(date_time, 0, sizeof(sys_date_timer_t));
+	memset(&date_time, 0, sizeof(sys_date_timer_t));
 	if(!CheckSystemDateTimeIsValid(mytime))
 	{
 		mytime.year = SYSTEM_DEFAULT_YEAR;
@@ -117,7 +121,7 @@ void InitSystemSettings(void)
 		err = nvs_setup();
 		if(err)
 		{
-			printk("Flash Init failed, return!\n");
+			LOG_INF("Flash Init failed, return!\n");
 			return;
 		}
 	}
@@ -125,7 +129,7 @@ void InitSystemSettings(void)
 	err = nvs_read(&fs, SETTINGS_ID, &settings, sizeof(global_settings_t));
 	if(err < 0)
 	{
-		printk("get settins err:%d\n", err);
+		LOG_INF("get settins err:%d\n", err);
 	}
 
 	memcpy(&global_settings, &settings, sizeof(global_settings_t));
@@ -139,7 +143,7 @@ void SaveSystemSettings(void)
 	int err;
 	
 	err = nvs_write(&fs, SETTINGS_ID, &global_settings, sizeof(global_settings_t));
-	printk("save settings err:%d\n", err);
+	LOG_INF("save settings err:%d\n", err);
 }
 
 void ResetSystemSettings(void)

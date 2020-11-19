@@ -45,12 +45,14 @@ static struct pollfd fds;
 
 //#define TEST_BNT_LED   //liming
 
+extern bool app_nb_on;
+
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[128] = {0};
 
 void show_infor(u8_t *strbuf)
 {
-	LCD_Fill(20,90,200,50,BLACK);
+	LCD_Clear(BLACK);
 	LCD_ShowStringInRect(20,90,200,50,strbuf);
 }
 #endif
@@ -679,4 +681,9 @@ void test_nb(void)
 		show_infor(tmpbuf);
 	#endif
 	}
+}
+
+void APP_Ask_NB(void)
+{
+	app_nb_on = true;
 }

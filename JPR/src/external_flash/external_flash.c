@@ -17,6 +17,10 @@
 #include "font.h"
 #include "external_flash.h"
 
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(external_flash, CONFIG_LOG_DEFAULT_LEVEL);
+
 struct device *spi_flash;
 struct device *gpio_flash;
 
@@ -66,11 +70,11 @@ void Spi_WriteOneByte(uint8_t Dat)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 	else
 	{
-		printk("ok\n");
+		LOG_INF("ok\n");
 	}
 }
 /*****************************************************************************
@@ -118,11 +122,11 @@ uint16_t SpiFlash_ReadID(void)
 	
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 	else
 	{
-		printk("TX sent: %x,%x,%x,%x,%x,%x\n", 
+		LOG_INF("TX sent: %x,%x,%x,%x,%x,%x\n", 
 			spi_tx_buf[0],
 			spi_tx_buf[1],
 			spi_tx_buf[2],
@@ -131,7 +135,7 @@ uint16_t SpiFlash_ReadID(void)
 			spi_tx_buf[5]
 			);
 		
-		printk("RX recv: %x,%x,%x,%x,%x,%x\n", 
+		LOG_INF("RX recv: %x,%x,%x,%x,%x,%x\n", 
 			spi_rx_buf[0],
 			spi_rx_buf[1],
 			spi_rx_buf[2],
@@ -144,7 +148,7 @@ uint16_t SpiFlash_ReadID(void)
 		dat|=spi_rx_buf[4]<<8;  
 		dat|=spi_rx_buf[5];
 		
-		printk("flash ID: %x\n", dat);
+		LOG_INF("flash ID: %x\n", dat);
 	}
 
 
@@ -179,11 +183,11 @@ static uint8_t SpiFlash_ReadSR(void)
 	
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 	else
 	{
-		printk("StatusReg: %x\n", spi_rx_buf[1]);
+		LOG_INF("StatusReg: %x\n", spi_rx_buf[1]);
 	}
 	
 	return spi_rx_buf[1];
@@ -223,7 +227,7 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 	
 	//等待W25Q64FW完成操作
@@ -254,7 +258,7 @@ void SPIFlash_Erase_Chip(void)
 	
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 
 	//等待W25Q64FW完成操作
@@ -300,7 +304,7 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 
 	tx_buff.buf = pBuffer;
@@ -311,7 +315,7 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 
 	SpiFlash_CS_HIGH();
@@ -399,7 +403,7 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
+		LOG_INF("SPI error: %d\n", err);
 	}
 
 	//开始读取数据
@@ -424,7 +428,7 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 		err = spi_transceive(spi_flash, &spi_cfg, NULL, &rx_bufs);
 		if(err)
 		{
-			printk("SPI error: %d\n", err);
+			LOG_INF("SPI error: %d\n", err);
 		}
 		
 		pBuffer += read_size;
@@ -446,7 +450,7 @@ void SPI_Flash_Init(void)
 	spi_flash = device_get_binding(FLASH_DEVICE);
 	if (!spi_flash) 
 	{
-		printk("Could not get %s device\n", FLASH_DEVICE);
+		LOG_INF("Could not get %s device\n", FLASH_DEVICE);
 		return;
 	}
 
@@ -457,12 +461,12 @@ void SPI_Flash_Init(void)
 
 void flash_init(void)
 {
-	printk("flash_init\n");
+	LOG_INF("flash_init\n");
 		
 	gpio_flash = device_get_binding(FLASH_PORT);
 	if(!gpio_flash)
 	{
-		printk("Cannot bind gpio device\n");
+		LOG_INF("Cannot bind gpio device\n");
 		return;
 	}
 
@@ -501,32 +505,35 @@ void test_flash(void)
 	//LCD_ShowString(0,100,"FLASH写入图片1成功!");
 
 	//写入数据
-	//LCD_ShowString(0,120,"FLASH写入图片2数据...");
+	//LCD_ShowString(0,80,"FLASH写入图片2数据...");
 	//SpiFlash_Write_Buf(peppa_pig_160X160, IMG_PEPPA_160X160_ADDR, IMG_PEPPA_160X160_SIZE);
-	//LCD_ShowString(0,140,"FLASH写入图片2成功!");
+	//LCD_ShowString(0,100,"FLASH写入图片2成功!");
 
 	//写入数据
-	LCD_ShowString(0,160,"FLASH写入图片3数据...");
+	//LCD_ShowString(0,80,"FLASH写入图片3数据...");
 	//SpiFlash_Write_Buf(peppa_pig_240X240_1, IMG_PEPPA_240X240_ADDR, 57608);
-	SpiFlash_Write_Buf(peppa_pig_240X240_2, IMG_PEPPA_240X240_ADDR+57608, 57600);
-	LCD_ShowString(0,180,"FLASH写入图片3成功!");
+	//SpiFlash_Write_Buf(peppa_pig_240X240_2, IMG_PEPPA_240X240_ADDR+57608, 57600);
+	//LCD_ShowString(0,100,"FLASH写入图片3成功!");
 
 	//写入数据
-	//LCD_ShowString(0,200,"FLASH写入图片4数据...");
-	//SpiFlash_Write_Buf(peppa_pig_320X320, IMG_PEPPA_320X320_ADDR, IMG_PEPPA_320X320_SIZE);
-	//LCD_ShowString(0,220,"FLASH写入图片4成功!");
+	LCD_ShowString(0,80,"FLASH写入图片4数据...");
+	//SpiFlash_Write_Buf(peppa_pig_320X320_1, IMG_PEPPA_320X320_ADDR, 51208);
+	//SpiFlash_Write_Buf(peppa_pig_320X320_2, IMG_PEPPA_320X320_ADDR+51208, 51200);
+	//SpiFlash_Write_Buf(peppa_pig_320X320_3, IMG_PEPPA_320X320_ADDR+51208+51200, 51200);
+	SpiFlash_Write_Buf(peppa_pig_320X320_4, IMG_PEPPA_320X320_ADDR+51208+2*51200, 51200);
+	LCD_ShowString(0,100,"FLASH写入图片4成功!");
 #endif
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,160,"FLASH写入16X08英文字库...");
+	LCD_ShowString(0,80,"FLASH写入16X08英文字库...");
 	SpiFlash_Write_Buf(asc2_1608, FONT_ASC_1608_ADDR, FONT_ASC_1608_SIZE);
-	LCD_ShowString(0,180,"FLASH写入16X08英文成功");
+	LCD_ShowString(0,100,"FLASH写入16X08英文成功");
 
 	//写入数据
-	LCD_ShowString(0,40,"FLASH写入24X12英文字库...");
+	LCD_ShowString(0,80,"FLASH写入24X12英文字库...");
 	SpiFlash_Write_Buf(asc2_2412, FONT_ASC_2412_ADDR, FONT_ASC_2412_SIZE);
-	LCD_ShowString(0,60,"FLASH写入24X12英文成功");
+	LCD_ShowString(0,100,"FLASH写入24X12英文成功");
 
 	//写入数据
 	LCD_ShowString(0,80,"FLASH写入32X16英文字库...");
@@ -536,16 +543,16 @@ void test_flash(void)
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,120,"FLASH写入16X16中文字库...");
+	LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
 	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
 	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+(2726*32)*1, (2726*32));
 	SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
-	LCD_ShowString(0,140,"FLASH写入16X16中文成功");
+	LCD_ShowString(0,100,"FLASH写入16X16中文成功");
 #endif
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,160,"FLASH写入24X24中文字库...");
+	LCD_ShowString(0,80,"FLASH写入24X24中文字库...");
 	//SpiFlash_Write_Buf(chinese_2424_1, FONT_CHN_SM_2424_ADDR+(1200*72)*0, (1200*72));
 	//SpiFlash_Write_Buf(chinese_2424_2, FONT_CHN_SM_2424_ADDR+(1200*72)*1, (1200*72));
 	//SpiFlash_Write_Buf(chinese_2424_3, FONT_CHN_SM_2424_ADDR+(1200*72)*2, (1200*72));
@@ -553,12 +560,12 @@ void test_flash(void)
 	//SpiFlash_Write_Buf(chinese_2424_5, FONT_CHN_SM_2424_ADDR+(1200*72)*4, (1200*72));
 	//SpiFlash_Write_Buf(chinese_2424_6, FONT_CHN_SM_2424_ADDR+(1200*72)*5, (1200*72));
 	SpiFlash_Write_Buf(chinese_2424_7, FONT_CHN_SM_2424_ADDR+(1200*72)*6, (977*72));
-	LCD_ShowString(0,180,"FLASH写入24X24中文成功");
+	LCD_ShowString(0,100,"FLASH写入24X24中文成功");
 #endif
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,200,"FLASH写入32X32中文字库...");
+	LCD_ShowString(0,80,"FLASH写入32X32中文字库...");
 	//SpiFlash_Write_Buf(chinese_3232_1, FONT_CHN_SM_3232_ADDR+(700*128)*0, (700*128));
 	//SpiFlash_Write_Buf(chinese_3232_2, FONT_CHN_SM_3232_ADDR+(700*128)*1, (700*128));
 	//SpiFlash_Write_Buf(chinese_3232_3, FONT_CHN_SM_3232_ADDR+(700*128)*2, (700*128));
@@ -571,9 +578,16 @@ void test_flash(void)
 	//SpiFlash_Write_Buf(chinese_3232_10, FONT_CHN_SM_3232_ADDR+(700*128)*9, (700*128));
 	//SpiFlash_Write_Buf(chinese_3232_11, FONT_CHN_SM_3232_ADDR+(700*128)*10, (700*128));
 	SpiFlash_Write_Buf(chinese_3232_12, FONT_CHN_SM_3232_ADDR+(700*128)*11, (478*128));
-	LCD_ShowString(0,220,"FLASH写入32X32中文成功");	
+	LCD_ShowString(0,100,"FLASH写入32X32中文成功");	
 #endif
-	
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,80,"FLASH写入RM16X08英文字库...");
+	SpiFlash_Write_Buf(asc2_16_rm, FONT_RM_ASC_16_ADDR, FONT_RM_ASC_16_SIZE);
+	LCD_ShowString(0,100,"FLASH写入RM16X08英文成功");	
+#endif
+
 	//读出数据
 	//SpiFlash_Read(my_rx_buf,0,len);
 	//LCD_ShowString(0,140,"FLASH读出数据:");

@@ -57,6 +57,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			//APP_Ask_GPS_Data();
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -68,6 +69,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			//APP_Ask_NB();
 			break;
 		case KEY_LONG_PRESS:
 			sys_pwr_off = true;

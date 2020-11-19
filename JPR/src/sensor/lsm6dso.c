@@ -10,12 +10,16 @@
 #include <math.h>
 #include "lsm6dso_reg.h"
 
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
+
 typedef union{
   int16_t i16bit[3];
   uint8_t u8bit[6];
 } axis3bit16_t;
 
-#define I2C_DEV "I2C_2"
+#define I2C_DEV "I2C_1"
 
 #define LSM6DSO_I2C_ADD     LSM6DSO_I2C_ADD_L >> 1 //need to shift 1 bit to the right.
 
@@ -68,18 +72,17 @@ u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
 
-uint8_t init_i2c(void)
+static uint8_t init_i2c(void)
 {
 	LSM6DSO_I2C = device_get_binding(I2C_DEV);
 	if(!LSM6DSO_I2C)
 	{
-		printf("ERROR SETTING UP I2C\r\n");
+		LOG_INF("ERROR SETTING UP I2C\r\n");
 		return -1;
 	}
 	else
 	{
 		i2c_configure(LSM6DSO_I2C, I2C_SPEED_SET(I2C_SPEED_FAST));
-		printf("I2C CONFIGURED\r\n");
 		return 0;
 	}
 }
@@ -116,7 +119,7 @@ void interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t p
 
 void button_pressed(struct device *gpiob, struct gpio_callback *cb, u32_t pins)
 {
-	printf("Button pressed\n");
+	LOG_INF("Button pressed\n");
 	button_flag = true;
 }
 
@@ -136,8 +139,6 @@ uint8_t init_gpio(void)
 
 	gpio_pin_enable_callback(gpiob, BUT_PIN);
 	gpio_pin_enable_callback(interrupt,LSM6DSO_INT2_PIN);
-
-	printf("GPIO Init Done\r\n");
 
 	return 0;
 }
@@ -185,7 +186,7 @@ void sensor_init(void)
 	int2_route.emb_func_int2.int2_tilt = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
-	printf("Sensor Init Done\r\n");
+	LOG_INF("Sensor Init Done\r\n");
 }
 
 void test_sensor(void)
@@ -211,12 +212,12 @@ void test_sensor(void)
 			lsm6dso_tilt_flag_data_ready_get(&imu_dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
 			if (is_tilt)
 			{
-				printf("tilt detected\n");	//¼ì²âµ½·­µ½
+				LOG_INF("tilt detected\n");	//¼ì²âµ½·­µ½
 				LCD_ShowString(20,100,"test_motion");
 			}
 			else
 			{
-				printf("tap detected\n");	//¼ì²âµ½´¥Åö
+				LOG_INF("tap detected\n");	//¼ì²âµ½´¥Åö
 				LCD_ShowString(20,100,"test_motion");
 			}
 			single_tap_event = false;
@@ -225,7 +226,7 @@ void test_sensor(void)
 		if(button_flag)
 		{
 			lsm6dso_number_of_steps_get(&imu_dev_ctx, (uint8_t*)&steps);
-			printf("steps :%d\r\n", steps);
+			LOG_INF("steps :%d\r\n", steps);
 			sprintf(tmpbuf, "steps :%d\r\n", steps);
 			LCD_ShowString(20,120,tmpbuf);
 			button_flag = false;
@@ -245,7 +246,7 @@ void motion_sensor_msg_proc(void)
 		lsm6dso_tilt_flag_data_ready_get(&imu_dev_ctx, &is_tilt); //is_tilt = true when a tilt is detected
 		if(is_tilt)
 		{
-			printf("tilt detected\n");	//¼ì²âµ½·­µ½
+			LOG_INF("tilt detected\n");	//¼ì²âµ½·­µ½
 
 			lcd_sleep_out = true;
 			sprintf(tmpbuf, "tilt trige lcd sleep out!");
@@ -254,7 +255,7 @@ void motion_sensor_msg_proc(void)
 		}
 		else
 		{
-			printf("tap detected\n");	//¼ì²âµ½´¥Åö
+			LOG_INF("tap detected\n");	//¼ì²âµ½´¥Åö
 		}
 	}
 
@@ -263,7 +264,7 @@ void motion_sensor_msg_proc(void)
 		button_flag = false;
 		
 		lsm6dso_number_of_steps_get(&imu_dev_ctx, (uint8_t*)&steps);
-		printf("steps :%d\r\n", steps);
+		LOG_INF("steps :%d\r\n", steps);
 
 		sprintf(tmpbuf, "step is:%d", steps);
 		LCD_ShowString(20,100,tmpbuf);
@@ -297,6 +298,8 @@ void ImuAutoReadTimeout(struct k_timer *timer)
 
 void IMU_init(void)
 {
+	LOG_INF("IMU_init\n");
+	
 	if(init_i2c() != 0)
 		return;
 	

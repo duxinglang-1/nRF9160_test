@@ -23,6 +23,7 @@ typedef enum
 //Ó¢ÎÄ×Ö¿â
 #if 1//def FONT_16
 extern unsigned char asc2_1608[96][16];
+extern unsigned char asc2_16_rm[];
 #endif
 #if 0//def FONT_24
 extern unsigned char asc2_2412[96][48];

@@ -72,6 +72,8 @@ typedef struct _PALETTE
 //extern unsigned char peppa_pig_320X320_2[51200];
 //extern unsigned char peppa_pig_320X320_3[51200];
 //extern unsigned char peppa_pig_320X320_4[51200];
+//extern unsigned char RM_LOGO_240X240_1[57608];
+//extern unsigned char RM_LOGO_240X240_2[57600];
 #endif
 
 #endif/*__FONT_H__*/

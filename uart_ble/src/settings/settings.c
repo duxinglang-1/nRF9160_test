@@ -22,7 +22,7 @@ static bool nvs_init_flag = false;
 static struct nvs_fs fs;
 static struct flash_pages_info info;
 
-u8_t screen_id = SCREEN_IDLE;
+u8_t screen_id = SCREEN_BOOTUP;
 
 bool need_save_settings = false;
 bool need_save_time = false;

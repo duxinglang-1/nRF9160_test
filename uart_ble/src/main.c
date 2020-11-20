@@ -378,8 +378,8 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_PEPPA_240X240_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_240X240_ADDR);
+	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
 	while(0)
 	{
 		switch(i)
@@ -568,17 +568,40 @@ static void buttons_leds_init(void)
 	}
 }
 
+void BootUpShowLoGo(void)
+{
+	u16_t x,y,w=0,h=0;
+		
+	if(screen_id == SCREEN_BOOTUP)
+	{
+		LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+		x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
+		y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
+		LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+	}
+}
+
+void EntryIdleScreen(void)
+{
+	screen_id = SCREEN_IDLE;
+}
+
 void system_init(void)
 {
+	flash_init();
+	LCD_Init();
+	BootUpShowLoGo();
+
 	InitSystemSettings();
 	buttons_leds_init();
 	key_init();
 	//pmu_init();
 	IMU_init();
-	LCD_Init();
-	flash_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
+
+	EntryIdleScreen();
 }
+
 
 void IdleReshowDatetime(void)
 {

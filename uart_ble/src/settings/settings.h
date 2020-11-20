@@ -29,6 +29,7 @@ typedef enum
 
 typedef enum
 {
+	SCREEN_BOOTUP,
 	SCREEN_IDLE,
 	SCREEN_GPS,
 	SCREEN_ALARM,

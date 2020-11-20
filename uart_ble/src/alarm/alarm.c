@@ -15,6 +15,7 @@
 #include <sys/printk.h>
 #include "settings.h"
 #include "datetime.h"
+#include "max20353.h"
 #include "lcd.h"
 
 #define ALARM_VIB_REPEAT_MAX	5
@@ -31,10 +32,9 @@ static bool vibrating = false;
 static struct k_timer alarm_timer;
 static struct k_timer find_timer;
 
-bool vibrate_start_flag = false;
-bool vibrate_stop_flag = false;
 bool alarm_is_running = false;
 bool find_is_running = false;
+bool app_find_device = false;
 
 extern bool lcd_sleep_out;
 extern bool show_date_time_first;
@@ -261,3 +261,11 @@ void AlarmRemindInit(void)
 	k_timer_init(&find_timer, FindDeviceTimeout, NULL);
 }
 
+void AlarmMsgProcess(void)
+{
+	if(app_find_device)
+	{
+		app_find_device = false;
+		FindDeviceEntryScreen();
+	}
+}

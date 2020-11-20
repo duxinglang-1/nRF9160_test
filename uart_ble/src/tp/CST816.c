@@ -410,3 +410,12 @@ void test_tp(void)
 	LCD_ShowString(20,80,tmpbuf);
 	CST816_init();
 }
+
+void TPMsgProcess(void)
+{
+	if(tp_trige_flag)
+	{
+		tp_trige_flag = false;
+		tp_interrupt_proc();
+	}
+}

@@ -16,6 +16,6 @@ extern bool find_is_running;
 extern void AlarmRemindInit(void);
 extern void AlarmRemindStart(void);
 extern void AlarmRemindStop(void);
-
+extern void AlarmMsgProcess(void);
 extern void FindDeviceEntryScreen(void);
 extern void FindDeviceStop(void);

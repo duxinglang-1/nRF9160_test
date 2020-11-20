@@ -153,3 +153,17 @@ void ResetSystemSettings(void)
 	SaveSysetemSettings(global_settings);
 }
 
+void SettingsMsgPorcess(void)
+{
+	if(need_save_time)
+	{
+		SaveSystemDateTime();
+		need_save_time = false;
+	}
+	
+	if(need_save_settings)
+	{
+		need_save_settings = false;
+		SaveSystemSettings();
+	}
+}

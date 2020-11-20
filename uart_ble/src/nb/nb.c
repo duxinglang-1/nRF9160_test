@@ -45,7 +45,7 @@ static struct pollfd fds;
 
 //#define TEST_BNT_LED   //liming
 
-extern bool app_nb_on;
+bool app_nb_on = false;
 
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[128] = {0};
@@ -686,4 +686,13 @@ void test_nb(void)
 void APP_Ask_NB(void)
 {
 	app_nb_on = true;
+}
+
+void NBMsgProcess(void)
+{
+	if(app_nb_on)
+	{
+		app_nb_on = false;
+		test_nb();
+	}
 }

@@ -13,6 +13,11 @@ static struct device *i2c_pmu;
 static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
+bool sys_pwr_off = false;
+
+bool vibrate_start_flag = false;
+bool vibrate_stop_flag = false;
+
 bool pmu_trige_flag = false;
 bool pmu_alert_flag = false;
 
@@ -180,3 +185,35 @@ void test_pmu(void)
     pmu_init();
 }
 
+void PMUMsgProcess(void)
+{
+	if(pmu_trige_flag)
+	{
+		pmu_interrupt_proc();
+		pmu_trige_flag = false;
+	}
+	
+	if(pmu_alert_flag)
+	{
+		pmu_alert_proc();
+		pmu_alert_flag = false;
+	}
+	
+	if(sys_pwr_off)
+	{
+		SystemShutDown();
+		sys_pwr_off = false;		
+	}
+	
+	if(vibrate_start_flag)
+	{
+		VibrateStart();
+		vibrate_start_flag = false;
+	}
+	
+	if(vibrate_stop_flag)
+	{
+		VibrateStop();
+		vibrate_stop_flag = false;
+	}
+}

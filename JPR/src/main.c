@@ -575,7 +575,7 @@ void system_init(void)
 	flash_init();
 	pmu_init();
 	LCD_Init();
-	//BootUpShowLoGo();
+	BootUpShowLoGo();
 
 	InitSystemSettings();
 
@@ -614,7 +614,8 @@ int main(void)
 	while(1)
 	{
 		IdleShowDateTime();
-		
+
+		NBMsgProcess();
 		GPSMsgProcess();
 		IMUMsgProcess();
 		PMUMsgProcess();

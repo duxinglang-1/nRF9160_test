@@ -22,7 +22,7 @@
 
 static const char results[][60] = { value1,value2,value3,value4,value5,value6,value7,value8,value9,value10,value11,value12};
 static struct nvs_fs fs;
-struct flash_pages_info info;
+static struct flash_pages_info info;
 
 int nvs_setup(void)
 {	

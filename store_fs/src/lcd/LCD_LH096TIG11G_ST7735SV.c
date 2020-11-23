@@ -7,7 +7,6 @@
 #ifdef LCD_LH096TIG11G_ST7735SV
 #include "LCD_LH096TIG11G_ST7735SV.h"
 
-#define SPI_DEV "SPI_3"
 #define SPI_BUF_LEN	8
 
 struct device *spi_lcd;
@@ -25,10 +24,10 @@ static void spi_init(void)
 {
 	printk("spi_init\n");
 	
-	spi_lcd = device_get_binding(SPI_DEV);
+	spi_lcd = device_get_binding(LCD_DEV);
 	if (!spi_lcd) 
 	{
-		printk("Could not get %s device\n", SPI_DEV);
+		printk("Could not get %s device\n", LCD_DEV);
 		return;
 	}
 

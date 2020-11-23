@@ -1,5 +1,9 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
+#include <nrf9160.h>
+#include <zephyr.h>
+
 #include "lcd.h"
 #include "font.h"
 #include "external_flash.h"
@@ -33,6 +37,9 @@ system_font_size system_font = FONT_SIZE_32;
 #else
 system_font_size system_font = FONT_SIZE_16;
 #endif
+
+bool lcd_sleep_in = false;
+bool lcd_sleep_out = false;
 
 //快速画点
 //x,y:坐标
@@ -981,8 +988,132 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 		#endif
 		}	
 	}  	    	   	 	  
-}   
-#endif
+}
+
+#ifdef FONTMAKER_FONT
+/*********************************************************************************************************************
+* Name:LCD_Show_Ex_Char
+* Function:显示fontmaker工具生成的bin格式的点阵字库
+* Description:
+* 	检索表: 
+* 	从00000010h 开始，每 4 个字节表示一个字符的检索信息， 且从字符 0x0 开始。故空格字符（' '，编码为 0x20）的检索信息
+* 	（文件头的长度+字符编码*4 = 0x10 + 0x20 *4 = 0x90， 即 000000090h）为：10 04 00 10，即得出一个 32 位数为： 
+* 	0x10000410（十六进制） --- （00010000 00000000 00000100 00010000）. 
+* 	高 6 位，表示当前字符的宽度。 故得出 000100 -- 4 （字库宽度为 4 ）
+* 	低 26 位，表示当期字符的点阵数据的偏移地址。故得出 00 00000000 00000100 00010000 -- 0x410 （点阵信息的起始地址为 0x410) 
+* 
+* 	点阵数据 
+* 	由于空格字符的起始地址为 0x410，且数据长度为：（（字体宽度+7）/8）* 字体高度 = ((4+7)/8)*16 = 16. 
+* 	故取如下 16 字节，即为空格字符的点阵数据。
+*********************************************************************************************************************/
+u8_t LCD_Show_Ex_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
+{
+	u8_t temp,t1,t,i=0,*ptr_font;
+	u16_t y0=y,x0=x;
+	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
+	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
+ 	u8_t databuf[2*COL] = {0};
+	u32_t index_addr,data_addr=0;
+
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			ptr_font=asc2_16_rm; 	 		//调用1608字体
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			ptr_font=asc2_24_rm;			//调用2412字体
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			ptr_font=asc2_32_rm;			//调用3216字体
+			break;
+	#endif
+		default:
+			return 0;						//没有的字库
+	}
+
+	index_addr = FONT_MBCS_HEAD_LEN+4*num;
+	data_addr = ptr_font[index_addr]+0x100*ptr_font[index_addr+1]+0x10000*ptr_font[index_addr+2];
+	cbyte = ptr_font[index_addr+3]>>2;
+	csize = ((cbyte+7)/8)*system_font;
+
+	for(t=0;t<csize;t++)
+	{
+		temp=ptr_font[data_addr+t];
+
+		BlockWrite(x0,y,(cbyte),1);	  	//设置刷新位置
+
+		for(t1=0;t1<8;t1++)
+		{
+		#ifdef LCD_TYPE_SPI
+			if(temp&0x80)
+			{
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				DispDate(2*i, databuf);
+				i=0;
+
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return cbyte;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+
+			}
+			if((x-x0)==cbyte)
+			{
+				DispDate(2*i, databuf);
+				i=0;
+				
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return cbyte;	//超区域了
+				break;
+			}
+		#else
+			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
+			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
+			temp<<=1;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;				
+			}
+			if((x-x0)==cbyte)
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				break;
+			}
+		#endif
+		}	
+	}  	 
+
+	return cbyte;
+}
+#endif/*FONTMAKER_FONT*/
+#endif/*IMG_FONT_FROM_FLASH*/
 
 //在指定位置显示flash中一个字符
 //x,y:起始坐标
@@ -1099,6 +1230,141 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 #endif
 }   
 
+#ifdef FONTMAKER_FONT
+/*********************************************************************************************************************
+* Name:LCD_Show_Ex_Char
+* Function:显示fontmaker工具生成的bin格式的点阵字库
+* Description:
+* 	检索表: 
+* 	从00000010h 开始，每 4 个字节表示一个字符的检索信息， 且从字符 0x0 开始。故空格字符（' '，编码为 0x20）的检索信息
+* 	（文件头的长度+字符编码*4 = 0x10 + 0x20 *4 = 0x90， 即 000000090h）为：10 04 00 10，即得出一个 32 位数为： 
+* 	0x10000410（十六进制） --- （00010000 00000000 00000100 00010000）. 
+* 	高 6 位，表示当前字符的宽度。 故得出 000100 -- 4 （字库宽度为 4 ）
+* 	低 26 位，表示当期字符的点阵数据的偏移地址。故得出 00 00000000 00000100 00010000 -- 0x410 （点阵信息的起始地址为 0x410) 
+* 
+* 	点阵数据 
+* 	由于空格字符的起始地址为 0x410，且数据长度为：（（字体宽度+7）/8）* 字体高度 = ((4+7)/8)*16 = 16. 
+* 	故取如下 16 字节，即为空格字符的点阵数据。
+*********************************************************************************************************************/
+u8_t LCD_Show_Ex_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
+{
+	u8_t temp,t1,t;
+	u16_t y0=y,x0=x;
+	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
+	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
+ 	u8_t databuf[2*1024] = {0};
+	u8_t fontbuf[128] = {0};
+	u32_t i=0,index_addr,font_addr,data_addr=0;
+
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			font_addr = FONT_RM_ASC_16_ADDR;
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			font_addr = FONT_RM_ASC_24_ADDR;
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			font_addr = FONT_RM_ASC_32_ADDR;
+			break;
+	#endif
+		default:
+			return; 						//没有的字库
+	}
+
+	index_addr = FONT_MBCS_HEAD_LEN+4*num;
+	SpiFlash_Read(fontbuf, font_addr+index_addr, 4);
+	data_addr = fontbuf[0]+0x100*fontbuf[1]+0x10000*fontbuf[2];
+	cbyte = fontbuf[3]>>2;
+	csize = ((cbyte+7)/8)*system_font;	
+	SpiFlash_Read(fontbuf, font_addr+data_addr, csize);
+	
+#ifdef LCD_TYPE_SPI
+	BlockWrite(x,y,cbyte,system_font);	//设置刷新位置
+#endif
+
+	for(t=0;t<csize;t++)
+	{		
+		temp = fontbuf[t];
+		for(t1=0;t1<8;t1++)
+		{
+		#ifdef LCD_TYPE_SPI
+			if(temp&0x80)
+			{
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
+			}
+			else if(mode==0)
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+			
+			temp<<=1;
+			i++;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)
+				{
+					DispDate(2*i, databuf);
+					return; //超区域了
+				}
+				
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;
+
+			}
+			if((x-x0)==cbyte)
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)
+				{
+					DispDate(2*i, databuf);
+					return; //超区域了
+				}
+				
+				break;
+			}
+		#else
+			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
+			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
+			temp<<=1;
+			x++;
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				break;				
+			}
+			if((x-x0)==cbyte)
+			{
+				x=x0;
+				y++;
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				break;
+			}
+		#endif
+		}
+	}
+
+#ifdef LCD_TYPE_SPI
+	DispDate(2*i, databuf);
+#endif
+
+	return cbyte;
+}
+#endif/*FONTMAKER_FONT*/
 
 //在指定位置显示一个中文字符
 //x,y:起始坐标
@@ -1329,13 +1595,14 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 {
 	uint8_t x0=x;
 	uint16_t phz=0;
-	
+
 	width+=x;
 	height+=y;
-    while(*p)
-    {       
-        if(x>=width){x=x0;y+=system_font;}
-        if(y>=height)break;//退出
+	while(*p)
+	{       
+		if(x>=width){x=x0;y+=system_font;}
+		if(*p=='\n'){x=x0;y+=system_font;p++;}
+		if(y>=height)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
@@ -1347,7 +1614,7 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 			p++;
 		}
 		else if(*(p+1))
-        {
+		{
 			phz = *p<<8;
 			phz += *(p+1);
 		#ifdef IMG_FONT_FROM_FLASH
@@ -1358,7 +1625,7 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 			x+=system_font;
 			p+=2;
 		}        
-    }
+	}
 }
 
 //显示中英文字符串
@@ -1367,24 +1634,37 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 {
 	uint8_t x0=x;
+	uint8_t width;
 	uint16_t phz=0;
-	
-    while(*p)
-    {       
-        if(x>=LCD_WIDTH)break;//退出
-        if(y>=LCD_HEIGHT)break;//退出
+
+	while(*p)
+	{       
+		if(x>=LCD_WIDTH)break;//退出
+		if(y>=LCD_HEIGHT)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
+		  #ifdef FONTMAKER_FONT
+			width = LCD_Show_Ex_Char_from_flash(x,y,*p,0);
+		  	x += width;
+		  #else
 			LCD_ShowChar_from_flash(x,y,*p,0);
+		  	x += system_font/2;
+		  #endif
 		#else
+		  #ifdef FONTMAKER_FONT
+			width = LCD_Show_Ex_Char(x,y,*p,0);
+		  	x += width;
+		  #else
 			LCD_ShowChar(x,y,*p,0);
+		  	x += system_font/2;
+		  #endif
 		#endif
-			x+=system_font/2;
+			
 			p++;
 		}
 		else if(*(p+1))
-        {
+		{
 			phz = *p<<8;
 			phz += *(p+1);
 		#ifdef IMG_FONT_FROM_FLASH	
@@ -1395,7 +1675,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 			x+=system_font;
 			p+=2;
 		}        
-    }
+	}
 }
 
 //m^n函数
@@ -1491,34 +1771,104 @@ void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
 	}
 } 
 
+#ifdef FONTMAKER_FONT
+//根据字体测量字符的宽度
+//byte:字符
+u8_t LCD_MeasureByte(u8_t byte)
+{
+	u8_t width, *ptr_font;
+	u8_t fontbuf[4] = {0};	
+	u32_t index_addr,data_addr,font_addr=0;
+
+#ifdef IMG_FONT_FROM_FLASH
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			font_addr = FONT_RM_ASC_16_ADDR;
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			font_addr = FONT_RM_ASC_24_ADDR;
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			font_addr = FONT_RM_ASC_32_ADDR;
+			break;
+	#endif
+		default:
+			return;
+	}
+
+	index_addr = FONT_MBCS_HEAD_LEN+4*byte;
+	SpiFlash_Read(fontbuf, font_addr+index_addr, 4);
+	data_addr = fontbuf[0]+0x100*fontbuf[1]+0x10000*fontbuf[2];
+	width = fontbuf[3]>>2;
+#else
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			ptr_font=asc2_16_rm; 	 	//调用1608字体
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			ptr_font=asc2_24_rm;			//调用2412字体
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			ptr_font=asc2_32_rm;			//调用3216字体
+			break;
+	#endif
+		default:
+			return 0;							//没有的字库
+	}
+	
+	index_addr = FONT_MBCS_HEAD_LEN+4*byte;
+	data_addr = ptr_font[index_addr]+0x100*ptr_font[index_addr+1]+0x10000*ptr_font[index_addr+2];
+	width = ptr_font[index_addr+3]>>2;
+#endif
+
+	return width;
+}
+#endif/*FONTMAKER_FONT*/
+
 //根据字体测量字符串的长度和高度
 //p:字符串指针
 //width,height:返回的字符串宽度和高度变量地址
 void LCD_MeasureString(uint8_t *p, uint16_t *width,uint16_t *height)
 {
 	uint8_t font_size;
-	
+
 	*width = 0;
 	*height = 0;
-	
+
 	if(p == NULL || strlen((const char *)p) == 0)
 		return;
-	
+
 	(*height) = system_font;
-	
+
 	while(*p)
-    {       
+	{       
 		if(*p<0x80)
 		{
+		#ifdef FONTMAKER_FONT
+			(*width) += LCD_MeasureByte(*p);
+		#else
 			(*width) += system_font/2;
+		#endif
 			p++;
 		}
 		else if(*(p+1))
-        {
+		{
 			(*width) += system_font;
 			p += 2;
 		}        
-    }  
+	}  
 }
 
 //设置系统字体
@@ -1527,4 +1877,19 @@ void LCD_SetFontSize(uint8_t font_size)
 {
 	if(font_size > FONT_SIZE_MIN && font_size < FONT_SIZE_MAX)
 		system_font = font_size;
+}
+
+void LCDMsgProcess(void)
+{
+	if(lcd_sleep_in)
+	{
+		lcd_sleep_in = false;
+		LCD_SleepIn();
+	}
+
+	if(lcd_sleep_out)
+	{
+		lcd_sleep_out = false;
+		LCD_SleepOut();
+	}
 }

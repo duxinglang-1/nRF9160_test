@@ -21,8 +21,9 @@ typedef enum
 }system_font_size;
 
 //Ó¢ÎÄ×Ö¿â
-#if 0//def FONT_16
+#if 1//def FONT_16
 extern unsigned char asc2_1608[96][16];
+extern unsigned char asc2_16_rm[];
 #endif
 #if 0//def FONT_24
 extern unsigned char asc2_2412[96][48];

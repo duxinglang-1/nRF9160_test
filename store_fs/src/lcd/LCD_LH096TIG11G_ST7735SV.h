@@ -17,6 +17,8 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
 #define LCD_PORT	"GPIO_0"
+#define LCD_DEV 	"SPI_3"
+
 #define CS		30
 #define	RST		16
 #define	RS		17

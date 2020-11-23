@@ -944,13 +944,13 @@ step_1:
 	for best Fuel Gauge
 	performance. Step 2.5.1 is not required for version 0x0012.
 	*/
-	do
-	{
-		WriteWord(0xFE, 0x54, 0x00); //Send POR command
-		WriteWord(0x3E, 0x4A, 0x57); //Send Unlock command
-		ReadWord(0x0E, &unlock_test_OCV_1, &unlock_test_OCV_2);
-		//Test Model access unlock similar to step 2.
-	} while((unlock_test_OCV_1 == 0xFF) && (unlock_test_OCV_2 == 0xFF));
+	//do
+	//{
+	//	WriteWord(0xFE, 0x54, 0x00); //Send POR command
+	//	WriteWord(0x3E, 0x4A, 0x57); //Send Unlock command
+	//	ReadWord(0x0E, &unlock_test_OCV_1, &unlock_test_OCV_2);
+	//	//Test Model access unlock similar to step 2.
+	//} while((unlock_test_OCV_1 == 0xFF) && (unlock_test_OCV_2 == 0xFF));
 	
 	/******************************************************************************
 	Step 3. Write OCV (MAX17040/1/3/4 only)

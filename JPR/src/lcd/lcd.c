@@ -1,5 +1,9 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
+#include <nrf9160.h>
+#include <zephyr.h>
+
 #include "lcd.h"
 #include "font.h"
 #include "external_flash.h"
@@ -33,6 +37,9 @@ system_font_size system_font = FONT_SIZE_32;
 #else
 system_font_size system_font = FONT_SIZE_16;
 #endif
+
+bool lcd_sleep_in = false;
+bool lcd_sleep_out = false;
 
 //快速画点
 //x,y:坐标
@@ -1870,4 +1877,19 @@ void LCD_SetFontSize(uint8_t font_size)
 {
 	if(font_size > FONT_SIZE_MIN && font_size < FONT_SIZE_MAX)
 		system_font = font_size;
+}
+
+void LCDMsgProcess(void)
+{
+	if(lcd_sleep_in)
+	{
+		lcd_sleep_in = false;
+		LCD_SleepIn();
+	}
+
+	if(lcd_sleep_out)
+	{
+		lcd_sleep_out = false;
+		LCD_SleepOut();
+	}
 }

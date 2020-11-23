@@ -20,8 +20,8 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
-//#include "CST816.h"
-#include "Max20353.h"
+#include "CST816.h"
+//#include "Max20353.h"
 #include "lsm6dso.h"
 #include "Alarm.h"
 #include "gps.h"
@@ -36,22 +36,6 @@ LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
 #define PI 3.1415926
 
 static u8_t show_pic_count = 0;//图片显示顺序
-
-u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
-
-bool lcd_sleep_in = false;
-bool lcd_sleep_out = false;
-bool sys_pwr_off = false;
-bool sys_time_count = false;
-bool show_date_time_first = true;
-bool update_time = false;
-bool update_date = false;
-bool update_week = false;
-bool update_date_time = false;
-bool app_gps_on = false;
-bool app_gps_off = false;
-bool app_find_device = false;
-bool app_nb_on = false;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -378,8 +362,8 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_PEPPA_240X240_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_240X240_ADDR);
+	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
 	while(0)
 	{
 		switch(i)
@@ -568,62 +552,38 @@ static void buttons_leds_init(void)
 	}
 }
 
+void BootUpShowLoGo(void)
+{
+	u16_t x,y,w=0,h=0;
+		
+	if(screen_id == SCREEN_BOOTUP)
+	{
+		LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+		x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
+		y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
+		LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+	}
+}
+
+void EntryIdleScreen(void)
+{
+	screen_id = SCREEN_IDLE;
+}
+
 void system_init(void)
 {
-	InitSystemSettings();
-	buttons_leds_init();
-	key_init();
-	pmu_init();
-	IMU_init();
-	LCD_Init();
 	flash_init();
+	pmu_init();
+	LCD_Init();
+	//BootUpShowLoGo();
+
+	InitSystemSettings();
+
+	key_init();
+	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
-}
 
-void IdleReshowDatetime(void)
-{
-	IdleShowSystemDateTime();
-}
-
-void IdleShowDateTime(void)
-{
-	bool count = false;
-	
-	if(screen_id == SCREEN_IDLE)
-	{
-		if(update_time || update_date || update_week || update_date_time || show_date_time_first)
-		{
-			if(update_date_time || show_date_time_first)
-			{
-				if(show_date_time_first)
-				{
-					show_date_time_first = false;
-					LCD_Clear(BLACK);
-				}
-				
-				update_date_time = false;
-				IdleShowSystemDateTime();
-			}
-			else if(update_date)
-			{
-				update_date = false;
-				IdleShowSystemDate();
-			}
-			else if(update_week)
-			{
-				update_week = false;
-				IdleShowSystemWeek();
-			}
-			else
-			{
-				update_time = false;
-				IdleShowSystemTime();
-			}
-			
-			count = !count;
-			dk_set_led(DK_LED2,count);
-		}
-	}
+	EntryIdleScreen();
 }
 
 extern void motion_sensor_msg_proc(void);
@@ -634,10 +594,7 @@ extern void motion_sensor_msg_proc(void);
 **************************************************************************/
 int main(void)
 {
-//	printk("main\n");
-
 	system_init();
-//	dk_set_led(DK_LED1,1);
 
 //	test_show_string();
 //	test_show_image();
@@ -658,114 +615,16 @@ int main(void)
 	{
 		IdleShowDateTime();
 		
-		if(sys_time_count)
-		{
-			sys_time_count = false;
-			UpdateSystemTime();
-		}
+		GPSMsgProcess();
+		IMUMsgProcess();
+		PMUMsgProcess();
+		LCDMsgProcess();
 
-		if(need_save_time)
-		{
-			need_save_time = false;
-			SaveSystemDateTime();
-		}
-
-		if(need_save_settings)
-		{
-			need_save_settings = false;
-			SaveSystemSettings();
-		}
-
-	#if 0
-		if(tp_trige_flag)
-		{
-			tp_trige_flag = false;
-			tp_interrupt_proc();
-		}
-	#endif
-	
-	#if 1
-		if(pmu_trige_flag)
-		{
-			pmu_trige_flag = false;
-			pmu_interrupt_proc();
-		}
-		if(pmu_alert_flag)
-		{
-			pmu_alert_flag = false;
-			pmu_alert_proc();
-		}
-		if(sys_pwr_off)
-		{
-			sys_pwr_off = false;
-			SystemShutDown();
-		}	
-	#endif
-
-		if(app_gps_on)
-		{
-			app_gps_on = false;
-			gps_on();
-		}
-		if(app_gps_off)
-		{
-			app_gps_off = false;
-			gps_off();
-		}
-		if(gps_data_incoming)
-		{
-			gps_data_incoming = false;
-			gps_data_receive();
-		}
-
-		if(app_nb_on)
-		{
-			app_nb_on = false;
-			test_nb();
-		}
+		//TPMsgProcess();
+		TimeMsgProcess();
+		AlarmMsgProcess();
+		SettingsMsgPorcess();
 		
-		if(vibrate_start_flag)
-		{
-			vibrate_start_flag = false;
-			VibrateStart();
-		}
-		
-		if(vibrate_stop_flag)
-		{
-			vibrate_stop_flag = false;
-			VibrateStop();
-		}
-
-		if(read_imu_steps)
-		{
-			read_imu_steps = false;
-			GetImuSteps();
-		}
-
-		if(reset_imu_steps)
-		{
-			reset_imu_steps = false;
-			ReSetImuSteps();
-		}
-
-		if(app_find_device)
-		{
-			app_find_device = false;
-			FindDeviceEntryScreen();
-		}
-		
-		if(lcd_sleep_in)
-		{
-			lcd_sleep_in = false;
-			LCD_SleepIn();
-		}
-
-		if(lcd_sleep_out)
-		{
-			lcd_sleep_out = false;
-			LCD_SleepOut();
-		}
-	
 		k_cpu_idle();
 	}
 }

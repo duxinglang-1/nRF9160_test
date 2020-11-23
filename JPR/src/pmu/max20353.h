@@ -9,6 +9,8 @@
 
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
+extern bool vibrate_start_flag;
+extern bool vibrate_stop_flag;
 
 extern void test_pmu(void);
 extern void pmu_init(void);
@@ -16,5 +18,5 @@ extern void MAX20353_Init(void);
 extern void Set_Screen_Backlight_On(void);
 extern void Set_Screen_Backlight_Off(void);
 extern void SystemShutDown(void);
-
+extern void PMUMsgProcess(void);
 #endif/*__MAX20353_H__*/

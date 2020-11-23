@@ -13,6 +13,11 @@ static struct device *i2c_pmu;
 static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
+bool sys_pwr_off = false;
+
+bool vibrate_start_flag = false;
+bool vibrate_stop_flag = false;
+
 bool pmu_trige_flag = false;
 bool pmu_alert_flag = false;
 
@@ -94,8 +99,8 @@ void pmu_interrupt_proc(void)
 	ret |= MAX20353_ReadReg(REG_INT0, &Int0);
 	if(Int0 & 0x08)
 	{
-		ret |= MAX20353_ReadReg(REG_STATUS0, &Status0);
-		ret |= MAX20353_ReadReg(REG_STATUS1, &Status1);
+		ret |= MAX20353_ReadReg( REG_STATUS0, &Status0);
+		ret |= MAX20353_ReadReg( REG_STATUS1, &Status1);
 		printf("Status0=0x%02X, Status1=0x%02X,", Status0, Status1); 
 
 		if(((Status1&0x08)==0x08) && ((Status0&0x07)==0x00))
@@ -180,3 +185,35 @@ void test_pmu(void)
     pmu_init();
 }
 
+void PMUMsgProcess(void)
+{
+	if(pmu_trige_flag)
+	{
+		pmu_interrupt_proc();
+		pmu_trige_flag = false;
+	}
+	
+	if(pmu_alert_flag)
+	{
+		pmu_alert_proc();
+		pmu_alert_flag = false;
+	}
+	
+	if(sys_pwr_off)
+	{
+		SystemShutDown();
+		sys_pwr_off = false;		
+	}
+	
+	if(vibrate_start_flag)
+	{
+		VibrateStart();
+		vibrate_start_flag = false;
+	}
+	
+	if(vibrate_stop_flag)
+	{
+		VibrateStop();
+		vibrate_stop_flag = false;
+	}
+}

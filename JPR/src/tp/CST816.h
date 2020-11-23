@@ -85,5 +85,5 @@ extern bool tp_trige_flag;
 
 extern void CST816_init(void);
 extern void tp_interrupt_proc(void);
-
+extern void TPMsgProcess(void);
 #endif/*__CST816_H__*/

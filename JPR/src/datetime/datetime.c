@@ -23,12 +23,14 @@ static struct k_timer clock_timer;
 sys_date_timer_t date_time = {0};
 sys_date_timer_t last_date_time = {0};
 
-extern bool sys_time_count;
-extern bool update_time;
-extern bool update_date;
-extern bool update_date_time;
+bool update_time = false;
+bool update_date = false;
+bool update_week = false;
+bool update_date_time = false;
+bool sys_time_count = false;
+bool show_date_time_first = true;
 
-extern u8_t date_time_changed;
+u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 
 void UpdateSystemTime(void)
 {
@@ -134,7 +136,7 @@ void UpdateSystemTime(void)
 	if((date_time_changed&0x08) != 0)
 	{
 		date_time_changed = date_time_changed&0xF7;
-		reset_imu_steps = true;
+		reset_steps = true;
 	}
 }
 
@@ -398,4 +400,51 @@ void IdleShowSystemDateTime(void)
 	IdleShowSystemTime();
 	IdleShowSystemDate();
 	IdleShowSystemWeek();
+}
+
+void IdleShowDateTime(void)
+{
+	if(screen_id == SCREEN_IDLE)
+	{
+		if(update_time || update_date || update_week || update_date_time || show_date_time_first)
+		{
+			if(update_date_time || show_date_time_first)
+			{
+				if(show_date_time_first)
+				{
+					show_date_time_first = false;
+					LCD_Clear(BLACK);
+				}
+				
+				update_date_time = false;
+				IdleShowSystemDateTime();
+			}
+			else if(update_date)
+			{
+				update_date = false;
+				IdleShowSystemDate();
+			}
+			else if(update_week)
+			{
+				update_week = false;
+				IdleShowSystemWeek();
+			}
+			else
+			{
+				update_time = false;
+				IdleShowSystemTime();
+			}
+		}
+	}
+}
+
+void TimeMsgProcess(void)
+{
+	if(sys_time_count)
+	{
+		sys_time_count = false;
+		UpdateSystemTime();
+	}
+
+	IdleShowDateTime();
 }

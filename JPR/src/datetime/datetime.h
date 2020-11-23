@@ -32,6 +32,14 @@ typedef struct
     uint8_t  week;
 }sys_date_timer_t;
 
+extern bool update_time;
+extern bool update_date;
+extern bool update_week;
+extern bool update_date_time;
+extern bool sys_time_count;
+extern bool show_date_time_first;
+extern u8_t date_time_changed;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
+
 extern sys_date_timer_t date_time;
 
 extern void InitSystemDateTime(void);

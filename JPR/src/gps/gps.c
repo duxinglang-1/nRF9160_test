@@ -79,11 +79,11 @@ static u64_t fix_timestamp;
 
 bool got_first_fix = false;
 bool gps_data_incoming = false;
+bool app_gps_on = false;
+bool app_gps_off = false;
 
 nrf_gnss_data_frame_t last_fix;
 
-extern bool app_gps_on;
-extern bool app_gps_off;
 extern bool show_date_time_first;
 
 K_SEM_DEFINE(lte_ready, 0, 1);
@@ -873,6 +873,25 @@ void gps_on(void)
 #endif
 
 	k_timer_start(&gps_data_timer, K_MSEC(500), K_MSEC(1000));
+}
+
+void GPSMsgProcess(void)
+{
+	if(app_gps_on)
+	{
+		app_gps_on = false;
+		gps_on();
+	}
+	if(app_gps_off)
+	{
+		app_gps_off = false;
+		gps_off();
+	}
+	if(gps_data_incoming)
+	{
+		gps_data_incoming = false;
+		gps_data_receive();
+	}	
 }
 
 void test_gps(void)

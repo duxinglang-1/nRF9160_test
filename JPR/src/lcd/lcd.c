@@ -1603,6 +1603,7 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 		if(x>=width){x=x0;y+=system_font;}
 		if(*p=='\n'){x=x0;y+=system_font;p++;}
 		if(y>=height)break;//ÍË³ö
+		if(*p==0x00)break;//ÍË³ö
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH

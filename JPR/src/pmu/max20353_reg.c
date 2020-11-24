@@ -13,20 +13,37 @@
 #include "max20353_reg.h"
 #include "max20353.h"
 
+#define BATTERY_SOC_GAUGE	//xb add 20201124 电量计功能的代码
+
+#ifdef BATTERY_SOC_GAUGE
 #define VERIFY_AND_FIX 1
 #define LOAD_MODEL !(VERIFY_AND_FIX)
-
 #define EMPTY_ADJUSTMENT		0
 #define FULL_ADJUSTMENT			100
-#define RCOMP0					89
-#define TEMP_COUP				(-0.55)
-#define TEMP_CODOWN				(-4.6)
-#define OCVTEST					55984
-#define SOCCHECKA				234
-#define SOCCHECKB				236
-#define BITS					19
+#define RCOMP0					22
+#define TEMP_COUP				(-0.71875)
+#define TEMP_CODOWN				(-3.875)
+#define TEMP_CODOWNN10			(-3.90625)
+#define OCVTEST					57680
+#define SOCCHECKA				114
+#define SOCCHECKB				116
+#define BITS					18
+#define RCOMPSEG				0x0400
 #define INI_OCVTEST_HIGH_BYTE 	(OCVTEST>>8)
 #define INI_OCVTEST_LOW_BYTE	(OCVTEST&0x00ff)
+
+static u8_t SOC_1, SOC_2;
+static u8_t original_OCV_1, original_OCV_2;
+static u16_t SOC;
+
+void prepare_to_load_model(void);
+void load_model(void);
+bool verify_model_correct(void);
+void cleanup_model_load(void);
+int ReadWord(u8_t reg, u8_t *MSB, u8_t *LSB);
+int WriteWord(u8_t reg, u8_t MSB, u8_t LSB);
+int WriteMulti(u8_t *data, u8_t len);
+#endif
 
 static u8_t HardwareID;
 static u8_t FirmwareID;
@@ -63,14 +80,6 @@ static unsigned char Pattern[256] =
 };
 
 extern maxdev_ctx_t pmu_dev_ctx;
-
-void prepare_to_load_model();
-void load_model();
-bool verify_model_correct();
-void cleanup_model_load();
-void ReadWord(u8_t memory_location, u8_t *output_MSB, u8_t *output_LSB);
-void WriteWord(u8_t memory_location, u8_t MSB, u8_t LSB);
-
 
 void delay_ms(uint32_t period)
 {
@@ -465,10 +474,8 @@ int MAX20353_InitRAM(void)
 	appdatainoutbuffer_[3] = 0x00;									// Wait[3:0]=0;RPTx[3:0]=15;
 	ret |= MAX20353_WriteRegMulti(REG_HPT_RAMADDR, appdatainoutbuffer_, 4);
 	k_sleep(K_MSEC(10));
-	k_sleep(K_MSEC(10));	
-
+	
 	return ret;
-
 }
 
 int MAX20353_AppWrite(uint8_t dataoutlen)
@@ -788,10 +795,53 @@ void MAX20353_Init(void)
 	MAX20353_SOCInit();
 }
 
-#if 1	//xb add 2020-11-05 增加有关电量计的代码
-u8_t SOC_1, SOC_2;
-u16_t SOC;
-u8_t original_OCV_1, original_OCV_2;
+#ifdef BATTERY_SOC_GAUGE	//xb add 2020-11-05 增加有关电量计的代码
+//******************************************************************************
+int ReadWord(u8_t reg, u8_t *MSB, u8_t *LSB)
+{
+	u32_t ret;
+	u8_t data = reg;
+	u8_t value[2];
+
+	ret = i2c_write(pmu_dev_ctx.handle, &data, sizeof(data), MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if(ret != 0)
+	{
+		return MAX20353_ERROR;
+	}
+
+	ret = i2c_read(pmu_dev_ctx.handle, value, sizeof(value), MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if (ret != 0)
+	{
+		return MAX20353_ERROR;
+	}
+	
+	*MSB = value[0];
+	*LSB = value[1];
+
+	return MAX20353_NO_ERROR;
+}
+
+//******************************************************************************
+int WriteWord(u8_t reg, u8_t MSB, u8_t LSB)
+{
+	u8_t cmdData[3] = {reg, MSB, LSB};
+	u32_t rslt = 0;
+
+	rslt = i2c_write(pmu_dev_ctx.handle, cmdData, sizeof(cmdData), MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if (rslt != 0)
+		return MAX20353_ERROR;
+	return MAX20353_NO_ERROR;
+}
+
+int WriteMulti(u8_t *data, u8_t len)
+{
+	u32_t ret;
+
+	ret = i2c_write(pmu_dev_ctx.handle, data, len, MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if (ret != 0)
+		return MAX20353_ERROR;
+	return MAX20353_NO_ERROR;
+}
 
 int MAX20353_UpdateRCOMP(void)
 {
@@ -805,7 +855,7 @@ int MAX20353_UpdateRCOMP(void)
 	float used_tempco = temp> 20 ? TempCoUp : TempCoDown;
 	int result = INI_RCOMP + (temp - 20) * used_tempco;
 
-	return (result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
+	return(result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
 }
 
 float MAX20353_CalculateSOC(void)
@@ -903,7 +953,7 @@ void MAX20353_NewInitVoltage(void)
 	This delay must be at least 150mS before reading the SOC Register to allow
 	the correct value to be calculated by the device.
 	*/
-	delay_ms(125);
+	delay_ms(250);
 }
 
 void prepare_to_load_model(void)
@@ -971,21 +1021,33 @@ void load_model(void)
 	int k;
 	u8_t databuf[10] = {0};
 	u8_t addr_mem;
-	u32_t RCOMPSeg = 0x0080;
+	u32_t RCOMPSeg = RCOMPSEG;
 	unsigned char RCOMPSeg_MSB = (RCOMPSeg >> 8) & 0xFF;
 	unsigned char RCOMPSeg_LSB = RCOMPSeg & 0xFF;	
-	u8_t model_data[64] = 
+	u8_t model_data[65] = 
 	{
 		// Fill in your model data here from the INI file
 		// 0x##, 0x##, ..., 0x##
-		0xA5,0xB0,0xB6,0xF0,0xB9,0x40,0xBA,0xC0,0xBC,0x00,
-		0xBC,0x50,0xBD,0x80,0xBE,0x00,0xBE,0xF0,0xC0,0x10,
-		0xC1,0x70,0xC3,0x10,0xC4,0x80,0xC8,0x90,0xCD,0x30,
-		0xD0,0xB0,0x01,0x00,0x25,0xC0,0x14,0xF0,0x21,0xA0,
-		0x74,0x50,0x6E,0xE0,0x2F,0x80,0x32,0x30,0x0C,0x10,
-		0x24,0xB0,0x16,0x00,0x24,0x10,0x19,0x00,0x11,0x90,
-		0x0E,0x30,0x0E,0x30
-	};	
+		0x40,
+		0xA3,0x90,0xB5,0x40,0xB7,0xC0,0xB8,0xA0,0xBA,0xE0,
+		0xBC,0x30,0xBD,0x80,0xBE,0xC0,0xC0,0xA0,0xC3,0x00,
+		0xC5,0x70,0xC7,0xA0,0xCB,0xF0,0xCE,0x70,0xD2,0x10,
+		0xD7,0x50,0x00,0x80,0x08,0xE0,0x12,0x80,0x0F,0xE0,
+		0x15,0xC0,0x12,0xC0,0x19,0xE0,0x12,0xF0,0x0C,0xF0,
+		0x09,0xE0,0x09,0x30,0x08,0x80,0x07,0xE0,0x09,0x00,
+		0x06,0x10,0x06,0x10
+	};
+	u8_t RCOMP_data[33] = // 1+16*2, first byte is the memory address
+	{
+		// Fill in RCOMP data 0x0080
+		// 0x##, 0x##, ..., 0x##
+		0x80,
+		0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,
+		0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,
+		0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,
+		0x04,0x00
+	};
+
 	/******************************************************************************
 	Step 5. Write the Model
 	Once the model is unlocked, the host software must write the 64 byte model
@@ -1005,12 +1067,15 @@ void load_model(void)
 		Send Data Byte (model_data[k])
 	}
 	*/
-	addr_mem = 0x40;
+	//addr_mem = 0x40;
+	/*
 	for(k=0;k<0x40;k++)
 	{
 		pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, addr_mem, &model_data[k], 1);
 		addr_mem++;
 	}
+	*/
+	WriteMulti(model_data, sizeof(model_data));
 	
 	/******************************************************************************
 	Step 5.1 Write RCOMPSeg (MAX17048/MAX17049 only)
@@ -1024,19 +1089,20 @@ void load_model(void)
 	/* Perform I2C:
 	Send Memory Location (0x80)
 	*/
-	addr_mem = 0x80;
-	databuf[0] = RCOMPSeg_MSB;
-	databuf[1] = RCOMPSeg_LSB;
-	
+	//addr_mem = 0x80;
+	//databuf[0] = RCOMPSeg_MSB;
+	//databuf[1] = RCOMPSeg_LSB;
+	/*
 	for(k=0;k<0x10;k++)
 	{
-		/* Send Data Byte (RCOMPSeg_MSB)
-		Send Data Byte (RCOMPSeg_LSB)
-		*/
+		// Send Data Byte (RCOMPSeg_MSB)
+		// Send Data Byte (RCOMPSeg_LSB)
 		pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, addr_mem, databuf, 2);
 		addr_mem+2;
 	}
+	*/
 	/* I2C STOP */
+	WriteMulti(RCOMP_data, sizeof(RCOMP_data));
 }
 
 bool verify_model_is_correct(void)
@@ -1074,7 +1140,7 @@ bool verify_model_is_correct(void)
 	This delay must be between 150ms and 600ms. Delaying beyond 600ms could
 	cause the verification to fail.
 	*/
-	delay_ms(150);
+	delay_ms(300);
 	
 	/******************************************************************************
 	Step 9. Read SOC Register and compare to expected result
@@ -1132,7 +1198,7 @@ void cleanup_model_load(void)
 	This delay must be at least 150mS before reading the SOC Register to allow
 	the correct value to be calculated by the device.
 	*/
-	delay_ms(150);
+	delay_ms(300);
 	
 	/******************************************************************************
 	Step 13. Final SOC check (MAX17040/41/43/44 only)
@@ -1144,50 +1210,6 @@ void cleanup_model_load(void)
 	//	goto step C1 and reload model
 }
 
-/* All registers of the ModelGauge devices must be written as a complete word.
-The device will ignore any writes that do not contain all 16 bits of the
-register. */
-void ReadWord(u8_t memory_location, u8_t *output_MSB, u8_t *output_LSB)
-{
-	u8_t databuf[2] = {0};
-
-	pmu_dev_ctx.read_reg(pmu_dev_ctx.handle, memory_location, databuf, 2);
-	*output_MSB = databuf[0];
-	*output_LSB = databuf[1];
-
-	/* Perform these I2C tasks:
-	START
-	Send Slave Address (0x6Ch)
-	Send Memory Location (memory_location)
-	RESTART
-	Send Slave Address (0x6Dh)
-	Read Data Byte (store value in output_MSB)
-	Read Data Byte (store value in output_LSB)
-	STOP
-	*/
-
-
-}
-
-/* All registers of the ModelGauge devices should be read as a complete word.*/
-void WriteWord(u8_t memory_location, u8_t MSB, u8_t LSB)
-{
-	u8_t databuf[2] = {0};
-
-	databuf[0] = MSB;
-	databuf[1] = LSB;
-	pmu_dev_ctx.write_reg(pmu_dev_ctx.handle, memory_location, databuf, 2);
-	
-	/* Perform these I2C tasks:
-	START
-	Send Slave Address (0x6Ch)
-	Send Memory Location (memory_location)
-	Send Data Byte (MSB)
-	Send Data Byte (LSB)
-	STOP
-	*/
-}
-
 /* If you know the model is not loaded, call:
 handle_model(LOAD_MODEL);
 If you want to verify the model, and correct errors, call:
@@ -1196,7 +1218,7 @@ handle_model(VERIFY_AND_FIX);
 void handle_model(int load_or_verify)
 {
 	bool model_load_ok = false;
-	u8_t retry = 5;
+	u8_t retry = 3;
 	
 	do
 	{
@@ -1226,8 +1248,9 @@ void MAX20353_SOCInit(void)
 {
 	handle_model(LOAD_MODEL);
 
+	MAX20353_QuickStart();
+	
 	//设置SOC变化1%报警，电量小于4%报警
 	WriteWord(0x0C, 0x97, 0x5C);
 }
-#endif
-
+#endif/*BATTERY_SOC_GAUGE*/

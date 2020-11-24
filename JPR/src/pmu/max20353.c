@@ -23,12 +23,22 @@ bool pmu_alert_flag = false;
 
 maxdev_ctx_t pmu_dev_ctx;
 
+#ifdef SHOW_LOG_IN_SCREEN
+static u8_t tmpbuf[128] = {0};
+
+static void show_infor(u8_t *strbuf)
+{
+	LCD_Clear(BLACK);
+	LCD_ShowStringInRect(30,50,180,160,strbuf);
+}
+#endif
+
 static bool init_i2c(void)
 {
 	i2c_pmu = device_get_binding(PMU_DEV);
 	if(!i2c_pmu)
 	{
-		printf("ERROR SETTING UP I2C\r\n");
+		LOG_INF("ERROR SETTING UP I2C\r\n");
 		return false;
 	} 
 	else
@@ -101,21 +111,37 @@ void pmu_interrupt_proc(void)
 	{
 		ret |= MAX20353_ReadReg( REG_STATUS0, &Status0);
 		ret |= MAX20353_ReadReg( REG_STATUS1, &Status1);
-		printf("Status0=0x%02X, Status1=0x%02X,", Status0, Status1); 
+		LOG_INF("Status0=0x%02X, Status1=0x%02X,", Status0, Status1); 
 
 		if(((Status1&0x08)==0x08) && ((Status0&0x07)==0x00))
-			printf("Charging Finished!\n");
+		{
+			LOG_INF("Charging Finished!\n");
+		#ifdef SHOW_LOG_IN_SCREEN
+			show_infor("Charging Finished!\n");
+		#endif			
+		}
 		if(((Status1&0x08)==0x08) && ((Status0&0x07)==0x07))
-			printf("Charger Fault!\n");
+		{
+			LOG_INF("Charger Fault!\n");
+		#ifdef SHOW_LOG_IN_SCREEN
+			show_infor("Charger Fault!\n");
+		#endif	
+		}
 
 		if(Status1&0x08)
 		{ 
 			ReInitCharger();
-			printf("USB Power Good!\n");
+			LOG_INF("USB Power Good!\n");
+		#ifdef SHOW_LOG_IN_SCREEN
+			show_infor("USB Power Good!\n");
+		#endif	
 		}
 		else
 		{
-			printf("USB Power Off!\n");
+			LOG_INF("USB Power Off!\n");
+		#ifdef SHOW_LOG_IN_SCREEN
+			show_infor("USB Power Off!\n");
+		#endif	
 		}
 	}
 }
@@ -128,11 +154,18 @@ void PmuInterruptHandle(void)
 void pmu_alert_proc(void)
 {
 	float bat_soc;
-
+	u8_t buff[128] = {0};
+	
 	LOG_INF("pmu_alert_proc\n");
 
 	bat_soc = MAX20353_CalculateSOC();
-	LOG_INF("bat_soc:%f\n", bat_soc);
+	LOG_INF("bat_soc:%4.2f \n", bat_soc);
+
+#ifdef SHOW_LOG_IN_SCREEN
+	sprintf(tmpbuf, "SOC changed:%4.2f\n", bat_soc);
+	show_infor(, bat_soc);
+#endif			
+	
 }
 
 void PmuAlertHandle(void)
@@ -178,6 +211,8 @@ void pmu_init(void)
 	pmu_dev_ctx.handle    = i2c_pmu;
 
 	MAX20353_Init();
+
+	pmu_alert_proc();
 }
 
 void test_pmu(void)

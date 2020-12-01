@@ -366,9 +366,9 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 	LOG_INF("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
 	LOG_INF("\nSeconds since last fix %lld\n", (k_uptime_get() - fix_timestamp) / 1000);
 #ifdef SHOW_LOG_IN_SCREEN
-	//sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
-	//				tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
-	//show_infor(tmpbuf);
+	sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
+					tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
+	show_infor(tmpbuf);
 #endif	
 }
 
@@ -378,11 +378,11 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 
 	LCD_Fill(0,20,240,200,BLACK);
 	
-	printf("Longitude:  %f\n", pvt_data->pvt.longitude);
-	printf("Latitude:   %f\n", pvt_data->pvt.latitude);
-	printf("Altitude:   %f\n", pvt_data->pvt.altitude);
-	printf("Speed:      %f\n", pvt_data->pvt.speed);
-	printf("Heading:    %f\n", pvt_data->pvt.heading);
+	LOG_INF("Longitude:  %f\n", pvt_data->pvt.longitude);
+	LOG_INF("Latitude:   %f\n", pvt_data->pvt.latitude);
+	LOG_INF("Altitude:   %f\n", pvt_data->pvt.altitude);
+	LOG_INF("Speed:      %f\n", pvt_data->pvt.speed);
+	LOG_INF("Heading:    %f\n", pvt_data->pvt.heading);
 	LOG_INF("Date:       %02u-%02u-%02u", pvt_data->pvt.datetime.year,
 					       					pvt_data->pvt.datetime.month,
 					       					pvt_data->pvt.datetime.day);

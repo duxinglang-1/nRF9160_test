@@ -572,10 +572,10 @@ void EntryIdleScreen(void)
 
 void system_init(void)
 {
-	flash_init();
 	pmu_init();
+	flash_init();
 	LCD_Init();
-	BootUpShowLoGo();
+	//BootUpShowLoGo();
 
 	InitSystemSettings();
 
@@ -610,19 +610,21 @@ int main(void)
 //	test_tp();
 //	test_gps();
 //	test_nb();
+//	test_i2c();
+//	test_bat_soc();
 
 	while(1)
 	{
-		IdleShowDateTime();
+		TimeMsgProcess();
 
 		NBMsgProcess();
 		GPSMsgProcess();
-		IMUMsgProcess();
 		PMUMsgProcess();
+		
+		IMUMsgProcess();
 		LCDMsgProcess();
 
 		//TPMsgProcess();
-		TimeMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		

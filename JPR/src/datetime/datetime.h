@@ -14,13 +14,6 @@
 #define SYSTEM_DEFAULT_MINUTE	0
 #define SYSTEM_DEFAULT_SECOND	0
 
-#define IDLE_DATE_SHOW_X	0
-#define IDLE_DATE_SHOW_Y	101
-#define IDLE_TIME_SHOW_X	0
-#define IDLE_TIME_SHOW_Y	64
-#define IDLE_WEEK_SHOW_X	0
-#define IDLE_WEEK_SHOW_Y	138
-
 typedef struct
 {
     uint16_t year;

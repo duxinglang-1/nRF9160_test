@@ -35,6 +35,8 @@
 static u8_t SOC_1, SOC_2;
 static u8_t original_OCV_1, original_OCV_2;
 static u16_t SOC;
+static u8_t SOC_percent;
+static u8_t PMICIntMasks[3];
 
 void prepare_to_load_model(void);
 void load_model(void);
@@ -208,7 +210,7 @@ int MAX20353_HapticConfig(void)
 void VibrateStart(void)
 {
 #ifdef MOTOR_TYPE_ERM
-	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3f);	//振幅控制，从0x00到0x7f
+	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3F);	//振幅控制，从0x00到0x7f
 	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x26); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x06
 #else defined(MOTOR_TYPE_LRA)
 	appcmdoutvalue_ = 0xAC;
@@ -657,17 +659,49 @@ int MAX20353_DirectWrite(int Amplitude, int time)
 	return ret;
 }
 
+// Read status0-3
+int MAX20353_CheckPMICStatus(unsigned char buf_results[4])
+{
+	int ret;
+
+	ret  = MAX20353_ReadReg(REG_STATUS0, &buf_results[0]);
+	ret |= MAX20353_ReadReg(REG_STATUS1, &buf_results[1]);
+	ret |= MAX20353_ReadReg(REG_STATUS2, &buf_results[2]);
+	ret |= MAX20353_ReadReg(REG_STATUS3, &buf_results[3]);
+	return ret;
+}
+
+// Read Int0-2
+int MAX20353_CheckPMICIntRegisters(unsigned char buf_results[3])
+{
+	int ret;
+	ret  = MAX20353_ReadReg(REG_INT0, &buf_results[0]);
+	ret |= MAX20353_ReadReg(REG_INT1, &buf_results[1]);
+	ret |= MAX20353_ReadReg(REG_INT2, &buf_results[2]);
+	return ret;
+}
+
+// Write Int Mask0-2
+int MAX20353_EnablePMICIntMaskRegisters(unsigned char buf_results[3])
+{
+	int ret;
+	ret  = MAX20353_WriteReg(REG_INT_MASK0, buf_results[0]);
+	ret |= MAX20353_WriteReg(REG_INT_MASK1, buf_results[1]);
+	ret |= MAX20353_WriteReg(REG_INT_MASK2, buf_results[2]);
+	return ret;
+}
+
 //充电配置    
 int MAX20353_ChargerCfg(void)
 {
 	int32_t ret = 0;
 
-	appcmdoutvalue_ = 0x14;
-	appdatainoutbuffer_[0] = 0x34; 
-	appdatainoutbuffer_[1] = 0x7D; //
-	appdatainoutbuffer_[2] = 0xF6;  //4.35V
-	appdatainoutbuffer_[3] = 0x07; //4.3V
-	ret = MAX20353_AppWrite(4);
+	appcmdoutvalue_ = 0x14; 
+	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
+	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
+	appdatainoutbuffer_[2] = 0xD6; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0011: 4.2V, b0110:4.35 
+	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
+	ret |= MAX20353_AppWrite(4);
 
 	return ret;
 }
@@ -677,22 +711,37 @@ int MAX20353_ChargerCtrl(void)
 {
 	int32_t ret = 0;
 
-	appcmdoutvalue_ = 0x1A;
-	appdatainoutbuffer_[0] = 0x01;  
-	ret = MAX20353_AppWrite(1);
+	appcmdoutvalue_ = 0x1A; 
+	appdatainoutbuffer_[0] = 0x01; // Thermal EN, Charger EN 
+	ret |= MAX20353_AppWrite(1); 
 
 	return ret;
 }
- 
+
 int MAX20353_InputCurCfg(void)
 {
 	int32_t ret = 0;
 
 	appcmdoutvalue_ = 0x10;
-	appdatainoutbuffer_[0] = 0x1C;  //最大输入电流300ma(充电电流+系统工作电流,不是充电电流，充电电流由F3的电阻决定，目前设置为160ma),截断时间10ms
+	appdatainoutbuffer_[0] = 0x1E;  //最大输入电流500ma(充电电流+系统工作电流,不是充电电流，充电电流由F3的电阻决定，目前设置为160ma),截断时间10ms
 	ret = MAX20353_AppWrite(1);
 
 	return ret;
+}
+
+void MAX20353_ChargerInit(void)
+{
+	//charger config
+	MAX20353_ChargerCfg();
+	MAX20353_ChargerCtrl();
+	MAX20353_InputCurCfg();
+
+	//Enable Int Mask 
+	//Enable Charger Status Int and USB OK Int 
+	PMICIntMasks[0] = 0x08;
+	PMICIntMasks[1] = 0x00;
+	PMICIntMasks[2] = 0x00;
+	MAX20353_EnablePMICIntMaskRegisters(PMICIntMasks);
 }
 
 int InitCharger(void)
@@ -700,23 +749,15 @@ int InitCharger(void)
 	int32_t ret = 0; 
 
 	appcmdoutvalue_ = 0x14; 
-	appdatainoutbuffer_[0] = 0x10; // Maintain charge b01:15min, FastCharge b00:75min, for 1C charging, PreCharge b00: 30min for dead battery 
-	appdatainoutbuffer_[1] = 0x65; // Precharge to b110:3.0V, b01:0.1IFChg for dead battery, ChgDone b01: 0.1IFChg 
-	appdatainoutbuffer_[2] = 0xC3; // 0xC6;Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0011: 4.2V, b0110:4.35 
+	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
+	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
+	appdatainoutbuffer_[2] = 0xD6; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0011: 4.2V, b0110:4.35 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
 	
 	appcmdoutvalue_ = 0x1A; 
 	appdatainoutbuffer_[0] = 0x01; // Thermal EN, Charger EN 
 	ret |= MAX20353_AppWrite(1); 
-	return ret;
-}
-
-int MAX20353_IntInit(void)
-{
-	int ret = 0;
-	ret |= MAX20353_WriteReg( REG_INT_MASK0, 0x08);
-
 	return ret;
 }
 
@@ -784,13 +825,8 @@ void MAX20353_Init(void)
 #endif
 
 	//充电配置
-	MAX20353_InputCurCfg();
-	MAX20353_ChargerCfg();
-	MAX20353_ChargerCtrl();
+	MAX20353_ChargerInit();
 	
-	//充电中断配置
-	MAX20353_IntInit();
-
 	//电量计
 	MAX20353_SOCInit();
 }
@@ -858,22 +894,20 @@ int MAX20353_UpdateRCOMP(void)
 	return(result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
 }
 
-float MAX20353_CalculateSOC(void)
+u8_t MAX20353_CalculateSOC(void)
 {
-	float SOC_percent;
+	u16_t tmp;
 	
 	ReadWord(0x04, &SOC_1, &SOC_2);
 	SOC = (SOC_1 << 8) + SOC_2;
 	
 	if(BITS == 18)
-	{
-		SOC_percent = ((SOC_1 << 8) + SOC_2) / 256;
-	}
-	else if(BITS == 19)
-	{
-		SOC_percent = ((SOC_1 << 8) + SOC_2) / 512;
-	}
+		SOC_percent = SOC/256;
+	else
+		SOC_percent = SOC/512;
 
+	//SOC_percent = 26.5;
+	
 	return SOC_percent;
 }
 
@@ -1186,7 +1220,7 @@ void cleanup_model_load(void)
 	model was verified.
 	*/
 	// Restore your desired value of HIBRT
-	WriteWord(0x0A, 0xFF, 0xFF);
+	WriteWord(0x0A, 0x80, 0x30);
 	
 	/******************************************************************************
 	Step 11. Lock Model Access
@@ -1244,13 +1278,48 @@ void handle_model(int load_or_verify)
 	cleanup_model_load();
 }
 
+int MAX20353_SOCReadReg(u8_t reg, u8_t *MSB, u8_t *LSB)
+{
+	u32_t ret;
+	u8_t data = reg;
+	u8_t value[2];
+
+	ret = i2c_write(pmu_dev_ctx.handle, &data, sizeof(data), MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if(ret != 0)
+	{
+		return MAX20353_ERROR;
+	}
+
+	ret = i2c_read(pmu_dev_ctx.handle, value, sizeof(value), MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if (ret != 0)
+	{
+		return MAX20353_ERROR;
+	}
+	
+	*MSB = value[0];
+	*LSB = value[1];
+
+	return MAX20353_NO_ERROR;
+
+}
+
+int MAX20353_SOCWriteReg(u8_t reg, u8_t MSB, u8_t LSB)
+{
+	u8_t cmdData[3] = {reg, MSB, LSB};
+	u32_t rslt = 0;
+
+	rslt = i2c_write(pmu_dev_ctx.handle, cmdData, sizeof(cmdData), MAX20353_I2C_ADDR_FUEL_GAUGE);
+	if (rslt != 0)
+		return MAX20353_ERROR;
+	return MAX20353_NO_ERROR;
+}
+
 void MAX20353_SOCInit(void)
 {
-	handle_model(LOAD_MODEL);
-
-	MAX20353_QuickStart();
+	u8_t MSB,LSB;
 	
+	handle_model(LOAD_MODEL);
 	//设置SOC变化1%报警，电量小于4%报警
-	WriteWord(0x0C, 0x97, 0x5C);
+	WriteWord(0x0C, 0x12, 0x5C);
 }
 #endif/*BATTERY_SOC_GAUGE*/

@@ -7,6 +7,14 @@
 #define MOTOR_TYPE_ERM	//转子马达
 //#define MOTOR_TYPE_LRA	//线性马达
 
+typedef enum
+{
+	BAT_CHARGING_NO,
+	BAT_CHARGING_PROGRESS,
+	BAT_CHARGING_FINISHED,
+	BAT_CHARGING_MAX
+}BAT_CHAEGER_STATUS;
+
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
 extern bool vibrate_start_flag;

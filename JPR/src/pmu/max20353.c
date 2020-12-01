@@ -3,34 +3,70 @@
 #include <stdio.h>
 #include <zephyr.h>
 #include <drivers/i2c.h>
+#include "max20353.h"
 #include "max20353_reg.h"
+#include "Lcd.h"
+#include "datetime.h"
+#include "settings.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
+//#define SHOW_LOG_IN_SCREEN
+
+#define BAT_PS_OFFSET_H	5
+
+#define BAT_POSITIVE_X	85
+#define BAT_POSITIVE_Y	20
+#define BAT_POSITIVE_W	10
+#define BAT_POSITIVE_H	10
+
+#define BAT_SUBJECT_X	(BAT_POSITIVE_X+BAT_POSITIVE_W)
+#define BAT_SUBJECT_Y	(BAT_POSITIVE_Y-BAT_PS_OFFSET_H)
+#define BAT_SUBJECT_W	60
+#define BAT_SUBJECT_H	(BAT_POSITIVE_H+2*BAT_PS_OFFSET_H)
+
+
+static u8_t g_bat_soc = 0;
+static u8_t PMICStatus[4], PMICInts[3];
+static BAT_CHAEGER_STATUS g_bat_status = BAT_CHARGING_NO;
+
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
+static struct k_timer soc_timer,soc_bat_timer,soc_pwroff;
 
 bool sys_pwr_off = false;
-
 bool vibrate_start_flag = false;
 bool vibrate_stop_flag = false;
-
 bool pmu_trige_flag = false;
 bool pmu_alert_flag = false;
+bool pmu_bat_flag = false;
+bool pmu_redraw_bat_flag = true;
+bool read_soc_status = false;
+bool charger_is_connected = false;
+bool pmu_bat_has_notify = false;
 
 maxdev_ctx_t pmu_dev_ctx;
 
 #ifdef SHOW_LOG_IN_SCREEN
-static u8_t tmpbuf[128] = {0};
+static u8_t tmpbuf[256] = {0};
 
-static void show_infor(u8_t *strbuf)
+static void show_infor1(u8_t *strbuf)
 {
-	LCD_Clear(BLACK);
-	LCD_ShowStringInRect(30,50,180,160,strbuf);
+	//LCD_Clear(BLACK);
+	LCD_Fill(30,50,180,70,BLACK);
+	LCD_ShowStringInRect(30,50,180,70,strbuf);
 }
+
+static void show_infor2(u8_t *strbuf)
+{
+	//LCD_Clear(BLACK);
+	LCD_Fill(30,130,180,70,BLACK);
+	LCD_ShowStringInRect(30,130,180,70,strbuf);
+}
+
 #endif
 
 static bool init_i2c(void)
@@ -70,7 +106,7 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 	{
 		rslt = i2c_read(handle, bufp, len, MAX20353_I2C_ADDR);
 	}
-	
+
 	return rslt;
 }
 
@@ -93,57 +129,156 @@ void SystemShutDown(void)
 	MAX20353_PowerOffConfig();
 }
 
-void ReInitCharger(void)
+void pmu_check_battery_status(void)
 {
-	MAX20353_ChargerCfg();
-	MAX20353_ChargerCtrl();
+	u8_t Status0;
+	static u8_t finish_flag=false,charging_flag=false;
+
+#ifdef SHOW_LOG_IN_SCREEN
+	sprintf(tmpbuf, "SOC:%d\n", g_bat_soc);
+#endif
+
+	MAX20353_ReadReg(REG_STATUS0, &Status0);
+	if((Status0&0x07) == 0x06)
+	{
+		LOG_INF("Charging Finished!\n");
+	#ifdef SHOW_LOG_IN_SCREEN
+		strcat(tmpbuf,"Charging Finished!\n");
+	#endif
+
+		g_bat_status = 2;
+
+		if(!finish_flag)
+		{
+			pmu_redraw_bat_flag = true;
+			
+			finish_flag = true;
+			charging_flag = false;
+			//AlarmRemindStart();
+		}
+	}
+	else
+	{
+		LOG_INF("Charging in progress!\n");
+	#ifdef SHOW_LOG_IN_SCREEN
+		strcat(tmpbuf,"Charging in progress!\n");
+	#endif
+
+		if(!charging_flag)
+		{
+			charging_flag = true;
+			finish_flag = false;
+			//AlarmRemindStart();
+		}
+	}
+
+#ifdef SHOW_LOG_IN_SCREEN	
+	show_infor1(tmpbuf);
+#endif
+
+	if(charger_is_connected)
+	{
+		k_timer_start(&soc_bat_timer, K_MSEC(7*1000), NULL);
+	}
+}
+
+void pmu_check_battery_timerout(void)
+{
+	pmu_bat_flag = true;
+}
+
+void pmu_check_battery_start(void)
+{
+	static bool timer_init = false;
+
+	if(!timer_init)
+	{
+		timer_init = true;
+		k_timer_init(&soc_bat_timer, pmu_check_battery_timerout, NULL);
+	}
+	
+	k_timer_start(&soc_bat_timer, K_MSEC(7*1000), NULL);
+}
+
+void pmu_check_battery_stop(void)
+{
+	k_timer_stop(&soc_bat_timer);
+
+	pmu_bat_has_notify = false;
+	
+#ifdef SHOW_LOG_IN_SCREEN
+	sprintf(tmpbuf, "SOC:%d\n", g_bat_soc);
+	show_infor1(tmpbuf);
+#endif
+}
+
+void pmu_battery_low_shutdown_timerout(void)
+{
+	sys_pwr_off = true;
+}
+
+void pmu_battery_low_shutdown(void)
+{
+	k_timer_init(&soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
+	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
 void pmu_interrupt_proc(void)
 {
-	int ret = 0;
-	uint8_t Int0, Status0,Status1;
+	u8_t buff[128] = {0};
 
 	LOG_INF("pmu_interrupt_proc\n");
 
-	ret |= MAX20353_ReadReg(REG_INT0, &Int0);
-	if(Int0 & 0x08)
+	MAX20353_CheckPMICIntRegisters(PMICInts);
+	MAX20353_CheckPMICStatus(PMICStatus);
+
+	LOG_INF("PMICInts[0]:%02X\n", PMICInts[0]);
+
+	// read to clear all INTs  
+	if((PMICInts[0]&0x40) == 0x40) //Charger status change INT  
 	{
-		ret |= MAX20353_ReadReg( REG_STATUS0, &Status0);
-		ret |= MAX20353_ReadReg( REG_STATUS1, &Status1);
-		LOG_INF("Status0=0x%02X, Status1=0x%02X,", Status0, Status1); 
-
-		if(((Status1&0x08)==0x08) && ((Status0&0x07)==0x00))
+		LOG_INF("Charger Status Changed to: %d\n", PMICStatus[0]&0x07);
+		if((PMICStatus[0]&0x07) == 0x06)
 		{
-			LOG_INF("Charging Finished!\n");
-		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor("Charging Finished!\n");
-		#endif			
+			if(charger_is_connected)
+			{
+				LOG_INF("Charging Finished!\n");
+			#ifdef SHOW_LOG_IN_SCREEN
+				show_infor2("Charging Finished!\n");
+			#endif
+			}
 		}
-		if(((Status1&0x08)==0x08) && ((Status0&0x07)==0x07))
+	}
+	
+	if((PMICInts[0]&0x08) == 0x08) //USB OK Int
+	{
+		if((PMICStatus[1]&0x08) == 0x08) //USB OK   
 		{
-			LOG_INF("Charger Fault!\n");
+			InitCharger();//Start Charging
+			
+			LOG_INF("Charger connected!\n");
 		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor("Charger Fault!\n");
-		#endif	
-		}
-
-		if(Status1&0x08)
-		{ 
-			ReInitCharger();
-			LOG_INF("USB Power Good!\n");
-		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor("USB Power Good!\n");
-		#endif	
+			show_infor2("Charger connected!\n");
+		#endif
+		
+			charger_is_connected = true;
+			g_bat_status = 1;
+			pmu_redraw_bat_flag = true;
+			pmu_check_battery_start();
 		}
 		else
 		{
-			LOG_INF("USB Power Off!\n");
+			LOG_INF("Charger removed!\n");
 		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor("USB Power Off!\n");
-		#endif	
+			show_infor2("Charger removed!\n");
+		#endif
+		
+			charger_is_connected = false;
+			g_bat_status = 0;
+			pmu_redraw_bat_flag = true;
+			pmu_check_battery_stop();
 		}
-	}
+	}	
 }
 
 void PmuInterruptHandle(void)
@@ -151,21 +286,87 @@ void PmuInterruptHandle(void)
 	pmu_trige_flag = true;
 }
 
+//An alert can indicate many different conditions. The
+//STATUS register identifies which alert condition was met.
+//Clear the corresponding bit after servicing the alert
 void pmu_alert_proc(void)
 {
-	float bat_soc;
 	u8_t buff[128] = {0};
-	
+	u8_t MSB,LSB;
+
 	LOG_INF("pmu_alert_proc\n");
 
-	bat_soc = MAX20353_CalculateSOC();
-	LOG_INF("bat_soc:%4.2f \n", bat_soc);
+	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+	if(MSB&0x40)
+	{
+		//EnVr (enable voltage reset alert)
+		MSB = MSB&0xBF;
 
-#ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "SOC changed:%4.2f\n", bat_soc);
-	show_infor(, bat_soc);
-#endif			
-	
+		LOG_INF("voltage reset alert!\n");
+	}
+	if(MSB&0x20)
+	{
+		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
+		MSB = MSB&0xDF;
+
+		g_bat_soc = MAX20353_CalculateSOC();
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+
+		LOG_INF("SOC change:%d\n", g_bat_soc);
+		if(g_bat_soc < 5)
+		{
+			LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
+
+			pmu_battery_low_shutdown();
+		}
+		else if(g_bat_soc < 20)
+		{
+			LOG_INF("Battery voltage is low, please charge in time!\n");
+		}
+	}
+	if(MSB&0x10)
+	{
+		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
+		MSB = MSB&0xEF;
+
+		LOG_INF("SOC low alert!\n");
+	}
+	if(MSB&0x08)
+	{
+		//VR (voltage reset) is set after the device has been reset if EnVr is set.
+		MSB = MSB&0xF7;
+
+		LOG_INF("voltage reset alert!\n");
+	}
+	if(MSB&0x04)
+	{
+		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
+		MSB = MSB&0xFB;
+
+		LOG_INF("voltage low alert!\n");
+	}
+	if(MSB&0x02)
+	{
+		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
+		MSB = MSB&0xFD;
+
+		LOG_INF("voltage high alert!\n");
+	}
+	if(MSB&0x01)
+	{
+		//RI (reset indicator) is set when the device powers up.
+		//Any time this bit is set, the IC is not configured, so the
+		//model should be loaded and the bit should be cleared
+		MSB = MSB&0xFE;
+
+		LOG_INF("reset indicator alert!\n");
+
+		MAX20353_QuickStart();
+	}
+
+	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
 }
 
 void PmuAlertHandle(void)
@@ -212,12 +413,135 @@ void pmu_init(void)
 
 	MAX20353_Init();
 
-	pmu_alert_proc();
+	g_bat_soc = MAX20353_CalculateSOC();
+	if(g_bat_soc>100)
+		g_bat_soc = 100;
+
+	test_soc();
 }
 
 void test_pmu(void)
 {
     pmu_init();
+}
+
+static struct k_timer soc_timer;
+
+//******************************************************************************
+int MAX20303_CheckPMICStatusRegisters(unsigned char buf_results[5])
+{ 
+	int ret;
+
+	ret  = MAX20353_ReadReg(REG_STATUS0, &buf_results[0]);
+	ret |= MAX20353_ReadReg(REG_STATUS1, &buf_results[1]);
+	ret |= MAX20353_ReadReg(REG_STATUS2, &buf_results[2]);
+	ret |= MAX20353_ReadReg(REG_STATUS3, &buf_results[3]);
+	ret |= MAX20353_ReadReg(REG_SYSTEM_ERROR, &buf_results[4]);
+	return ret;
+}
+
+void test_soc_status(void)
+{
+	u8_t MSB,LSB;
+	u8_t RCOMP,Status0,Status1,Status2,Status3;
+	u16_t VCell,SOC,CRate,MODE,Version,HIBRT,Config,Status,VALRT,VReset,CMD,OCV;
+	u8_t strbuf[512] = {0};
+	
+	MAX20353_SOCReadReg(0x02, &MSB, &LSB);//vcell
+	VCell = ((MSB<<8)+LSB);
+	VCell = VCell*625/8/1000;
+	
+	MAX20353_SOCReadReg(0x04, &MSB, &LSB);//soc
+	SOC = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x0C, &MSB, &LSB);//Config RCOMP(MSB)
+	RCOMP = MSB;
+	Config = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x16, &MSB, &LSB);//CRate
+	CRate = ((MSB<<8)+LSB);
+	if(CRate&0x8000==0x8000)
+		CRate |= 0xFFFF0000;
+	CRate = CRate*208;
+	
+	MAX20353_SOCReadReg(0x06, &MSB, &LSB);//MODE
+	MODE = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x08, &MSB, &LSB);//Version
+	Version = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x0A, &MSB, &LSB);//HIBRT
+	HIBRT = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);//Status
+	Status = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x14, &MSB, &LSB);//VALRT
+	VALRT = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x18, &MSB, &LSB);//VReset
+	VReset = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0xFE, &MSB, &LSB);//CMD
+	CMD = ((MSB<<8)+LSB);
+	
+	MAX20353_SOCReadReg(0x0E, &MSB, &LSB);//OCV
+	OCV = ((MSB<<8)+LSB);
+
+	MAX20353_ReadReg(REG_STATUS0, &Status0);
+	Status0 = Status0&0x07;
+	
+	sprintf(strbuf, "%02d/%02d/%04d-%02d:%02d:%02d %2.3f,%3.8f,0x%02X,%1.5f,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,%d\n", 
+				date_time.day,date_time.month,date_time.year,date_time.hour,date_time.minute,date_time.second,
+				(float)VCell/1000, (float)SOC/256.0,
+				RCOMP,
+				(float)CRate/1000/100,
+				MODE, Version, HIBRT, Config, Status, VALRT, VReset, CMD, OCV, Status0);
+
+	LOG_INF("%s", strbuf);
+}
+
+void test_soc_timerout(void)
+{
+	read_soc_status = true;
+}
+
+void test_soc(void)
+{
+	k_timer_init(&soc_timer, test_soc_timerout, NULL);
+	k_timer_start(&soc_timer, K_MSEC(10*1000), K_MSEC(15*1000));
+}
+
+void PMURedrawBatStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t strbuf[10] = {0};
+
+	if(screen_id == SCREEN_IDLE)
+	{
+		LCD_DrawRectangle(BAT_POSITIVE_X,BAT_POSITIVE_Y,BAT_POSITIVE_W,BAT_POSITIVE_H);
+		LCD_DrawRectangle(BAT_SUBJECT_X,BAT_SUBJECT_Y,BAT_SUBJECT_W,BAT_SUBJECT_H);
+		LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
+		
+		switch(g_bat_status)
+		{
+		case BAT_CHARGING_NO:
+			sprintf(strbuf, "%02d", g_bat_soc);
+			break;
+		case BAT_CHARGING_PROGRESS:
+			strcpy(strbuf, "CHG");
+			break;
+		case BAT_CHARGING_FINISHED:
+			strcpy(strbuf, "OK");
+			break;
+		}
+
+		LCD_SetFontSize(FONT_SIZE_16);
+		LCD_MeasureString(strbuf, &w, &h);
+		x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
+		y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
+		LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);	
+	}
 }
 
 void PMUMsgProcess(void)
@@ -251,4 +575,42 @@ void PMUMsgProcess(void)
 		VibrateStop();
 		vibrate_stop_flag = false;
 	}
+
+	if(read_soc_status)
+	{
+		test_soc_status();
+		read_soc_status = false;
+	}
+
+	if(pmu_bat_flag)
+	{
+		pmu_check_battery_status();
+		pmu_bat_flag = false;
+	}
+
+	if(pmu_redraw_bat_flag)
+	{
+		PMURedrawBatStatus();
+		pmu_redraw_bat_flag = false;
+	}
+}
+
+void MAX20353_ReadStatus(void)
+{
+	u8_t Status0,Status1,Status2,Status3;
+	
+	MAX20353_ReadReg(REG_STATUS0, &Status0);
+	MAX20353_ReadReg(REG_STATUS1, &Status1);
+	MAX20353_ReadReg(REG_STATUS2, &Status2);
+	MAX20353_ReadReg(REG_STATUS3, &Status3);
+	
+	LOG_INF("Status0=0x%02X,Status1=0x%02X,Status2=0x%02X,Status3=0x%02X\n", Status0, Status1, Status2, Status3); 
+}
+
+void test_bat_soc(void)
+{
+#ifdef SHOW_LOG_IN_SCREEN
+	sprintf(tmpbuf, "SOC:%d\n", g_bat_soc);
+	show_infor1(tmpbuf);
+#endif
 }

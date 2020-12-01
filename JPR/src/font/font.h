@@ -2,7 +2,7 @@
 #define __FONT_H__
 
 #define FONT_16
-//#define FONT_24
+#define FONT_24
 //#define FONT_32
 
 typedef enum
@@ -18,14 +18,14 @@ typedef enum
 	FONT_SIZE_32 = 32,
 #endif
 	FONT_SIZE_MAX
-}system_font_size;
+}SYSTEM_FONT_SIZE;
 
 //Ó¢ÎÄ×Ö¿â
-#if 1//def FONT_16
+#ifdef FONT_16
 extern unsigned char asc2_1608[96][16];
 extern unsigned char asc2_16_rm[];
 #endif
-#if 0//def FONT_24
+#ifdef FONT_24
 extern unsigned char asc2_2412[96][48];
 #endif
 #if 0//def FONT_32

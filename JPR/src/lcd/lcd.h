@@ -2,6 +2,7 @@
 #define __LCD_H__
 
 #include <stdint.h>
+#include "font.h"
 //#include "boards.h"
 
 //#define LCD_R154101_ST7796S
@@ -40,6 +41,9 @@ extern uint16_t  LCD_HEIGHT;
 extern uint16_t  POINT_COLOR;//默认红色    
 extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
+//系统字体大小
+extern SYSTEM_FONT_SIZE system_font;
+
 //画笔颜色
 #define WHITE         	 0xFFFF
 #define BLACK         	 0x0000	  
@@ -77,7 +81,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void LCD_Pic_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char *color);
 void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
-void LCD_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void LCD_Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r);
 void LCD_ShowString(uint16_t x, uint16_t y, uint8_t *p);
 void LCD_ShowStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t *p);

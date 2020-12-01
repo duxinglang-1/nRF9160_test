@@ -29,13 +29,13 @@ uint16_t BACK_COLOR=BLACK;  //背景色
 
 //默认字体大小
 #ifdef FONT_16
-system_font_size system_font = FONT_SIZE_16;
+SYSTEM_FONT_SIZE system_font = FONT_SIZE_16;
 #elif defined(FONT_24)
-system_font_size system_font = FONT_SIZE_24;
+SYSTEM_FONT_SIZE system_font = FONT_SIZE_24;
 #elif defined(FONT_32)
-system_font_size system_font = FONT_SIZE_32;
+SYSTEM_FONT_SIZE system_font = FONT_SIZE_32;
 #else
-system_font_size system_font = FONT_SIZE_16;
+SYSTEM_FONT_SIZE system_font = FONT_SIZE_16;
 #endif
 
 bool lcd_sleep_in = false;
@@ -144,12 +144,12 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 
 //画矩形	  
 //(x1,y1),(x2,y2):矩形的对角坐标
-void LCD_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
-	LCD_DrawLine(x1,y1,x2,y1);
-	LCD_DrawLine(x1,y1,x1,y2);
-	LCD_DrawLine(x1,y2,x2,y2);
-	LCD_DrawLine(x2,y1,x2,y2);
+	LCD_DrawLine(x,y,x+w,y);
+	LCD_DrawLine(x,y,x,y+h);
+	LCD_DrawLine(x,y+h,x+w,y+h);
+	LCD_DrawLine(x+w,y,x+w,y+h);
 }
 
 //在指定位置画一个指定大小的圆

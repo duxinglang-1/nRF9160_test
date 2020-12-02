@@ -35,7 +35,7 @@ static BAT_CHAEGER_STATUS g_bat_status = BAT_CHARGING_NO;
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
-static struct k_timer soc_timer,soc_bat_timer,soc_pwroff;
+static struct k_timer soc_timer,soc_pwroff;
 
 bool sys_pwr_off = false;
 bool vibrate_start_flag = false;
@@ -126,90 +126,9 @@ void Set_Screen_Backlight_Off(void)
 
 void SystemShutDown(void)
 {
+	SaveSystemDateTime();
+	
 	MAX20353_PowerOffConfig();
-}
-
-void pmu_check_battery_status(void)
-{
-	u8_t Status0;
-	static u8_t finish_flag=false,charging_flag=false;
-
-#ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "SOC:%d\n", g_bat_soc);
-#endif
-
-	MAX20353_ReadReg(REG_STATUS0, &Status0);
-	if((Status0&0x07) == 0x06)
-	{
-		LOG_INF("Charging Finished!\n");
-	#ifdef SHOW_LOG_IN_SCREEN
-		strcat(tmpbuf,"Charging Finished!\n");
-	#endif
-
-		g_bat_status = 2;
-
-		if(!finish_flag)
-		{
-			pmu_redraw_bat_flag = true;
-			
-			finish_flag = true;
-			charging_flag = false;
-			//AlarmRemindStart();
-		}
-	}
-	else
-	{
-		LOG_INF("Charging in progress!\n");
-	#ifdef SHOW_LOG_IN_SCREEN
-		strcat(tmpbuf,"Charging in progress!\n");
-	#endif
-
-		if(!charging_flag)
-		{
-			charging_flag = true;
-			finish_flag = false;
-			//AlarmRemindStart();
-		}
-	}
-
-#ifdef SHOW_LOG_IN_SCREEN	
-	show_infor1(tmpbuf);
-#endif
-
-	if(charger_is_connected)
-	{
-		k_timer_start(&soc_bat_timer, K_MSEC(7*1000), NULL);
-	}
-}
-
-void pmu_check_battery_timerout(void)
-{
-	pmu_bat_flag = true;
-}
-
-void pmu_check_battery_start(void)
-{
-	static bool timer_init = false;
-
-	if(!timer_init)
-	{
-		timer_init = true;
-		k_timer_init(&soc_bat_timer, pmu_check_battery_timerout, NULL);
-	}
-	
-	k_timer_start(&soc_bat_timer, K_MSEC(7*1000), NULL);
-}
-
-void pmu_check_battery_stop(void)
-{
-	k_timer_stop(&soc_bat_timer);
-
-	pmu_bat_has_notify = false;
-	
-#ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "SOC:%d\n", g_bat_soc);
-	show_infor1(tmpbuf);
-#endif
 }
 
 void pmu_battery_low_shutdown_timerout(void)
@@ -225,60 +144,69 @@ void pmu_battery_low_shutdown(void)
 
 void pmu_interrupt_proc(void)
 {
-	u8_t buff[128] = {0};
-
-	LOG_INF("pmu_interrupt_proc\n");
-
-	MAX20353_CheckPMICIntRegisters(PMICInts);
-	MAX20353_CheckPMICStatus(PMICStatus);
-
-	LOG_INF("PMICInts[0]:%02X\n", PMICInts[0]);
-
-	// read to clear all INTs  
-	if((PMICInts[0]&0x40) == 0x40) //Charger status change INT  
-	{
-		LOG_INF("Charger Status Changed to: %d\n", PMICStatus[0]&0x07);
-		if((PMICStatus[0]&0x07) == 0x06)
-		{
-			if(charger_is_connected)
-			{
-				LOG_INF("Charging Finished!\n");
-			#ifdef SHOW_LOG_IN_SCREEN
-				show_infor2("Charging Finished!\n");
-			#endif
-			}
-		}
-	}
+	u8_t int0,status0,status1;
+	u8_t val;
 	
-	if((PMICInts[0]&0x08) == 0x08) //USB OK Int
+	do
 	{
-		if((PMICStatus[1]&0x08) == 0x08) //USB OK   
+		MAX20353_ReadReg(REG_INT0, &int0);
+		LOG_INF("pmu_interrupt_proc REG_INT0:%02X\n", int0);
+
+		if((int0&0x40) == 0x40) //Charger status change INT  
 		{
-			InitCharger();//Start Charging
-			
-			LOG_INF("Charger connected!\n");
-		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor2("Charger connected!\n");
-		#endif
-		
-			charger_is_connected = true;
-			g_bat_status = 1;
+			MAX20353_ReadReg(REG_STATUS0, &status0);
+			LOG_INF("REG_STATUS0:%02X\n", status0);
+			switch((status0&0x07))
+			{
+			case 0x00://Charger off
+			case 0x01://Charging suspended due to temperature (see battery charger state diagram)
+			case 0x07://Charger fault condition (see battery charger state diagram)
+				g_bat_status = BAT_CHARGING_NO;
+				break;
+				
+			case 0x02://Pre-charge in progress
+			case 0x03://Fast-charge constant current mode in progress
+			case 0x04://Fast-charge constant voltage mode in progress
+			case 0x05://Maintain charge in progress
+				g_bat_status = BAT_CHARGING_PROGRESS;
+				break;
+				
+			case 0x06://Maintain charger timer done
+				g_bat_status = BAT_CHARGING_FINISHED;
+				lcd_sleep_out = true;
+				break;
+			}
+
 			pmu_redraw_bat_flag = true;
-			pmu_check_battery_start();
 		}
-		else
+		
+		if((int0&0x08) == 0x08) //USB OK Int
 		{
-			LOG_INF("Charger removed!\n");
-		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor2("Charger removed!\n");
-		#endif
-		
-			charger_is_connected = false;
-			g_bat_status = 0;
+			MAX20353_ReadReg(REG_STATUS1, &status1);
+			if((status1&0x08) == 0x08) //USB OK   
+			{
+				InitCharger();
+
+				charger_is_connected = true;
+				g_bat_status = BAT_CHARGING_PROGRESS;
+				lcd_sleep_out = true;
+			}
+			else
+			{			
+				charger_is_connected = false;
+				g_bat_status = BAT_CHARGING_NO;
+				lcd_sleep_out = true;
+			}
+
 			pmu_redraw_bat_flag = true;
-			pmu_check_battery_stop();
 		}
-	}	
+
+		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
+		{
+			LOG_INF("Cannot get pin");
+			break;
+		}
+	}while(!val);
 }
 
 void PmuInterruptHandle(void)
@@ -294,9 +222,8 @@ void pmu_alert_proc(void)
 	u8_t buff[128] = {0};
 	u8_t MSB,LSB;
 
-	LOG_INF("pmu_alert_proc\n");
-
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+	LOG_INF("pmu_alert_proc status:%02X\n", MSB);
 	if(MSB&0x40)
 	{
 		//EnVr (enable voltage reset alert)
@@ -313,7 +240,7 @@ void pmu_alert_proc(void)
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
 
-		LOG_INF("SOC change:%d\n", g_bat_soc);
+		LOG_INF("SOC:%d\n", g_bat_soc);
 		if(g_bat_soc < 5)
 		{
 			LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
@@ -324,6 +251,8 @@ void pmu_alert_proc(void)
 		{
 			LOG_INF("Battery voltage is low, please charge in time!\n");
 		}
+
+		pmu_redraw_bat_flag = true;
 	}
 	if(MSB&0x10)
 	{
@@ -374,6 +303,17 @@ void PmuAlertHandle(void)
 	pmu_alert_flag = true;
 }
 
+void MAX20353_InitData(void)
+{
+	pmu_interrupt_proc();
+	
+	g_bat_soc = MAX20353_CalculateSOC();
+	if(g_bat_soc>100)
+		g_bat_soc = 100;
+
+	//test_soc();
+}
+
 void pmu_init(void)
 {
 	bool rst;
@@ -412,12 +352,7 @@ void pmu_init(void)
 	pmu_dev_ctx.handle    = i2c_pmu;
 
 	MAX20353_Init();
-
-	g_bat_soc = MAX20353_CalculateSOC();
-	if(g_bat_soc>100)
-		g_bat_soc = 100;
-
-	test_soc();
+	MAX20353_InitData();
 }
 
 void test_pmu(void)
@@ -580,12 +515,6 @@ void PMUMsgProcess(void)
 	{
 		test_soc_status();
 		read_soc_status = false;
-	}
-
-	if(pmu_bat_flag)
-	{
-		pmu_check_battery_status();
-		pmu_bat_flag = false;
 	}
 
 	if(pmu_redraw_bat_flag)

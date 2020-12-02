@@ -738,7 +738,7 @@ void MAX20353_ChargerInit(void)
 
 	//Enable Int Mask 
 	//Enable Charger Status Int and USB OK Int 
-	PMICIntMasks[0] = 0x08;
+	PMICIntMasks[0] = 0x48;
 	PMICIntMasks[1] = 0x00;
 	PMICIntMasks[2] = 0x00;
 	MAX20353_EnablePMICIntMaskRegisters(PMICIntMasks);

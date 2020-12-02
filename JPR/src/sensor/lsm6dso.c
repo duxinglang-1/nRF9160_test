@@ -884,6 +884,8 @@ void IMUMsgProcess(void)
 			LOG_INF("tilt trigger!\n");
 			wrist_tilt = false;
 			//¼ì²âµ½Ì§Íó
+
+			lcd_sleep_out = true;
 		}
 		else
 		{

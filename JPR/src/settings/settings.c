@@ -76,9 +76,9 @@ static int nvs_setup(void)
 
 void SaveSystemDateTime(void)
 {
-	//printk("date_time: %04d-%02d-%02d, %02d:%02d:%02d\n", date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
+	//LOG_INF("date_time: %04d-%02d-%02d, %02d:%02d:%02d\n", date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
 	nvs_write(&fs, DATETIME_ID, &date_time, sizeof(sys_date_timer_t));
-	//printk("date_time set ok!\n");
+	//LOG_INF("date_time set ok!\n");
 }
 
 void InitSystemDateTime(void)

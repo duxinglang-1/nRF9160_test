@@ -1,6 +1,7 @@
 #ifndef __LCD_H__
 #define __LCD_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "font.h"
 //#include "boards.h"
@@ -32,6 +33,10 @@
 #define FONT_UNICODE_HEAD_FLAG_1	0x11
 #define FONT_UNICODE_HEAD_LEN		16
 #endif
+
+//LCD睡眠唤醒
+extern bool lcd_sleep_in;
+extern bool lcd_sleep_out;
 
 //LCD的宽度和高度
 extern uint16_t  LCD_WIDTH;

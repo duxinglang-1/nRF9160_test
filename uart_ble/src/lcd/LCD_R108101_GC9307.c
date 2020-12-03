@@ -479,6 +479,7 @@ void LCD_Init(void)
 	WriteComm(0x2c);
 
 	LCD_Clear(BLACK);		//清屏为黑色
+	Delay(20);
 
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU

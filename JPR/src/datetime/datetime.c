@@ -198,7 +198,7 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 		count += (31+(28+flag));
 		break;
 	case 4:
-		count += (31+30+(28+flag));
+		count += (2*31+(28+flag));
 		break;
 	case 5:
 		count += (2*31+30+(28+flag));
@@ -222,7 +222,7 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 		count += (6*31+3*30+(28+flag));
 		break;
 	case 12:
-		count += (7*31+4*30+(28+flag));
+		count += (6*31+4*30+(28+flag));
 		break;			
 	}
 

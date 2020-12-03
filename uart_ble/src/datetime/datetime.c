@@ -18,6 +18,22 @@
 #include "font.h"
 #include "lsm6dso.h"
 
+#define IDLE_TIME_SHOW_X	0
+#ifdef FONT_32
+#define IDLE_TIME_SHOW_Y	54
+#elif defined(FONT_24)
+#define IDLE_TIME_SHOW_Y	64
+#elif defined(FONT_16)
+#define IDLE_TIME_SHOW_Y	74
+#endif
+
+
+#define IDLE_DATE_SHOW_X	0
+#define IDLE_DATE_SHOW_Y	(IDLE_TIME_SHOW_Y+system_font)
+
+#define IDLE_WEEK_SHOW_X	0
+#define IDLE_WEEK_SHOW_Y	(IDLE_DATE_SHOW_Y+system_font)
+
 static struct k_timer clock_timer;
 
 sys_date_timer_t date_time = {0};
@@ -182,7 +198,7 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 		count += (31+(28+flag));
 		break;
 	case 4:
-		count += (31+30+(28+flag));
+		count += (2*31+(28+flag));
 		break;
 	case 5:
 		count += (2*31+30+(28+flag));
@@ -206,7 +222,7 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 		count += (6*31+3*30+(28+flag));
 		break;
 	case 12:
-		count += (7*31+4*30+(28+flag));
+		count += (6*31+4*30+(28+flag));
 		break;			
 	}
 

@@ -37,7 +37,7 @@ extern struct device *max20353_I2C;
 #define MAX20353_NO_ERROR   0
 #define MAX20353_ERROR      -1
 
-#define MAX20353_I2C_ADDR_FUEL_GAUGE    0x6C
+#define MAX20353_I2C_ADDR_FUEL_GAUGE    (0x6C >> 1)
 
 #define MAX20353_LDO_MIN_MV 	800
 #define MAX20353_LDO_MAX_MV 	3600

@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr.h>
-#include <sys/printk.h>
 #include <soc.h>
 #include <device.h>
 #include <drivers/gpio.h>
@@ -11,6 +10,10 @@
 #include "key.h"
 #include "Max20353.h"
 #include "Alarm.h"
+
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(key, CONFIG_LOG_DEFAULT_LEVEL);
 
 static u8_t flag;
 static u32_t keycode;
@@ -47,7 +50,7 @@ extern void GetImuSteps(void);
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//printk("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
+	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
 
 	switch(key_code)
 	{
@@ -162,7 +165,7 @@ static u32_t get_buttons(void)
 
 		if(gpio_pin_read(button_devs[i], button_pins[i].number, &val))
 		{
-			printk("Cannot read gpio pin");
+			LOG_INF("Cannot read gpio pin");
 			return 0;
 		}
 
@@ -235,7 +238,7 @@ static void buttons_scan_fn(struct k_work *work)
 		int err = k_delayed_work_submit(&buttons_scan, CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL);
 		if(err)
 		{
-			printk("Cannot add work to workqueue");
+			LOG_INF("Cannot add work to workqueue");
 		}
 	}
 	else
@@ -261,7 +264,7 @@ static void buttons_scan_fn(struct k_work *work)
 
 		if(err)
 		{
-			printk("Cannot enable callbacks");
+			LOG_INF("Cannot enable callbacks");
 		}
 	}
 }
@@ -309,7 +312,7 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, u3
 
 	if(err)
 	{
-		printk("Cannot disable callbacks");
+		LOG_INF("Cannot disable callbacks");
 	}
 
 	switch (state)
@@ -345,14 +348,14 @@ static int buttons_init(button_handler_t button_handler)
 		button_devs[i] = device_get_binding(button_pins[i].port);
 		if (!button_devs[i])
 		{
-			printk("Cannot bind gpio device");
+			LOG_INF("Cannot bind gpio device");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
 		if(err)
 		{
-			printk("Cannot configure button gpio");
+			LOG_INF("Cannot configure button gpio");
 			return err;
 		}
 	}
@@ -360,7 +363,7 @@ static int buttons_init(button_handler_t button_handler)
 	err = set_trig_mode(GPIO_INT_LEVEL);
 	if(err)
 	{
-		printk("Cannot set interrupt mode");
+		LOG_INF("Cannot set interrupt mode");
 		return err;
 	}
 
@@ -374,7 +377,7 @@ static int buttons_init(button_handler_t button_handler)
 		err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
 		if(err)
 		{
-			printk("Cannot disable callbacks()");
+			LOG_INF("Cannot disable callbacks()");
 			return err;
 		}
 
@@ -388,7 +391,7 @@ static int buttons_init(button_handler_t button_handler)
 		err = gpio_add_callback(button_devs[i], &gpio_cb);
 		if(err)
 		{
-			printk("Cannot add callback");
+			LOG_INF("Cannot add callback");
 			return err;
 		}
 	}
@@ -400,7 +403,7 @@ static int buttons_init(button_handler_t button_handler)
 	err = k_delayed_work_submit(&buttons_scan, 0);
 	if(err)
 	{
-		printk("Cannot add work to workqueue");
+		LOG_INF("Cannot add work to workqueue");
 		return err;
 	}
 
@@ -413,12 +416,12 @@ void key_init(void)
 {
 	int err;
 
-	printk("key_init\n");
+	LOG_INF("key_init\n");
 	
 	err = buttons_init(button_handler);
 	if (err)
 	{
-		printk("Could not initialize buttons, err code: %d\n", err);
+		LOG_INF("Could not initialize buttons, err code: %d\n", err);
 		return;
 	}
 

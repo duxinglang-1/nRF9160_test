@@ -20,7 +20,11 @@
 #include "supl_support.h"
 #endif
 
-#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将GPS测试状态LOG信息显示在屏幕上
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(gps, CONFIG_LOG_DEFAULT_LEVEL);
+
+//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将GPS测试状态LOG信息显示在屏幕上
 
 #define AT_XSYSTEMMODE_GPSON      "AT\%XSYSTEMMODE=0,1,1,0"
 #define AT_XSYSTEMMODE_GPSOFF     "AT\%XSYSTEMMODE=0,1,0,0"
@@ -100,7 +104,7 @@ static void show_infor(u8_t *strbuf)
 
 void bsd_recoverable_error_handler(uint32_t error)
 {
-	printf("Err: %lu\n", (unsigned long)error);
+	LOG_INF("Err: %lu\n", (unsigned long)error);
 #ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "Err: %lu", (unsigned long)error);
 	show_infor(tmpbuf);
@@ -210,14 +214,14 @@ static int gnss_ctrl(uint32_t ctrl)
 
 		if(gnss_fd >= 0)
 		{
-			printk("GPS Socket created\n");
+			LOG_INF("GPS Socket created\n");
 		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("GPS Socket created");
 		#endif
 		}
 		else
 		{
-			printk("Could not init socket (err: %d)\n", gnss_fd);
+			LOG_INF("Could not init socket (err: %d)\n", gnss_fd);
 		#ifdef SHOW_LOG_IN_SCREEN	
 			sprintf(tmpbuf, "Could not init socket (err: %d)", gnss_fd);
 			show_infor(tmpbuf);
@@ -232,7 +236,7 @@ static int gnss_ctrl(uint32_t ctrl)
 					sizeof(fix_retry));
 		if(retval != 0)
 		{
-			printk("Failed to set fix retry value\n");
+			LOG_INF("Failed to set fix retry value\n");
 		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("Failed to set fix retry value");
 		#endif
@@ -246,7 +250,7 @@ static int gnss_ctrl(uint32_t ctrl)
 					sizeof(fix_interval));
 		if(retval != 0)
 		{
-			printk("Failed to set fix interval value\n");
+			LOG_INF("Failed to set fix interval value\n");
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("Failed to set fix interval value");
 		#endif	
@@ -260,7 +264,7 @@ static int gnss_ctrl(uint32_t ctrl)
 					sizeof(nmea_mask));
 		if(retval != 0)
 		{
-			printk("Failed to set nmea mask\n");
+			LOG_INF("Failed to set nmea mask\n");
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("Failed to set nmea mask");
 		#endif	
@@ -277,7 +281,7 @@ static int gnss_ctrl(uint32_t ctrl)
 					sizeof(delete_mask));
 		if(retval != 0)
 		{
-			printk("Failed to start GPS\n");
+			LOG_INF("Failed to start GPS\n");
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("Failed to start GPS");
 		#endif	
@@ -294,7 +298,7 @@ static int gnss_ctrl(uint32_t ctrl)
 					sizeof(delete_mask));
 		if(retval != 0)
 		{
-			printk("Failed to stop GPS\n");
+			LOG_INF("Failed to stop GPS\n");
 		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("Failed to stop GPS");
 		#endif
@@ -307,7 +311,7 @@ static int gnss_ctrl(uint32_t ctrl)
 		retval = nrf_close(gnss_fd);
 		if(retval != 0)
 		{
-			printk("Failed to close GPS\n");
+			LOG_INF("Failed to close GPS\n");
 			return -1;
 		}
 	}
@@ -321,7 +325,7 @@ static int init_app(void)
 
 	if(setup_modem() != 0)
 	{
-		printk("Failed to initialize modem\n");
+		LOG_INF("Failed to initialize modem\n");
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("Failed to initialize modem");
 	#endif	
@@ -359,23 +363,12 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 		}
 	}
 
-	printk("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
-	printk("\nSeconds since last fix %lld\n", (k_uptime_get() - fix_timestamp) / 1000);
+	LOG_INF("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
+	LOG_INF("\nSeconds since last fix %lld\n", (k_uptime_get() - fix_timestamp) / 1000);
 #ifdef SHOW_LOG_IN_SCREEN
-	//sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
-	//				tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
-	sprintf(tmpbuf, "Tracking:%02d,Using:%02d   ", tracked, in_fix);
-	for(i = 0; i < NRF_GNSS_MAX_SATELLITES; ++i)
-	{
-		if ((pvt_data->pvt.sv[i].sv > 0) && (pvt_data->pvt.sv[i].sv < 33))
-		{
-			u8_t sate_single[128] = {0};
-			
-			sprintf(sate_single, "NO:%02d,CN0:%d;", pvt_data->pvt.sv[i].sv, pvt_data->pvt.sv[i].cn0);
-			strcat(tmpbuf,sate_single);
-		}
-	}
-	show_infor(tmpbuf);	
+	sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
+					tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
+	show_infor(tmpbuf);
 #endif	
 }
 
@@ -385,18 +378,18 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 
 	LCD_Fill(0,20,240,200,BLACK);
 	
-	printf("Longitude:  %f\n", pvt_data->pvt.longitude);
-	printf("Latitude:   %f\n", pvt_data->pvt.latitude);
-	printf("Altitude:   %f\n", pvt_data->pvt.altitude);
-	printf("Speed:      %f\n", pvt_data->pvt.speed);
-	printf("Heading:    %f\n", pvt_data->pvt.heading);
-	printk("Date:       %02u-%02u-%02u", pvt_data->pvt.datetime.year,
+	LOG_INF("Longitude:  %f\n", pvt_data->pvt.longitude);
+	LOG_INF("Latitude:   %f\n", pvt_data->pvt.latitude);
+	LOG_INF("Altitude:   %f\n", pvt_data->pvt.altitude);
+	LOG_INF("Speed:      %f\n", pvt_data->pvt.speed);
+	LOG_INF("Heading:    %f\n", pvt_data->pvt.heading);
+	LOG_INF("Date:       %02u-%02u-%02u", pvt_data->pvt.datetime.year,
 					       					pvt_data->pvt.datetime.month,
 					       					pvt_data->pvt.datetime.day);
-	printk("Time (UTC): %02u:%02u:%02u", pvt_data->pvt.datetime.hour,
+	LOG_INF("Time (UTC): %02u:%02u:%02u", pvt_data->pvt.datetime.hour,
 					       					pvt_data->pvt.datetime.minute,
 					      					pvt_data->pvt.datetime.seconds);
-#if 0//def SHOW_LOG_IN_SCREEN
+#ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u", 
 					pvt_data->pvt.longitude,
 					pvt_data->pvt.latitude,
@@ -417,11 +410,11 @@ static void print_nmea_data(void)
 {
 	int i;
 	
-	printk("\n");
+	LOG_INF("\n");
 	
 	for(i = 0; i < nmea_string_cnt; ++i)
 	{
-		printk("%s", nmea_strings[i]);
+		LOG_INF("%s", nmea_strings[i]);
 	}
 }
 
@@ -472,9 +465,9 @@ int process_gps_data(nrf_gnss_data_frame_t *gps_data)
 
 		case NRF_GNSS_AGPS_DATA_ID:
 		#ifdef CONFIG_SUPL_CLIENT_LIB
-			printk("\033[1;1H");
-			printk("\033[2J");
-			printk("New AGPS data requested, contacting SUPL server, flags %d\n",
+			LOG_INF("\033[1;1H");
+			LOG_INF("\033[2J");
+			LOG_INF("New AGPS data requested, contacting SUPL server, flags %d\n",
 			       gps_data->agps.data_flags);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "New AGPS data requested, contacting SUPL server, flags %d", gps_data->agps.data_flags);
@@ -482,7 +475,7 @@ int process_gps_data(nrf_gnss_data_frame_t *gps_data)
 		#endif
 			gnss_ctrl(GNSS_STOP);
 			activate_lte(true);
-			printk("Established LTE link\n");
+			LOG_INF("Established LTE link\n");
 		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("Established LTE link");
 		#endif	
@@ -493,7 +486,7 @@ int process_gps_data(nrf_gnss_data_frame_t *gps_data)
 				show_infor("Starting SUPL session");
 			#endif	
 				supl_session(&gps_data->agps);
-				printk("Done\n");
+				LOG_INF("Done\n");
 			#ifdef SHOW_LOG_IN_SCREEN
 				show_infor("Done");
 			#endif	
@@ -529,7 +522,7 @@ int inject_agps_type(void *agps,
 
 	if(retval != 0)
 	{
-		printk("Failed to send AGNSS data, type: %d (err: %d)\n",
+		LOG_INF("Failed to send AGNSS data, type: %d (err: %d)\n",
 		       type,
 		       errno);
 	#ifdef SHOW_LOG_IN_SCREEN
@@ -539,7 +532,7 @@ int inject_agps_type(void *agps,
 		return -1;
 	}
 
-	printk("Injected AGPS data, flags: %d, size: %d\n", type, agps_size);
+	LOG_INF("Injected AGPS data, flags: %d, size: %d\n", type, agps_size);
 #ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "Injected AGPS data, flags: %d, size: %d", type, agps_size);
 	show_infor(tmpbuf);
@@ -662,29 +655,29 @@ void gps_data_receive(void)
 	if(!got_first_fix)
 	{
 		cnt++;
-		printk("\033[1;1H");
-		printk("\033[2J");
+		LOG_INF("\033[1;1H");
+		LOG_INF("\033[2J");
 		print_satellite_stats(&gps_data);
-		printk("\nScanning [%c] ",
+		LOG_INF("\nScanning [%c] ",
 				update_indicator[cnt%4]);
 	#ifdef SHOW_LOG_IN_SCREEN
-		//sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
-		//show_infor(tmpbuf);
+		sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
+		show_infor(tmpbuf);
 	#endif	
 	}
 
 	if(((k_uptime_get() - fix_timestamp) >= 1) && (got_first_fix))
 	{
-		printk("\033[1;1H");
-		printk("\033[2J");
+		LOG_INF("\033[1;1H");
+		LOG_INF("\033[2J");
 
 		print_satellite_stats(&gps_data);
 
-		printk("---------------------------------\n");
+		LOG_INF("---------------------------------\n");
 		print_pvt_data(&last_fix);
-		printk("\n");
+		LOG_INF("\n");
 		print_nmea_data();
-		printk("---------------------------------");
+		LOG_INF("---------------------------------");
 
 		update_terminal = false;
 
@@ -698,7 +691,7 @@ void gps_data_receive(void)
 				k_timer_stop(&app_wait_gps_timer);
 
 			APP_wait_gps = false;
-			//gps_off();
+			gps_off();
 
 			//UTC date&time
 			//year
@@ -753,7 +746,7 @@ void gps_data_receive(void)
 			tmp1 = tmp1%100;
 			str_gps[16] = (u8_t)(tmp1);
 
-			//APP_get_location_data_reply(str_gps, 17);
+			APP_get_location_data_reply(str_gps, 17);
 
 			return;
 		}
@@ -796,7 +789,7 @@ void gps_off(void)
 {
 	if(!gps_is_on)
 	{
-		printk("gps is been truned off\n");
+		LOG_INF("gps is been truned off\n");
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("gps is been truned off");
 	#endif
@@ -817,7 +810,7 @@ void gps_off(void)
 
 	//if(reset_modem() != 0)
 	//{
-	//	printk("Failed to reset modem\n");
+	//	LOG_INF("Failed to reset modem\n");
 	//#ifdef SHOW_LOG_IN_SCREEN	
 	//	show_infor("Failed to reset modem");
 	//#endif	
@@ -844,7 +837,7 @@ void gps_on(void)
 
 	if(gps_is_on)
 	{
-		printk("gps is been truned on\n");
+		LOG_INF("gps is been truned on\n");
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("gps is been truned on");
 	#endif
@@ -853,7 +846,7 @@ void gps_on(void)
 
 	screen_id = SCREEN_GPS;
 
-	printk("Staring GPS application\n");
+	LOG_INF("Staring GPS application\n");
 #ifdef SHOW_LOG_IN_SCREEN
 	show_infor("Staring GPS application");
 #endif
@@ -878,7 +871,7 @@ void gps_on(void)
 	}
 #endif
 
-	printk("Getting GPS data...\n");
+	LOG_INF("Getting GPS data...\n");
 #ifdef SHOW_LOG_IN_SCREEN
 	show_infor("Getting GPS data...");
 #endif

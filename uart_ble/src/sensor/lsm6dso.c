@@ -15,6 +15,8 @@ this code includes fall detection, wrist tilt detection, step counter
 #include <math.h>
 #include "lsm6dso_reg.h"
 #include "algorithm.h"
+#include "lcd.h"
+#include "settings.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -33,6 +35,11 @@ LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
+#define IMU_STEPS_SHOW_X	15
+#define IMU_STEPS_SHOW_Y	160
+#define IMU_STEPS_SHOW_W	210
+#define IMU_STEPS_SHOW_H	20
+
 static uint8_t whoamI, rst;
 static uint16_t steps; //step counter
 
@@ -41,6 +48,7 @@ static struct device *gpio_imu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
+bool imu_redraw_steps_flag = true;
 
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
@@ -788,6 +796,75 @@ void enable_tilt_detection(void)
 	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);
 }
 
+void test_i2c(void)
+{
+  struct device *i2c_dev;
+  struct device *dev0;
+
+  i2c_dev = device_get_binding(IMU_DEV);
+
+  LOG_INF("Starting i2c scanner...\n");
+
+  if(!i2c_dev)
+  {
+    LOG_INF("I2C: Device driver not found.\n");
+    return;
+  }
+  i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
+  uint8_t error = 0u;
+
+  LOG_INF("Value of NRF_TWIM3_NS->PSEL.SCL: %ld \n",NRF_TWIM3_NS->PSEL.SCL);
+  LOG_INF("Value of NRF_TWIM3_NS->PSEL.SDA: %ld \n",NRF_TWIM3_NS->PSEL.SDA);
+  LOG_INF("Value of NRF_TWIM3_NS->FREQUENCY: %ld \n",NRF_TWIM3_NS->FREQUENCY);
+  LOG_INF("26738688 -> 100k\n");
+  LOG_INF("67108864 -> 250k\n");
+  LOG_INF("104857600 -> 400k\n");
+    
+  for (u8_t i = 0; i < 0x7f; i++)
+  {
+    struct i2c_msg msgs[1];
+    u8_t dst = 1;
+
+    /* Send the address to read from */
+    msgs[0].buf = &dst;
+    msgs[0].len = 1U;
+    msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+		
+    error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
+    if(error == 0)
+	{
+      LOG_INF("0x%2x device address found on I2C Bus\n", i);
+    }
+    else
+	{
+      //LOG_INF("error %d \n", error);
+    }
+  }
+}
+
+void IMURedrawSteps(void)
+{
+	u8_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
+	if(screen_id == SCREEN_IDLE)
+	{
+		LCD_SetFontSize(FONT_SIZE_16);
+		
+		LCD_Fill(IMU_STEPS_SHOW_X,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
+		sprintf(strbuf, "S:%d", g_steps);
+		LCD_ShowString(IMU_STEPS_SHOW_X, IMU_STEPS_SHOW_Y, strbuf);
+
+		LCD_Fill(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
+		sprintf(strbuf, "D:%d", g_distance);
+		LCD_ShowString(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, strbuf);
+
+		LCD_Fill(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
+		sprintf(strbuf, "C:%d", g_calorie);
+		LCD_ShowString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, strbuf);
+	}
+}
+
 void IMUMsgProcess(void)
 {
 	if(int1_event)	//steps
@@ -796,6 +873,7 @@ void IMUMsgProcess(void)
 
 		GetImuSteps();
 		int1_event = false;
+		imu_redraw_steps_flag = true;
 	}
 
 	if(int2_event)	//fall or tilt
@@ -806,6 +884,8 @@ void IMUMsgProcess(void)
 			LOG_INF("tilt trigger!\n");
 			wrist_tilt = false;
 			//¼ì²âµ½Ì§Íó
+
+			lcd_sleep_out = true;
 		}
 		else
 		{
@@ -825,5 +905,13 @@ void IMUMsgProcess(void)
 	{
 		reset_steps = false;
 		ReSetImuSteps();
+		imu_redraw_steps_flag = true;
+	}
+
+	if(imu_redraw_steps_flag)
+	{
+		imu_redraw_steps_flag = false;
+		IMURedrawSteps();
 	}
 }
+

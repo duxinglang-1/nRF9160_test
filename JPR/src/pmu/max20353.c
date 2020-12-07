@@ -241,15 +241,19 @@ void pmu_alert_proc(void)
 			g_bat_soc = 100;
 
 		LOG_INF("SOC:%d\n", g_bat_soc);
-		if(g_bat_soc < 5)
+		
+		if(!charger_is_connected)
 		{
-			LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
+			if(g_bat_soc < 5)
+			{
+				LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
 
-			pmu_battery_low_shutdown();
-		}
-		else if(g_bat_soc < 20)
-		{
-			LOG_INF("Battery voltage is low, please charge in time!\n");
+				pmu_battery_low_shutdown();
+			}
+			else if(g_bat_soc < 20)
+			{
+				LOG_INF("Battery voltage is low, please charge in time!\n");
+			}
 		}
 
 		pmu_redraw_bat_flag = true;

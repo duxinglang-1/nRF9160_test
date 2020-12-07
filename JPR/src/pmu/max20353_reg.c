@@ -824,11 +824,11 @@ void MAX20353_Init(void)
 	//MAX20353_InitRAM();  		//马达振动模式
 #endif
 
-	//充电配置
-	MAX20353_ChargerInit();
-	
 	//电量计
 	MAX20353_SOCInit();
+
+	//充电配置
+	MAX20353_ChargerInit();
 }
 
 #ifdef BATTERY_SOC_GAUGE	//xb add 2020-11-05 增加有关电量计的代码
@@ -1317,8 +1317,21 @@ int MAX20353_SOCWriteReg(u8_t reg, u8_t MSB, u8_t LSB)
 void MAX20353_SOCInit(void)
 {
 	u8_t MSB,LSB;
+
+	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+	if(MSB&0x01)
+	{
+		//RI (reset indicator) is set when the device powers up.
+		//Any time this bit is set, the IC is not configured, so the
+		//model should be loaded and the bit should be cleared
+		MSB = MSB&0xFE;
+		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+		MAX20353_QuickStart();
+		delay_ms(150);
+		
+		handle_model(LOAD_MODEL);
+	}
 	
-	handle_model(LOAD_MODEL);
 	//设置SOC变化1%报警，电量小于4%报警
 	WriteWord(0x0C, 0x12, 0x5C);
 }

@@ -15,6 +15,15 @@ typedef enum
 	BAT_CHARGING_MAX
 }BAT_CHAEGER_STATUS;
 
+typedef enum
+{
+	BAT_LEVEL_VERY_LOW,
+	BAT_LEVEL_LOW,
+	BAT_LEVEL_NORMAL,
+	BAT_LEVEL_GOOD,
+	BAT_LEVEL_MAX
+}BAT_LEVEL_STATUS;
+
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
 extern bool vibrate_start_flag;

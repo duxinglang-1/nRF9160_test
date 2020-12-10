@@ -29,6 +29,10 @@ extern bool pmu_alert_flag;
 extern bool vibrate_start_flag;
 extern bool vibrate_stop_flag;
 
+extern u8_t g_bat_soc;
+extern BAT_CHAEGER_STATUS g_chg_status;
+extern BAT_LEVEL_STATUS g_bat_level;
+
 extern void test_pmu(void);
 extern void pmu_init(void);
 extern void MAX20353_Init(void);

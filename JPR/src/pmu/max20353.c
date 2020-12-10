@@ -27,8 +27,6 @@ LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 #define BAT_SUBJECT_W	60
 #define BAT_SUBJECT_H	(BAT_POSITIVE_H+2*BAT_PS_OFFSET_H)
 
-
-static u8_t g_bat_soc = 0;
 static u8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -46,6 +44,7 @@ bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
 
+u8_t g_bat_soc = 0;
 BAT_CHAEGER_STATUS g_chg_status = BAT_CHARGING_NO;
 BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_NORMAL;
 
@@ -201,6 +200,9 @@ void pmu_interrupt_proc(void)
 				
 				g_chg_status = BAT_CHARGING_NO;
 				g_bat_soc = MAX20353_CalculateSOC();
+				if(g_bat_soc>100)
+					g_bat_soc = 100;
+				
 				if(g_bat_soc < 5)
 				{
 					g_bat_level = BAT_LEVEL_VERY_LOW;

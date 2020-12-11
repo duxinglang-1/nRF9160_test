@@ -25,6 +25,9 @@ typedef enum
 }ENUM_BLE_MODE;
 
 extern bool APP_wait_gps;
+extern ENUM_BLE_STATUS g_ble_status;
+extern ENUM_BLE_MODE g_ble_mode;
+
 extern void uart_ble_test(void);
 extern void APP_get_location_data_reply(u8_t *buf, u32_t len);
 extern void MCU_get_nrf52810_ver(void);

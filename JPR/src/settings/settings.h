@@ -69,9 +69,11 @@ typedef struct{
 }phd_measure_t;
 
 typedef struct{
+	bool init;		//system inited flag
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
+	bool wake_screen_by_wrist;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
@@ -83,6 +85,8 @@ typedef struct{
 
 extern bool need_save_time;
 extern bool need_save_settings;
+extern bool need_reset_settings;
+
 extern u8_t screen_id;
 
 extern global_settings_t global_settings;

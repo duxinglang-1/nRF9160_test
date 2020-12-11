@@ -9,6 +9,7 @@
 #include "settings.h"
 #include "datetime.h"
 #include "alarm.h"
+#include "lcd.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -26,28 +27,47 @@ u8_t screen_id = SCREEN_BOOTUP;
 
 bool need_save_settings = false;
 bool need_save_time = false;
+bool need_reset_settings = false;
 
 global_settings_t global_settings = {0};
 
 extern sys_date_timer_t date_time;
 
-//const global_settings_t FACTORY_DEFAULT_DATA = {
-//	TIME_FORMAT_24,			//24 format
-//	false,					//heart rate turn on
-//	false,					//blood pressure turn on
-//	false,					//blood oxygen turn on					
-//	{
-//		0,					//alarm
-//		{false,0,0,0},
-//		{false,0,0,0},
-//		{false,0,0,0},
-//		{false,0,0,0},
-//		{false,0,0,0},
-//		{false,0,0,0},
-//		{false,0,0,0},
-//		{false,0,0,0},
-//	}
-//};
+const sys_date_timer_t FACTORY_DEFAULT_TIME = 
+{
+	2020,
+	01,
+	01,
+	00,
+	00,
+	00,
+	3		//0=sunday
+};
+
+const global_settings_t FACTORY_DEFAULT_SETTINGS = 
+{
+	false,					//system inited flag
+	false,					//heart rate turn on
+	false,					//blood pressure turn on
+	false,					//blood oxygen turn on		
+	true,					//wake screen by wrist
+	TIME_FORMAT_24,			//24 format
+	LANGUAGE_EN,			//language
+	DATE_FORMAT_YYYYMMDD,	//date format
+	CLOCK_MODE_DIGITAL,		//colck mode
+	BACKLIGHT_ALWAYS_ON,	//backlight time
+	{true,1},				//PHD
+	{						//alarm
+		{false,0,0,0},		
+		{false,0,0,0},
+		{false,0,0,0},
+		{false,0,0,0},
+		{false,0,0,0},
+		{false,0,0,0},
+		{false,0,0,0},
+		{false,0,0,0},
+	}
+};
 
 static int nvs_setup(void)
 {	
@@ -76,9 +96,13 @@ static int nvs_setup(void)
 
 void SaveSystemDateTime(void)
 {
-	//LOG_INF("date_time: %04d-%02d-%02d, %02d:%02d:%02d\n", date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
 	nvs_write(&fs, DATETIME_ID, &date_time, sizeof(sys_date_timer_t));
-	//LOG_INF("date_time set ok!\n");
+}
+
+void ResetSystemTime(void)
+{
+	memcpy(&date_time, &FACTORY_DEFAULT_TIME, sizeof(sys_date_timer_t));
+	SaveSystemDateTime();
 }
 
 void InitSystemDateTime(void)
@@ -86,35 +110,36 @@ void InitSystemDateTime(void)
 	int err = 0;
 	sys_date_timer_t mytime = {0};
 
-	err = nvs_read(&fs, DATETIME_ID, &mytime, sizeof(sys_date_timer_t));
+	err = nvs_read(&fs, DATETIME_ID, &date_time, sizeof(sys_date_timer_t));
 	if(err < 0)
 	{
 		LOG_INF("get datetime err:%d\n", err);
 	}
 	
-	LOG_INF("mytime: %04d-%02d-%02d, %02d:%02d:%02d\n", mytime.year,mytime.month,mytime.day,mytime.hour,mytime.minute,mytime.second);
-	
-	memset(&date_time, 0, sizeof(sys_date_timer_t));
 	if(!CheckSystemDateTimeIsValid(mytime))
 	{
-		mytime.year = SYSTEM_DEFAULT_YEAR;
-		mytime.month = SYSTEM_DEFAULT_MONTH;
-		mytime.day = SYSTEM_DEFAULT_DAY;
-		mytime.hour = SYSTEM_DEFAULT_HOUR;
-		mytime.minute = SYSTEM_DEFAULT_MINUTE;
-		mytime.second = SYSTEM_DEFAULT_SECOND;
-		mytime.week = GetWeekDayByDate(mytime);
+		memcpy(&mytime, &FACTORY_DEFAULT_TIME, sizeof(sys_date_timer_t));
 	}
-	
 	memcpy(&date_time, &mytime, sizeof(sys_date_timer_t));
+
 	SaveSystemDateTime();
 	StartSystemDateTime();
+}
+
+void SaveSystemSettings(void)
+{
+	nvs_write(&fs, SETTINGS_ID, &global_settings, sizeof(global_settings_t));
+}
+
+void ResetSystemSettings(void)
+{
+	memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
+	SaveSystemSettings();
 }
 
 void InitSystemSettings(void)
 {
 	int err;
-	global_settings_t settings = {0};
 
 	if(!nvs_init_flag)
 	{
@@ -126,31 +151,20 @@ void InitSystemSettings(void)
 		}
 	}
 	
-	err = nvs_read(&fs, SETTINGS_ID, &settings, sizeof(global_settings_t));
+	err = nvs_read(&fs, SETTINGS_ID, &global_settings, sizeof(global_settings_t));
 	if(err < 0)
 	{
 		LOG_INF("get settins err:%d\n", err);
 	}
 
-	memcpy(&global_settings, &settings, sizeof(global_settings_t));
+	if(!global_settings.init)
+	{
+		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
+		SaveSystemSettings();
+	}
 
 	InitSystemDateTime();
 	AlarmRemindInit();
-}
-
-void SaveSystemSettings(void)
-{
-	int err;
-	
-	err = nvs_write(&fs, SETTINGS_ID, &global_settings, sizeof(global_settings_t));
-	LOG_INF("save settings err:%d\n", err);
-}
-
-void ResetSystemSettings(void)
-{
-	//memcpy(global_settings, FACTORY_DEFAULT_DATA, sizeof(global_settings_t));
-
-	SaveSysetemSettings(global_settings);
 }
 
 void SettingsMsgPorcess(void)
@@ -165,5 +179,15 @@ void SettingsMsgPorcess(void)
 	{
 		need_save_settings = false;
 		SaveSystemSettings();
+	}
+
+	if(need_reset_settings)
+	{
+		need_reset_settings = false;
+		ResetSystemSettings();
+		ResetSystemTime();
+
+		lcd_sleep_out = true;
+		update_date_time = true;
 	}
 }

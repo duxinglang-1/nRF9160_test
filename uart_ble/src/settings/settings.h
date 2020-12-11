@@ -21,9 +21,11 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_EN,	//English
-	LANGUAGE_CHN,	//Chinese
-	LANGUAGE_JPN,	//Japanese
+	LANGUAGE_CHN_SM,	//Chinese_sm
+	LANGUAGE_EN,		//English
+	LANGUAGE_JPN,		//Japanese
+	LANGUAGE_CHN_TR,	//Chinese_tr
+	LANGUAGE_KOR,		//Korea
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 
@@ -46,13 +48,15 @@ typedef enum
 
 typedef enum
 {
-	BACKLIGHT_15_SEC,
-	BACKLIGHT_30_SEC,
-	BACKLIGHT_1_MIN,
-	BACKLIGHT_2_MIN,
-	BACKLIGHT_5_MIN,
-	BACKLIGHT_10_MIN,
-	BACKLIGHT_ALWAYS_ON,	
+	BACKLIGHT_5_SEC=5,
+	BACKLIGHT_10_SEC=10,
+	BACKLIGHT_15_SEC=15,
+	BACKLIGHT_30_SEC=30,
+	BACKLIGHT_1_MIN=60,
+	BACKLIGHT_2_MIN=120,
+	BACKLIGHT_5_MIN=300,
+	BACKLIGHT_10_MIN=600,
+	BACKLIGHT_ALWAYS_ON=0,
 	BACKLIGHT_MAX
 }BACKLIGHT_TIME;
 
@@ -69,9 +73,11 @@ typedef struct{
 }phd_measure_t;
 
 typedef struct{
+	bool init;		//system inited flag
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
+	bool wake_screen_by_wrist;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
@@ -83,6 +89,8 @@ typedef struct{
 
 extern bool need_save_time;
 extern bool need_save_settings;
+extern bool need_reset_settings;
+
 extern u8_t screen_id;
 
 extern global_settings_t global_settings;

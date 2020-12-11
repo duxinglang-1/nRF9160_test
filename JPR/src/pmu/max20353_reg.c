@@ -879,19 +879,48 @@ int WriteMulti(u8_t *data, u8_t len)
 	return MAX20353_NO_ERROR;
 }
 
-int MAX20353_UpdateRCOMP(void)
+int MAX20353_UpdateRCOMP(int temp)
 {
-	// RCOMP value at 20 degrees C
-	int INI_RCOMP = RCOMP0;
-	// RCOMP change per degree for every degree above 20 degrees C
-	float TempCoUp = TEMP_COUP;
-	// RCOMP change per degree for every degree below 20 degrees C
-	float TempCoDown = TEMP_CODOWN;
-	float temp = 27; // battery temperature degrees C
-	float used_tempco = temp> 20 ? TempCoUp : TempCoDown;
-	int result = INI_RCOMP + (temp - 20) * used_tempco;
+	int RCOMP; 
+	// RCOMP value at 20 degrees C 
+	int INI_RCOMP = RCOMP0; 
+	// RCOMP change per degree for every degree above 20 degrees C 
+	float TempCoUp = TEMP_COUP; 
+	// RCOMP change per degree for every degree below 20 degrees C 
+	float TempCoDown = TEMP_CODOWN; 
+	// RCOMP change per degree for every degree below 0 degrees C 
+	float TempCoDownN10 = TEMP_CODOWNN10; 
+	//float temp = 25; // battery temperature degrees C 
+	//float used_tempco = temp> 20 ? TempCoUp : TempCoDown; 
+	//int result = INI_RCOMP + (temp - 20) * used_tempco;  
 
-	return(result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
+	float used_tempco; 
+	int result; 
+
+	if(temp>20) // (20, ...) 
+	{
+		used_tempco = TempCoUp;
+		result = INI_RCOMP + (temp - 20) * used_tempco;
+	}
+	else if(temp>0) // {0, 20)
+	{
+		used_tempco = TempCoDown;
+		result = INI_RCOMP + (temp - 20) * used_tempco;
+	}
+	else //(-10, 0)
+	{
+		// calculate result to 0 degree
+		used_tempco = TempCoDown;
+		int result_0 = INI_RCOMP + (0 - 20) * used_tempco;
+		// calculate result < 0 degree
+		used_tempco = TempCoDownN10;
+		result = result_0 + (temp - 0) * used_tempco;
+	}
+
+	RCOMP = (result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
+	//Set RCOMP, SOC 1% change alert, Empty threshold 4%
+	WriteWord(0x0C, RCOMP, 0x5C);
+	return RCOMP;
 }
 
 u8_t MAX20353_CalculateSOC(void)
@@ -1332,7 +1361,7 @@ void MAX20353_SOCInit(void)
 		handle_model(LOAD_MODEL);
 	}
 	
-	//设置SOC变化1%报警，电量小于4%报警
+	//设置默认温度25度，SOC变化1%报警，电量小于4%报警
 	WriteWord(0x0C, 0x12, 0x5C);
 }
 #endif/*BATTERY_SOC_GAUGE*/

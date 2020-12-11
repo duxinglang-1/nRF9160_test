@@ -123,6 +123,9 @@ uint8_t init_gpio(void)
 	gpio_add_callback(gpio_imu, &gpio_cb2);
 	gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT2_PIN);
 
+	//ÔÝÊ±½«PPG¹©µç¹Ø±Õ£¬·ÀÖ¹LED³£ÁÁºÄµç
+	gpio_pin_configure(gpio_imu, 17, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_imu, 17, 0);
 	return 0;
 }
 
@@ -883,19 +886,22 @@ void IMUMsgProcess(void)
 		{
 			LOG_INF("tilt trigger!\n");
 			wrist_tilt = false;
-			//¼ì²âµ½Ì§Íó
 
-			lcd_sleep_out = true;
+			if(global_settings.wake_screen_by_wrist)
+				lcd_sleep_out = true;
 		}
 		else
 		{
-			fall_detection();
-			if(fall_result)
-			{
-				LOG_INF("fall trigger!\n");
-				fall_result = false;
-				//¼ì²âµ½Ë¤µ¹
-			}
+			//if(is_wearing())
+			//{
+			//	fall_detection();
+			//	if(fall_result)
+			//	{
+			//		LOG_INF("fall trigger!\n");
+			//		fall_result = false;
+			//		//¼ì²âµ½Ë¤µ¹
+			//	}
+			//}
 		}
 
 		int2_event = false;

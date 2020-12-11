@@ -15,6 +15,7 @@
 #include "Uart_ble.h"
 #include "CST816.h"
 #include "gps.h"
+#include "max20353.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -53,9 +54,18 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define	ECG_ID					0xFF54			//心电
 #define	LOCATION_ID				0xFF55			//获取定位信息
 #define	DATE_FORMAT_ID			0xFF56			//年月日格式设置
+#define NOTIFY_CONTENT_ID		0xFF57			//智能提醒内容
+#define CHECK_WHITELIST_ID		0xFF58			//判断手机ID是否在手环白名单
+#define INSERT_WHITELIST_ID`	0xFF59			//将手机ID插入白名单
+#define DEVICE_SEND_128_RAND_ID	0xFF60			//手环发送随机的128位随机数
+#define PHONE_SEND_128_AES_ID	0xFF61			//手机发送AES 128 CBC加密数据给手环
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
 #define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
+#define GET_NRF52810_VER_ID		0xFFB2			//获取52810版本号
+#define GET_BLE_MAC_ADDR_ID		0xFFB3			//获取BLE MAC地址
+#define GET_BLE_STATUS_ID		0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
+#define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 
 static u32_t rece_len=0;
 
@@ -76,6 +86,12 @@ struct uart_data_t
 
 bool BLE_is_connected = false;
 bool APP_wait_gps = false;
+
+u8_t ble_mac_addr[6] = {0};
+u8_t str_nrf52810_ver[128] = {0};
+
+ENUM_BLE_STATUS g_ble_status = BLE_STATUS_BROADCAST;
+ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
 extern bool update_time;
 extern bool update_date;
@@ -100,7 +116,7 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 
 void APP_find_device(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 	
 	//packet head
@@ -130,11 +146,11 @@ void APP_find_device(u8_t *buf, u32_t len)
 
 void APP_set_language(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 	
 	if(buf[7] == 0x00)
-		global_settings.language = LANGUAGE_CHN;
+		global_settings.language = LANGUAGE_CHN_SM;
 	else if(buf[7] == 0x01)
 		global_settings.language = LANGUAGE_EN;
 	else if(buf[7] == 0x02)
@@ -171,7 +187,7 @@ void APP_set_language(u8_t *buf, u32_t len)
 
 void APP_set_time_24_format(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 	
 	if(buf[7] == 0x00)
@@ -211,7 +227,7 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 
 void APP_set_date_format(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 	
 	if(buf[7] == 0x00)
@@ -252,7 +268,7 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 
 void APP_set_date_time(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 	sys_date_timer_t datetime = {0};
 	
@@ -297,7 +313,7 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 
 void APP_set_alarm(u8_t *buf, u32_t len)
 {
-	u8_t result=0,reply[256] = {0};
+	u8_t result=0,reply[128] = {0};
 	u32_t i,index,reply_len = 0;
 	alarm_infor_t infor = {0};
 
@@ -342,7 +358,7 @@ void APP_set_alarm(u8_t *buf, u32_t len)
 
 void APP_set_PHD_interval(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 	
 	if(buf[6] == 1)
@@ -378,9 +394,74 @@ void APP_set_PHD_interval(u8_t *buf, u32_t len)
 	need_save_settings = true;	
 }
 
+void APP_set_wake_screen_by_wrist(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+	
+	if(buf[6] == 1)
+		global_settings.wake_screen_by_wrist = true;
+	else
+		global_settings.wake_screen_by_wrist = false;
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (SHAKE_SCREEN_ID>>8);		
+	reply[reply_len++] = (u8_t)(SHAKE_SCREEN_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;	
+}
+
+void APP_set_factory_reset(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (FACTORY_RESET_ID>>8);		
+	reply[reply_len++] = (u8_t)(FACTORY_RESET_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_reset_settings = true;
+}
+
 void APP_get_current_data(u8_t *buf, u32_t len)
 {
-	u8_t wake,reply[256] = {0};
+	u8_t wake,reply[128] = {0};
 	u16_t steps,calorie,distance,shallow_sleep,deep_sleep;	
 	u32_t i,reply_len = 0;
 
@@ -437,7 +518,7 @@ void APP_get_location_data(u8_t *buf, u32_t len)
 
 void APP_get_location_data_reply(u8_t *buf, u32_t len)
 {
-	u8_t reply[256] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -472,6 +553,76 @@ void APP_get_location_data_reply(u8_t *buf, u32_t len)
 	reply[reply_len++] = buf[14];//degree dot1~2
 	reply[reply_len++] = buf[15];//degree dot3~4
 	reply[reply_len++] = buf[16];//degree dot5~6
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void APP_get_battery_level(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (BATTERY_LEVEL_ID>>8);		
+	reply[reply_len++] = (u8_t)(BATTERY_LEVEL_ID&0x00ff);
+	//status
+	switch(g_chg_status)
+	{
+	case BAT_CHARGING_NO:
+		reply[reply_len++] = 0x00;
+		break;
+		
+	case BAT_CHARGING_PROGRESS:
+	case BAT_CHARGING_FINISHED:
+		reply[reply_len++] = 0x01;
+		break;
+	}
+	//control
+	reply[reply_len++] = 0x00;
+	//bat level
+	reply[reply_len++] = g_bat_soc;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void APP_get_firmware_version(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (FIRMWARE_INFOR_ID>>8);		
+	reply[reply_len++] = (u8_t)(FIRMWARE_INFOR_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//fm ver
+	reply[reply_len++] = (0x02<<4)+0x00;	//V2.0
 	//CRC
 	reply[reply_len++] = 0x00;
 	//packet end
@@ -533,6 +684,157 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 	}
 }
 
+void MCU_get_nrf52810_ver(void)
+{
+	u8_t reply[16] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_NRF52810_VER_ID>>8);		
+	reply[reply_len++] = (u8_t)(GET_NRF52810_VER_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void get_nrf52810_ver_response(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	for(i=0;i<len-9;i++)
+	{
+		str_nrf52810_ver[i] = buf[7+i];
+	}
+
+	LOG_INF("str_nrf52810_ver:%s\n", str_nrf52810_ver);
+}
+
+void MCU_get_ble_mac_address(void)
+{
+	u8_t reply[16] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_BLE_MAC_ADDR_ID>>8);		
+	reply[reply_len++] = (u8_t)(GET_BLE_MAC_ADDR_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void get_ble_mac_address_response(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	for(i=0;i<6;i++)
+	{
+		ble_mac_addr[i] = buf[7+i];
+	}
+
+	LOG_INF("ble_mac_addr %02X:%02X:%02X:%02X:%02X:%02X\n",
+							ble_mac_addr[0],
+							ble_mac_addr[1],
+							ble_mac_addr[2],
+							ble_mac_addr[3],
+							ble_mac_addr[4],
+							ble_mac_addr[5]
+							);
+}
+
+void MCU_get_ble_status(void)
+{
+	u8_t reply[16] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_BLE_STATUS_ID>>8);		
+	reply[reply_len++] = (u8_t)(GET_BLE_STATUS_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void get_ble_status_response(u8_t *buf, u32_t len)
+{
+	LOG_INF("BLE_status:%d\n", buf[6]);
+
+	g_ble_status = buf[6];
+}
+
+//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
+void MCU_set_ble_work_mode(u8_t work_mode)
+{
+	u8_t reply[16] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (SET_BEL_WORK_MODE_ID>>8);		
+	reply[reply_len++] = (u8_t)(SET_BEL_WORK_MODE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = work_mode;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
+}
+
 /**********************************************************************************
 *Name: ble_receive_date_handle
 *Function:  处理蓝牙接收到的数据
@@ -563,10 +865,10 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 **********************************************************************************/
 void ble_receive_date_handle(u8_t *buf, u32_t len)
 {
-	u8_t CRC_data,data_status;
+	u8_t CRC_data=0,data_status;
 	u16_t data_len,data_ID;
 	u32_t i;
-	
+
 	if((buf[0] != PACKET_HEAD) || (buf[len-1] != PACKET_END))	//format is error
 	{
 		LOG_INF("format is error! HEAD:%x, END:%x\n", buf[0], buf[len-1]);
@@ -613,6 +915,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SEDENTARY_ID:			//久坐提醒
 		break;
 	case SHAKE_SCREEN_ID:		//抬手亮屏
+		APP_set_wake_screen_by_wrist(buf, len);
 		break;
 	case MEASURE_HOURLY_ID:		//整点测量设置
 		APP_set_PHD_interval(buf, len);
@@ -635,10 +938,13 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case TARGET_STEPS_ID:		//目标步数
 		break;
 	case BATTERY_LEVEL_ID:		//电池电量
+		APP_get_battery_level(buf, len);
 		break;
 	case FIRMWARE_INFOR_ID:		//固件版本号
+		APP_get_firmware_version(buf, len);
 		break;
 	case FACTORY_RESET_ID:		//清除手环数据
+		APP_set_factory_reset(buf, len);
 		break;
 	case ECG_ID:				//心电
 		break;
@@ -653,6 +959,17 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		break;
 	case CTP_NOTIFY_ID:
 		CTP_notify_handle(buf, len);
+		break;
+	case GET_NRF52810_VER_ID:
+		get_nrf52810_ver_response(buf, len);
+		break;
+	case GET_BLE_MAC_ADDR_ID:
+		get_ble_mac_address_response(buf, len);
+		break;
+	case GET_BLE_STATUS_ID:
+		get_ble_status_response(buf, len);
+		break;
+	case SET_BEL_WORK_MODE_ID:
 		break;
 	default:
 		LOG_INF("data_id is unknown! \n");

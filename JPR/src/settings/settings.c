@@ -9,6 +9,7 @@
 #include "settings.h"
 #include "datetime.h"
 #include "alarm.h"
+#include "lcd.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -45,7 +46,7 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
 {
-	true,					//system inited flag
+	false,					//system inited flag
 	false,					//heart rate turn on
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
@@ -54,7 +55,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
-	BACKLIGHT_15_SEC,		//backlight time
+	BACKLIGHT_5_SEC,		//backlight time
 	{true,1},				//PHD
 	{						//alarm
 		{false,0,0,0},		
@@ -115,9 +116,6 @@ void InitSystemDateTime(void)
 		LOG_INF("get datetime err:%d\n", err);
 	}
 	
-	LOG_INF("mytime: %04d-%02d-%02d, %02d:%02d:%02d\n", date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
-	
-	memset(&date_time, 0, sizeof(sys_date_timer_t));
 	if(!CheckSystemDateTimeIsValid(mytime))
 	{
 		memcpy(&mytime, &FACTORY_DEFAULT_TIME, sizeof(sys_date_timer_t));
@@ -188,7 +186,8 @@ void SettingsMsgPorcess(void)
 		need_reset_settings = false;
 		ResetSystemSettings();
 		ResetSystemTime();
-		
+
+		lcd_sleep_out = true;
 		update_date_time = true;
 	}
 }

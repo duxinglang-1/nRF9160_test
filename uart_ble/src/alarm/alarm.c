@@ -19,12 +19,12 @@
 #include "lcd.h"
 
 #define ALARM_VIB_REPEAT_MAX	5
-#define ALARM_VIB_ON_SEC		500
-#define ALARM_VIB_OFF_SEC		200
+#define ALARM_VIB_ON_SEC		1000
+#define ALARM_VIB_OFF_SEC		500
 
 #define FIND_VIN_REPEAT_MAX		10
 #define FIND_VIB_ON_SEC			1000
-#define FIND_VIB_OFF_SEC		200
+#define FIND_VIB_OFF_SEC		500
 
 static u8_t count = 0;
 static bool vibrating = false;

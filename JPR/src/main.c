@@ -572,13 +572,14 @@ void EntryIdleScreen(void)
 
 void system_init(void)
 {
+	InitSystemSettings();
+	
 	pmu_init();
 	flash_init();
 	LCD_Init();
+
 	//BootUpShowLoGo();
-
-	InitSystemSettings();
-
+	
 	key_init();
 	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句

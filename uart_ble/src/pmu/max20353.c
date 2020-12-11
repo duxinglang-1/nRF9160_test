@@ -27,11 +27,7 @@ LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 #define BAT_SUBJECT_W	60
 #define BAT_SUBJECT_H	(BAT_POSITIVE_H+2*BAT_PS_OFFSET_H)
 
-
-static u8_t g_bat_soc = 0;
 static u8_t PMICStatus[4], PMICInts[3];
-static BAT_CHAEGER_STATUS g_bat_status = BAT_CHARGING_NO;
-
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
@@ -47,6 +43,10 @@ bool pmu_redraw_bat_flag = true;
 bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
+
+u8_t g_bat_soc = 0;
+BAT_CHAEGER_STATUS g_chg_status = BAT_CHARGING_NO;
+BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_NORMAL;
 
 maxdev_ctx_t pmu_dev_ctx;
 
@@ -161,18 +161,18 @@ void pmu_interrupt_proc(void)
 			case 0x00://Charger off
 			case 0x01://Charging suspended due to temperature (see battery charger state diagram)
 			case 0x07://Charger fault condition (see battery charger state diagram)
-				g_bat_status = BAT_CHARGING_NO;
+				g_chg_status = BAT_CHARGING_NO;
 				break;
 				
 			case 0x02://Pre-charge in progress
 			case 0x03://Fast-charge constant current mode in progress
 			case 0x04://Fast-charge constant voltage mode in progress
 			case 0x05://Maintain charge in progress
-				g_bat_status = BAT_CHARGING_PROGRESS;
+				g_chg_status = BAT_CHARGING_PROGRESS;
 				break;
 				
 			case 0x06://Maintain charger timer done
-				g_bat_status = BAT_CHARGING_FINISHED;
+				g_chg_status = BAT_CHARGING_FINISHED;
 				lcd_sleep_out = true;
 				break;
 			}
@@ -188,13 +188,39 @@ void pmu_interrupt_proc(void)
 				InitCharger();
 
 				charger_is_connected = true;
-				g_bat_status = BAT_CHARGING_PROGRESS;
+				
+				g_chg_status = BAT_CHARGING_PROGRESS;
+				g_bat_level = BAT_LEVEL_NORMAL;
+
 				lcd_sleep_out = true;
 			}
 			else
 			{			
 				charger_is_connected = false;
-				g_bat_status = BAT_CHARGING_NO;
+				
+				g_chg_status = BAT_CHARGING_NO;
+				g_bat_soc = MAX20353_CalculateSOC();
+				if(g_bat_soc>100)
+					g_bat_soc = 100;
+				
+				if(g_bat_soc < 5)
+				{
+					g_bat_level = BAT_LEVEL_VERY_LOW;
+					pmu_battery_low_shutdown();
+				}
+				else if(g_bat_soc < 20)
+				{
+					g_bat_level = BAT_LEVEL_LOW;
+				}
+				else if(g_bat_soc < 80)
+				{
+					g_bat_level = BAT_LEVEL_NORMAL;
+				}
+				else
+				{
+					g_bat_level = BAT_LEVEL_GOOD;
+				}
+				
 				lcd_sleep_out = true;
 			}
 
@@ -243,15 +269,35 @@ void pmu_alert_proc(void)
 		LOG_INF("SOC:%d\n", g_bat_soc);
 		if(g_bat_soc < 5)
 		{
-			LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
-
-			pmu_battery_low_shutdown();
+			g_bat_level = BAT_LEVEL_VERY_LOW;
+			if(!charger_is_connected)
+			{
+				LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
+				pmu_battery_low_shutdown();
+			}
 		}
 		else if(g_bat_soc < 20)
 		{
-			LOG_INF("Battery voltage is low, please charge in time!\n");
+			g_bat_level = BAT_LEVEL_LOW;
+			if(!charger_is_connected)
+			{
+				LOG_INF("Battery voltage is low, please charge in time!\n");
+			}
+		}
+		else if(g_bat_soc < 80)
+		{
+			g_bat_level = BAT_LEVEL_NORMAL;
+		}
+		else
+		{
+			g_bat_level = BAT_LEVEL_GOOD;
 		}
 
+		if(charger_is_connected)
+		{
+			g_bat_level = BAT_LEVEL_NORMAL;
+		}
+		
 		pmu_redraw_bat_flag = true;
 	}
 	if(MSB&0x10)
@@ -458,7 +504,7 @@ void PMURedrawBatStatus(void)
 		LCD_DrawRectangle(BAT_SUBJECT_X,BAT_SUBJECT_Y,BAT_SUBJECT_W,BAT_SUBJECT_H);
 		LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
 		
-		switch(g_bat_status)
+		switch(g_chg_status)
 		{
 		case BAT_CHARGING_NO:
 			sprintf(strbuf, "%02d", g_bat_soc);

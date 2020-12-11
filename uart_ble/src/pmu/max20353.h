@@ -15,10 +15,23 @@ typedef enum
 	BAT_CHARGING_MAX
 }BAT_CHAEGER_STATUS;
 
+typedef enum
+{
+	BAT_LEVEL_VERY_LOW,
+	BAT_LEVEL_LOW,
+	BAT_LEVEL_NORMAL,
+	BAT_LEVEL_GOOD,
+	BAT_LEVEL_MAX
+}BAT_LEVEL_STATUS;
+
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
 extern bool vibrate_start_flag;
 extern bool vibrate_stop_flag;
+
+extern u8_t g_bat_soc;
+extern BAT_CHAEGER_STATUS g_chg_status;
+extern BAT_LEVEL_STATUS g_bat_level;
 
 extern void test_pmu(void);
 extern void pmu_init(void);

@@ -489,7 +489,7 @@ void test_show_string(void)
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
 
-	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
+	strcpy(cnbuf, "深セン市オーコスデジタル有限会社");
 	strcpy(enbuf, "2015-2020 August International Ltd. All Rights Reserved.");
 
 #ifdef FONT_16
@@ -567,19 +567,21 @@ void BootUpShowLoGo(void)
 
 void EntryIdleScreen(void)
 {
+	LCD_Clear(BLACK);
 	screen_id = SCREEN_IDLE;
 }
 
 void system_init(void)
 {
+	InitSystemSettings();
+	
+	//pmu_init();
 	flash_init();
 	LCD_Init();
-	BootUpShowLoGo();
 
-	InitSystemSettings();
-
+	//BootUpShowLoGo();
+	
 	key_init();
-	pmu_init();
 	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 
@@ -610,18 +612,21 @@ int main(void)
 //	test_tp();
 //	test_gps();
 //	test_nb();
+//	test_i2c();
+//	test_bat_soc();
 
 	while(1)
 	{
-		IdleShowDateTime();
-		
+		TimeMsgProcess();
+
+		NBMsgProcess();
 		GPSMsgProcess();
-		IMUMsgProcess();
 		PMUMsgProcess();
+		
+		IMUMsgProcess();
 		LCDMsgProcess();
 
 		//TPMsgProcess();
-		TimeMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		

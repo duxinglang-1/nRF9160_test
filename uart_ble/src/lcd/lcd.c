@@ -5,6 +5,7 @@
 #include <zephyr.h>
 
 #include "lcd.h"
+#include "settings.h"
 #include "font.h"
 #include "external_flash.h"
 
@@ -1382,38 +1383,89 @@ u8_t LCD_Show_Ex_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 {
 	u8_t temp,t1,t;
 	u16_t x0=x,y0=y;
-	u16_t index=0;
-	u8_t cbyte=system_font/8+((system_font%8)?1:0); 	//行扫描，每个字符每一行占用的字节数
-	u8_t csize=cbyte*(system_font); 					//得到字体一个字符对应点阵集所占的字节数	
+	u8_t cbyte=0; 					//行扫描，每个字符每一行占用的字节数
+	u8_t csize=0; 					//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*1024] = {0};
 	u8_t fontbuf[128] = {0};
-	u32_t i=0;
-	
-	index = FONT_MBCS_HEAD_LEN + (num - 0xA1A1);
+	u32_t i=0,index,font_addr,data_addr=0;
+	u8_t R_code=0xFF&(num>>8);		//区码
+	u8_t C_code=0xFF&num;			//位码
 	
 	switch(system_font)
 	{
 	#ifdef FONT_16
 		case FONT_SIZE_16:
-			SpiFlash_Read(fontbuf, FONT_RM_CJK_16_ADDR+csize*index, csize);
+			font_addr = FONT_RM_GBK_16_ADDR;
 			break;
 	#endif
 	#ifdef FONT_24
 		case FONT_SIZE_24:
-			SpiFlash_Read(fontbuf, FONT_RM_CJK_24_ADDR+csize*index, csize);
+			font_addr = FONT_RM_JIS_24_ADDR;
 			break;
 	#endif
 	#ifdef FONT_32
 		case FONT_SIZE_32:
-			SpiFlash_Read(fontbuf, FONT_RM_CJK_32_ADDR+csize*index, csize);
+			font_addr = FONT_RM_JIS_32_ADDR;
 			break;
 	#endif
 		default:
-			return; 									//没有的字库
-	}	
+			return; 						//没有的字库
+	}
 
+	switch(global_settings.language)
+	{
+	case LANGUAGE_JPN:
+		if((R_code>=0x81)&&(R_code<=0x9F))
+		{
+			if((C_code>=0x40)&&(C_code<=0x7E))
+				index = (R_code-0x81)*188+(C_code-0x40);		//188= 0x7E-0x40+1)+(0xFC-0x80+1); 	
+			else if((C_code>=0x80)&&(C_code<=0xFC))
+				index = (R_code-0x81)*188+(C_code-0x80)+63;		//63 = 0x7E-0x40+1;
+		}
+		else if((R_code>=0xE0)&&(R_code<=0xFC))
+		{
+			if((C_code>=0x40)&&(C_code<=0x7E))
+				index = 5828+(R_code-0xE0)*188+(C_code-0x40);	//5828 = 188 * (0x9F-0x81+1);
+			else if((C_code>=0x80)&&(C_code<=0xFC))
+				index = 5828+(R_code-0xE0)*188+(C_code-0x80)+63;
+		}
+		break;
+		
+	case LANGUAGE_CHN_SM:
+		if(((R_code>=0xA1)&&(R_code<=0xFE))&&((C_code>=0xA1)&&(C_code<=0xFE)))
+		{
+			index = 94*(R_code-0xA1)+(C_code-0xA1);
+		}
+		break;
+
+	case LANGUAGE_CHN_TR:
+		if((R_code>=0xA1)&&(R_code<=0xFE)) 
+		{
+			if((C_code>=0x40)&&(C_code<=0x7E))
+				index = ((R_code-0xA1)*157+(C_code-0x40)); 		//157= (0x7E-0x40+1)+(0xFE-0xA1+1);
+			else if(C_code >= 0xA1 && C_code <= 0xFE)
+				index = ((R_code-0xA1)*157+(C_code-0xA1)+63);  	// 63 = (0x7E-0x40+1);
+		}
+		break;
+
+	case LANGUAGE_KOR:
+		if(R_code>=0x81)
+		{
+			if((C_code>=0x41)&&(C_code<=0x7E))
+				index = ((R_code-0x81)*188+(C_code-0x41)); 		//188= (0x7E-0x41+1)+(0xFE-0x81+1);
+			else if((C_code>=0x81)&&(C_code<=0xFE))
+				index = ((R_code-0x81)*188+(C_code-0x81)+62);  	//62 = (0x7E-0x41+1);	
+		}	
+		break;
+	}
+	
+	cbyte = system_font;
+	csize = ((cbyte+7)/8)*system_font;
+	data_addr = FONT_MBCS_HEAD_LEN + csize*index;
+	SpiFlash_Read(fontbuf, font_addr+data_addr, csize);
+		
 #ifdef LCD_TYPE_SPI
-	BlockWrite(x0,y,system_font,system_font);			//设置刷新位置
+	BlockWrite(x,y,cbyte,system_font);	//设置刷新位置
 #endif
 
 	for(t=0;t<csize;t++)
@@ -1795,8 +1847,12 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 		{
 			phz = *p<<8;
 			phz += *(p+1);
-		#ifdef IMG_FONT_FROM_FLASH	
+		#ifdef IMG_FONT_FROM_FLASH
+		  #ifdef FONTMAKER_FONT
+			LCD_Show_Ex_CJK_Char_from_flash(x,y,phz,0);
+		  #else
 			LCD_ShowChineseChar_from_flash(x,y,phz,0);
+		  #endif
 		#else
 			LCD_ShowChineseChar(x,y,phz,0);
 		#endif

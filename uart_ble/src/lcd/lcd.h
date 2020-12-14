@@ -19,7 +19,6 @@
 
 //#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
-//#define FONTMAKER_FONT		//fontmake根据RM提供的矢量字库转换成的点阵字库数据
 #ifdef FONTMAKER_FONT
 #define FONT_MBCS_HEAD_FLAG_0	0x4D
 #define FONT_MBCS_HEAD_FLAG_1	0x46

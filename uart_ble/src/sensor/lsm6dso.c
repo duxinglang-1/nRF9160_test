@@ -54,6 +54,8 @@ u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
 
+extern bool update_sleep_parameter;
+
 static uint8_t init_i2c(void)
 {
 	i2c_imu = device_get_binding(IMU_DEV);
@@ -237,6 +239,28 @@ void sensor_reset(void)
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
+}
+
+/*@brief Get real time X/Y/Z reading in mg
+*
+*/
+void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
+{
+	u8_t reg;
+
+	lsm6dso_xl_flag_data_ready_get(&imu_dev_ctx, &reg);
+	if(reg)
+	{
+		memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
+		lsm6dso_acceleration_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
+		acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
+		acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
+		acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
+	}
+
+	*sensor_x = acceleration_mg[0];
+	*sensor_y = acceleration_mg[1];
+	*sensor_z = acceleration_mg[2];
 }
 
 void historic_buffer(void)
@@ -723,9 +747,14 @@ void ReSetImuSteps(void)
 	lsm6dso_steps_reset(&imu_dev_ctx);
 }
 
-void GetImuSteps(void)
+void GetImuSteps(u16_t *steps)
 {
-	lsm6dso_number_of_steps_get(&imu_dev_ctx, &g_steps);
+	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
+}
+
+void UpdateIMUData(void)
+{
+	GetImuSteps(&g_steps);
 
 	g_distance = 0.7*g_steps;
 	g_calorie = 0.8214*60*(g_distance/1000);
@@ -756,6 +785,8 @@ void IMU_init(void)
 	sensor_init();
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 
+	StartSleepTimeMonitor();
+	
 	LOG_INF("IMU_init done!\n");
 }
 
@@ -874,7 +905,7 @@ void IMUMsgProcess(void)
 	{
 		LOG_INF("steps trigger!\n");
 
-		GetImuSteps();
+		UpdateIMUData();
 		int1_event = false;
 		imu_redraw_steps_flag = true;
 	}
@@ -918,6 +949,12 @@ void IMUMsgProcess(void)
 	{
 		imu_redraw_steps_flag = false;
 		IMURedrawSteps();
+	}
+
+	if(update_sleep_parameter)
+	{
+		update_sleep_parameter = false;
+		UpdateSleepPara();
 	}
 }
 

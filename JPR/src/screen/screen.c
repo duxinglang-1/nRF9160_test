@@ -286,8 +286,9 @@ void IdleScreenProcess(void)
 
 void AlarmScreenProcess(void)
 {
+	u16_t rect_x,rect_y,rect_w=180,rect_h=80;
 	u16_t x,y,w,h;
-	u8_t notify[128] = "The alarm is coming!";
+	u8_t notify[128] = "Alarm Notify!";
 
 	switch(scr_msg[SCREEN_ID_ALARM].act)
 	{
@@ -295,9 +296,18 @@ void AlarmScreenProcess(void)
 		scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATED;
 				
+		rect_x = (LCD_WIDTH-rect_w)/2;
+		rect_y = (LCD_HEIGHT-rect_h)/2;
+		
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+		
+		LCD_SetFontSize(FONT_SIZE_24);
 		LCD_MeasureString(notify,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = (h > LCD_HEIGHT)? 0 : (LCD_HEIGHT-h)/2;
+		x = (w > rect_w)? 0 : (rect_w-w)/2;
+		y = (h > rect_h)? 0 : (rect_h-h)/2;
+		x += rect_x;
+		y += rect_y;
 		LCD_ShowString(x,y,notify);
 		break;
 		
@@ -323,7 +333,7 @@ void FindDeviceScreenProcess(void)
 		rect_x = (LCD_WIDTH-rect_w)/2;
 		rect_y = (LCD_HEIGHT-rect_h)/2;
 		
-		LCD_Fill(rect_x, rect_y, rect_w, rect_h, WHITE);
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
 		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
 		
 		LCD_SetFontSize(FONT_SIZE_24);

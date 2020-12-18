@@ -793,8 +793,8 @@ void gps_off(void)
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("gps is been truned off");
 	#endif
-		screen_id = SCREEN_IDLE;
-		show_date_time_first = true;
+
+		GoBackHistoryScreen();
 		return;
 	}
 	
@@ -816,8 +816,7 @@ void gps_off(void)
 	//#endif	
 	//}
 
-	screen_id = SCREEN_IDLE;
-	show_date_time_first = true;
+	GoBackHistoryScreen();
 }
 
 void gps_on(void)
@@ -844,7 +843,7 @@ void gps_on(void)
 		return;
 	}
 
-	screen_id = SCREEN_GPS;
+	EnterGPSTestScreen();
 
 	LOG_INF("Staring GPS application\n");
 #ifdef SHOW_LOG_IN_SCREEN

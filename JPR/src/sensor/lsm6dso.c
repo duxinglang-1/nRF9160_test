@@ -1,6 +1,7 @@
 /*
-Last Update: 18/11/2020 by Arno
-this code includes fall detection, wrist tilt detection, step counter
+Last Update: 16/12/2020 by Jiahe
+this code includes wrist tilt detection, step counter
+Take 26Hz data rate
 */
 
 #include <nrf9160.h>
@@ -17,6 +18,7 @@ this code includes fall detection, wrist tilt detection, step counter
 #include "algorithm.h"
 #include "lcd.h"
 #include "settings.h"
+#include "screen.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -35,11 +37,6 @@ LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
-#define IMU_STEPS_SHOW_X	15
-#define IMU_STEPS_SHOW_Y	160
-#define IMU_STEPS_SHOW_W	210
-#define IMU_STEPS_SHOW_H	20
-
 static uint8_t whoamI, rst;
 static uint16_t steps; //step counter
 
@@ -53,6 +50,8 @@ bool imu_redraw_steps_flag = true;
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
+
+extern bool update_sleep_parameter;
 
 static uint8_t init_i2c(void)
 {
@@ -152,11 +151,11 @@ void sensor_init(void)
 
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
 
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_417Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_417Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_26Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_26Hz);
 
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_417Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_417Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_26Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_26Hz);
 
 	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
@@ -197,13 +196,14 @@ void sensor_init(void)
 
 	/* route single tap, wrist tilt to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	//int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
 	int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+        //int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 }
 
@@ -224,19 +224,41 @@ void sensor_reset(void)
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
 
 	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
-
+/*
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.int1_ctrl.int1_fifo_th = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);*/
 
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_26Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_26Hz);
 
 	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_26Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_26Hz);
+}
+
+/*@brief Get real time X/Y/Z reading in mg
+*
+*/
+void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
+{
+	u8_t reg;
+
+	lsm6dso_xl_flag_data_ready_get(&imu_dev_ctx, &reg);
+	if(reg)
+	{
+		memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
+		lsm6dso_acceleration_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
+		acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
+		acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
+		acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
+	}
+
+	*sensor_x = acceleration_mg[0];
+	*sensor_y = acceleration_mg[1];
+	*sensor_z = acceleration_mg[2];
 }
 
 void historic_buffer(void)
@@ -723,9 +745,14 @@ void ReSetImuSteps(void)
 	lsm6dso_steps_reset(&imu_dev_ctx);
 }
 
-void GetImuSteps(void)
+void GetImuSteps(u16_t *steps)
 {
-	lsm6dso_number_of_steps_get(&imu_dev_ctx, &g_steps);
+	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
+}
+
+void UpdateIMUData(void)
+{
+	GetImuSteps(&g_steps);
 
 	g_distance = 0.7*g_steps;
 	g_calorie = 0.8214*60*(g_distance/1000);
@@ -756,6 +783,8 @@ void IMU_init(void)
 	sensor_init();
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 
+	StartSleepTimeMonitor();
+	
 	LOG_INF("IMU_init done!\n");
 }
 
@@ -847,24 +876,10 @@ void test_i2c(void)
 
 void IMURedrawSteps(void)
 {
-	u8_t x,y,w,h;
-	u8_t strbuf[128] = {0};
-	
-	if(screen_id == SCREEN_IDLE)
+	if(screen_id == SCREEN_ID_IDLE)
 	{
-		LCD_SetFontSize(FONT_SIZE_16);
-		
-		LCD_Fill(IMU_STEPS_SHOW_X,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
-		sprintf(strbuf, "S:%d", g_steps);
-		LCD_ShowString(IMU_STEPS_SHOW_X, IMU_STEPS_SHOW_Y, strbuf);
-
-		LCD_Fill(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
-		sprintf(strbuf, "D:%d", g_distance);
-		LCD_ShowString(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, strbuf);
-
-		LCD_Fill(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
-		sprintf(strbuf, "C:%d", g_calorie);
-		LCD_ShowString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, strbuf);
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPORT;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
 
@@ -873,38 +888,25 @@ void IMUMsgProcess(void)
 	if(int1_event)	//steps
 	{
 		LOG_INF("steps trigger!\n");
-
-		GetImuSteps();
+		
 		int1_event = false;
-		imu_redraw_steps_flag = true;
+		UpdateIMUData();
+		imu_redraw_steps_flag = true;	
 	}
 
-	if(int2_event)	//fall or tilt
+	if(int2_event)	//tilt
 	{
-		is_tilt();
+		int2_event = false;
+		
+        is_tilt();
 		if(wrist_tilt)
 		{
 			LOG_INF("tilt trigger!\n");
+			
 			wrist_tilt = false;
-
 			if(global_settings.wake_screen_by_wrist)
 				lcd_sleep_out = true;
 		}
-		else
-		{
-			if(is_wearing())
-			{
-				fall_detection();
-				if(fall_result)
-				{
-					LOG_INF("fall trigger!\n");
-					fall_result = false;
-					//¼ì²âµ½Ë¤µ¹
-				}
-			}
-		}
-
-		int2_event = false;
 	}
 
 	if(reset_steps)
@@ -918,6 +920,12 @@ void IMUMsgProcess(void)
 	{
 		imu_redraw_steps_flag = false;
 		IMURedrawSteps();
+	}
+
+	if(update_sleep_parameter)
+	{
+		update_sleep_parameter = false;
+		UpdateSleepPara();
 	}
 }
 

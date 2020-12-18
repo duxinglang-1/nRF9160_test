@@ -915,7 +915,7 @@ int MAX20353_UpdateRCOMP(int temp)
 		// calculate result < 0 degree
 		used_tempco = TempCoDownN10;
 		result = result_0 + (temp - 0) * used_tempco;
-	}
+	}
 
 	RCOMP = (result >= 0xff ? 0xff : (result <= 0 ?  0 : result));
 	//Set RCOMP, SOC 1% change alert, Empty threshold 4%

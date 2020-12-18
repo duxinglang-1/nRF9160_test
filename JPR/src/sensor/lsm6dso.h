@@ -24,8 +24,9 @@ extern void enable_tilt_detection(void); //enable wrist tilt detection
 
 /*step counter*/
 extern bool int1_event;
-extern void GetImuSteps(void);
+extern void GetImuSteps(u16_t *steps);
 extern void ReSetImuSteps(void);
+extern void UpdateIMUData(void);
 extern void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance);
 
 /*sleep monitor*/

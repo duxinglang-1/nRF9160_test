@@ -23,8 +23,6 @@ static bool nvs_init_flag = false;
 static struct nvs_fs fs;
 static struct flash_pages_info info;
 
-u8_t screen_id = SCREEN_BOOTUP;
-
 bool need_save_settings = false;
 bool need_save_time = false;
 bool need_reset_settings = false;
@@ -55,7 +53,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
-	BACKLIGHT_5_SEC,		//backlight time
+	BACKLIGHT_ALWAYS_ON,		//backlight time
 	{true,1},				//PHD
 	{						//alarm
 		{false,0,0,0},		

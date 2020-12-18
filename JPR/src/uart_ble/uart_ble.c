@@ -16,6 +16,7 @@
 #include "CST816.h"
 #include "gps.h"
 #include "max20353.h"
+#include "screen.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -93,14 +94,7 @@ u8_t str_nrf52810_ver[128] = {0};
 ENUM_BLE_STATUS g_ble_status = BLE_STATUS_BROADCAST;
 ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
-extern bool update_time;
-extern bool update_date;
-extern bool update_week;
-extern bool update_date_time;
-extern bool app_gps_on;
 extern bool app_find_device;
-extern bool show_date_time_first;
-extern u8_t date_time_changed;
 
 void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 {
@@ -158,8 +152,6 @@ void APP_set_language(u8_t *buf, u32_t len)
 	else
 		global_settings.language = LANGUAGE_EN;
 		
-	update_week = true;
-
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
@@ -182,6 +174,12 @@ void APP_set_language(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_WEEK;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	
 	need_save_settings = true;
 }
 
@@ -197,15 +195,13 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 	else
 		global_settings.time_format = TIME_FORMAT_24;//24 format
 
-	update_time = true;
-
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
 	reply[reply_len++] = 0x06;
 	//data ID
-	reply[reply_len++] = (TIME_24_SETTING_ID>>8);		
+	reply[reply_len++] = (TIME_24_SETTING_ID>>8);
 	reply[reply_len++] = (u8_t)(TIME_24_SETTING_ID&0x00ff);
 	//status
 	reply[reply_len++] = 0x80;
@@ -221,7 +217,13 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
-	need_save_settings = true;
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	
+	need_save_settings = true;	
 }
 
 
@@ -238,8 +240,6 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 		global_settings.date_format = DATE_FORMAT_DDMMYYYY;
 	else
 		global_settings.date_format = DATE_FORMAT_YYYYMMDD;
-
-	update_date = true;
 
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -263,6 +263,12 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_DATE;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+
 	need_save_settings = true;
 }
 
@@ -284,7 +290,11 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 		datetime.week = GetWeekDayByDate(datetime);
 		memcpy(&date_time, &datetime, sizeof(sys_date_timer_t));
 
-		update_date_time = true;
+		if(screen_id == SCREEN_ID_IDLE)
+		{
+			scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
 		need_save_time = true;
 	}
 

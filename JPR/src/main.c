@@ -21,10 +21,11 @@
 #include "uart_ble.h"
 #include "settings.h"
 #include "CST816.h"
-//#include "Max20353.h"
+#include "Max20353.h"
 #include "lsm6dso.h"
 #include "Alarm.h"
 #include "gps.h"
+#include "screen.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -552,24 +553,6 @@ static void buttons_leds_init(void)
 	}
 }
 
-void BootUpShowLoGo(void)
-{
-	u16_t x,y,w=0,h=0;
-		
-	if(screen_id == SCREEN_BOOTUP)
-	{
-		LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
-		x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
-		y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-		LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
-	}
-}
-
-void EntryIdleScreen(void)
-{
-	screen_id = SCREEN_IDLE;
-}
-
 void system_init(void)
 {
 	InitSystemSettings();
@@ -577,14 +560,14 @@ void system_init(void)
 	pmu_init();
 	flash_init();
 	LCD_Init();
-
-	//BootUpShowLoGo();
 	
+	ShowBootUpLogo();
+
 	key_init();
 	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 
-	EntryIdleScreen();
+	EnterIdleScreen();
 }
 
 extern void motion_sensor_msg_proc(void);
@@ -615,20 +598,18 @@ int main(void)
 //	test_bat_soc();
 
 	while(1)
-	{
+	{		
 		TimeMsgProcess();
-
 		NBMsgProcess();
 		GPSMsgProcess();
 		PMUMsgProcess();
-		
 		IMUMsgProcess();
 		LCDMsgProcess();
-
 		//TPMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
-		
+
+		ScreenMsgProcess();
 		k_cpu_idle();
 	}
 }

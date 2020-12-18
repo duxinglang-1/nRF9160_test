@@ -1395,7 +1395,7 @@ u8_t LCD_Show_Ex_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 	{
 	#ifdef FONT_16
 		case FONT_SIZE_16:
-			font_addr = FONT_RM_GBK_16_ADDR;
+			font_addr = FONT_RM_JIS_16_ADDR;
 			break;
 	#endif
 	#ifdef FONT_24

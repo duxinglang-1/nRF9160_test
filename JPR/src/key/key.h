@@ -1,3 +1,11 @@
+/****************************************Copyright (c)************************************************
+** File Name:			    Key.h
+** Descriptions:			Key message process head file
+** Created By:				xie biao
+** Created Date:			2020-07-13
+** Modified Date:      		2020-10-10 
+** Version:			    	V1.1
+******************************************************************************************************/
 #ifndef __KEY_H__
 #define __KEY_H__
 

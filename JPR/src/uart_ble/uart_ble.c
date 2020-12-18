@@ -472,14 +472,12 @@ void APP_set_factory_reset(u8_t *buf, u32_t len)
 void APP_get_current_data(u8_t *buf, u32_t len)
 {
 	u8_t wake,reply[128] = {0};
-	u16_t steps,calorie,distance,shallow_sleep,deep_sleep;	
+	u16_t steps,calorie,distance,light_sleep,deep_sleep;	
 	u32_t i,reply_len = 0;
 
-	GetSportData(&steps,&calorie,&distance);
-	
+	GetSportData(&steps, &calorie, &distance);
+	GetSleepTimeData(&deep_sleep, &light_sleep);
 	wake = 8;
-	shallow_sleep = 45;
-	deep_sleep = 560;
 	
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -503,8 +501,8 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	reply[reply_len++] = (distance>>8);
 	reply[reply_len++] = (u8_t)(distance&0x00ff);
 	//Shallow Sleep
-	reply[reply_len++] = (shallow_sleep>>8);
-	reply[reply_len++] = (u8_t)(shallow_sleep&0x00ff);
+	reply[reply_len++] = (light_sleep>>8);
+	reply[reply_len++] = (u8_t)(light_sleep&0x00ff);
 	//Deep Sleep
 	reply[reply_len++] = (deep_sleep>>8);
 	reply[reply_len++] = (u8_t)(deep_sleep&0x00ff);

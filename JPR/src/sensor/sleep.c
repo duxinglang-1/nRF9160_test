@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(sleep, CONFIG_LOG_DEFAULT_LEVEL);
 
 u16_t light_sleep_time = 0;
 u16_t deep_sleep_time = 0;
+u16_t g_light_sleep = 0;
+u16_t g_deep_sleep = 0;
 int waggle_level[12] = {0};
 int hour_time = 0;
 
@@ -103,13 +105,19 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, 
 				sedentary_time_temp = 0;
 				light_sleep_time = 0;				 
 				deep_sleep_time = 0;
+
+				g_light_sleep = 0;
+				g_deep_sleep = 0;
 			}
 			else if((move == setp)&&(watch_state >= 60)) /* 在期间没有走动过 */
 			{
 				if(watch_state >= (60*10))/* 晚上15分钟以上未晃动过，判断为深度睡眠*/
 					deep_sleep_time++; 
 				else
-					light_sleep_time++; 
+					light_sleep_time++;
+
+				g_light_sleep = light_sleep_time;
+				g_deep_sleep = deep_sleep_time;
 			}
 
 		}
@@ -154,15 +162,15 @@ void StartSleepTimeMonitor(void)
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));
 }
 
-void GetSleepTimeData(u32_t *deep_sleep, u32_t *light_sleep)
+void GetSleepTimeData(u16_t *deep_sleep, u16_t *light_sleep)
 {
-	*deep_sleep = deep_sleep_time*1.0;
-	*light_sleep = light_sleep_time*1.0;
+	*deep_sleep = g_deep_sleep;
+	*light_sleep = g_light_sleep;
 }
 
 void GetSleepInfor(void)
 {
-	u32_t deep_sleep, light_sleep;
+	u16_t deep_sleep, light_sleep;
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 

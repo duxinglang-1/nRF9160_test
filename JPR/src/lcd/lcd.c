@@ -1,3 +1,11 @@
+/****************************************Copyright (c)************************************************
+** File Name:			    Lcd.c
+** Descriptions:			LCD source file
+** Created By:				xie biao
+** Created Date:			2020-07-13
+** Modified Date:      		2020-12-18 
+** Version:			    	V1.0
+******************************************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -146,10 +154,21 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 //(x1,y1),(x2,y2):矩形的对角坐标
 void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
+#ifdef LCD_TYPE_SPI
+	BlockWrite(x,y,w,1);
+	DispColor(w, POINT_COLOR);
+	BlockWrite(x,y,1,h);
+	DispColor(h, POINT_COLOR);
+	BlockWrite(x,y+h,w,1);
+	DispColor(w, POINT_COLOR);
+	BlockWrite(x+w,y,1,h);
+	DispColor(h, POINT_COLOR);	
+#else
 	LCD_DrawLine(x,y,x+w,y);
 	LCD_DrawLine(x,y,x,y+h);
 	LCD_DrawLine(x,y+h,x+w,y+h);
 	LCD_DrawLine(x+w,y,x+w,y+h);
+#endif
 }
 
 //在指定位置画一个指定大小的圆

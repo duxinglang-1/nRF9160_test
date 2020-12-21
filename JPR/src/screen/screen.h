@@ -50,6 +50,7 @@ extern "C" {
 #define IMU_STEPS_SHOW_W	210
 #define IMU_STEPS_SHOW_H	20
 
+//idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000
 #define SCREEN_EVENT_UPDATE_BAT			0x00000001
 #define SCREEN_EVENT_UPDATE_TIME		0x00000002
@@ -58,6 +59,9 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_SPORT		0x00000010
 #define SCREEN_EVENT_UPDATE_SLEEP		0x00000020
 
+//notify
+#define NOTIFY_TEXT_MAX_LEN	80
+#define NOTIFY_TIMER_INTERVAL	5
 typedef enum
 {
 	SCREEN_ID_BOOTUP,
@@ -70,6 +74,7 @@ typedef enum
 	SCREEN_ID_SETTINGS,
 	SCREEN_ID_GPS_TEST,
 	SCREEN_ID_NB_TEST,
+	SCREEN_ID_NOTIFY,
 	SCREEN_ID_MAX
 }SCREEN_ID_ENUM;
 
@@ -96,6 +101,27 @@ typedef struct
 	u32_t para;
 }screen_msg;
 
+typedef enum
+{
+	NOTIFY_TYPE_POPUP,
+	NOTIFY_TYPE_CONFIRM,
+	NOTIFY_TYPE_MAX
+}NOTIFY_TYPE_ENUM;
+
+typedef enum
+{
+	NOTIFY_ALIGN_CENTER,
+	NOTIFY_ALIGN_BOUNDARY,
+	NOTIFY_ALIGN_MAX
+}NOTIFY_ALIGN_ENUM;
+
+typedef struct
+{
+	NOTIFY_TYPE_ENUM type;
+	NOTIFY_ALIGN_ENUM align;
+	u8_t text[NOTIFY_TEXT_MAX_LEN+1];
+}notify_infor;
+
 extern SCREEN_ID_ENUM screen_id;
 extern screen_msg scr_msg[SCREEN_ID_MAX];
 
@@ -107,8 +133,8 @@ extern void EnterGPSTestScreen(void);
 extern void EnterNBTestScreen(void);
 extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
-
-
+extern void ExitNotifyScreen(void);
+extern void DisplayPopUp(u8_t *message);
 
 #ifdef __cplusplus
 }

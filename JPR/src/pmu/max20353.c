@@ -261,7 +261,7 @@ void pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
+				DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
 				pmu_battery_low_shutdown();
 			}
 		}
@@ -270,7 +270,7 @@ void pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
 			{
-				LOG_INF("Battery voltage is low, please charge in time!\n");
+				DisplayPopUp("Battery voltage is low, please charge in time!");
 			}
 		}
 		else if(g_bat_soc < 80)
@@ -395,8 +395,6 @@ void test_pmu(void)
 {
     pmu_init();
 }
-
-static struct k_timer soc_timer;
 
 //******************************************************************************
 int MAX20303_CheckPMICStatusRegisters(unsigned char buf_results[5])

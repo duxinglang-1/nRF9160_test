@@ -25,9 +25,14 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(screen, CONFIG_LOG_DEFAULT_LEVEL);
 
+static void NotifyTimerOutCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
+
+
 SCREEN_ID_ENUM screen_id = SCREEN_ID_BOOTUP;
 SCREEN_ID_ENUM history_screen_id = SCREEN_ID_BOOTUP;
 screen_msg scr_msg[SCREEN_ID_MAX] = {0};
+notify_infor notify_msg = {0};
 
 void ShowBootUpLogo(void)
 {
@@ -39,6 +44,54 @@ void ShowBootUpLogo(void)
 	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
 }
 
+void ExitNotifyScreen(void)
+{
+	if(screen_id == SCREEN_ID_NOTIFY)
+	{
+		k_timer_stop(&notify_timer);
+		GoBackHistoryScreen();
+	}
+}
+
+void NotifyTimerOutCallBack(struct k_timer *timer_id)
+{
+	ExitNotifyScreen();
+}
+
+void EnterNotifyScreen(void)
+{
+	if(screen_id == SCREEN_ID_NOTIFY)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_NOTIFY;	
+	scr_msg[SCREEN_ID_NOTIFY].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_NOTIFY].status = SCREEN_STATUS_CREATING;	
+}
+
+void DisplayPopUp(u8_t *message)
+{
+	u32_t len;
+	
+	notify_msg.type = NOTIFY_TYPE_POPUP;
+	notify_msg.align = NOTIFY_ALIGN_CENTER;
+	
+	len = strlen(message);
+	if(len > NOTIFY_TEXT_MAX_LEN)
+		len = NOTIFY_TEXT_MAX_LEN;
+	memset(notify_msg.text, 0x00, sizeof(notify_msg.text));
+	memcpy(notify_msg.text, message, len);
+
+	if(notify_msg.type == NOTIFY_TYPE_POPUP)
+	{
+		k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
+	}
+	
+	EnterNotifyScreen();
+}
 void IdleShowSystemDate(void)
 {
 	u16_t x,y,w,h;
@@ -352,6 +405,111 @@ void FindDeviceScreenProcess(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 }
 
+void NotifyScreenProcess(void)
+{
+	u16_t rect_x,rect_y,rect_w=180,rect_h=120;
+	u16_t x,y,w,h;
+	u16_t offset_w=4,offset_h=4;
+
+	switch(scr_msg[SCREEN_ID_NOTIFY].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_NOTIFY].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_NOTIFY].status = SCREEN_STATUS_CREATED;
+				
+		rect_x = (LCD_WIDTH-rect_w)/2;
+		rect_y = (LCD_HEIGHT-rect_h)/2;
+		
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+		
+		LCD_SetFontSize(FONT_SIZE_16);
+		LCD_MeasureString(notify_msg.text, &w, &h);
+		switch(notify_msg.align)
+		{
+		case NOTIFY_ALIGN_CENTER:
+			if(w > (rect_w-2*offset_w))
+			{
+				u8_t line_count,line_no,line_max;
+				u16_t line_h=(h+offset_h);
+				u16_t byte_no=0,text_len;
+
+				line_max = (rect_h-2*offset_h)/line_h;
+				line_count = w/(rect_w-2*offset_w) + ((w%(rect_w-offset_w) != 0)? 1 : 0);
+				if(line_count > line_max)
+					line_count = line_max;
+
+				line_no = 0;
+				text_len = strlen(notify_msg.text);
+				y = ((rect_h-2*offset_h)-line_count*line_h)/2;
+				y += (rect_y+offset_h);
+				while(line_no<line_count)
+				{
+					u8_t tmpbuf[128] = {0};
+					u8_t i=0;
+
+					tmpbuf[i++] = notify_msg.text[byte_no++];
+					LCD_MeasureString(tmpbuf, &w, &h);
+					while(w < (rect_w-2*offset_w))
+					{
+						if(byte_no < text_len)
+						{
+							tmpbuf[i++] = notify_msg.text[byte_no++];
+							LCD_MeasureString(tmpbuf, &w, &h);
+						}
+						else
+							break;
+					}
+
+					if(byte_no < text_len)
+					{
+						i -= 2;
+						byte_no -= 2;
+						tmpbuf[i] = 0x00;
+
+						LCD_MeasureString(tmpbuf, &w, &h);
+						x = ((rect_w-2*offset_w)-w)/2;
+						x += (rect_x+offset_w);
+						LCD_ShowString(x,y,tmpbuf);
+
+						y += line_h;
+					}
+					else
+					{
+						LCD_MeasureString(tmpbuf, &w, &h);
+						x = ((rect_w-2*offset_w)-w)/2;
+						x += (rect_x+offset_w);
+						LCD_ShowString(x,y,tmpbuf);
+
+						break;
+					}
+				}
+			}
+			else
+			{
+				x = (w > (rect_w-2*offset_w))? 0 : ((rect_w-2*offset_w)-w)/2;
+				y = (h > (rect_h-2*offset_h))? 0 : ((rect_h-2*offset_h)-h)/2;
+				x += (rect_x+offset_w);
+				y += (rect_y+offset_h);
+				LCD_ShowString(x,y,notify_msg.text);				
+			}
+			break;
+		case NOTIFY_ALIGN_BOUNDARY:
+			x = (rect_x+offset_w);
+			y = (rect_y+offset_h);
+			LCD_ShowStringInRect(x, y, (rect_w-2*offset_w), (rect_h-2*offset_h), notify_msg.text);
+			break;
+		}
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_NOTIFY].act = SCREEN_ACTION_NO;
+
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -464,6 +622,9 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_GPS_TEST:
 			break;
 		case SCREEN_ID_NB_TEST:
+			break;
+		case SCREEN_ID_NOTIFY:
+			NotifyScreenProcess();
 			break;
 		}
 	}

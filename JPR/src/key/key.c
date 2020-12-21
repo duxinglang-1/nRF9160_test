@@ -102,6 +102,8 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	{
 		FindDeviceStop();
 	}
+
+	ExitNotifyScreen();
 }
 
 static void button_handler(u32_t button_state, u32_t has_changed)

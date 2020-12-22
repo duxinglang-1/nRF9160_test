@@ -66,6 +66,7 @@ typedef struct{
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
 	bool wake_screen_by_wrist;
+	u16_t target_steps;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;

@@ -108,7 +108,7 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 }
 
-void APP_find_device(u8_t *buf, u32_t len)
+void APP_set_find_device(u8_t *buf, u32_t len)
 {
 	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
@@ -436,7 +436,7 @@ void APP_set_wake_screen_by_wrist(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
-	need_save_settings = true;	
+	need_save_settings = true;
 }
 
 void APP_set_factory_reset(u8_t *buf, u32_t len)
@@ -467,6 +467,40 @@ void APP_set_factory_reset(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 
 	need_reset_settings = true;
+}
+
+void APP_set_target_steps(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	LOG_INF("APP_set_target_steps: %02X,%02X\n", buf[7], buf[8]);
+
+	global_settings.target_steps = buf[7]*100+buf[8];
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (TARGET_STEPS_ID>>8);		
+	reply[reply_len++] = (u8_t)(TARGET_STEPS_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;
 }
 
 void APP_get_current_data(u8_t *buf, u32_t len)
@@ -640,6 +674,19 @@ void APP_get_firmware_version(u8_t *buf, u32_t len)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);
+}
+
+//APP回复手环查找手机
+void APP_reply_find_phone(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	LOG_INF("APP_reply_find_phone\n");
+	
+	for(i=0;i<len;i++)
+	{
+		LOG_INF("i:%d, data:%02X\n", i, buf[i]);
+	}
 }
 
 void CTP_notify_handle(u8_t *buf, u32_t len)
@@ -843,6 +890,38 @@ void MCU_set_ble_work_mode(u8_t work_mode)
 	ble_send_date_handle(reply, reply_len);	
 }
 
+//手环查找手机
+void MCU_Find_Phone(void)
+{
+	u8_t reply[16] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (FIND_PHONE_ID>>8);		
+	reply[reply_len++] = (u8_t)(FIND_PHONE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//data
+	reply[reply_len++] = 0x01;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
+
+}
+
 /**********************************************************************************
 *Name: ble_receive_date_handle
 *Function:  处理蓝牙接收到的数据
@@ -911,7 +990,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
 	case FIND_DEVICE_ID:		//查找手环
-		APP_find_device(buf, len);
+		APP_set_find_device(buf, len);
 		break;
 	case SMART_NOTIFY_ID:		//智能提醒
 		break;
@@ -937,6 +1016,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		APP_set_time_24_format(buf, len);
 		break;
 	case FIND_PHONE_ID:			//查找手机回复
+		APP_reply_find_phone(buf, len);
 		break;
 	case WEATHER_INFOR_ID:		//天气信息下发
 		break;
@@ -944,6 +1024,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		APP_set_date_time(buf, len);
 		break;
 	case TARGET_STEPS_ID:		//目标步数
+		APP_set_target_steps(buf, len);
 		break;
 	case BATTERY_LEVEL_ID:		//电池电量
 		APP_get_battery_level(buf, len);

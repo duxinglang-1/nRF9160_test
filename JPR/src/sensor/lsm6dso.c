@@ -157,6 +157,8 @@ void sensor_init(void)
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_26Hz);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_26Hz);
 
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
+
 	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_x_set(&imu_dev_ctx, PROPERTY_ENABLE);
@@ -767,6 +769,19 @@ void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
 	*distance = g_distance;
 }
 
+/*@Set Sensor sensitivity
+*/
+void lsm6dso_sensitivity(void)
+{
+	//Set the debounce steps
+	uint8_t deb_step = 5;
+	lsm6dso_pedo_debounce_steps_set(&imu_dev_ctx, &deb_step);
+
+	//Set the sensitivity of the sensor
+	//uint8_t delay_time = 0;
+	//lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
+}
+
 void IMU_init(void)
 {
 	LOG_INF("IMU_init\n");
@@ -782,6 +797,7 @@ void IMU_init(void)
 
 	sensor_init();
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
+	lsm6dso_sensitivity();
 
 	StartSleepTimeMonitor();
 	

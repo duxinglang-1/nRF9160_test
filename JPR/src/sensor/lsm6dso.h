@@ -28,6 +28,7 @@ extern void GetImuSteps(u16_t *steps);
 extern void ReSetImuSteps(void);
 extern void UpdateIMUData(void);
 extern void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance);
+extern void lsm6dso_sensitivity(void);
 
 /*sleep monitor*/
 extern void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp,int hr,int hour,int charging);

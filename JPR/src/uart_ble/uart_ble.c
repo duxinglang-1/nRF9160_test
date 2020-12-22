@@ -267,7 +267,8 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_DATE;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
+	
+}
 
 	need_save_settings = true;
 }
@@ -676,6 +677,54 @@ void APP_get_firmware_version(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 }
 
+void APP_get_heart_rate(u8_t *buf, u32_t len)
+{
+	u8_t heart_rate,reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	switch(buf[5])
+	{
+	case 0x01://实时测量心率
+		break;
+	case 0x02://单词测量心率
+		break;
+	}
+
+	switch(buf[6])
+	{
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
+	
+	GetHeartRate(&heart_rate);
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (HEART_RATE_ID>>8);		
+	reply[reply_len++] = (u8_t)(HEART_RATE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x02;
+	//control
+	reply[reply_len++] = 0x01;
+	//heart rate
+	reply[reply_len++] = heart_rate;	//V2.0
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
 //APP回复手环查找手机
 void APP_reply_find_phone(u8_t *buf, u32_t len)
 {
@@ -977,6 +1026,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	switch(data_ID)
 	{
 	case HEART_RATE_ID:			//心率
+		APP_get_heart_rate(buf, len);
 		break;
 	case BLOOD_OXYGEN_ID:		//血氧
 		break;

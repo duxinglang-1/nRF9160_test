@@ -96,6 +96,8 @@ ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
 extern bool app_find_device;
 
+static void MCU_send_heart_rate(void);
+
 void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 {
 	LOG_INF("BLE status:%x\n", buf[6]);
@@ -106,6 +108,56 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 	else
 		BLE_is_connected = false;
+}
+
+void CTP_notify_handle(u8_t *buf, u32_t len)
+{
+	u8_t tmpbuf[128] = {0};
+	u8_t tp_type = TP_EVENT_MAX;
+	u16_t tp_x,tp_y;
+	
+	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	switch(buf[5])
+	{
+	case GESTURE_NONE:
+		sprintf(tmpbuf, "GESTURE_NONE        ");
+		break;
+	case GESTURE_MOVING_UP:
+		tp_type = TP_EVENT_MOVING_UP;
+		sprintf(tmpbuf, "MOVING_UP   ");
+		break;
+	case GESTURE_MOVING_DOWN:
+		tp_type = TP_EVENT_MOVING_DOWN;
+		sprintf(tmpbuf, "MOVING_DOWN ");
+		break;
+	case GESTURE_MOVING_LEFT:
+		tp_type = TP_EVENT_MOVING_LEFT;
+		sprintf(tmpbuf, "MOVING_LEFT ");
+		break;
+	case GESTURE_MOVING_RIGHT:
+		tp_type = TP_EVENT_MOVING_RIGHT;
+		sprintf(tmpbuf, "MOVING_RIGHT");
+		break;
+	case GESTURE_SINGLE_CLICK:
+		tp_type = TP_EVENT_SINGLE_CLICK;
+		sprintf(tmpbuf, "SINGLE_CLICK");
+		break;
+	case GESTURE_DOUBLE_CLICK:
+		tp_type = TP_EVENT_DOUBLE_CLICK;
+		sprintf(tmpbuf, "DOUBLE_CLICK");
+		break;
+	case GESTURE_LONG_PRESS:
+		tp_type = TP_EVENT_LONG_PRESS;
+		sprintf(tmpbuf, "LONG_PRESS  ");
+		break;
+	}
+
+	if(tp_type != TP_EVENT_MAX)
+	{
+		tp_x = buf[7]*0x100+buf[8];
+		tp_y = buf[9]*0x100+buf[10];
+		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	}
 }
 
 void APP_set_find_device(u8_t *buf, u32_t len)
@@ -552,6 +604,9 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);
+
+	//上传心率数据
+	MCU_send_heart_rate();
 }
 
 void APP_get_location_data(u8_t *buf, u32_t len)
@@ -738,59 +793,9 @@ void APP_reply_find_phone(u8_t *buf, u32_t len)
 	}
 }
 
-void CTP_notify_handle(u8_t *buf, u32_t len)
-{
-	u8_t tmpbuf[128] = {0};
-	u8_t tp_type = TP_EVENT_MAX;
-	u16_t tp_x,tp_y;
-	
-	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
-	switch(buf[5])
-	{
-	case GESTURE_NONE:
-		sprintf(tmpbuf, "GESTURE_NONE        ");
-		break;
-	case GESTURE_MOVING_UP:
-		tp_type = TP_EVENT_MOVING_UP;
-		sprintf(tmpbuf, "MOVING_UP   ");
-		break;
-	case GESTURE_MOVING_DOWN:
-		tp_type = TP_EVENT_MOVING_DOWN;
-		sprintf(tmpbuf, "MOVING_DOWN ");
-		break;
-	case GESTURE_MOVING_LEFT:
-		tp_type = TP_EVENT_MOVING_LEFT;
-		sprintf(tmpbuf, "MOVING_LEFT ");
-		break;
-	case GESTURE_MOVING_RIGHT:
-		tp_type = TP_EVENT_MOVING_RIGHT;
-		sprintf(tmpbuf, "MOVING_RIGHT");
-		break;
-	case GESTURE_SINGLE_CLICK:
-		tp_type = TP_EVENT_SINGLE_CLICK;
-		sprintf(tmpbuf, "SINGLE_CLICK");
-		break;
-	case GESTURE_DOUBLE_CLICK:
-		tp_type = TP_EVENT_DOUBLE_CLICK;
-		sprintf(tmpbuf, "DOUBLE_CLICK");
-		break;
-	case GESTURE_LONG_PRESS:
-		tp_type = TP_EVENT_LONG_PRESS;
-		sprintf(tmpbuf, "LONG_PRESS  ");
-		break;
-	}
-
-	if(tp_type != TP_EVENT_MAX)
-	{
-		tp_x = buf[7]*0x100+buf[8];
-		tp_y = buf[9]*0x100+buf[10];
-		touch_panel_event_handle(tp_type, tp_x, tp_y);
-	}
-}
-
 void MCU_get_nrf52810_ver(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -816,21 +821,9 @@ void MCU_get_nrf52810_ver(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void get_nrf52810_ver_response(u8_t *buf, u32_t len)
-{
-	u32_t i;
-
-	for(i=0;i<len-9;i++)
-	{
-		str_nrf52810_ver[i] = buf[7+i];
-	}
-
-	LOG_INF("str_nrf52810_ver:%s\n", str_nrf52810_ver);
-}
-
 void MCU_get_ble_mac_address(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -856,28 +849,9 @@ void MCU_get_ble_mac_address(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void get_ble_mac_address_response(u8_t *buf, u32_t len)
-{
-	u32_t i;
-
-	for(i=0;i<6;i++)
-	{
-		ble_mac_addr[i] = buf[7+i];
-	}
-
-	LOG_INF("ble_mac_addr %02X:%02X:%02X:%02X:%02X:%02X\n",
-							ble_mac_addr[0],
-							ble_mac_addr[1],
-							ble_mac_addr[2],
-							ble_mac_addr[3],
-							ble_mac_addr[4],
-							ble_mac_addr[5]
-							);
-}
-
 void MCU_get_ble_status(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -903,17 +877,10 @@ void MCU_get_ble_status(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void get_ble_status_response(u8_t *buf, u32_t len)
-{
-	LOG_INF("BLE_status:%d\n", buf[6]);
-
-	g_ble_status = buf[6];
-}
-
 //设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 void MCU_set_ble_work_mode(u8_t work_mode)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -940,9 +907,9 @@ void MCU_set_ble_work_mode(u8_t work_mode)
 }
 
 //手环查找手机
-void MCU_Find_Phone(void)
+void MCU_send_find_phone(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -969,6 +936,89 @@ void MCU_Find_Phone(void)
 
 	ble_send_date_handle(reply, reply_len);	
 
+}
+
+//手环上报整点心率数据
+void MCU_send_heart_rate(void)
+{
+	u8_t heart_rate,reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	GetHeartRate(&heart_rate);
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x0D;
+	//data ID
+	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+	reply[reply_len++] = (u8_t)(PULL_REFRESH_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x81;
+	//control
+	reply[reply_len++] = 0x00;
+	//year
+	reply[reply_len++] = (u8_t)(date_time.year>>8);
+	reply[reply_len++] = (u8_t)(date_time.year&0x00ff);
+	//month
+	reply[reply_len++] = date_time.month;
+	//day
+	reply[reply_len++] = date_time.day;
+	//hour
+	reply[reply_len++] = date_time.hour;
+	//minute
+	reply[reply_len++] = date_time.minute;
+	//data
+	reply[reply_len++] = heart_rate;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
+
+}
+
+void get_nrf52810_ver_response(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	for(i=0;i<len-9;i++)
+	{
+		str_nrf52810_ver[i] = buf[7+i];
+	}
+
+	LOG_INF("str_nrf52810_ver:%s\n", str_nrf52810_ver);
+}
+
+void get_ble_mac_address_response(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	for(i=0;i<6;i++)
+	{
+		ble_mac_addr[i] = buf[7+i];
+	}
+
+	LOG_INF("ble_mac_addr %02X:%02X:%02X:%02X:%02X:%02X\n",
+							ble_mac_addr[0],
+							ble_mac_addr[1],
+							ble_mac_addr[2],
+							ble_mac_addr[3],
+							ble_mac_addr[4],
+							ble_mac_addr[5]
+							);
+}
+
+void get_ble_status_response(u8_t *buf, u32_t len)
+{
+	LOG_INF("BLE_status:%d\n", buf[6]);
+
+	g_ble_status = buf[6];
 }
 
 /**********************************************************************************

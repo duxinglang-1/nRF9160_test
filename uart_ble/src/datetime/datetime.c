@@ -17,22 +17,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "lsm6dso.h"
-
-#define IDLE_TIME_SHOW_X	0
-#ifdef FONT_32
-#define IDLE_TIME_SHOW_Y	54
-#elif defined(FONT_24)
-#define IDLE_TIME_SHOW_Y	64
-#elif defined(FONT_16)
-#define IDLE_TIME_SHOW_Y	74
-#endif
-
-
-#define IDLE_DATE_SHOW_X	0
-#define IDLE_DATE_SHOW_Y	(IDLE_TIME_SHOW_Y+system_font)
-
-#define IDLE_WEEK_SHOW_X	0
-#define IDLE_WEEK_SHOW_Y	(IDLE_DATE_SHOW_Y+system_font)
+#include "screen.h"
 
 static struct k_timer clock_timer;
 
@@ -50,9 +35,10 @@ u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表
 
 void UpdateSystemTime(void)
 {
-	//printk("clock_timer_handler\n");
-
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
+
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 	
 	date_time.second++;
 	if(date_time.second > 59)
@@ -135,11 +121,13 @@ void UpdateSystemTime(void)
 				}
 
 				update_date_time = true;
+				
+				if(screen_id == SCREEN_ID_IDLE)
+					scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
 			}
 		}
 	}
 	date_time_changed = date_time_changed|0x01;
-	update_time = true;
 	
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
@@ -322,137 +310,14 @@ void GetSystemWeekStrings(u8_t *str_week)
 	}
 }
 
-void IdleShowSystemDate(void)
-{
-	u16_t x,y,w,h;
-	u8_t str_date[20] = {0};
-
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
-
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-#endif
-
-	GetSystemDateStrings(str_date);
-	LCD_MeasureString(str_date,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_DATE_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
-	LCD_ShowString(x,y,str_date);
-}
-
-void IdleShowSystemTime(void)
-{
-	u16_t x,y,w,h,offset;
-	u8_t str_time[20] = {0};
-	u8_t str_ampm[5] = {0};
-
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
-	
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);
-	offset = 16;
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);
-	offset = 8;
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-	offset = 0;
-#endif
-
-	GetSystemTimeStrings(str_time);
-	LCD_MeasureString(str_time,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_TIME_SHOW_Y;
-	LCD_ShowString(x,y,str_time);
-
-	LCD_SetFontSize(FONT_SIZE_16);
-	GetSysteAmPmStrings(str_ampm);
-	x = x+w+5;
-	y = IDLE_TIME_SHOW_Y+offset;
-	LCD_ShowString(x,y,str_ampm);	
-}
-
-void IdleShowSystemWeek(void)
-{
-	u16_t x,y,w,h;
-	u8_t str_week[20] = {0};
-
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
-
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-#endif
-
-	GetSystemWeekStrings(str_week);
-	LCD_MeasureString(str_week,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_WEEK_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
-	LCD_ShowString(x,y,str_week);
-}
-
-void IdleShowSystemDateTime(void)
-{
-	IdleShowSystemTime();
-	IdleShowSystemDate();
-	IdleShowSystemWeek();
-}
-
-void IdleShowDateTime(void)
-{
-	if(screen_id == SCREEN_IDLE)
-	{
-		if(update_time || update_date || update_week || update_date_time || show_date_time_first)
-		{
-			if(update_date_time || show_date_time_first)
-			{
-				if(show_date_time_first)
-				{
-					show_date_time_first = false;
-					LCD_Clear(BLACK);
-				}
-				
-				update_date_time = false;
-				IdleShowSystemDateTime();
-			}
-			else if(update_date)
-			{
-				update_date = false;
-				IdleShowSystemDate();
-			}
-			else if(update_week)
-			{
-				update_week = false;
-				IdleShowSystemWeek();
-			}
-			else
-			{
-				update_time = false;
-				IdleShowSystemTime();
-			}
-		}
-	}
-}
-
 void TimeMsgProcess(void)
 {
 	if(sys_time_count)
 	{
 		sys_time_count = false;
 		UpdateSystemTime();
-	}
 
-	IdleShowDateTime();
+		if(screen_id == SCREEN_ID_IDLE)
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
 }

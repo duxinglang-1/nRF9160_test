@@ -13,10 +13,12 @@
 #include <stdio.h>
 #include <zephyr.h>
 #include <sys/printk.h>
+
 #include "settings.h"
 #include "datetime.h"
 #include "max20353.h"
 #include "lcd.h"
+#include "screen.h"
 
 #define ALARM_VIB_REPEAT_MAX	5
 #define ALARM_VIB_ON_SEC		1000
@@ -52,8 +54,7 @@ void AlarmRemindStop(void)
 
 	k_timer_stop(&alarm_timer);
 
-	screen_id = SCREEN_IDLE;
-	show_date_time_first = true;
+	GoBackHistoryScreen();
 }
 
 void AlarmRemindTimeout(struct k_timer *timer)
@@ -172,17 +173,7 @@ void AlarmRemindCheck(sys_date_timer_t time)
 
 void AlarmRemindEntryScreen(void)
 {
-	u16_t x,y,w,h;
-
-	screen_id = SCREEN_ALARM;
-
-	LCD_Clear(BLACK);
-	LCD_MeasureString("The alarm is coming!",&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = (h > LCD_HEIGHT)? 0 : (LCD_HEIGHT-h)/2;
-	
-	LCD_ShowString(x,y,"The alarm is coming!");
-
+	EnterAlarmScreen();
 	AlarmRemindStart();
 }
 
@@ -196,8 +187,7 @@ void FindDeviceStop(void)
 
 	k_timer_stop(&find_timer);
 
-	screen_id = SCREEN_IDLE;
-	show_date_time_first = true;
+	GoBackHistoryScreen();
 }
 
 void FindDeviceTimeout(struct k_timer *timer)
@@ -241,18 +231,8 @@ void FindDeviceStart(void)
 
 void FindDeviceEntryScreen(void)
 {
-	u16_t x,y,w,h;
-
-	screen_id = SCREEN_FIND_DEVICE;
-
-	LCD_Clear(BLACK);
-	LCD_MeasureString("The find device is coming!",&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = (h > LCD_HEIGHT)? 0 : (LCD_HEIGHT-h)/2;
-	
-	LCD_ShowString(x,y,"The find device is coming!");
-
-	AlarmRemindStart();
+	EnterFindDeviceScreen();
+	FindDeviceStart();
 }
 
 void AlarmRemindInit(void)

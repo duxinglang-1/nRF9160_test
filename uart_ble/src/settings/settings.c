@@ -23,8 +23,6 @@ static bool nvs_init_flag = false;
 static struct nvs_fs fs;
 static struct flash_pages_info info;
 
-u8_t screen_id = SCREEN_BOOTUP;
-
 bool need_save_settings = false;
 bool need_save_time = false;
 bool need_reset_settings = false;
@@ -51,6 +49,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
 	true,					//wake screen by wrist
+	0x0000,					//target steps
 	TIME_FORMAT_24,			//24 format
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format

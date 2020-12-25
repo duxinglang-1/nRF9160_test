@@ -8,24 +8,13 @@
 #include "Lcd.h"
 #include "datetime.h"
 #include "settings.h"
+#include "screen.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
-
-#define BAT_PS_OFFSET_H	5
-
-#define BAT_POSITIVE_X	85
-#define BAT_POSITIVE_Y	20
-#define BAT_POSITIVE_W	10
-#define BAT_POSITIVE_H	10
-
-#define BAT_SUBJECT_X	(BAT_POSITIVE_X+BAT_POSITIVE_W)
-#define BAT_SUBJECT_Y	(BAT_POSITIVE_Y-BAT_PS_OFFSET_H)
-#define BAT_SUBJECT_W	60
-#define BAT_SUBJECT_H	(BAT_POSITIVE_H+2*BAT_PS_OFFSET_H)
 
 static u8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
@@ -45,7 +34,7 @@ bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
 
 u8_t g_bat_soc = 0;
-BAT_CHAEGER_STATUS g_chg_status = BAT_CHARGING_NO;
+BAT_CHARGER_STATUS g_chg_status = BAT_CHARGING_NO;
 BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_NORMAL;
 
 maxdev_ctx_t pmu_dev_ctx;
@@ -272,7 +261,7 @@ void pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				LOG_INF("Battery voltage is very low, the system will shut down in a few seconds!\n");
+				DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
 				pmu_battery_low_shutdown();
 			}
 		}
@@ -281,7 +270,7 @@ void pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
 			{
-				LOG_INF("Battery voltage is low, please charge in time!\n");
+				DisplayPopUp("Battery voltage is low, please charge in time!");
 			}
 		}
 		else if(g_bat_soc < 80)
@@ -297,8 +286,9 @@ void pmu_alert_proc(void)
 		{
 			g_bat_level = BAT_LEVEL_NORMAL;
 		}
-		
-		pmu_redraw_bat_flag = true;
+
+		if(g_chg_status == BAT_CHARGING_NO)
+			pmu_redraw_bat_flag = true;
 	}
 	if(MSB&0x10)
 	{
@@ -406,8 +396,6 @@ void test_pmu(void)
     pmu_init();
 }
 
-static struct k_timer soc_timer;
-
 //******************************************************************************
 int MAX20303_CheckPMICStatusRegisters(unsigned char buf_results[5])
 { 
@@ -495,33 +483,10 @@ void test_soc(void)
 
 void PMURedrawBatStatus(void)
 {
-	u16_t x,y,w,h;
-	u8_t strbuf[10] = {0};
-
-	if(screen_id == SCREEN_IDLE)
+	if(screen_id == SCREEN_ID_IDLE)
 	{
-		LCD_DrawRectangle(BAT_POSITIVE_X,BAT_POSITIVE_Y,BAT_POSITIVE_W,BAT_POSITIVE_H);
-		LCD_DrawRectangle(BAT_SUBJECT_X,BAT_SUBJECT_Y,BAT_SUBJECT_W,BAT_SUBJECT_H);
-		LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
-		
-		switch(g_chg_status)
-		{
-		case BAT_CHARGING_NO:
-			sprintf(strbuf, "%02d", g_bat_soc);
-			break;
-		case BAT_CHARGING_PROGRESS:
-			strcpy(strbuf, "CHG");
-			break;
-		case BAT_CHARGING_FINISHED:
-			strcpy(strbuf, "OK");
-			break;
-		}
-
-		LCD_SetFontSize(FONT_SIZE_16);
-		LCD_MeasureString(strbuf, &w, &h);
-		x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
-		y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
-		LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);	
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
 

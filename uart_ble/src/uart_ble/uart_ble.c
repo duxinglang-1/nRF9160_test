@@ -16,6 +16,7 @@
 #include "CST816.h"
 #include "gps.h"
 #include "max20353.h"
+#include "screen.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -93,14 +94,9 @@ u8_t str_nrf52810_ver[128] = {0};
 ENUM_BLE_STATUS g_ble_status = BLE_STATUS_BROADCAST;
 ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
-extern bool update_time;
-extern bool update_date;
-extern bool update_week;
-extern bool update_date_time;
-extern bool app_gps_on;
 extern bool app_find_device;
-extern bool show_date_time_first;
-extern u8_t date_time_changed;
+
+static void MCU_send_heart_rate(void);
 
 void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 {
@@ -114,7 +110,57 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 }
 
-void APP_find_device(u8_t *buf, u32_t len)
+void CTP_notify_handle(u8_t *buf, u32_t len)
+{
+	u8_t tmpbuf[128] = {0};
+	u8_t tp_type = TP_EVENT_MAX;
+	u16_t tp_x,tp_y;
+	
+	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	switch(buf[5])
+	{
+	case GESTURE_NONE:
+		sprintf(tmpbuf, "GESTURE_NONE        ");
+		break;
+	case GESTURE_MOVING_UP:
+		tp_type = TP_EVENT_MOVING_UP;
+		sprintf(tmpbuf, "MOVING_UP   ");
+		break;
+	case GESTURE_MOVING_DOWN:
+		tp_type = TP_EVENT_MOVING_DOWN;
+		sprintf(tmpbuf, "MOVING_DOWN ");
+		break;
+	case GESTURE_MOVING_LEFT:
+		tp_type = TP_EVENT_MOVING_LEFT;
+		sprintf(tmpbuf, "MOVING_LEFT ");
+		break;
+	case GESTURE_MOVING_RIGHT:
+		tp_type = TP_EVENT_MOVING_RIGHT;
+		sprintf(tmpbuf, "MOVING_RIGHT");
+		break;
+	case GESTURE_SINGLE_CLICK:
+		tp_type = TP_EVENT_SINGLE_CLICK;
+		sprintf(tmpbuf, "SINGLE_CLICK");
+		break;
+	case GESTURE_DOUBLE_CLICK:
+		tp_type = TP_EVENT_DOUBLE_CLICK;
+		sprintf(tmpbuf, "DOUBLE_CLICK");
+		break;
+	case GESTURE_LONG_PRESS:
+		tp_type = TP_EVENT_LONG_PRESS;
+		sprintf(tmpbuf, "LONG_PRESS  ");
+		break;
+	}
+
+	if(tp_type != TP_EVENT_MAX)
+	{
+		tp_x = buf[7]*0x100+buf[8];
+		tp_y = buf[9]*0x100+buf[10];
+		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	}
+}
+
+void APP_set_find_device(u8_t *buf, u32_t len)
 {
 	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
@@ -150,7 +196,7 @@ void APP_set_language(u8_t *buf, u32_t len)
 	u32_t i,reply_len = 0;
 	
 	if(buf[7] == 0x00)
-		global_settings.language = LANGUAGE_CHN_SM;
+		global_settings.language = LANGUAGE_CHN;
 	else if(buf[7] == 0x01)
 		global_settings.language = LANGUAGE_EN;
 	else if(buf[7] == 0x02)
@@ -158,8 +204,6 @@ void APP_set_language(u8_t *buf, u32_t len)
 	else
 		global_settings.language = LANGUAGE_EN;
 		
-	update_week = true;
-
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
@@ -182,6 +226,12 @@ void APP_set_language(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_WEEK;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	
 	need_save_settings = true;
 }
 
@@ -197,15 +247,13 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 	else
 		global_settings.time_format = TIME_FORMAT_24;//24 format
 
-	update_time = true;
-
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
 	reply[reply_len++] = 0x06;
 	//data ID
-	reply[reply_len++] = (TIME_24_SETTING_ID>>8);		
+	reply[reply_len++] = (TIME_24_SETTING_ID>>8);
 	reply[reply_len++] = (u8_t)(TIME_24_SETTING_ID&0x00ff);
 	//status
 	reply[reply_len++] = 0x80;
@@ -221,7 +269,13 @@ void APP_set_time_24_format(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
-	need_save_settings = true;
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	
+	need_save_settings = true;	
 }
 
 
@@ -238,8 +292,6 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 		global_settings.date_format = DATE_FORMAT_DDMMYYYY;
 	else
 		global_settings.date_format = DATE_FORMAT_YYYYMMDD;
-
-	update_date = true;
 
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -263,6 +315,13 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_DATE;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	
+}
+
 	need_save_settings = true;
 }
 
@@ -284,7 +343,11 @@ void APP_set_date_time(u8_t *buf, u32_t len)
 		datetime.week = GetWeekDayByDate(datetime);
 		memcpy(&date_time, &datetime, sizeof(sys_date_timer_t));
 
-		update_date_time = true;
+		if(screen_id == SCREEN_ID_IDLE)
+		{
+			scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
 		need_save_time = true;
 	}
 
@@ -426,7 +489,7 @@ void APP_set_wake_screen_by_wrist(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
-	need_save_settings = true;	
+	need_save_settings = true;
 }
 
 void APP_set_factory_reset(u8_t *buf, u32_t len)
@@ -459,17 +522,49 @@ void APP_set_factory_reset(u8_t *buf, u32_t len)
 	need_reset_settings = true;
 }
 
+void APP_set_target_steps(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	LOG_INF("APP_set_target_steps: %02X,%02X\n", buf[7], buf[8]);
+
+	global_settings.target_steps = buf[7]*100+buf[8];
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (TARGET_STEPS_ID>>8);		
+	reply[reply_len++] = (u8_t)(TARGET_STEPS_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+
+	need_save_settings = true;
+}
+
 void APP_get_current_data(u8_t *buf, u32_t len)
 {
 	u8_t wake,reply[128] = {0};
-	u16_t steps,calorie,distance,shallow_sleep,deep_sleep;	
+	u16_t steps,calorie,distance,light_sleep,deep_sleep;	
 	u32_t i,reply_len = 0;
 
-	GetSportData(&steps,&calorie,&distance);
-	
+	GetSportData(&steps, &calorie, &distance);
+	GetSleepTimeData(&deep_sleep, &light_sleep);
 	wake = 8;
-	shallow_sleep = 45;
-	deep_sleep = 560;
 	
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -493,8 +588,8 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	reply[reply_len++] = (distance>>8);
 	reply[reply_len++] = (u8_t)(distance&0x00ff);
 	//Shallow Sleep
-	reply[reply_len++] = (shallow_sleep>>8);
-	reply[reply_len++] = (u8_t)(shallow_sleep&0x00ff);
+	reply[reply_len++] = (light_sleep>>8);
+	reply[reply_len++] = (u8_t)(light_sleep&0x00ff);
 	//Deep Sleep
 	reply[reply_len++] = (deep_sleep>>8);
 	reply[reply_len++] = (u8_t)(deep_sleep&0x00ff);
@@ -509,6 +604,9 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);
+
+	//上传心率数据
+	MCU_send_heart_rate();
 }
 
 void APP_get_location_data(u8_t *buf, u32_t len)
@@ -634,59 +732,70 @@ void APP_get_firmware_version(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void CTP_notify_handle(u8_t *buf, u32_t len)
+void APP_get_heart_rate(u8_t *buf, u32_t len)
 {
-	u8_t tmpbuf[128] = {0};
-	u8_t tp_type = TP_EVENT_MAX;
-	u16_t tp_x,tp_y;
-	
-	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	u8_t heart_rate,reply[128] = {0};
+	u32_t i,reply_len = 0;
+
 	switch(buf[5])
 	{
-	case GESTURE_NONE:
-		sprintf(tmpbuf, "GESTURE_NONE        ");
+	case 0x01://实时测量心率
 		break;
-	case GESTURE_MOVING_UP:
-		tp_type = TP_EVENT_MOVING_UP;
-		sprintf(tmpbuf, "MOVING_UP   ");
-		break;
-	case GESTURE_MOVING_DOWN:
-		tp_type = TP_EVENT_MOVING_DOWN;
-		sprintf(tmpbuf, "MOVING_DOWN ");
-		break;
-	case GESTURE_MOVING_LEFT:
-		tp_type = TP_EVENT_MOVING_LEFT;
-		sprintf(tmpbuf, "MOVING_LEFT ");
-		break;
-	case GESTURE_MOVING_RIGHT:
-		tp_type = TP_EVENT_MOVING_RIGHT;
-		sprintf(tmpbuf, "MOVING_RIGHT");
-		break;
-	case GESTURE_SINGLE_CLICK:
-		tp_type = TP_EVENT_SINGLE_CLICK;
-		sprintf(tmpbuf, "SINGLE_CLICK");
-		break;
-	case GESTURE_DOUBLE_CLICK:
-		tp_type = TP_EVENT_DOUBLE_CLICK;
-		sprintf(tmpbuf, "DOUBLE_CLICK");
-		break;
-	case GESTURE_LONG_PRESS:
-		tp_type = TP_EVENT_LONG_PRESS;
-		sprintf(tmpbuf, "LONG_PRESS  ");
+	case 0x02://单词测量心率
 		break;
 	}
 
-	if(tp_type != TP_EVENT_MAX)
+	switch(buf[6])
 	{
-		tp_x = buf[7]*0x100+buf[8];
-		tp_y = buf[9]*0x100+buf[10];
-		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
+	
+	GetHeartRate(&heart_rate);
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (HEART_RATE_ID>>8);		
+	reply[reply_len++] = (u8_t)(HEART_RATE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x02;
+	//control
+	reply[reply_len++] = 0x01;
+	//heart rate
+	reply[reply_len++] = heart_rate;	//V2.0
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+//APP回复手环查找手机
+void APP_reply_find_phone(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	LOG_INF("APP_reply_find_phone\n");
+	
+	for(i=0;i<len;i++)
+	{
+		LOG_INF("i:%d, data:%02X\n", i, buf[i]);
 	}
 }
 
 void MCU_get_nrf52810_ver(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -712,21 +821,9 @@ void MCU_get_nrf52810_ver(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void get_nrf52810_ver_response(u8_t *buf, u32_t len)
-{
-	u32_t i;
-
-	for(i=0;i<len-9;i++)
-	{
-		str_nrf52810_ver[i] = buf[7+i];
-	}
-
-	LOG_INF("str_nrf52810_ver:%s\n", str_nrf52810_ver);
-}
-
 void MCU_get_ble_mac_address(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -752,28 +849,9 @@ void MCU_get_ble_mac_address(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void get_ble_mac_address_response(u8_t *buf, u32_t len)
-{
-	u32_t i;
-
-	for(i=0;i<6;i++)
-	{
-		ble_mac_addr[i] = buf[7+i];
-	}
-
-	LOG_INF("ble_mac_addr %02X:%02X:%02X:%02X:%02X:%02X\n",
-							ble_mac_addr[0],
-							ble_mac_addr[1],
-							ble_mac_addr[2],
-							ble_mac_addr[3],
-							ble_mac_addr[4],
-							ble_mac_addr[5]
-							);
-}
-
 void MCU_get_ble_status(void)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -799,17 +877,10 @@ void MCU_get_ble_status(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void get_ble_status_response(u8_t *buf, u32_t len)
-{
-	LOG_INF("BLE_status:%d\n", buf[6]);
-
-	g_ble_status = buf[6];
-}
-
 //设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 void MCU_set_ble_work_mode(u8_t work_mode)
 {
-	u8_t reply[16] = {0};
+	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
 	//packet head
@@ -833,6 +904,121 @@ void MCU_set_ble_work_mode(u8_t work_mode)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);	
+}
+
+//手环查找手机
+void MCU_send_find_phone(void)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (FIND_PHONE_ID>>8);		
+	reply[reply_len++] = (u8_t)(FIND_PHONE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//data
+	reply[reply_len++] = 0x01;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
+
+}
+
+//手环上报整点心率数据
+void MCU_send_heart_rate(void)
+{
+	u8_t heart_rate,reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	GetHeartRate(&heart_rate);
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x0D;
+	//data ID
+	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+	reply[reply_len++] = (u8_t)(PULL_REFRESH_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x81;
+	//control
+	reply[reply_len++] = 0x00;
+	//year
+	reply[reply_len++] = (u8_t)(date_time.year>>8);
+	reply[reply_len++] = (u8_t)(date_time.year&0x00ff);
+	//month
+	reply[reply_len++] = date_time.month;
+	//day
+	reply[reply_len++] = date_time.day;
+	//hour
+	reply[reply_len++] = date_time.hour;
+	//minute
+	reply[reply_len++] = date_time.minute;
+	//data
+	reply[reply_len++] = heart_rate;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);	
+
+}
+
+void get_nrf52810_ver_response(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	for(i=0;i<len-9;i++)
+	{
+		str_nrf52810_ver[i] = buf[7+i];
+	}
+
+	LOG_INF("str_nrf52810_ver:%s\n", str_nrf52810_ver);
+}
+
+void get_ble_mac_address_response(u8_t *buf, u32_t len)
+{
+	u32_t i;
+
+	for(i=0;i<6;i++)
+	{
+		ble_mac_addr[i] = buf[7+i];
+	}
+
+	LOG_INF("ble_mac_addr %02X:%02X:%02X:%02X:%02X:%02X\n",
+							ble_mac_addr[0],
+							ble_mac_addr[1],
+							ble_mac_addr[2],
+							ble_mac_addr[3],
+							ble_mac_addr[4],
+							ble_mac_addr[5]
+							);
+}
+
+void get_ble_status_response(u8_t *buf, u32_t len)
+{
+	LOG_INF("BLE_status:%d\n", buf[6]);
+
+	g_ble_status = buf[6];
 }
 
 /**********************************************************************************
@@ -890,6 +1076,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	switch(data_ID)
 	{
 	case HEART_RATE_ID:			//心率
+		APP_get_heart_rate(buf, len);
 		break;
 	case BLOOD_OXYGEN_ID:		//血氧
 		break;
@@ -903,7 +1090,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
 	case FIND_DEVICE_ID:		//查找手环
-		APP_find_device(buf, len);
+		APP_set_find_device(buf, len);
 		break;
 	case SMART_NOTIFY_ID:		//智能提醒
 		break;
@@ -929,6 +1116,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		APP_set_time_24_format(buf, len);
 		break;
 	case FIND_PHONE_ID:			//查找手机回复
+		APP_reply_find_phone(buf, len);
 		break;
 	case WEATHER_INFOR_ID:		//天气信息下发
 		break;
@@ -936,6 +1124,7 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		APP_set_date_time(buf, len);
 		break;
 	case TARGET_STEPS_ID:		//目标步数
+		APP_set_target_steps(buf, len);
 		break;
 	case BATTERY_LEVEL_ID:		//电池电量
 		APP_get_battery_level(buf, len);

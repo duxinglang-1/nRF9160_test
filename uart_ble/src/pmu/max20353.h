@@ -13,7 +13,7 @@ typedef enum
 	BAT_CHARGING_PROGRESS,
 	BAT_CHARGING_FINISHED,
 	BAT_CHARGING_MAX
-}BAT_CHAEGER_STATUS;
+}BAT_CHARGER_STATUS;
 
 typedef enum
 {
@@ -30,7 +30,7 @@ extern bool vibrate_start_flag;
 extern bool vibrate_stop_flag;
 
 extern u8_t g_bat_soc;
-extern BAT_CHAEGER_STATUS g_chg_status;
+extern BAT_CHARGER_STATUS g_chg_status;
 extern BAT_LEVEL_STATUS g_bat_level;
 
 extern void test_pmu(void);

@@ -21,23 +21,11 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_CHN_SM,	//Chinese_sm
-	LANGUAGE_EN,		//English
-	LANGUAGE_JPN,		//Japanese
-	LANGUAGE_CHN_TR,	//Chinese_tr
-	LANGUAGE_KOR,		//Korea
+	LANGUAGE_EN,	//English
+	LANGUAGE_CHN,	//Chinese
+	LANGUAGE_JPN,	//Japanese
 	LANGUAGE_MAX
 }LANGUAGE_SET;
-
-typedef enum
-{
-	SCREEN_BOOTUP,
-	SCREEN_IDLE,
-	SCREEN_GPS,
-	SCREEN_ALARM,
-	SCREEN_FIND_DEVICE,
-	SCREEN_MAX
-}SCREEN_STATUS;
 
 typedef enum
 {
@@ -78,6 +66,7 @@ typedef struct{
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
 	bool wake_screen_by_wrist;
+	u16_t target_steps;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;

@@ -354,8 +354,12 @@ void AlarmScreenProcess(void)
 		
 		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
 		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
-		
+
+	#ifdef FONT_24
 		LCD_SetFontSize(FONT_SIZE_24);
+	#else
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
 		LCD_MeasureString(notify,&w,&h);
 		x = (w > rect_w)? 0 : (rect_w-w)/2;
 		y = (h > rect_h)? 0 : (rect_h-h)/2;
@@ -389,7 +393,11 @@ void FindDeviceScreenProcess(void)
 		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
 		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
 		
+	#ifdef FONT_24
 		LCD_SetFontSize(FONT_SIZE_24);
+	#else
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
 		LCD_MeasureString(notify,&w,&h);
 		x = (w > rect_w)? 0 : (rect_w-w)/2;
 		y = (h > rect_h)? 0 : (rect_h-h)/2;

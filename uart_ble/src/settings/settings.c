@@ -10,6 +10,7 @@
 #include "datetime.h"
 #include "alarm.h"
 #include "lcd.h"
+#include "codetrans.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -51,7 +52,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	true,					//wake screen by wrist
 	0x0000,					//target steps
 	TIME_FORMAT_24,			//24 format
-	LANGUAGE_EN,			//language
+	LANGUAGE_JPN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_ALWAYS_ON,	//backlight time
@@ -164,6 +165,8 @@ void InitSystemSettings(void)
 
 	InitSystemDateTime();
 	AlarmRemindInit();
+
+	mmi_chset_init();
 }
 
 void SettingsMsgPorcess(void)

@@ -1,0 +1,3 @@
+---- GetSystemTimeStrings Matches (2 in 2 files) ----
+Datetime.c (src\datetime):void GetSystemTimeStrings(u8_t *str_time)
+Screen.c (src\screen):	GetSystemTimeStrings(str_time);

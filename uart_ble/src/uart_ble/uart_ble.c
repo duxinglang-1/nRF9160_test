@@ -319,8 +319,7 @@ void APP_set_date_format(u8_t *buf, u32_t len)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_DATE;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	
-}
+	}
 
 	need_save_settings = true;
 }
@@ -1176,6 +1175,8 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
+	LOG_INF("uart_rece:%02X\n", data);
+	
 	rx_buf[rece_len++] = data;
 	if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	//receivive complete
 	{

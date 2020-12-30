@@ -483,7 +483,6 @@ void test_flash(void)
 	
 	//flash_init();
 
-
 	LCD_ShowString(0,0,"FLASH测试开始");
 
 	flash_id = SpiFlash_ReadID();
@@ -549,11 +548,11 @@ void test_flash(void)
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
+	//LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
 	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
 	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+(2726*32)*1, (2726*32));
-	SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
-	LCD_ShowString(0,100,"FLASH写入16X16中文成功");
+	//SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
+	//LCD_ShowString(0,100,"FLASH写入16X16中文成功");
 #endif
 
 #if 0
@@ -596,21 +595,25 @@ void test_flash(void)
 
 #if 0
 	//写入数据
-	//LCD_ShowString(0,80,"FLASH写入RM16X16日文字库...");
-	//SpiFlash_Write_Buf(RM_JIS_16_1, FONT_RM_JIS_16_ADDR+85952*0, 85952);
-	//SpiFlash_Write_Buf(RM_JIS_16_2, FONT_RM_JIS_16_ADDR+85952*1, 85952);
-	//SpiFlash_Write_Buf(RM_JIS_16_3, FONT_RM_JIS_16_ADDR+85952*2, 85952);	
-	//SpiFlash_Write_Buf(RM_JIS_16_4, FONT_RM_JIS_16_ADDR+85952*3, 85936);
-	//LCD_ShowString(0,100,"FLASH写入RM16X16日文成功");
+	LCD_ShowString(0,80,"FLASH写入RM16X16日文字库...");
+	//SpiFlash_Write_Buf(RM_JIS_16_1, FONT_RM_JIS_16_ADDR+72192*0, 72192);
+	//SpiFlash_Write_Buf(RM_JIS_16_2, FONT_RM_JIS_16_ADDR+72192*1, 72192);
+	//SpiFlash_Write_Buf(RM_JIS_16_3, FONT_RM_JIS_16_ADDR+72192*2, 72192);	
+	//SpiFlash_Write_Buf(RM_JIS_16_4, FONT_RM_JIS_16_ADDR+72192*3, 72192);
+	SpiFlash_Write_Buf(RM_JIS_16_5, FONT_RM_JIS_16_ADDR+72192*4, 72208);
+	LCD_ShowString(0,100,"FLASH写入RM16X16日文成功");
 #endif
 
 #if 0
 	//写入数据
 	LCD_ShowString(0,80,"FLASH写入RM16X16日文字库...");
-	//SpiFlash_Write_Buf(RM_GBK_16_1, FONT_RM_GBK_16_ADDR+65280*0, 65280);
-	//SpiFlash_Write_Buf(RM_GBK_16_2, FONT_RM_GBK_16_ADDR+65280*1, 65280);
-	//SpiFlash_Write_Buf(RM_GBK_16_3, FONT_RM_GBK_16_ADDR+65280*2, 65280);	
-	SpiFlash_Write_Buf(RM_GBK_16_4, FONT_RM_GBK_16_ADDR+65280*3, 65264);
+	//SpiFlash_Write_Buf(RM_UNI_16_1, FONT_RM_UNI_16_ADDR+88288*0, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_2, FONT_RM_UNI_16_ADDR+88288*1, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_3, FONT_RM_UNI_16_ADDR+88288*2, 88288);	
+	//SpiFlash_Write_Buf(RM_UNI_16_4, FONT_RM_UNI_16_ADDR+88288*3, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_5, FONT_RM_UNI_16_ADDR+88288*4, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_6, FONT_RM_UNI_16_ADDR+88288*5, 88288);
+	SpiFlash_Write_Buf(RM_UNI_16_7, FONT_RM_UNI_16_ADDR+88288*6, 88224);
 	LCD_ShowString(0,100,"FLASH写入RM16X16日文成功");
 #endif
 

@@ -1,3 +1,11 @@
+/****************************************Copyright (c)************************************************
+** File Name:			    Lcd.c
+** Descriptions:			LCD head file
+** Created By:				xie biao
+** Created Date:			2020-07-13
+** Modified Date:      		2020-12-18 
+** Version:			    	V1.0
+******************************************************************************************************/
 #ifndef __LCD_H__
 #define __LCD_H__
 
@@ -18,20 +26,6 @@
 #define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 //#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
-
-#ifdef FONTMAKER_FONT
-#define FONT_MBCS_HEAD_FLAG_0	0x4D
-#define FONT_MBCS_HEAD_FLAG_1	0x46
-#define FONT_MBCS_HEAD_FLAG_1	0x4C
-#define FONT_MBCS_HEAD_FLAG_1	0x11
-#define FONT_MBCS_HEAD_LEN		16
-
-#define FONT_UNICODE_HEAD_FLAG_0	0x55
-#define FONT_UNICODE_HEAD_FLAG_1	0x46
-#define FONT_UNICODE_HEAD_FLAG_1	0x4C
-#define FONT_UNICODE_HEAD_FLAG_1	0x11
-#define FONT_UNICODE_HEAD_LEN		16
-#endif
 
 //LCD睡眠唤醒
 extern bool lcd_sleep_in;
@@ -98,5 +92,10 @@ void LCD_dis_pic(uint16_t x,uint16_t y, unsigned char *color);
 void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans);
 void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned int rotate);
 void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate);
+#ifdef FONTMAKER_UNICODE_FONT
+void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height);
+void LCD_ShowUniString(u16_t x, u16_t y, u16_t *p);
+void LCD_ShowUniStringInRect(u16_t x, u16_t y, u16_t width, u16_t height, u16_t *p);
+#endif/*FONTMAKER_UNICODE_FONT*/
 
 #endif

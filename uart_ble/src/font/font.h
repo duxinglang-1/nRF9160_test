@@ -1,11 +1,35 @@
 #ifndef __FONT_H__
 #define __FONT_H__
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <nrf9160.h>
+#include <zephyr.h>
+
 #define FONT_16
 //#define FONT_24
 //#define FONT_32
 
-//#define FONTMAKER_FONT		//fontmake根据RM提供的矢量字库转换成的点阵字库数据
+//#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
+#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
+
+#ifdef FONTMAKER_MBCS_FONT
+#define FONT_MBCS_HEAD_FLAG_0	0x4D
+#define FONT_MBCS_HEAD_FLAG_1	0x46
+#define FONT_MBCS_HEAD_FLAG_1	0x4C
+#define FONT_MBCS_HEAD_FLAG_1	0x11
+#define FONT_MBCS_HEAD_LEN		16
+#endif
+
+#ifdef FONTMAKER_UNICODE_FONT
+#define FONT_UNI_HEAD_FLAG_0	0x55
+#define FONT_UNI_HEAD_FLAG_1	0x46
+#define FONT_UNI_FLAG_1			0x4C
+#define FONT_UNI_HEAD_FLAG_1	0x11
+#define FONT_UNI_HEAD_LEN		16
+#define FONT_UNI_SECT_LEN		8
+#define FONT_UNI_SECT_NUM_MAX	10
+#endif
 
 typedef enum
 {
@@ -22,10 +46,43 @@ typedef enum
 	FONT_SIZE_MAX
 }SYSTEM_FONT_SIZE;
 
+#ifdef FONTMAKER_UNICODE_FONT
+typedef struct
+{
+	u8_t id[4];
+	u32_t filelen;
+	u8_t sect_num;
+	u8_t hight;
+	u16_t codepage;
+	u16_t charnum;
+	u16_t reserved;
+}font_uni_head;
+
+typedef struct
+{
+	u16_t first_char;
+	u16_t last_char;
+	u32_t index_addr;
+}font_uni_sect;
+
+typedef struct
+{
+	u8_t width;
+	u32_t font_addr;
+}font_uni_index;
+
+typedef struct
+{
+	font_uni_head head;
+	font_uni_sect sect[FONT_UNI_SECT_NUM_MAX];
+	font_uni_index index;
+}font_uni_infor;
+#endif
+
 //英文字库
 #ifdef FONT_16
 extern unsigned char asc2_1608[96][16];
-#ifdef FONTMAKER_FONT
+#ifdef FONTMAKER_MBCS_FONT
 extern unsigned char asc2_16_rm[];
 #endif
 #endif
@@ -40,17 +97,23 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char chinese_1616_1[2726][32];
 //extern unsigned char chinese_1616_2[2726][32];
 //extern unsigned char chinese_1616_3[2726][32];
-#ifdef FONTMAKER_FONT
-//extern unsigned char RM_JIS_16_1[85952];
-//extern unsigned char RM_JIS_16_2[85952];
-//extern unsigned char RM_JIS_16_3[85952];
-//extern unsigned char RM_JIS_16_4[85936];
-
-//extern unsigned char RM_GBK_16_1[65280];
-//extern unsigned char RM_GBK_16_2[65280];
-//extern unsigned char RM_GBK_16_3[65280];
-//extern unsigned char RM_GBK_16_4[65264];
+#ifdef FONTMAKER_MBCS_FONT
+//extern unsigned char RM_JIS_16_1[72192];
+//extern unsigned char RM_JIS_16_2[72192];
+//extern unsigned char RM_JIS_16_3[72192];
+//extern unsigned char RM_JIS_16_4[72192];
+//extern unsigned char RM_JIS_16_5[72208];
 #endif
+
+#if 0	//def FONTMAKER_UNICODE_FONT
+//extern unsigned char RM_UNI_16_1[88288];
+//extern unsigned char RM_UNI_16_2[88288];
+//extern unsigned char RM_UNI_16_3[88288];
+//extern unsigned char RM_UNI_16_4[88288];
+//extern unsigned char RM_UNI_16_5[88288];
+//extern unsigned char RM_UNI_16_6[88288];
+//extern unsigned char RM_UNI_16_7[88224];
+#endif/*FONTMAKER_UNICODE_FONT*/
 #endif
 
 #ifdef FONT_24

@@ -65,6 +65,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			APP_Ask_GPS_Data();
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -85,7 +86,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	}
 
 	//power key will wakeup lcd
-	if((key_code == KEY_PWR) && (key_type == KEY_UP))
+	if((key_type == KEY_UP))
 	{
 		if(lcd_is_sleeping)
 			lcd_sleep_out = true;

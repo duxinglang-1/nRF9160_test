@@ -18,6 +18,7 @@
 #include "font.h"
 #include "lsm6dso.h"
 #include "screen.h"
+#include "ucs2.h"
 
 static struct k_timer clock_timer;
 
@@ -244,6 +245,8 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 
 void GetSystemDateStrings(u8_t *str_date)
 {
+	u8_t tmpbuf[128] = {0};
+	
 	switch(global_settings.date_format)
 	{
 	case DATE_FORMAT_YYYYMMDD:
@@ -256,12 +259,18 @@ void GetSystemDateStrings(u8_t *str_date)
 		sprintf((char*)str_date, "%02d/%02d/%04d", date_time.day, date_time.month, date_time.year);
 		break;
 	}
+
+#ifdef FONTMAKER_UNICODE_FONT
+	strcpy(tmpbuf, str_date);
+	mmi_asc_to_ucs2(str_date, tmpbuf);
+#endif
 }
 
 void GetSysteAmPmStrings(u8_t *str_ampm)
 {
 	u8_t flag = 0;
 	u8_t *am_pm[2] = {"am", "pm"};
+	u8_t tmpbuf[128] = {0};
 
 	if(date_time.hour > 12)
 		flag = 1;
@@ -275,10 +284,18 @@ void GetSysteAmPmStrings(u8_t *str_ampm)
 		sprintf((char*)str_ampm, "%s", am_pm[flag]);
 		break;
 	}
+
+#ifdef FONTMAKER_UNICODE_FONT
+	strcpy(tmpbuf, str_ampm);
+	mmi_asc_to_ucs2(str_ampm, tmpbuf);
+#endif
+
 }
 
 void GetSystemTimeStrings(u8_t *str_time)
 {
+	u8_t tmpbuf[128] = {0};
+	
 	switch(global_settings.time_format)
 	{
 	case TIME_FORMAT_24:
@@ -288,6 +305,11 @@ void GetSystemTimeStrings(u8_t *str_time)
 		sprintf((char*)str_time, "%02d:%02d:%02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
 		break;
 	}
+
+#ifdef FONTMAKER_UNICODE_FONT
+	strcpy(tmpbuf, str_time);
+	mmi_asc_to_ucs2(str_time, tmpbuf);
+#endif
 }
 
 void GetSystemWeekStrings(u8_t *str_week)
@@ -295,17 +317,58 @@ void GetSystemWeekStrings(u8_t *str_week)
 	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 	u8_t *week_chn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
 	u8_t *week_jpn[15] = {"にちようび", "げつようび", "かようび", "すいようび", "もくようび", "きんようび", "どようび"};
+#ifdef FONTMAKER_UNICODE_FONT
+	u16_t week_uni_en[7][10] = {
+								{0x0053,0x0075,0x006E,0x0064,0x0061,0x0079,0x0000},
+								{0x004D,0x006F,0x006E,0x0064,0x0061,0x0079,0x0000},
+								{0x0054,0x0075,0x0065,0x0073,0x0064,0x0061,0x0079,0x0000},
+								{0x0057,0x0065,0x0064,0x006E,0x0065,0x0073,0x0064,0x0061,0x0079,0x0000},
+								{0x0054,0x0068,0x0075,0x0072,0x0073,0x0064,0x0061,0x0079,0x0000},
+								{0x0046,0x0072,0x0049,0x0064,0x0061,0x0079,0x0000},
+								{0x0053,0x0061,0x0074,0x0075,0x0072,0x0064,0x0061,0x0079,0x0000}
+							};
+	u16_t week_uni_chn[7][4] = {
+								{0x661F,0x671F,0x65E5,0x0000}, 
+								{0x661F,0x671F,0x4E00,0x0000}, 
+								{0x661F,0x671F,0x4E8C,0x0000}, 
+								{0x661F,0x671F,0x4E09,0x0000}, 
+								{0x661F,0x671F,0x56DB,0x0000}, 
+								{0x661F,0x671F,0x4E94,0x0000}, 
+								{0x661F,0x671F,0x516D,0x0000}
+							};
+	u16_t week_uni_jpn[15][6] = {
+								{0x306B,0x3061,0x3088,0x3046,0x3073,0x0000},
+								{0x3052,0x3064,0x3088,0x3046,0x3073,0x0000},
+								{0x304B,0x3088,0x3046,0x3073,0x0000},
+								{0x3059,0x3044,0x3088,0x3046,0x3073,0x0000},
+								{0x3082,0x304F,0x3088,0x3046,0x3073,0x0000},
+								{0x304D,0x3093,0x3088,0x3046,0x3073,0x0000},
+								{0x3069,0x3088,0x3046,0x3073,0x0000}
+							};
+#endif
 
 	switch(global_settings.language)
 	{
 	case LANGUAGE_CHN:
+	#ifdef FONTMAKER_UNICODE_FONT
+		mmi_ucs2cpy(str_week, week_uni_chn[date_time.week]);
+	#else
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
+	#endif
 		break;
 	case LANGUAGE_EN:
+	#ifdef FONTMAKER_UNICODE_FONT
+		mmi_ucs2cpy(str_week, week_uni_en[date_time.week]);
+	#else
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
+	#endif
 		break;
 	case LANGUAGE_JPN:
+	#ifdef FONTMAKER_UNICODE_FONT
+		mmi_ucs2cpy(str_week, week_uni_jpn[date_time.week]);
+	#else
 		strcpy((char*)str_week, (const char*)week_jpn[date_time.week]);
+	#endif
 		break;
 	}
 }

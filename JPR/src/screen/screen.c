@@ -20,6 +20,7 @@
 #include "lsm6dso.h"
 #include "external_flash.h"
 #include "screen.h"
+#include "ucs2.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -108,12 +109,23 @@ void IdleShowSystemDate(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 #endif
 
+#ifdef FONTMAKER_UNICODE_FONT
+	GetSystemDateStrings(str_date);
+	LCD_MeasureUniString(str_date,&w,&h);
+	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+	y = IDLE_DATE_SHOW_Y;
+	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
+	LCD_ShowUniString(x,y,str_date);
+	
+#else
+
 	GetSystemDateStrings(str_date);
 	LCD_MeasureString(str_date,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
 	y = IDLE_DATE_SHOW_Y;
 	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
 	LCD_ShowString(x,y,str_date);
+#endif
 }
 
 void IdleShowSystemTime(void)
@@ -136,6 +148,21 @@ void IdleShowSystemTime(void)
 	offset = 0;
 #endif
 
+#ifdef FONTMAKER_UNICODE_FONT
+	GetSystemTimeStrings(str_time);
+	LCD_MeasureUniString(str_time,&w,&h);
+	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+	y = IDLE_TIME_SHOW_Y;
+	LCD_ShowUniString(x,y,str_time);
+
+	LCD_SetFontSize(FONT_SIZE_16);
+	GetSysteAmPmStrings(str_ampm);
+	x = x+w+5;
+	y = IDLE_TIME_SHOW_Y+offset;
+	LCD_ShowUniString(x,y,str_ampm);
+
+#else
+
 	GetSystemTimeStrings(str_time);
 	LCD_MeasureString(str_time,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
@@ -146,7 +173,8 @@ void IdleShowSystemTime(void)
 	GetSysteAmPmStrings(str_ampm);
 	x = x+w+5;
 	y = IDLE_TIME_SHOW_Y+offset;
-	LCD_ShowString(x,y,str_ampm);	
+	LCD_ShowString(x,y,str_ampm);
+#endif
 }
 
 void IdleShowSystemWeek(void)
@@ -167,18 +195,21 @@ void IdleShowSystemWeek(void)
 
 	GetSystemWeekStrings(str_week);
 
-	//xb add 2020-11-06
-	if(global_settings.language == LANGUAGE_CHN)
-		strcpy(str_week,"It has no chinese font!");
-	else if(global_settings.language == LANGUAGE_JPN)
-		strcpy(str_week,"It has no japanese font!");
-	//xb end
-	
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_MeasureUniString(str_week,&w,&h);
+	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+	y = IDLE_WEEK_SHOW_Y;
+	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
+	LCD_ShowUniString(x,y,str_week);
+
+#else
+
 	LCD_MeasureString(str_week,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
 	y = IDLE_WEEK_SHOW_Y;
 	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
 	LCD_ShowString(x,y,str_week);
+#endif
 }
 
 void IdleShowDateTime(void)
@@ -192,7 +223,8 @@ void IdleUpdateBatSoc(void)
 {
 	u16_t x,y,w,h;
 	u8_t strbuf[10] = {0};
-
+	u8_t tmpbuf[128] = {0};
+	
 	LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
 	
 	switch(g_chg_status)
@@ -209,17 +241,29 @@ void IdleUpdateBatSoc(void)
 	}
 
 	LCD_SetFontSize(FONT_SIZE_16);
+	
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
+	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
+	LCD_ShowUniString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, tmpbuf);
+	
+#else
+
 	LCD_MeasureString(strbuf, &w, &h);
 	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
 	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
 	LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);
+#endif
 }
 
 void IdleShowBatSoc(void)
 {
 	u16_t x,y,w,h;
 	u8_t strbuf[10] = {0};
-
+	u8_t tmpbuf[128] = {0};
+	
 	LCD_DrawRectangle(BAT_POSITIVE_X,BAT_POSITIVE_Y,BAT_POSITIVE_W,BAT_POSITIVE_H);
 	LCD_DrawRectangle(BAT_SUBJECT_X,BAT_SUBJECT_Y,BAT_SUBJECT_W,BAT_SUBJECT_H);
 	LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
@@ -238,18 +282,54 @@ void IdleShowBatSoc(void)
 	}
 
 	LCD_SetFontSize(FONT_SIZE_16);
+	
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
+	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
+	LCD_ShowUniString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, tmpbuf);
+	
+#else
+	
 	LCD_MeasureString(strbuf, &w, &h);
 	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
 	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
-	LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);	
+	LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);
+#endif
 }
 
 void IdleUpdateSportData(void)
 {
 	u16_t x,y,w,h;
 	u8_t strbuf[128] = {0};
-
+	u8_t tmpbuf[128] = {0};
+	
 	LCD_SetFontSize(FONT_SIZE_16);
+
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf,"S:");
+	LCD_MeasureUniString(tmpbuf, &w, &h);		
+	LCD_Fill(IMU_STEPS_SHOW_X+w, IMU_STEPS_SHOW_Y, 50, IMU_STEPS_SHOW_H, BLACK);
+	sprintf(strbuf, "%d", g_steps);
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_ShowUniString(IMU_STEPS_SHOW_X+w, IMU_STEPS_SHOW_Y, tmpbuf);
+
+	mmi_asc_to_ucs2(tmpbuf,"D:");
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_Fill(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3+w, IMU_STEPS_SHOW_Y, 50, IMU_STEPS_SHOW_H, BLACK);
+	sprintf(strbuf, "%d", g_distance);
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_ShowUniString(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3+w, IMU_STEPS_SHOW_Y, tmpbuf);
+
+	mmi_asc_to_ucs2(tmpbuf,"C:");
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_Fill(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3+w, IMU_STEPS_SHOW_Y, 50, IMU_STEPS_SHOW_H, BLACK);
+	sprintf(strbuf, "%d", g_calorie);
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_ShowUniString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3+w, IMU_STEPS_SHOW_Y, tmpbuf);
+
+#else
 
 	LCD_MeasureString("S:", &w, &h);		
 	LCD_Fill(IMU_STEPS_SHOW_X+w, IMU_STEPS_SHOW_Y, 50, IMU_STEPS_SHOW_H, BLACK);
@@ -265,15 +345,34 @@ void IdleUpdateSportData(void)
 	LCD_Fill(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3+w, IMU_STEPS_SHOW_Y, 50, IMU_STEPS_SHOW_H, BLACK);
 	sprintf(strbuf, "%d", g_calorie);
 	LCD_ShowString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3+w, IMU_STEPS_SHOW_Y, strbuf);
+#endif
 }
 
 void IdleShowSportData(void)
 {
 	u16_t x,y,w,h;
 	u8_t strbuf[128] = {0};
+	u8_t tmpbuf[128] = {0};
 	
 	LCD_SetFontSize(FONT_SIZE_16);
-		
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_Fill(IMU_STEPS_SHOW_X,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
+	sprintf(strbuf, "S:%d", g_steps);
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_ShowUniString(IMU_STEPS_SHOW_X, IMU_STEPS_SHOW_Y, tmpbuf);
+
+	LCD_Fill(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
+	sprintf(strbuf, "D:%d", g_distance);
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_ShowUniString(IMU_STEPS_SHOW_X+IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, tmpbuf);
+
+	LCD_Fill(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
+	sprintf(strbuf, "C:%d", g_calorie);
+	mmi_asc_to_ucs2(tmpbuf,strbuf);
+	LCD_ShowUniString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, tmpbuf);
+
+#else
 	LCD_Fill(IMU_STEPS_SHOW_X,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
 	sprintf(strbuf, "S:%d", g_steps);
 	LCD_ShowString(IMU_STEPS_SHOW_X, IMU_STEPS_SHOW_Y, strbuf);
@@ -285,6 +384,7 @@ void IdleShowSportData(void)
 	LCD_Fill(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_Y,IMU_STEPS_SHOW_W/3,IMU_STEPS_SHOW_H,BLACK);
 	sprintf(strbuf, "C:%d", g_calorie);
 	LCD_ShowString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, strbuf);
+#endif
 }
 
 void IdleScreenProcess(void)
@@ -354,8 +454,12 @@ void AlarmScreenProcess(void)
 		
 		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
 		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
-		
+
+	#ifdef FONT_24
 		LCD_SetFontSize(FONT_SIZE_24);
+	#else
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
 		LCD_MeasureString(notify,&w,&h);
 		x = (w > rect_w)? 0 : (rect_w-w)/2;
 		y = (h > rect_h)? 0 : (rect_h-h)/2;
@@ -389,7 +493,11 @@ void FindDeviceScreenProcess(void)
 		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
 		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
 		
+	#ifdef FONT_24
 		LCD_SetFontSize(FONT_SIZE_24);
+	#else
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
 		LCD_MeasureString(notify,&w,&h);
 		x = (w > rect_w)? 0 : (rect_w-w)/2;
 		y = (h > rect_h)? 0 : (rect_h-h)/2;

@@ -210,11 +210,11 @@ void LCD_Init(void)
 	WriteComm(0x21);
 	WriteComm(0x29);
 
+	LCD_Clear(WHITE);		//清屏为黑色
+	
 	//点亮背光
 	gpio_pin_write(lcd_gpio, LEDK_1, 0);
 	gpio_pin_write(lcd_gpio, LEDK_2, 0);
-				
-	LCD_Clear(WHITE);		//清屏为黑色
 }
 
  

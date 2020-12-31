@@ -203,6 +203,12 @@ void IdleShowSystemWeek(void)
 	LCD_ShowUniString(x,y,str_week);
 
 #else
+	//xb add 2020-11-06
+	if(global_settings.language == LANGUAGE_CHN)
+		strcpy(str_week,"It has no chinese font!");
+	else if(global_settings.language == LANGUAGE_JPN)
+		strcpy(str_week,"It has no japanese font!");
+	//xb end
 
 	LCD_MeasureString(str_week,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;

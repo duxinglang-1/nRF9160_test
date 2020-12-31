@@ -86,10 +86,10 @@ extern unsigned char asc2_1608[96][16];
 extern unsigned char asc2_16_rm[];
 #endif
 #endif
-#if 0	//def FONT_24
+#ifdef FONT_24
 extern unsigned char asc2_2412[96][48];
 #endif
-#if	0	//def FONT_32
+#ifdef FONT_32
 extern unsigned char asc2_3216[96][64];
 #endif
 //ÖÐÎÄ×Ö¿â

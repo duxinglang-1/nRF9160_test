@@ -29,11 +29,6 @@ static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
-bool lcd_is_sleeping = true;
-
-extern bool lcd_sleep_in;
-extern bool lcd_sleep_out;
-
 static void LCD_SPI_Init(void)
 {
 	spi_lcd = device_get_binding(LCD_DEV);

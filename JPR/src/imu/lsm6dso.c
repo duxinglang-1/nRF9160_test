@@ -922,7 +922,10 @@ void IMUMsgProcess(void)
 			
 			wrist_tilt = false;
 			if(global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
 				lcd_sleep_out = true;
+			}
 		}
 	}
 

@@ -29,11 +29,6 @@ static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
-bool lcd_is_sleeping = true;
-
-extern bool lcd_sleep_in;
-extern bool lcd_sleep_out;
-
 static void LCD_SPI_Init(void)
 {
 	spi_lcd = device_get_binding(LCD_DEV);
@@ -308,11 +303,23 @@ void LCD_SleepIn(void)
 //屏幕唤醒
 void LCD_SleepOut(void)
 {
+	u16_t bk_time;
+	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
 
 	if(global_settings.backlight_time != 0)
-		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+	{
+		bk_time = global_settings.backlight_time;
+		//xb add 2020-12-31 抬手亮屏5秒后自动息屏
+		if(sleep_out_by_wrist)
+		{
+			sleep_out_by_wrist = false;
+			bk_time = 5;
+		}
+
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), NULL);
+	}
 
 	if(!lcd_is_sleeping)
 		return;

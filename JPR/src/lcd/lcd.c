@@ -27,7 +27,6 @@
 #include "LCD_R108101_GC9307.h"
 #endif 
 
-
 //LCD屏幕的高度和宽度
 uint16_t LCD_WIDTH = COL;
 uint16_t LCD_HEIGHT = ROW;
@@ -49,6 +48,8 @@ SYSTEM_FONT_SIZE system_font = FONT_SIZE_16;
 
 bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
+bool lcd_is_sleeping = true;
+bool sleep_out_by_wrist = false;
 
 #ifdef FONTMAKER_UNICODE_FONT
 font_uni_infor uni_infor = {0};

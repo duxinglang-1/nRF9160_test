@@ -55,7 +55,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
-	BACKLIGHT_ALWAYS_ON,		//backlight time
+	BACKLIGHT_15_SEC,		//backlight time
 	{true,1},				//PHD
 	{						//alarm
 		{false,0,0,0},		

@@ -659,7 +659,7 @@ int main(void)
 //	test_bat_soc();
 
 	while(1)
-	{		
+	{
 		TimeMsgProcess();
 		NBMsgProcess();
 		GPSMsgProcess();

@@ -18,6 +18,7 @@
 #include "key.h"
 #include "Max20353.h"
 #include "Alarm.h"
+#include "lcd.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -47,9 +48,6 @@ static struct k_delayed_work buttons_scan;
 static struct k_mutex button_handler_mut;
 static struct k_timer g_long_press_timer_id;
 
-extern bool lcd_sleep_in;
-extern bool lcd_sleep_out;
-extern bool lcd_is_sleeping;
 extern bool sys_pwr_off;
 extern bool app_gps_on;
 
@@ -87,6 +85,8 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	//power key will wakeup lcd
 	if((key_code == KEY_PWR) && (key_type == KEY_UP))
 	{
+		sleep_out_by_wrist = false;
+		
 		if(lcd_is_sleeping)
 			lcd_sleep_out = true;
 		else

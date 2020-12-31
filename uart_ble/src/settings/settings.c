@@ -52,7 +52,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	true,					//wake screen by wrist
 	0x0000,					//target steps
 	TIME_FORMAT_24,			//24 format
-	LANGUAGE_JPN,			//language
+	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_ALWAYS_ON,	//backlight time

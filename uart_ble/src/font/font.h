@@ -7,11 +7,11 @@
 #include <zephyr.h>
 
 #define FONT_16
-//#define FONT_24
+#define FONT_24
 //#define FONT_32
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
-#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
+//#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
 
 #ifdef FONTMAKER_MBCS_FONT
 #define FONT_MBCS_HEAD_FLAG_0	0x4D
@@ -86,10 +86,10 @@ extern unsigned char asc2_1608[96][16];
 extern unsigned char asc2_16_rm[];
 #endif
 #endif
-#if 0	//def FONT_24
+#ifdef FONT_24
 extern unsigned char asc2_2412[96][48];
 #endif
-#if	0	//def FONT_32
+#ifdef FONT_32
 extern unsigned char asc2_3216[96][64];
 #endif
 //中文字库

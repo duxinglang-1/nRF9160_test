@@ -778,8 +778,9 @@ void lsm6dso_sensitivity(void)
 	lsm6dso_pedo_debounce_steps_set(&imu_dev_ctx, &deb_step);
 
 	//Set the sensitivity of the sensor
-	//uint8_t delay_time = 0;
-	//lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
+	uint8_t delay_time[2] = {0x00U, 0x32U};
+	//Lower Limit is 0 and Upper Limit is 50(32 in Hex), the delay time is 320ms
+	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
 }
 
 void IMU_init(void)
@@ -921,7 +922,10 @@ void IMUMsgProcess(void)
 			
 			wrist_tilt = false;
 			if(global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
 				lcd_sleep_out = true;
+			}
 		}
 	}
 

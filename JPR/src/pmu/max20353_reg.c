@@ -12,8 +12,12 @@
 #include <drivers/i2c.h>
 #include "max20353_reg.h"
 #include "max20353.h"
+#include "NTC_table.h"
+#include "lcd.h"
 
-#define BATTERY_SOC_GAUGE	//xb add 20201124 电量计功能的代码
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(max20353_reg, CONFIG_LOG_DEFAULT_LEVEL);
 
 #ifdef BATTERY_SOC_GAUGE
 #define VERIFY_AND_FIX 1
@@ -37,6 +41,8 @@ static u8_t original_OCV_1, original_OCV_2;
 static u16_t SOC;
 static u8_t SOC_percent;
 static u8_t PMICIntMasks[3];
+
+static struct k_timer ntc_check_timer;
 
 void prepare_to_load_model(void);
 void load_model(void);
@@ -499,6 +505,21 @@ int MAX20353_AppWrite(uint8_t dataoutlen)
 	return ret;
 }
 
+int MAX20353_AppRead(uint8_t datainlen)
+{
+	int ret;
+
+	ret = MAX20353_WriteReg(REG_AP_CMDOUT, appcmdoutvalue_);
+
+	k_sleep(K_MSEC(10));
+	
+	ret |= MAX20353_ReadRegMulti(REG_AP_RESPONSE, i2cbuffer_, datainlen);
+	if(ret != 0)
+		return MAX20353_ERROR;
+
+	return MAX20353_NO_ERROR;
+}
+
 int MAX20353_WriteRegMulti(max20353_reg_t reg, uint8_t *value, uint8_t len)
 {
 	s32_t ret;
@@ -879,6 +900,23 @@ int WriteMulti(u8_t *data, u8_t len)
 	return MAX20353_NO_ERROR;
 }
 
+#ifdef BATTERT_NTC_CHECK
+u8_t MAX20353_ReadTHM(void)
+{
+	int ret;
+
+	// Read THM
+	appcmdoutvalue_ = 0x53;
+	appdatainoutbuffer_[0] = 0x22; ////4 average, THM
+	ret |= MAX20353_AppWrite(1);
+
+	appcmdoutvalue_ = 0x53;
+	ret |= MAX20353_AppRead(5);
+	LOG_INF("%02X, %02X, %02X, %02X, %02X\n", i2cbuffer_[0], i2cbuffer_[1], i2cbuffer_[2], i2cbuffer_[3], i2cbuffer_[4]);
+
+	return i2cbuffer_[4];
+}
+
 int MAX20353_UpdateRCOMP(int temp)
 {
 	int RCOMP; 
@@ -922,6 +960,111 @@ int MAX20353_UpdateRCOMP(int temp)
 	WriteWord(0x0C, RCOMP, 0x5C);
 	return RCOMP;
 }
+
+void MAX20353_UpdateTemper(void)
+{
+	u8_t thm;
+	s8_t begin,end,tmp;
+	float resistance;
+	s16_t temper=25;
+	u8_t tmpbuf[128] = {0};
+	static u8_t pre_thm=0;
+	static u16_t pre_temper=25;	//初始化默认25度
+	
+	thm = MAX20353_ReadTHM();
+	if(thm == pre_thm)
+		return;
+
+	pre_thm = thm;
+	resistance = (float)10/(255.00/thm-1);
+
+	sprintf(tmpbuf, "resistance:%.4f", resistance);
+	LOG_INF("%s\n", tmpbuf);
+
+	begin = 0;
+	end = TEMPER_NUM_MAX-1;
+	while(begin <= end)
+	{
+		tmp = (begin+end)/2;
+		
+		if(ntc_table[tmp].impedance == resistance)
+			break;
+
+		if(ntc_table[tmp].impedance > resistance)
+		{
+			begin = tmp+1;
+		}
+		else
+		{
+			end = tmp-1;
+		}
+	}
+
+	if(begin <= end)	//find success!
+	{
+		LOG_INF("find success!\n");
+		
+		temper = ntc_table[tmp].temperature;
+	}
+	else			//select closeet
+	{
+		float com1,com2;
+
+		LOG_INF("select closeet!\n");
+		
+		if(begin == tmp+1)
+		{
+			com1 = fabs(ntc_table[tmp].impedance-resistance);
+			com2 = fabs(ntc_table[tmp+1].impedance-resistance);
+			sprintf(tmpbuf, "001 com1:%.4f, com2:%04f", com1, com2);
+			LOG_INF("%s\n", tmpbuf);
+			if(com1 > com2)
+			{
+				temper = ntc_table[tmp+1].temperature;
+			}
+			else
+			{
+				temper = ntc_table[tmp].temperature;
+			}
+		}
+		else if(end == tmp-1)
+		{
+			com1 = fabs(ntc_table[tmp].impedance-resistance);
+			com2 = fabs(ntc_table[tmp-1].impedance-resistance);
+			sprintf(tmpbuf, "002 com1:%.4f, com2:%04f", com1, com2);
+			LOG_INF("%s\n", tmpbuf);
+			if(com1 > com2)
+			{
+				temper = ntc_table[tmp-1].temperature;
+			}
+			else
+			{
+				temper = ntc_table[tmp].temperature;
+			}			
+		}
+	}
+
+	LOG_INF("temper:%d\n", temper);
+
+	if(temper != pre_temper)
+	{
+		pre_temper = temper;
+		MAX20353_UpdateRCOMP(temper);	
+	}
+}
+
+void MAX20353_CheckTemper(void)
+{
+	pmu_check_temp_flag = true;
+}
+
+void MAX20353_StartCheckTemper(void)
+{
+	k_timer_init(&ntc_check_timer, MAX20353_CheckTemper, NULL);
+	k_timer_start(&ntc_check_timer, K_MSEC(30*1000), K_MSEC(60*1000));
+}
+
+#endif/*BATTERT_NTC_CHECK*/
 
 u8_t MAX20353_CalculateSOC(void)
 {
@@ -1363,5 +1506,9 @@ void MAX20353_SOCInit(void)
 	
 	//设置默认温度25度，SOC变化1%报警，电量小于4%报警
 	WriteWord(0x0C, 0x12, 0x5C);
+
+#ifdef BATTERT_NTC_CHECK
+	MAX20353_StartCheckTemper();
+#endif
 }
 #endif/*BATTERY_SOC_GAUGE*/

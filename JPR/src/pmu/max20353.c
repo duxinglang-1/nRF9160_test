@@ -28,7 +28,9 @@ bool vibrate_stop_flag = false;
 bool pmu_trige_flag = false;
 bool pmu_alert_flag = false;
 bool pmu_bat_flag = false;
+bool pmu_check_temp_flag = false;
 bool pmu_redraw_bat_flag = true;
+
 bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
@@ -490,6 +492,13 @@ void PMURedrawBatStatus(void)
 	}
 }
 
+#ifdef BATTERT_NTC_CHECK
+void PMUUpdateTempForSOC(void)
+{
+	MAX20353_UpdateTemper();
+}
+#endif
+
 void PMUMsgProcess(void)
 {
 	if(pmu_trige_flag)
@@ -533,6 +542,14 @@ void PMUMsgProcess(void)
 		PMURedrawBatStatus();
 		pmu_redraw_bat_flag = false;
 	}
+
+#ifdef BATTERT_NTC_CHECK
+	if(pmu_check_temp_flag)
+	{
+		PMUUpdateTempForSOC();
+		pmu_check_temp_flag = false;
+	}
+#endif
 }
 
 void MAX20353_ReadStatus(void)

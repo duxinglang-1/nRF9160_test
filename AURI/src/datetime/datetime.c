@@ -295,14 +295,26 @@ void GetSysteAmPmStrings(u8_t *str_ampm)
 void GetSystemTimeStrings(u8_t *str_time)
 {
 	u8_t tmpbuf[128] = {0};
+	static bool flag = true;
 	
 	switch(global_settings.time_format)
 	{
 	case TIME_FORMAT_24:
-		sprintf((char*)str_time, "%02d:%02d:%02d", date_time.hour, date_time.minute, date_time.second);
+		if(flag)
+			sprintf((char*)str_time, "%02d:%02d", date_time.hour, date_time.minute);
+		else
+			sprintf((char*)str_time, "%02d %02d", date_time.hour, date_time.minute);
+
+		flag = !flag;
 		break;
+		
 	case TIME_FORMAT_12:
-		sprintf((char*)str_time, "%02d:%02d:%02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
+		if(flag)
+			sprintf((char*)str_time, "%02d:%02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute);
+		else
+			sprintf((char*)str_time, "%02d %02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute);
+
+		flag = !flag;
 		break;
 	}
 

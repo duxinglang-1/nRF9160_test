@@ -133,6 +133,24 @@ void pmu_battery_low_shutdown(void)
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
+void pmu_charge_complete(void)
+{
+	MAX20353_LED0(2,10,true);//green led on
+	MAX20353_LED2(2,10,false);//red led off
+}
+
+void pmu_charge_connected(void)
+{
+	MAX20353_LED0(2,10,false);//green led off
+	MAX20353_LED2(2,10,true);//red led on
+}
+
+void pmu_charge_disconnected(void)
+{
+	MAX20353_LED0(2,10,false);//green led off
+	MAX20353_LED2(2,10,false);//red led off
+}
+
 void pmu_interrupt_proc(void)
 {
 	u8_t int0,status0,status1;
@@ -163,6 +181,8 @@ void pmu_interrupt_proc(void)
 				break;
 				
 			case 0x06://Maintain charger timer done
+				pmu_charge_complete();
+				
 				g_chg_status = BAT_CHARGING_FINISHED;
 				lcd_sleep_out = true;
 				break;
@@ -178,6 +198,8 @@ void pmu_interrupt_proc(void)
 			{
 				InitCharger();
 
+				pmu_charge_connected();
+				
 				charger_is_connected = true;
 				
 				g_chg_status = BAT_CHARGING_PROGRESS;
@@ -186,7 +208,9 @@ void pmu_interrupt_proc(void)
 				lcd_sleep_out = true;
 			}
 			else
-			{			
+			{	
+				pmu_charge_disconnected();
+				
 				charger_is_connected = false;
 				
 				g_chg_status = BAT_CHARGING_NO;

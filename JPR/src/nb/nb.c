@@ -18,6 +18,9 @@
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
 #endif
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
@@ -63,7 +66,7 @@ void show_infor(u8_t *strbuf)
 /**@brief Recoverable BSD library error. */
 static void bsd_recoverable_error_handler(uint32_t err)
 {
-	printk("bsdlib recoverable error: %u\n", (unsigned int)err);
+	LOG_INF("bsdlib recoverable error: %u\n", (unsigned int)err);
 #ifdef SHOW_LOG_IN_SCREEN	
 	sprintf(tmpbuf, "bsdlib recoverable error: %u\n", (unsigned int)err);
 	show_infor(tmpbuf);
@@ -79,38 +82,38 @@ void lwm2m_carrier_event_handler(const lwm2m_carrier_event_t *event)
 {
 	switch (event->type) {
 	case LWM2M_CARRIER_EVENT_BSDLIB_INIT:
-		printk("LWM2M_CARRIER_EVENT_BSDLIB_INIT\n");
+		LOG_INF("LWM2M_CARRIER_EVENT_BSDLIB_INIT\n");
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("LWM2M_CARRIER_EVENT_BSDLIB_INIT");
 	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_CONNECT:
-		printk("LWM2M_CARRIER_EVENT_CONNECT\n");
+		LOG_INF("LWM2M_CARRIER_EVENT_CONNECT\n");
 	#ifdef SHOW_LOG_IN_SCREEN
 		show_infor("LWM2M_CARRIER_EVENT_CONNECT");
 	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_DISCONNECT:
-		printk("LWM2M_CARRIER_EVENT_DISCONNECT\n");
+		LOG_INF("LWM2M_CARRIER_EVENT_DISCONNECT\n");
 	#ifdef SHOW_LOG_IN_SCREEN
 		show_infor("LWM2M_CARRIER_EVENT_DISCONNECT");
 	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_READY:
-		printk("LWM2M_CARRIER_EVENT_READY\n");
+		LOG_INF("LWM2M_CARRIER_EVENT_READY\n");
 	#ifdef SHOW_LOG_IN_SCREEN
 		show_infor("LWM2M_CARRIER_EVENT_READY");
 	#endif
 		k_sem_give(&carrier_registered);
 		break;
 	case LWM2M_CARRIER_EVENT_FOTA_START:
-		printk("LWM2M_CARRIER_EVENT_FOTA_START\n");
+		LOG_INF("LWM2M_CARRIER_EVENT_FOTA_START\n");
 	#ifdef SHOW_LOG_IN_SCREEN
 		show_infor("LWM2M_CARRIER_EVENT_FOTA_START");
 	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_REBOOT:
-		printk("LWM2M_CARRIER_EVENT_REBOOT\n");
+		LOG_INF("LWM2M_CARRIER_EVENT_REBOOT\n");
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("LWM2M_CARRIER_EVENT_REBOOT");
 	#endif
@@ -127,7 +130,7 @@ static void data_print(u8_t *prefix, u8_t *data, size_t len)
 
 	memcpy(buf, data, len);
 	buf[len] = 0;
-	printk("%s%s\n", prefix, buf);
+	LOG_INF("%s%s\n", prefix, buf);
 }
 
 /**@brief Function to publish data on the configured topic
@@ -147,7 +150,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.retain_flag = 0;
 
 	data_print("Publishing: ", data, len);
-	printk("to topic: %s len: %u\n",
+	LOG_INF("to topic: %s len: %u\n",
 		CONFIG_MQTT_PUB_TOPIC,
 		(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
 #ifdef SHOW_LOG_IN_SCREEN	
@@ -178,7 +181,7 @@ static int subscribe(void)
 		.message_id = 1234
 	};
 
-	printk("Subscribing to: %s len %u\n", CONFIG_MQTT_SUB_TOPIC,
+	LOG_INF("Subscribing to: %s len %u\n", CONFIG_MQTT_SUB_TOPIC,
 		(unsigned int)strlen(CONFIG_MQTT_SUB_TOPIC));
 #ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "Subscribing to: %s len %u", CONFIG_MQTT_SUB_TOPIC,
@@ -210,7 +213,7 @@ static int publish_get_payload(struct mqtt_client *c, size_t length)
 				return ret;
 			}
 
-			printk("mqtt_read_publish_payload: EAGAIN\n");
+			LOG_INF("mqtt_read_publish_payload: EAGAIN\n");
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("mqtt_read_publish_payload: EAGAIN");
 		#endif
@@ -246,7 +249,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_CONNACK:
 		if (evt->result != 0)
 		{
-			printk("MQTT connect failed %d\n", evt->result);
+			LOG_INF("MQTT connect failed %d\n", evt->result);
 		#ifdef SHOW_LOG_IN_SCREEN	
 			sprintf(tmpbuf, "MQTT connect failed %d", evt->result);
 			show_infor(tmpbuf);
@@ -256,7 +259,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 		}
 
 		connected = true;
-		printk("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
+		LOG_INF("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
 	#ifdef SHOW_LOG_IN_SCREEN	
 		sprintf(tmpbuf, "[%s:%d] MQTT client connected!", __func__, __LINE__);
 		show_infor(tmpbuf);
@@ -265,7 +268,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	case MQTT_EVT_DISCONNECT:
-		printk("[%s:%d] MQTT client disconnected %d\n", __func__,
+		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__,
 		       __LINE__, evt->result);
 	#ifdef SHOW_LOG_IN_SCREEN	
 		sprintf(tmpbuf, "[%s:%d] MQTT client disconnected %d", __func__,
@@ -280,7 +283,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 		{
 			const struct mqtt_publish_param *p = &evt->param.publish;
 
-			printk("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__,
+			LOG_INF("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__,
 			       __LINE__, evt->result, p->message.payload.len);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "[%s:%d] MQTT PUBLISH result=%d len=%d", __func__,
@@ -299,8 +302,8 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 			}
 			else
 			{
-				printk("mqtt_read_publish_payload: Failed! %d\n", err);
-				printk("Disconnecting MQTT client...\n");
+				LOG_INF("mqtt_read_publish_payload: Failed! %d\n", err);
+				LOG_INF("Disconnecting MQTT client...\n");
 			#ifdef SHOW_LOG_IN_SCREEN	
 				sprintf(tmpbuf, "mqtt_read_publish_payload: Failed! %d", err);
 				show_infor(tmpbuf);
@@ -310,7 +313,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 				err = mqtt_disconnect(c);
 				if(err)
 				{
-					printk("Could not disconnect: %d\n", err);
+					LOG_INF("Could not disconnect: %d\n", err);
 				#ifdef SHOW_LOG_IN_SCREEN	
 					sprintf(tmpbuf, "Could not disconnect: %d", err);
 					show_infor(tmpbuf);
@@ -323,7 +326,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_PUBACK:
 		if(evt->result != 0)
 		{
-			printk("MQTT PUBACK error %d\n", evt->result);
+			LOG_INF("MQTT PUBACK error %d\n", evt->result);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "MQTT PUBACK error %d", evt->result);
 			show_infor(tmpbuf);
@@ -331,7 +334,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		printk("[%s:%d] PUBACK packet id: %u\n", __func__, __LINE__,
+		LOG_INF("[%s:%d] PUBACK packet id: %u\n", __func__, __LINE__,
 				evt->param.puback.message_id);
 	#ifdef SHOW_LOG_IN_SCREEN
 		sprintf(tmpbuf, "[%s:%d] PUBACK packet id: %u", __func__, __LINE__,
@@ -343,7 +346,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_SUBACK:
 		if(evt->result != 0)
 		{
-			printk("MQTT SUBACK error %d\n", evt->result);
+			LOG_INF("MQTT SUBACK error %d\n", evt->result);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "MQTT SUBACK error %d", evt->result);
 			show_infor(tmpbuf);
@@ -351,7 +354,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		printk("[%s:%d] SUBACK packet id: %u\n", __func__, __LINE__,
+		LOG_INF("[%s:%d] SUBACK packet id: %u\n", __func__, __LINE__,
 				evt->param.suback.message_id);
 	#ifdef SHOW_LOG_IN_SCREEN
 		sprintf(tmpbuf, "[%s:%d] SUBACK packet id: %u", __func__, __LINE__,
@@ -361,7 +364,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	default:
-		printk("[%s:%d] default: %d\n", __func__, __LINE__,
+		LOG_INF("[%s:%d] default: %d\n", __func__, __LINE__,
 				evt->type);
 	#ifdef SHOW_LOG_IN_SCREEN
 		sprintf(tmpbuf, "[%s:%d] default: %d", __func__, __LINE__,
@@ -388,7 +391,7 @@ static void broker_init(void)
 	err = getaddrinfo(CONFIG_MQTT_BROKER_HOSTNAME, NULL, &hints, &result);
 	if(err)
 	{
-		printk("ERROR: getaddrinfo failed %d\n", err);
+		LOG_INF("ERROR: getaddrinfo failed %d\n", err);
 	#ifdef SHOW_LOG_IN_SCREEN
 		sprintf(tmpbuf, "ERROR: getaddrinfo failed %d", err);
 		show_infor(tmpbuf);	
@@ -418,7 +421,7 @@ static void broker_init(void)
 
 			inet_ntop(AF_INET, &broker4->sin_addr.s_addr,
 				  ipv4_addr, sizeof(ipv4_addr));
-			printk("IPv4 Address found %s\n", ipv4_addr);
+			LOG_INF("IPv4 Address found %s\n", ipv4_addr);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "IPv4 Address found %s", ipv4_addr);
 			show_infor(tmpbuf);
@@ -428,7 +431,7 @@ static void broker_init(void)
 		}
 		else
 		{
-			printk("ai_addrlen = %u should be %u or %u\n",
+			LOG_INF("ai_addrlen = %u should be %u or %u\n",
 				(unsigned int)addr->ai_addrlen,
 				(unsigned int)sizeof(struct sockaddr_in),
 				(unsigned int)sizeof(struct sockaddr_in6));
@@ -523,7 +526,7 @@ static void modem_configure(void)
 #if 1 //xb test 20200927
 	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
 	{
-		printk("AT_CMD write fail!\n");
+		LOG_INF("AT_CMD write fail!\n");
 		return;
 	}
 #endif
@@ -541,25 +544,25 @@ static void modem_configure(void)
 		/* Wait for the LWM2M_CARRIER to configure the modem and
 		 * start the connection.
 		 */
-		printk("Waitng for carrier registration...\n");
+		LOG_INF("Waitng for carrier registration...\n");
 	  #ifdef SHOW_LOG_IN_SCREEN
 		show_infor("Waitng for carrier registration...");
 	  #endif
 		k_sem_take(&carrier_registered, K_FOREVER);
-		printk("Registered!\n");
+		LOG_INF("Registered!\n");
 	  #ifdef SHOW_LOG_IN_SCREEN
 		show_infor("Registered!");
 	  #endif
 	#else /* defined(CONFIG_LWM2M_CARRIER) */
 		int err;
 
-		printk("LTE Link Connecting ...\n");
+		LOG_INF("LTE Link Connecting ...\n");
 	  #ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("LTE Link Connecting ...");
 	  #endif
 		err = lte_lc_init_and_connect();
 		__ASSERT(err == 0, "LTE link could not be established.");
-		printk("LTE Link Connected!\n");
+		LOG_INF("LTE Link Connected!\n");
 	  #ifdef SHOW_LOG_IN_SCREEN
 		show_infor("LTE Link Connected!");
 	  #endif
@@ -572,7 +575,7 @@ void test_nb(void)
 {
 	int err;
 
-	printk("Start NB-IoT test!\n");
+	LOG_INF("Start NB-IoT test!\n");
 
 #ifdef SHOW_LOG_IN_SCREEN
 	show_infor("Start NB-IoT test!");
@@ -585,7 +588,7 @@ void test_nb(void)
 	err = mqtt_connect(&client);
 	if(err != 0)
 	{
-		printk("ERROR: mqtt_connect %d\n", err);
+		LOG_INF("ERROR: mqtt_connect %d\n", err);
 	#ifdef SHOW_LOG_IN_SCREEN
 		sprintf(tmpbuf, "ERROR: mqtt_connect %d", err);
 		show_infor(tmpbuf);
@@ -597,7 +600,7 @@ void test_nb(void)
 	err = fds_init(&client);
 	if(err != 0)
 	{
-		printk("ERROR: fds_init %d\n", err);
+		LOG_INF("ERROR: fds_init %d\n", err);
 	#ifdef SHOW_LOG_IN_SCREEN
 		sprintf(tmpbuf, "ERROR: fds_init %d", err);
 		show_infor(tmpbuf);
@@ -611,7 +614,7 @@ void test_nb(void)
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
 		if(err < 0)
 		{
-			printk("ERROR: poll %d\n", errno);
+			LOG_INF("ERROR: poll %d\n", errno);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "ERROR: poll %d", errno);
 			show_infor(tmpbuf);
@@ -623,7 +626,7 @@ void test_nb(void)
 		err = mqtt_live(&client);
 		if((err != 0) && (err != -EAGAIN))
 		{
-			printk("ERROR: mqtt_live %d\n", err);
+			LOG_INF("ERROR: mqtt_live %d\n", err);
 		#ifdef SHOW_LOG_IN_SCREEN
 			sprintf(tmpbuf, "ERROR: mqtt_live %d", err);
 			show_infor(tmpbuf);
@@ -637,7 +640,7 @@ void test_nb(void)
 			err = mqtt_input(&client);
 			if(err != 0)
 			{
-				printk("ERROR: mqtt_input %d\n", err);
+				LOG_INF("ERROR: mqtt_input %d\n", err);
 			#ifdef SHOW_LOG_IN_SCREEN
 				sprintf(tmpbuf, "ERROR: mqtt_input %d", err);
 				show_infor(tmpbuf);
@@ -649,7 +652,7 @@ void test_nb(void)
 
 		if((fds.revents & POLLERR) == POLLERR)
 		{
-			printk("POLLERR\n");
+			LOG_INF("POLLERR\n");
 		#ifdef SHOW_LOG_IN_SCREEN	
 			show_infor("POLLERR");
 		#endif
@@ -659,7 +662,7 @@ void test_nb(void)
 
 		if((fds.revents & POLLNVAL) == POLLNVAL)
 		{
-			printk("POLLNVAL\n");
+			LOG_INF("POLLNVAL\n");
 		#ifdef SHOW_LOG_IN_SCREEN
 			show_infor("POLLNVAL");
 		#endif
@@ -668,7 +671,7 @@ void test_nb(void)
 		}
 	}
 
-	printk("Disconnecting MQTT client...\n");
+	LOG_INF("Disconnecting MQTT client...\n");
 #ifdef SHOW_LOG_IN_SCREEN	
 	show_infor("Disconnecting MQTT client...");
 #endif
@@ -676,7 +679,7 @@ void test_nb(void)
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		printk("Could not disconnect MQTT client. Error: %d\n", err);
+		LOG_INF("Could not disconnect MQTT client. Error: %d\n", err);
 	#ifdef SHOW_LOG_IN_SCREEN	
 		sprintf(tmpbuf, "Could not disconnect MQTT client. Error: %d", err);
 		show_infor(tmpbuf);

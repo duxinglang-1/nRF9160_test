@@ -487,14 +487,14 @@ void test_flash(void)
 
 	flash_id = SpiFlash_ReadID();
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
-	LCD_ShowString(0,20,tmpbuf);
+	LCD_ShowString(0,2,tmpbuf);
 
 #if 0
 	//写之前需要先执行擦除操作
-	LCD_ShowString(0,40,"FLASH开始擦除...");
+	LCD_ShowString(0,0,"BEGIN FLASH开始擦除...");
 	SPIFlash_Erase_Chip();
 	//SPIFlash_Erase_Sector(0);
-	LCD_ShowString(0,60,"FLASH擦除成功!");
+	LCD_ShowString(0,2,"END FLASH擦除成功!");
 #endif
 
 #if 0	
@@ -523,27 +523,26 @@ void test_flash(void)
 	//LCD_ShowString(0,100,"FLASH写入图片4成功!");
 
 	//写入数据
-	//LCD_ShowString(0,80,"FLASH写入RM_LOGO图片数据...");
-	//SpiFlash_Write_Buf(RM_LOGO_240X240_1, IMG_RM_LOGO_240X240_ADDR, 57608);
-	//SpiFlash_Write_Buf(RM_LOGO_240X240_2, IMG_RM_LOGO_240X240_ADDR+57608, 57600);
-	//LCD_ShowString(0,100,"FLASH写入RM_LOGO图片成功!");	
+	LCD_ShowString(0,0,"FLASH写入LOGO图片数据...");
+	SpiFlash_Write_Buf(jjph_gc_96X32, IMG_LOGO_96X32_ADDR, IMG_LOGO_96X32_SZIE);
+	LCD_ShowString(0,2,"FLASH写入LOGO图片成功!");	
 #endif
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,80,"FLASH写入16X08英文字库...");
+	LCD_ShowString(0,0,"BEGIN FLASH写入16X08英文字库...");
 	SpiFlash_Write_Buf(asc2_1608, FONT_ASC_1608_ADDR, FONT_ASC_1608_SIZE);
-	LCD_ShowString(0,100,"FLASH写入16X08英文成功");
+	LCD_ShowString(0,2,"END FLASH写入16X08英文成功");
 
 	//写入数据
-	LCD_ShowString(0,120,"FLASH写入24X12英文字库...");
+	LCD_ShowString(0,0,"BEGIN FLASH写入24X12英文字库...");
 	SpiFlash_Write_Buf(asc2_2412, FONT_ASC_2412_ADDR, FONT_ASC_2412_SIZE);
-	LCD_ShowString(0,140,"FLASH写入24X12英文成功");
+	LCD_ShowString(0,2,"END FLASH写入24X12英文成功");
 
 	//写入数据
-	LCD_ShowString(0,160,"FLASH写入32X16英文字库...");
+	LCD_ShowString(0,0,"BEGIN FLASH写入32X16英文字库...");
 	SpiFlash_Write_Buf(asc2_3216, FONT_ASC_3216_ADDR, FONT_ASC_3216_SIZE);
-	LCD_ShowString(0,180,"FLASH写入32X16英文成功");
+	LCD_ShowString(0,2,"END FLASH写入32X16英文成功");
 #endif
 
 #if 0
@@ -584,6 +583,75 @@ void test_flash(void)
 	//SpiFlash_Write_Buf(chinese_3232_11, FONT_CHN_SM_3232_ADDR+(700*128)*10, (700*128));
 	//SpiFlash_Write_Buf(chinese_3232_12, FONT_CHN_SM_3232_ADDR+(700*128)*11, (478*128));
 	//LCD_ShowString(0,100,"FLASH写入32X32中文成功");	
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入08X04英文字库...");
+	SpiFlash_Write_Buf(asc2_SH1106_0804, FONT_ASC_0804_ADDR, FONT_ASC_0804_SIZE);
+	LCD_ShowString(0,2,"END FLASH写入16X08英文成功");
+
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入16X08英文字库...");
+	SpiFlash_Write_Buf(asc2_SH1106_1608, FONT_ASC_1608_ADDR, FONT_ASC_1608_SIZE);
+	LCD_ShowString(0,2,"END FLASH写入16X08英文成功");
+
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入24X12英文字库...");
+	SpiFlash_Write_Buf(asc2_SH1106_2412, FONT_ASC_2412_ADDR, FONT_ASC_2412_SIZE);
+	LCD_ShowString(0,2,"END FLASH写入24X12英文成功");
+
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入32X16英文字库...");
+	SpiFlash_Write_Buf(asc2_SH1106_3216, FONT_ASC_3216_ADDR, FONT_ASC_3216_SIZE);
+	LCD_ShowString(0,2,"END FLASH写入32X16英文成功");
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN写入08X08中文字库...");
+	SpiFlash_Write_Buf(chn_SH1106_0808, FONT_CHN_SM_0808_ADDR, 8178*8);
+	LCD_ShowString(0,2,"END写入08X08中文成功");
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入16X16中文字库...");
+	//SpiFlash_Write_Buf(chn_SH1106_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
+	//SpiFlash_Write_Buf(chn_SH1106_1616_2, FONT_CHN_SM_1616_ADDR+(2726*32)*1, (2726*32));
+	SpiFlash_Write_Buf(chn_SH1106_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32)); 
+	LCD_ShowString(0,2,"END FLASH写入16X16中文成功");
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入24X24中文字库...");
+	//SpiFlash_Write_Buf(chn_SH1106_2424_1, FONT_CHN_SM_2424_ADDR+(1200*72)*0, (1200*72));
+	//SpiFlash_Write_Buf(chn_SH1106_2424_2, FONT_CHN_SM_2424_ADDR+(1200*72)*1, (1200*72));
+	//SpiFlash_Write_Buf(chn_SH1106_2424_3, FONT_CHN_SM_2424_ADDR+(1200*72)*2, (1200*72));
+	//SpiFlash_Write_Buf(chn_SH1106_2424_4, FONT_CHN_SM_2424_ADDR+(1200*72)*3, (1200*72));
+	//SpiFlash_Write_Buf(chn_SH1106_2424_5, FONT_CHN_SM_2424_ADDR+(1200*72)*4, (1200*72));
+	//SpiFlash_Write_Buf(chn_SH1106_2424_6, FONT_CHN_SM_2424_ADDR+(1200*72)*5, (1200*72));
+	SpiFlash_Write_Buf(chn_SH1106_2424_7, FONT_CHN_SM_2424_ADDR+(1200*72)*6, (977*72));
+	LCD_ShowString(0,2,"END FLASH写入24X24中文成功");
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,0,"FLASH写入32X32中文字库...");
+	//SpiFlash_Write_Buf(chn_SH1106_3232_1, FONT_CHN_SM_3232_ADDR+(700*128)*0, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_2, FONT_CHN_SM_3232_ADDR+(700*128)*1, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_3, FONT_CHN_SM_3232_ADDR+(700*128)*2, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_4, FONT_CHN_SM_3232_ADDR+(700*128)*3, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_5, FONT_CHN_SM_3232_ADDR+(700*128)*4, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_6, FONT_CHN_SM_3232_ADDR+(700*128)*5, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_7, FONT_CHN_SM_3232_ADDR+(700*128)*6, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_8, FONT_CHN_SM_3232_ADDR+(700*128)*7, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_9, FONT_CHN_SM_3232_ADDR+(700*128)*8, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_10, FONT_CHN_SM_3232_ADDR+(700*128)*9, (700*128));
+	//SpiFlash_Write_Buf(chn_SH1106_3232_11, FONT_CHN_SM_3232_ADDR+(700*128)*10, (700*128));
+	SpiFlash_Write_Buf(chn_SH1106_3232_12, FONT_CHN_SM_3232_ADDR+(700*128)*11, (478*128));
+	LCD_ShowString(0,2,"FLASH写入32X32中文成功");	
 #endif
 
 #if 0

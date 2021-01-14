@@ -55,7 +55,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define Y_min 0x00A1
 #define Y_max 0x0759
 
-#define LCD_DATA_LEN 4096
+#define LCD_DATA_LEN ((COL*ROW)/8)
 
 //------------------------------------------------------
 

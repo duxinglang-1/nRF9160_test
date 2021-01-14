@@ -145,8 +145,8 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	if(y >= ROW)
 		y = 0;
 
-	WriteComm(0xb0+y%4);
-	WriteComm(0X11+(x>>4));		  // Set Higher Column Start Address for Page Addressing Mode
+	WriteComm(0xb0+y%PAGE_MAX);
+	WriteComm(0X11+(x>>PAGE_MAX));		  // Set Higher Column Start Address for Page Addressing Mode
 	WriteComm((0X02+(x&0x0f))&0x0f);  
 }
 
@@ -349,111 +349,6 @@ void LCD_SleepOut(void)
 #endif
 
 	lcd_is_sleeping = false;
-}
-
-//在指定位置显示一个中文字符
-//x,y:起始坐标
-//num:要显示的字符:" "--->"~"
-void LCD_ShowCn(u16_t x, u16_t y, u16_t num)
-{  							  
-	u8_t temp,t1,t,i=0;
-	u16_t x0=x,y0=y;
-	u16_t index=0;
-	u8_t cbyte=system_font/8+((system_font%8)?1:0);				//行扫描，每个字符每一行占用的字节数
-	u8_t csize=cbyte*(system_font);								//得到字体一个字符对应点阵集所占的字节数	
-	u8_t databuf[2*COL] = {0};
-
-	BlockWrite(x,y,system_font,1);
-	for(t=0;t<16;t++)
-	{
-		//WriteData(Hzk[0][t]);
-	}	
-
-	BlockWrite(x,y+1,system_font,1);
-	for(t=0;t<16;t++)
-	{	
-		//WriteData(Hzk[0][t+16]);
-	}
-}  
-
-//在指定位置显示一个字符
-//x,y:起始坐标
-//num:要显示的字符:" "--->"~"
-void LCD_ShowEn(u16_t x,u16_t y,u8_t num)
-{
-    u8_t temp,t1,t,i=0;
-	u16_t y0=y,x0=x;
-	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
- 	u8_t databuf[2*COL] = {0};
-	
-	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
-
-	if(system_font == FONT_SIZE_16)
-	{
-		BlockWrite(x,y,(system_font/2),1);
-		memcpy(databuf, &asc2_SH1106_1608[num][0],(system_font/2));
-		DispDate((system_font/2), databuf);
-
-		BlockWrite(x,y+1,(system_font/2),1);
-		memcpy(databuf, &asc2_SH1106_1608[num][8],(system_font/2));
-		DispDate((system_font/2), databuf);
-  	}
-}
-
-//显示中英文字符串
-//x,y:起点坐标
-//*p:字符串起始地址	
-void LCD_ShowStr(uint16_t x, uint16_t y, uint8_t *p)
-{
-	u8_t x0=x;
-	u8_t width;
-	u16_t phz=0;
-
-	while(*p)
-	{       
-		if(x>=LCD_WIDTH)break;//退出
-		if(y>=LCD_HEIGHT)break;//退出
-		if(*p<0x80)
-		{
-			LCD_ShowEn(x,y,*p);
-		  	x += system_font/2;
-			p++;
-		}
-		else if(*(p+1))
-		{
-			phz = *p<<8;
-			phz += *(p+1);
-			LCD_ShowCn(x,y,phz);
-			x+=system_font;
-			p+=2;
-		}        
-	}
-}
-
-void test_show_str(void)
-{
-	u16_t x,y,w,h;
-	u8_t enbuf[64] = {0};
-	u8_t cnbuf[64] = {0};
-	u8_t jpbuf[64] = {0};
-		
-	POINT_COLOR=WHITE;								//画笔颜色
-	BACK_COLOR=BLACK;  								//背景色 
-
-	strcpy(enbuf, "August0123456789");
-
-#ifdef FONT_16
-	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
-#endif
-	LCD_MeasureString(enbuf,&w,&h);
-	x = 0;//(w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = 0;	
-	LCD_ShowStr(x,y,enbuf);
-	y = 2;
-	LCD_ShowStr(x,y,enbuf);
-
-	//LCD_ShowCn(0,1,1,0);
 }
 
 //LCD初始化函数

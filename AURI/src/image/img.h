@@ -76,4 +76,8 @@ typedef struct _PALETTE
 //extern unsigned char RM_LOGO_240X240_2[57600];
 #endif
 
+#ifdef LCD_VGM068A4W01_SH1106G
+
+#endif/*LCD_VGM068A4W01_SH1106G*/
+extern unsigned char jjph_gc_96X32[390];
 #endif/*__FONT_H__*/

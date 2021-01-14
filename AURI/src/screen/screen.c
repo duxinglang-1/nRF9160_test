@@ -15,6 +15,7 @@
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
+#include "img.h"
 #include "datetime.h"
 #include "max20353.h"
 #include "lsm6dso.h"
@@ -39,10 +40,17 @@ void ShowBootUpLogo(void)
 {
 	u16_t x,y,w,h;
 
-	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_get_pic_size_from_flash(IMG_LOGO_96X32_ADDR, &w, &h);
 	x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
 	y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+	LCD_ShowImg_From_Flash(0, 0, IMG_LOGO_96X32_ADDR);
+#else
+	//LCD_get_pic_size(jjph_gc_96X32, &w, &h);
+	//x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
+	//y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
+	//LCD_ShowImg(0, 0, jjph_gc_96X32);
+#endif
 }
 
 void ExitNotifyScreen(void)
@@ -166,14 +174,14 @@ void IdleShowSystemTime(void)
 	GetSystemTimeStrings(str_time);
 	LCD_MeasureString(str_time,&w,&h);
 	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_TIME_SHOW_Y;
+	y = 0;
 	LCD_ShowString(x,y,str_time);
 
-	LCD_SetFontSize(FONT_SIZE_16);
-	GetSysteAmPmStrings(str_ampm);
-	x = x+w+5;
-	y = IDLE_TIME_SHOW_Y+offset;
-	LCD_ShowString(x,y,str_ampm);
+	//LCD_SetFontSize(FONT_SIZE_16);
+	//GetSysteAmPmStrings(str_ampm);
+	//x = x+w+5;
+	//y = IDLE_TIME_SHOW_Y+offset;
+	//LCD_ShowString(x,y,str_ampm);
 #endif
 }
 
@@ -221,8 +229,8 @@ void IdleShowSystemWeek(void)
 void IdleShowDateTime(void)
 {
 	IdleShowSystemTime();
-	IdleShowSystemDate();
-	IdleShowSystemWeek();
+	//IdleShowSystemDate();
+	//IdleShowSystemWeek();
 }
 
 void IdleUpdateBatSoc(void)
@@ -402,16 +410,16 @@ void IdleScreenProcess(void)
 		scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATED;
 		
 		LCD_Clear(BLACK);
-		IdleShowBatSoc();
+		//IdleShowBatSoc();
 		IdleShowDateTime();
-		IdleShowSportData();
+		//IdleShowSportData();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BAT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BAT);
-			IdleUpdateBatSoc();
+			//IdleUpdateBatSoc();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_TIME)
 		{
@@ -421,17 +429,17 @@ void IdleScreenProcess(void)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_DATE)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_DATE);
-			IdleShowSystemDate();
+			//IdleShowSystemDate();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_WEEK)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_WEEK);
-			IdleShowSystemWeek();
+			//IdleShowSystemWeek();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SPORT);
-			IdleUpdateSportData();
+			//IdleUpdateSportData();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SLEEP)
 		{

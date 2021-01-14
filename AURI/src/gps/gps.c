@@ -98,7 +98,8 @@ static u8_t tmpbuf[128] = {0};
 static void show_infor(u8_t *strbuf)
 {
 	LCD_Clear(BLACK);
-	LCD_ShowStringInRect(30,50,180,160,strbuf);
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, 4, strbuf);
 }
 #endif
 

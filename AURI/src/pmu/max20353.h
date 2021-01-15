@@ -8,7 +8,7 @@
 //#define MOTOR_TYPE_LRA	//线性马达
 
 #define BATTERY_SOC_GAUGE	//xb add 20201124 电量计功能的代码
-//#define BATTERT_NTC_CHECK	//xb add 20210106 电池增加NTC温度检测
+#define BATTERT_NTC_CHECK	//xb add 20210106 电池增加NTC温度检测
 
 typedef enum
 {

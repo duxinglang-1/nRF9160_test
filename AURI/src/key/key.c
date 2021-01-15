@@ -53,7 +53,7 @@ extern bool app_gps_on;
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
+	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
 
 	switch(key_code)
 	{
@@ -63,6 +63,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			//APP_Ask_GPS_Data();
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -74,6 +75,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			//test_gps();
 			break;
 		case KEY_LONG_PRESS:
 			sys_pwr_off = true;

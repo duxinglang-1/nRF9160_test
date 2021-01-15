@@ -576,6 +576,8 @@ void test_nb(void)
 {
 	int err;
 
+	nb_is_running = true;
+	
 	LOG_INF("Start NB-IoT test!\n");
 
 	EnterNBTestScreen();
@@ -586,6 +588,7 @@ void test_nb(void)
 
 	modem_configure();
 
+#if 0	//xb add 2021-01-14
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -688,6 +691,7 @@ void test_nb(void)
 		show_infor(tmpbuf);
 	#endif
 	}
+#endif	
 }
 
 void APP_Ask_NB(void)

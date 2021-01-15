@@ -24,7 +24,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gps, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将GPS测试状态LOG信息显示在屏幕上
+#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将GPS测试状态LOG信息显示在屏幕上
 
 #define AT_XSYSTEMMODE_GPSON      "AT\%XSYSTEMMODE=0,1,1,0"
 #define AT_XSYSTEMMODE_GPSOFF     "AT\%XSYSTEMMODE=0,1,0,0"
@@ -343,15 +343,20 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 	u8_t tracked = 0;
 	u8_t in_fix = 0;
 	u8_t unhealthy = 0;
-	u8_t tmpbuf[512] = {0};
+	u8_t strbuf[512] = {0};
 	int i;
 
 	for(i = 0; i < NRF_GNSS_MAX_SATELLITES; ++i)
 	{
+		u8_t buf[128] = {0};
+		
 		if ((pvt_data->pvt.sv[i].sv > 0) && (pvt_data->pvt.sv[i].sv < 33))
 		{
 			tracked++;
 
+			sprintf(buf, "%d|%d;", pvt_data->pvt.sv[i].sv, pvt_data->pvt.sv[i].cn0/10);
+			strcat(strbuf, buf);
+			
 			if (pvt_data->pvt.sv[i].flags & NRF_GNSS_SV_FLAG_USED_IN_FIX)
 			{
 				in_fix++;
@@ -364,21 +369,21 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 		}
 	}
 
-	LOG_INF("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
-	LOG_INF("\nSeconds since last fix %lld\n", (k_uptime_get() - fix_timestamp) / 1000);
+	sprintf(tmpbuf, "%d,", tracked);
+	strcat(tmpbuf, strbuf);
+
+	LOG_INF("%s\n", tmpbuf);
+	//LOG_INF("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
+	//LOG_INF("\nSeconds since last fix %lld\n", (k_uptime_get() - fix_timestamp) / 1000);
 #ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
-					tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
+	//sprintf(tmpbuf, "Tracking:%d,Using:%d,Unhealthy:%d,Seconds since last fix:%lld", 
+	//				tracked, in_fix, unhealthy, (k_uptime_get() - fix_timestamp) / 1000);
 	show_infor(tmpbuf);
 #endif	
 }
 
 static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
-{
-	u8_t tmpbuf[512] = {0};
-
-	LCD_Fill(0,20,240,200,BLACK);
-	
+{	
 	LOG_INF("Longitude:  %f\n", pvt_data->pvt.longitude);
 	LOG_INF("Latitude:   %f\n", pvt_data->pvt.latitude);
 	LOG_INF("Altitude:   %f\n", pvt_data->pvt.altitude);
@@ -391,19 +396,20 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 					       					pvt_data->pvt.datetime.minute,
 					      					pvt_data->pvt.datetime.seconds);
 #ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u", 
-					pvt_data->pvt.longitude,
-					pvt_data->pvt.latitude,
-					pvt_data->pvt.altitude,
-					pvt_data->pvt.speed,
-					pvt_data->pvt.heading,
-					pvt_data->pvt.datetime.year,
-					pvt_data->pvt.datetime.month,
-					pvt_data->pvt.datetime.day,
-					pvt_data->pvt.datetime.hour,
-					pvt_data->pvt.datetime.minute,
-					pvt_data->pvt.datetime.seconds);
-	show_infor(tmpbuf);
+	//LCD_Fill(0,20,240,200,BLACK);
+	//sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u", 
+	//				pvt_data->pvt.longitude,
+	//				pvt_data->pvt.latitude,
+	//				pvt_data->pvt.altitude,
+	//				pvt_data->pvt.speed,
+	//				pvt_data->pvt.heading,
+	//				pvt_data->pvt.datetime.year,
+	//				pvt_data->pvt.datetime.month,
+	//				pvt_data->pvt.datetime.day,
+	//				pvt_data->pvt.datetime.hour,
+	//				pvt_data->pvt.datetime.minute,
+	//				pvt_data->pvt.datetime.seconds);
+	//show_infor(tmpbuf);
 #endif
 }
 
@@ -662,9 +668,9 @@ void gps_data_receive(void)
 		LOG_INF("\nScanning [%c] ",
 				update_indicator[cnt%4]);
 	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
-		show_infor(tmpbuf);
-	#endif	
+		//sprintf(tmpbuf, "Scanning [%c] ", update_indicator[cnt%4]);
+		//show_infor(tmpbuf);
+	#endif
 	}
 
 	if(((k_uptime_get() - fix_timestamp) >= 1) && (got_first_fix))

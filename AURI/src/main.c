@@ -276,7 +276,7 @@ void idle_show_clock_background(void)
 #ifdef ANALOG_CLOCK	
 	if(global_settings.idle_colck_mode == CLOCK_MODE_ANALOG)
 	{
-		LCD_dis_pic(0,0,clock_bg_80X160);
+		LCD_ShowImg(0,0,clock_bg_80X160);
 	}
 #endif
 }
@@ -360,39 +360,42 @@ void test_show_image(void)
 	LOG_INF("test_show_image\n");
 	
 	LCD_Clear(BLACK);
+
+	//LCD_ShowImg(0, 0, jjph_gc_96X32);
+	LCD_ShowImg_From_Flash(0, 0, IMG_LOGO_96X32_ADDR);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
-	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+	//LCD_ShowImg(0, 0, peppa_pig_160X160);
+	//LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+	//LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
 	while(0)
 	{
 		switch(i)
 		{
 			case 0:
-				//LCD_dis_pic(w*0,h*0,peppa_pig_160X160);
+				//LCD_ShowImg(w*0,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
-				//LCD_dis_pic(w*1,h*0,peppa_pig_160X160);
+				//LCD_ShowImg(w*1,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
 				break;
 			case 2:
-				//LCD_dis_pic(w*1,h*1,peppa_pig_160X160);
+				//LCD_ShowImg(w*1,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*1,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
-				//LCD_dis_pic(w*0,h*1,peppa_pig_160X160);
+				//LCD_ShowImg(w*0,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*1,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
@@ -541,28 +544,42 @@ void test_show_string(void)
 	y = y + h + 2;
 	LCD_ShowUniString(x,y,en_unibuf);
 #endif
-//#else
-	strcpy(enbuf, "August Shenzhen Digital Ltd");
-	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
+#else
+	strcpy(enbuf, "Aa");
+	strcpy(cnbuf, "哈");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
+	x = 0;//(w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;	
+	y = 0;	
 #ifdef FONT_16
-	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
+	LCD_SetFontSize(FONT_SIZE_8);					//设置字体大小
 #endif
 	LCD_MeasureString(enbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = 120;	
+	LCD_ShowString(x,y,enbuf);
+
+	x += w;
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_MeasureString(enbuf,&w,&h);
+	LCD_ShowString(x,y,enbuf);
+
+	x += w;
+	LCD_SetFontSize(FONT_SIZE_24);
+	LCD_MeasureString(enbuf,&w,&h);
+	LCD_ShowString(x,y,enbuf);	
+
+	x += w;
+	LCD_SetFontSize(FONT_SIZE_32);
 	LCD_ShowString(x,y,enbuf);
 	
-	LCD_MeasureString(cnbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;
-	LCD_ShowString(x,y,cnbuf);
+	//LCD_MeasureString(cnbuf,&w,&h);
+	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	//y = y + h + 2;
+	//LCD_ShowString(x,y,cnbuf);
 	
-	LCD_MeasureString(jpbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;
-	LCD_ShowString(x,y,jpbuf);
+	//LCD_MeasureString(jpbuf,&w,&h);
+	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	//y = y + h + 2;
+	//LCD_ShowString(x,y,jpbuf);
 
 #if 0
 #ifdef FONT_24
@@ -622,7 +639,7 @@ void system_init(void)
 	flash_init();
 	LCD_Init();
 	
-	//ShowBootUpLogo();
+	ShowBootUpLogo();
 
 	key_init();
 	IMU_init();
@@ -631,7 +648,7 @@ void system_init(void)
 	EnterIdleScreen();
 }
 
-extern void motion_sensor_msg_proc(void);
+
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 
@@ -641,7 +658,6 @@ int main(void)
 {
 	system_init();
 
-	test_show_str();
 //	test_show_string();
 //	test_show_image();
 //	test_nvs();
@@ -659,7 +675,7 @@ int main(void)
 //	test_i2c();
 //	test_bat_soc();
 
-	while(0)
+	while(1)
 	{
 		TimeMsgProcess();
 		NBMsgProcess();

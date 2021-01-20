@@ -471,6 +471,7 @@ void flash_init(void)
 	}
 
 	gpio_pin_configure(gpio_flash, CS, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_flash, CS, 1);
 
 	SPI_Flash_Init();
 }

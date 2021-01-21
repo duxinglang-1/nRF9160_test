@@ -140,14 +140,18 @@ void WriteOneDot(u16_t color)
 ////////////////////////////////////////////////测试函数//////////////////////////////////////////
 void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
 {
+	u8_t x0;
+	
 	if(x >= COL)
 		x = 0;
 	if(y >= ROW)
 		y = 0;
 
+	x0 = x+0x12;//屏起始坐标对应IC的起始坐标偏移
+	
 	WriteComm(0xb0+y%PAGE_MAX);
-	WriteComm(0X11+(x>>PAGE_MAX));		  // Set Higher Column Start Address for Page Addressing Mode
-	WriteComm((0X02+(x&0x0f))&0x0f);  
+	WriteComm((x0&0xf0)>>4|0x10);		  // Set Higher Column Start Address for Page Addressing Mode
+	WriteComm(x0&0x0f);  
 }
 
 void DispColor(u32_t total, u8_t color)

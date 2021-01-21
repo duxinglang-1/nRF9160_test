@@ -77,7 +77,34 @@ typedef struct _PALETTE
 #endif
 
 #ifdef LCD_VGM068A4W01_SH1106G
+extern unsigned char jjph_gc_96X32[390];
+
+extern unsigned char IMG_BAT_0[58];
+extern unsigned char IMG_BAT_1[58];
+extern unsigned char IMG_BAT_2[58];
+extern unsigned char IMG_BAT_3[58];
+extern unsigned char IMG_BAT_4[58];
+extern unsigned char IMG_BAT_5[58];
+
+extern unsigned char IMG_SIG_0[26];
+extern unsigned char IMG_SIG_1[26];
+extern unsigned char IMG_SIG_2[26];
+extern unsigned char IMG_SIG_3[26];
+extern unsigned char IMG_SIG_4[26];
+
+extern unsigned char IMG_COLON[26];
+extern unsigned char IMG_NO_COLON[26];
+extern unsigned char IMG_BIG_NUM_0[54];
+extern unsigned char IMG_BIG_NUM_1[54];
+extern unsigned char IMG_BIG_NUM_2[54];
+extern unsigned char IMG_BIG_NUM_3[54];
+extern unsigned char IMG_BIG_NUM_4[54];
+extern unsigned char IMG_BIG_NUM_5[54];
+extern unsigned char IMG_BIG_NUM_6[54];
+extern unsigned char IMG_BIG_NUM_7[54];
+extern unsigned char IMG_BIG_NUM_8[54];
+extern unsigned char IMG_BIG_NUM_9[54];
 
 #endif/*LCD_VGM068A4W01_SH1106G*/
-extern unsigned char jjph_gc_96X32[390];
+
 #endif/*__FONT_H__*/

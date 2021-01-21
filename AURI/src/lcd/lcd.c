@@ -2248,7 +2248,7 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 	u16_t h,w,show_w,show_h;
 	u8_t i=0;
 	u8_t databuf[COL]={0};
-	u32_t offset=6,datelen,showlen=0,readlen=COL;
+	u32_t offset=6,datelen,showlen=0,readlen=0;
 	
 	w=color[2]+256*color[3]; 			//获取图片宽度
 	h=color[4]+256*color[5];			//获取图片高度
@@ -2267,6 +2267,8 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 	datelen = show_w*(show_h/8+((show_h%8)?1:0));
 	if(show_w < w)
 		readlen = show_w;
+	else
+		readlen = w;
 	
 	while(datelen)
 	{
@@ -2284,7 +2286,7 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 		memset(databuf, 0, COL);
 		memcpy(databuf, &color[offset], readlen);
 		DispDate(readlen, databuf);
-		
+
 		if(show_w < w)
 			offset += w;
 		else

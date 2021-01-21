@@ -8,21 +8,25 @@
 #include <stdio.h>
 #include <drivers/uart.h>
 #include <string.h>
-#include "lcd.h"
-#include "font.h"
-#include "settings.h"
-
 #include <net/mqtt.h>
 #include <net/socket.h>
 #include <modem/lte_lc.h>
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
 #endif
+
+#include "lcd.h"
+#include "font.h"
+#include "settings.h"
+#include "nb.h"
+
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
+
+NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_4;
 
 //add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)

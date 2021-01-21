@@ -37,7 +37,7 @@ bool pmu_bat_has_notify = false;
 
 u8_t g_bat_soc = 0;
 BAT_CHARGER_STATUS g_chg_status = BAT_CHARGING_NO;
-BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_NORMAL;
+BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_0;
 
 maxdev_ctx_t pmu_dev_ctx;
 
@@ -203,7 +203,6 @@ void pmu_interrupt_proc(void)
 				charger_is_connected = true;
 				
 				g_chg_status = BAT_CHARGING_PROGRESS;
-				g_bat_level = BAT_LEVEL_NORMAL;
 
 				lcd_sleep_out = true;
 			}
@@ -220,20 +219,32 @@ void pmu_interrupt_proc(void)
 				
 				if(g_bat_soc < 5)
 				{
-					g_bat_level = BAT_LEVEL_VERY_LOW;
+					g_bat_level = BAT_LEVEL_0;
 					pmu_battery_low_shutdown();
+				}
+				else if(g_bat_soc < 10)
+				{
+					g_bat_level = BAT_LEVEL_0;
 				}
 				else if(g_bat_soc < 20)
 				{
-					g_bat_level = BAT_LEVEL_LOW;
+					g_bat_level = BAT_LEVEL_1;
+				}
+				else if(g_bat_soc < 40)
+				{
+					g_bat_level = BAT_LEVEL_2;
+				}
+				else if(g_bat_soc < 60)
+				{
+					g_bat_level = BAT_LEVEL_3;
 				}
 				else if(g_bat_soc < 80)
 				{
-					g_bat_level = BAT_LEVEL_NORMAL;
+					g_bat_level = BAT_LEVEL_4;
 				}
 				else
 				{
-					g_bat_level = BAT_LEVEL_GOOD;
+					g_bat_level = BAT_LEVEL_5;
 				}
 				
 				lcd_sleep_out = true;
@@ -284,33 +295,40 @@ void pmu_alert_proc(void)
 		LOG_INF("SOC:%d\n", g_bat_soc);
 		if(g_bat_soc < 5)
 		{
-			g_bat_level = BAT_LEVEL_VERY_LOW;
+			g_bat_level = BAT_LEVEL_0;
 			if(!charger_is_connected)
 			{
 				DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
 				pmu_battery_low_shutdown();
 			}
 		}
+		else if(g_bat_soc < 10)
+		{
+			g_bat_level = BAT_LEVEL_0;
+		}
 		else if(g_bat_soc < 20)
 		{
-			g_bat_level = BAT_LEVEL_LOW;
+			g_bat_level = BAT_LEVEL_1;
 			if(!charger_is_connected)
 			{
 				DisplayPopUp("Battery voltage is low, please charge in time!");
 			}
 		}
+		else if(g_bat_soc < 40)
+		{
+			g_bat_level = BAT_LEVEL_2;
+		}
+		else if(g_bat_soc < 60)
+		{
+			g_bat_level = BAT_LEVEL_3;
+		}
 		else if(g_bat_soc < 80)
 		{
-			g_bat_level = BAT_LEVEL_NORMAL;
+			g_bat_level = BAT_LEVEL_4;
 		}
 		else
 		{
-			g_bat_level = BAT_LEVEL_GOOD;
-		}
-
-		if(charger_is_connected)
-		{
-			g_bat_level = BAT_LEVEL_NORMAL;
+			g_bat_level = BAT_LEVEL_5;
 		}
 
 		if(g_chg_status == BAT_CHARGING_NO)
@@ -372,6 +390,31 @@ void MAX20353_InitData(void)
 	g_bat_soc = MAX20353_CalculateSOC();
 	if(g_bat_soc>100)
 		g_bat_soc = 100;
+
+	if(g_bat_soc < 10)
+	{
+		g_bat_level = BAT_LEVEL_0;
+	}
+	else if(g_bat_soc < 20)
+	{
+		g_bat_level = BAT_LEVEL_1;
+	}
+	else if(g_bat_soc < 40)
+	{
+		g_bat_level = BAT_LEVEL_2;
+	}
+	else if(g_bat_soc < 60)
+	{
+		g_bat_level = BAT_LEVEL_3;
+	}
+	else if(g_bat_soc < 80)
+	{
+		g_bat_level = BAT_LEVEL_4;
+	}
+	else
+	{
+		g_bat_level = BAT_LEVEL_5;
+	}
 
 	//test_soc();
 }

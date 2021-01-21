@@ -19,19 +19,44 @@
 extern "C" {
 #endif
 
-//date&time
-#define IDLE_TIME_SHOW_X	0
-#ifdef FONT_32
-#define IDLE_TIME_SHOW_Y	54
-#elif defined(FONT_24)
-#define IDLE_TIME_SHOW_Y	64
-#elif defined(FONT_16)
-#define IDLE_TIME_SHOW_Y	74
-#endif
+//time
+#define BIG_NUM_W		12
+#define BIG_NUM_H		32
+#define X_OFFSET		2
+#define IDLE_HOUR_H_X	18
+#define IDLE_HOUR_H_Y	0
+#define IDLE_HOUR_L_X	(IDLE_HOUR_H_X+BIG_NUM_W)
+#define IDLE_HOUR_L_Y	0
+
+#define IDLE_COLON_X	(IDLE_HOUR_L_X+BIG_NUM_W+X_OFFSET)
+#define IDLE_COLON_Y	0
+#define IDLE_COLON_W	5
+#define IDLE_COLON_H	32
+
+#define IDLE_MIN_H_X	(IDLE_COLON_X+IDLE_COLON_W+X_OFFSET)
+#define IDLE_MIN_H_Y	0
+#define IDLE_MIN_L_X	(IDLE_MIN_H_X+BIG_NUM_W)
+#define IDLE_MIN_L_Y	0
+
+//date
 #define IDLE_DATE_SHOW_X	0
-#define IDLE_DATE_SHOW_Y	(IDLE_TIME_SHOW_Y+system_font)
+#define IDLE_DATE_SHOW_Y	0
+
+//week
 #define IDLE_WEEK_SHOW_X	0
-#define IDLE_WEEK_SHOW_Y	(IDLE_DATE_SHOW_Y+system_font)
+#define IDLE_WEEK_SHOW_Y	0
+
+//NB signal
+#define NB_SIGNAL_X			5
+#define NB_SIGNAL_Y			0
+#define NB_SIGNAL_W			5
+#define NB_SIGNAL_H			32
+
+//battery soc
+#define BAT_LEVEL_X		80
+#define BAT_LEVEL_Y		0
+#define BAT_LEVEL_W		13
+#define BAT_LEVEL_H		32
 
 //battery soc
 #define BAT_PS_OFFSET_H		5
@@ -52,16 +77,19 @@ extern "C" {
 
 //idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000
-#define SCREEN_EVENT_UPDATE_BAT			0x00000001
-#define SCREEN_EVENT_UPDATE_TIME		0x00000002
-#define SCREEN_EVENT_UPDATE_DATE		0x00000004
-#define SCREEN_EVENT_UPDATE_WEEK		0x00000008
-#define SCREEN_EVENT_UPDATE_SPORT		0x00000010
-#define SCREEN_EVENT_UPDATE_SLEEP		0x00000020
+#define SCREEN_EVENT_UPDATE_SIG			0x00000001
+#define SCREEN_EVENT_UPDATE_BAT			0x00000002
+#define SCREEN_EVENT_UPDATE_TIME		0x00000004
+#define SCREEN_EVENT_UPDATE_DATE		0x00000008
+#define SCREEN_EVENT_UPDATE_WEEK		0x00000010
+#define SCREEN_EVENT_UPDATE_SPORT		0x00000020
+#define SCREEN_EVENT_UPDATE_SLEEP		0x00000040
 
 //notify
-#define NOTIFY_TEXT_MAX_LEN	80
+#define NOTIFY_TEXT_MAX_LEN		80
 #define NOTIFY_TIMER_INTERVAL	5
+
+//screen ID
 typedef enum
 {
 	SCREEN_ID_BOOTUP,

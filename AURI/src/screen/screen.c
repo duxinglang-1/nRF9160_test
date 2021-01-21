@@ -22,6 +22,7 @@
 #include "external_flash.h"
 #include "screen.h"
 #include "ucs2.h"
+#include "nb.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -138,51 +139,33 @@ void IdleShowSystemDate(void)
 
 void IdleShowSystemTime(void)
 {
-	u16_t x,y,w,h,offset;
-	u8_t str_time[20] = {0};
-	u8_t str_ampm[5] = {0};
-
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
+	static bool colon_flag = true;
 	
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);
-	offset = 16;
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);
-	offset = 8;
+#ifdef IMG_FONT_FROM_FLASH
+	u32_t img_addr[10] = {IMG_BIG_NUM_0_ADDR,IMG_BIG_NUM_1_ADDR,IMG_BIG_NUM_2_ADDR,IMG_BIG_NUM_3_ADDR,IMG_BIG_NUM_4_ADDR,
+						  IMG_BIG_NUM_5_ADDR,IMG_BIG_NUM_6_ADDR,IMG_BIG_NUM_7_ADDR,IMG_BIG_NUM_8_ADDR,IMG_BIG_NUM_9_ADDR};
+	u32_t img_colon_addr[2] = {IMG_NO_COLON_ADDR,IMG_COLON_ADDR};
 #else
-	LCD_SetFontSize(FONT_SIZE_16);
-	offset = 0;
+	unsigned char *img[10] = {IMG_BIG_NUM_0,IMG_BIG_NUM_1,IMG_BIG_NUM_2,IMG_BIG_NUM_3,IMG_BIG_NUM_4,
+							  IMG_BIG_NUM_5,IMG_BIG_NUM_6,IMG_BIG_NUM_7,IMG_BIG_NUM_8,IMG_BIG_NUM_9};
+	unsigned char *img_colon[2] = {IMG_NO_COLON,IMG_COLON};
 #endif
 
-#ifdef FONTMAKER_UNICODE_FONT
-	GetSystemTimeStrings(str_time);
-	LCD_MeasureUniString(str_time,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_TIME_SHOW_Y;
-	LCD_ShowUniString(x,y,str_time);
-
-	LCD_SetFontSize(FONT_SIZE_16);
-	GetSysteAmPmStrings(str_ampm);
-	x = x+w+5;
-	y = IDLE_TIME_SHOW_Y+offset;
-	LCD_ShowUniString(x,y,str_ampm);
-
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(IDLE_HOUR_H_X, IDLE_HOUR_H_Y, img_addr[date_time.hour/10]);
+	LCD_ShowImg_From_Flash(IDLE_HOUR_L_X, IDLE_HOUR_L_Y, img_addr[date_time.hour%10]);
+	LCD_ShowImg_From_Flash(IDLE_COLON_X, IDLE_COLON_Y, img_colon_addr[colon_flag]);
+	LCD_ShowImg_From_Flash(IDLE_MIN_H_X, IDLE_MIN_H_Y, img_addr[date_time.minute/10]);
+	LCD_ShowImg_From_Flash(IDLE_MIN_L_X, IDLE_MIN_L_Y, img_addr[date_time.minute%10]);
 #else
-
-	GetSystemTimeStrings(str_time);
-	LCD_MeasureString(str_time,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = 0;
-	LCD_ShowString(x,y,str_time);
-
-	//LCD_SetFontSize(FONT_SIZE_16);
-	//GetSysteAmPmStrings(str_ampm);
-	//x = x+w+5;
-	//y = IDLE_TIME_SHOW_Y+offset;
-	//LCD_ShowString(x,y,str_ampm);
+	LCD_ShowImg(IDLE_HOUR_H_X, IDLE_HOUR_H_Y, img[date_time.hour/10]);
+	LCD_ShowImg(IDLE_HOUR_L_X, IDLE_HOUR_L_Y, img[date_time.hour%10]);
+	LCD_ShowImg(IDLE_COLON_X, IDLE_COLON_Y, img_colon[colon_flag]);
+	LCD_ShowImg(IDLE_MIN_H_X, IDLE_MIN_H_Y, img[date_time.minute/10]);
+	LCD_ShowImg(IDLE_MIN_L_X, IDLE_MIN_L_Y, img[date_time.minute%10]);
 #endif
+
+	colon_flag = !colon_flag;
 }
 
 void IdleShowSystemWeek(void)
@@ -239,7 +222,7 @@ void IdleUpdateBatSoc(void)
 	u8_t strbuf[10] = {0};
 	u8_t tmpbuf[128] = {0};
 	
-	LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
+	//LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
 	
 	switch(g_chg_status)
 	{
@@ -264,7 +247,6 @@ void IdleUpdateBatSoc(void)
 	LCD_ShowUniString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, tmpbuf);
 	
 #else
-
 	LCD_MeasureString(strbuf, &w, &h);
 	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
 	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
@@ -272,44 +254,33 @@ void IdleUpdateBatSoc(void)
 #endif
 }
 
+void IdleShowSignal(void)
+{
+#ifdef IMG_FONT_FROM_FLASH
+	u32_t img_addr[5] = {IMG_NB_SIG_0_ADDR,IMG_NB_SIG_1_ADDR,IMG_NB_SIG_2_ADDR,IMG_NB_SIG_3_ADDR,IMG_NB_SIG_4_ADDR};
+#else
+	unsigned char *img[5] = {IMG_SIG_0,IMG_SIG_1,IMG_SIG_2,IMG_SIG_3,IMG_SIG_4};
+#endif
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(NB_SIGNAL_X, NB_SIGNAL_Y, img_addr[g_nb_sig]);
+#else
+	LCD_ShowImg(NB_SIGNAL_X, NB_SIGNAL_Y, img[g_nb_sig]);
+#endif
+}
+
 void IdleShowBatSoc(void)
 {
-	u16_t x,y,w,h;
-	u8_t strbuf[10] = {0};
-	u8_t tmpbuf[128] = {0};
-	
-	LCD_DrawRectangle(BAT_POSITIVE_X,BAT_POSITIVE_Y,BAT_POSITIVE_W,BAT_POSITIVE_H);
-	LCD_DrawRectangle(BAT_SUBJECT_X,BAT_SUBJECT_Y,BAT_SUBJECT_W,BAT_SUBJECT_H);
-	LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
-	
-	switch(g_chg_status)
-	{
-	case BAT_CHARGING_NO:
-		sprintf(strbuf, "%02d", g_bat_soc);
-		break;
-	case BAT_CHARGING_PROGRESS:
-		strcpy(strbuf, "CHG");
-		break;
-	case BAT_CHARGING_FINISHED:
-		strcpy(strbuf, "OK");
-		break;
-	}
-
-	LCD_SetFontSize(FONT_SIZE_16);
-	
-#ifdef FONTMAKER_UNICODE_FONT
-	mmi_asc_to_ucs2(tmpbuf,strbuf);
-	LCD_MeasureUniString(tmpbuf, &w, &h);
-	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
-	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
-	LCD_ShowUniString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, tmpbuf);
-	
+#ifdef IMG_FONT_FROM_FLASH
+	u32_t img_addr[6] = {IMG_BAT_0_ADDR,IMG_BAT_1_ADDR,IMG_BAT_2_ADDR,IMG_BAT_3_ADDR,IMG_BAT_4_ADDR,IMG_BAT_5_ADDR};
 #else
+	unsigned char *img[6] = {IMG_BAT_0,IMG_BAT_1,IMG_BAT_2,IMG_BAT_3,IMG_BAT_4,IMG_BAT_5};
+#endif
 	
-	LCD_MeasureString(strbuf, &w, &h);
-	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
-	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
-	LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(BAT_LEVEL_X, BAT_LEVEL_Y, img_addr[g_bat_level]);
+#else
+	LCD_ShowImg(BAT_LEVEL_X, BAT_LEVEL_Y, img[g_bat_level]);
 #endif
 }
 
@@ -410,16 +381,21 @@ void IdleScreenProcess(void)
 		scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATED;
 		
 		LCD_Clear(BLACK);
-		//IdleShowBatSoc();
+		IdleShowSignal();
 		IdleShowDateTime();
-		//IdleShowSportData();
+		IdleShowBatSoc();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SIG)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SIG);
+			IdleShowSignal();
+		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BAT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BAT);
-			//IdleUpdateBatSoc();
+			IdleShowBatSoc();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_TIME)
 		{

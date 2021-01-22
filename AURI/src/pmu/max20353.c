@@ -331,8 +331,7 @@ void pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_5;
 		}
 
-		if(g_chg_status == BAT_CHARGING_NO)
-			pmu_redraw_bat_flag = true;
+		pmu_redraw_bat_flag = true;
 	}
 	if(MSB&0x10)
 	{

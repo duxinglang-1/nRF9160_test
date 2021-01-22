@@ -644,7 +644,8 @@ void system_init(void)
 	key_init();
 	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
-
+	NB_init();
+	
 	EnterIdleScreen();
 }
 

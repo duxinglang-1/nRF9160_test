@@ -21,4 +21,5 @@ typedef enum
 
 extern NB_SIGNL_LEVEL g_nb_sig;
 
+extern void NB_init(void);
 extern void NBMsgProcess(void);

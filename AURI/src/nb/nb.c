@@ -14,11 +14,17 @@
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
 #endif
-
+#if defined(CONFIG_BSD_LIBRARY)
+#include <modem/bsdlib.h>
+#include <bsd.h>
+#include <modem/lte_lc.h>
+#include <modem/modem_info.h>
+#endif /* CONFIG_BSD_LIBRARY */
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
 #include "nb.h"
+#include "screen.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -26,7 +32,10 @@ LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
-NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_4;
+NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
+
+static struct modem_param_info modem_param;
+static bool nb_redraw_sig_flag = false;
 
 //add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -65,20 +74,6 @@ void show_infor(u8_t *strbuf)
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, 4, strbuf);
 }
 #endif
-
-#if defined(CONFIG_BSD_LIBRARY)
-
-/**@brief Recoverable BSD library error. */
-static void bsd_recoverable_error_handler(uint32_t err)
-{
-	LOG_INF("bsdlib recoverable error: %u\n", (unsigned int)err);
-#ifdef SHOW_LOG_IN_SCREEN	
-	sprintf(tmpbuf, "bsdlib recoverable error: %u\n", (unsigned int)err);
-	show_infor(tmpbuf);
-#endif
-}
-
-#endif /* defined(CONFIG_BSD_LIBRARY) */
 
 #if defined(CONFIG_LWM2M_CARRIER)
 K_SEM_DEFINE(carrier_registered, 0, 1);
@@ -519,6 +514,61 @@ static int fds_init(struct mqtt_client *c)
 	return 0;
 }
 
+#if CONFIG_MODEM_INFO
+/**@brief Callback handler for LTE RSRP data. */
+static void modem_rsrp_handler(char rsrp_value)
+{
+	/* RSRP raw values that represent actual signal strength are
+	 * 0 through 97 (per "nRF91 AT Commands" v1.1). If the received value
+	 * falls outside this range, we should not send the value.
+	 */
+	LOG_INF("rsrp_value:%d\n", rsrp_value);
+
+	if(rsrp_value > 97)
+	{
+		g_nb_sig = NB_SIG_LEVEL_NO;
+	}
+	else if(rsrp_value > 80)
+	{
+		g_nb_sig = NB_SIG_LEVEL_4;
+	}
+	else if(rsrp_value > 60)
+	{
+		g_nb_sig = NB_SIG_LEVEL_3;
+	}
+	else if(rsrp_value > 40)
+	{
+		g_nb_sig = NB_SIG_LEVEL_2;
+	}
+	else if(rsrp_value > 20)
+	{
+		g_nb_sig = NB_SIG_LEVEL_1;
+	}
+	else
+	{
+		g_nb_sig = NB_SIG_LEVEL_0;
+	}
+
+	nb_redraw_sig_flag = true;
+}
+
+/**brief Initialize LTE status containers. */
+void modem_data_init(void)
+{
+	int err;
+
+	err = modem_info_init();
+	if(err)
+	{
+		LOG_INF("Modem info could not be established: %d", err);
+		return;
+	}
+
+	modem_info_params_init(&modem_param);
+	modem_info_rsrp_register(modem_rsrp_handler);
+}
+#endif /* CONFIG_MODEM_INFO */
+
 /**@brief Configures modem to provide LTE link. Blocks until link is
  * successfully established.
  */
@@ -703,6 +753,15 @@ void APP_Ask_NB(void)
 	app_nb_on = true;
 }
 
+void NBRedrawSignal(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SIG;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
 void NBMsgProcess(void)
 {
 	if(app_nb_on)
@@ -713,4 +772,21 @@ void NBMsgProcess(void)
 		
 		test_nb();
 	}
+
+	if(nb_redraw_sig_flag)
+	{
+		NBRedrawSignal();
+		nb_redraw_sig_flag = false;
+	}
+}
+
+void NB_init(void)
+{
+	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
+	{
+		LOG_INF("AT_CMD write fail!\n");
+		return;
+	}
+
+	modem_data_init();
 }

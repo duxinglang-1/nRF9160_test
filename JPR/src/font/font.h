@@ -8,7 +8,7 @@
 
 #define FONT_16
 #define FONT_24
-//#define FONT_32
+#define FONT_32
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
 //#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
@@ -104,8 +104,7 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char RM_JIS_16_4[72192];
 //extern unsigned char RM_JIS_16_5[72208];
 #endif
-
-#if 0	//def FONTMAKER_UNICODE_FONT
+#if 1	//def FONTMAKER_UNICODE_FONT
 //extern unsigned char RM_UNI_16_1[88288];
 //extern unsigned char RM_UNI_16_2[88288];
 //extern unsigned char RM_UNI_16_3[88288];
@@ -114,9 +113,9 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char RM_UNI_16_6[88288];
 //extern unsigned char RM_UNI_16_7[88224];
 #endif/*FONTMAKER_UNICODE_FONT*/
-#endif
+#endif/*FONT_16*/
 
-#ifdef FONT_24
+#if 1	//def FONT_24
 //extern unsigned char chinese_2424_1[1200][72];
 //extern unsigned char chinese_2424_2[1200][72];
 //extern unsigned char chinese_2424_3[1200][72];
@@ -124,9 +123,24 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char chinese_2424_5[1200][72];
 //extern unsigned char chinese_2424_6[1200][72];
 //extern unsigned char chinese_2424_7[977][72];
-#endif
 
-#ifdef FONT_32
+#if 1	//def FONTMAKER_UNICODE_FONT
+//extern unsigned char RM_UNI_24_1[89600];
+//extern unsigned char RM_UNI_24_2[89600];
+//extern unsigned char RM_UNI_24_3[89600];
+//extern unsigned char RM_UNI_24_4[89600];
+//extern unsigned char RM_UNI_24_5[89600];
+//extern unsigned char RM_UNI_24_6[89600];
+//extern unsigned char RM_UNI_24_7[89600];
+//extern unsigned char RM_UNI_24_8[89600];
+//extern unsigned char RM_UNI_24_9[89600];
+//extern unsigned char RM_UNI_24_10[89600];
+//extern unsigned char RM_UNI_24_11[80388];
+#endif/*def FONTMAKER_UNICODE_FONT*/
+
+#endif/*FONT_24*/
+
+#if 1	//def FONT_32
 //extern unsigned char chinese_3232_1[700][128];
 //extern unsigned char chinese_3232_2[700][128];
 //extern unsigned char chinese_3232_3[700][128];
@@ -139,6 +153,6 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char chinese_3232_10[700][128];
 //extern unsigned char chinese_3232_11[700][128];
 //extern unsigned char chinese_3232_12[478][128];
-#endif
+#endif/*FONT_32*/
 
 #endif/*__FONT_H__*/

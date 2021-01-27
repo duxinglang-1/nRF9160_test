@@ -491,17 +491,23 @@ void test_show_string(void)
 	u16_t en_unibuf[64] = {0x0041,0x0075,0x0067,0x0075,0x0073,0x0074,0x0020,0x0053,0x0068,0x0065,0x006E,0x007A,0x0068,0x0065,0x006E,0x0020,0x0044,0x0049,0x0067,0x0049,0x0074,0x0061,0x006C,0x0020,0x004C,0x0074,0x0064,0x0000};
 	u16_t cn_unibuf[64] = {0x6DF1,0x5733,0x5E02,0x5965,0x79D1,0x65AF,0x6570,0x7801,0x6709,0x9650,0x516C,0x53F8,0x0000};
 	u16_t jp_unibuf[64] = {0x6DF1,0x30BB,0x30F3,0x5E02,0x30AA,0x30FC,0x30B3,0x30B9,0x30C7,0x30B8,0x30BF,0x30EB,0x6709,0x9650,0x4F1A,0x793E,0x0000};
+
+	LCD_Clear(BLACK);
 	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
 
 #ifdef FONTMAKER_UNICODE_FONT
-#ifdef FONT_16
+#ifdef FONT_32
+	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
+#elif defined(FONT_24)
+	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
+#elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
 	LCD_MeasureUniString(en_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = 60;	
+	y = 30;	
 	LCD_ShowUniString(x,y,en_unibuf);
 
 	LCD_MeasureUniString(cn_unibuf,&w,&h);
@@ -546,12 +552,17 @@ void test_show_string(void)
 	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
-#ifdef FONT_16
+#ifdef FONT_32
+	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
+#elif defined(FONT_24)
+	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
+#elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
+
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = 120;	
+	y = y + h + 2;	
 	LCD_ShowString(x,y,enbuf);
 	
 	LCD_MeasureString(cnbuf,&w,&h);
@@ -622,7 +633,7 @@ void system_init(void)
 	flash_init();
 	LCD_Init();
 	
-	ShowBootUpLogo();
+	//ShowBootUpLogo();
 
 	key_init();
 	IMU_init();

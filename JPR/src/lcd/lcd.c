@@ -921,8 +921,8 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*1024] = {0};
-	u8_t fontbuf[128] = {0};
-	u16_t y0=y,x0=x;
+	u8_t fontbuf[256] = {0};
+	u16_t y0=y,x0=x,w=(system_font/2),h=system_font;
 	u32_t i=0;
 	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
@@ -948,7 +948,11 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	}
 
 #ifdef LCD_TYPE_SPI
-	BlockWrite(x,y,(system_font/2),system_font); 	//设置刷新位置
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h); 	//设置刷新位置
 #endif
 
 	for(t=0;t<csize;t++)
@@ -973,28 +977,24 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return;	//超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 
 			}
 			if((x-x0)==(system_font/2))
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return;	//超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				break;
 			}
 		#else
@@ -1020,10 +1020,6 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 		#endif
 		}
 	}
-
-#ifdef LCD_TYPE_SPI
-	DispDate(2*i, databuf);
-#endif
 }   
 
 //在指定位置显示flash中一个中文字符
@@ -1033,12 +1029,12 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 {  							  
 	u8_t temp,t1,t;
-	u16_t x0=x,y0=y;
+	u16_t x0=x,y0=y,w=system_font,h=system_font;
 	u16_t index=0;
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//行扫描，每个字符每一行占用的字节数
 	u8_t csize=cbyte*(system_font);						//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*1024] = {0};
-	u8_t fontbuf[128] = {0};
+	u8_t fontbuf[256] = {0};
 	u32_t i=0;
 	
 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
@@ -1064,7 +1060,11 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 	}	
 
 #ifdef LCD_TYPE_SPI
-	BlockWrite(x0,y,system_font,system_font); 	//设置刷新位置
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h); 	//设置刷新位置
 #endif
 
 	for(t=0;t<csize;t++)
@@ -1089,27 +1089,23 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return;	//超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 			}
 			if((x-x0)==(system_font))
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return;	//超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return;	//超区域了
 				break;
 			}			
 		#else
@@ -1135,10 +1131,6 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 		#endif
 		} 
 	} 
-
-#ifdef LCD_TYPE_SPI
-	DispDate(2*i, databuf);
-#endif	
 } 
 
 #ifdef FONTMAKER_MBCS_FONT
@@ -1160,11 +1152,11 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
 	u8_t temp,t1,t;
-	u16_t y0=y,x0=x;
+	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*1024] = {0};
-	u8_t fontbuf[128] = {0};
+	u8_t fontbuf[256] = {0};
 	u32_t i=0,index_addr,font_addr,data_addr=0;
 
 	switch(system_font)
@@ -1194,9 +1186,16 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 	cbyte = fontbuf[3]>>2;
 	csize = ((cbyte+7)/8)*system_font;	
 	SpiFlash_Read(fontbuf, font_addr+data_addr, csize);
+
+	w = cbyte;
+	h = system_font;
 	
 #ifdef LCD_TYPE_SPI
-	BlockWrite(x,y,cbyte,system_font);	//设置刷新位置
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
 	for(t=0;t<csize;t++)
@@ -1221,28 +1220,23 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return; //超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return; //超区域了
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
-
 			}
 			if((x-x0)==cbyte)
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return; //超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return; //超区域了
 				break;
 			}
 		#else
@@ -1269,10 +1263,6 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 		}
 	}
 
-#ifdef LCD_TYPE_SPI
-	DispDate(2*i, databuf);
-#endif
-
 	return cbyte;
 }
 
@@ -1292,11 +1282,11 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8_t mode)
 {
 	u8_t temp,t1,t;
-	u16_t x0=x,y0=y;
+	u16_t x0=x,y0=y,w,h;
 	u8_t cbyte=0; 					//行扫描，每个字符每一行占用的字节数
 	u8_t csize=0; 					//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*1024] = {0};
-	u8_t fontbuf[128] = {0};
+	u8_t fontbuf[256] = {0};
 	u32_t i=0,index,font_addr,data_addr=0;
 	u8_t R_code=0xFF&(num>>8);		//区码
 	u8_t C_code=0xFF&num;			//位码
@@ -1353,9 +1343,16 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 	csize = ((cbyte+7)/8)*system_font;
 	data_addr = FONT_MBCS_HEAD_LEN + csize*index;
 	SpiFlash_Read(fontbuf, font_addr+data_addr, csize);
-		
+
+	w = cbyte;
+	h = system_font;
+
 #ifdef LCD_TYPE_SPI
-	BlockWrite(x,y,cbyte,system_font);	//设置刷新位置
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
 	for(t=0;t<csize;t++)
@@ -1380,27 +1377,23 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 			x++;
 			if(x>=LCD_WIDTH)							//超出行区域，直接显示下一行
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return; 							//超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return; 							//超区域了
 				t=t+(cbyte-(t%cbyte))-1;				//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 			}
 			if((x-x0)==(system_font))
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return; 							//超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return; 							//超区域了
 				break;
 			}			
 		#else
@@ -1427,10 +1420,6 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 		} 
 	} 
 
-#ifdef LCD_TYPE_SPI
-	DispDate(2*i, databuf);
-#endif	
-
 	return cbyte;
 }
 #endif/*FONTMAKER_MBCS_FONT*/
@@ -1439,12 +1428,12 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 {
 	u8_t temp,t1,t;
-	u16_t y0=y,x0=x;
+	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
 	u8_t sect=0;
 	u8_t databuf[2*1024] = {0};
-	u8_t fontbuf[128] = {0};
+	u8_t fontbuf[256] = {0};
 	u8_t headbuf[FONT_UNI_HEAD_LEN] = {0};
 	u8_t secbuf[8*FONT_UNI_SECT_LEN] = {0};
 	u32_t i=0,index_addr,font_addr,data_addr=0;
@@ -1495,9 +1484,16 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 	csize = ((cbyte+7)/8)*system_font;
 	//read font data
 	SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize);
+
+	w = cbyte;
+	h = system_font;
 	
 #ifdef LCD_TYPE_SPI
-	BlockWrite(x,y,cbyte,system_font);	//设置刷新位置
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
 	for(t=0;t<csize;t++)
@@ -1522,28 +1518,24 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return; //超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return; //超区域了
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 
 			}
 			if((x-x0)==cbyte)
 			{
+				DispDate(2*i, databuf);
+				i=0;
+				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)
-				{
-					DispDate(2*i, databuf);
-					return; //超区域了
-				}
-				
+				if(y>=LCD_HEIGHT)return; //超区域了
 				break;
 			}
 		#else
@@ -1570,10 +1562,6 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 		}
 	}
 
-#ifdef LCD_TYPE_SPI
-	DispDate(2*i, databuf);
-#endif
-
 	return cbyte;
 }
 #endif/*FONTMAKER_UNICODE_FONT*/
@@ -1587,39 +1575,45 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
     u8_t temp,t1,t,i=0;
-	u16_t y0=y,x0=x;
+	u16_t y0=y,x0=x,w=(system_font/2),h=system_font;
 	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
+	u8_t fontbuf[256] = {0};	
  	u8_t databuf[2*COL] = {0};
-	
+
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
+	switch(system_font)
+	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			memcpy(fontbuf, asc2_1608[num], csize);	//调用1608字体
+			break;
+	#endif
+	#ifdef FONT_24
+		case FONT_SIZE_24:
+			memcpy(fontbuf, asc2_2412[num], csize);	//调用1608字体
+			break;
+	#endif
+	#ifdef FONT_32
+		case FONT_SIZE_32:
+			memcpy(fontbuf, asc2_3216[num], csize);	//调用1608字体
+			break;
+	#endif
+		default:
+			return;							//没有的字库
+	}
+
+#ifdef LCD_TYPE_SPI
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
+#endif
+		
 	for(t=0;t<csize;t++)
 	{
-		switch(system_font)
-		{
-		#ifdef FONT_16
-			case FONT_SIZE_16:
-				temp=asc2_1608[num][t]; 	 	//调用1608字体
-				break;
-		#endif
-		#ifdef FONT_24
-			case FONT_SIZE_24:
-				temp=asc2_2412[num][t];			//调用2412字体
-				break;
-		#endif
-		#ifdef FONT_32
-			case FONT_SIZE_32:
-				temp=asc2_3216[num][t];			//调用3216字体
-				break;
-		#endif
-			default:
-				return;							//没有的字库
-		}
-
-	#ifdef LCD_TYPE_SPI
-		BlockWrite(x0,y,(system_font/2),1);	  	//设置刷新位置
-	#endif
-	
+		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
@@ -1691,40 +1685,46 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 {  							  
 	u8_t temp,t1,t,i=0;
-	u16_t x0=x,y0=y;
+	u16_t x0=x,y0=y,w=system_font,h=system_font;
 	u16_t index=0;
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);				//行扫描，每个字符每一行占用的字节数
 	u8_t csize=cbyte*(system_font);								//得到字体一个字符对应点阵集所占的字节数	
+	u8_t fontbuf[256] = {0};
 	u8_t databuf[2*COL] = {0};
 
 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
+	switch(system_font)
+	{
+	#if 0	//def FONT_16
+		case FONT_SIZE_16:
+			memcpy(fontbuf, chinese_1616[index], csize);	//调用1608字体
+			break;
+	#endif
+	#if 0	//def FONT_24
+		case FONT_SIZE_24:
+			memcpy(fontbuf, chinese_2424[index], csize);	//调用2424字体
+			break;
+	#endif
+	#if 0	//def FONT_32
+		case FONT_SIZE_32:
+			memcpy(fontbuf, chinese_3232[index], csize);	//调用3232字体
+			break;
+	#endif
+		default:
+			return;								//没有的字库
+	}	
+
+#ifdef LCD_TYPE_SPI
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
+#endif
+
 	for(t=0;t<csize;t++)
 	{	
-		switch(system_font)
-		{
-		#if 0	//def FONT_16
-			case FONT_SIZE_16:
-				temp=chinese_1616[index][t]; 	 	//调用1616字体
-				break;
-		#endif
-		#if 0	//def FONT_24
-			case FONT_SIZE_24:
-				temp=chinese_2424[index][t];		//调用2424字体
-				break;
-		#endif
-		#if 0	//def FONT_32
-			case FONT_SIZE_32:
-				temp=chinese_3232[index][t];		//调用3232字体
-				break;
-		#endif
-			default:
-				return;								//没有的字库
-		}	
-
-	#ifdef LCD_TYPE_SPI
-		BlockWrite(x0,y,system_font,1);	  	//设置刷新位置
-	#endif
-	
+		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
@@ -1807,7 +1807,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
 	u8_t temp,t1,t,i=0,*ptr_font;
-	u16_t y0=y,x0=x;
+	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*COL] = {0};
@@ -1839,12 +1839,20 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	cbyte = ptr_font[index_addr+3]>>2;
 	csize = ((cbyte+7)/8)*system_font;
 
+	w = cbyte;
+	h = 1;
+	
+#ifdef LCD_TYPE_SPI
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
+#endif
+	
 	for(t=0;t<csize;t++)
 	{
 		temp=ptr_font[data_addr+t];
-
-		BlockWrite(x0,y,(cbyte),1);	  	//设置刷新位置
-
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI

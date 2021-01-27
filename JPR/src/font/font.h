@@ -104,7 +104,7 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char RM_JIS_16_4[72192];
 //extern unsigned char RM_JIS_16_5[72208];
 #endif
-#if 1	//def FONTMAKER_UNICODE_FONT
+#ifdef FONTMAKER_UNICODE_FONT
 //extern unsigned char RM_UNI_16_1[88288];
 //extern unsigned char RM_UNI_16_2[88288];
 //extern unsigned char RM_UNI_16_3[88288];
@@ -115,7 +115,7 @@ extern unsigned char asc2_3216[96][64];
 #endif/*FONTMAKER_UNICODE_FONT*/
 #endif/*FONT_16*/
 
-#if 1	//def FONT_24
+#ifdef FONT_24
 //extern unsigned char chinese_2424_1[1200][72];
 //extern unsigned char chinese_2424_2[1200][72];
 //extern unsigned char chinese_2424_3[1200][72];
@@ -124,7 +124,7 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char chinese_2424_6[1200][72];
 //extern unsigned char chinese_2424_7[977][72];
 
-#if 1	//def FONTMAKER_UNICODE_FONT
+#ifdef FONTMAKER_UNICODE_FONT
 //extern unsigned char RM_UNI_24_1[89600];
 //extern unsigned char RM_UNI_24_2[89600];
 //extern unsigned char RM_UNI_24_3[89600];
@@ -140,7 +140,7 @@ extern unsigned char asc2_3216[96][64];
 
 #endif/*FONT_24*/
 
-#if 1	//def FONT_32
+#ifdef FONT_32
 //extern unsigned char chinese_3232_1[700][128];
 //extern unsigned char chinese_3232_2[700][128];
 //extern unsigned char chinese_3232_3[700][128];

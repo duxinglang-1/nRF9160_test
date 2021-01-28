@@ -105,6 +105,37 @@ extern unsigned char IMG_BIG_NUM_7[54];
 extern unsigned char IMG_BIG_NUM_8[54];
 extern unsigned char IMG_BIG_NUM_9[54];
 
+extern unsigned char IMG_NUM_0[46];
+extern unsigned char IMG_NUM_1[46];
+extern unsigned char IMG_NUM_2[46];
+extern unsigned char IMG_NUM_3[46];
+extern unsigned char IMG_NUM_4[46];
+extern unsigned char IMG_NUM_5[46];
+extern unsigned char IMG_NUM_6[46];
+extern unsigned char IMG_NUM_7[46];
+extern unsigned char IMG_NUM_8[46];
+extern unsigned char IMG_NUM_9[46];
+
+extern unsigned char IMG_FALL_ICON[114];
+extern unsigned char IMG_FALL_CN[194];
+extern unsigned char IMG_FALL_EN[114];
+
+extern unsigned char IMG_SLP_ICON[36];
+extern unsigned char IMG_STEP_ICON[66];
+
+extern unsigned char IMG_HOUR_CN[38];
+extern unsigned char IMG_MIN_CN[38];
+extern unsigned char IMG_HOUR_EN[30];
+extern unsigned char IMG_MIN_EN[34];
+
+extern unsigned char IMG_SOS[314];
+extern unsigned char IMG_SOS_RECE[342];
+extern unsigned char IMG_SOS_SEND[342];
+
+extern unsigned char IMG_WRIST_ICON[90];
+extern unsigned char IMG_WRIST_CN[194];
+extern unsigned char IMG_WRIST_EN[226];
+
 #endif/*LCD_VGM068A4W01_SH1106G*/
 
 #endif/*__FONT_H__*/

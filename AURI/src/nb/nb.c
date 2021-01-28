@@ -642,7 +642,7 @@ void test_nb(void)
 
 	modem_configure();
 
-#if 0	//xb add 2021-01-14
+#if 1	//xb add 2021-01-14
 	client_init(&client);
 
 	err = mqtt_connect(&client);

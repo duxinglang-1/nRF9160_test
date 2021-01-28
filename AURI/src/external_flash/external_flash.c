@@ -525,7 +525,7 @@ void test_flash(void)
 
 	//写入数据
 	LCD_ShowString(0,0,"FLASH写入LOGO图片数据...");
-	SpiFlash_Write_Buf(jjph_gc_96X32, IMG_LOGO_96X32_ADDR, IMG_LOGO_96X32_SZIE);
+	SpiFlash_Write_Buf(jjph_gc_96X32, IMG_AURI_LOGO_ADDR, IMG_AURI_LOGO_SIZE);
 	LCD_ShowString(0,2,"FLASH写入LOGO图片成功!");	
 #endif
 

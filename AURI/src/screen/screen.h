@@ -19,9 +19,15 @@
 extern "C" {
 #endif
 
-//time
+//big num
 #define BIG_NUM_W		12
 #define BIG_NUM_H		32
+
+//small num
+#define SMALL_NUM_W		10
+#define SMALL_NUM_H		32
+
+//time
 #define X_OFFSET		2
 #define IDLE_HOUR_H_X	18
 #define IDLE_HOUR_H_Y	0
@@ -49,14 +55,10 @@ extern "C" {
 //NB signal
 #define NB_SIGNAL_X			5
 #define NB_SIGNAL_Y			0
-#define NB_SIGNAL_W			5
-#define NB_SIGNAL_H			32
 
 //battery soc
 #define BAT_LEVEL_X		80
 #define BAT_LEVEL_Y		0
-#define BAT_LEVEL_W		13
-#define BAT_LEVEL_H		32
 
 //battery soc
 #define BAT_PS_OFFSET_H		5
@@ -75,6 +77,46 @@ extern "C" {
 #define IMU_STEPS_SHOW_W	210
 #define IMU_STEPS_SHOW_H	20
 
+//SOS
+#define SOS_X	9
+#define SOS_Y	0
+
+//sleep
+#define SLEEP_ICON_X	9
+#define SLEEP_ICON_Y	0
+#define SLEEP_NUM_X	32
+#define SLEEP_NUM_Y	0
+#define SLEEP_CN_HOUR_W	8
+#define SLEEP_CN_HOUR_H	32
+#define SLEEP_CN_MIN_W	8
+#define SLEEP_CN_MIN_H	32
+#define SLEEP_EN_HOUR_W	6
+#define SLEEP_EN_HOUR_H	32
+#define SLEEP_EN_MIN_W	7
+#define SLEEP_EN_MIN_H	32
+
+//steps
+#define STEPS_ICON_X	9
+#define STEPS_ICON_Y	0
+#define STEPS_NUM_X	31
+#define STEPS_NUM_Y	0
+
+//fall
+#define FALL_ICON_X	9
+#define FALL_ICON_Y	0
+#define FALL_CN_TEXT_X	39
+#define FALL_CN_TEXT_Y	0
+#define FALL_EN_TEXT_X	50
+#define FALL_EN_TEXT_Y	0
+
+//wrist
+#define WRIST_ICON_X	9
+#define WRIST_ICON_Y	0
+#define WRIST_CN_TEXT_X	39
+#define WRIST_CN_TEXT_Y	0
+#define WRIST_EN_TEXT_X	31
+#define WRIST_EN_TEXT_Y	0
+
 //idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000
 #define SCREEN_EVENT_UPDATE_SIG			0x00000001
@@ -84,6 +126,8 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_WEEK		0x00000010
 #define SCREEN_EVENT_UPDATE_SPORT		0x00000020
 #define SCREEN_EVENT_UPDATE_SLEEP		0x00000040
+#define SCREEN_EVENT_UPDATE_SOS			0x00000080
+#define SCREEN_EVENT_UPDATE_WRIST		0x00000100
 
 //notify
 #define NOTIFY_TEXT_MAX_LEN		80
@@ -99,6 +143,11 @@ typedef enum
 	SCREEN_ID_HR,
 	SCREEN_ID_ECG,
 	SCREEN_ID_BP,
+	SCREEN_ID_SOS,
+	SCREEN_ID_SLEEP,
+	SCREEN_ID_STEPS,
+	SCREEN_ID_FALL,
+	SCREEN_ID_WRIST,
 	SCREEN_ID_SETTINGS,
 	SCREEN_ID_GPS_TEST,
 	SCREEN_ID_NB_TEST,
@@ -147,6 +196,8 @@ typedef struct
 {
 	NOTIFY_TYPE_ENUM type;
 	NOTIFY_ALIGN_ENUM align;
+	u8_t *img;
+	u32_t img_addr;
 	u8_t text[NOTIFY_TEXT_MAX_LEN+1];
 }notify_infor;
 

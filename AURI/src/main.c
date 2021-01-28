@@ -362,7 +362,7 @@ void test_show_image(void)
 	LCD_Clear(BLACK);
 
 	//LCD_ShowImg(0, 0, jjph_gc_96X32);
-	LCD_ShowImg_From_Flash(0, 0, IMG_LOGO_96X32_ADDR);
+	LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
@@ -376,28 +376,28 @@ void test_show_image(void)
 			case 0:
 				//LCD_ShowImg(w*0,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
+				//LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
 				//LCD_ShowImg(w*1,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
+				//LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
 				break;
 			case 2:
 				//LCD_ShowImg(w*1,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_160X160_ADDR);
+				//LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
 				//LCD_ShowImg(w*0,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_160X160_ADDR);
+				//LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_160X160_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
 				break;

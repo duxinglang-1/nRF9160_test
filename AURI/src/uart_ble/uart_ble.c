@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define BLE_DEV	"UART_0"
 
+#define UART_CTRL_PIN 	1	//拉高切换到WIFI，拉低切换到BLE
+#define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉高此脚
 #define BUF_MAXSIZE	1024
 
 #define PACKET_HEAD	0xAB

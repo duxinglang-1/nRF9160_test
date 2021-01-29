@@ -41,7 +41,7 @@ typedef union{
 #define ACC_MAGN_TRIGGER_THRES_DEF    9.0f 	 // for acc trigger
 #define FUZZY_OUT_THRES_DEF           45.0f	 // for fuzzy output
 #define STD_SVMG_SECOND_STAGE         12.0f
-#define STD_VARIANCE_THRES_DEF        0.13f  	 // for Standard Deviation
+#define STD_VARIANCE_THRES_DEF        0.2f  	 // for Standard Deviation
 #define PEAKS_NO_THRES                8       //number of peaks threshold
 #define PEAK_THRES                    11.0f
 #define MAX_GYROSCOPE_THRESHOLD       200  //max gyroscope threshold
@@ -116,7 +116,7 @@ volatile uint8_t suspicion_rules[9][3] =
 /*wrist tilt detection FSM*/
 const uint8_t lsm6so_prg_wrist_tilt[] = {
       0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x00, 0x00,
-      0x20, 0x00, 0x00, 0x0D, 0x06, 0x23, 0x00, 0x53,
+      0x80, 0x00, 0x00, 0x0D, 0x06, 0x23, 0x00, 0x53,
       0x33, 0x74, 0x44, 0x22,
      };
 

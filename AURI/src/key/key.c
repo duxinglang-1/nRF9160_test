@@ -35,10 +35,13 @@ static sys_slist_t button_handlers;
 
 #define KEY_SOS			BIT(0)
 #define KEY_PWR			BIT(1)
+#define KEY_TOUCH		BIT(2)
+
 static const key_cfg button_pins[] = 
 {
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 26, ACTIVE_LOW},
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15, ACTIVE_HIGH},
+	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 06, ACTIVE_HIGH},
 };
 
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
@@ -48,12 +51,19 @@ static struct k_delayed_work buttons_scan;
 static struct k_mutex button_handler_mut;
 static struct k_timer g_long_press_timer_id;
 
+static bool touch_flag = false;
+
 extern bool sys_pwr_off;
 extern bool app_gps_on;
 
+bool is_wearing(void)
+{
+	return touch_flag;
+}
+
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
+	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
 
 	switch(key_code)
 	{
@@ -63,9 +73,10 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			//APP_Ask_GPS_Data();
+			EntryMainMenuScreen();
 			break;
 		case KEY_LONG_PRESS:
+			EnterSOSScreen();
 			break;
 		}
 		break;
@@ -75,13 +86,30 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			//test_gps();
+			EntryIdleScreen();
 			break;
 		case KEY_LONG_PRESS:
 			sys_pwr_off = true;
 			break;
 		}
-		break;	
+		break;
+	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
+		switch(key_type)
+		{
+		case KEY_DOWN://´÷ÉÏ
+			touch_flag = true;
+			break;
+		case KEY_UP://ÍÑÏÂ
+			if(touch_flag)
+			{
+				touch_flag = false;
+				EnterWristScreen();
+			}
+			break;
+		case KEY_LONG_PRESS:
+			break;
+		}		
+		break;
 	}
 
 	//power key will wakeup lcd
@@ -91,21 +119,24 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		
 		if(lcd_is_sleeping)
 			lcd_sleep_out = true;
-		else
-			lcd_sleep_in = true;
+		//else
+		//	lcd_sleep_in = true;
 	}
 
-	if(alarm_is_running)
+	if(key_code != KEY_TOUCH)
 	{
-		AlarmRemindStop();
-	}
+		if(alarm_is_running)
+		{
+			AlarmRemindStop();
+		}
 
-	if(find_is_running)
-	{
-		FindDeviceStop();
-	}
+		if(find_is_running)
+		{
+			FindDeviceStop();
+		}
 
-	ExitNotifyScreen();
+		ExitNotifyScreen();	
+	}
 }
 
 static void button_handler(u32_t button_state, u32_t has_changed)
@@ -116,7 +147,7 @@ static void button_handler(u32_t button_state, u32_t has_changed)
 
 	keycode = has_changed;
 	keytype = button_state/has_changed;
-	
+
 	switch(keytype)
 	{
 	case KEY_DOWN:

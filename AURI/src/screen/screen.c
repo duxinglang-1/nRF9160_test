@@ -57,11 +57,19 @@ void ShowBootUpLogo(void)
 
 void ExitNotifyScreen(void)
 {
+#if 0
 	if(screen_id == SCREEN_ID_NOTIFY)
 	{
 		k_timer_stop(&notify_timer);
 		GoBackHistoryScreen();
 	}
+#else
+	if(screen_id == SCREEN_ID_FALL || screen_id == SCREEN_ID_WRIST)
+	{
+		k_timer_stop(&notify_timer);
+		EntryIdleScreen();
+	}
+#endif
 }
 
 void NotifyTimerOutCallBack(struct k_timer *timer_id)
@@ -258,7 +266,7 @@ void IdleUpdateBatSoc(void)
 void IdleShowSignal(void)
 {
 #ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[5] = {IMG_NB_SIG_0_ADDR,IMG_NB_SIG_1_ADDR,IMG_NB_SIG_2_ADDR,IMG_NB_SIG_3_ADDR,IMG_NB_SIG_4_ADDR};
+	u32_t img_addr[5] = {IMG_SIG_0_ADDR,IMG_SIG_1_ADDR,IMG_SIG_2_ADDR,IMG_SIG_3_ADDR,IMG_SIG_4_ADDR};
 #else
 	unsigned char *img[5] = {IMG_SIG_0,IMG_SIG_1,IMG_SIG_2,IMG_SIG_3,IMG_SIG_4};
 #endif
@@ -703,7 +711,7 @@ void SleepShowStatus(void)
 	case LANGUAGE_EN:
 	#ifdef IMG_FONT_FROM_FLASH
 		img_h_addr = IMG_HOUR_EN_ADDR;
-		img_m_addr = IMG_MIN_EN_ADDR
+		img_m_addr = IMG_MIN_EN_ADDR;
 	#else
 		img_h = IMG_HOUR_EN;
 		img_m = IMG_MIN_EN;
@@ -716,7 +724,7 @@ void SleepShowStatus(void)
 	case LANGUAGE_CHN:
 	#ifdef IMG_FONT_FROM_FLASH
 		img_h_addr = IMG_HOUR_CN_ADDR;
-		img_m_addr = IMG_MIN_CN_ADDR
+		img_m_addr = IMG_MIN_CN_ADDR;
 	#else
 		img_h = IMG_HOUR_CN;
 		img_m = IMG_MIN_CN;
@@ -1038,7 +1046,9 @@ void EnterSOSScreen(void)
 
 	screen_id = SCREEN_ID_SOS;	
 	scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;		
+	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
+
+	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
 }
 
 void EnterSleepScreen(void)
@@ -1052,7 +1062,7 @@ void EnterSleepScreen(void)
 
 	screen_id = SCREEN_ID_SLEEP;	
 	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;		
+	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;	
 }
 
 void EnterStepsScreen(void)
@@ -1080,7 +1090,9 @@ void EnterFallScreen(void)
 
 	screen_id = SCREEN_ID_FALL;	
 	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;		
+	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;
+
+	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
 }
 
 void EnterWristScreen(void)
@@ -1094,7 +1106,9 @@ void EnterWristScreen(void)
 
 	screen_id = SCREEN_ID_WRIST;	
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATING;		
+	scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATING;
+
+	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
 }
 
 void GoBackHistoryScreen(void)
@@ -1108,6 +1122,38 @@ void GoBackHistoryScreen(void)
 	screen_id = history_screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_ENTER;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_CREATING;	
+}
+
+void EntryIdleScreen(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_IDLE;	
+	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
+}
+
+void EntryMainMenuScreen(void)
+{
+	static u8_t scr_index=0;
+	u16_t scr_id[3] = {SCREEN_ID_IDLE,SCREEN_ID_SLEEP,SCREEN_ID_STEPS};
+	
+	scr_index++;
+	if(scr_index>=ARRAY_SIZE(scr_id))
+		scr_index = 0;
+	
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = scr_id[scr_index];	
+	scr_msg[screen_id].act = SCREEN_ACTION_ENTER;
+	scr_msg[screen_id].status = SCREEN_STATUS_CREATING;
 }
 
 void ScreenMsgProcess(void)

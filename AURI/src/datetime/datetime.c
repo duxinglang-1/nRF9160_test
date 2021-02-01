@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "lsm6dso.h"
+#include "max20353.h"
 #include "screen.h"
 #include "ucs2.h"
 
@@ -393,6 +394,12 @@ void TimeMsgProcess(void)
 		UpdateSystemTime();
 
 		if(screen_id == SCREEN_ID_IDLE)
+		{
+			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
+			
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
+		
 	}
 }

@@ -278,16 +278,28 @@ void IdleShowSignal(void)
 
 void IdleShowBatSoc(void)
 {
+	static u8_t index = 0;
 #ifdef IMG_FONT_FROM_FLASH
 	u32_t img_addr[6] = {IMG_BAT_0_ADDR,IMG_BAT_1_ADDR,IMG_BAT_2_ADDR,IMG_BAT_3_ADDR,IMG_BAT_4_ADDR,IMG_BAT_5_ADDR};
 #else
 	unsigned char *img[6] = {IMG_BAT_0,IMG_BAT_1,IMG_BAT_2,IMG_BAT_3,IMG_BAT_4,IMG_BAT_5};
 #endif
+
+	if(charger_is_connected&&g_chg_status == BAT_CHARGING_PROGRESS)
+	{
+		index++;
+		if(index>=6)
+			index = 0;
+	}
+	else
+	{
+		index = g_bat_level;
+	}
 	
 #ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(BAT_LEVEL_X, BAT_LEVEL_Y, img_addr[g_bat_level]);
+	LCD_ShowImg_From_Flash(BAT_LEVEL_X, BAT_LEVEL_Y, img_addr[index]);
 #else
-	LCD_ShowImg(BAT_LEVEL_X, BAT_LEVEL_Y, img[g_bat_level]);
+	LCD_ShowImg(BAT_LEVEL_X, BAT_LEVEL_Y, img[index]);
 #endif
 }
 

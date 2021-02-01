@@ -41,7 +41,7 @@ typedef union{
 #define ACC_MAGN_TRIGGER_THRES_DEF    9.0f 	 // for acc trigger
 #define FUZZY_OUT_THRES_DEF           45.0f	 // for fuzzy output
 #define STD_SVMG_SECOND_STAGE         12.0f
-#define STD_VARIANCE_THRES_DEF        0.2f  	 // for Standard Deviation
+#define STD_VARIANCE_THRES_DEF        0.13f  	 // for Standard Deviation
 #define PEAKS_NO_THRES                8       //number of peaks threshold
 #define PEAK_THRES                    11.0f
 #define MAX_GYROSCOPE_THRESHOLD       200  //max gyroscope threshold

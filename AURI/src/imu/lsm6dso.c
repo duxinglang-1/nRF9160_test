@@ -159,10 +159,6 @@ void sensor_init(void)
 
 	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 
-	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
-
-	//lsm6dso_tap_axis_priority_set(&imu_dev_ctx, LSM6DSO_ZXY);
-
 	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_x_set(&imu_dev_ctx, PROPERTY_ENABLE);
@@ -197,20 +193,22 @@ void sensor_init(void)
                       sizeof(lsm6so_prg_wrist_tilt));
 	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
 
-//	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)falltrigger,
-//                      sizeof(falltrigger));
+	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)falltrigger,
+                      sizeof(falltrigger));
 
-	/* route step counter, wrist tilt to INT1 pin*/
+	/* route single tap, wrist tilt to INT2 pin*/
+	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
+	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+
+	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
-	/* route single tap to INT2 pin*/
-	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
-	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
-	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
 }
 
 void sensor_reset(void)
@@ -230,10 +228,10 @@ void sensor_reset(void)
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
 
 	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
-
+/*
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.int1_ctrl.int1_fifo_th = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);*/
 
 	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
@@ -906,59 +904,51 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
-	static bool wear_flag = true;
-	
-	if(is_wearing())
+	if(int1_event)	//steps or tilt
 	{
-		wear_flag = true;
+		int1_event = false;
+
+		if(!is_wearing())
+			//return;
 		
-		if(int1_event)	//steps or tilt
+		is_tilt();
+		if(wrist_tilt)
 		{
-			int1_event = false;
+			LOG_INF("tilt trigger!\n");
 			
-			is_tilt();
-			if(wrist_tilt)
+			wrist_tilt = false;
+			if(global_settings.wake_screen_by_wrist)
 			{
-				LOG_INF("tilt trigger!\n");
-				
-				wrist_tilt = false;
-				if(global_settings.wake_screen_by_wrist)
-				{
-					sleep_out_by_wrist = true;
-					lcd_sleep_out = true;
-				}
-			}
-			else
-			{
-				LOG_INF("steps trigger!\n");
-				
-				UpdateIMUData();
-				imu_redraw_steps_flag = true;	
+				sleep_out_by_wrist = true;
+				lcd_sleep_out = true;
 			}
 		}
-
-		if(int2_event)	//fall
+		else
 		{
-			int2_event = false;
-
-			fall_detection();
-			if(fall_result)
-			{
-				LOG_INF("tilt trigger!\n");
-				
-				fall_result = false;
-				EnterFallScreen();
-			}
-		}	
+			LOG_INF("steps trigger!\n");
+			
+			UpdateIMUData();
+			imu_redraw_steps_flag = true;	
+		}
 	}
-	else
+
+	if(int2_event)	//fall
 	{
-		if(wear_flag)
+		int2_event = false;
+		
+		if(!is_wearing())
+			//return;
+
+		fall_detection();
+		if(fall_result)
 		{
-			wear_flag = false;
+			LOG_INF("tilt trigger!\n");
+			
+			fall_result = false;
+			lcd_sleep_out = true;
 			EnterFallScreen();
 		}
-	}
+	}	
 	
 	if(reset_steps)
 	{

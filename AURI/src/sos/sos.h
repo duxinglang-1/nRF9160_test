@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define SOS_SENDING_TIMEOUT 5*60*1000
+#define SOS_SENDING_TIMEOUT 5
 
 typedef enum
 {

@@ -41,7 +41,7 @@ static const key_cfg button_pins[] =
 {
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 26, ACTIVE_LOW},
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15, ACTIVE_HIGH},
-	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 06, ACTIVE_HIGH},
+	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 06, ACTIVE_LOW},
 };
 
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
@@ -65,6 +65,13 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 {
 	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
 
+	if(lcd_is_sleeping && (key_type == KEY_UP))
+	{
+		sleep_out_by_wrist = false;
+		lcd_sleep_out = true;
+		return;
+	}
+
 	switch(key_code)
 	{
 	case KEY_SOS:
@@ -76,7 +83,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			EntryMainMenuScreen();
 			break;
 		case KEY_LONG_PRESS:
-			EnterSOSScreen();
+			SOSStart();
 			break;
 		}
 		break;
@@ -112,17 +119,6 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		break;
 	}
 
-	//power key will wakeup lcd
-	if((key_code == KEY_PWR)&&(key_type == KEY_UP))
-	{
-		sleep_out_by_wrist = false;
-		
-		if(lcd_is_sleeping)
-			lcd_sleep_out = true;
-		//else
-		//	lcd_sleep_in = true;
-	}
-
 	if(key_code != KEY_TOUCH)
 	{
 		if(alarm_is_running)
@@ -135,7 +131,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			FindDeviceStop();
 		}
 
-		ExitNotifyScreen();	
+		//ExitNotifyScreen();	
 	}
 }
 

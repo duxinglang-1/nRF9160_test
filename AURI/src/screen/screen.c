@@ -64,11 +64,9 @@ void ExitNotifyScreen(void)
 		GoBackHistoryScreen();
 	}
 #else
-	if(screen_id == SCREEN_ID_FALL || screen_id == SCREEN_ID_WRIST)
-	{
-		k_timer_stop(&notify_timer);
-		EntryIdleScreen();
-	}
+	sos_state = SOS_STATUS_IDLE;
+	k_timer_stop(&notify_timer);
+	EntryIdleScreen();
 #endif
 }
 
@@ -681,10 +679,16 @@ void SOSScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_SOS].para&SCREEN_EVENT_UPDATE_SOS)
+		{
+			scr_msg[SCREEN_ID_SOS].para &= (~SCREEN_EVENT_UPDATE_SOS);
+			SOSShowStatus();
+		}
+
+		if(scr_msg[SCREEN_ID_SOS].para == SCREEN_EVENT_UPDATE_NO)
+			scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_NO;
 		break;
 	}
-	
-	scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_NO;
 }
 
 void SleepShowStatus(void)
@@ -1047,8 +1051,6 @@ void EnterSOSScreen(void)
 	screen_id = SCREEN_ID_SOS;	
 	scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
-
-	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
 }
 
 void EnterSleepScreen(void)
@@ -1119,15 +1121,17 @@ void GoBackHistoryScreen(void)
 	scr_msg[scr_id].act = SCREEN_ACTION_NO;
 	scr_msg[scr_id].status = SCREEN_STATUS_NO;
 
-	screen_id = history_screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_ENTER;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_CREATING;	
+	screen_id = SCREEN_ID_IDLE;
+	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;	
 }
 
 void EntryIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
 		return;
+
+	k_timer_stop(&notify_timer);
 
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -1142,6 +1146,9 @@ void EntryMainMenuScreen(void)
 {
 	static u8_t scr_index=0;
 	u16_t scr_id[3] = {SCREEN_ID_IDLE,SCREEN_ID_SLEEP,SCREEN_ID_STEPS};
+
+	if(screen_id == SCREEN_ID_SOS)
+		return;
 	
 	scr_index++;
 	if(scr_index>=ARRAY_SIZE(scr_id))
@@ -1152,8 +1159,8 @@ void EntryMainMenuScreen(void)
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
 
 	screen_id = scr_id[scr_index];	
-	scr_msg[screen_id].act = SCREEN_ACTION_ENTER;
-	scr_msg[screen_id].status = SCREEN_STATUS_CREATING;
+	scr_msg[scr_id[scr_index]].act = SCREEN_ACTION_ENTER;
+	scr_msg[scr_id[scr_index]].status = SCREEN_STATUS_CREATING;
 }
 
 void ScreenMsgProcess(void)

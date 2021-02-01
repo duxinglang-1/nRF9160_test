@@ -7,6 +7,12 @@
 ** Version:			    1.0
 ** Descriptions:		NB-IoTÍ·ÎÄ¼þ
 ******************************************************************************************************/
+#define CMD_GET_IMEI	"AT+CGSN"
+#define CMD_GET_IMSI	"AT+CIMI"
+
+#define IMEI_MAX_LEN	(15+1)
+#define IMSI_MAX_LEN	(15+1)
+
 
 typedef enum
 {

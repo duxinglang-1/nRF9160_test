@@ -30,12 +30,16 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
+static void GetModemInforCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_modem_timer, GetModemInforCallBack, NULL);
+
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
 static struct modem_param_info modem_param;
 static bool nb_redraw_sig_flag = false;
+static bool get_modem_infor = false;
 
 //add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -63,6 +67,9 @@ static struct pollfd fds;
 
 bool app_nb_on = false;
 bool nb_is_running = false;
+
+u8_t g_imsi[IMSI_MAX_LEN] = {0};
+u8_t g_imei[IMEI_MAX_LEN] = {0};
 
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[128] = {0};
@@ -762,6 +769,30 @@ void NBRedrawSignal(void)
 	}
 }
 
+void GetModemInfor(void)
+{
+	u8_t imei[128] = {0};
+	u8_t imsi[128] = {0};
+
+	if(at_cmd_write(CMD_GET_IMEI, imei, sizeof(imei), NULL) != 0)
+	{
+		LOG_INF("Get imei fail!\n");
+		return;
+	}
+
+	LOG_INF("imei:%s\n", imei);
+	strncpy(g_imei, imei, IMEI_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_IMSI, imsi, sizeof(imsi), NULL) != 0)
+	{
+		LOG_INF("Get imsi fail!\n");
+		return;
+	}
+
+	LOG_INF("imsi:%s\n", imsi);
+	strncpy(g_imsi, imsi, IMSI_MAX_LEN);
+}
+
 void NBMsgProcess(void)
 {
 	if(app_nb_on)
@@ -778,15 +809,30 @@ void NBMsgProcess(void)
 		NBRedrawSignal();
 		nb_redraw_sig_flag = false;
 	}
+
+	if(get_modem_infor)
+	{
+		GetModemInfor();
+		get_modem_infor = false;
+	}
+}
+
+
+
+void GetModemInforCallBack(struct k_timer *timer_id)
+{
+	get_modem_infor = true;
 }
 
 void NB_init(void)
 {
 	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
 	{
-		LOG_INF("AT_CMD write fail!\n");
+		LOG_INF("Set modem on fail!\n");
 		return;
 	}
-
+	
 	modem_data_init();
+
+	k_timer_start(&get_modem_timer, K_MSEC(2000), NULL);
 }

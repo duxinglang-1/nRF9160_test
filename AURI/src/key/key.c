@@ -65,11 +65,12 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 {
 	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
 
-	if(lcd_is_sleeping && (key_type == KEY_UP))
+	if(key_type == KEY_UP)
 	{
 		sleep_out_by_wrist = false;
 		lcd_sleep_out = true;
-		return;
+		if(lcd_is_sleeping)
+			return;
 	}
 
 	switch(key_code)

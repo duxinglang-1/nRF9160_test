@@ -917,7 +917,8 @@ void IMUMsgProcess(void)
 			LOG_INF("tilt trigger!\n");
 			
 			wrist_tilt = false;
-			if(global_settings.wake_screen_by_wrist)
+
+			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
 			{
 				sleep_out_by_wrist = true;
 				lcd_sleep_out = true;

@@ -37,7 +37,7 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 	2020,
 	1,
 	1,
-	8,
+	0,
 	0,
 	0,
 	3		//0=sunday

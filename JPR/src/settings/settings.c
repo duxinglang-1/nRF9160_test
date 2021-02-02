@@ -35,11 +35,11 @@ extern sys_date_timer_t date_time;
 const sys_date_timer_t FACTORY_DEFAULT_TIME = 
 {
 	2020,
-	01,
-	01,
-	00,
-	00,
-	00,
+	1,
+	1,
+	0,
+	0,
+	0,
 	3		//0=sunday
 };
 

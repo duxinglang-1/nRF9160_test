@@ -112,9 +112,11 @@ static void button_handler(u32_t button_state, u32_t has_changed)
 
 	u32_t buttons = (button_state & has_changed);
 
+	LOG_INF("button_state:%d, has_changed:%d\n", button_state, has_changed);
+
 	keycode = has_changed;
-	keytype = button_state/has_changed;
-	
+	keytype = (buttons>0 ? KEY_DOWN:KEY_UP);
+
 	switch(keytype)
 	{
 	case KEY_DOWN:

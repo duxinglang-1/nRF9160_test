@@ -535,19 +535,19 @@ static void modem_rsrp_handler(char rsrp_value)
 	{
 		g_nb_sig = NB_SIG_LEVEL_NO;
 	}
-	else if(rsrp_value > 80)
+	else if(rsrp_value >= 80)
 	{
 		g_nb_sig = NB_SIG_LEVEL_4;
 	}
-	else if(rsrp_value > 60)
+	else if(rsrp_value >= 60)
 	{
 		g_nb_sig = NB_SIG_LEVEL_3;
 	}
-	else if(rsrp_value > 40)
+	else if(rsrp_value >= 40)
 	{
 		g_nb_sig = NB_SIG_LEVEL_2;
 	}
-	else if(rsrp_value > 20)
+	else if(rsrp_value >= 20)
 	{
 		g_nb_sig = NB_SIG_LEVEL_1;
 	}

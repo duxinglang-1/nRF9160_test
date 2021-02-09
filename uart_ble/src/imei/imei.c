@@ -197,6 +197,7 @@ void show_bar_code(u32_t datalen, u8_t *data)
 void test_imei(void)
 {
 	int err;
+	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 	
 	printk("test_imei\n");
@@ -205,8 +206,10 @@ void test_imei(void)
 	if(get_imei(128, tmpbuf))
 	{
 		memcpy(imei_buf, &tmpbuf[1+strlen(RES_IMEI_HEAD)], IMEI_LEN);
-		LCD_ShowString(0,20,imei_buf);
 
 		show_bar_code(15,imei_buf);
+		
+		LCD_MeasureString(imei_buf, &w, &h);
+		LCD_ShowString((LCD_WIDTH-w)/2, 180, imei_buf);
 	}
 }

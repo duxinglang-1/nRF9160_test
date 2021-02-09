@@ -793,8 +793,6 @@ void gps_off(void)
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("gps is been truned off");
 	#endif
-
-		GoBackHistoryScreen();
 		return;
 	}
 	

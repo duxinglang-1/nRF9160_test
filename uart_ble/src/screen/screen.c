@@ -21,6 +21,7 @@
 #include "external_flash.h"
 #include "screen.h"
 #include "ucs2.h"
+#include "nb.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -39,10 +40,12 @@ void ShowBootUpLogo(void)
 {
 	u16_t x,y,w,h;
 
+#ifdef IMG_FONT_FROM_FLASH
 	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
 	x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
 	y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
 	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+#endif	
 }
 
 void ExitNotifyScreen(void)
@@ -258,6 +261,23 @@ void IdleUpdateBatSoc(void)
 #endif
 }
 
+void IdleShowSignal(void)
+{
+#if 0
+#ifdef IMG_FONT_FROM_FLASH
+	u32_t img_addr[5] = {IMG_SIG_0_ADDR,IMG_SIG_1_ADDR,IMG_SIG_2_ADDR,IMG_SIG_3_ADDR,IMG_SIG_4_ADDR};
+#else
+	unsigned char *img[5] = {IMG_SIG_0,IMG_SIG_1,IMG_SIG_2,IMG_SIG_3,IMG_SIG_4};
+#endif
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(NB_SIGNAL_X, NB_SIGNAL_Y, img_addr[g_nb_sig]);
+#else
+	LCD_ShowImg(NB_SIGNAL_X, NB_SIGNAL_Y, img[g_nb_sig]);
+#endif
+#endif
+}
+
 void IdleShowBatSoc(void)
 {
 	u16_t x,y,w,h;
@@ -402,6 +422,11 @@ void IdleScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SIG)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SIG);
+			IdleShowSignal();
+		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BAT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BAT);

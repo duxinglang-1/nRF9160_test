@@ -8,10 +8,10 @@
 
 #define FONT_16
 #define FONT_24
-#define FONT_32
+//#define FONT_32
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
-//#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
+#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
 
 #ifdef FONTMAKER_MBCS_FONT
 #define FONT_MBCS_HEAD_FLAG_0	0x4D
@@ -104,18 +104,18 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char RM_JIS_16_4[72192];
 //extern unsigned char RM_JIS_16_5[72208];
 #endif
-#ifdef FONTMAKER_UNICODE_FONT
-//extern unsigned char RM_UNI_16_1[88288];
-//extern unsigned char RM_UNI_16_2[88288];
-//extern unsigned char RM_UNI_16_3[88288];
-//extern unsigned char RM_UNI_16_4[88288];
-//extern unsigned char RM_UNI_16_5[88288];
-//extern unsigned char RM_UNI_16_6[88288];
-//extern unsigned char RM_UNI_16_7[88224];
+#if 0	//def FONTMAKER_UNICODE_FONT
+//extern unsigned char RM_UNI_16_1[85504];
+//extern unsigned char RM_UNI_16_2[85504];
+//extern unsigned char RM_UNI_16_3[85504];
+//extern unsigned char RM_UNI_16_4[85504];
+//extern unsigned char RM_UNI_16_5[85504];
+//extern unsigned char RM_UNI_16_6[85504];
+//extern unsigned char RM_UNI_16_7[85408];
 #endif/*FONTMAKER_UNICODE_FONT*/
 #endif/*FONT_16*/
 
-#ifdef FONT_24
+#if 1	//def FONT_24
 //extern unsigned char chinese_2424_1[1200][72];
 //extern unsigned char chinese_2424_2[1200][72];
 //extern unsigned char chinese_2424_3[1200][72];
@@ -124,18 +124,19 @@ extern unsigned char asc2_3216[96][64];
 //extern unsigned char chinese_2424_6[1200][72];
 //extern unsigned char chinese_2424_7[977][72];
 
-#ifdef FONTMAKER_UNICODE_FONT
-//extern unsigned char RM_UNI_24_1[89600];
-//extern unsigned char RM_UNI_24_2[89600];
-//extern unsigned char RM_UNI_24_3[89600];
-//extern unsigned char RM_UNI_24_4[89600];
-//extern unsigned char RM_UNI_24_5[89600];
-//extern unsigned char RM_UNI_24_6[89600];
-//extern unsigned char RM_UNI_24_7[89600];
-//extern unsigned char RM_UNI_24_8[89600];
-//extern unsigned char RM_UNI_24_9[89600];
-//extern unsigned char RM_UNI_24_10[89600];
-//extern unsigned char RM_UNI_24_11[80388];
+#if 1	//def FONTMAKER_UNICODE_FONT
+//extern unsigned char RM_UNI_24_1[84960];
+//extern unsigned char RM_UNI_24_2[84960];
+//extern unsigned char RM_UNI_24_3[84960];
+//extern unsigned char RM_UNI_24_4[84960];
+//extern unsigned char RM_UNI_24_5[84960];
+//extern unsigned char RM_UNI_24_6[84960];
+//extern unsigned char RM_UNI_24_7[84960];
+//extern unsigned char RM_UNI_24_8[84960];
+//extern unsigned char RM_UNI_24_9[84960];
+//extern unsigned char RM_UNI_24_10[84960];
+//extern unsigned char RM_UNI_24_11[84960];
+//extern unsigned char RM_UNI_24_12[84672];
 #endif/*def FONTMAKER_UNICODE_FONT*/
 
 #endif/*FONT_24*/

@@ -105,7 +105,11 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN://´÷ÉÏ
-			touch_flag = true;
+			if(!touch_flag)
+			{
+				touch_flag = true;
+				ExitWristScreen();
+			}			
 			break;
 		case KEY_UP://ÍÑÏÂ
 			if(touch_flag)

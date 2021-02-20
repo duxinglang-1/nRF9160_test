@@ -1109,6 +1109,14 @@ void EnterFallScreen(void)
 	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
 }
 
+void ExitWristScreen(void)
+{
+	if(screen_id == SCREEN_ID_WRIST)
+	{
+		EntryIdleScreen();
+	}
+}
+
 void EnterWristScreen(void)
 {
 	if(screen_id == SCREEN_ID_WRIST)

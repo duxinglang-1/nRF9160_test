@@ -127,6 +127,12 @@ void pmu_battery_low_shutdown_timerout(void)
 	sys_pwr_off = true;
 }
 
+void pmu_battery_stop_shutdown(void)
+{
+	if(k_timer_remaining_get(&soc_pwroff) > 0)
+		k_timer_stop(&soc_pwroff);
+}
+
 void pmu_battery_low_shutdown(void)
 {
 	k_timer_init(&soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
@@ -176,6 +182,8 @@ void pmu_interrupt_proc(void)
 			MAX20353_ReadReg(REG_STATUS1, &status1);
 			if((status1&0x08) == 0x08) //USB OK   
 			{
+				pmu_battery_stop_shutdown();
+				
 				InitCharger();
 
 				charger_is_connected = true;

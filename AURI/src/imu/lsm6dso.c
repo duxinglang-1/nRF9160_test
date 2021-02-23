@@ -938,7 +938,7 @@ void IMUMsgProcess(void)
 		int2_event = false;
 		
 		if(!is_wearing())
-			//return;
+			return;
 
 		fall_detection();
 		if(fall_result)

@@ -793,6 +793,20 @@ void GetModemInfor(void)
 void GetNBSignal(void)
 {
 	u8_t str_rsrp[128] = {0};
+
+	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get cfun fail!\n");
+		return;
+	}
+	LOG_INF("cfun:%s\n", str_rsrp);
+
+	if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get cpsms fail!\n");
+		return;
+	}
+	LOG_INF("cpsms:%s\n", str_rsrp);
 	
 	if(at_cmd_write(CMD_GET_RSRP, str_rsrp, sizeof(str_rsrp), NULL) != 0)
 	{
@@ -836,14 +850,33 @@ void GetModemInforCallBack(struct k_timer *timer_id)
 
 void NB_init(void)
 {
-//	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
-//	{
-//		LOG_INF("Set modem on fail!\n");
-//		return;
-//	}
+	if(at_cmd_write(CMD_SET_NW_MODE, NULL, 0, NULL) != 0)
+	{
+		return;
+	}
 
-	//modem_data_init();
-	lte_lc_init();
+	if(at_cmd_write(CMD_SET_CREG, NULL, 0, NULL) != 0)
+	{
+		return;
+	}
+
+#if defined(CONFIG_LTE_LEGACY_PCO_MODE)
+	if(at_cmd_write(CMD_SET_EPCO_MODE, NULL, 0, NULL) != 0)
+	{
+		return;
+	}
+#endif
+
+	if(at_cmd_write(CMD_SET_NW_MODE, NULL, 0, NULL) != 0)
+	{
+		return;
+	}
+
+	if(at_cmd_write(CMD_SET_FUN_MODE, NULL, 0, NULL) != 0)
+	{
+		return;
+	}
+
 	modem_data_init();
 
 	k_timer_start(&get_modem_timer, K_MSEC(2000), NULL);

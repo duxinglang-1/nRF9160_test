@@ -11,6 +11,13 @@
 #define CMD_GET_IMSI	"AT+CIMI"
 #define CMD_GET_RSRP	"AT+CESQ"
 
+#define CMD_SET_CREG	 	"AT+CEREG=5"
+#if defined(CONFIG_LTE_LEGACY_PCO_MODE)
+#define CMD_SET_EPCO_MODE	"AT%XEPCO=0"
+#endif
+#define CMD_SET_NW_MODE		"AT%XSYSTEMMODE=0,1,1,0"	//Preferred network mode: Narrowband-IoT and GPS
+#define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
+
 #define IMEI_MAX_LEN	(15+1)
 #define IMSI_MAX_LEN	(15+1)
 

@@ -909,7 +909,7 @@ void IMUMsgProcess(void)
 		int1_event = false;
 
 		if(!is_wearing())
-			//return;
+			return;
 		
 		is_tilt();
 		if(wrist_tilt)

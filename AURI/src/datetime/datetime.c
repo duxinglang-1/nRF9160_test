@@ -21,6 +21,10 @@
 #include "screen.h"
 #include "ucs2.h"
 
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(datetime, CONFIG_LOG_DEFAULT_LEVEL);
+
 static struct k_timer clock_timer;
 
 sys_date_timer_t date_time = {0};
@@ -37,15 +41,22 @@ u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表
 
 void UpdateSystemTime(void)
 {
+	u64_t timestamp,timeskip;
+	static u64_t laststamp=0;
+	
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
 
 	if(screen_id == SCREEN_ID_IDLE)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
-	
-	date_time.second++;
+
+	timestamp = k_uptime_get();
+	timeskip = timestamp - laststamp;
+	laststamp = timestamp;
+
+	date_time.second += (timeskip/1000);
 	if(date_time.second > 59)
 	{
-		date_time.second = 0;
+		date_time.second = date_time.second%60;
 		date_time.minute++;
 		date_time_changed = date_time_changed|0x02;
 		//date_time_changed = date_time_changed|0x04;//分针在变动的同时，时针也会同步缓慢变动

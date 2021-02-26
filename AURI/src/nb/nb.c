@@ -30,8 +30,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-static void GetModemInforCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(get_modem_timer, GetModemInforCallBack, NULL);
+static struct k_work_q *app_work_q;
+static struct k_delayed_work link_work;
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
@@ -771,26 +771,66 @@ void NBRedrawSignal(void)
 
 void GetModemInfor(void)
 {
-	u8_t imei[128] = {0};
+	char *ptr;
+	int i=0,len,err;
+	u8_t tmpbuf[128] = {0};
 	u8_t imsi[128] = {0};
 
-	if(at_cmd_write(CMD_GET_IMEI, imei, sizeof(imei), NULL) != 0)
+	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get imei fail!\n");
 		return;
 	}
 
-	LOG_INF("imei:%s\n", imei);
-	strncpy(g_imei, imei, IMEI_MAX_LEN);
+	LOG_INF("imei:%s\n", tmpbuf);
+	strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
 
-	if(at_cmd_write(CMD_GET_IMSI, imsi, sizeof(imsi), NULL) != 0)
+	if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get imsi fail!\n");
 		return;
 	}
 
-	LOG_INF("imsi:%s\n", imsi);
-	strncpy(g_imsi, imsi, IMSI_MAX_LEN);
+	LOG_INF("imsi:%s\n", tmpbuf);
+	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get rsrp fail!\n");
+		return;
+	}
+
+	LOG_INF("rsrp:%s\n", tmpbuf);
+	len = strlen(tmpbuf);
+	ptr = tmpbuf;
+	while(i<5)
+	{
+		ptr = strstr(ptr, ",");
+		ptr++;
+		i++;
+	}
+
+	memset(imsi, 0, sizeof(imsi));
+	memcpy((char*)imsi, ptr, len-(ptr-(char*)tmpbuf));
+	modem_rsrp_handler(atoi(imsi));
+}
+
+static void nb_link(struct k_work *work)
+{
+	int err;
+
+	err = lte_lc_init_and_connect();
+	if(err)
+	{
+		LOG_INF("Can't connected to LTE network");
+	}
+	else
+	{
+		LOG_INF("Connected to LTE network");
+		modem_data_init();
+	}
+
+	GetModemInfor();
 }
 
 void GetNBSignal(void)
@@ -836,51 +876,14 @@ void NBMsgProcess(void)
 		NBRedrawSignal();
 		nb_redraw_sig_flag = false;
 	}
-
-	if(get_modem_infor)
-	{
-		GetModemInfor();
-		get_modem_infor = false;
-	}
 }
 
-
-
-void GetModemInforCallBack(struct k_timer *timer_id)
+void NB_init(struct k_work_q *work_q)
 {
-	get_modem_infor = true;
-}
+	int err;
 
-void NB_init(void)
-{
-	if(at_cmd_write(CMD_SET_NW_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
+	app_work_q = work_q;
 
-	if(at_cmd_write(CMD_SET_CREG, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-
-#if defined(CONFIG_LTE_LEGACY_PCO_MODE)
-	if(at_cmd_write(CMD_SET_EPCO_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-#endif
-
-	if(at_cmd_write(CMD_SET_NW_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-
-	if(at_cmd_write(CMD_SET_FUN_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-
-	modem_data_init();
-
-	k_timer_start(&get_modem_timer, K_MSEC(2000), NULL);
+	k_work_init(&link_work, nb_link);
+	k_work_submit_to_queue(app_work_q, &link_work);
 }

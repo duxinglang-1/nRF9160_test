@@ -906,19 +906,6 @@ static void nb_link(struct k_work *work)
 	GetModemInfor();
 }
 
-void testnetworktime(void)
-{
-	u8_t tmpbuf[128] = {0};
-
-	if(at_cmd_write("AT%XNETTIME?", tmpbuf, sizeof(tmpbuf), NULL) != 0)
-	{
-		LOG_INF("Get cfun fail!\n");
-		return;
-	}
-	LOG_INF("%s\n", tmpbuf);
-
-}
-
 void GetNBSignal(void)
 {
 	u8_t str_rsrp[128] = {0};

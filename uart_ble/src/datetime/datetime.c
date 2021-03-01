@@ -38,6 +38,271 @@ bool show_date_time_first = true;
 
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 
+u8_t GetWeekDayByDate(sys_date_timer_t date)
+{
+	u8_t flag=0,index=SYSTEM_STARTING_WEEK;//1900年1月1日是星期一 0=sunday
+	u32_t i,count=0;
+	
+	if(date.year < SYSTEM_STARTING_YEAR)
+		return 0xff;
+
+	for(i=SYSTEM_STARTING_YEAR;i<date.year;i++)
+	{
+		if(i%4 == 0)	//闰年366天
+			count += 366;
+		else
+			count += 365;
+	}
+
+	if(date.year%4 == 0)
+		flag = 1;
+	
+	switch(date.month)
+	{
+	case 1:
+		count += 0;
+		break;
+	case 2:
+		count += 31;
+		break;
+	case 3:
+		count += (31+(28+flag));
+		break;
+	case 4:
+		count += (2*31+(28+flag));
+		break;
+	case 5:
+		count += (2*31+30+(28+flag));
+		break;
+	case 6:
+		count += (3*31+30+(28+flag));
+		break;
+	case 7:
+		count += (3*31+2*30+(28+flag));
+		break;
+	case 8:
+		count += (4*31+2*30+(28+flag));
+		break;
+	case 9:
+		count += (5*31+2*30+(28+flag));
+		break;
+	case 10:
+		count += (5*31+3*30+(28+flag));
+		break;
+	case 11:
+		count += (6*31+3*30+(28+flag));
+		break;
+	case 12:
+		count += (6*31+4*30+(28+flag));
+		break;			
+	}
+
+	count += (date.day-1);
+	
+	count = count%7;
+	index = (index+count)%7;
+	
+	return index;
+}
+
+void DateIncreaseOne(sys_date_timer_t *date)
+{
+	(*date).day++;
+	if((*date).month == 1 \
+	|| (*date).month == 3 \
+	|| (*date).month == 5 \
+	|| (*date).month == 7 \
+	|| (*date).month == 8 \
+	|| (*date).month == 10 \
+	|| (*date).month == 12)
+	{
+		if((*date).day > 31)
+		{
+			(*date).day = 1;
+			(*date).month++;
+			if((*date).month > 12)
+			{
+				(*date).month = 1;
+				(*date).year++;
+			}
+		}
+	}
+	else if((*date).month == 4 \
+		|| (*date).month == 6 \
+		|| (*date).month == 9 \
+		|| (*date).month == 11)
+	{
+		if((*date).day > 30)
+		{
+			(*date).day = 1;
+			(*date).month++;
+			if((*date).month > 12)
+			{
+				(*date).month = 1;
+				(*date).year++;
+			}
+		}
+	}
+	else
+	{
+		uint8_t Leap = 0;
+
+		if((*date).year%4 == 0)
+			Leap = 1;
+		
+		if((*date).day > (28+Leap))
+		{
+			(*date).day = 1;
+			(*date).month++;
+			if((*date).month > 12)
+			{
+				(*date).month = 1;
+				(*date).year++;
+			}
+		}
+	}	
+
+	(*date).week = GetWeekDayByDate((*date));
+
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+}
+
+void DateDecreaseOne(sys_date_timer_t *date)
+{
+	if((*date).day > 1)
+	{
+		(*date).day--;
+	}
+	else
+	{
+		if((*date).month == 1 \
+		|| (*date).month == 2 \
+		|| (*date).month == 4 \
+		|| (*date).month == 6 \
+		|| (*date).month == 8 \
+		|| (*date).month == 9 \
+		|| (*date).month == 11)
+		{
+			(*date).day = 31;
+			if((*date).month == 1)
+			{
+				(*date).year--;
+				(*date).month = 12;
+			}
+			else
+			{
+				(*date).month--;
+			}
+		}
+		else if((*date).month == 5 \
+			|| (*date).month == 7 \
+			|| (*date).month == 10 \
+			|| (*date).month == 12)
+		{
+			(*date).day = 30;
+			(*date).month--;
+		}
+		else
+		{
+			uint8_t Leap = 0;
+
+			if((*date).year%4 == 0)
+				Leap = 1;
+
+			(*date).day = (28+Leap);
+			(*date).month--;
+		}			
+	}
+
+	(*date).week = GetWeekDayByDate((*date));
+
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+}
+
+void TimeIncrease(sys_date_timer_t *date, u32_t minutes)
+{
+	u8_t m_add,h_add,day_add;
+	
+	m_add = minutes%60;
+	h_add = minutes/60;
+	day_add = h_add/24;
+
+	LOG_INF("m_add:%d, h_add:%d\n", m_add, h_add);
+
+	(*date).minute += m_add;
+	if((*date).minute > 59)
+	{
+		(*date).minute = (*date).minute%60;
+		h_add++;
+	}
+	
+	(*date).hour += h_add;
+	if((*date).hour > 23)
+	{
+		(*date).hour = (*date).hour%24;
+		day_add++;
+	}	
+	
+	while(day_add>0)
+	{
+		DateIncreaseOne(date);
+		day_add--;
+	}
+
+	(*date).week = GetWeekDayByDate((*date));
+	
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);	
+}
+
+void TimeDecrease(sys_date_timer_t *date, u32_t minutes)
+{
+	u8_t m_dec,h_dec,day_dec;
+
+	m_dec = minutes%60;
+	h_dec = minutes/60;
+	day_dec = h_dec/24;
+
+	if((*date).minute >= m_dec)
+	{
+		(*date).minute -= m_dec;
+	}
+	else
+	{
+		(*date).minute = ((*date).minute+60)-m_dec;
+		h_dec++;
+	}
+
+	if((*date).hour >= h_dec)
+	{
+		(*date).hour -= h_dec;
+	}
+	else
+	{
+		(*date).hour = ((*date).hour+24)-h_dec;
+		day_dec++;
+	}
+	
+	while(day_dec>0)
+	{
+		DateDecreaseOne(date);
+		day_dec--;
+	}
+
+	(*date).week = GetWeekDayByDate((*date));
+	
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);	
+}
+
+void RedrawSystemTime(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+}
+
 void UpdateSystemTime(void)
 {
 	u64_t timestamp,timeskip;
@@ -165,73 +430,6 @@ void StartSystemDateTime(void)
 {
 	k_timer_init(&clock_timer, clock_timer_handler, NULL);
 	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
-}
-
-uint8_t GetWeekDayByDate(sys_date_timer_t date)
-{
-	uint8_t flag=0,index=SYSTEM_STARTING_WEEK;//1900年1月1日是星期一 0=sunday
-	uint32_t i,count=0;
-	
-	if(date.year < SYSTEM_STARTING_YEAR)
-		return 0xff;
-
-	for(i=SYSTEM_STARTING_YEAR;i<date.year;i++)
-	{
-		if(i%4 == 0)	//闰年366天
-			count += 366;
-		else
-			count += 365;
-	}
-
-	if(date.year%4 == 0)
-		flag = 1;
-	
-	switch(date.month)
-	{
-	case 1:
-		count += 0;
-		break;
-	case 2:
-		count += 31;
-		break;
-	case 3:
-		count += (31+(28+flag));
-		break;
-	case 4:
-		count += (2*31+(28+flag));
-		break;
-	case 5:
-		count += (2*31+30+(28+flag));
-		break;
-	case 6:
-		count += (3*31+30+(28+flag));
-		break;
-	case 7:
-		count += (3*31+2*30+(28+flag));
-		break;
-	case 8:
-		count += (4*31+2*30+(28+flag));
-		break;
-	case 9:
-		count += (5*31+2*30+(28+flag));
-		break;
-	case 10:
-		count += (5*31+3*30+(28+flag));
-		break;
-	case 11:
-		count += (6*31+3*30+(28+flag));
-		break;
-	case 12:
-		count += (6*31+4*30+(28+flag));
-		break;			
-	}
-
-	count += (date.day-1);
-	
-	count = count%7;
-	index = (index+count)%7;
-	
-	return index;
 }
 
 bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)

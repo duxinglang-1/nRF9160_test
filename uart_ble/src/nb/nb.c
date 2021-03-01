@@ -23,6 +23,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
+#include "datetime.h"
 #include "nb.h"
 #include "screen.h"
 
@@ -30,8 +31,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-static void GetModemInforCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(get_modem_timer, GetModemInforCallBack, NULL);
+static struct k_work_q *app_work_q;
+static struct k_delayed_work link_work;
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
@@ -766,28 +767,156 @@ void NBRedrawSignal(void)
 	}
 }
 
+void GetModemDateTime(void)
+{
+	char *ptr;
+	u8_t timebuf[128] = {0};
+	u8_t tmpbuf[10] = {0};
+	u8_t tz_dir[2],tz_count;
+
+	if(at_cmd_write("AT+CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
+	{
+		LOG_INF("Get CCLK fail!\n");
+		return;
+	}
+	LOG_INF("%s\n", timebuf);
+
+	//+CCLK: "21/02/26,08:31:33+32"
+	ptr = strstr(timebuf, "\"");
+	if(ptr)
+	{
+		ptr++;
+		
+		memcpy(tmpbuf, ptr, 2);
+		date_time.year = 2000+atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.month= atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.day = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.hour = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.minute = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.second = atoi(tmpbuf);
+		ptr+=2;
+
+		memcpy(tz_dir, ptr, 1);
+		ptr+=1;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		tz_count = atoi(tmpbuf);
+		if(tz_dir[0] == '+')
+		{
+			TimeIncrease(&date_time, tz_count*15);
+		}
+		else if(tz_dir[0] == '-')
+		{
+			TimeDecrease(&date_time, tz_count*15);
+		}
+	}
+
+	LOG_INF("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d\n", 
+					date_time.year,date_time.month,date_time.day,
+					date_time.hour,date_time.minute,date_time.second,
+					date_time.week);
+
+	RedrawSystemTime();
+	SaveSystemDateTime();
+}
+
 void GetModemInfor(void)
 {
-	u8_t imei[128] = {0};
-	u8_t imsi[128] = {0};
+	char *ptr;
+	int i=0,len,err;
+	u8_t tmpbuf[128] = {0};
+	u8_t strbuf[128] = {0};
 
-	if(at_cmd_write(CMD_GET_IMEI, imei, sizeof(imei), NULL) != 0)
+	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get imei fail!\n");
 		return;
 	}
 
-	LOG_INF("imei:%s\n", imei);
-	strncpy(g_imei, imei, IMEI_MAX_LEN);
+	LOG_INF("imei:%s\n", tmpbuf);
+	strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
 
-	if(at_cmd_write(CMD_GET_IMSI, imsi, sizeof(imsi), NULL) != 0)
+	if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get imsi fail!\n");
 		return;
 	}
 
-	LOG_INF("imsi:%s\n", imsi);
-	strncpy(g_imsi, imsi, IMSI_MAX_LEN);
+	LOG_INF("imsi:%s\n", tmpbuf);
+	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get rsrp fail!\n");
+		return;
+	}
+
+	LOG_INF("rsrp:%s\n", tmpbuf);
+	len = strlen(tmpbuf);
+	ptr = tmpbuf;
+	while(i<5)
+	{
+		ptr = strstr(ptr, ",");
+		ptr++;
+		i++;
+	}
+
+	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
+	modem_rsrp_handler(atoi(strbuf));
+}
+
+static void nb_link(struct k_work *work)
+{
+	int err;
+
+	err = lte_lc_init_and_connect();
+	if(err)
+	{
+		LOG_INF("Can't connected to LTE network");
+	}
+	else
+	{
+		LOG_INF("Connected to LTE network");
+
+		GetModemDateTime();
+		modem_data_init();
+	}
+
+	GetModemInfor();
+}
+
+void testnetworktime(void)
+{
+	u8_t tmpbuf[128] = {0};
+
+	if(at_cmd_write("AT%XNETTIME?", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get cfun fail!\n");
+		return;
+	}
+	LOG_INF("%s\n", tmpbuf);
+
 }
 
 void GetNBSignal(void)
@@ -833,51 +962,14 @@ void NBMsgProcess(void)
 		NBRedrawSignal();
 		nb_redraw_sig_flag = false;
 	}
-
-	if(get_modem_infor)
-	{
-		GetModemInfor();
-		get_modem_infor = false;
-	}
 }
 
-
-
-void GetModemInforCallBack(struct k_timer *timer_id)
+void NB_init(struct k_work_q *work_q)
 {
-	get_modem_infor = true;
-}
+	int err;
 
-void NB_init(void)
-{
-	if(at_cmd_write(CMD_SET_NW_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
+	app_work_q = work_q;
 
-	if(at_cmd_write(CMD_SET_CREG, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-
-#if defined(CONFIG_LTE_LEGACY_PCO_MODE)
-	if(at_cmd_write(CMD_SET_EPCO_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-#endif
-
-	if(at_cmd_write(CMD_SET_NW_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-
-	if(at_cmd_write(CMD_SET_FUN_MODE, NULL, 0, NULL) != 0)
-	{
-		return;
-	}
-
-	modem_data_init();
-
-	k_timer_start(&get_modem_timer, K_MSEC(2000), NULL);
+	k_work_init(&link_work, nb_link);
+	k_work_submit_to_queue(app_work_q, &link_work);
 }

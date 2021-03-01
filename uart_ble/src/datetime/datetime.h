@@ -43,5 +43,7 @@ extern void IdleShowSystemWeek(void);
 extern void IdleShowSystemDateTime(void);
 extern void StartSystemDateTime(void);
 extern void UpdateSystemTime(void);
-
+extern void RedrawSystemTime(void);
+extern void TimeIncrease(sys_date_timer_t *date, u32_t minutes);
+extern void TimeDecrease(sys_date_timer_t *date, u32_t minutes);
 #endif/*__DATETIME_H__*/

@@ -6,9 +6,11 @@
 
 #include <nrf9160.h>
 #include <zephyr.h>
+#include <kernel_structs.h>
 #include <device.h>
 #include <stdio.h>
 #include <sys/printk.h>
+#include <power/reboot.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
@@ -34,10 +36,18 @@ LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
-
 #define PI 3.1415926
 
 static u8_t show_pic_count = 0;//图片显示顺序
+
+/* Stack definition for application workqueue */
+K_THREAD_STACK_DEFINE(application_stack_area,
+		      CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+static struct k_work_q application_work_q;
+
+/* Structures for work */
+static struct k_work nb_link_work;
+static struct k_delayed_work reboot_work;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -625,6 +635,34 @@ static void buttons_leds_init(void)
 	}
 }
 
+static void nb_link_work_fn(struct k_work *work)
+{
+	int err;
+	
+	err = lte_lc_init_and_connect();
+	if(err)
+	{
+		LOG_INF("LTE link connected.");
+	}
+	else
+	{
+		LOG_INF("LTE link could not be connected.");
+	}
+}
+
+/**@brief Reboot the device if CONNACK has not arrived. */
+static void sys_reboot_handler(struct k_work *work)
+{
+	sys_reboot(0);
+}
+
+/**@brief Initializes and submits delayed work. */
+static void work_init(void)
+{
+	k_work_init(&nb_link_work, nb_link_work_fn);
+	k_delayed_work_init(&reboot_work, sys_reboot_handler);
+}
+
 void system_init(void)
 {
 	InitSystemSettings();
@@ -638,7 +676,7 @@ void system_init(void)
 	key_init();
 	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
-	NB_init();
+	NB_init(&application_work_q);
 	
 	EnterIdleScreen();
 }
@@ -651,6 +689,12 @@ extern void motion_sensor_msg_proc(void);
 **************************************************************************/
 int main(void)
 {
+	k_work_q_start(&application_work_q, application_stack_area,
+		       K_THREAD_STACK_SIZEOF(application_stack_area),
+		       CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+
+	//work_init();
+	
 	system_init();
 
 //	test_show_string();

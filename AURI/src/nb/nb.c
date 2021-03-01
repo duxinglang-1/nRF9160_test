@@ -23,6 +23,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
+#include "datetime.h"
 #include "nb.h"
 #include "screen.h"
 
@@ -769,12 +770,86 @@ void NBRedrawSignal(void)
 	}
 }
 
+void GetModemDateTime(void)
+{
+	char *ptr;
+	u8_t timebuf[128] = {0};
+	u8_t tmpbuf[10] = {0};
+	u8_t tz_dir[2],tz_count;
+
+	if(at_cmd_write("AT+CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
+	{
+		LOG_INF("Get CCLK fail!\n");
+		return;
+	}
+	LOG_INF("%s\n", timebuf);
+
+	//+CCLK: "21/02/26,08:31:33+32"
+	ptr = strstr(timebuf, "\"");
+	if(ptr)
+	{
+		ptr++;
+		
+		memcpy(tmpbuf, ptr, 2);
+		date_time.year = 2000+atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.month= atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.day = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.hour = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.minute = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.second = atoi(tmpbuf);
+		ptr+=2;
+
+		memcpy(tz_dir, ptr, 1);
+		ptr+=1;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		tz_count = atoi(tmpbuf);
+		if(tz_dir[0] == '+')
+		{
+			TimeIncrease(&date_time, tz_count*15);
+		}
+		else if(tz_dir[0] == '-')
+		{
+			TimeDecrease(&date_time, tz_count*15);
+		}
+	}
+
+	LOG_INF("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d\n", 
+					date_time.year,date_time.month,date_time.day,
+					date_time.hour,date_time.minute,date_time.second,
+					date_time.week);
+
+	RedrawSystemTime();
+	SaveSystemDateTime();
+}
+
 void GetModemInfor(void)
 {
 	char *ptr;
 	int i=0,len,err;
 	u8_t tmpbuf[128] = {0};
-	u8_t imsi[128] = {0};
+	u8_t strbuf[128] = {0};
 
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
@@ -810,9 +885,8 @@ void GetModemInfor(void)
 		i++;
 	}
 
-	memset(imsi, 0, sizeof(imsi));
-	memcpy((char*)imsi, ptr, len-(ptr-(char*)tmpbuf));
-	modem_rsrp_handler(atoi(imsi));
+	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
+	modem_rsrp_handler(atoi(strbuf));
 }
 
 static void nb_link(struct k_work *work)
@@ -827,6 +901,8 @@ static void nb_link(struct k_work *work)
 	else
 	{
 		LOG_INF("Connected to LTE network");
+
+		GetModemDateTime();
 		modem_data_init();
 	}
 

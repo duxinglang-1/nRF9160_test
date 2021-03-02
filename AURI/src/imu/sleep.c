@@ -111,15 +111,17 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 			}
 			else if((move == step)&&(watch_state >= 60)) /* 在期间没有走动过 */
 			{
-				if(watch_state >= (60*10))/* 晚上15分钟以上未晃动过，判断为深度睡眠*/
-					deep_sleep_time++; 
-				else
-					light_sleep_time++;
+				if(is_wearing())	//xb add 2021-03-02 脱腕之后不计算睡眠
+				{
+					if(watch_state >= (60*10))/* 晚上15分钟以上未晃动过，判断为深度睡眠*/
+						deep_sleep_time++; 
+					else
+						light_sleep_time++;
+				}
 
 				g_light_sleep = light_sleep_time;
 				g_deep_sleep = deep_sleep_time;
 			}
-
 		}
 		else
 		{

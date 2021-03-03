@@ -796,7 +796,7 @@ void IMU_init(void)
 
 	imu_dev_ctx.write_reg = platform_write;
 	imu_dev_ctx.read_reg = platform_read;
-	imu_dev_ctx.handle = &i2c_imu;
+	imu_dev_ctx.handle = i2c_imu;
 
 	sensor_init();
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
@@ -852,10 +852,13 @@ void test_i2c(void)
   struct device *i2c_dev;
   struct device *dev0;
 
-  i2c_dev = device_get_binding(IMU_DEV);
+  dev0 = device_get_binding("GPIO_0");
+  gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
+  gpio_pin_write(dev0, 0, 1);
 
   LOG_INF("Starting i2c scanner...\n");
 
+  i2c_dev = device_get_binding(IMU_DEV);
   if(!i2c_dev)
   {
     LOG_INF("I2C: Device driver not found.\n");
@@ -864,9 +867,9 @@ void test_i2c(void)
   i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
   uint8_t error = 0u;
 
-  LOG_INF("Value of NRF_TWIM3_NS->PSEL.SCL: %ld \n",NRF_TWIM3_NS->PSEL.SCL);
-  LOG_INF("Value of NRF_TWIM3_NS->PSEL.SDA: %ld \n",NRF_TWIM3_NS->PSEL.SDA);
-  LOG_INF("Value of NRF_TWIM3_NS->FREQUENCY: %ld \n",NRF_TWIM3_NS->FREQUENCY);
+  LOG_INF("Value of NRF_TWIM1_NS->PSEL.SCL: %ld \n",NRF_TWIM1_NS->PSEL.SCL);
+  LOG_INF("Value of NRF_TWIM1_NS->PSEL.SDA: %ld \n",NRF_TWIM1_NS->PSEL.SDA);
+  LOG_INF("Value of NRF_TWIM1_NS->FREQUENCY: %ld \n",NRF_TWIM1_NS->FREQUENCY);
   LOG_INF("26738688 -> 100k\n");
   LOG_INF("67108864 -> 250k\n");
   LOG_INF("104857600 -> 400k\n");

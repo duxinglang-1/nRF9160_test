@@ -681,7 +681,6 @@ void system_init(void)
 	EnterIdleScreen();
 }
 
-extern void motion_sensor_msg_proc(void);
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 

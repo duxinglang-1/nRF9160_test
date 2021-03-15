@@ -15,6 +15,7 @@
 #include <string.h>
 #include "img.h"
 #include "font.h"
+#include "audio_wav.h"
 #include "external_flash.h"
 
 #include <logging/log_ctrl.h>
@@ -495,14 +496,14 @@ void test_flash(void)
 	LCD_ShowString(0,0,"BEGIN FLASH开始擦除...");
 	SPIFlash_Erase_Chip();
 	//SPIFlash_Erase_Sector(0);
-	LCD_ShowString(0,2,"END FLASH擦除成功!");
+	LCD_ShowString(0,1,"END FLASH擦除成功!");
 #endif
 
 #if 0	
 	//写入数据
-	//LCD_ShowString(0,80,"FLASH写入图片1数据...");
+	//LCD_ShowString(0,0,"FLASH写入图片1数据...");
 	//SpiFlash_Write_Buf(peppa_pig_80X160, IMG_PEPPA_80X160_ADDR, IMG_PEPPA_80X160_SIZE);
-	//LCD_ShowString(0,100,"FLASH写入图片1成功!");
+	//LCD_ShowString(0,1,"FLASH写入图片1成功!");
 
 	//写入数据
 	//LCD_ShowString(0,80,"FLASH写入图片2数据...");
@@ -684,6 +685,16 @@ void test_flash(void)
 	//SpiFlash_Write_Buf(RM_UNI_16_6, FONT_RM_UNI_16_ADDR+88288*5, 88288);
 	SpiFlash_Write_Buf(RM_UNI_16_7, FONT_RM_UNI_16_ADDR+88288*6, 88224);
 	LCD_ShowString(0,100,"FLASH写入RM16X16日文成功");
+#endif
+
+#if 0
+	//写入数据
+	LCD_ShowString(0,0,"BEGIN FLASH写入音频数据...");
+	//SpiFlash_Write_Buf(fall_alarm_1, AUDIO_FALL_ALARM_ADDR+69168*0, 69168);
+	//SpiFlash_Write_Buf(fall_alarm_2, AUDIO_FALL_ALARM_ADDR+69168*1, 69168);
+	//SpiFlash_Write_Buf(fall_alarm_3, AUDIO_FALL_ALARM_ADDR+69168*2, 69168);	
+	SpiFlash_Write_Buf(fall_alarm_4, AUDIO_FALL_ALARM_ADDR+69168*3, 69108);
+	LCD_ShowString(0,2,"END FLASH写入音频数据成功");
 #endif
 
 	//读出数据

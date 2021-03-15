@@ -314,11 +314,11 @@ void UpdateSystemTime(void)
 	if(screen_id == SCREEN_ID_IDLE)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
-	timestamp = k_uptime_get();
-	timeskip = timestamp - laststamp;
-	laststamp = timestamp;
+	//timestamp = k_uptime_get();
+	//timeskip = timestamp - laststamp;
+	//laststamp = timestamp;
 
-	date_time.second += (timeskip/1000);
+	date_time.second++;	// += (timeskip/1000);
 	if(date_time.second > 59)
 	{
 		date_time.second = date_time.second%60;

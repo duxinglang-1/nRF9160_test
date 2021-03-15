@@ -41,9 +41,12 @@ LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
 static u8_t show_pic_count = 0;//图片显示顺序
 
 /* Stack definition for application workqueue */
-K_THREAD_STACK_DEFINE(application_stack_area,
+K_THREAD_STACK_DEFINE(nb_stack_area,
 		      CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
-static struct k_work_q application_work_q;
+static struct k_work_q nb_work_q;
+K_THREAD_STACK_DEFINE(imu_stack_area,
+              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+static struct k_work_q imu_work_q;
 
 /* Structures for work */
 static struct k_work nb_link_work;
@@ -621,54 +624,6 @@ void test_show_string(void)
 #endif
 }
 
-/**@brief Initializes buttons and LEDs, using the DK buttons and LEDs
- * library.
- */
-static void buttons_leds_init(void)
-{
-	int err;
-
-	err = dk_leds_init();
-	if (err)
-	{
-		LOG_INF("Could not initialize leds, err code: %d\n", err);
-	}
-
-	err = dk_set_leds_state(0x00, DK_ALL_LEDS_MSK);
-	if (err)
-	{
-		LOG_INF("Could not set leds state, err code: %d\n", err);
-	}
-}
-
-static void nb_link_work_fn(struct k_work *work)
-{
-	int err;
-	
-	err = lte_lc_init_and_connect();
-	if(err)
-	{
-		LOG_INF("LTE link connected.");
-	}
-	else
-	{
-		LOG_INF("LTE link could not be connected.");
-	}
-}
-
-/**@brief Reboot the device if CONNACK has not arrived. */
-static void sys_reboot_handler(struct k_work *work)
-{
-	sys_reboot(0);
-}
-
-/**@brief Initializes and submits delayed work. */
-static void work_init(void)
-{
-	k_work_init(&nb_link_work, nb_link_work_fn);
-	k_delayed_work_init(&reboot_work, sys_reboot_handler);
-}
-
 void system_init(void)
 {
 	InitSystemSettings();
@@ -680,13 +635,23 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
-	IMU_init();
+	IMU_init(&imu_work_q);
+	audio_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
-	NB_init(&application_work_q);
+	NB_init(&nb_work_q);
 	
 	EnterIdleScreen();
 }
 
+void work_init(void)
+{
+	k_work_q_start(&nb_work_q, nb_stack_area,
+		       		K_THREAD_STACK_SIZEOF(nb_stack_area),
+		       		CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+    k_work_q_start(&imu_work_q, imu_stack_area,
+					K_THREAD_STACK_SIZEOF(imu_stack_area),
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+}
 
 /***************************************************************************
 * 描  述 : main函数 
@@ -695,12 +660,7 @@ void system_init(void)
 **************************************************************************/
 int main(void)
 {
-	k_work_q_start(&application_work_q, application_stack_area,
-		       K_THREAD_STACK_SIZEOF(application_stack_area),
-		       CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
-
-	//work_init();
-	
+	work_init();
 	system_init();
 
 //	test_show_string();
@@ -719,6 +679,8 @@ int main(void)
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();
+//	test_audio_wav();
+//	test_i2s();
 
 	while(1)
 	{

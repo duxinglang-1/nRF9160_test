@@ -32,7 +32,7 @@
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
 static struct k_work_q *app_work_q;
-static struct k_delayed_work link_work;
+static struct k_work link_work;
 
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 

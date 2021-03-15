@@ -37,6 +37,9 @@ LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
+static struct k_work_q *imu_work_q;
+static struct k_work imu_work;
+
 static uint8_t whoamI, rst;
 static uint16_t steps; //step counter
 
@@ -46,6 +49,7 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
+bool fall_testing = false;
 
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
@@ -95,7 +99,7 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t* bufp, uint16_t 
 
 void interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
 {
-	int2_event = true; 
+	int2_event = true;
 }
 
 void step_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
@@ -303,8 +307,8 @@ void historic_buffer(void)
 					acc_z_hist_buffer[i] = acceleration_g[2];   
 
 					histBuff_counter++;
-					printf("%d, Axyz, %4.2f, %4.2f, %4.2f\r\n",
-								i, acc_x_hist_buffer[i], acc_y_hist_buffer[i], acc_z_hist_buffer[i]);
+					//LOG_INF("%d, Axyz, %4.2f, %4.2f, %4.2f\r\n",
+					//			i, acc_x_hist_buffer[i], acc_y_hist_buffer[i], acc_z_hist_buffer[i]);
 					break;
 
 				case LSM6DSO_GYRO_NC_TAG:
@@ -324,7 +328,7 @@ void historic_buffer(void)
 
 					histBuff_counter++;
 					i++;
-					//printf("%d, Gxyz, %4.2f, %4.2f, %4.2f\r\n",
+					//LOG_INF("%d, Gxyz, %4.2f, %4.2f, %4.2f\r\n",
 					//				i, angular_rate_dps[0], angular_rate_dps[1], angular_rate_dps[2]);
 					break;
 
@@ -340,7 +344,7 @@ void historic_buffer(void)
 
 			if(histBuff_counter == PATTERN_LEN)
 			{
-				printf("\nHIST BUFFER FLAG ON\n");
+				//LOG_INF("\nHIST BUFFER FLAG ON\n");
 				hist_buff_flag = true;
 				break;
 			}
@@ -401,7 +405,7 @@ void curr_vrif_buffers(void)
 
 				if(buff_counter >= ACC_GYRO_FIFO_BUF_LEN && buff_counter < 2*ACC_GYRO_FIFO_BUF_LEN)
 				{
-					for (uint8_t i = 0; i < 200; i++)
+					for (uint8_t i = 0; i < ACC_GYRO_FIFO_BUF_LEN; i++)
 					{
 						acc_x_cur_buffer[i]  = accel_tempX[i_rev];
 						acc_y_cur_buffer[i]  = accel_tempY[i_rev];
@@ -412,14 +416,14 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						i_rev--;
 
-						printf("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f\r\n",
-									i, acc_x_cur_buffer[i], acc_y_cur_buffer[i], acc_z_cur_buffer[i]);
+						//LOG_INF("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f\r\n",
+						//			i, acc_x_cur_buffer[i], acc_y_cur_buffer[i], acc_z_cur_buffer[i]);
 					}
 				}
 
 				if(buff_counter >= 3*ACC_GYRO_FIFO_BUF_LEN && buff_counter < 4*ACC_GYRO_FIFO_BUF_LEN)
 				{
-					for (uint8_t j = 0; j < 200; j++)
+					for (uint8_t j = 0; j < ACC_GYRO_FIFO_BUF_LEN; j++)
 					{
 						acc_x_vrif_buffer[j]  = accel_tempX[j_rev];
 						acc_y_vrif_buffer[j]  = accel_tempY[j_rev];
@@ -430,14 +434,14 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						j_rev--;
 
-						printf("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f\r\n",
-									j, acc_x_vrif_buffer[j], acc_y_vrif_buffer[j], acc_z_vrif_buffer[j]);
+						//LOG_INF("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f\r\n",
+						//			j, acc_x_vrif_buffer[j], acc_y_vrif_buffer[j], acc_z_vrif_buffer[j]);
 					}
 				}
 
 				if(buff_counter >= 5*ACC_GYRO_FIFO_BUF_LEN && buff_counter < 6*ACC_GYRO_FIFO_BUF_LEN)
 				{
-					for (uint8_t k = 0; k < 200; k++)
+					for (uint8_t k = 0; k < ACC_GYRO_FIFO_BUF_LEN; k++)
 					{
 						acc_x_vrif_buffer_1[k]  = accel_tempX[k_rev];
 						acc_y_vrif_buffer_1[k]  = accel_tempY[k_rev];
@@ -448,8 +452,8 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						k_rev--;
 
-						printf("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f\r\n",
-									k, acc_x_vrif_buffer_1[k], acc_y_vrif_buffer_1[k], acc_z_vrif_buffer_1[k]);
+						//LOG_INF("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f\r\n",
+						//			k, acc_x_vrif_buffer_1[k], acc_y_vrif_buffer_1[k], acc_z_vrif_buffer_1[k]);
 					}
 				}
 			}
@@ -457,7 +461,7 @@ void curr_vrif_buffers(void)
 			if(buff_counter == 6*ACC_GYRO_FIFO_BUF_LEN)
 			{
 				curr_vrif_buff_flag = true;
-				break;
+				return;
 			}
 		}
 	}
@@ -465,7 +469,7 @@ void curr_vrif_buffers(void)
 
 static float angle_analyse_fifo(void)
 {
-	volatile float angle_degree=0,avg_index=50;
+	volatile float angle_degree=0,avg_index=20;
 	volatile float start_avg_accel_x=0,start_avg_accel_y=0,start_avg_accel_z=0;
 	volatile float end_avg_accel_x=0, end_avg_accel_y=0, end_avg_accel_z=0;
 	volatile float num=0,denom=0;
@@ -694,11 +698,13 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 void fall_detection(void)
 {
 	historic_buffer();
+	LOG_INF("fall detecting 1");
 
 	if(hist_buff_flag)
 	{
 		curr_vrif_buffers();
 		hist_buff_flag = false;
+		LOG_INF("fall detecting 2");
 	}
 
 	if(curr_vrif_buff_flag)
@@ -741,6 +747,7 @@ void fall_detection(void)
 		
 		curr_vrif_buff_flag = false;
 		sensor_init(); //resets the algorithm, will work continuosly on every tap
+		LOG_INF("fall detecting 3");
 	} 
 }
 
@@ -785,10 +792,83 @@ void lsm6dso_sensitivity(void)
 	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
 }
 
-void IMU_init(void)
+static void mt_fall_detection(struct k_work *work)
 {
-	LOG_INF("IMU_init\n");
+	if(int1_event)	//steps or tilt
+	{
+		int1_event = false;
+
+		if(!is_wearing())
+			return;
+		
+		is_tilt();
+		if(wrist_tilt)
+		{
+			LOG_INF("tilt trigger!\n");
+			
+			wrist_tilt = false;
+
+			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
+				lcd_sleep_out = true;
+			}
+		}
+		else
+		{
+			LOG_INF("steps trigger!\n");
+			
+			UpdateIMUData();
+			imu_redraw_steps_flag = true;	
+		}
+	}
+
+	if(int2_event) //fall
+	{
+		int2_event = false;
+		
+		if(!is_wearing()||fall_testing)
+			return;
+
+		fall_detection();
+		if(fall_result)
+		{
+			LOG_INF("Fall trigger!\n");
+			
+			fall_result = false;
+			lcd_sleep_out = true;
+			EnterFallScreen();
+		}
+        else
+        {
+			//LOG_INF("Not Fall.\n");
+        }
+
+		fall_testing = false;
+	}
 	
+	if(reset_steps)
+	{
+		reset_steps = false;
+		ReSetImuSteps();
+		imu_redraw_steps_flag = true;
+	}
+
+	if(imu_redraw_steps_flag)
+	{
+		imu_redraw_steps_flag = false;
+		IMURedrawSteps();
+	}
+
+	if(update_sleep_parameter)
+	{
+		update_sleep_parameter = false;
+		UpdateSleepPara();
+	}
+}
+
+void IMU_init(struct k_work_q *work_q)
+{
 	if(init_i2c() != 0)
 		return;
 	
@@ -801,8 +881,10 @@ void IMU_init(void)
 	sensor_init();
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
-
 	StartSleepTimeMonitor();
+
+	imu_work_q = work_q;
+	k_work_init(&imu_work, mt_fall_detection);
 	
 	LOG_INF("IMU_init done!\n");
 }
@@ -849,51 +931,51 @@ void enable_tilt_detection(void)
 
 void test_i2c(void)
 {
-  struct device *i2c_dev;
-  struct device *dev0;
+	struct device *i2c_dev;
+	struct device *dev0;
 
-  dev0 = device_get_binding("GPIO_0");
-  gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
-  gpio_pin_write(dev0, 0, 1);
+	dev0 = device_get_binding("GPIO_0");
+	gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
+	gpio_pin_write(dev0, 0, 1);
 
-  LOG_INF("Starting i2c scanner...\n");
+	LOG_INF("Starting i2c scanner...\n");
 
-  i2c_dev = device_get_binding(IMU_DEV);
-  if(!i2c_dev)
-  {
-    LOG_INF("I2C: Device driver not found.\n");
-    return;
-  }
-  i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
-  uint8_t error = 0u;
-
-  LOG_INF("Value of NRF_TWIM1_NS->PSEL.SCL: %ld \n",NRF_TWIM1_NS->PSEL.SCL);
-  LOG_INF("Value of NRF_TWIM1_NS->PSEL.SDA: %ld \n",NRF_TWIM1_NS->PSEL.SDA);
-  LOG_INF("Value of NRF_TWIM1_NS->FREQUENCY: %ld \n",NRF_TWIM1_NS->FREQUENCY);
-  LOG_INF("26738688 -> 100k\n");
-  LOG_INF("67108864 -> 250k\n");
-  LOG_INF("104857600 -> 400k\n");
-    
-  for (u8_t i = 0; i < 0x7f; i++)
-  {
-    struct i2c_msg msgs[1];
-    u8_t dst = 1;
-
-    /* Send the address to read from */
-    msgs[0].buf = &dst;
-    msgs[0].len = 1U;
-    msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
-		
-    error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
-    if(error == 0)
+	i2c_dev = device_get_binding(IMU_DEV);
+	if(!i2c_dev)
 	{
-      LOG_INF("0x%2x device address found on I2C Bus\n", i);
-    }
-    else
+		LOG_INF("I2C: Device driver not found.\n");
+		return;
+	}
+	i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	uint8_t error = 0u;
+
+	LOG_INF("Value of NRF_TWIM1_NS->PSEL.SCL: %ld \n",NRF_TWIM1_NS->PSEL.SCL);
+	LOG_INF("Value of NRF_TWIM1_NS->PSEL.SDA: %ld \n",NRF_TWIM1_NS->PSEL.SDA);
+	LOG_INF("Value of NRF_TWIM1_NS->FREQUENCY: %ld \n",NRF_TWIM1_NS->FREQUENCY);
+	LOG_INF("26738688 -> 100k\n");
+	LOG_INF("67108864 -> 250k\n");
+	LOG_INF("104857600 -> 400k\n");
+
+	for (u8_t i = 0; i < 0x7f; i++)
 	{
-      //LOG_INF("error %d \n", error);
-    }
-  }
+		struct i2c_msg msgs[1];
+		u8_t dst = 1;
+
+		/* Send the address to read from */
+		msgs[0].buf = &dst;
+		msgs[0].len = 1U;
+		msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+		error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
+		if(error == 0)
+		{
+			LOG_INF("0x%2x device address found on I2C Bus\n", i);
+		}
+		else
+		{
+			//LOG_INF("error %d \n", error);
+		}
+	}
 }
 
 void IMURedrawSteps(void)
@@ -907,70 +989,6 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
-	if(int1_event)	//steps or tilt
-	{
-		int1_event = false;
-
-		if(!is_wearing())
-			return;
-		
-		is_tilt();
-		if(wrist_tilt)
-		{
-			LOG_INF("tilt trigger!\n");
-			
-			wrist_tilt = false;
-
-			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
-			{
-				sleep_out_by_wrist = true;
-				lcd_sleep_out = true;
-			}
-		}
-		else
-		{
-			LOG_INF("steps trigger!\n");
-			
-			UpdateIMUData();
-			imu_redraw_steps_flag = true;	
-		}
-	}
-
-	if(int2_event)	//fall
-	{
-		int2_event = false;
-		
-		if(!is_wearing())
-			return;
-
-		fall_detection();
-		if(fall_result)
-		{
-			LOG_INF("tilt trigger!\n");
-			
-			fall_result = false;
-			lcd_sleep_out = true;
-			EnterFallScreen();
-		}
-	}	
-	
-	if(reset_steps)
-	{
-		reset_steps = false;
-		ReSetImuSteps();
-		imu_redraw_steps_flag = true;
-	}
-
-	if(imu_redraw_steps_flag)
-	{
-		imu_redraw_steps_flag = false;
-		IMURedrawSteps();
-	}
-
-	if(update_sleep_parameter)
-	{
-		update_sleep_parameter = false;
-		UpdateSleepPara();
-	}
+	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
 

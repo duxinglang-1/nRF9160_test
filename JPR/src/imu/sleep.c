@@ -30,7 +30,7 @@ void set_sleep_parameter(int light_sleep, int deep_sleep,int *waggle) /* »Ø´«Ë¯Ã
 	strncpy(waggle_level, waggle,10);
 }
 
-void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, int hr, int hour, int charging)
+void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, int hr, int hour, int charging)
 {	
 	int test=0,i=0;
 	static int move = 0;
@@ -50,7 +50,7 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, 
 	test = abs(x+y+z);
 	hour_time = hour;
 
-	if((abs(gsensor-test)) >= 100)  /* ÅĞ¶ÏÊÖ±íÊÇ·ñ»Î¶¯£¬ãĞÖµ¸ù¾İgsensor ÁéÃô¶Èµ÷Õû*/
+	if((abs(gsensor-test)) >= 120)  /* ÅĞ¶ÏÊÖ±íÊÇ·ñ»Î¶¯£¬ãĞÖµ¸ù¾İgsensor ÁéÃô¶Èµ÷Õû*/
 	{
 		watch_state = 0;
 	}
@@ -69,9 +69,9 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, 
 
 	if((rtc_sec % 60) == 0)  /* Ò»·ÖÖÓÑİËãÒ»´ÎÊı¾İ*/
 	{
-		if(((move <setp)&&(move>0))||(move_flag > 0))  /*  move_flag  ÒÆ¶¯¹ıºóµÚÒ»´Î¾²Ö¹Ä¬ÈÏÎªÒÆ¶¯*/
+		if(((move <step)&&(move>0))||(move_flag > 0))  /*  move_flag  ÒÆ¶¯¹ıºóµÚÒ»´Î¾²Ö¹Ä¬ÈÏÎªÒÆ¶¯*/
 		{
-			if((move_flag == 0)||((move <setp)&&(move>0)))
+			if((move_flag == 0)||((move <step)&&(move>0)))
 				move_flag = 1;
 			else if(move_flag > 0)
 				move_flag--;
@@ -99,7 +99,7 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, 
 				}
 			}
 
-			if((watch_state >= (3600*2))||(waggle_flag >= 3)||/* (3)ÍíÉÏ2¸ö3Ê±ÖÕ¶ËÃ»ÓĞ¶¯£¬ÅĞ¶ÏÎªÍíÉÏË¯¾õÃ»ÓĞÅå´÷¹ı£¬ÀÛ¼ÆË¯Ãß¡¢¾Ã×øÊı¾İÇå¿Õ*/
+			if((watch_state >= (3600*2))||(waggle_flag >= 7)||/* (3)ÍíÉÏ2¸ö3Ê±ÖÕ¶ËÃ»ÓĞ¶¯£¬ÅĞ¶ÏÎªÍíÉÏË¯¾õÃ»ÓĞÅå´÷¹ı£¬ÀÛ¼ÆË¯Ãß¡¢¾Ã×øÊı¾İÇå¿Õ*/
 				((hour<8)&&(sedentary_time_temp > 180)))  /* ÍíÉÏË¯Ãß¼à²âÊ±¼äÀÛ¼Ó150·ÖÖÓÓÖ×ß¶¯»òÕß¾Ã×ø£¬Ä¬ÈÏË¯Ãß¼à²âÊı¾İÎª0*/
 			{
 				sedentary_time_temp = 0;
@@ -109,17 +109,19 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, 
 				g_light_sleep = 0;
 				g_deep_sleep = 0;
 			}
-			else if((move == setp)&&(watch_state >= 60)) /* ÔÚÆÚ¼äÃ»ÓĞ×ß¶¯¹ı */
+			else if((move == step)&&(watch_state >= 60)) /* ÔÚÆÚ¼äÃ»ÓĞ×ß¶¯¹ı */
 			{
-				if(watch_state >= (60*10))/* ÍíÉÏ15·ÖÖÓÒÔÉÏÎ´»Î¶¯¹ı£¬ÅĞ¶ÏÎªÉî¶ÈË¯Ãß*/
-					deep_sleep_time++; 
-				else
-					light_sleep_time++;
+				if(is_wearing())	//xb add 2021-03-02 ÍÑÍóÖ®ºó²»¼ÆËãË¯Ãß
+				{
+					if(watch_state >= (60*10))/* ÍíÉÏ15·ÖÖÓÒÔÉÏÎ´»Î¶¯¹ı£¬ÅĞ¶ÏÎªÉî¶ÈË¯Ãß*/
+						deep_sleep_time++; 
+					else
+						light_sleep_time++;
+				}
 
 				g_light_sleep = light_sleep_time;
 				g_deep_sleep = deep_sleep_time;
 			}
-
 		}
 		else
 		{
@@ -138,7 +140,7 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp, 
 	}
 
 	rtc_sec++;
-	move = setp;
+	move = step;
 }
 
 int get_light_sleep_time(void) /* Ç³Ë¯Ê±³¤*/

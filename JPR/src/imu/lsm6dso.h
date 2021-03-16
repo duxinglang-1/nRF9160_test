@@ -8,7 +8,7 @@ extern u16_t g_steps;
 extern u16_t g_calorie;
 extern u16_t g_distance;
 
-extern void IMU_init(void);
+extern void IMU_init(struct k_work_q *work_q);
 extern void IMUMsgProcess(void);
 
 /*fall detection*/

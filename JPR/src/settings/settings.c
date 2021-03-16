@@ -50,7 +50,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
 	true,					//wake screen by wrist
-	0x0000,					//target steps
+	0,						//target steps
 	TIME_FORMAT_24,			//24 format
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format

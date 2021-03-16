@@ -38,8 +38,6 @@ static bool connected;
 /* File descriptor */
 static struct pollfd fds;
 
-//#define TEST_BNT_LED   //liming
-
 #if defined(CONFIG_BSD_LIBRARY)
 
 /**@brief Recoverable BSD library error. */
@@ -114,14 +112,19 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	return mqtt_publish(c, &param);
 }
 
+static char *get_mqtt_topic(void)
+{
+	return CONFIG_MQTT_SUB_TOPIC"352656100158792";
+}
+
 /**@brief Function to subscribe to the configured topic
  */
 static int subscribe(void)
 {
 	struct mqtt_topic subscribe_topic = {
 		.topic = {
-			.utf8 = CONFIG_MQTT_SUB_TOPIC,
-			.size = strlen(CONFIG_MQTT_SUB_TOPIC)
+			.utf8 = (u8_t *)get_mqtt_topic(),
+			.size = strlen(subscribe_topic.topic.utf8)
 		},
 		.qos = MQTT_QOS_1_AT_LEAST_ONCE
 	};
@@ -132,8 +135,8 @@ static int subscribe(void)
 		.message_id = 1234
 	};
 
-	printk("Subscribing to: %s len %u\n", CONFIG_MQTT_SUB_TOPIC,
-		(unsigned int)strlen(CONFIG_MQTT_SUB_TOPIC));
+	printk("Subscribing to: %s len %u\n", subscribe_topic.topic.utf8,
+		(unsigned int)subscribe_topic.topic.size);
 
 	return mqtt_subscribe(&client, &subscription_list);
 }
@@ -317,17 +320,29 @@ static void broker_init(void)
  */
 static void client_init(struct mqtt_client *client)
 {
+	static struct mqtt_utf8 password;
+	static struct mqtt_utf8 username;
+
 	mqtt_client_init(client);
 
 	broker_init();
 
 	/* MQTT client configuration */
 	client->broker = &broker;
+	
 	client->evt_cb = mqtt_evt_handler;
+	
 	client->client_id.utf8 = (u8_t *)CONFIG_MQTT_CLIENT_ID;
 	client->client_id.size = strlen(CONFIG_MQTT_CLIENT_ID);
-	client->password = NULL;
-	client->user_name = NULL;
+
+	password.utf8 = (u8_t *)CONFIG_MQTT_PASSWORD;
+	password.size = strlen(CONFIG_MQTT_PASSWORD);
+	client->password = &password;
+
+	username.utf8 = (u8_t *)CONFIG_MQTT_USER_NAME;
+	username.size = strlen(CONFIG_MQTT_USER_NAME);
+	client->user_name = &username;
+	
 	client->protocol_version = MQTT_VERSION_3_1_1;
 
 	/* MQTT buffers configuration */
@@ -377,14 +392,6 @@ static int fds_init(struct mqtt_client *c)
  */
 static void modem_configure(void)
 {
-#if 1 //xb test 20200927
-	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
-	{
-		printk("AT_CMD write fail!\n");
-		return;
-	}
-#endif
-
 #if defined(CONFIG_LTE_LINK_CONTROL)
 	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT)) {
 		/* Do nothing, modem is already turned on
@@ -462,6 +469,9 @@ void main(void)
 			printk("POLLNVAL\n");
 			break;
 		}
+
+		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, "222", strlen("222"));
+		k_sleep(K_MSEC(5000));
 	}
 
 	printk("Disconnecting MQTT client...\n");

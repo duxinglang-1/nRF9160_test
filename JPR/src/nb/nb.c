@@ -8,21 +8,39 @@
 #include <stdio.h>
 #include <drivers/uart.h>
 #include <string.h>
-#include "lcd.h"
-#include "font.h"
-#include "settings.h"
-
 #include <net/mqtt.h>
 #include <net/socket.h>
 #include <modem/lte_lc.h>
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
 #endif
+#if defined(CONFIG_BSD_LIBRARY)
+#include <modem/bsdlib.h>
+#include <bsd.h>
+#include <modem/lte_lc.h>
+#include <modem/modem_info.h>
+#endif /* CONFIG_BSD_LIBRARY */
+#include "lcd.h"
+#include "font.h"
+#include "settings.h"
+#include "datetime.h"
+#include "nb.h"
+#include "screen.h"
+
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
+static struct k_work_q *app_work_q;
+static struct k_work link_work;
+
 #define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
+
+NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
+
+static struct modem_param_info modem_param;
+static bool nb_redraw_sig_flag = false;
+static bool get_modem_infor = false;
 
 //add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -51,6 +69,9 @@ static struct pollfd fds;
 bool app_nb_on = false;
 bool nb_is_running = false;
 
+u8_t g_imsi[IMSI_MAX_LEN] = {0};
+u8_t g_imei[IMEI_MAX_LEN] = {0};
+
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[128] = {0};
 
@@ -60,20 +81,6 @@ void show_infor(u8_t *strbuf)
 	LCD_ShowStringInRect(20,90,200,50,strbuf);
 }
 #endif
-
-#if defined(CONFIG_BSD_LIBRARY)
-
-/**@brief Recoverable BSD library error. */
-static void bsd_recoverable_error_handler(uint32_t err)
-{
-	LOG_INF("bsdlib recoverable error: %u\n", (unsigned int)err);
-#ifdef SHOW_LOG_IN_SCREEN	
-	sprintf(tmpbuf, "bsdlib recoverable error: %u\n", (unsigned int)err);
-	show_infor(tmpbuf);
-#endif
-}
-
-#endif /* defined(CONFIG_BSD_LIBRARY) */
 
 #if defined(CONFIG_LWM2M_CARRIER)
 K_SEM_DEFINE(carrier_registered, 0, 1);
@@ -514,6 +521,61 @@ static int fds_init(struct mqtt_client *c)
 	return 0;
 }
 
+#if CONFIG_MODEM_INFO
+/**@brief Callback handler for LTE RSRP data. */
+static void modem_rsrp_handler(char rsrp_value)
+{
+	/* RSRP raw values that represent actual signal strength are
+	 * 0 through 97 (per "nRF91 AT Commands" v1.1). If the received value
+	 * falls outside this range, we should not send the value.
+	 */
+	LOG_INF("rsrp_value:%d\n", rsrp_value);
+
+	if(rsrp_value > 97)
+	{
+		g_nb_sig = NB_SIG_LEVEL_NO;
+	}
+	else if(rsrp_value >= 80)
+	{
+		g_nb_sig = NB_SIG_LEVEL_4;
+	}
+	else if(rsrp_value >= 60)
+	{
+		g_nb_sig = NB_SIG_LEVEL_3;
+	}
+	else if(rsrp_value >= 40)
+	{
+		g_nb_sig = NB_SIG_LEVEL_2;
+	}
+	else if(rsrp_value >= 20)
+	{
+		g_nb_sig = NB_SIG_LEVEL_1;
+	}
+	else
+	{
+		g_nb_sig = NB_SIG_LEVEL_0;
+	}
+
+	nb_redraw_sig_flag = true;
+}
+
+/**brief Initialize LTE status containers. */
+void modem_data_init(void)
+{
+	int err;
+
+	err = modem_info_init();
+	if(err)
+	{
+		LOG_INF("Modem info could not be established: %d", err);
+		return;
+	}
+
+	modem_info_params_init(&modem_param);
+	modem_info_rsrp_register(modem_rsrp_handler);
+}
+#endif /* CONFIG_MODEM_INFO */
+
 /**@brief Configures modem to provide LTE link. Blocks until link is
  * successfully established.
  */
@@ -575,8 +637,12 @@ void test_nb(void)
 {
 	int err;
 
+	nb_is_running = true;
+	
 	LOG_INF("Start NB-IoT test!\n");
 
+	EnterNBTestScreen();
+	
 #ifdef SHOW_LOG_IN_SCREEN
 	show_infor("Start NB-IoT test!");
 #endif
@@ -692,6 +758,181 @@ void APP_Ask_NB(void)
 	app_nb_on = true;
 }
 
+void NBRedrawSignal(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SIG;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void GetModemDateTime(void)
+{
+	char *ptr;
+	u8_t timebuf[128] = {0};
+	u8_t tmpbuf[10] = {0};
+	u8_t tz_dir[2],tz_count;
+
+	if(at_cmd_write("AT+CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
+	{
+		LOG_INF("Get CCLK fail!\n");
+		return;
+	}
+	LOG_INF("%s\n", timebuf);
+
+	//+CCLK: "21/02/26,08:31:33+32"
+	ptr = strstr(timebuf, "\"");
+	if(ptr)
+	{
+		ptr++;
+		
+		memcpy(tmpbuf, ptr, 2);
+		date_time.year = 2000+atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.month= atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.day = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.hour = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.minute = atoi(tmpbuf);
+		ptr+=3;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		date_time.second = atoi(tmpbuf);
+		ptr+=2;
+
+		memcpy(tz_dir, ptr, 1);
+		ptr+=1;
+
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		memcpy(tmpbuf, ptr, 2);
+		tz_count = atoi(tmpbuf);
+		if(tz_dir[0] == '+')
+		{
+			TimeIncrease(&date_time, tz_count*15);
+		}
+		else if(tz_dir[0] == '-')
+		{
+			TimeDecrease(&date_time, tz_count*15);
+		}
+	}
+
+	LOG_INF("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d\n", 
+					date_time.year,date_time.month,date_time.day,
+					date_time.hour,date_time.minute,date_time.second,
+					date_time.week);
+
+	RedrawSystemTime();
+	SaveSystemDateTime();
+}
+
+void GetModemInfor(void)
+{
+	char *ptr;
+	int i=0,len,err;
+	u8_t tmpbuf[128] = {0};
+	u8_t strbuf[128] = {0};
+
+	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get imei fail!\n");
+		return;
+	}
+
+	LOG_INF("imei:%s\n", tmpbuf);
+	strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get imsi fail!\n");
+		return;
+	}
+
+	LOG_INF("imsi:%s\n", tmpbuf);
+	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get rsrp fail!\n");
+		return;
+	}
+
+	LOG_INF("rsrp:%s\n", tmpbuf);
+	len = strlen(tmpbuf);
+	ptr = tmpbuf;
+	while(i<5)
+	{
+		ptr = strstr(ptr, ",");
+		ptr++;
+		i++;
+	}
+
+	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
+	modem_rsrp_handler(atoi(strbuf));
+}
+
+static void nb_link(struct k_work *work)
+{
+	int err;
+
+	err = lte_lc_init_and_connect();
+	if(err)
+	{
+		LOG_INF("Can't connected to LTE network");
+	}
+	else
+	{
+		LOG_INF("Connected to LTE network");
+
+		GetModemDateTime();
+		modem_data_init();
+	}
+
+	GetModemInfor();
+}
+
+void GetNBSignal(void)
+{
+	u8_t str_rsrp[128] = {0};
+
+	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get cfun fail!\n");
+		return;
+	}
+	LOG_INF("cfun:%s\n", str_rsrp);
+
+	if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get cpsms fail!\n");
+		return;
+	}
+	LOG_INF("cpsms:%s\n", str_rsrp);
+	
+	if(at_cmd_write(CMD_GET_RSRP, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get rsrp fail!\n");
+		return;
+	}
+
+	LOG_INF("rsrp:%s\n", str_rsrp);
+}
+
 void NBMsgProcess(void)
 {
 	if(app_nb_on)
@@ -702,4 +943,14 @@ void NBMsgProcess(void)
 		
 		test_nb();
 	}
+}
+
+void NB_init(struct k_work_q *work_q)
+{
+	int err;
+
+	app_work_q = work_q;
+
+	k_work_init(&link_work, nb_link);
+	k_work_submit_to_queue(app_work_q, &link_work);
 }

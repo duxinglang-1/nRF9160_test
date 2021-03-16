@@ -359,8 +359,31 @@ int MAX20353_HardResetConfig(void)
 }
 
 /**************************************************
+*Name:	MAX20353_LED0
+*Function: LED0 控制
+*Parameter:
+*			flag:true-on,false-off
+*			IStep:0-2
+*			Amplitude:0-31
+*return: 
+***************************************************/
+int MAX20353_LED0(int IStep, int Amplitude, bool flag)
+{ 
+	int ret = 0;
+
+	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
+	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
+
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	if(flag)
+		ret |= MAX20353_WriteReg(REG_LED0_DIRECT,  0x20|(Amplitude&0x1F)); 
+	else
+		ret |= MAX20353_WriteReg(REG_LED0_DIRECT,  0x00); 
+}
+
+/**************************************************
 *Name:	MAX20353_LED1
-*Function: LED 控制
+*Function: LED1 控制
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
@@ -371,7 +394,7 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 { 
 	int ret = 0;
 
-	//Bit7: LED2Open, Bit6: LED1Open, Bit6: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
+	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
 	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
@@ -379,6 +402,29 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 		ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x20|(Amplitude&0x1F)); 
 	else
 		ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x00); 
+}
+
+/**************************************************
+*Name:	MAX20353_LED2
+*Function: LED2 控制
+*Parameter:
+*			flag:true-on,false-off
+*			IStep:0-2
+*			Amplitude:0-31
+*return: 
+***************************************************/
+int MAX20353_LED2(int IStep, int Amplitude, bool flag)
+{ 
+	int ret = 0;
+
+	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
+	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
+
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	if(flag)
+		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x20|(Amplitude&0x1F)); 
+	else
+		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x00); 
 }
 
 ///InitRAM  
@@ -840,7 +886,7 @@ void MAX20353_Init(void)
 	//马达驱动
 #ifdef MOTOR_TYPE_ERM
 	MAX20303_HapticConfigDCMotor();
-#else defined(MOTOR_TYPE_LRA)
+#elif defined(MOTOR_TYPE_LRA)
 	MAX20353_HapticConfig();	//线性马达驱动参数进行初始化  
 	//MAX20353_InitRAM();  		//马达振动模式
 #endif

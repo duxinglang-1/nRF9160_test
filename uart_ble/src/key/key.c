@@ -48,8 +48,15 @@ static struct k_delayed_work buttons_scan;
 static struct k_mutex button_handler_mut;
 static struct k_timer g_long_press_timer_id;
 
+static bool touch_flag = true;
+
 extern bool sys_pwr_off;
 extern bool app_gps_on;
+
+bool is_wearing(void)
+{
+	return touch_flag;
+}
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {

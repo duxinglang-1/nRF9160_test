@@ -50,12 +50,12 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
 	true,					//wake screen by wrist
-	0x0000,					//target steps
+	0,						//target steps
 	TIME_FORMAT_24,			//24 format
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
-	BACKLIGHT_ALWAYS_ON,	//backlight time
+	BACKLIGHT_15_SEC,		//backlight time
 	{true,1},				//PHD
 	{						//alarm
 		{false,0,0,0},		

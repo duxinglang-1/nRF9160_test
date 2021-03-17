@@ -102,15 +102,6 @@ static void show_infor(u8_t *strbuf)
 }
 #endif
 
-void bsd_recoverable_error_handler(uint32_t error)
-{
-	LOG_INF("Err: %lu\n", (unsigned long)error);
-#ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "Err: %lu", (unsigned long)error);
-	show_infor(tmpbuf);
-#endif
-}
-
 static int setup_modem(void)
 {
 	int i;
@@ -793,6 +784,8 @@ void gps_off(void)
 	#ifdef SHOW_LOG_IN_SCREEN	
 		show_infor("gps is been truned off");
 	#endif
+
+		GoBackHistoryScreen();
 		return;
 	}
 	

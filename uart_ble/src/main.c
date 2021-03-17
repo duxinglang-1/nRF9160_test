@@ -622,7 +622,7 @@ void system_init(void)
 {
 	InitSystemSettings();
 	
-	pmu_init();
+	//pmu_init();
 	flash_init();
 	LCD_Init();
 	

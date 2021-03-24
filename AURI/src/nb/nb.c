@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
+static void MqttDisConnectCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mqtt_disconnect_timer, MqttDisConnectCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_work nb_link_work;
@@ -47,7 +49,8 @@ NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 static struct modem_param_info modem_param;
 static bool nb_redraw_sig_flag = false;
 static bool get_modem_infor = false;
-static bool nb_send_data = false;
+static bool send_data_flag = false;
+static bool mqtt_disconnect_flag = false;
 
 //add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -78,6 +81,9 @@ u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 u8_t g_imei[IMEI_MAX_LEN+1] = {0};
 
 static void NbSendDateStart(void);
+static void NbSendDateStop(void);
+static void MqttDicConnectStart(void);
+static void MqttDicConnectStop(void);
 
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[128] = {0};
@@ -275,12 +281,16 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		subscribe();
 
 		NbSendDateStart();
+		MqttDicConnectStart();
 		//k_delayed_work_submit_to_queue(app_work_q, &mqtt_send_work, K_SECONDS(5));
 		break;
 
 	case MQTT_EVT_DISCONNECT:
 		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__, __LINE__, evt->result);
 		mqtt_connected = false;
+		
+		NbSendDateStop();
+		MqttDicConnectStop();
 		break;
 
 	case MQTT_EVT_PUBLISH: 
@@ -421,8 +431,8 @@ static void client_init(struct mqtt_client *client)
 	
 	client->evt_cb = mqtt_evt_handler;
 	
-	client->client_id.utf8 = (u8_t *)CONFIG_MQTT_CLIENT_ID;
-	client->client_id.size = strlen(CONFIG_MQTT_CLIENT_ID);
+	client->client_id.utf8 = (u8_t *)g_imei;	//xb add 2021-03-24 CONFIG_MQTT_CLIENT_ID;
+	client->client_id.size = strlen(g_imei);
 
 	password.utf8 = (u8_t *)CONFIG_MQTT_PASSWORD;
 	password.size = strlen(CONFIG_MQTT_PASSWORD);
@@ -439,7 +449,7 @@ static void client_init(struct mqtt_client *client)
 	client->rx_buf_size = sizeof(rx_buffer);
 	client->tx_buf = tx_buffer;
 	client->tx_buf_size = sizeof(tx_buffer);
-/* MQTT transport configuration */  //add by liming
+
 #if defined(CONFIG_MQTT_LIB_TLS)
     struct mqtt_sec_config *tls_config = &client->transport.tls.config;
     
@@ -451,10 +461,9 @@ static void client_init(struct mqtt_client *client)
     tls_config->sec_tag_count = ARRAY_SIZE(sec_tag_list);
     tls_config->sec_tag_list = sec_tag_list;
     tls_config->hostname = CONFIG_MQTT_BROKER_HOSTNAME;
-#else /* MQTT transport configuration */
+#else
     client->transport.type = MQTT_TRANSPORT_NON_SECURE;
-#endif /* defined(CONFIG_MQTT_LIB_TLS) */
-
+#endif/* defined(CONFIG_MQTT_LIB_TLS) */
 }
 
 /**@brief Initialize the file descriptor structure used by poll.
@@ -537,7 +546,6 @@ static void mqtt_link(struct k_work_q *work_q)
 			break;
 		}
 
-		//data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, "222", strlen("222"));
 		//k_sleep(K_MSEC(5000));
 	}
 
@@ -546,7 +554,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		LOG_INF("Could not disconnect MQTT client. Error: %d\n", err);
+		LOG_INF("%s: Could not disconnect MQTT client. Error: %d\n", __func__, err);
 	}
 }
 
@@ -580,12 +588,17 @@ static void mqtt_send(struct k_work_q *work_q)
 
 static void SendDataCallBack(struct k_timer *timer)
 {
-	nb_send_data = true;
+	send_data_flag = true;
 }
 
 static void NbSendDateStart(void)
 {
 	k_timer_start(&send_data_timer, K_MSEC(5000), NULL);
+}
+
+static void NbSendDateStop(void)
+{
+	k_timer_stop(&send_data_timer);
 }
 
 static void NbSendData(void)
@@ -606,6 +619,36 @@ static void NbSendData(void)
 		k_timer_start(&send_data_timer, K_MSEC(1000), NULL);
 	}
 }
+
+static void MqttDisConnect(void)
+{
+	int err;
+
+	LOG_INF("%s: begin\n", __func__);
+	err = mqtt_disconnect(&client);
+	if(err)
+	{
+		LOG_INF("%s: Could not disconnect MQTT client. Error: %d\n", __func__, err);
+	}
+}
+
+static void MqttDisConnectCallBack(struct k_timer *timer_id)
+{
+	LOG_INF("%s: begin\n", __func__);
+	mqtt_disconnect_flag = true;
+}
+
+static void MqttDicConnectStart(void)
+{
+	LOG_INF("%s: begin\n", __func__);
+	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5*60), NULL);
+}
+
+static void MqttDicConnectStop(void)
+{
+	k_timer_stop(&mqtt_disconnect_timer);
+}
+
 
 #if CONFIG_MODEM_INFO
 /**@brief Callback handler for LTE RSRP data. */
@@ -945,18 +988,21 @@ void GetModemDateTime(void)
 void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
+
+	ret = add_data_into_cache(data, datalen);
+	LOG_INF("%s: data add ret:%d\n", __func__, ret);
 	
 	if(mqtt_connected)
 	{
-		ret = add_data_into_cache(data, datalen);
-		LOG_INF("%s: begin 001, ret:%d\n", __func__, ret);
+		LOG_INF("%s: begin 001\n", __func__);
 		//k_delayed_work_submit_to_queue(app_work_q, &mqtt_send_work, K_SECONDS(5));
-		//data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, data, datalen);
+
 		NbSendDateStart();
 	}
 	else
 	{
-		LOG_INF("%s: begin 001\n", __func__);
+		LOG_INF("%s: begin 002\n", __func__);
+
 		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 	}
 }
@@ -1074,10 +1120,16 @@ void NBMsgProcess(void)
 		nb_redraw_sig_flag = false;
 	}
 
-	if(nb_send_data)
+	if(send_data_flag)
 	{
 		NbSendData();
-		nb_send_data = false;
+		send_data_flag = false;
+	}
+
+	if(mqtt_disconnect_flag)
+	{
+		MqttDisConnect();
+		mqtt_disconnect_flag = false;
 	}
 }
 

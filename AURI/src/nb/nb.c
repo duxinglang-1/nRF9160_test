@@ -26,21 +26,28 @@
 #include "datetime.h"
 #include "nb.h"
 #include "screen.h"
+#include "transfer_cache.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-static struct k_work_q *app_work_q;
-static struct k_work link_work;
+static void SendDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
 
-#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
+static struct k_work_q *app_work_q;
+static struct k_work nb_link_work;
+static struct k_delayed_work mqtt_link_work;
+static struct k_delayed_work mqtt_send_work;
+
+//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
 static struct modem_param_info modem_param;
 static bool nb_redraw_sig_flag = false;
 static bool get_modem_infor = false;
+static bool nb_send_data = false;
 
 //add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -59,22 +66,21 @@ static struct mqtt_client client;
 static struct sockaddr_storage broker;
 
 /* Connected flag */
-static bool connected;
+static bool mqtt_connected = false;
 
 /* File descriptor */
 static struct pollfd fds;
 
-//#define TEST_BNT_LED   //liming
-
 bool app_nb_on = false;
 bool nb_is_running = false;
 
-u8_t g_imsi[IMSI_MAX_LEN] = {0};
-u8_t g_imei[IMEI_MAX_LEN] = {0};
+u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
+u8_t g_imei[IMEI_MAX_LEN+1] = {0};
+
+static void NbSendDateStart(void);
 
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[128] = {0};
-
 void show_infor(u8_t *strbuf)
 {
 	LCD_Clear(BLACK);
@@ -82,6 +88,7 @@ void show_infor(u8_t *strbuf)
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, 4, strbuf);
 }
 #endif
+
 
 #if defined(CONFIG_LWM2M_CARRIER)
 K_SEM_DEFINE(carrier_registered, 0, 1);
@@ -161,14 +168,16 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	LOG_INF("to topic: %s len: %u\n",
 		CONFIG_MQTT_PUB_TOPIC,
 		(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
-#ifdef SHOW_LOG_IN_SCREEN	
-	sprintf(tmpbuf, "to topic: %s len: %u",
-		CONFIG_MQTT_PUB_TOPIC,
-		(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
-	show_infor(tmpbuf);
-#endif
 
 	return mqtt_publish(c, &param);
+}
+
+static char *get_mqtt_topic(void)
+{
+	static char str_sub_topic[256] = {0};
+
+	sprintf(str_sub_topic, "%s%s", CONFIG_MQTT_SUB_TOPIC, g_imei);
+	return str_sub_topic;
 }
 
 /**@brief Function to subscribe to the configured topic
@@ -177,8 +186,8 @@ static int subscribe(void)
 {
 	struct mqtt_topic subscribe_topic = {
 		.topic = {
-			.utf8 = CONFIG_MQTT_SUB_TOPIC,
-			.size = strlen(CONFIG_MQTT_SUB_TOPIC)
+			.utf8 = (u8_t *)get_mqtt_topic(),
+			.size = strlen(subscribe_topic.topic.utf8)
 		},
 		.qos = MQTT_QOS_1_AT_LEAST_ONCE
 	};
@@ -189,13 +198,8 @@ static int subscribe(void)
 		.message_id = 1234
 	};
 
-	LOG_INF("Subscribing to: %s len %u\n", CONFIG_MQTT_SUB_TOPIC,
-		(unsigned int)strlen(CONFIG_MQTT_SUB_TOPIC));
-#ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "Subscribing to: %s len %u", CONFIG_MQTT_SUB_TOPIC,
-		(unsigned int)strlen(CONFIG_MQTT_SUB_TOPIC));
-	show_infor(tmpbuf);
-#endif
+	LOG_INF("Subscribing to:%s, len:%d\n", subscribe_topic.topic.utf8,
+		subscribe_topic.topic.size);
 
 	return mqtt_subscribe(&client, &subscription_list);
 }
@@ -207,35 +211,40 @@ static int publish_get_payload(struct mqtt_client *c, size_t length)
 	u8_t *buf = payload_buf;
 	u8_t *end = buf + length;
 
-	if (length > sizeof(payload_buf)) {
+	if(length > sizeof(payload_buf))
+	{
 		return -EMSGSIZE;
 	}
 
-	while (buf < end) {
+	while(buf < end)
+	{
 		int ret = mqtt_read_publish_payload(c, buf, end - buf);
 
-		if (ret < 0) {
+		if(ret < 0)
+		{
 			int err;
 
-			if (ret != -EAGAIN) {
+			if(ret != -EAGAIN)
+			{
 				return ret;
 			}
 
 			LOG_INF("mqtt_read_publish_payload: EAGAIN\n");
-		#ifdef SHOW_LOG_IN_SCREEN	
-			show_infor("mqtt_read_publish_payload: EAGAIN");
-		#endif
 		
 			err = poll(&fds, 1,
 				   CONFIG_MQTT_KEEPALIVE * MSEC_PER_SEC);
-			if (err > 0 && (fds.revents & POLLIN) == POLLIN) {
+			if(err > 0 && (fds.revents & POLLIN) == POLLIN)
+			{
 				continue;
-			} else {
+			}
+			else
+			{
 				return -EIO;
 			}
 		}
 
-		if (ret == 0) {
+		if(ret == 0)
+		{
 			return -EIO;
 		}
 
@@ -247,7 +256,7 @@ static int publish_get_payload(struct mqtt_client *c, size_t length)
 
 /**@brief MQTT client event handler
  */
-void mqtt_evt_handler(struct mqtt_client *const c,
+static void mqtt_evt_handler(struct mqtt_client *const c,
 		      const struct mqtt_evt *evt)
 {
 	int err;
@@ -255,50 +264,31 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 	switch(evt->type)
 	{
 	case MQTT_EVT_CONNACK:
-		if (evt->result != 0)
+		if(evt->result != 0)
 		{
 			LOG_INF("MQTT connect failed %d\n", evt->result);
-		#ifdef SHOW_LOG_IN_SCREEN	
-			sprintf(tmpbuf, "MQTT connect failed %d", evt->result);
-			show_infor(tmpbuf);
-		#endif
-		
 			break;
 		}
 
-		connected = true;
+		mqtt_connected = true;
 		LOG_INF("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
-	#ifdef SHOW_LOG_IN_SCREEN	
-		sprintf(tmpbuf, "[%s:%d] MQTT client connected!", __func__, __LINE__);
-		show_infor(tmpbuf);
-	#endif
 		subscribe();
+
+		NbSendDateStart();
+		//k_delayed_work_submit_to_queue(app_work_q, &mqtt_send_work, K_SECONDS(5));
 		break;
 
 	case MQTT_EVT_DISCONNECT:
-		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__,
-		       __LINE__, evt->result);
-	#ifdef SHOW_LOG_IN_SCREEN	
-		sprintf(tmpbuf, "[%s:%d] MQTT client disconnected %d", __func__,
-		       __LINE__, evt->result);
-		show_infor(tmpbuf);
-	#endif
-	
-		connected = false;
+		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__, __LINE__, evt->result);
+		mqtt_connected = false;
 		break;
 
 	case MQTT_EVT_PUBLISH: 
 		{
 			const struct mqtt_publish_param *p = &evt->param.publish;
 
-			LOG_INF("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__,
-			       __LINE__, evt->result, p->message.payload.len);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "[%s:%d] MQTT PUBLISH result=%d len=%d", __func__,
-			       __LINE__, evt->result, p->message.payload.len);
-			show_infor(tmpbuf);
-		#endif
-		
+			LOG_INF("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__, __LINE__, evt->result, p->message.payload.len);
+	
 			err = publish_get_payload(c, p->message.payload.len);
 			if(err >= 0)
 			{
@@ -312,11 +302,6 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 			{
 				LOG_INF("mqtt_read_publish_payload: Failed! %d\n", err);
 				LOG_INF("Disconnecting MQTT client...\n");
-			#ifdef SHOW_LOG_IN_SCREEN	
-				sprintf(tmpbuf, "mqtt_read_publish_payload: Failed! %d", err);
-				show_infor(tmpbuf);
-				show_infor("Disconnecting MQTT client...");
-			#endif
 			
 				err = mqtt_disconnect(c);
 				if(err)
@@ -335,50 +320,27 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 		if(evt->result != 0)
 		{
 			LOG_INF("MQTT PUBACK error %d\n", evt->result);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "MQTT PUBACK error %d", evt->result);
-			show_infor(tmpbuf);
-		#endif
 			break;
 		}
 
 		LOG_INF("[%s:%d] PUBACK packet id: %u\n", __func__, __LINE__,
 				evt->param.puback.message_id);
-	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "[%s:%d] PUBACK packet id: %u", __func__, __LINE__,
-				evt->param.puback.message_id);
-		show_infor(tmpbuf);
-	#endif
 		break;
 
 	case MQTT_EVT_SUBACK:
 		if(evt->result != 0)
 		{
 			LOG_INF("MQTT SUBACK error %d\n", evt->result);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "MQTT SUBACK error %d", evt->result);
-			show_infor(tmpbuf);
-		#endif
 			break;
 		}
 
 		LOG_INF("[%s:%d] SUBACK packet id: %u\n", __func__, __LINE__,
 				evt->param.suback.message_id);
-	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "[%s:%d] SUBACK packet id: %u", __func__, __LINE__,
-				evt->param.suback.message_id);
-		show_infor(tmpbuf);
-	#endif
 		break;
 
 	default:
 		LOG_INF("[%s:%d] default: %d\n", __func__, __LINE__,
 				evt->type);
-	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "[%s:%d] default: %d", __func__, __LINE__,
-				evt->type);
-		show_infor(tmpbuf);
-	#endif
 		break;
 	}
 }
@@ -400,11 +362,6 @@ static void broker_init(void)
 	if(err)
 	{
 		LOG_INF("ERROR: getaddrinfo failed %d\n", err);
-	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "ERROR: getaddrinfo failed %d", err);
-		show_infor(tmpbuf);	
-	#endif
-	
 		return;
 	}
 
@@ -430,11 +387,6 @@ static void broker_init(void)
 			inet_ntop(AF_INET, &broker4->sin_addr.s_addr,
 				  ipv4_addr, sizeof(ipv4_addr));
 			LOG_INF("IPv4 Address found %s\n", ipv4_addr);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "IPv4 Address found %s", ipv4_addr);
-			show_infor(tmpbuf);
-		#endif
-
 			break;
 		}
 		else
@@ -443,13 +395,6 @@ static void broker_init(void)
 				(unsigned int)addr->ai_addrlen,
 				(unsigned int)sizeof(struct sockaddr_in),
 				(unsigned int)sizeof(struct sockaddr_in6));
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "ai_addrlen = %u should be %u or %u",
-				(unsigned int)addr->ai_addrlen,
-				(unsigned int)sizeof(struct sockaddr_in),
-				(unsigned int)sizeof(struct sockaddr_in6));
-			show_infor(tmpbuf);
-		#endif
 		}
 
 		addr = addr->ai_next;
@@ -464,17 +409,29 @@ static void broker_init(void)
  */
 static void client_init(struct mqtt_client *client)
 {
+	static struct mqtt_utf8 password;
+	static struct mqtt_utf8 username;
+
 	mqtt_client_init(client);
 
 	broker_init();
 
 	/* MQTT client configuration */
 	client->broker = &broker;
+	
 	client->evt_cb = mqtt_evt_handler;
+	
 	client->client_id.utf8 = (u8_t *)CONFIG_MQTT_CLIENT_ID;
 	client->client_id.size = strlen(CONFIG_MQTT_CLIENT_ID);
-	client->password = NULL;
-	client->user_name = NULL;
+
+	password.utf8 = (u8_t *)CONFIG_MQTT_PASSWORD;
+	password.size = strlen(CONFIG_MQTT_PASSWORD);
+	client->password = &password;
+
+	username.utf8 = (u8_t *)CONFIG_MQTT_USER_NAME;
+	username.size = strlen(CONFIG_MQTT_USER_NAME);
+	client->user_name = &username;
+	
 	client->protocol_version = MQTT_VERSION_3_1_1;
 
 	/* MQTT buffers configuration */
@@ -520,6 +477,134 @@ static int fds_init(struct mqtt_client *c)
 	fds.events = POLLIN;
 
 	return 0;
+}
+
+static void mqtt_link(struct k_work_q *work_q)
+{
+	int err,i=0;
+
+	client_init(&client);
+
+	err = mqtt_connect(&client);
+	if(err != 0)
+	{
+		LOG_INF("ERROR: mqtt_connect %d\n", err);
+		return;
+	}
+
+	err = fds_init(&client);
+	if(err != 0)
+	{
+		LOG_INF("ERROR: fds_init %d\n", err);
+		return;
+	}
+
+	while(1)
+	{
+		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
+		if(err < 0)
+		{
+			LOG_INF("ERROR: poll %d\n", errno);
+			break;
+		}
+
+		err = mqtt_live(&client);
+		if((err != 0) && (err != -EAGAIN))
+		{
+			LOG_INF("ERROR: mqtt_live %d\n", err);
+			break;
+		}
+
+		if((fds.revents & POLLIN) == POLLIN)
+		{
+			err = mqtt_input(&client);
+			if(err != 0)
+			{
+				LOG_INF("ERROR: mqtt_input %d\n", err);
+				break;
+			}
+		}
+
+		if((fds.revents & POLLERR) == POLLERR)
+		{
+			LOG_INF("POLLERR\n");
+			break;
+		}
+
+		if((fds.revents & POLLNVAL) == POLLNVAL)
+		{
+			LOG_INF("POLLNVAL\n");
+			break;
+		}
+
+		//data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, "222", strlen("222"));
+		//k_sleep(K_MSEC(5000));
+	}
+
+	LOG_INF("Disconnecting MQTT client...\n");
+
+	err = mqtt_disconnect(&client);
+	if(err)
+	{
+		LOG_INF("Could not disconnect MQTT client. Error: %d\n", err);
+	}
+}
+
+static void mqtt_send(struct k_work_q *work_q)
+{
+	u8_t *p_data;
+	u32_t data_len,i=0;
+	int ret;
+
+	LOG_INF("%s: begin\n", __func__);
+	
+	while(1)
+	{
+		ret = get_data_from_cache(p_data, &data_len);
+		LOG_INF("%s: ret:%d, loop:%d\n", __func__, ret, ++i);
+		if(ret)
+		{
+			ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
+			if(!ret)
+			{
+				delete_data_from_cache();
+			}
+			k_sleep(K_MSEC(2000));
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+static void SendDataCallBack(struct k_timer *timer)
+{
+	nb_send_data = true;
+}
+
+static void NbSendDateStart(void)
+{
+	k_timer_start(&send_data_timer, K_MSEC(5000), NULL);
+}
+
+static void NbSendData(void)
+{
+	u8_t *p_data;
+	u32_t data_len;
+	int ret;
+
+	ret = get_data_from_cache(&p_data, &data_len);
+	if(ret)
+	{
+		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
+		if(!ret)
+		{
+			delete_data_from_cache();
+		}
+
+		k_timer_start(&send_data_timer, K_MSEC(1000), NULL);
+	}
 }
 
 #if CONFIG_MODEM_INFO
@@ -642,9 +727,8 @@ void test_nb(void)
 	
 	LOG_INF("Start NB-IoT test!\n");
 
+#ifdef	SHOW_LOG_IN_SCREEN
 	EnterNBTestScreen();
-	
-#ifdef SHOW_LOG_IN_SCREEN
 	show_infor("Start NB-IoT test!");
 #endif
 
@@ -737,6 +821,9 @@ void test_nb(void)
 		
 			break;
 		}
+
+		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, "222", strlen("222"));
+		k_sleep(K_MSEC(5000));
 	}
 
 	LOG_INF("Disconnecting MQTT client...\n");
@@ -775,53 +862,52 @@ void GetModemDateTime(void)
 	char *ptr;
 	u8_t timebuf[128] = {0};
 	u8_t tmpbuf[10] = {0};
-	u8_t tz_dir[2],tz_count;
+	u8_t tz_dir[2],tz_count,daylight;
 
-	if(at_cmd_write("AT+CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
+	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
 		LOG_INF("Get CCLK fail!\n");
 		return;
 	}
 	LOG_INF("%s\n", timebuf);
 
-	//+CCLK: "21/02/26,08:31:33+32"
+	//%CCLK: "21/02/26,08:31:33+32",0
 	ptr = strstr(timebuf, "\"");
 	if(ptr)
 	{
 		ptr++;
-		
 		memcpy(tmpbuf, ptr, 2);
 		date_time.year = 2000+atoi(tmpbuf);
-		ptr+=3;
 
+		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
 		date_time.month= atoi(tmpbuf);
-		ptr+=3;
 
+		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
 		date_time.day = atoi(tmpbuf);
-		ptr+=3;
 
+		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
 		date_time.hour = atoi(tmpbuf);
-		ptr+=3;
 
+		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
 		date_time.minute = atoi(tmpbuf);
-		ptr+=3;
 
+		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
 		date_time.second = atoi(tmpbuf);
+
 		ptr+=2;
-
 		memcpy(tz_dir, ptr, 1);
-		ptr+=1;
 
+		ptr+=1;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
 		tz_count = atoi(tmpbuf);
@@ -833,6 +919,18 @@ void GetModemDateTime(void)
 		{
 			TimeDecrease(&date_time, tz_count*15);
 		}
+
+		ptr+=3;
+		ptr = strstr(ptr, ",");
+		if(ptr)
+		{
+			ptr+=1;
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, ptr, 1);
+			daylight = atoi(tmpbuf);
+			TimeDecrease(&date_time, daylight*60);
+		}
+		
 	}
 
 	LOG_INF("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d\n", 
@@ -842,6 +940,25 @@ void GetModemDateTime(void)
 
 	RedrawSystemTime();
 	SaveSystemDateTime();
+}
+
+void MqttSendData(u8_t *data, u32_t datalen)
+{
+	int ret;
+	
+	if(mqtt_connected)
+	{
+		ret = add_data_into_cache(data, datalen);
+		LOG_INF("%s: begin 001, ret:%d\n", __func__, ret);
+		//k_delayed_work_submit_to_queue(app_work_q, &mqtt_send_work, K_SECONDS(5));
+		//data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, data, datalen);
+		NbSendDateStart();
+	}
+	else
+	{
+		LOG_INF("%s: begin 001\n", __func__);
+		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+	}
 }
 
 void GetModemInfor(void)
@@ -901,12 +1018,16 @@ static void nb_link(struct k_work *work)
 	else
 	{
 		LOG_INF("Connected to LTE network");
-
 		GetModemDateTime();
 		modem_data_init();
 	}
 
 	GetModemInfor();
+	
+	if(!err)
+	{
+		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+	}
 }
 
 void GetNBSignal(void)
@@ -952,6 +1073,12 @@ void NBMsgProcess(void)
 		NBRedrawSignal();
 		nb_redraw_sig_flag = false;
 	}
+
+	if(nb_send_data)
+	{
+		NbSendData();
+		nb_send_data = false;
+	}
 }
 
 void NB_init(struct k_work_q *work_q)
@@ -960,6 +1087,9 @@ void NB_init(struct k_work_q *work_q)
 
 	app_work_q = work_q;
 
-	k_work_init(&link_work, nb_link);
-	k_work_submit_to_queue(app_work_q, &link_work);
+	k_work_init(&nb_link_work, nb_link);
+	k_delayed_work_init(&mqtt_link_work, mqtt_link);
+	k_delayed_work_init(&mqtt_send_work, mqtt_send);
+	
+	k_work_submit_to_queue(app_work_q, &nb_link_work);
 }

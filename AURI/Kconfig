@@ -25,6 +25,14 @@ config MQTT_CLIENT_ID
 	string "MQTT Client ID"
 	default "my-client-id"
 
+config MQTT_USER_NAME
+	string "MQTT user name"
+	default "admin123"
+	
+config MQTT_PASSWORD
+	string "MQTT password"
+	default "admin123"
+
 config MQTT_BROKER_HOSTNAME
 	string "MQTT broker hostname"
 	default "mqtt.eclipse.org"

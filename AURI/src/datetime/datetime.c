@@ -25,6 +25,19 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(datetime, CONFIG_LOG_DEFAULT_LEVEL);
 
+#define SEC_START_YEAR		1970
+#define SEC_START_MONTH		1
+#define SEC_START_DAY		1
+#define SEC_START_HOUR		0
+#define SEC_START_MINUTE	0
+#define SEC_START_SECOND	0
+
+#define SEC_PER_MINUTE		60
+#define SEC_PER_HOUR		(SEC_PER_MINUTE*60)
+#define SEC_PER_DAY			(SEC_PER_HOUR*24)
+#define SEC_PER_SMALL_YEAR	(SEC_PER_DAY*365)
+#define SEC_PER_BIG_YEAR	(SEC_PER_DAY*366)
+
 static struct k_timer clock_timer;
 
 sys_date_timer_t date_time = {0};
@@ -39,6 +52,14 @@ bool show_date_time_first = true;
 
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 
+u8_t CheckYearIsLeap(u32_t years)
+{
+	if(((years%4 == 0) && (years%100 != 0))||(years%400 == 0))
+		return 1;
+	else
+		return 0;
+}
+
 u8_t GetWeekDayByDate(sys_date_timer_t date)
 {
 	u8_t flag=0,index=SYSTEM_STARTING_WEEK;//1900年1月1日是星期一 0=sunday
@@ -49,13 +70,13 @@ u8_t GetWeekDayByDate(sys_date_timer_t date)
 
 	for(i=SYSTEM_STARTING_YEAR;i<date.year;i++)
 	{
-		if(i%4 == 0)	//闰年366天
+		if(((i%4 == 0)&&(i%100 != 0))||(i%400 == 0))	//闰年366天
 			count += 366;
 		else
 			count += 365;
 	}
 
-	if(date.year%4 == 0)
+	if(CheckYearIsLeap(date.year))
 		flag = 1;
 	
 	switch(date.month)
@@ -148,7 +169,7 @@ void DateIncreaseOne(sys_date_timer_t *date)
 	{
 		uint8_t Leap = 0;
 
-		if((*date).year%4 == 0)
+		if(CheckYearIsLeap((*date).year))
 			Leap = 1;
 		
 		if((*date).day > (28+Leap))
@@ -208,7 +229,7 @@ void DateDecreaseOne(sys_date_timer_t *date)
 		{
 			uint8_t Leap = 0;
 
-			if((*date).year%4 == 0)
+			if(CheckYearIsLeap((*date).year))
 				Leap = 1;
 
 			(*date).day = (28+Leap);
@@ -381,7 +402,7 @@ void UpdateSystemTime(void)
 				{
 					uint8_t Leap = 0;
 
-					if(date_time.year%4 == 0)
+					if(CheckYearIsLeap(date_time.year))
 						Leap = 1;
 					
 					if(date_time.day > (28+Leap))
@@ -451,6 +472,54 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 	}
 	
 	return ret;
+}
+
+void GetSystemTimeSecStrings(u8_t *str_utc)
+{
+	u32_t i;
+	u32_t total_sec,total_day=0;
+
+	LOG_INF("[%s] %04d/%02d/%02d %02d:%02d:%02d\n", __func__, date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
+
+	if(date_time.year >= SEC_START_YEAR)
+	{
+		total_day += (date_time.day-1);
+
+		for(i=1;i<date_time.month;i++)
+		{
+			switch(i)
+			{
+			case 1:
+			case 3:
+			case 5:
+			case 7:
+			case 8:
+			case 10:
+			case 12:
+				total_day += 31;
+				break;
+			case 2:
+				total_day += (28+(CheckYearIsLeap(date_time.year)));
+				break;
+			case 4:
+			case 6:
+			case 9:
+			case 11:
+				total_day += 30;
+				break;
+			}
+		}
+		
+		for(i=SEC_START_YEAR;i<date_time.year;i++)
+		{
+			total_day += (365+(CheckYearIsLeap(i)));
+		}
+
+		total_sec = total_day*SEC_PER_DAY+date_time.hour*SEC_PER_HOUR+date_time.minute*SEC_PER_MINUTE+date_time.second;
+		LOG_INF("[%s] total_day:%d, total_sec:%d\n", __func__, total_day, total_sec);
+
+		sprintf(str_utc, "%d", total_sec);
+	}
 }
 
 void GetSystemDateStrings(u8_t *str_date)

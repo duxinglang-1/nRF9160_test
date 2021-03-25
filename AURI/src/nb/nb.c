@@ -52,10 +52,9 @@ static bool get_modem_infor = false;
 static bool send_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 
-//add by liming
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
-#endif /* defined(CONFIG_MQTT_LIB_TLS) */ 
+#endif/*CONFIG_MQTT_LIB_TLS*/ 
 
 /* Buffers for MQTT client. */
 static u8_t rx_buffer[CONFIG_MQTT_MESSAGE_BUFFER_SIZE];
@@ -1006,6 +1005,27 @@ void MqttSendData(u8_t *data, u32_t datalen)
 		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 	}
 }
+
+void NBSendSosData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	
+	LOG_INF("[%s] gps data:%s len:%d\n", __func__, data, datalen);
+
+	strcpy(buf, "{T0,");
+	strcat(buf, g_imei);
+	strcat(buf, ",[");
+	strcat(buf, data);
+	strcat(buf, ";0;");
+	GetSystemTimeSecStrings(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "]}");
+
+	LOG_INF("[%s] sos data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
 
 void GetModemInfor(void)
 {

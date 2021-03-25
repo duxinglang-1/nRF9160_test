@@ -1,8 +1,16 @@
-/*
-* Copyright (c) 2019 Nordic Semiconductor ASA
-*
-* SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
-*/
+/****************************************Copyright (c)************************************************
+** File Name:				transfer_cache.h
+** Descriptions:			Data transfer cache pool head file
+** Created By:				xie biao
+** Created Date:			2021-03-25
+** Modified Date:			2021-03-25 
+** Version:					V1.0
+******************************************************************************************************/
+#ifndef __UART_BLE_H__
+#define __UART_BLE_H__
+
+#include <nrf_socket.h>
+
 
 //0:关闭 1:休眠 2:广播 3:连接
 typedef enum
@@ -29,8 +37,11 @@ extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 
 extern void uart_ble_test(void);
-extern void APP_get_location_data_reply(u8_t *buf, u32_t len);
+extern void APP_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data);
 extern void MCU_get_nrf52810_ver(void);
 extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);
 extern void MCU_set_ble_work_mode(u8_t work_mode);
+
+
+#endif/*__UART_BLE_H__*/

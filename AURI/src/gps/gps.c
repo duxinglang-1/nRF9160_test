@@ -13,6 +13,8 @@
 #include "lcd.h"
 #include "uart_ble.h"
 #include "Settings.h"
+#include "nb.h"
+#include "sos.h"
 
 #ifdef CONFIG_SUPL_CLIENT_LIB
 #include <supl_os_client.h>
@@ -47,8 +49,12 @@ LOG_MODULE_REGISTER(gps, CONFIG_LOG_DEFAULT_LEVEL);
 #define AT_COEX0_CANCEL		"AT\%XCOEX0"
 #endif
 
-static struct k_timer app_wait_gps_timer;
-static struct k_timer gps_data_timer;
+static void SOS_Ask_GPS_Data_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(sos_wait_gps_timer, SOS_Ask_GPS_Data_timerout, NULL);
+static void APP_Ask_GPS_Data_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
+static void gps_data_wait_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(gps_data_timer, gps_data_wait_timerout, NULL);
 
 static u8_t cnt = 0;
 static const char update_indicator[] = {'\\', '|', '/', '-'};
@@ -85,6 +91,8 @@ bool got_first_fix = false;
 bool gps_data_incoming = false;
 bool app_gps_on = false;
 bool app_gps_off = false;
+bool sos_gps_on = false;
+bool sos_gps_off = false;
 
 nrf_gnss_data_frame_t last_fix;
 
@@ -602,7 +610,7 @@ void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 	tmp1 = tmp1%100;
 	str_gps[16] = (u8_t)(tmp1);
 
-	APP_get_location_data_reply(str_gps, 17);
+	APP_get_location_data_reply(last_fix.pvt);
 }
 
 void APP_Ask_GPS_Data(void)
@@ -613,12 +621,6 @@ void APP_Ask_GPS_Data(void)
 	app_gps_on = true;
 	APP_wait_gps = true;
 
-	if(time_init == false)
-	{
-		time_init = true;
-		k_timer_init(&app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
-	}
-	
 	k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
 #else
 	last_fix.pvt.datetime.year = 2020;
@@ -639,6 +641,41 @@ void APP_Ask_GPS_off(void)
 	app_gps_off = true;
 }
 
+void SOS_Ask_GPS_Data_timerout(struct k_timer *timer)
+{
+	sos_wait_gps = false;
+	sos_gps_off = true;
+
+	sos_get_location_data_reply(last_fix.pvt);
+}
+
+void SOS_Ask_GPS_Data(void)
+{
+	static u8_t time_init = false;
+
+#if 0
+	sos_gps_on = true;
+	sos_wait_gps = true;
+
+	k_timer_start(&sos_wait_gps_timer, K_MSEC(3*60*1000), NULL);
+#else
+	last_fix.pvt.datetime.year = 2020;
+	last_fix.pvt.datetime.month = 11;
+	last_fix.pvt.datetime.day = 4;
+	last_fix.pvt.datetime.hour = 2;
+	last_fix.pvt.datetime.minute = 20;
+	last_fix.pvt.datetime.seconds = 40;
+	last_fix.pvt.longitude = 114.025254;
+	last_fix.pvt.latitude = 22.667808;
+
+	SOS_Ask_GPS_Data_timerout(NULL);
+#endif
+}
+
+void SOS_Ask_GPS_off(void)
+{
+	sos_gps_off = true;
+}
 void gps_data_receive(void)
 {
 	nrf_gnss_data_frame_t gps_data;
@@ -679,73 +716,26 @@ void gps_data_receive(void)
 
 		update_terminal = false;
 
-		if(((k_uptime_get() - fix_timestamp) >= 5) && (APP_wait_gps))
+		if(((k_uptime_get() - fix_timestamp) >= 5) && (APP_wait_gps||sos_wait_gps))
 		{
-			u8_t str_gps[20] = {0};
-			u32_t tmp1;
-			double tmp2;
-
+			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
+				k_timer_stop(&app_wait_gps_timer);
 			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
 				k_timer_stop(&app_wait_gps_timer);
 
-			APP_wait_gps = false;
 			gps_off();
 
-			//UTC date&time
-			//year
-			str_gps[0] = last_fix.pvt.datetime.year>>8;
-			str_gps[1] = (u8_t)(last_fix.pvt.datetime.year&0x00FF);
-			//month
-			str_gps[2] = last_fix.pvt.datetime.month;
-			//day
-			str_gps[3] = last_fix.pvt.datetime.day;
-			//hour
-			str_gps[4] = last_fix.pvt.datetime.hour;
-			//minute
-			str_gps[5] = last_fix.pvt.datetime.minute;
-			//seconds
-			str_gps[6] = last_fix.pvt.datetime.seconds;
-
-			//longitude
-			str_gps[7] = 'E';
-			if(last_fix.pvt.longitude < 0)
+			if(APP_wait_gps)
 			{
-				str_gps[7] = 'W';
-				last_fix.pvt.longitude = -last_fix.pvt.longitude;
+				APP_get_location_data_reply(last_fix.pvt);
+				APP_wait_gps = false;
 			}
 
-			tmp1 = (u32_t)(last_fix.pvt.longitude);	//经度整数部分
-			tmp2 = last_fix.pvt.longitude - tmp1;	//经度小数部分
-			
-			str_gps[8] = tmp1;//整数部分
-			tmp1 = (u32_t)(tmp2*1000000);
-			str_gps[9] = (u8_t)(tmp1/10000);
-			tmp1 = tmp1%10000;
-			str_gps[10] = (u8_t)(tmp1/100);
-			tmp1 = tmp1%100;
-			str_gps[11] = (u8_t)(tmp1);
-			
-			//latitude
-			str_gps[12] = 'N';
-			if(last_fix.pvt.latitude < 0)
+			if(sos_wait_gps)
 			{
-				str_gps[12] = 'S';
-				last_fix.pvt.latitude = -last_fix.pvt.latitude;
+				sos_get_location_data_reply(last_fix.pvt);
+				sos_wait_gps = false;
 			}
-
-			tmp1 = (u32_t)(last_fix.pvt.latitude);	//经度整数部分
-			tmp2 = last_fix.pvt.latitude - tmp1;	//经度小数部分
-			
-			str_gps[13] = tmp1;//整数部分
-			tmp1 = (u32_t)(tmp2*1000000);
-			str_gps[14] = (u8_t)(tmp1/10000);
-			tmp1 = tmp1%10000;
-			str_gps[15] = (u8_t)(tmp1/100);
-			tmp1 = tmp1%100;
-			str_gps[16] = (u8_t)(tmp1);
-
-			APP_get_location_data_reply(str_gps, 17);
-
 			return;
 		}
 	}
@@ -774,8 +764,6 @@ void gps_init(void)
 	}
 
 	gps_is_inited = true;
-
-	k_timer_init(&gps_data_timer, gps_data_wait_timerout, NULL);
 }
 
 void gps_restart(void)
@@ -878,14 +866,16 @@ void gps_on(void)
 
 void GPSMsgProcess(void)
 {
-	if(app_gps_on)
+	if(app_gps_on || sos_gps_on)
 	{
 		app_gps_on = false;
+		sos_gps_on = false;
 		gps_on();
 	}
-	if(app_gps_off)
+	if(app_gps_off || sos_gps_off)
 	{
 		app_gps_off = false;
+		sos_gps_off = false;
 		gps_off();
 	}
 	if(gps_data_incoming)

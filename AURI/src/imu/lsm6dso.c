@@ -474,7 +474,7 @@ void curr_vrif_buffers(void)
 
 static float angle_analyse_fifo(void)
 {
-	volatile float angle_degree=0,avg_index=20;
+	volatile float angle_degree=0,avg_index=50;
 	volatile float start_avg_accel_x=0,start_avg_accel_y=0,start_avg_accel_z=0;
 	volatile float end_avg_accel_x=0, end_avg_accel_y=0, end_avg_accel_z=0;
 	volatile float num=0,denom=0;

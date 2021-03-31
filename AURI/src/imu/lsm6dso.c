@@ -8,6 +8,7 @@ Take 26Hz data rate
 #include <zephyr.h>
 #include <device.h>
 #include <sys/printk.h>
+#include <nrf_socket.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <string.h>
@@ -17,8 +18,10 @@ Take 26Hz data rate
 #include "lsm6dso_reg.h"
 #include "algorithm.h"
 #include "lcd.h"
+#include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "esp8266.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -43,6 +46,7 @@ static struct k_work imu_work;
 static uint8_t whoamI, rst;
 static uint16_t steps; //step counter
 
+
 static struct device *i2c_imu;
 static struct device *gpio_imu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
@@ -51,6 +55,7 @@ bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
 bool fall_testing = false;
 
+u8_t fall_trigger_time[16] = {0};
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
@@ -790,6 +795,112 @@ void lsm6dso_sensitivity(void)
 	uint8_t delay_time[2] = {0x00U, 0x32U};
 	//Lower Limit is 0 and Upper Limit is 50(32 in Hex), the delay time is 320ms
 	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
+}
+
+void fall_get_wifi_data_reply(wifi_infor wifi_data)
+{
+	u8_t reply[256] = {0};
+	u8_t tmpbuf[128] = {0};
+	u32_t i;
+
+	if(wifi_data.count > 0)
+	{
+		strcat(reply, "3,");
+		for(i=0;i<wifi_data.count;i++)
+		{
+			strcat(reply, wifi_data.node[i].mac);
+			strcat(reply, "&");
+			sprintf(tmpbuf, "%d", wifi_data.node[i].rssi);
+			strcat(reply, tmpbuf);
+			strcat(reply, "&");
+			if(i < (wifi_data.count-1))
+				strcat(reply, "|");
+		}
+	}
+
+	NBSendFallWifiData(reply, strlen(reply));
+}
+
+void fall_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+{
+	u8_t reply[128] = {0};
+	u8_t tmpbuf[8] = {0};
+	u32_t tmp1;
+	double tmp2;
+
+	//latitude
+	if(gps_data.latitude < 0)
+	{
+		strcat(reply, "-");
+		gps_data.latitude = -gps_data.latitude;
+	}
+
+	tmp1 = (u32_t)(gps_data.latitude);	//经度整数部分
+	tmp2 = gps_data.latitude - tmp1;		//经度小数部分
+	//integer
+	sprintf(tmpbuf, "%d", tmp1);
+	strcat(reply, tmpbuf);
+	//dot
+	strcat(reply, ".");
+	//decimal
+	tmp1 = (u32_t)(tmp2*1000000);
+	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/10000));
+	strcat(reply, tmpbuf);
+	tmp1 = tmp1%10000;
+	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/100));
+	strcat(reply, tmpbuf);	
+	tmp1 = tmp1%100;
+	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
+	strcat(reply, tmpbuf);
+
+	//semicolon
+	strcat(reply, ";");
+	
+	//longitude
+	if(gps_data.longitude < 0)
+	{
+		strcat(reply, "-");
+		gps_data.longitude = -gps_data.longitude;
+	}
+
+	tmp1 = (u32_t)(gps_data.longitude);	//经度整数部分
+	tmp2 = gps_data.longitude - tmp1;	//经度小数部分
+	//integer
+	sprintf(tmpbuf, "%d", tmp1);
+	strcat(reply, tmpbuf);
+	//dot
+	strcat(reply, ".");
+	//decimal
+	tmp1 = (u32_t)(tmp2*1000000);
+	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/10000));
+	strcat(reply, tmpbuf);	
+	tmp1 = tmp1%10000;
+	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/100));
+	strcat(reply, tmpbuf);	
+	tmp1 = tmp1%100;
+	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
+	strcat(reply, tmpbuf);
+
+	//semicolon
+	strcat(reply, ";");
+
+	//sos trigger time
+	strcat(reply, fall_trigger_time);
+
+	//semicolon
+	strcat(reply, ";");
+	
+	NBSendFallGpsData(reply, strlen(reply));
+}
+
+void FallAlarmStart(void)
+{
+	GetSystemTimeSecStrings(fall_trigger_time);
+
+	fall_wait_wifi = true;
+	APP_Ask_wifi_data();
+	fall_wait_gps = true;
+	APP_Ask_GPS_Data();
 }
 
 static void mt_fall_detection(struct k_work *work)

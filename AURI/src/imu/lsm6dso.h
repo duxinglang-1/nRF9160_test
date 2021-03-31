@@ -3,7 +3,9 @@
 #include <device.h>
 
 extern bool reset_steps;
+extern bool fall_wait_gps;
 
+extern u8_t fall_trigger_time[16];
 extern u16_t g_steps;
 extern u16_t g_calorie;
 extern u16_t g_distance;

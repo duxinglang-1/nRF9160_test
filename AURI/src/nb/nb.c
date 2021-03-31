@@ -26,6 +26,8 @@
 #include "datetime.h"
 #include "nb.h"
 #include "screen.h"
+#include "sos.h"
+#include "lsm6dso.h"
 #include "transfer_cache.h"
 
 #include <logging/log_ctrl.h>
@@ -776,7 +778,6 @@ void test_nb(void)
 
 	modem_configure();
 
-#if 1	//xb add 2021-01-14
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -863,9 +864,6 @@ void test_nb(void)
 		
 			break;
 		}
-
-		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, "222", strlen("222"));
-		k_sleep(K_MSEC(5000));
 	}
 
 	LOG_INF("Disconnecting MQTT client...\n");
@@ -882,7 +880,6 @@ void test_nb(void)
 		show_infor(tmpbuf);
 	#endif
 	}
-#endif	
 }
 
 void APP_Ask_NB(void)
@@ -1006,26 +1003,81 @@ void MqttSendData(u8_t *data, u32_t datalen)
 	}
 }
 
-void NBSendSosData(u8_t *data, u32_t datalen)
+void NBSendSosWifiData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	
+	LOG_INF("[%s] wifi data:%s len:%d\n", __func__, data, datalen);
+
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T1:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	strcat(buf, sos_trigger_time);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] sos wifi data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendSosGpsData(u8_t *data, u32_t datalen)
 {
 	u8_t buf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 	
 	LOG_INF("[%s] gps data:%s len:%d\n", __func__, data, datalen);
 
-	strcpy(buf, "{T0,");
+	strcpy(buf, "{T2,");
 	strcat(buf, g_imei);
 	strcat(buf, ",[");
 	strcat(buf, data);
-	strcat(buf, ";0;");
 	GetSystemTimeSecStrings(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "]}");
 
-	LOG_INF("[%s] sos data:%s\n", __func__, buf);
+	LOG_INF("[%s] sos gps data:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
 }
 
+void NBSendFallWifiData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	
+	LOG_INF("[%s] wifi data:%s len:%d\n", __func__, data, datalen);
+
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T3:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	strcat(buf, fall_trigger_time);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] fall wifi data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendFallGpsData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	
+	LOG_INF("[%s] gps data:%s len:%d\n", __func__, data, datalen);
+
+	strcpy(buf, "{T4,");
+	strcat(buf, g_imei);
+	strcat(buf, ",[");
+	strcat(buf, data);
+	GetSystemTimeSecStrings(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "]}");
+
+	LOG_INF("[%s] fall gps data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
 
 void GetModemInfor(void)
 {

@@ -37,7 +37,7 @@ bool add_data_into_cache(u8_t *data, u32_t len)
 			return false;
 	
 		memset(tail, 0, sizeof(DataNode));
-		tail->data = k_malloc(sizeof(len));
+		tail->data = k_malloc(len+1);
 		if(tail->data == NULL) 
 		{
 			k_free(tail);
@@ -46,6 +46,7 @@ bool add_data_into_cache(u8_t *data, u32_t len)
 		}
 		
 		tail->len = len;
+		memset(tail->data, 0, len+1);
 		memcpy(tail->data, data, len);
 
 		g_nb_cache.cache = tail;
@@ -73,7 +74,7 @@ bool add_data_into_cache(u8_t *data, u32_t len)
 			return false;
 
 		memset(pnew, 0, sizeof(DataNode));
-		pnew->data = k_malloc(sizeof(len));
+		pnew->data = k_malloc(len+1);
 		if(pnew->data == NULL) 
 		{
 			k_free(pnew);
@@ -82,6 +83,7 @@ bool add_data_into_cache(u8_t *data, u32_t len)
 		}
 		
 		pnew->len = len;
+		memset(pnew->data, 0, len+1);
 		memcpy(pnew->data, data, len);
 
 		tail->next = pnew;

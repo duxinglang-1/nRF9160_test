@@ -62,6 +62,7 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define INSERT_WHITELIST_ID`	0xFF59			//将手机ID插入白名单
 #define DEVICE_SEND_128_RAND_ID	0xFF60			//手环发送随机的128位随机数
 #define PHONE_SEND_128_AES_ID	0xFF61			//手机发送AES 128 CBC加密数据给手环
+#define WIFI_SCAN_DATA_ID		0xFF62			//扫描到的wifi信号数据
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
 #define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
@@ -88,7 +89,6 @@ struct uart_data_t
 };
 
 bool BLE_is_connected = false;
-bool APP_wait_gps = false;
 
 u8_t ble_mac_addr[6] = {0};
 u8_t str_nrf52810_ver[128] = {0};
@@ -160,6 +160,16 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		tp_y = buf[9]*0x100+buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
+}
+
+void wifi_sacn_notify_handle(u8_t *buf, u32_t len)
+{
+	u8_t tmpbuf[128] = {0};
+	u8_t tp_type = TP_EVENT_MAX;
+	u16_t tp_x,tp_y;
+	
+	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	
 }
 
 void APP_set_find_device(u8_t *buf, u32_t len)
@@ -612,6 +622,7 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 
 void APP_get_location_data(u8_t *buf, u32_t len)
 {
+	ble_wait_gps = true;
 	APP_Ask_GPS_Data();
 }
 
@@ -1193,6 +1204,9 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 		break;
 	case CTP_NOTIFY_ID:
 		CTP_notify_handle(buf, len);
+		break;
+	case WIFI_SCAN_DATA_ID:
+		wifi_sacn_notify_handle(buf, len);
 		break;
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);

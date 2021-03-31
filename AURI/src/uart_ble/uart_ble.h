@@ -32,7 +32,6 @@ typedef enum
 	BLE_MODE_MAX
 }ENUM_BLE_MODE;
 
-extern bool APP_wait_gps;
 extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 

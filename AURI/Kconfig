@@ -60,6 +60,13 @@ config PEER_VERIFY
 	help
 		Set to 0 for VERIFY_NONE, 1 for VERIFY_OPTIONAL, and 2 for VERIFY_REQUIRED.
 
+config UDP_PSM_ENABLE
+	bool "Enable LTE Power Saving Mode"
+	default y
+
+config UDP_EDRX_ENABLE
+	bool "Enable LTE enhanced Discontinuous Reception"
+
 endmenu
 
 menu "Zephyr Kernel"

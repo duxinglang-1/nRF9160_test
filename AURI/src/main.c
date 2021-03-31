@@ -693,7 +693,8 @@ int main(void)
 		//TPMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
-
+		SOSMsgProc();
+		
 		ScreenMsgProcess();
 		k_cpu_idle();
 	}

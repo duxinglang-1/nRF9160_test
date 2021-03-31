@@ -165,12 +165,12 @@ void pmu_interrupt_proc(void)
 	do
 	{
 		MAX20353_ReadReg(REG_INT0, &int0);
-		LOG_INF("pmu_interrupt_proc REG_INT0:%02X\n", int0);
+		//LOG_INF("pmu_interrupt_proc REG_INT0:%02X\n", int0);
 
 		if((int0&0x40) == 0x40) //Charger status change INT  
 		{
 			MAX20353_ReadReg(REG_STATUS0, &status0);
-			LOG_INF("REG_STATUS0:%02X\n", status0);
+			//LOG_INF("REG_STATUS0:%02X\n", status0);
 			switch((status0&0x07))
 			{
 			case 0x00://Charger off
@@ -263,7 +263,7 @@ void pmu_interrupt_proc(void)
 
 		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
 		{
-			LOG_INF("Cannot get pin");
+			//LOG_INF("Cannot get pin");
 			break;
 		}
 	}while(!val);
@@ -283,7 +283,7 @@ void pmu_alert_proc(void)
 	u8_t MSB,LSB;
 
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
-	LOG_INF("pmu_alert_proc status:%02X\n", MSB);
+	//LOG_INF("pmu_alert_proc status:%02X\n", MSB);
 	if(MSB&0x40)
 	{
 		//EnVr (enable voltage reset alert)

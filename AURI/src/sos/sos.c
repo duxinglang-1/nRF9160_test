@@ -20,7 +20,9 @@
 #include "Max20353.h"
 #include "Alarm.h"
 #include "lcd.h"
+#include "gps.h"
 #include "screen.h"
+#include "esp8266.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -28,7 +30,9 @@ LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
 
 SOS_STATUS sos_state = SOS_STATUS_IDLE;
 
-bool sos_wait_gps = false;
+bool sos_trigger_flag = false;
+
+u8_t sos_trigger_time[16] = {0};
 
 static void SOSTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_timer, SOSTimerOutCallBack, NULL);
@@ -67,6 +71,30 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 		if(sos_state != SOS_STATUS_IDLE)
 			k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
 	}
+}
+
+void sos_get_wifi_data_reply(wifi_infor wifi_data)
+{
+	u8_t reply[256] = {0};
+	u8_t tmpbuf[128] = {0};
+	u32_t i;
+
+	if(wifi_data.count > 0)
+	{
+		strcat(reply, "3,");
+		for(i=0;i<wifi_data.count;i++)
+		{
+			strcat(reply, wifi_data.node[i].mac);
+			strcat(reply, "&");
+			sprintf(tmpbuf, "%d", wifi_data.node[i].rssi);
+			strcat(reply, tmpbuf);
+			strcat(reply, "&");
+			if(i < (wifi_data.count-1))
+				strcat(reply, "|");
+		}
+	}
+
+	NBSendSosWifiData(reply, strlen(reply));
 }
 
 void sos_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
@@ -127,23 +155,49 @@ void sos_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 	strcat(reply, tmpbuf);	
 	tmp1 = tmp1%100;
 	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
-	strcat(reply, tmpbuf);	
+	strcat(reply, tmpbuf);
 
-	NBSendSosData(reply, strlen(reply));
+	//semicolon
+	strcat(reply, ";");
+
+	//sos trigger time
+	strcat(reply, sos_trigger_time);
+
+	//semicolon
+	strcat(reply, ";");
+	
+	NBSendSosGpsData(reply, strlen(reply));
+}
+
+void SOSTrigger(void)
+{
+	sos_trigger_flag = true;
 }
 
 void SOSStart(void)
 {
+	LOG_INF("[%s]\n", __func__);
+
 	sos_state = SOS_STATUS_SENDING;
 
 	EnterSOSScreen();
 
-	SOS_Ask_GPS_Data();
+	GetSystemTimeSecStrings(sos_trigger_time);
+
+	sos_wait_wifi = true;
+	APP_Ask_wifi_data();
+	sos_wait_gps = true;
+	APP_Ask_GPS_Data();
+
 	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
 }
 
 void SOSMsgProc(void)
 {
-	
+	if(sos_trigger_flag)
+	{
+		SOSStart();
+		sos_trigger_flag = false;
+	}
 }
 

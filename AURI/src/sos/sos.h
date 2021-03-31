@@ -29,7 +29,7 @@ typedef enum
 }SOS_STATUS;
 
 extern SOS_STATUS sos_state;
-extern bool sos_wait_gps;
+extern u8_t sos_trigger_time[16];
 
 extern void SOSStart(void);
 extern void SOSCancel(void);

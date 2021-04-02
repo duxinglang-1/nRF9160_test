@@ -90,7 +90,8 @@ void APP_Ask_wifi_data(void)
 		strcpy(wifi_data.node[i].mac, str_mac[i]);
 	}
 
-	APP_Ask_wifi_Data_timerout(NULL);
+	//APP_Ask_wifi_Data_timerout(NULL);
+	k_timer_start(&wifi_scan_timer, K_MSEC(30*1000), NULL);
 #endif	
 }
 

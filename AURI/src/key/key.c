@@ -58,7 +58,7 @@ extern bool app_gps_on;
 
 bool is_wearing(void)
 {
-	return touch_flag;
+	return true;//touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
@@ -81,7 +81,10 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			EntryMainMenuScreen();
+			if(!SOSIsRunning())
+			{
+				EntryIdleScreen();
+			}
 			break;
 		case KEY_LONG_PRESS:
 			SOSStart();
@@ -94,7 +97,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			EntryIdleScreen();
+			EntryMainMenuScreen();
 			break;
 		case KEY_LONG_PRESS:
 			sys_pwr_off = true;
@@ -102,6 +105,9 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		}
 		break;
 	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
+		if(SOSIsRunning())
+			break;
+		
 		switch(key_type)
 		{
 		case KEY_DOWN://´÷ÉÏ

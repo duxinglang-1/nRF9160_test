@@ -34,6 +34,10 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
+//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
+
+#define MQTT_CONNECTED_KEEP_TIME	(1*60)
+
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
 static void MqttDisConnectCallBack(struct k_timer *timer_id);
@@ -43,8 +47,6 @@ static struct k_work_q *app_work_q;
 static struct k_work nb_link_work;
 static struct k_delayed_work mqtt_link_work;
 static struct k_delayed_work mqtt_send_work;
-
-//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
@@ -642,7 +644,7 @@ static void MqttDisConnectCallBack(struct k_timer *timer_id)
 static void MqttDicConnectStart(void)
 {
 	LOG_INF("%s: begin\n", __func__);
-	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5*60), NULL);
+	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), NULL);
 }
 
 static void MqttDicConnectStop(void)

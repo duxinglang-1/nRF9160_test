@@ -899,8 +899,8 @@ void FallAlarmStart(void)
 
 	fall_wait_wifi = true;
 	APP_Ask_wifi_data();
-	fall_wait_gps = true;
-	APP_Ask_GPS_Data();
+	//fall_wait_gps = true;
+	//APP_Ask_GPS_Data();
 }
 
 static void mt_fall_detection(struct k_work *work)
@@ -949,6 +949,7 @@ static void mt_fall_detection(struct k_work *work)
 			fall_result = false;
 			lcd_sleep_out = true;
 			EnterFallScreen();
+			FallAlarmStart();
 		}
         else
         {

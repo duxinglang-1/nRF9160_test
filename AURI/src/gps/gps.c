@@ -576,7 +576,13 @@ void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 	double tmp2;
 
 	app_gps_off = true;
-	app_gps_send = true;
+
+	if(ble_wait_gps)
+		ble_wait_gps = false;
+	if(sos_wait_gps)
+		sos_wait_gps = false;
+	if(fall_wait_gps)
+		fall_wait_gps = false;
 }
 
 void APP_Ask_GPS_Data(void)

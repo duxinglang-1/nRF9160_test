@@ -21,7 +21,6 @@
 #define IMEI_MAX_LEN	(15)
 #define IMSI_MAX_LEN	(15)
 
-
 typedef enum
 {
 	NB_SIG_LEVEL_NO,

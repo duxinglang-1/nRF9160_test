@@ -479,7 +479,6 @@ void GetSystemTimeSecStrings(u8_t *str_utc)
 	u32_t i;
 	u32_t total_sec,total_day=0;
 
-	LOG_INF("[%s] %04d/%02d/%02d %02d:%02d:%02d\n", __func__, date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
 
 	if(date_time.year >= SEC_START_YEAR)
 	{
@@ -516,7 +515,6 @@ void GetSystemTimeSecStrings(u8_t *str_utc)
 		}
 
 		total_sec = total_day*SEC_PER_DAY+date_time.hour*SEC_PER_HOUR+date_time.minute*SEC_PER_MINUTE+date_time.second;
-		LOG_INF("[%s] total_day:%d, total_sec:%d\n", __func__, total_day, total_sec);
 
 		sprintf(str_utc, "%d", total_sec);
 	}

@@ -18,9 +18,8 @@
 #define CMD_SET_NW_MODE		"AT%XSYSTEMMODE=0,1,1,0"	//Preferred network mode: Narrowband-IoT and GPS
 #define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
 
-#define IMEI_MAX_LEN	(15+1)
-#define IMSI_MAX_LEN	(15+1)
-
+#define IMEI_MAX_LEN	(15)
+#define IMSI_MAX_LEN	(15)
 
 typedef enum
 {
@@ -37,3 +36,4 @@ extern NB_SIGNL_LEVEL g_nb_sig;
 
 extern void NB_init(struct k_work_q *work_q);
 extern void NBMsgProcess(void);
+extern void NBSendSosData(u8_t *data, u32_t datalen);

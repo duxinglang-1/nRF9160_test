@@ -60,6 +60,7 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define INSERT_WHITELIST_ID`	0xFF59			//将手机ID插入白名单
 #define DEVICE_SEND_128_RAND_ID	0xFF60			//手环发送随机的128位随机数
 #define PHONE_SEND_128_AES_ID	0xFF61			//手机发送AES 128 CBC加密数据给手环
+#define WIFI_SCAN_DATA_ID		0xFF62			//扫描到的wifi信号数据
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
 #define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
@@ -86,7 +87,6 @@ struct uart_data_t
 };
 
 bool BLE_is_connected = false;
-bool APP_wait_gps = false;
 
 u8_t ble_mac_addr[6] = {0};
 u8_t str_nrf52810_ver[128] = {0};
@@ -158,6 +158,16 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		tp_y = buf[9]*0x100+buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
+}
+
+void wifi_sacn_notify_handle(u8_t *buf, u32_t len)
+{
+	u8_t tmpbuf[128] = {0};
+	u8_t tp_type = TP_EVENT_MAX;
+	u16_t tp_x,tp_y;
+	
+	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
+	
 }
 
 void APP_set_find_device(u8_t *buf, u32_t len)
@@ -610,13 +620,17 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 
 void APP_get_location_data(u8_t *buf, u32_t len)
 {
+	ble_wait_gps = true;
 	APP_Ask_GPS_Data();
 }
 
-void APP_get_location_data_reply(u8_t *buf, u32_t len)
+void APP_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 {
+	u8_t tmpgps;
 	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
+	u32_t tmp1;
+	double tmp2;
 
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -630,26 +644,67 @@ void APP_get_location_data_reply(u8_t *buf, u32_t len)
 	reply[reply_len++] = 0x80;
 	//control
 	reply[reply_len++] = 0x00;
+	
 	//UTC data&time
-	reply[reply_len++] = buf[0];//h-byte year
-	reply[reply_len++] = buf[1];//l-byte year
-	reply[reply_len++] = buf[2];//month
-	reply[reply_len++] = buf[3];//day
-	reply[reply_len++] = buf[4];//hour
-	reply[reply_len++] = buf[5];//minute
-	reply[reply_len++] = buf[6];//seconds
+	//year
+	reply[reply_len++] = gps_data.datetime.year>>8;
+	reply[reply_len++] = (u8_t)(gps_data.datetime.year&0x00FF);
+	//month
+	reply[reply_len++] = gps_data.datetime.month;
+	//day
+	reply[reply_len++] = gps_data.datetime.day;
+	//hour
+	reply[reply_len++] = gps_data.datetime.hour;
+	//minute
+	reply[reply_len++] = gps_data.datetime.minute;
+	//seconds
+	reply[reply_len++] = gps_data.datetime.seconds;
+	
 	//longitude
-	reply[reply_len++] = buf[7];//direction	E\W
-	reply[reply_len++] = buf[8];//degree int
-	reply[reply_len++] = buf[9];//degree dot1~2
-	reply[reply_len++] = buf[10];//degree dot3~4
-	reply[reply_len++] = buf[11];//degree dot5~6
+	tmpgps = 'E';
+	if(gps_data.longitude < 0)
+	{
+		tmpgps = 'W';
+		gps_data.longitude = -gps_data.longitude;
+	}
+	//direction	E\W
+	reply[reply_len++] = tmpgps;
+	tmp1 = (u32_t)(gps_data.longitude); //经度整数部分
+	tmp2 = gps_data.longitude - tmp1;	//经度小数部分
+	//degree int
+	reply[reply_len++] = tmp1;//整数部分
+	tmp1 = (u32_t)(tmp2*1000000);
+	//degree dot1~2
+	reply[reply_len++] = (u8_t)(tmp1/10000);
+	tmp1 = tmp1%10000;
+	//degree dot3~4
+	reply[reply_len++] = (u8_t)(tmp1/100);
+	tmp1 = tmp1%100;
+	//degree dot5~6
+	reply[reply_len++] = (u8_t)(tmp1);	
 	//latitude
-	reply[reply_len++] = buf[12];//direction	N\S
-	reply[reply_len++] = buf[13];//degree int
-	reply[reply_len++] = buf[14];//degree dot1~2
-	reply[reply_len++] = buf[15];//degree dot3~4
-	reply[reply_len++] = buf[16];//degree dot5~6
+	tmpgps = 'N';
+	if(gps_data.latitude < 0)
+	{
+		tmpgps = 'S';
+		gps_data.latitude = -gps_data.latitude;
+	}
+	//direction N\S
+	reply[reply_len++] = tmpgps;
+	tmp1 = (u32_t)(gps_data.latitude);	//经度整数部分
+	tmp2 = gps_data.latitude - tmp1;	//经度小数部分
+	//degree int
+	reply[reply_len++] = tmp1;//整数部分
+	tmp1 = (u32_t)(tmp2*1000000);
+	//degree dot1~2
+	reply[reply_len++] = (u8_t)(tmp1/10000);
+	tmp1 = tmp1%10000;
+	//degree dot3~4
+	reply[reply_len++] = (u8_t)(tmp1/100);
+	tmp1 = tmp1%100;
+	//degree dot5~6
+	reply[reply_len++] = (u8_t)(tmp1);
+					
 	//CRC
 	reply[reply_len++] = 0x00;
 	//packet end
@@ -1148,6 +1203,9 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case CTP_NOTIFY_ID:
 		CTP_notify_handle(buf, len);
 		break;
+	case WIFI_SCAN_DATA_ID:
+		wifi_sacn_notify_handle(buf, len);
+		break;
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);
 		break;
@@ -1176,6 +1234,12 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
 	LOG_INF("uart_rece:%02X\n", data);
+	
+	if(data == 0xAB)
+	{
+		memset(rx_buf, 0, sizeof(rx_buf));
+		rece_len = 0;
+	}
 	
 	rx_buf[rece_len++] = data;
 	if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	//receivive complete

@@ -524,10 +524,10 @@ void test_flash(void)
 	//LCD_ShowString(0,100,"FLASH写入图片4成功!");
 
 	//写入数据
-	LCD_ShowString(0,80,"FLASH写入RM_LOGO图片数据...");
+	//LCD_ShowString(0,80,"FLASH写入RM_LOGO图片数据...");
 	//SpiFlash_Write_Buf(RM_LOGO_240X240_1, IMG_RM_LOGO_240X240_ADDR, 57608);
-	SpiFlash_Write_Buf(RM_LOGO_240X240_2, IMG_RM_LOGO_240X240_ADDR+57608, 57600);
-	LCD_ShowString(0,100,"FLASH写入RM_LOGO图片成功!");	
+	//SpiFlash_Write_Buf(RM_LOGO_240X240_2, IMG_RM_LOGO_240X240_ADDR+57608, 57600);
+	//LCD_ShowString(0,100,"FLASH写入RM_LOGO图片成功!");	
 #endif
 
 #if 0
@@ -549,11 +549,11 @@ void test_flash(void)
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
+	//LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
 	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
 	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+(2726*32)*1, (2726*32));
-	SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
-	LCD_ShowString(0,100,"FLASH写入16X16中文成功");
+	//SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
+	//LCD_ShowString(0,100,"FLASH写入16X16中文成功");
 #endif
 
 #if 0

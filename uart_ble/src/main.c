@@ -626,7 +626,7 @@ void system_init(void)
 	flash_init();
 	LCD_Init();
 	
-	//ShowBootUpLogo();
+	ShowBootUpLogo();
 
 	key_init();
 	IMU_init(&imu_work_q);
@@ -684,7 +684,8 @@ int main(void)
 		//TPMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
-
+		SOSMsgProc();
+		
 		ScreenMsgProcess();
 		k_cpu_idle();
 	}

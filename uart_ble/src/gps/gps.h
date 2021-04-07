@@ -12,5 +12,9 @@
 extern bool app_gps_on;
 extern bool app_gps_off;
 
+extern bool ble_wait_gps;
+extern bool sos_wait_gps;
+extern bool fall_wait_gps;
+
 extern void gps_init(void);
 extern void GPSMsgProcess(void);

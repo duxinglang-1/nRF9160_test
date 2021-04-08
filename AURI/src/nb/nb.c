@@ -1081,6 +1081,47 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+static int configure_low_power(void)
+{
+	int err;
+
+#if defined(CONFIG_LTE_PSM_ENABLE)
+	/** Power Saving Mode */
+	err = lte_lc_psm_req(true);
+	if (err) {
+		LOG_INF("lte_lc_psm_req, error: %d\n", err);
+	}
+#else
+	err = lte_lc_psm_req(false);
+	if (err) {
+		LOG_INF("lte_lc_psm_req, error: %d\n", err);
+	}
+#endif
+
+#if defined(CONFIG_LTE_EDRX_ENABLE)
+	/** enhanced Discontinuous Reception */
+	err = lte_lc_edrx_req(true);
+	if (err) {
+		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
+	}
+#else
+	err = lte_lc_edrx_req(false);
+	if (err) {
+		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
+	}
+#endif
+
+#if defined(CONFIG_LTE_RAI_ENABLE)
+	/** Release Assistance Indication  */
+	err = lte_lc_rai_req(true);
+	if (err) {
+		LOG_INF("lte_lc_rai_req, error: %d\n", err);
+	}
+#endif
+
+	return err;
+}
+
 void GetModemInfor(void)
 {
 	char *ptr;
@@ -1126,14 +1167,27 @@ void GetModemInfor(void)
 	modem_rsrp_handler(atoi(strbuf));
 }
 
+static void SetModemTurnOff(void)
+{
+	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) != 0)
+	{
+		LOG_INF("Can't turn off modem!");
+		return;
+	}	
+	LOG_INF("turn off modem success!");
+}
+
 static void nb_link(struct k_work *work)
 {
 	int err;
+
+	configure_low_power();
 
 	err = lte_lc_init_and_connect();
 	if(err)
 	{
 		LOG_INF("Can't connected to LTE network");
+		SetModemTurnOff();
 	}
 	else
 	{

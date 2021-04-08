@@ -58,7 +58,7 @@ extern bool app_gps_on;
 
 bool is_wearing(void)
 {
-	return true;//touch_flag;
+	return touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)

@@ -104,7 +104,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 {
 	LOG_INF("uart_rece:%02X\n", data);
 
-#if 0	
+#if 0
 	if(data == 0xAB)
 	{
 		memset(rx_buf, 0, sizeof(rx_buf));

@@ -1338,4 +1338,3 @@ void test_uart_ble(void)
 		k_sleep(K_MSEC(1000));
 	}
 }
-

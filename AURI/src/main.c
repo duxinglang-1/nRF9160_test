@@ -636,7 +636,7 @@ void system_init(void)
 
 	key_init();
 	IMU_init(&imu_work_q);
-	audio_init();
+	//audio_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 	NB_init(&nb_work_q);
 	
@@ -646,9 +646,9 @@ void system_init(void)
 void work_init(void)
 {
 	k_work_q_start(&nb_work_q, nb_stack_area,
-		       		K_THREAD_STACK_SIZEOF(nb_stack_area),
-		       		CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
-    k_work_q_start(&imu_work_q, imu_stack_area,
+					K_THREAD_STACK_SIZEOF(nb_stack_area),
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+	k_work_q_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
 }

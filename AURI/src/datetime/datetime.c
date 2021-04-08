@@ -38,8 +38,6 @@ LOG_MODULE_REGISTER(datetime, CONFIG_LOG_DEFAULT_LEVEL);
 #define SEC_PER_SMALL_YEAR	(SEC_PER_DAY*365)
 #define SEC_PER_BIG_YEAR	(SEC_PER_DAY*366)
 
-static struct k_timer clock_timer;
-
 sys_date_timer_t date_time = {0};
 sys_date_timer_t last_date_time = {0};
 
@@ -51,6 +49,9 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
+
+static void clock_timer_handler(struct k_timer *timer);
+K_TIMER_DEFINE(clock_timer, clock_timer_handler, NULL);
 
 u8_t CheckYearIsLeap(u32_t years)
 {
@@ -450,8 +451,12 @@ static void clock_timer_handler(struct k_timer *timer)
 
 void StartSystemDateTime(void)
 {
-	k_timer_init(&clock_timer, clock_timer_handler, NULL);
 	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
+}
+
+void StopSystemDateTime(void)
+{
+	k_timer_stop(&clock_timer);
 }
 
 bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
@@ -669,6 +674,9 @@ void TimeMsgProcess(void)
 		sys_time_count = false;
 		UpdateSystemTime();
 
+		if(lcd_is_sleeping)
+			return;
+		
 		if(screen_id == SCREEN_ID_IDLE)
 		{
 			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))

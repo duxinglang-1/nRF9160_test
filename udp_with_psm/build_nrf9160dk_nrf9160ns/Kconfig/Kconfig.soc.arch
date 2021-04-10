@@ -1,0 +1,2 @@
+osource "D:/software/nrf9160/ncs1.4.0/zephyr/soc/$(ARCH)/Kconfig"
+osource "D:/software/nrf9160/ncs1.4.0/zephyr/soc/$(ARCH)/*/Kconfig"

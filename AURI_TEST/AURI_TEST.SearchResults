@@ -1,0 +1,8 @@
+---- lcd_sleep_in Matches (7 in 5 files) ----
+Lcd.c (src\lcd):bool lcd_sleep_in = false;
+Lcd.c (src\lcd):	if(lcd_sleep_in)
+Lcd.c (src\lcd):		lcd_sleep_in = false;
+Lcd.h (src\lcd):extern bool lcd_sleep_in;
+LCD_ORCT012210N_ST7789V2.c (src\lcd):	lcd_sleep_in = true;
+LCD_R108101_GC9307.c (src\lcd):	lcd_sleep_in = true;
+LCD_VGM068A4W01_SH1106G.c (src\lcd):	lcd_sleep_in = true;

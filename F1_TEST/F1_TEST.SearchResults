@@ -1,0 +1,4 @@
+---- EnterIdleScreen Matches (3 in 3 files) ----
+Main.c (src):	EnterIdleScreen();
+Screen.c (src\screen):void EnterIdleScreen(void)
+Screen.h (src\screen):extern void EnterIdleScreen(void);

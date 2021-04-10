@@ -3,7 +3,6 @@
 *
 * SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
 */
-
 #include <zephyr.h>
 #include <stdio.h>
 #include <zephyr/types.h>

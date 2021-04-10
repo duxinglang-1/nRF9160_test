@@ -174,11 +174,26 @@ void SOSTrigger(void)
 	sos_trigger_flag = true;
 }
 
+bool SOSIsRunning(void)
+{
+	if(sos_state > SOS_STATUS_IDLE)
+	{
+		LOG_INF("[%s] true\n", __func__);
+		return true;
+	}
+	else
+	{
+		LOG_INF("[%s] false\n", __func__);
+		return false;
+	}
+}
+
 void SOSStart(void)
 {
 	LOG_INF("[%s]\n", __func__);
 
-	//sos_state = SOS_STATUS_SENDING;
+	lcd_sleep_out = true;
+	sos_state = SOS_STATUS_SENDING;
 	//EnterSOSScreen();
 
 	GetSystemTimeSecStrings(sos_trigger_time);

@@ -1,0 +1,4 @@
+---- peppa_pig_320X320 Matches (3 in 3 files) ----
+External_flash.c (src\external_flash):	//SpiFlash_Write_Buf(peppa_pig_320X320, IMG_PEPPA_320X320_ADDR, IMG_PEPPA_320X320_SIZE);
+Img.c (src\image):unsigned char peppa_pig_320X320[204808] = { 0X10,0X10,0X01,0X40,0X01,0X40,0X01,0X1B,
+Img.h (src\image):extern unsigned char peppa_pig_320X320[204808];

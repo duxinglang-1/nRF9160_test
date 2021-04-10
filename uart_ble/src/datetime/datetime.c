@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "lsm6dso.h"
+#include "max20353.h"
 #include "screen.h"
 #include "ucs2.h"
 
@@ -24,7 +25,18 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(datetime, CONFIG_LOG_DEFAULT_LEVEL);
 
-static struct k_timer clock_timer;
+#define SEC_START_YEAR		1970
+#define SEC_START_MONTH		1
+#define SEC_START_DAY		1
+#define SEC_START_HOUR		0
+#define SEC_START_MINUTE	0
+#define SEC_START_SECOND	0
+
+#define SEC_PER_MINUTE		60
+#define SEC_PER_HOUR		(SEC_PER_MINUTE*60)
+#define SEC_PER_DAY			(SEC_PER_HOUR*24)
+#define SEC_PER_SMALL_YEAR	(SEC_PER_DAY*365)
+#define SEC_PER_BIG_YEAR	(SEC_PER_DAY*366)
 
 sys_date_timer_t date_time = {0};
 sys_date_timer_t last_date_time = {0};
@@ -37,6 +49,19 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
+u64_t beginstamp=0;
+
+static void clock_timer_handler(struct k_timer *timer);
+K_TIMER_DEFINE(clock_timer, clock_timer_handler, NULL);
+
+
+u8_t CheckYearIsLeap(u32_t years)
+{
+	if(((years%4 == 0) && (years%100 != 0))||(years%400 == 0))
+		return 1;
+	else
+		return 0;
+}
 
 u8_t GetWeekDayByDate(sys_date_timer_t date)
 {
@@ -48,13 +73,13 @@ u8_t GetWeekDayByDate(sys_date_timer_t date)
 
 	for(i=SYSTEM_STARTING_YEAR;i<date.year;i++)
 	{
-		if(i%4 == 0)	//闰年366天
+		if(((i%4 == 0)&&(i%100 != 0))||(i%400 == 0))	//闰年366天
 			count += 366;
 		else
 			count += 365;
 	}
 
-	if(date.year%4 == 0)
+	if(CheckYearIsLeap(date.year))
 		flag = 1;
 	
 	switch(date.month)
@@ -147,7 +172,7 @@ void DateIncreaseOne(sys_date_timer_t *date)
 	{
 		uint8_t Leap = 0;
 
-		if((*date).year%4 == 0)
+		if(CheckYearIsLeap((*date).year))
 			Leap = 1;
 		
 		if((*date).day > (28+Leap))
@@ -207,7 +232,7 @@ void DateDecreaseOne(sys_date_timer_t *date)
 		{
 			uint8_t Leap = 0;
 
-			if((*date).year%4 == 0)
+			if(CheckYearIsLeap((*date).year))
 				Leap = 1;
 
 			(*date).day = (28+Leap);
@@ -306,7 +331,7 @@ void RedrawSystemTime(void)
 void UpdateSystemTime(void)
 {
 	u64_t timestamp,timeskip;
-	static u64_t laststamp=0;
+
 	
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
 
@@ -314,7 +339,7 @@ void UpdateSystemTime(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
 	//timestamp = k_uptime_get();
-	//timeskip = timestamp - laststamp;
+	//timeskip = timestamp - beginstamp;
 	//laststamp = timestamp;
 
 	date_time.second++;	// += (timeskip/1000);
@@ -380,7 +405,7 @@ void UpdateSystemTime(void)
 				{
 					uint8_t Leap = 0;
 
-					if(date_time.year%4 == 0)
+					if(CheckYearIsLeap(date_time.year))
 						Leap = 1;
 					
 					if(date_time.day > (28+Leap))
@@ -428,8 +453,12 @@ static void clock_timer_handler(struct k_timer *timer)
 
 void StartSystemDateTime(void)
 {
-	k_timer_init(&clock_timer, clock_timer_handler, NULL);
 	k_timer_start(&clock_timer, K_MSEC(1000), K_MSEC(1000));
+}
+
+void StopSystemDateTime(void)
+{
+	k_timer_stop(&clock_timer);
 }
 
 bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
@@ -450,6 +479,52 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 	}
 	
 	return ret;
+}
+
+void GetSystemTimeSecStrings(u8_t *str_utc)
+{
+	u32_t i;
+	u32_t total_sec,total_day=0;
+
+
+	if(date_time.year >= SEC_START_YEAR)
+	{
+		total_day += (date_time.day-1);
+
+		for(i=1;i<date_time.month;i++)
+		{
+			switch(i)
+			{
+			case 1:
+			case 3:
+			case 5:
+			case 7:
+			case 8:
+			case 10:
+			case 12:
+				total_day += 31;
+				break;
+			case 2:
+				total_day += (28+(CheckYearIsLeap(date_time.year)));
+				break;
+			case 4:
+			case 6:
+			case 9:
+			case 11:
+				total_day += 30;
+				break;
+			}
+		}
+		
+		for(i=SEC_START_YEAR;i<date_time.year;i++)
+		{
+			total_day += (365+(CheckYearIsLeap(i)));
+		}
+
+		total_sec = total_day*SEC_PER_DAY+date_time.hour*SEC_PER_HOUR+date_time.minute*SEC_PER_MINUTE+date_time.second;
+
+		sprintf(str_utc, "%d", total_sec);
+	}
 }
 
 void GetSystemDateStrings(u8_t *str_date)
@@ -589,6 +664,9 @@ void TimeMsgProcess(void)
 		sys_time_count = false;
 		UpdateSystemTime();
 
+		if(lcd_is_sleeping)
+			return;
+		
 		if(screen_id == SCREEN_ID_IDLE)
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}

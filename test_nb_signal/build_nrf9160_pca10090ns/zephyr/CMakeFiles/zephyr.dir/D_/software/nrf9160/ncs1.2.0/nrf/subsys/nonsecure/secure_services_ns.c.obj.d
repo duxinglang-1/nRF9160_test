@@ -1,0 +1,24 @@
+zephyr/CMakeFiles/zephyr.dir/D_/software/nrf9160/ncs1.2.0/nrf/subsys/nonsecure/secure_services_ns.c.obj: \
+ D:/software/nrf9160/ncs1.2.0/nrf/subsys/nonsecure/secure_services_ns.c \
+ D:/software/nrf9160/my_projects/my_test/test_nb_signal/build_nrf9160_pca10090ns/zephyr/include/generated/autoconf.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/zephyr_stdint.h \
+ zephyr/include/generated/autoconf.h \
+ D:/software/nrf9160/ncs1.2.0/nrf/include/secure_services.h \
+ c:\gnuarmemb\lib\gcc\arm-none-eabi\8.3.1\include\stddef.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/zephyr/types.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/stdint.h \
+ D:/software/nrf9160/ncs1.2.0/nrf/include/fw_info.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/gcc.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/common.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/stdbool.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/sys/util.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/sys/__assert.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/sys/printk.h \
+ c:\gnuarmemb\lib\gcc\arm-none-eabi\8.3.1\include\stdarg.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/inttypes.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/linker/sections.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/linker/section_tags.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/string.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/bits/restrict.h \
+ zephyr/include/generated/pm_config.h

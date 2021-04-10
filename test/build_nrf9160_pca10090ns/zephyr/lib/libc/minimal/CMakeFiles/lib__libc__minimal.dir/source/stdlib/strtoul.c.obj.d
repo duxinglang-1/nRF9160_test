@@ -1,0 +1,21 @@
+zephyr/lib/libc/minimal/CMakeFiles/lib__libc__minimal.dir/source/stdlib/strtoul.c.obj: \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/source/stdlib/strtoul.c \
+ D:/software/nrf9160/my_projects/my_test/test/build_nrf9160_pca10090ns/zephyr/include/generated/autoconf.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/zephyr_stdint.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/limits.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/ctype.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/errno.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/sys/errno_private.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/gcc.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/common.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/stdbool.h \
+ zephyr/include/generated/syscalls/errno_private.h \
+ zephyr/include/generated/syscall_list.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/stdint.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/syscall.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/arch/syscall.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/arch/arm/aarch32/syscall.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/zephyr/types.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/minimal/include/stdlib.h \
+ c:\gnuarmemb\lib\gcc\arm-none-eabi\8.3.1\include\stddef.h

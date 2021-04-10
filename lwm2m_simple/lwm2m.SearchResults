@@ -1,0 +1,3 @@
+---- PM_MCUBOOT_SECONDARY_SIZE Matches (2 in 2 files) ----
+Lwm2m_device.c (src\lwm2m):#define CLIENT_FLASH_SIZE	PM_MCUBOOT_SECONDARY_SIZE
+Lwm2m_firmware.c (src\lwm2m):#define FLASH_BANK_SIZE			PM_MCUBOOT_SECONDARY_SIZE

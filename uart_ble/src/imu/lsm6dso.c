@@ -948,6 +948,7 @@ static void mt_fall_detection(struct k_work *work)
 			
 			fall_result = false;
 			lcd_sleep_out = true;
+			FallAlarmStart();
 		}
         else
         {

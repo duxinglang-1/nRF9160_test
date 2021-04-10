@@ -639,9 +639,9 @@ void system_init(void)
 void work_init(void)
 {
 	k_work_q_start(&nb_work_q, nb_stack_area,
-		       		K_THREAD_STACK_SIZEOF(nb_stack_area),
-		       		CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
-    k_work_q_start(&imu_work_q, imu_stack_area,
+					K_THREAD_STACK_SIZEOF(nb_stack_area),
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+	k_work_q_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
 }
@@ -687,6 +687,7 @@ int main(void)
 		SOSMsgProc();
 		
 		ScreenMsgProcess();
+		
 		k_cpu_idle();
 	}
 }

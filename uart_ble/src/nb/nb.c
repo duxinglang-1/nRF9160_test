@@ -307,8 +307,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 				data_print("Received: ", payload_buf,
 					p->message.payload.len);
 				/* Echo back received data */
-				data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE,
-					payload_buf, p->message.payload.len);
+				//data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE,
+				//	payload_buf, p->message.payload.len);
 			}
 			else
 			{
@@ -551,12 +551,12 @@ static void mqtt_link(struct k_work_q *work_q)
 		//k_sleep(K_MSEC(5000));
 	}
 
-	LOG_INF("Disconnecting MQTT client...\n");
+	LOG_INF("[%s]: Disconnecting MQTT client...\n", __func__);
 
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		LOG_INF("%s: Could not disconnect MQTT client. Error: %d\n", __func__, err);
+		LOG_INF("[%s]: Could not disconnect MQTT client. Error: %d\n", __func__, err);
 	}
 }
 
@@ -626,23 +626,23 @@ static void MqttDisConnect(void)
 {
 	int err;
 
-	LOG_INF("%s: begin\n", __func__);
+	LOG_INF("[%s]: begin\n", __func__);
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		LOG_INF("%s: Could not disconnect MQTT client. Error: %d\n", __func__, err);
+		LOG_INF("[%s]: Could not disconnect MQTT client. Error: %d\n", __func__, err);
 	}
 }
 
 static void MqttDisConnectCallBack(struct k_timer *timer_id)
 {
-	LOG_INF("%s: begin\n", __func__);
+	LOG_INF("[%s]: begin\n", __func__);
 	mqtt_disconnect_flag = true;
 }
 
 static void MqttDicConnectStart(void)
 {
-	LOG_INF("%s: begin\n", __func__);
+	LOG_INF("[%s]: begin\n", __func__);
 	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), NULL);
 }
 
@@ -1166,16 +1166,27 @@ void GetModemInfor(void)
 	modem_rsrp_handler(atoi(strbuf));
 }
 
+static void SetModemTurnOff(void)
+{
+	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) != 0)
+	{
+		LOG_INF("Can't turn off modem!");
+		return;
+	}	
+	LOG_INF("turn off modem success!");
+}
+
 static void nb_link(struct k_work *work)
 {
 	int err;
 
 	configure_low_power();
-	
+
 	err = lte_lc_init_and_connect();
 	if(err)
 	{
 		LOG_INF("Can't connected to LTE network");
+		SetModemTurnOff();
 	}
 	else
 	{

@@ -1,0 +1,101 @@
+<!DOCTYPE CrossStudio_Session_File>
+<session>
+ <Bookmarks/>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <BreakpointListItem trigger="" line="1382" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../src/main.c" useHWbreakpoint="false"/>
+  <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault;SecureFault"/>
+ </Breakpoints>
+ <ExecutionProfileWindow/>
+ <FrameBufferWindow>
+  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
+ </FrameBufferWindow>
+ <Memory1>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="zephyr/merged.hex" radix="16" sizeText="" addressText=""/>
+ </Memory1>
+ <Memory2>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="zephyr/merged.hex" radix="16" sizeText="" addressText=""/>
+ </Memory2>
+ <Memory3>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="zephyr/merged.hex" radix="16" sizeText="" addressText=""/>
+ </Memory3>
+ <Memory4>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="zephyr/merged.hex" radix="16" sizeText="" addressText=""/>
+ </Memory4>
+ <Project>
+  <ProjectSessionItem path="test_nbiot"/>
+  <ProjectSessionItem path="test_nbiot;zephyr/merged.hex"/>
+  <ProjectSessionItem path="test_nbiot;build"/>
+  <ProjectSessionItem path="test_nbiot;build;app/libapp.a"/>
+  <ProjectSessionItem path="test_nbiot;build;app/libapp.a;C_COMPILER__app_"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/ext/cjson/lib..__nrf__ext__cjson.a"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/ext/cjson/lib..__nrf__ext__cjson.a;C_COMPILER__.2e.2e__nrf__ext__cjson_"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/lib/bsdlib/lib..__nrf__lib__bsdlib.a"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/lib/bsdlib/lib..__nrf__lib__bsdlib.a;C_COMPILER__.2e.2e__nrf__lib__bsdlib_"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/subsys/net/lib/cloud/lib..__nrf__subsys__net__lib__cloud.a"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/subsys/net/lib/cloud/lib..__nrf__subsys__net__lib__cloud.a;C_COMPILER__.2e.2e__nrf__subsys__net__lib__cloud_"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/subsys/net/lib/nrf_cloud/lib..__nrf__subsys__net__lib__nrf_cloud.a"/>
+  <ProjectSessionItem path="test_nbiot;build;modules/nrf/subsys/net/lib/nrf_cloud/lib..__nrf__subsys__net__lib__nrf_cloud.a;C_COMPILER__.2e.2e__nrf__subsys__net__lib__nrf_cloud_"/>
+  <ProjectSessionItem path="test_nbiot;build;zephyr/kernel/libkernel.a"/>
+  <ProjectSessionItem path="test_nbiot;build;zephyr/kernel/libkernel.a;C_COMPILER__kernel_"/>
+ </Project>
+ <Register1>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/msp_ns;CPU/psp_ns;CPU/msp_s;CPU/psp_s;CPU/msplim_s;CPU/psplim_s;CPU/msplim_ns;CPU/psplim_ns;CPU/cfbp_s;CPU/cfbp_ns;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="zephyr/merged.hex" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register1>
+ <Register2>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/msp_ns;CPU/psp_ns;CPU/msp_s;CPU/psp_s;CPU/msplim_s;CPU/psplim_s;CPU/msplim_ns;CPU/psplim_ns;CPU/cfbp_s;CPU/cfbp_ns;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="zephyr/merged.hex" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register2>
+ <Register3>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/msp_ns;CPU/psp_ns;CPU/msp_s;CPU/psp_s;CPU/msplim_s;CPU/psplim_s;CPU/msplim_ns;CPU/psplim_ns;CPU/cfbp_s;CPU/cfbp_ns;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="zephyr/merged.hex" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register3>
+ <Register4>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/msp_ns;CPU/psp_ns;CPU/msp_s;CPU/psp_s;CPU/msplim_s;CPU/psplim_s;CPU/msplim_ns;CPU/psplim_ns;CPU/cfbp_s;CPU/cfbp_ns;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="zephyr/merged.hex" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register4>
+ <Threads>
+  <ThreadsWindow showLists=""/>
+ </Threads>
+ <TraceWindow>
+  <Trace enabled="Yes"/>
+ </TraceWindow>
+ <Watch1>
+  <Watches active="1" update="Never">
+   <Watchpoint expression="imei_buf" name="imei_buf" radix="16" linenumber="0" filename=""/>
+   <Watchpoint expression="client_id_buf" name="client_id_buf" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="shadow_base_topic" name="shadow_base_topic" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="accepted_topic" name="accepted_topic" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="rejected_topic" name="rejected_topic" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="update_delta_topic" name="update_delta_topic" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="update_topic" name="update_topic" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="shadow_get_topic" name="shadow_get_topic" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="nct" name="nct" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="hints" name="hints" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="*service" name="*service" radix="16" linenumber="0" filename=""/>
+  </Watches>
+ </Watch1>
+ <Watch2>
+  <Watches active="0" update="Never"/>
+ </Watch2>
+ <Watch3>
+  <Watches active="0" update="Never"/>
+ </Watch3>
+ <Watch4>
+  <Watches active="0" update="Never"/>
+ </Watch4>
+ <Files>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1414" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/main.c" selected="0" top="1402" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="502" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/zephyr/kernel/init.c" selected="0" top="489" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="439" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/zephyr/include/logging/log_core.h" selected="0" top="426" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="29" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/subsys/net/lib/cloud/cloud.c" selected="0" top="9" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="224" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/include/net/cloud.h" selected="0" top="207" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="89" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/subsys/net/lib/nrf_cloud/src/nrf_cloud.c" selected="0" top="74" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="122" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/subsys/net/lib/nrf_cloud/src/nrf_cloud_fsm.c" selected="0" top="109" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="119" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/subsys/net/lib/nrf_cloud/src/nrf_cloud_codec.c" selected="0" top="103" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="25" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/ext/cjson/cJSON_os.c" selected="0" top="9" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="208" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/ext/cjson/cJSON.c" selected="0" top="190" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="820" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/subsys/net/lib/nrf_cloud/src/nrf_cloud_transport.c" selected="0" top="808" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="874" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/cloud_codec/cloud_codec.c" selected="0" top="857" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="2885" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/zephyr/include/kernel.h" selected="0" top="2873" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="149" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/zephyr/include/net/socket_offload.h" selected="0" top="134" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="923" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../ncs1.2.0/nrf/lib/bsdlib/nrf91_sockets.c" selected="1" top="909" codecName=""/>
+ </Files>
+ <ARMCrossStudioWindow activeProject="zephyr/merged.hex" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Common" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
+</session>

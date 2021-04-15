@@ -552,7 +552,7 @@ int MAX20353_AppWrite(uint8_t dataoutlen)
 }
 
 int MAX20353_AppRead(uint8_t datainlen)
-{
+{
 	int ret;
 
 	ret = MAX20353_WriteReg(REG_AP_CMDOUT, appcmdoutvalue_);
@@ -864,13 +864,12 @@ void MAX20353_GetDeviceID(u8_t *Device_ID)
 	MAX20353_ReadReg(REG_HARDWARE_ID, Device_ID);
 }
 
-void MAX20353_Init(void)
+bool MAX20353_Init(void)
 {
 	MAX20353_GetDeviceID(&HardwareID);
 	if(HardwareID != MAX20353_HARDWARE_ID)
-	{
-		return;
-	}
+		return false;
+
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();	//1.8v  350mA
@@ -896,6 +895,8 @@ void MAX20353_Init(void)
 
 	//充电配置
 	MAX20353_ChargerInit();
+
+	return true;
 }
 
 #ifdef BATTERY_SOC_GAUGE	//xb add 2020-11-05 增加有关电量计的代码

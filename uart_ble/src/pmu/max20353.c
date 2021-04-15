@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
 
+static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -397,7 +398,10 @@ void pmu_init(void)
 	pmu_dev_ctx.read_reg  = platform_read;
 	pmu_dev_ctx.handle    = i2c_pmu;
 
-	MAX20353_Init();
+	pmu_check_ok = MAX20353_Init();
+	if(!pmu_check_ok)
+		return;
+	
 	MAX20353_InitData();
 }
 
@@ -511,50 +515,66 @@ void PMUMsgProcess(void)
 {
 	if(pmu_trige_flag)
 	{
-		pmu_interrupt_proc();
+		if(pmu_check_ok)
+			pmu_interrupt_proc();
+		
 		pmu_trige_flag = false;
 	}
 	
 	if(pmu_alert_flag)
 	{
-		pmu_alert_proc();
+		if(pmu_check_ok)
+			pmu_alert_proc();
+		
 		pmu_alert_flag = false;
 	}
 	
 	if(sys_pwr_off)
 	{
-		SystemShutDown();
+		if(pmu_check_ok)
+			SystemShutDown();
+		
 		sys_pwr_off = false;		
 	}
 	
 	if(vibrate_start_flag)
 	{
-		VibrateStart();
+		if(pmu_check_ok)
+			VibrateStart();
+		
 		vibrate_start_flag = false;
 	}
 	
 	if(vibrate_stop_flag)
 	{
-		VibrateStop();
+		if(pmu_check_ok)
+			VibrateStop();
+		
 		vibrate_stop_flag = false;
 	}
 
 	if(read_soc_status)
 	{
-		test_soc_status();
+		if(pmu_check_ok)
+			test_soc_status();
+		
 		read_soc_status = false;
 	}
 
 	if(pmu_redraw_bat_flag)
 	{
-		PMURedrawBatStatus();
+		if(pmu_check_ok)
+			PMURedrawBatStatus();
+		
 		pmu_redraw_bat_flag = false;
 	}
 
 #ifdef BATTERT_NTC_CHECK
 	if(pmu_check_temp_flag)
 	{
-		PMUUpdateTempForSOC();
+		if(pmu_check_ok)
+			PMUUpdateTempForSOC();
+		
 		pmu_check_temp_flag = false;
 	}
 #endif

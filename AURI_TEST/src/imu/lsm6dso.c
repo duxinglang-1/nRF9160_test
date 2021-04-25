@@ -43,9 +43,9 @@ LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
 static struct k_work_q *imu_work_q;
 static struct k_work imu_work;
 
+static bool imu_check_ok = false;
 static uint8_t whoamI, rst;
 static uint16_t steps; //step counter
-
 
 static struct device *i2c_imu;
 static struct device *gpio_imu;
@@ -137,11 +137,11 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-void sensor_init(void)
+bool sensor_init(void)
 {
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
 	if(whoamI != LSM6DSO_ID)
-		while(1);
+		return false;
 
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	do
@@ -218,6 +218,8 @@ void sensor_init(void)
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
+
+	return true;
 }
 
 void sensor_reset(void)
@@ -895,12 +897,12 @@ void fall_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 
 void FallAlarmStart(void)
 {
-	GetSystemTimeSecStrings(fall_trigger_time);
+	GetSystemTimeSecString(fall_trigger_time);
 
 	fall_wait_wifi = true;
 	APP_Ask_wifi_data();
-	//fall_wait_gps = true;
-	//APP_Ask_GPS_Data();
+	fall_wait_gps = true;
+	APP_Ask_GPS_Data();
 }
 
 static void mt_fall_detection(struct k_work *work)
@@ -909,6 +911,9 @@ static void mt_fall_detection(struct k_work *work)
 	{
 		int1_event = false;
 
+		if(!imu_check_ok)
+			return;
+		
 		if(!is_wearing())
 			return;
 		
@@ -937,6 +942,9 @@ static void mt_fall_detection(struct k_work *work)
 	if(int2_event) //fall
 	{
 		int2_event = false;
+
+		if(!imu_check_ok)
+			return;
 		
 		if(!is_wearing()||fall_testing)
 			return;
@@ -962,6 +970,10 @@ static void mt_fall_detection(struct k_work *work)
 	if(reset_steps)
 	{
 		reset_steps = false;
+
+		if(!imu_check_ok)
+			return;
+		
 		ReSetImuSteps();
 		imu_redraw_steps_flag = true;
 	}
@@ -969,18 +981,29 @@ static void mt_fall_detection(struct k_work *work)
 	if(imu_redraw_steps_flag)
 	{
 		imu_redraw_steps_flag = false;
+
+		if(!imu_check_ok)
+			return;
+		
 		IMURedrawSteps();
 	}
 
 	if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
+
+		if(!imu_check_ok)
+			return;
+		
 		UpdateSleepPara();
 	}
 }
 
 void IMU_init(struct k_work_q *work_q)
 {
+	imu_work_q = work_q;
+	k_work_init(&imu_work, mt_fall_detection);
+	
 	if(init_i2c() != 0)
 		return;
 	
@@ -990,14 +1013,14 @@ void IMU_init(struct k_work_q *work_q)
 	imu_dev_ctx.read_reg = platform_read;
 	imu_dev_ctx.handle = i2c_imu;
 
-	sensor_init();
+	imu_check_ok = sensor_init();
+	if(!imu_check_ok)
+		return;
+	
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
 	StartSleepTimeMonitor();
 
-	imu_work_q = work_q;
-	k_work_init(&imu_work, mt_fall_detection);
-	
 	LOG_INF("IMU_init done!\n");
 }
 

@@ -40,13 +40,14 @@ LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
+static void ParseDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(parse_data_timer, ParseDataCallBack, NULL);
 static void MqttDisConnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_disconnect_timer, MqttDisConnectCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work nb_link_work;
 static struct k_delayed_work mqtt_link_work;
-static struct k_delayed_work mqtt_send_work;
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
@@ -54,6 +55,7 @@ static struct modem_param_info modem_param;
 static bool nb_redraw_sig_flag = false;
 static bool get_modem_infor = false;
 static bool send_data_flag = false;
+static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -79,12 +81,14 @@ static struct pollfd fds;
 
 bool app_nb_on = false;
 bool nb_is_running = false;
+bool get_modem_info_flag = false;
 
 u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 u8_t g_imei[IMEI_MAX_LEN+1] = {0};
 
-static void NbSendDateStart(void);
-static void NbSendDateStop(void);
+static void NbSendDataStart(void);
+static void NbSendDataStop(void);
+static void MqttReceData(u8_t *data, u32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
@@ -283,16 +287,15 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		LOG_INF("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
 		subscribe();
 
-		NbSendDateStart();
+		NbSendDataStart();
 		MqttDicConnectStart();
-		//k_delayed_work_submit_to_queue(app_work_q, &mqtt_send_work, K_SECONDS(5));
 		break;
 
 	case MQTT_EVT_DISCONNECT:
 		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__, __LINE__, evt->result);
 		mqtt_connected = false;
 		
-		NbSendDateStop();
+		NbSendDataStop();
 		MqttDicConnectStop();
 		break;
 
@@ -310,6 +313,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 				/* Echo back received data */
 				//data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE,
 				//	payload_buf, p->message.payload.len);
+
+				MqttReceData(payload_buf, p->message.payload.len);
 			}
 			else
 			{
@@ -552,40 +557,12 @@ static void mqtt_link(struct k_work_q *work_q)
 		//k_sleep(K_MSEC(5000));
 	}
 
-	LOG_INF("Disconnecting MQTT client...\n");
+	LOG_INF("[%s]: Disconnecting MQTT client...\n", __func__);
 
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		LOG_INF("%s: Could not disconnect MQTT client. Error: %d\n", __func__, err);
-	}
-}
-
-static void mqtt_send(struct k_work_q *work_q)
-{
-	u8_t *p_data;
-	u32_t data_len,i=0;
-	int ret;
-
-	LOG_INF("%s: begin\n", __func__);
-	
-	while(1)
-	{
-		ret = get_data_from_cache(p_data, &data_len);
-		LOG_INF("%s: ret:%d, loop:%d\n", __func__, ret, ++i);
-		if(ret)
-		{
-			ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
-			if(!ret)
-			{
-				delete_data_from_cache();
-			}
-			k_sleep(K_MSEC(2000));
-		}
-		else
-		{
-			break;
-		}
+		LOG_INF("[%s]: Could not disconnect MQTT client. Error: %d\n", __func__, err);
 	}
 }
 
@@ -594,12 +571,12 @@ static void SendDataCallBack(struct k_timer *timer)
 	send_data_flag = true;
 }
 
-static void NbSendDateStart(void)
+static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(5000), NULL);
+	k_timer_start(&send_data_timer, K_MSEC(500), NULL);
 }
 
-static void NbSendDateStop(void)
+static void NbSendDataStop(void)
 {
 	k_timer_stop(&send_data_timer);
 }
@@ -610,13 +587,13 @@ static void NbSendData(void)
 	u32_t data_len;
 	int ret;
 
-	ret = get_data_from_cache(&p_data, &data_len);
+	ret = get_data_from_send_cache(&p_data, &data_len);
 	if(ret)
 	{
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
-			delete_data_from_cache();
+			delete_data_from_send_cache();
 		}
 
 		k_timer_start(&send_data_timer, K_MSEC(1000), NULL);
@@ -627,29 +604,23 @@ static void MqttDisConnect(void)
 {
 	int err;
 
-	LOG_INF("%s: begin\n", __func__);
+	LOG_INF("[%s]: begin\n", __func__);
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
 		LOG_INF("[%s]: Could not disconnect MQTT client. Error: %d\n", __func__, err);
 	}
-	
-	//err = mqtt_live(&client);
-	//if(err != 0)
-	//{
-	//	LOG_INF("[%s]: ERROR: mqtt_live %d\n", err);
-	//}
 }
 
 static void MqttDisConnectCallBack(struct k_timer *timer_id)
 {
-	LOG_INF("%s: begin\n", __func__);
+	LOG_INF("[%s]: begin\n", __func__);
 	mqtt_disconnect_flag = true;
 }
 
 static void MqttDicConnectStart(void)
 {
-	LOG_INF("%s: begin\n", __func__);
+	LOG_INF("[%s]: begin\n", __func__);
 	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), NULL);
 }
 
@@ -989,19 +960,18 @@ void GetModemDateTime(void)
 	SaveSystemDateTime();
 }
 
-void MqttSendData(u8_t *data, u32_t datalen)
+static void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_cache(data, datalen);
+	ret = add_data_into_send_cache(data, datalen);
 	LOG_INF("%s: data add ret:%d\n", __func__, ret);
 	
 	if(mqtt_connected)
 	{
 		LOG_INF("%s: begin 001\n", __func__);
-		//k_delayed_work_submit_to_queue(app_work_q, &mqtt_send_work, K_SECONDS(5));
 
-		NbSendDateStart();
+		NbSendDataStart();
 	}
 	else
 	{
@@ -1041,7 +1011,7 @@ void NBSendSosGpsData(u8_t *data, u32_t datalen)
 	strcat(buf, g_imei);
 	strcat(buf, ",[");
 	strcat(buf, data);
-	GetSystemTimeSecStrings(tmpbuf);
+	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "]}");
 
@@ -1079,12 +1049,209 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 	strcat(buf, g_imei);
 	strcat(buf, ",[");
 	strcat(buf, data);
-	GetSystemTimeSecStrings(tmpbuf);
+	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "]}");
 
 	LOG_INF("[%s] fall gps data:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendHealthData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	
+	strcpy(buf, "{1,1,0,0,");
+	strcat(buf, g_imei);
+	strcat(buf, ":T5:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] health data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendLocationData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	
+	strcpy(buf, "{1,1,0,0,");
+	strcat(buf, g_imei);
+	strcat(buf, ":T6:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] location data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+bool GetParaFromString(u8_t *rece, u32_t rece_len, u8_t *cmd, u8_t *data)
+{
+	u8_t *p1,*p2;
+	u32_t i=0;
+	
+	if(rece == NULL || cmd == NULL || rece_len == 0)
+		return false;
+
+	p1 = rece;
+	while((p1 != NULL) && ((p1-rece) < rece_len))
+	{
+		p2 = strstr(p1, ":");
+		if(p2 != NULL)
+		{
+			i++;
+			p1 = p2 + 1;
+			if(i == 5)
+				break;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	p2 = strstr(p1, ":");
+	if(p2 != NULL)
+	{
+		memcpy(cmd, p1, (p2-p1));
+
+		p1 = p2 + 1;
+		p2 = strstr(p1, "}");
+		if(p2 != NULL)
+		{
+			memcpy(data, p1, (p2-p1));
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void ParseData(u8_t *data, u32_t datalen)
+{
+	bool ret = false;
+	u8_t strcmd[10] = {0};
+	u8_t strdata[256] = {0};
+	
+	if(data == NULL || datalen == 0)
+		return;
+
+	ret = GetParaFromString(data, datalen, strcmd, strdata);
+	LOG_INF("[%s]: ret:%d, cmd:%s, data:%s\n", __func__, ret,strcmd,strdata);
+	if(ret)
+	{
+		if(strcmp(strcmd, "S7") == 0)
+		{
+			u8_t *ptr;
+			u8_t strtmp[128] = {0};
+
+			//后台下发定位上报间隔
+			ptr = strstr(strdata, ",");
+			if(ptr != NULL)
+			{
+				memcpy(strtmp, strdata, (ptr-strdata));
+				global_settings.dot_interval.time = atoi(strtmp);
+
+				ptr++;
+				memset(strtmp, 0, sizeof(strtmp));
+				strcpy(strtmp, ptr);
+				global_settings.dot_interval.steps = atoi(strtmp);
+			}
+		}
+		else if(strcmp(strcmd, "S8") == 0)
+		{
+			//后台下发健康检测间隔
+			global_settings.health_interval = atoi(strdata);
+			
+		}
+		else if(strcmp(strcmd, "S9") == 0)
+		{
+			//后台下发抬腕亮屏设置
+			global_settings.wake_screen_by_wrist = atoi(strdata);
+			
+		}
+		else if(strcmp(strcmd, "S10") == 0)
+		{
+			//后台下发脱腕检测设置
+			global_settings.wrist_off_check = atoi(strdata);
+			
+		}
+		else if(strcmp(strcmd, "S11") == 0)
+		{
+			u8_t *ptr;
+			u8_t strtmp[128] = {0};
+			
+			//后台下发血压校准值
+			ptr = strstr(strdata, ",");
+			if(ptr != NULL)
+			{
+				memcpy(strtmp, strdata, (ptr-strdata));
+				global_settings.bp_calibra.systolic = atoi(strtmp);
+
+				ptr++;
+				memset(strtmp, 0, sizeof(strtmp));
+				strcpy(strtmp, ptr);
+				global_settings.bp_calibra.diastolic = atoi(strtmp);
+			}
+		}
+
+		SaveSystemSettings();
+	}
+}
+
+static void ParseDataCallBack(struct k_timer *timer_id)
+{
+	parse_data_flag = true;
+}
+
+static void ParseReceData(void)
+{
+	u8_t *p_data;
+	u32_t data_len;
+	int ret;
+
+	ret = get_data_from_rece_cache(&p_data, &data_len);
+	if(ret)
+	{
+		ParseData(p_data, data_len);
+		delete_data_from_rece_cache();
+		
+		k_timer_start(&parse_data_timer, K_MSEC(100), NULL);
+	}
+}
+
+static void ParseReceDataStart(void)
+{
+	k_timer_start(&parse_data_timer, K_MSEC(500), NULL);
+}
+
+static void MqttReceData(u8_t *data, u32_t datalen)
+{
+	int ret;
+
+	ret = add_data_into_rece_cache(data, datalen);
+	LOG_INF("[%s]: data add ret:%d\n", __func__, ret);
+	
+	ParseReceDataStart();
 }
 
 static int configure_low_power(void)
@@ -1094,12 +1261,14 @@ static int configure_low_power(void)
 #if defined(CONFIG_LTE_PSM_ENABLE)
 	/** Power Saving Mode */
 	err = lte_lc_psm_req(true);
-	if (err) {
+	if(err)
+	{
 		LOG_INF("lte_lc_psm_req, error: %d\n", err);
 	}
 #else
 	err = lte_lc_psm_req(false);
-	if (err) {
+	if(err)
+	{
 		LOG_INF("lte_lc_psm_req, error: %d\n", err);
 	}
 #endif
@@ -1107,20 +1276,23 @@ static int configure_low_power(void)
 #if defined(CONFIG_LTE_EDRX_ENABLE)
 	/** enhanced Discontinuous Reception */
 	err = lte_lc_edrx_req(true);
-	if (err) {
+	if(err)
+	{
 		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
 	}
 #else
 	err = lte_lc_edrx_req(false);
-	if (err) {
+	if(err)
+	{
 		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
 	}
 #endif
 
 #if defined(CONFIG_LTE_RAI_ENABLE)
 	/** Release Assistance Indication  */
-	err = lte_lc_rai_req(true);
-	if (err) {
+	err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
+	if(err)
+	{
 		LOG_INF("lte_lc_rai_req, error: %d\n", err);
 	}
 #endif
@@ -1248,6 +1420,12 @@ void NBMsgProcess(void)
 		test_nb();
 	}
 
+	if(get_modem_info_flag)
+	{
+		GetModemInfor();
+		get_modem_info_flag = false;
+	}
+
 	if(nb_redraw_sig_flag)
 	{
 		NBRedrawSignal();
@@ -1260,6 +1438,12 @@ void NBMsgProcess(void)
 		send_data_flag = false;
 	}
 
+	if(parse_data_flag)
+	{
+		ParseReceData();
+		parse_data_flag = false;
+	}
+	
 	if(mqtt_disconnect_flag)
 	{
 		MqttDisConnect();
@@ -1275,7 +1459,6 @@ void NB_init(struct k_work_q *work_q)
 
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
-	k_delayed_work_init(&mqtt_send_work, mqtt_send);
 
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	//k_work_submit_to_queue(app_work_q, &nb_link_work);

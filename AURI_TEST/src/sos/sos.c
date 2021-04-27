@@ -192,17 +192,23 @@ void SOSStart(void)
 {
 	LOG_INF("[%s]\n", __func__);
 
+	if(sos_state != SOS_STATUS_IDLE)
+	{
+		LOG_INF("[%s] sos is running!\n", __func__);
+		return;
+	}
+	
 	lcd_sleep_out = true;
 	sos_state = SOS_STATUS_SENDING;
 
 	EnterSOSScreen();
 
-	GetSystemTimeSecStrings(sos_trigger_time);
+	GetSystemTimeSecString(sos_trigger_time);
 
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
-	//sos_wait_gps = true;
-	//APP_Ask_GPS_Data();
+	sos_wait_gps = true;
+	APP_Ask_GPS_Data();
 
 	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
 }

@@ -981,6 +981,40 @@ void WristScreenProcess(void)
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
 }
 
+void GPSTestScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_GPS_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATED;
+
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+}
+
+void NBTestScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_NB_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATED;
+
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;	
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -1230,7 +1264,7 @@ void ScreenMsgProcess(void)
 			break;
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();
-			break;		
+			break;
 		}
 	}
 }

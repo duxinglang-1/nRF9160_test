@@ -436,7 +436,7 @@ void UpdateSystemTime(void)
 	{
 		//SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
-		//AlarmRemindCheck(date_time);
+		AlarmRemindCheck(date_time);
 	}
 
 	if((date_time_changed&0x08) != 0)
@@ -481,7 +481,7 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 	return ret;
 }
 
-void GetSystemTimeSecStrings(u8_t *str_utc)
+void GetSystemTimeSecString(u8_t *str_utc)
 {
 	u32_t i;
 	u32_t total_sec,total_day=0;

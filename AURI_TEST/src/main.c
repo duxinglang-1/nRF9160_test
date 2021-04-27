@@ -32,7 +32,7 @@
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -47,6 +47,10 @@ static struct k_work_q nb_work_q;
 K_THREAD_STACK_DEFINE(imu_stack_area,
               CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
 static struct k_work_q imu_work_q;
+K_THREAD_STACK_DEFINE(gps_stack_area,
+              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+static struct k_work_q gps_work_q;
+
 
 
 #if defined(ANALOG_CLOCK)
@@ -635,8 +639,8 @@ void system_init(void)
 	IMU_init(&imu_work_q);
 	//audio_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
-	//NB_init(&nb_work_q);
-	
+	NB_init(&nb_work_q);
+	GPS_init(&gps_work_q);
 	EnterIdleScreen();
 }
 
@@ -648,6 +652,9 @@ void work_init(void)
 	k_work_q_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+	k_work_q_start(&gps_work_q, gps_stack_area,
+					K_THREAD_STACK_SIZEOF(imu_stack_area),
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 }
 
 /***************************************************************************
@@ -681,18 +688,18 @@ int main(void)
 
 	while(1)
 	{
-		//TimeMsgProcess();
-		//NBMsgProcess();
-		//GPSMsgProcess();
-		//PMUMsgProcess();
-		//IMUMsgProcess();
+		TimeMsgProcess();
+		NBMsgProcess();
+		GPSMsgProcess();
+		PMUMsgProcess();
+		IMUMsgProcess();
 		LCDMsgProcess();
 		//TPMsgProcess();
-		//AlarmMsgProcess();
-		//SettingsMsgPorcess();
-		//SOSMsgProc();
-		//BLEMsgProc();
-		//ScreenMsgProcess();
+		AlarmMsgProcess();
+		SettingsMsgPorcess();
+		SOSMsgProc();
+		BLEMsgProc();
+		ScreenMsgProcess();
 		
 		k_cpu_idle();
 	}

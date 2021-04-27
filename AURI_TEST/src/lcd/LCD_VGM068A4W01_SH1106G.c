@@ -314,8 +314,6 @@ void LCD_SleepIn(void)
 #endif
 
 	WriteComm(0xae);
-
-	//StopSystemDateTime();
 	
 	lcd_is_sleeping = true;
 }
@@ -343,8 +341,6 @@ void LCD_SleepOut(void)
 
 	if(!lcd_is_sleeping)
 		return;
-
-	//StartSystemDateTime();
 	
 	WriteComm(0xaf);
 	
@@ -429,8 +425,6 @@ void LCD_Init(void)
 
 	if(global_settings.backlight_time != 0)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
-
-	//test_show_str();
 }
 
 #endif/*LCD_R108101_GC9307*/

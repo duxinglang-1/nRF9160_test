@@ -4,7 +4,7 @@
 #define BATTERY_VOLTAGE_LOW_NOTIFY	(3.55)
 #define BATTERY_VOLTAGE_SHUTDOWN	(3.40)
 
-//#define MOTOR_TYPE_ERM	//转子马达
+#define MOTOR_TYPE_ERM		//转子马达
 //#define MOTOR_TYPE_LRA	//线性马达
 
 #define BATTERY_SOC_GAUGE	//xb add 20201124 电量计功能的代码
@@ -42,9 +42,9 @@ extern BAT_LEVEL_STATUS g_bat_level;
 
 extern void test_pmu(void);
 extern void pmu_init(void);
-extern void MAX20353_Init(void);
 extern void Set_Screen_Backlight_On(void);
 extern void Set_Screen_Backlight_Off(void);
 extern void SystemShutDown(void);
 extern void PMUMsgProcess(void);
+extern void GetBatterySocString(u8_t *str_utc);
 #endif/*__MAX20353_H__*/

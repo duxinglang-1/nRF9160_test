@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
 
+static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -221,6 +222,8 @@ void pmu_interrupt_proc(void)
 				charger_is_connected = false;
 				
 				g_chg_status = BAT_CHARGING_NO;
+
+			#ifdef BATTERY_SOC_GAUGE	
 				g_bat_soc = MAX20353_CalculateSOC();
 				if(g_bat_soc>100)
 					g_bat_soc = 100;
@@ -254,7 +257,8 @@ void pmu_interrupt_proc(void)
 				{
 					g_bat_level = BAT_LEVEL_5;
 				}
-				
+			#endif
+			
 				lcd_sleep_out = true;
 			}
 
@@ -282,6 +286,7 @@ void pmu_alert_proc(void)
 	u8_t buff[128] = {0};
 	u8_t MSB,LSB;
 
+#ifdef BATTERY_SOC_GAUGE
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
 	//LOG_INF("pmu_alert_proc status:%02X\n", MSB);
 	if(MSB&0x40)
@@ -383,6 +388,7 @@ void pmu_alert_proc(void)
 
 	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+#endif	
 }
 
 void PmuAlertHandle(void)
@@ -393,7 +399,8 @@ void PmuAlertHandle(void)
 void MAX20353_InitData(void)
 {
 	pmu_interrupt_proc();
-	
+
+#ifdef BATTERY_SOC_GAUGE	
 	g_bat_soc = MAX20353_CalculateSOC();
 	if(g_bat_soc>100)
 		g_bat_soc = 100;
@@ -422,6 +429,7 @@ void MAX20353_InitData(void)
 	{
 		g_bat_level = BAT_LEVEL_5;
 	}
+#endif
 
 	//test_soc();
 }
@@ -463,8 +471,13 @@ void pmu_init(void)
 	pmu_dev_ctx.read_reg  = platform_read;
 	pmu_dev_ctx.handle    = i2c_pmu;
 
-	MAX20353_Init();
+	pmu_check_ok = MAX20353_Init();
+	if(!pmu_check_ok)
+		return;
+	
 	MAX20353_InitData();
+
+	LOG_INF("pmu_init done!\n");
 }
 
 void test_pmu(void)
@@ -485,6 +498,7 @@ int MAX20303_CheckPMICStatusRegisters(unsigned char buf_results[5])
 	return ret;
 }
 
+#ifdef BATTERY_SOC_GAUGE
 void test_soc_status(void)
 {
 	u8_t MSB,LSB;
@@ -556,6 +570,7 @@ void test_soc(void)
 	k_timer_init(&soc_timer, test_soc_timerout, NULL);
 	k_timer_start(&soc_timer, K_MSEC(10*1000), K_MSEC(15*1000));
 }
+#endif/*BATTERY_SOC_GAUGE*/
 
 void PMURedrawBatStatus(void)
 {
@@ -573,54 +588,80 @@ void PMUUpdateTempForSOC(void)
 }
 #endif
 
+void GetBatterySocString(u8_t *str_utc)
+{
+	if(str_utc == NULL)
+		return;
+
+	sprintf(str_utc, "%d", g_bat_soc);
+}
+
 void PMUMsgProcess(void)
 {
 	if(pmu_trige_flag)
 	{
-		pmu_interrupt_proc();
+		if(pmu_check_ok)
+			pmu_interrupt_proc();
+		
 		pmu_trige_flag = false;
 	}
 	
 	if(pmu_alert_flag)
 	{
-		pmu_alert_proc();
+		if(pmu_check_ok)
+			pmu_alert_proc();
+		
 		pmu_alert_flag = false;
 	}
 	
 	if(sys_pwr_off)
 	{
-		SystemShutDown();
+		if(pmu_check_ok)
+			SystemShutDown();
+		
 		sys_pwr_off = false;		
 	}
 	
 	if(vibrate_start_flag)
 	{
-		VibrateStart();
+		if(pmu_check_ok)
+			VibrateStart();
+		
 		vibrate_start_flag = false;
 	}
 	
 	if(vibrate_stop_flag)
 	{
-		VibrateStop();
+		if(pmu_check_ok)
+			VibrateStop();
+		
 		vibrate_stop_flag = false;
 	}
 
+#ifdef BATTERY_SOC_GAUGE
 	if(read_soc_status)
 	{
-		test_soc_status();
+		if(pmu_check_ok)
+			test_soc_status();
+		
 		read_soc_status = false;
 	}
+#endif
 
 	if(pmu_redraw_bat_flag)
 	{
-		PMURedrawBatStatus();
+		if(pmu_check_ok)
+			PMURedrawBatStatus();
+		
 		pmu_redraw_bat_flag = false;
 	}
 
 #ifdef BATTERT_NTC_CHECK
 	if(pmu_check_temp_flag)
 	{
-		PMUUpdateTempForSOC();
+		if(pmu_check_ok)
+			PMUUpdateTempForSOC();
+		
 		pmu_check_temp_flag = false;
 	}
 #endif
@@ -634,7 +675,7 @@ void MAX20353_ReadStatus(void)
 	MAX20353_ReadReg(REG_STATUS1, &Status1);
 	MAX20353_ReadReg(REG_STATUS2, &Status2);
 	MAX20353_ReadReg(REG_STATUS3, &Status3);
-	
+
 	LOG_INF("Status0=0x%02X,Status1=0x%02X,Status2=0x%02X,Status3=0x%02X\n", Status0, Status1, Status2, Status3); 
 }
 

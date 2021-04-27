@@ -1001,6 +1001,8 @@ static void mt_fall_detection(struct k_work *work)
 
 void IMU_init(struct k_work_q *work_q)
 {
+	LOG_INF("IMU_init\n");
+	
 	imu_work_q = work_q;
 	k_work_init(&imu_work, mt_fall_detection);
 	

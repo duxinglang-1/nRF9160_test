@@ -19,6 +19,14 @@
 extern "C" {
 #endif
 
+//big num
+#define BIG_NUM_W		16
+#define BIG_NUM_H		32
+
+//small num
+#define SMALL_NUM_W		10
+#define SMALL_NUM_H		32
+
 //date&time
 #define IDLE_TIME_SHOW_X	0
 #ifdef FONT_32
@@ -49,6 +57,46 @@ extern "C" {
 #define IMU_STEPS_SHOW_Y	160
 #define IMU_STEPS_SHOW_W	210
 #define IMU_STEPS_SHOW_H	20
+
+//SOS
+#define SOS_X	9
+#define SOS_Y	0
+
+//sleep
+#define SLEEP_ICON_X	9
+#define SLEEP_ICON_Y	0
+#define SLEEP_NUM_X	32
+#define SLEEP_NUM_Y	0
+#define SLEEP_CN_HOUR_W	8
+#define SLEEP_CN_HOUR_H	32
+#define SLEEP_CN_MIN_W	8
+#define SLEEP_CN_MIN_H	32
+#define SLEEP_EN_HOUR_W	6
+#define SLEEP_EN_HOUR_H	32
+#define SLEEP_EN_MIN_W	7
+#define SLEEP_EN_MIN_H	32
+
+//steps
+#define STEPS_ICON_X	9
+#define STEPS_ICON_Y	0
+#define STEPS_NUM_X	31
+#define STEPS_NUM_Y	0
+
+//fall
+#define FALL_ICON_X	9
+#define FALL_ICON_Y	0
+#define FALL_CN_TEXT_X	39
+#define FALL_CN_TEXT_Y	0
+#define FALL_EN_TEXT_X	50
+#define FALL_EN_TEXT_Y	0
+
+//wrist
+#define WRIST_ICON_X	9
+#define WRIST_ICON_Y	0
+#define WRIST_CN_TEXT_X	39
+#define WRIST_CN_TEXT_Y	0
+#define WRIST_EN_TEXT_X	31
+#define WRIST_EN_TEXT_Y	0
 
 //idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000

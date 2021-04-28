@@ -15,6 +15,7 @@
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
+#include "img.h"
 #include "datetime.h"
 #include "max20353.h"
 #include "lsm6dso.h"
@@ -22,6 +23,7 @@
 #include "screen.h"
 #include "ucs2.h"
 #include "nb.h"
+#include "sos.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -643,6 +645,360 @@ void NotifyScreenProcess(void)
 
 }
 
+void SOSShowStatus(void)
+{
+	u32_t img_addr;
+	u8_t *img;
+	
+	LCD_Clear(BLACK);
+
+	switch(sos_state)
+	{
+	case SOS_STATUS_IDLE:
+		break;
+		
+	case SOS_STATUS_SENDING:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_ADDR;
+	#else
+		img = IMG_SOS;
+	#endif
+		break;
+	
+	case SOS_STATUS_SENT:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_SEND_ADDR;
+	#else
+		img = IMG_SOS_SEND;
+	#endif
+		break;
+	
+	case SOS_STATUS_RECEIVED:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_RECE_ADDR;
+	#else
+		img = IMG_SOS_RECE;
+	#endif
+		break;
+	
+	case SOS_STATUS_CANCEL:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_ADDR;
+	#else
+		img = IMG_SOS;
+	#endif
+		break;
+	}
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(SOS_X, SOS_Y, img_addr);
+#else
+	LCD_ShowImg(SOS_X, SOS_Y, img);
+#endif
+}
+
+void SOSScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_SOS].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATED;
+
+		SOSShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_SOS].para&SCREEN_EVENT_UPDATE_SOS)
+		{
+			scr_msg[SCREEN_ID_SOS].para &= (~SCREEN_EVENT_UPDATE_SOS);
+			SOSShowStatus();
+		}
+
+		if(scr_msg[SCREEN_ID_SOS].para == SCREEN_EVENT_UPDATE_NO)
+			scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_NO;
+		break;
+	}
+}
+
+void SleepShowStatus(void)
+{
+	u16_t x,y,img_hour_w,img_hour_h;
+	u16_t deep_sleep,light_sleep,total_sleep;
+	u32_t img_h_addr,img_m_addr;
+	u8_t *img_h,*img_m;
+#ifdef IMG_FONT_FROM_FLASH
+	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
+						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
+#else
+	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
+							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
+#endif
+
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+	total_sleep = deep_sleep + light_sleep;
+
+	LCD_Clear(BLACK);
+
+	switch(global_settings.language)
+	{
+	case LANGUAGE_EN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_h_addr = IMG_HOUR_EN_ADDR;
+		img_m_addr = IMG_MIN_EN_ADDR;
+	#else
+		img_h = IMG_HOUR_EN;
+		img_m = IMG_MIN_EN;
+	#endif
+
+		img_hour_w = SLEEP_EN_HOUR_W;
+		img_hour_h = SLEEP_EN_HOUR_H;
+		break;
+		
+	case LANGUAGE_CHN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_h_addr = IMG_HOUR_CN_ADDR;
+		img_m_addr = IMG_MIN_CN_ADDR;
+	#else
+		img_h = IMG_HOUR_CN;
+		img_m = IMG_MIN_CN;
+	#endif
+
+		img_hour_w = SLEEP_CN_HOUR_W;
+		img_hour_h = SLEEP_CN_HOUR_H;	
+		break;
+	}
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(SLEEP_ICON_X, SLEEP_ICON_Y, IMG_SLP_ICON_ADDR);
+	x = SLEEP_NUM_X;
+	y = SLEEP_NUM_Y;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep/60)/10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep/60)%10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_h_addr);
+	x += img_hour_w;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep&60)/10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep&60)%10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_m_addr);
+#else
+	LCD_ShowImg(SLEEP_ICON_X, SLEEP_ICON_Y, IMG_SLP_ICON);
+	x = SLEEP_NUM_X;
+	y = SLEEP_NUM_Y;
+	LCD_ShowImg(x, y, img[(total_sleep/60)/10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img[(total_sleep/60)%10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img_h);
+	x += img_hour_w;
+	LCD_ShowImg(x, y, img[(total_sleep&60)/10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img[(total_sleep&60)%10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img_m);
+#endif
+}
+
+void SleepScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_SLEEP].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATED;
+
+		SleepShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
+}
+
+void StepsShowStatus(void)
+{
+	u16_t s_count;
+	u16_t x,y;
+#ifdef IMG_FONT_FROM_FLASH
+	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
+						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
+#else
+	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
+							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
+#endif
+
+	GetImuSteps(&s_count);
+
+	LCD_Clear(BLACK);
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(STEPS_ICON_X, STEPS_ICON_X, IMG_STEP_ICON_ADDR);
+	x = STEPS_NUM_X;
+	y = STEPS_NUM_Y;
+	LCD_ShowImg_From_Flash(x, y, img_addr[s_count/10000]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%10000)/1000]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%1000)/100]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%100)/10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg_From_Flash(x, y, img_addr[s_count%10]);
+#else
+	LCD_ShowImg(STEPS_ICON_X, STEPS_ICON_Y, IMG_STEP_ICON);
+	x = STEPS_NUM_X;
+	y = STEPS_NUM_Y;
+	LCD_ShowImg(x, y, img[s_count/10000]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img[(s_count%10000)/1000]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img[(s_count%1000)/100]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img[(s_count%100)/10]);
+	x += SMALL_NUM_W;
+	LCD_ShowImg(x, y, img[s_count%10]);
+#endif
+}
+
+void StepsScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_STEPS].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATED;
+
+		StepsShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
+}
+
+void FallShowStatus(void)
+{
+	u16_t x,y;
+	u32_t img_addr;
+	u8_t *img;
+
+	LCD_Clear(BLACK);
+
+	switch(global_settings.language)
+	{
+	case LANGUAGE_EN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_FALL_EN_ADDR;
+	#else
+		img = IMG_FALL_EN;
+	#endif
+		x = FALL_EN_TEXT_X;
+		y = FALL_CN_TEXT_Y;
+		break;
+		
+	case LANGUAGE_CHN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_FALL_CN_ADDR;
+	#else
+		img = IMG_FALL_CN;
+	#endif
+		x = FALL_CN_TEXT_X;
+		y = FALL_CN_TEXT_Y;	
+		break;
+	}
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON_ADDR);
+	LCD_ShowImg_From_Flash(x, y, img_addr);
+#else
+	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON);
+	LCD_ShowImg(x, y, img);
+#endif
+}
+
+void FallScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_FALL].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATED;
+
+		FallShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_NO;
+}
+
+void WristShowStatus(void)
+{
+	u16_t x,y;
+	u32_t img_addr;
+	u8_t *img;
+
+	LCD_Clear(BLACK);
+
+	switch(global_settings.language)
+	{
+	case LANGUAGE_EN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_WRIST_EN_ADDR;
+	#else
+		img = IMG_WRIST_EN;
+	#endif
+		x = WRIST_EN_TEXT_X;
+		y = WRIST_EN_TEXT_Y;
+		break;
+		
+	case LANGUAGE_CHN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_WRIST_CN_ADDR;
+	#else
+		img = IMG_WRIST_CN;
+	#endif
+		x = WRIST_CN_TEXT_X;
+		y = WRIST_CN_TEXT_Y;	
+		break;
+	}
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON_ADDR);
+	LCD_ShowImg_From_Flash(x, y, img_addr);
+#else
+	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
+	LCD_ShowImg(x, y, img);
+#endif
+}
+
+void WristScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_WRIST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATED;
+
+		WristShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -713,6 +1069,88 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;		
 }
 
+void EnterSOSScreen(void)
+{
+	if(screen_id == SCREEN_ID_SOS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SOS;	
+	scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
+}
+
+void EnterSleepScreen(void)
+{
+	if(screen_id == SCREEN_ID_SLEEP)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SLEEP;	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;	
+}
+
+void EnterStepsScreen(void)
+{
+	if(screen_id == SCREEN_ID_STEPS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_STEPS;	
+	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;		
+}
+
+void EnterFallScreen(void)
+{
+	if(screen_id == SCREEN_ID_FALL)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FALL;	
+	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;
+
+	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
+}
+
+void ExitWristScreen(void)
+{
+	if(screen_id == SCREEN_ID_WRIST)
+	{
+		EntryIdleScreen();
+	}
+}
+
+void EnterWristScreen(void)
+{
+	if(screen_id == SCREEN_ID_WRIST)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_WRIST;	
+	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATING;
+
+	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
+}
+
 void GoBackHistoryScreen(void)
 {
 	SCREEN_ID_ENUM scr_id;
@@ -750,6 +1188,21 @@ void ScreenMsgProcess(void)
 			break;
 		case SCREEN_ID_BP:
 			break;
+		case SCREEN_ID_SOS:
+			SOSScreenProcess();
+			break;
+		case SCREEN_ID_SLEEP:
+			SleepScreenProcess();
+			break;
+		case SCREEN_ID_STEPS:
+			StepsScreenProcess();
+			break;
+		case SCREEN_ID_FALL:
+			FallScreenProcess();
+			break;
+		case SCREEN_ID_WRIST:
+			WristScreenProcess();
+			break;				
 		case SCREEN_ID_SETTINGS:
 			break;
 		case SCREEN_ID_GPS_TEST:

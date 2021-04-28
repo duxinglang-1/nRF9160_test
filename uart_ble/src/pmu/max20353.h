@@ -43,4 +43,5 @@ extern void Set_Screen_Backlight_On(void);
 extern void Set_Screen_Backlight_Off(void);
 extern void SystemShutDown(void);
 extern void PMUMsgProcess(void);
+extern void GetBatterySocString(u8_t *str_utc);
 #endif/*__MAX20353_H__*/

@@ -199,6 +199,7 @@ void pmu_interrupt_proc(void)
 				charger_is_connected = false;
 				
 				g_chg_status = BAT_CHARGING_NO;
+			#ifdef BATTERY_SOC_GAUGE	
 				g_bat_soc = MAX20353_CalculateSOC();
 				if(g_bat_soc>100)
 					g_bat_soc = 100;
@@ -220,6 +221,7 @@ void pmu_interrupt_proc(void)
 				{
 					g_bat_level = BAT_LEVEL_GOOD;
 				}
+			#endif
 				
 				lcd_sleep_out = true;
 			}
@@ -248,6 +250,7 @@ void pmu_alert_proc(void)
 	u8_t buff[128] = {0};
 	u8_t MSB,LSB;
 
+#ifdef BATTERY_SOC_GAUGE
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
 	//LOG_INF("pmu_alert_proc status:%02X\n", MSB);
 	if(MSB&0x40)
@@ -343,6 +346,7 @@ void pmu_alert_proc(void)
 
 	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+#endif	
 }
 
 void PmuAlertHandle(void)
@@ -354,9 +358,11 @@ void MAX20353_InitData(void)
 {
 	pmu_interrupt_proc();
 	
+#ifdef BATTERY_SOC_GAUGE	
 	g_bat_soc = MAX20353_CalculateSOC();
 	if(g_bat_soc>100)
 		g_bat_soc = 100;
+#endif
 
 	//test_soc();
 }
@@ -403,6 +409,8 @@ void pmu_init(void)
 		return;
 	
 	MAX20353_InitData();
+
+	LOG_INF("pmu_init done!\n");
 }
 
 void test_pmu(void)
@@ -423,6 +431,7 @@ int MAX20303_CheckPMICStatusRegisters(unsigned char buf_results[5])
 	return ret;
 }
 
+#ifdef BATTERY_SOC_GAUGE
 void test_soc_status(void)
 {
 	u8_t MSB,LSB;
@@ -494,6 +503,7 @@ void test_soc(void)
 	k_timer_init(&soc_timer, test_soc_timerout, NULL);
 	k_timer_start(&soc_timer, K_MSEC(10*1000), K_MSEC(15*1000));
 }
+#endif/*BATTERY_SOC_GAUGE*/
 
 void PMURedrawBatStatus(void)
 {
@@ -510,6 +520,14 @@ void PMUUpdateTempForSOC(void)
 	MAX20353_UpdateTemper();
 }
 #endif
+
+void GetBatterySocString(u8_t *str_utc)
+{
+	if(str_utc == NULL)
+		return;
+
+	sprintf(str_utc, "%d", g_bat_soc);
+}
 
 void PMUMsgProcess(void)
 {
@@ -553,6 +571,7 @@ void PMUMsgProcess(void)
 		vibrate_stop_flag = false;
 	}
 
+#ifdef BATTERY_SOC_GAUGE
 	if(read_soc_status)
 	{
 		if(pmu_check_ok)
@@ -560,6 +579,7 @@ void PMUMsgProcess(void)
 		
 		read_soc_status = false;
 	}
+#endif
 
 	if(pmu_redraw_bat_flag)
 	{

@@ -481,7 +481,7 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 	return ret;
 }
 
-void GetSystemTimeSecStrings(u8_t *str_utc)
+void GetSystemTimeSecString(u8_t *str_utc)
 {
 	u32_t i;
 	u32_t total_sec,total_day=0;
@@ -664,6 +664,9 @@ void TimeMsgProcess(void)
 		sys_time_count = false;
 		UpdateSystemTime();
 
+		//CheckSendHealthData();
+		//CheckSendLocationData();
+		
 		if(lcd_is_sleeping)
 			return;
 		

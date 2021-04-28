@@ -16,5 +16,5 @@ extern bool ble_wait_gps;
 extern bool sos_wait_gps;
 extern bool fall_wait_gps;
 
-extern void gps_init(void);
+extern void GPS_init(struct k_work_q *work_q);
 extern void GPSMsgProcess(void);

@@ -97,7 +97,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 	NBSendSosWifiData(reply, strlen(reply));
 }
 
-void sos_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+void sos_get_gps_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};
@@ -192,11 +192,18 @@ void SOSStart(void)
 {
 	LOG_INF("[%s]\n", __func__);
 
+	if(sos_state != SOS_STATUS_IDLE)
+	{
+		LOG_INF("[%s] sos is running!\n", __func__);
+		return;
+	}
+	
 	lcd_sleep_out = true;
 	sos_state = SOS_STATUS_SENDING;
+
 	//EnterSOSScreen();
 
-	GetSystemTimeSecStrings(sos_trigger_time);
+	GetSystemTimeSecString(sos_trigger_time);
 
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();

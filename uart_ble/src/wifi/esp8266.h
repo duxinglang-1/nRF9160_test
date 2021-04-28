@@ -25,5 +25,6 @@ typedef struct
 
 extern bool sos_wait_wifi;
 extern bool fall_wait_wifi;
+extern bool location_wait_wifi;
 
 #endif/*__ESP8266_H__*/

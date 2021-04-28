@@ -68,6 +68,8 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define GET_BLE_STATUS_ID		0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
 #define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 
+static bool uart_low_power_flag = false;
+
 static u32_t rece_len=0;
 
 static u8_t rx_buf[BUF_MAXSIZE]={0};
@@ -623,7 +625,7 @@ void APP_get_location_data(u8_t *buf, u32_t len)
 	APP_Ask_GPS_Data();
 }
 
-void APP_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+void APP_get_gps_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 {
 	u8_t tmpgps;
 	u8_t reply[128] = {0};
@@ -1306,6 +1308,19 @@ static void uart_cb(struct device *x)
 
 		k_free(buf);
 	}
+
+}
+
+void suspend_uart2(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(uart_ble != NULL)
+	{
+		uart_irq_rx_disable(uart_ble);
+		device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
+		uart_low_power_flag = true;
+	}
+#endif
 }
 
 void ble_init(void)
@@ -1321,6 +1336,14 @@ void ble_init(void)
 
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	//device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	//uart2_rx_reset();
+	//uart2_tx_resume();
+	//uart_irq_rx_enable(uart_ble);
+#endif
+	
 }
 
 void test_uart_ble(void)

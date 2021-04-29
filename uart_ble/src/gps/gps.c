@@ -107,7 +107,7 @@ bool sos_wait_gps = false;
 bool fall_wait_gps = false;
 bool location_wait_gps = false;
 
-nrf_gnss_data_frame_t last_fix;
+nrf_gnss_data_frame_t last_fix = {0};
 
 extern bool show_date_time_first;
 
@@ -557,34 +557,34 @@ int inject_agps_type(void *agps,
 }
 #endif
 
-bool APP_GPS_data_send(void)
+bool APP_GPS_data_send(bool fix_flag)
 {
 	bool ret = false;
 	
 	if(ble_wait_gps)
 	{
-		APP_get_gps_data_reply(last_fix.pvt);
+		APP_get_gps_data_reply(fix_flag, last_fix.pvt);
 		ble_wait_gps = false;
 		ret = true;
 	}
 
 	if(sos_wait_gps)
 	{
-		sos_get_gps_data_reply(last_fix.pvt);
+		sos_get_gps_data_reply(fix_flag, last_fix.pvt);
 		sos_wait_gps = false;
 		ret = true;
 	}
 
 	if(fall_wait_gps)
 	{
-		fall_get_gps_data_reply(last_fix.pvt);
+		fall_get_gps_data_reply(fix_flag, last_fix.pvt);
 		fall_wait_gps = false;
 		ret = true;
 	}
 
 	if(location_wait_gps)
 	{
-		location_get_gps_data_reply(last_fix.pvt);
+		location_get_gps_data_reply(fix_flag, last_fix.pvt);
 		location_wait_gps = false;
 		ret = true;
 	}
@@ -600,16 +600,7 @@ void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 
 	app_gps_off = true;
 
-	APP_GPS_data_send();
-	
-	if(ble_wait_gps)
-		ble_wait_gps = false;
-	if(sos_wait_gps)
-		sos_wait_gps = false;
-	if(fall_wait_gps)
-		fall_wait_gps = false;
-	if(location_wait_gps)
-		location_wait_gps = false;
+	APP_GPS_data_send(false);
 }
 
 void APP_Ask_GPS_Data(void)
@@ -620,7 +611,7 @@ void APP_Ask_GPS_Data(void)
 	if(!app_gps_on)
 	{
 		app_gps_on = true;
-		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), NULL);
+		k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
 	}
 #else
 	last_fix.pvt.datetime.year = 2020;
@@ -689,7 +680,7 @@ void gps_data_receive(void)
 			if(k_timer_remaining_get(&gps_data_timer) > 0)
 				k_timer_stop(&gps_data_timer);
 
-			if(APP_GPS_data_send())
+			if(APP_GPS_data_send(true))
 			{
 				APP_Ask_GPS_off();
 				return;
@@ -1016,12 +1007,4 @@ void GPS_init(struct k_work_q *work_q)
 	k_work_init(&send_agps_request_work, send_agps_request);
 
 	gps_control_init(app_work_q, gps_handler);
-}
-
-void CheckSendLocationData(void)
-{
-	location_wait_wifi = true;
-	APP_Ask_wifi_data();
-	location_wait_gps = true;
-	APP_Ask_GPS_Data();
 }

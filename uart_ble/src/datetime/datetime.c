@@ -437,6 +437,9 @@ void UpdateSystemTime(void)
 		//SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 		AlarmRemindCheck(date_time);
+		
+		TimeCheckSendHealthData();
+		TimeCheckSendLocationData();
 	}
 
 	if((date_time_changed&0x08) != 0)
@@ -663,9 +666,6 @@ void TimeMsgProcess(void)
 	{
 		sys_time_count = false;
 		UpdateSystemTime();
-
-		//CheckSendHealthData();
-		//CheckSendLocationData();
 		
 		if(lcd_is_sleeping)
 			return;

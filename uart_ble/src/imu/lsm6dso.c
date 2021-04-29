@@ -776,6 +776,8 @@ void UpdateIMUData(void)
 	g_calorie = 0.8214*60*(g_distance/1000);
 
 	LOG_INF("g_steps:%d,g_distance:%d,g_calorie:%d\n", g_steps, g_distance, g_calorie);
+
+	StepCheckSendLocationData(g_steps);
 }
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
@@ -823,13 +825,16 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 	NBSendFallWifiData(reply, strlen(reply));
 }
 
-void fall_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+void fall_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};
 	u32_t tmp1;
 	double tmp2;
 
+	if(!flag)
+		return;
+	
 	//latitude
 	if(gps_data.latitude < 0)
 	{
@@ -897,7 +902,7 @@ void fall_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 
 void FallAlarmStart(void)
 {
-	GetSystemTimeSecStrings(fall_trigger_time);
+	GetSystemTimeSecString(fall_trigger_time);
 
 	fall_wait_wifi = true;
 	APP_Ask_wifi_data();
@@ -958,10 +963,10 @@ static void mt_fall_detection(struct k_work *work)
 			lcd_sleep_out = true;
 			FallAlarmStart();
 		}
-        else
-        {
+		else
+		{
 			//LOG_INF("Not Fall.\n");
-        }
+		}
 
 		fall_testing = false;
 	}
@@ -1000,6 +1005,11 @@ static void mt_fall_detection(struct k_work *work)
 
 void IMU_init(struct k_work_q *work_q)
 {
+	LOG_INF("IMU_init\n");
+	
+	imu_work_q = work_q;
+	k_work_init(&imu_work, mt_fall_detection);
+	
 	if(init_i2c() != 0)
 		return;
 	
@@ -1017,9 +1027,6 @@ void IMU_init(struct k_work_q *work_q)
 	lsm6dso_sensitivity();
 	StartSleepTimeMonitor();
 
-	imu_work_q = work_q;
-	k_work_init(&imu_work, mt_fall_detection);
-	
 	LOG_INF("IMU_init done!\n");
 }
 
@@ -1125,4 +1132,3 @@ void IMUMsgProcess(void)
 {
 	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
-

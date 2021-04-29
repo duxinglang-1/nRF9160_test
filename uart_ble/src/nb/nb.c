@@ -176,10 +176,10 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	data_print("Publishing: ", data, len);
-	LOG_INF("to topic: %s len: %u\n",
-		CONFIG_MQTT_PUB_TOPIC,
-		(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
+	//data_print("Publishing: ", data, len);
+	//LOG_INF("to topic: %s len: %u\n",
+	//	CONFIG_MQTT_PUB_TOPIC,
+	//	(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
 
 	return mqtt_publish(c, &param);
 }

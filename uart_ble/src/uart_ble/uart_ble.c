@@ -625,7 +625,7 @@ void APP_get_location_data(u8_t *buf, u32_t len)
 	APP_Ask_GPS_Data();
 }
 
-void APP_get_gps_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+void APP_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
 {
 	u8_t tmpgps;
 	u8_t reply[128] = {0};
@@ -633,6 +633,9 @@ void APP_get_gps_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
 	u32_t tmp1;
 	double tmp2;
 
+	if(!flag)
+		return;
+	
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len

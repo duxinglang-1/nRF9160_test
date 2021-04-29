@@ -97,13 +97,16 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 	NBSendSosWifiData(reply, strlen(reply));
 }
 
-void sos_get_gps_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+void sos_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};
 	u32_t tmp1;
 	double tmp2;
 
+	if(!flag)
+		return;
+	
 	//latitude
 	if(gps_data.latitude < 0)
 	{

@@ -32,7 +32,7 @@
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -47,10 +47,11 @@ static struct k_work_q nb_work_q;
 K_THREAD_STACK_DEFINE(imu_stack_area,
               CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
 static struct k_work_q imu_work_q;
+K_THREAD_STACK_DEFINE(gps_stack_area,
+              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+static struct k_work_q gps_work_q;
 
-/* Structures for work */
-static struct k_work nb_link_work;
-static struct k_delayed_work reboot_work;
+
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -377,8 +378,8 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+	LCD_get_pic_size_from_flash(IMG_PEPPA_240X240_ADDR, &w, &h);
+	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_240X240_ADDR);
 	while(0)
 	{
 		switch(i)
@@ -386,42 +387,45 @@ void test_show_image(void)
 			case 0:
 				//LCD_dis_pic(w*0,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
+				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_80X160_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,0);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
 				//LCD_dis_pic(w*1,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
+				//LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_80X160_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,90);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
+				LCD_Fill((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,w,h,BLACK);
 				break;
 			case 2:
 				//LCD_dis_pic(w*1,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_160X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
+				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_80X160_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,90);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,180);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
 				//LCD_dis_pic(w*0,h*1,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_160X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
+				//LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_80X160_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,270);
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
+				LCD_Fill((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,h,w,BLACK);
 				break;
 			case 4:
-				LCD_Fill(w*0,h*0,w,h,BLACK);
+				//LCD_Fill(w*0,h*0,w,h,BLACK);
 				break;
 			case 5:
-				LCD_Fill(w*1,h*0,w,h,BLACK);
+				//LCD_Fill(w*1,h*0,w,h,BLACK);
 				break;
 			case 6:
-				LCD_Fill(w*1,h*1,w,h,BLACK);
+				//LCD_Fill(w*1,h*1,w,h,BLACK);
 				break;
 			case 7:
-				LCD_Fill(w*0,h*1,w,h,BLACK);
+				//LCD_Fill(w*0,h*1,w,h,BLACK);
 				break;
 		}
 		
@@ -622,17 +626,17 @@ void system_init(void)
 {
 	InitSystemSettings();
 	
-	//pmu_init();
+	pmu_init();
 	flash_init();
 	LCD_Init();
 	
-	ShowBootUpLogo();
+	//ShowBootUpLogo();
 
 	key_init();
 	IMU_init(&imu_work_q);
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 	NB_init(&nb_work_q);
-	
+	GPS_init(&gps_work_q);
 	EnterIdleScreen();
 }
 
@@ -644,6 +648,9 @@ void work_init(void)
 	k_work_q_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+	k_work_q_start(&gps_work_q, gps_stack_area,
+					K_THREAD_STACK_SIZEOF(imu_stack_area),
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 }
 
 /***************************************************************************
@@ -687,6 +694,8 @@ int main(void)
 		SOSMsgProc();
 		
 		ScreenMsgProcess();
+
+		//k_sleep(K_MSEC(5));
 		
 		k_cpu_idle();
 	}

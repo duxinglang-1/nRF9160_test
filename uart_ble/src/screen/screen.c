@@ -464,6 +464,14 @@ void IdleScreenProcess(void)
 	}
 }
 
+bool IsInIdleScreen(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+		return true;
+	else
+		return false;
+}
+
 void AlarmScreenProcess(void)
 {
 	u16_t rect_x,rect_y,rect_w=180,rect_h=80;
@@ -779,9 +787,9 @@ void SleepShowStatus(void)
 	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_h_addr);
 	x += img_hour_w;
-	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep&60)/10]);
+	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep%60)/10]);
 	x += SMALL_NUM_W;
-	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep&60)%10]);
+	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep%60)%10]);
 	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_m_addr);
 #else
@@ -794,9 +802,9 @@ void SleepShowStatus(void)
 	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img_h);
 	x += img_hour_w;
-	LCD_ShowImg(x, y, img[(total_sleep&60)/10]);
+	LCD_ShowImg(x, y, img[(total_sleep%60)/10]);
 	x += SMALL_NUM_W;
-	LCD_ShowImg(x, y, img[(total_sleep&60)%10]);
+	LCD_ShowImg(x, y, img[(total_sleep%60)%10]);
 	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img_m);
 #endif

@@ -963,10 +963,10 @@ static void mt_fall_detection(struct k_work *work)
 			lcd_sleep_out = true;
 			FallAlarmStart();
 		}
-		else
-		{
+        else
+        {
 			//LOG_INF("Not Fall.\n");
-		}
+        }
 
 		fall_testing = false;
 	}

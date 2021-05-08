@@ -30,6 +30,7 @@ static bool app_wifi_on = false;
 
 bool sos_wait_wifi = false;
 bool fall_wait_wifi = false;
+bool location_wait_wifi = false;
 
 static u32_t rece_len=0;
 
@@ -64,6 +65,12 @@ static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
 		fall_get_wifi_data_reply(wifi_data);	
 		fall_wait_wifi = false;
 	}
+
+	if(location_wait_wifi)
+	{
+		location_get_wifi_data_reply(wifi_data);
+		location_wait_wifi = false;
+	}
 }
 
 void wifi_get_scanned_data(u32_t count, u32_t datalen, u8_t *databuf)
@@ -91,7 +98,7 @@ void APP_Ask_wifi_data(void)
 	}
 
 	//APP_Ask_wifi_Data_timerout(NULL);
-	k_timer_start(&wifi_scan_timer, K_MSEC(30*1000), NULL);
+	k_timer_start(&wifi_scan_timer, K_MSEC(10*1000), NULL);
 #endif	
 }
 

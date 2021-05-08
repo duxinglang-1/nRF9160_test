@@ -776,6 +776,8 @@ void UpdateIMUData(void)
 	g_calorie = 0.8214*60*(g_distance/1000);
 
 	LOG_INF("g_steps:%d,g_distance:%d,g_calorie:%d\n", g_steps, g_distance, g_calorie);
+
+	StepCheckSendLocationData(g_steps);
 }
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
@@ -823,13 +825,16 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 	NBSendFallWifiData(reply, strlen(reply));
 }
 
-void fall_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data)
+void fall_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};
 	u32_t tmp1;
 	double tmp2;
 
+	if(!flag)
+		return;
+	
 	//latitude
 	if(gps_data.latitude < 0)
 	{
@@ -1117,10 +1122,9 @@ void test_i2c(void)
 
 void IMURedrawSteps(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if(screen_id == SCREEN_ID_STEPS)
 	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPORT;
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		StepsUpdateStatus();
 	}
 }
 
@@ -1128,4 +1132,3 @@ void IMUMsgProcess(void)
 {
 	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
-

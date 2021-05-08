@@ -14,10 +14,11 @@
 #include "font.h"
 //#include "boards.h"
 
+//#define LCD_R108101_GC9307
+//#define LCD_ORCZ010903C_GC9A01
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
 //#define LCD_ORCT012210N_ST7789V2
-//#define LCD_R108101_GC9307
 #define LCD_VGM068A4W01_SH1106G
 
 //#define LCD_TYPE_PARALLEL		//²¢¿Ú

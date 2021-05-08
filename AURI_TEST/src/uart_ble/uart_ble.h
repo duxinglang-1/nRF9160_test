@@ -36,7 +36,7 @@ extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 
 extern void uart_ble_test(void);
-extern void APP_get_location_data_reply(nrf_gnss_pvt_data_frame_t gps_data);
+extern void APP_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data);
 extern void MCU_get_nrf52810_ver(void);
 extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);

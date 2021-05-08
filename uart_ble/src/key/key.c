@@ -82,7 +82,6 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			//GetModemInfor();
 			break;
 		case KEY_LONG_PRESS:
 			sys_pwr_off = true;

@@ -1390,8 +1390,8 @@ static void nb_link(struct k_work *work)
 	else
 	{
 		LOG_INF("Connected to LTE network");
-		modem_data_init();
 		GetModemDateTime();
+		modem_data_init();
 	}
 
 	GetModemInfor();

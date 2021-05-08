@@ -123,12 +123,12 @@ void TimeCheckSendHealthData(void)
 	u16_t steps,calorie,distance,light_sleep,deep_sleep;
 	u8_t tmpbuf[20] = {0};
 	u8_t databuf[128] = {0};
-	static u32_t hour_count = 0;
-	
-	hour_count++;
-	if(hour_count == global_settings.health_interval)
+	static u32_t health_hour_count = 0;
+
+	health_hour_count++;
+	if(health_hour_count == global_settings.health_interval)
 	{
-		hour_count = 0;
+		health_hour_count = 0;
 
 		GetSportData(&steps, &calorie, &distance);
 		GetSleepTimeData(&deep_sleep, &light_sleep);
@@ -191,12 +191,12 @@ void TimeCheckSendHealthData(void)
 
 void TimeCheckSendLocationData(void)
 {
-	static u32_t hour_count = 0;
-	
-	hour_count++;
-	if(hour_count == global_settings.dot_interval.time)
+	static u32_t loc_hour_count = 0;
+
+	loc_hour_count++;
+	if(loc_hour_count == global_settings.dot_interval.time)
 	{
-		hour_count = 0;
+		loc_hour_count = 0;
 		location_wait_gps = true;
 		APP_Ask_GPS_Data();
 	}

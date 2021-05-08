@@ -17,14 +17,14 @@
 #include "font.h"
 #include "external_flash.h"
 
-#if defined(LCD_R154101_ST7796S)
-#include "LCD_R154101_ST7796S.h"
+#if defined(LCD_ORCZ010903C_GC9A01)
+#include "LCD_ORCZ010903C_GC9A01.h"
 #elif defined(LCD_R108101_GC9307)
 #include "LCD_R108101_GC9307.h"
 #elif defined(LCD_ORCT012210N_ST7789V2)
 #include "LCD_ORCT012210N_ST7789V2.h"
-#elif defined(LCD_ORCZ010903C_GC9A01)
-#include "LCD_ORCZ010903C_GC9A01.h"
+#elif defined(LCD_R154101_ST7796S)
+#include "LCD_R154101_ST7796S.h"
 #elif defined(LCD_LH096TIG11G_ST7735SV)
 #include "LCD_LH096TIG11G_ST7735SV.h"
 #elif defined(LCD_VGM068A4W01_SH1106G)
@@ -2858,6 +2858,9 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_out)
 	{
 		lcd_sleep_out = false;
+		if(IsInIdleScreen())
+			IdleShowDateTime();
+		
 		LCD_SleepOut();
 	}
 }

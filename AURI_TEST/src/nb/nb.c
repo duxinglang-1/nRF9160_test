@@ -177,10 +177,10 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	data_print("Publishing: ", data, len);
-	LOG_INF("to topic: %s len: %u\n",
-		CONFIG_MQTT_PUB_TOPIC,
-		(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
+	//data_print("Publishing: ", data, len);
+	//LOG_INF("to topic: %s len: %u\n",
+	//	CONFIG_MQTT_PUB_TOPIC,
+	//	(unsigned int)strlen(CONFIG_MQTT_PUB_TOPIC));
 
 	return mqtt_publish(c, &param);
 }
@@ -590,6 +590,7 @@ static void NbSendData(void)
 	ret = get_data_from_send_cache(&p_data, &data_len);
 	if(ret)
 	{
+		LOG_INF("[%s]: data:%s, len:%d\n", __func__, p_data, data_len);
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
@@ -981,6 +982,24 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 	}
 }
 
+void NBSendSettingReply(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":");
+	strcat(buf, data);
+	strcat(buf, ":");
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);	
+	strcat(buf, "}");
+
+	LOG_INF("[%s] reply data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
 void NBSendSosWifiData(u8_t *data, u32_t datalen)
 {
 	u8_t buf[128] = {0};
@@ -1062,7 +1081,7 @@ void NBSendHealthData(u8_t *data, u32_t datalen)
 	u8_t buf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 	
-	strcpy(buf, "{1,1,0,0,");
+	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T5:");
 	strcat(buf, data);
@@ -1084,7 +1103,7 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 	u8_t buf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 	
-	strcpy(buf, "{1,1,0,0,");
+	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T6:");
 	strcat(buf, data);
@@ -1215,6 +1234,9 @@ void ParseData(u8_t *data, u32_t datalen)
 		}
 
 		SaveSystemSettings();
+
+		strcmd[0] = 'T';
+		NBSendSettingReply(strcmd, strlen(strcmd));
 	}
 }
 
@@ -1378,7 +1400,7 @@ static void nb_link(struct k_work *work)
 	
 	if(!err)
 	{
-		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 	}
 }
 

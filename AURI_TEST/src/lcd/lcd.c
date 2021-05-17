@@ -1510,7 +1510,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
 	u8_t temp,t1,t,i=0,*ptr_font;
-	u16_t y0=y,x0=x;
+	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
 	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*COL] = {0};
@@ -1542,12 +1542,20 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	cbyte = ptr_font[index_addr+3]>>2;
 	csize = ((cbyte+7)/8)*system_font;
 
+	w = cbyte;
+	h = 1;
+	
+#ifdef LCD_TYPE_SPI
+	if((x+w)>=LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>=LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+	BlockWrite(x,y,w,h);	//设置刷新位置
+#endif
+	
 	for(t=0;t<csize;t++)
 	{
 		temp=ptr_font[data_addr+t];
-
-		BlockWrite(x0,y,(cbyte),1);	  	//设置刷新位置
-
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI

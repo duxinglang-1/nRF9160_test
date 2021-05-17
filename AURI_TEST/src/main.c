@@ -29,6 +29,7 @@
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
+#include "audio.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -235,7 +236,7 @@ void idle_show_analog_clock(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 
 	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
-	if(language_mode == 0)
+	if(global_settings.language == LANGUAGE_CHN)
 		strcpy(str_week, week_cn[date_time.week]);
 	else
 		strcpy(str_week, week_en[date_time.week]);
@@ -499,6 +500,10 @@ void test_show_color(void)
 	}
 }
 
+double longitude = 22.222222;
+double latitude = 114.888888;
+char tmpbuf[128] = {0};
+
 void test_show_string(void)
 {
 	u16_t x,y,w,h;
@@ -511,6 +516,13 @@ void test_show_string(void)
 	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
+
+	sprintf(tmpbuf, "%f", longitude);
+	LCD_ShowString(0,0,tmpbuf);
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%f", latitude);	
+	LCD_ShowString(0,2,tmpbuf);
+	return;
 
 #ifdef FONTMAKER_UNICODE_FONT
 #ifdef FONT_16
@@ -637,7 +649,7 @@ void system_init(void)
 
 	key_init();
 	IMU_init(&imu_work_q);
-	//audio_init();
+	audio_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
@@ -698,7 +710,6 @@ int main(void)
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
-		BLEMsgProc();
 		ScreenMsgProcess();
 		
 		k_cpu_idle();

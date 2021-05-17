@@ -13,6 +13,7 @@
 #define GPS_CONTROLLER_H__
 
 #include <zephyr.h>
+#include <drivers/gps.h>
 
 #ifdef __cplusplus
 extern "C" {

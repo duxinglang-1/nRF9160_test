@@ -9,8 +9,7 @@
 #ifndef __UART_BLE_H__
 #define __UART_BLE_H__
 
-#include <nrf_socket.h>
-
+#include <drivers/gps.h>
 
 //0:关闭 1:休眠 2:广播 3:连接
 typedef enum
@@ -32,11 +31,13 @@ typedef enum
 	BLE_MODE_MAX
 }ENUM_BLE_MODE;
 
+extern bool blue_is_on;
+
 extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 
 extern void uart_ble_test(void);
-extern void APP_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data);
+extern void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data);
 extern void MCU_get_nrf52810_ver(void);
 extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);

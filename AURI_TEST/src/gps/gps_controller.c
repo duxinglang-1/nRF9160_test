@@ -28,7 +28,7 @@ static void start(struct k_work *work)
 	ARG_UNUSED(work);
 	int err;
 	struct gps_config gps_cfg = {
-		.nav_mode = GPS_POWER_MODE_DISABLED,
+		.nav_mode = GPS_NAV_MODE_SINGLE_FIX,
 		.power_mode = GPS_POWER_MODE_PERFORMANCE,
 		.timeout = CONFIG_GPS_CONTROL_FIX_TRY_TIME,
 		.interval = CONFIG_GPS_CONTROL_FIX_TRY_TIME +
@@ -141,25 +141,28 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 	int err;
 	static bool is_init;
 
-	if (is_init) {
+	if (is_init)
+	{
 		return -EALREADY;
 	}
 
-	if ((work_q == NULL) || (handler == NULL)) {
+	if((work_q == NULL) || (handler == NULL))
+	{
 		return -EINVAL;
 	}
 
 	app_work_q = work_q;
 
 	gps_dev = device_get_binding(CONFIG_GPS_DEV_NAME);
-	if (gps_dev == NULL) {
-		LOG_ERR("Could not get %s device",
-			log_strdup(CONFIG_GPS_DEV_NAME));
+	if (gps_dev == NULL)
+	{
+		LOG_ERR("Could not get %s device", log_strdup(CONFIG_GPS_DEV_NAME));
 		return -ENODEV;
 	}
 
 	err = gps_init(gps_dev, handler);
-	if (err) {
+	if(err)
+	{
 		LOG_ERR("Could not initialize GPS, error: %d", err);
 		return err;
 	}

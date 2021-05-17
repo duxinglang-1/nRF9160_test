@@ -10,6 +10,7 @@
 #define CMD_GET_IMEI	"AT+CGSN"
 #define CMD_GET_IMSI	"AT+CIMI"
 #define CMD_GET_RSRP	"AT+CESQ"
+#define CMD_GET_APN		"AT+CGDCONT?"
 
 #define CMD_SET_CREG	 	"AT+CEREG=5"
 #if defined(CONFIG_LTE_LEGACY_PCO_MODE)

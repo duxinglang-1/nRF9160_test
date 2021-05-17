@@ -678,8 +678,8 @@ void TimeMsgProcess(void)
 	{
 		sys_time_count = false;
 		UpdateSystemTime();
-
-		if(lcd_is_sleeping)
+		
+		if(lcd_is_sleeping&&!gps_is_working())
 			return;
 		
 		if(screen_id == SCREEN_ID_IDLE)

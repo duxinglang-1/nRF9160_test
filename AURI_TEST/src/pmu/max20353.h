@@ -4,7 +4,7 @@
 #define BATTERY_VOLTAGE_LOW_NOTIFY	(3.55)
 #define BATTERY_VOLTAGE_SHUTDOWN	(3.40)
 
-#define MOTOR_TYPE_ERM		//转子马达
+//#define MOTOR_TYPE_ERM	//转子马达
 //#define MOTOR_TYPE_LRA	//线性马达
 
 #define BATTERY_SOC_GAUGE	//xb add 20201124 电量计功能的代码

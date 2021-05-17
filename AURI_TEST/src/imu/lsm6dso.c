@@ -825,7 +825,7 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 	NBSendFallWifiData(reply, strlen(reply));
 }
 
-void fall_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
+void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};

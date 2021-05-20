@@ -334,7 +334,7 @@ int MAX20353_BuckBoostConfig(void)
     appcmdoutvalue_ = 0x70;
     appdatainoutbuffer_[0] = 0x00;
     appdatainoutbuffer_[1] = 0x04;
-    appdatainoutbuffer_[2] = 0x19;		// 2.5V + (0.1V * number) = 5.0V
+    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 5.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
 
@@ -895,7 +895,7 @@ bool MAX20353_Init(void)
 	MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
 
 	//电荷泵及BUCK/BOOST配置
-	MAX20353_ChargePumpConfig();
+	//MAX20353_ChargePumpConfig();
 
 	//MAX20353_BuckBoostDisable();
 	MAX20353_BuckBoostConfig();

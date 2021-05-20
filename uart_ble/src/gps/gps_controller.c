@@ -23,12 +23,14 @@ static struct k_delayed_work start_work;
 static struct k_delayed_work stop_work;
 static int gps_reporting_interval_seconds;
 
+extern bool test_gps_flag;
+
 static void start(struct k_work *work)
 {
-	ARG_UNUSED(work);
+//	ARG_UNUSED(work);
 	int err;
 	struct gps_config gps_cfg = {
-		.nav_mode = GPS_POWER_MODE_DISABLED,
+		.nav_mode = GPS_NAV_MODE_SINGLE_FIX,
 		.power_mode = GPS_POWER_MODE_PERFORMANCE,
 		.timeout = CONFIG_GPS_CONTROL_FIX_TRY_TIME,
 		.interval = CONFIG_GPS_CONTROL_FIX_TRY_TIME +
@@ -51,6 +53,12 @@ static void start(struct k_work *work)
 	}
 #endif /* CONFIG_GPS_CONTROL_PSM_ENABLE_ON_START */
 
+	if(test_gps_flag)
+	{
+		gps_cfg.nav_mode = GPS_NAV_MODE_CONTINUOUS;
+		gps_cfg.power_mode = GPS_POWER_MODE_DISABLED;
+	}
+	
 	err = gps_start(gps_dev, &gps_cfg);
 	if (err) {
 		LOG_ERR("Failed to enable GPS, error: %d", err);
@@ -76,7 +84,7 @@ static void start(struct k_work *work)
 
 static void stop(struct k_work *work)
 {
-	ARG_UNUSED(work);
+//	ARG_UNUSED(work);
 	int err;
 
 	if (gps_dev == NULL) {
@@ -141,25 +149,28 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 	int err;
 	static bool is_init;
 
-	if (is_init) {
+	if (is_init)
+	{
 		return -EALREADY;
 	}
 
-	if ((work_q == NULL) || (handler == NULL)) {
+	if((work_q == NULL) || (handler == NULL))
+	{
 		return -EINVAL;
 	}
 
 	app_work_q = work_q;
 
 	gps_dev = device_get_binding(CONFIG_GPS_DEV_NAME);
-	if (gps_dev == NULL) {
-		LOG_ERR("Could not get %s device",
-			log_strdup(CONFIG_GPS_DEV_NAME));
+	if (gps_dev == NULL)
+	{
+		LOG_ERR("Could not get %s device", log_strdup(CONFIG_GPS_DEV_NAME));
 		return -ENODEV;
 	}
 
 	err = gps_init(gps_dev, handler);
-	if (err) {
+	if(err)
+	{
 		LOG_ERR("Could not initialize GPS, error: %d", err);
 		return err;
 	}

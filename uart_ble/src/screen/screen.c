@@ -24,6 +24,7 @@
 #include "ucs2.h"
 #include "nb.h"
 #include "sos.h"
+#include "gps.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -657,7 +658,8 @@ void SOSShowStatus(void)
 {
 	u32_t img_addr;
 	u8_t *img;
-	
+
+#if 0	
 	LCD_Clear(BLACK);
 
 	switch(sos_state)
@@ -703,6 +705,7 @@ void SOSShowStatus(void)
 #else
 	LCD_ShowImg(SOS_X, SOS_Y, img);
 #endif
+#endif
 }
 
 void SOSScreenProcess(void)
@@ -731,10 +734,12 @@ void SOSScreenProcess(void)
 
 void SleepShowStatus(void)
 {
+#if 0
 	u16_t x,y,img_hour_w,img_hour_h;
 	u16_t deep_sleep,light_sleep,total_sleep;
 	u32_t img_h_addr,img_m_addr;
 	u8_t *img_h,*img_m;
+	
 #ifdef IMG_FONT_FROM_FLASH
 	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
 						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
@@ -808,6 +813,7 @@ void SleepShowStatus(void)
 	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img_m);
 #endif
+#endif
 }
 
 void SleepScreenProcess(void)
@@ -830,6 +836,7 @@ void SleepScreenProcess(void)
 
 void StepsShowStatus(void)
 {
+#if 0
 	u16_t s_count;
 	u16_t x,y;
 #ifdef IMG_FONT_FROM_FLASH
@@ -871,6 +878,7 @@ void StepsShowStatus(void)
 	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[s_count%10]);
 #endif
+#endif
 }
 
 void StepsScreenProcess(void)
@@ -893,6 +901,7 @@ void StepsScreenProcess(void)
 
 void FallShowStatus(void)
 {
+#if 0
 	u16_t x,y;
 	u32_t img_addr;
 	u8_t *img;
@@ -929,6 +938,7 @@ void FallShowStatus(void)
 	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON);
 	LCD_ShowImg(x, y, img);
 #endif
+#endif
 }
 
 void FallScreenProcess(void)
@@ -951,6 +961,7 @@ void FallScreenProcess(void)
 
 void WristShowStatus(void)
 {
+#if 0
 	u16_t x,y;
 	u32_t img_addr;
 	u8_t *img;
@@ -987,6 +998,7 @@ void WristShowStatus(void)
 	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
 	LCD_ShowImg(x, y, img);
 #endif
+#endif
 }
 
 void WristScreenProcess(void)
@@ -1005,6 +1017,56 @@ void WristScreenProcess(void)
 	}
 	
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
+}
+
+void TestGPSShowInfor(void)
+{
+	LCD_Clear(BLACK);
+	LCD_ShowStringInRect(30,50,180,160,gps_test_info);
+}
+
+void TestGPSScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_GPS_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATED;
+
+		TestGPSShowInfor();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		TestGPSShowInfor();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+}
+
+void TestNBShowInfor(void)
+{
+	LCD_Clear(BLACK);
+	LCD_ShowStringInRect(30,50,180,160,gps_test_info);
+}
+
+void TestNBScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_NB_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATED;
+
+		TestNBShowInfor();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		TestNBShowInfor();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
 }
 
 void EnterIdleScreen(void)
@@ -1159,6 +1221,12 @@ void EnterWristScreen(void)
 	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
 }
 
+void UpdataTestGPSInfo(void)
+{
+	if(screen_id == SCREEN_ID_GPS_TEST)
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+}
+
 void GoBackHistoryScreen(void)
 {
 	SCREEN_ID_ENUM scr_id;
@@ -1214,8 +1282,10 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_SETTINGS:
 			break;
 		case SCREEN_ID_GPS_TEST:
+			TestGPSScreenProcess();
 			break;
 		case SCREEN_ID_NB_TEST:
+			TestNBScreenProcess();
 			break;
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();

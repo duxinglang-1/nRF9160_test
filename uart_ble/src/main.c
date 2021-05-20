@@ -235,7 +235,7 @@ void idle_show_analog_clock(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 
 	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
-	if(language_mode == 0)
+	if(global_settings.language == LANGUAGE_CHN)
 		strcpy(str_week, week_cn[date_time.week]);
 	else
 		strcpy(str_week, week_en[date_time.week]);
@@ -626,13 +626,14 @@ void system_init(void)
 {
 	InitSystemSettings();
 	
-	pmu_init();
+	//pmu_init();
 	flash_init();
 	LCD_Init();
 	
 	//ShowBootUpLogo();
 
 	key_init();
+	PPG_init();
 	IMU_init(&imu_work_q);
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 	NB_init(&nb_work_q);
@@ -649,7 +650,7 @@ void work_init(void)
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
 	k_work_q_start(&gps_work_q, gps_stack_area,
-					K_THREAD_STACK_SIZEOF(imu_stack_area),
+					K_THREAD_STACK_SIZEOF(gps_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 }
 
@@ -687,6 +688,7 @@ int main(void)
 		GPSMsgProcess();
 		PMUMsgProcess();
 		IMUMsgProcess();
+		PPGMsgProcess();
 		LCDMsgProcess();
 		//TPMsgProcess();
 		AlarmMsgProcess();
@@ -695,8 +697,6 @@ int main(void)
 		
 		ScreenMsgProcess();
 
-		//k_sleep(K_MSEC(5));
-		
 		k_cpu_idle();
 	}
 }

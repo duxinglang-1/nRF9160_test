@@ -16,6 +16,7 @@
 #include "nb.h"
 #include "gps.h"
 #include "esp8266.h"
+#include "datetime.h"
 #include "communicate.h"
 
 #include <logging/log_ctrl.h>
@@ -25,7 +26,6 @@ LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u8_t tmpbuf[128] = {0};
 	u32_t i;
 
 	if(wifi_data.count > 0)
@@ -35,8 +35,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 		{
 			strcat(reply, wifi_data.node[i].mac);
 			strcat(reply, "&");
-			sprintf(tmpbuf, "%d", wifi_data.node[i].rssi);
-			strcat(reply, tmpbuf);
+			strcat(reply, wifi_data.node[i].rssi);
 			strcat(reply, "&");
 			if(i < (wifi_data.count-1))
 				strcat(reply, "|");
@@ -46,7 +45,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 	}
 }
 
-void location_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
+void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};
@@ -192,9 +191,22 @@ void TimeCheckSendHealthData(void)
 void TimeCheckSendLocationData(void)
 {
 	static u32_t loc_hour_count = 0;
-
+	bool flag = false;
+	
 	loc_hour_count++;
-	if(loc_hour_count == global_settings.dot_interval.time)
+	if(date_time.hour >= 21 || date_time.hour <= 9)
+	{
+		if(loc_hour_count == 360)
+		{
+			flag = true;
+		}
+	}
+	else if(loc_hour_count == global_settings.dot_interval.time)
+	{
+		flag = true;
+	}
+
+	if(flag)
 	{
 		loc_hour_count = 0;
 		location_wait_gps = true;

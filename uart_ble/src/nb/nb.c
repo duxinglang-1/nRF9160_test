@@ -34,7 +34,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
+#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
 
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
@@ -74,6 +74,7 @@ static struct mqtt_client client;
 static struct sockaddr_storage broker;
 
 /* Connected flag */
+static bool nb_connected = false;
 static bool mqtt_connected = false;
 
 /* File descriptor */
@@ -498,6 +499,8 @@ static int fds_init(struct mqtt_client *c)
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err,i=0;
+
+	LOG_INF("[%s] begin\n", __func__);
 
 	client_init(&client);
 
@@ -976,7 +979,17 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 	{
 		LOG_INF("%s: begin 002\n", __func__);
 
-		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+		if(nb_connected)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+		}
+		else
+		{
+			if(k_work_pending(&nb_link_work))
+				k_delayed_work_cancel(&nb_link_work);
+			
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_NO_WAIT);
+		}
 	}
 }
 
@@ -1345,6 +1358,22 @@ void GetModemInfor(void)
 	LOG_INF("imsi:%s\n", tmpbuf);
 	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
 
+	err = strncmp(g_imsi, "90128", 5);
+	if(err == 0)
+	{
+		if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+		{
+			LOG_INF("set apn fail!\n");
+		}
+	}
+	
+	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get apn fail!\n");
+		return;
+	}
+	LOG_INF("apn:%s\n", tmpbuf);
+
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get rsrp fail!\n");
@@ -1375,9 +1404,30 @@ static void SetModemTurnOff(void)
 	LOG_INF("turn off modem success!");
 }
 
+void SetModemAPN(void)
+{
+	u8_t tmpbuf[128] = {0};
+	
+	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("[%s] set apn fail!\n", __func__);
+	}
+
+	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("[%s] Get apn fail!\n", __func__);
+		return;
+	}
+	LOG_INF("[%s] apn:%s\n", __func__, tmpbuf);	
+}
+
 static void nb_link(struct k_work *work)
 {
 	int err;
+	u8_t tmpbuf[128] = {0};
+	static u32_t retry_count = 0;
+	
+	LOG_INF("[%s] begin\n", __func__);
 
 	configure_low_power();
 
@@ -1386,10 +1436,30 @@ static void nb_link(struct k_work *work)
 	{
 		LOG_INF("Can't connected to LTE network");
 		SetModemTurnOff();
+
+		nb_connected = false;
+		
+		retry_count++;
+		if(retry_count <= 5)	//5次以内每半分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(30));
+		else if(retry_count <= 10)	//6到10次每分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(60));
+		else if(retry_count <= 15)	//11到15次每5分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(300));		
+		else if(retry_count <= 20)	//16到20次每10分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(600));
+		else if(retry_count <= 25)	//21到25次每30分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1800));
+		else						//26次以上每1小时重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(3600));
 	}
 	else
 	{
 		LOG_INF("Connected to LTE network");
+
+		nb_connected = true;
+		retry_count = 0;
+		
 		GetModemDateTime();
 		modem_data_init();
 	}
@@ -1425,8 +1495,21 @@ void GetNBSignal(void)
 		LOG_INF("Get rsrp fail!\n");
 		return;
 	}
-
 	LOG_INF("rsrp:%s\n", str_rsrp);
+
+	if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get apn fail!\n");
+		return;
+	}
+	LOG_INF("apn:%s\n", str_rsrp);
+
+	if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get csq fail!\n");
+		return;
+	}
+	LOG_INF("csq:%s\n", str_rsrp);
 }
 
 void NBMsgProcess(void)
@@ -1475,5 +1558,4 @@ void NB_init(struct k_work_q *work_q)
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
-	//k_work_submit_to_queue(app_work_q, &nb_link_work);
 }

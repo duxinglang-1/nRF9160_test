@@ -16,10 +16,11 @@
 #include "gps.h"
 #include "max20353.h"
 #include "screen.h"
+#include "esp8266.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(ble, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define BLE_DEV	"UART_0"
 
@@ -59,7 +60,6 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define INSERT_WHITELIST_ID`	0xFF59			//将手机ID插入白名单
 #define DEVICE_SEND_128_RAND_ID	0xFF60			//手环发送随机的128位随机数
 #define PHONE_SEND_128_AES_ID	0xFF61			//手机发送AES 128 CBC加密数据给手环
-#define WIFI_SCAN_DATA_ID		0xFF62			//扫描到的wifi信号数据
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
 #define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
@@ -68,10 +68,9 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define GET_BLE_STATUS_ID		0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
 #define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 
-static bool uart_low_power_flag = false;
+bool blue_is_on = true;
 
 static u32_t rece_len=0;
-
 static u8_t rx_buf[BUF_MAXSIZE]={0};
 static u8_t tx_buf[BUF_MAXSIZE]={0};
 
@@ -159,16 +158,6 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		tp_y = buf[9]*0x100+buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
-}
-
-void wifi_sacn_notify_handle(u8_t *buf, u32_t len)
-{
-	u8_t tmpbuf[128] = {0};
-	u8_t tp_type = TP_EVENT_MAX;
-	u16_t tp_x,tp_y;
-	
-	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
-	
 }
 
 void APP_set_find_device(u8_t *buf, u32_t len)
@@ -625,7 +614,7 @@ void APP_get_location_data(u8_t *buf, u32_t len)
 	APP_Ask_GPS_Data();
 }
 
-void APP_get_gps_data_reply(bool flag, nrf_gnss_pvt_data_frame_t gps_data)
+void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	u8_t tmpgps;
 	u8_t reply[128] = {0};
@@ -1080,7 +1069,7 @@ void get_ble_status_response(u8_t *buf, u32_t len)
 }
 
 /**********************************************************************************
-*Name: ble_receive_date_handle
+*Name: ble_receive_data_handle
 *Function:  处理蓝牙接收到的数据
 *Parameter: 
 *			Input:
@@ -1107,7 +1096,7 @@ void get_ble_status_response(u8_t *buf, u32_t len)
 *	8+n		CRC8		1		0x00-0xFF			数据校验,从包头开始到CRC前一位
 *	9+n		EndFrame	1		0x88				结束帧
 **********************************************************************************/
-void ble_receive_date_handle(u8_t *buf, u32_t len)
+void ble_receive_data_handle(u8_t *buf, u32_t len)
 {
 	u8_t CRC_data=0,data_status;
 	u16_t data_len,data_ID;
@@ -1207,9 +1196,6 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 	case CTP_NOTIFY_ID:
 		CTP_notify_handle(buf, len);
 		break;
-	case WIFI_SCAN_DATA_ID:
-		wifi_sacn_notify_handle(buf, len);
-		break;
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);
 		break;
@@ -1231,31 +1217,50 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 {
 	LOG_INF("ble_send_date_handle\n");
 
+	switch_to_ble();
+	
 	uart_fifo_fill(uart_ble, buf, len);
 	uart_irq_tx_enable(uart_ble); 
 }
 
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
-	LOG_INF("uart_rece:%02X\n", data);
-	
-	if(data == 0xAB)
-	{
-		memset(rx_buf, 0, sizeof(rx_buf));
-		rece_len = 0;
-	}
-	
-	rx_buf[rece_len++] = data;
-	if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	//receivive complete
-	{
-		ble_receive_date_handle(rx_buf, rece_len);
+    if(blue_is_on)
+    {
+        rx_buf[rece_len++] = data;
+        if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	
+        {
+            //ble_send_date_handle(rx_buf, rece_len);
+            ble_receive_data_handle(rx_buf, rece_len);
+            
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+        }
+		
+        if(data == 0x88)
+        {
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+        }
+    }
+    else if(wifi_is_on)
+    {
+       
+        rx_buf[rece_len++] = data;
+        if(rece_len==256)  
+        {
+            wifi_receive_data_handle(rx_buf, rece_len);
 
-		memset(rx_buf, 0, sizeof(rx_buf));
-		rece_len = 0;
-	}
-	else				//continue receive
-	{
-	}
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+        }
+
+        if((rx_buf[rece_len-1] == 0X4B) || (rece_len==BUF_MAXSIZE-256))	
+        {
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+        }      
+   }
 }
 
 void uart_send_data(void)
@@ -1311,19 +1316,6 @@ static void uart_cb(struct device *x)
 
 		k_free(buf);
 	}
-
-}
-
-void suspend_uart2(void)
-{
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	if(uart_ble != NULL)
-	{
-		uart_irq_rx_disable(uart_ble);
-		device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
-		uart_low_power_flag = true;
-	}
-#endif
 }
 
 void ble_init(void)
@@ -1339,14 +1331,6 @@ void ble_init(void)
 
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	//device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	//uart2_rx_reset();
-	//uart2_tx_resume();
-	//uart_irq_rx_enable(uart_ble);
-#endif
-	
 }
 
 void test_uart_ble(void)
@@ -1361,4 +1345,3 @@ void test_uart_ble(void)
 		k_sleep(K_MSEC(1000));
 	}
 }
-

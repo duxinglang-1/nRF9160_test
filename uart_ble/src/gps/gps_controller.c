@@ -27,7 +27,7 @@ extern bool test_gps_flag;
 
 static void start(struct k_work *work)
 {
-//	ARG_UNUSED(work);
+	ARG_UNUSED(work);
 	int err;
 	struct gps_config gps_cfg = {
 		.nav_mode = GPS_NAV_MODE_SINGLE_FIX,
@@ -84,7 +84,7 @@ static void start(struct k_work *work)
 
 static void stop(struct k_work *work)
 {
-//	ARG_UNUSED(work);
+	ARG_UNUSED(work);
 	int err;
 
 	if (gps_dev == NULL) {

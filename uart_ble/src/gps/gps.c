@@ -49,6 +49,8 @@ LOG_MODULE_REGISTER(gps, CONFIG_LOG_DEFAULT_LEVEL);
 
 static void APP_Ask_GPS_Data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(app_wait_gps_timer, APP_Ask_GPS_Data_timerout, NULL);
+static void APP_Send_GPS_Data_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(app_send_gps_timer, APP_Send_GPS_Data_timerout, NULL);
 
 static bool gps_is_on = false;
 
@@ -139,6 +141,11 @@ void APP_Ask_GPS_Data(void)
 #endif
 }
 
+void APP_Send_GPS_Data_timerout(struct k_timer *timer)
+{
+	APP_GPS_data_send(true);
+}
+
 void APP_Ask_GPS_off(void)
 {
 	app_gps_off = true;
@@ -170,6 +177,10 @@ void GPSMsgProcess(void)
 	{
 		app_gps_off = false;
 		gps_off();
+	}
+	if(gps_is_working())
+	{
+		k_sleep(K_MSEC(5));
 	}
 }
 
@@ -211,7 +222,7 @@ static void set_gps_enable(const bool enable)
 
 static void send_agps_request(struct k_work *work)
 {
-//	ARG_UNUSED(work);
+	ARG_UNUSED(work);
 
 #if defined(CONFIG_NRF_CLOUD_AGPS)
 	int err;
@@ -241,7 +252,7 @@ static void send_agps_request(struct k_work *work)
 
 static void gps_handler(struct device *dev, struct gps_event *evt)
 {
-	u8_t tmpbuf[256] = {0};
+	u8_t tmpbuf[128] = {0};
 	
 	switch (evt->type)
 	{
@@ -324,7 +335,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
 				k_timer_stop(&app_wait_gps_timer);
 
-			APP_GPS_data_send(true);
+			k_timer_start(&app_send_gps_timer, K_MSEC(1000), NULL);
 		}
 		break;
 		

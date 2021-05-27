@@ -44,6 +44,9 @@ static void ParseDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(parse_data_timer, ParseDataCallBack, NULL);
 static void MqttDisConnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_disconnect_timer, MqttDisConnectCallBack, NULL);
+static void GetNetWorkTimeCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_nw_time_timer, GetNetWorkTimeCallBack, NULL);
+
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work nb_link_work;
@@ -887,6 +890,10 @@ void GetModemDateTime(void)
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
 		LOG_INF("Get CCLK fail!\n");
+
+		if(nb_connected)
+			k_timer_start(&get_nw_time_timer, K_MSEC(1000), NULL);
+		
 		return;
 	}
 	LOG_INF("%s\n", timebuf);
@@ -962,22 +969,27 @@ void GetModemDateTime(void)
 	SaveSystemDateTime();
 }
 
+void GetNetWorkTimeCallBack(struct k_timer *timer_id)
+{
+	GetModemDateTime();
+}
+
 static void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
 
 	ret = add_data_into_send_cache(data, datalen);
-	LOG_INF("%s: data add ret:%d\n", __func__, ret);
+	LOG_INF("[%s]: data add ret:%d\n", __func__, ret);
 	
 	if(mqtt_connected)
 	{
-		LOG_INF("%s: begin 001\n", __func__);
+		LOG_INF("[%s]: begin 001\n", __func__);
 
 		NbSendDataStart();
 	}
 	else
 	{
-		LOG_INF("%s: begin 002\n", __func__);
+		LOG_INF("[%s]: begin 002\n", __func__);
 
 		if(nb_connected)
 		{
@@ -1358,22 +1370,6 @@ void GetModemInfor(void)
 	LOG_INF("imsi:%s\n", tmpbuf);
 	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
 
-	err = strncmp(g_imsi, "90128", 5);
-	if(err == 0)
-	{
-		if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
-		{
-			LOG_INF("set apn fail!\n");
-		}
-	}
-	
-	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
-	{
-		LOG_INF("Get apn fail!\n");
-		return;
-	}
-	LOG_INF("apn:%s\n", tmpbuf);
-
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get rsrp fail!\n");
@@ -1468,7 +1464,7 @@ static void nb_link(struct k_work *work)
 	
 	if(!err)
 	{
-		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 	}
 }
 

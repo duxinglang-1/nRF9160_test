@@ -81,7 +81,6 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			test_nb();
 			//test_gps();
 			//FallAlarmStart();
 			break;

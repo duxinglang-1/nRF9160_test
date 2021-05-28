@@ -15,6 +15,7 @@ extern bool ble_wait_gps;
 extern bool sos_wait_gps;
 extern bool fall_wait_gps;
 extern bool location_wait_gps;
+extern bool test_gps_flag;
 
 extern u8_t gps_test_info[256];
 

@@ -1019,10 +1019,22 @@ void WristScreenProcess(void)
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
 }
 
+void TestGPSUpdateInfor(void)
+{
+	LCD_Fill(30, 50, 190, 160, BLACK);
+	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+}
+
 void TestGPSShowInfor(void)
 {
+	u32_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
 	LCD_Clear(BLACK);
-	LCD_ShowStringInRect(30,50,180,160,gps_test_info);
+	strcpy(strbuf, "GPS TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
 }
 
 void TestGPSScreenProcess(void)
@@ -1037,17 +1049,30 @@ void TestGPSScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
-		TestGPSShowInfor();
+		TestGPSUpdateInfor();
 		break;
 	}
 	
 	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
 }
 
+void TestNBUpdateINfor(void)
+{
+	LCD_Fill(30, 50, 190, 160, BLACK);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+}
+
 void TestNBShowInfor(void)
 {
+	u32_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
 	LCD_Clear(BLACK);
-	LCD_ShowStringInRect(30,50,180,160,gps_test_info);
+	strcpy(strbuf, "NB-IoT TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+
 }
 
 void TestNBScreenProcess(void)
@@ -1058,15 +1083,15 @@ void TestNBScreenProcess(void)
 		scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATED;
 
-		TestNBShowInfor();
+		TestNBUpdateINfor();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
-		TestNBShowInfor();
+		TestNBUpdateINfor();
 		break;
 	}
 	
-	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+	scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
 }
 
 void EnterIdleScreen(void)

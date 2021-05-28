@@ -14,6 +14,8 @@
 
 #include "lcd.h"
 #include "settings.h"
+#include "gps.h"
+#include "nb.h"
 #include "font.h"
 #include "external_flash.h"
 
@@ -2852,7 +2854,8 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_in)
 	{
 		lcd_sleep_in = false;
-		LCD_SleepIn();
+		if(!test_gps_flag && !test_nb_flag)
+			LCD_SleepIn();
 	}
 
 	if(lcd_sleep_out)

@@ -38,6 +38,9 @@ typedef enum
 extern NB_SIGNL_LEVEL g_nb_sig;
 
 extern bool get_modem_info_flag;
+extern bool test_nb_flag;
+
+extern u8_t nb_test_info[256];
 
 extern void NB_init(struct k_work_q *work_q);
 extern void NBMsgProcess(void);

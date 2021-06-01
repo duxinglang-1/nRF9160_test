@@ -277,13 +277,20 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
 					tracked++;
-			
+				#ifdef LCD_VGM068A4W01_SH1106G
+					if(tracked<8)
+					{
+						sprintf(buf, "%02d|", evt->pvt.sv[i].cn0/10);
+						strcat(strbuf, buf);
+					}
+				#else
 					sprintf(buf, "%02d|%02d;", evt->pvt.sv[i].sv, evt->pvt.sv[i].cn0/10);
 					strcat(strbuf, buf);
+				#endif
 				}
 			}
 
-			sprintf(gps_test_info, "%d,", tracked);
+			sprintf(gps_test_info, "%02d,", tracked);
 			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
 			
@@ -327,13 +334,20 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
 					tracked++;
-			
+				#ifdef LCD_VGM068A4W01_SH1106G
+					if(tracked<8)
+					{
+						sprintf(buf, "%02d|", evt->pvt.sv[i].cn0/10);
+						strcat(strbuf, buf);
+					}
+				#else
 					sprintf(buf, "%02d|%02d;", evt->pvt.sv[i].sv, evt->pvt.sv[i].cn0/10);
 					strcat(strbuf, buf);
+				#endif
 				}
 			}
 
-			sprintf(gps_test_info, "%d,", tracked);
+			sprintf(gps_test_info, "%02d,", tracked);
 			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
 			

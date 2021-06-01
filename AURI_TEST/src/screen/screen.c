@@ -1036,8 +1036,13 @@ void WristScreenProcess(void)
 
 void TestGPSUpdateInfor(void)
 {
+#ifdef LCD_VGM068A4W01_SH1106G
+	LCD_Clear(BLACK);
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, gps_test_info);
+#else
 	LCD_Fill(30, 50, 190, 160, BLACK);
 	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+#endif/*LCD_VGM068A4W01_SH1106G*/
 }
 
 void TestGPSShowInfor(void)
@@ -1046,10 +1051,15 @@ void TestGPSShowInfor(void)
 	u8_t strbuf[128] = {0};
 	
 	LCD_Clear(BLACK);
+	
+#ifdef LCD_VGM068A4W01_SH1106G
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, gps_test_info);
+#else
 	strcpy(strbuf, "GPS TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
 	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+#endif/*LCD_VGM068A4W01_SH1106G*/
 }
 
 void TestGPSScreenProcess(void)
@@ -1073,8 +1083,13 @@ void TestGPSScreenProcess(void)
 
 void TestNBUpdateINfor(void)
 {
+#ifdef LCD_VGM068A4W01_SH1106G
+	LCD_Clear(BLACK);
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, nb_test_info);
+#else
 	LCD_Fill(30, 50, 190, 160, BLACK);
 	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+#endif
 }
 
 void TestNBShowInfor(void)
@@ -1083,11 +1098,14 @@ void TestNBShowInfor(void)
 	u8_t strbuf[128] = {0};
 	
 	LCD_Clear(BLACK);
+#ifdef LCD_VGM068A4W01_SH1106G
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, nb_test_info);
+#else	
 	strcpy(strbuf, "NB-IoT TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
 	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
-
+#endif
 }
 
 void TestNBScreenProcess(void)

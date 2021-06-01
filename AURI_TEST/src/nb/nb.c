@@ -1486,7 +1486,7 @@ void GetModemSignal(void)
 	if(rsrp != rsrpbk)
 	{
 		rsrpbk = rsrp;
-		sprintf(nb_test_info, "NB signal(rsrp):%ddb", (rsrp-141));
+		sprintf(nb_test_info, "rsrp:%d\n    %ddBm", rsrp, (rsrp-141));
 		nb_test_update_flag = true;
 	}
 

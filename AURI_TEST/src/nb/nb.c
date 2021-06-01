@@ -34,8 +34,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define SHOW_LOG_IN_SCREEN		//xb add 20201029 将NB测试状态LOG信息显示在屏幕上
-
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
@@ -44,6 +42,11 @@ static void ParseDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(parse_data_timer, ParseDataCallBack, NULL);
 static void MqttDisConnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_disconnect_timer, MqttDisConnectCallBack, NULL);
+static void GetNetWorkTimeCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_nw_time_timer, GetNetWorkTimeCallBack, NULL);
+static void GetNetWorkSignalCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_nw_rsrp_timer, GetNetWorkSignalCallBack, NULL);
+
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work nb_link_work;
@@ -83,6 +86,11 @@ static struct pollfd fds;
 bool app_nb_on = false;
 bool nb_is_running = false;
 bool get_modem_info_flag = false;
+bool get_modem_time_flag = false;
+bool get_modem_signal_flag = false;
+bool get_modem_cclk_flag = false;
+bool test_nb_flag = false;
+bool nb_test_update_flag = false;
 
 u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 u8_t g_imei[IMEI_MAX_LEN+1] = {0};
@@ -93,16 +101,7 @@ static void MqttReceData(u8_t *data, u32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
-#ifdef SHOW_LOG_IN_SCREEN
-static u8_t tmpbuf[128] = {0};
-void show_infor(u8_t *strbuf)
-{
-	LCD_Clear(BLACK);
-	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_ShowStrInRect(0, 0, LCD_WIDTH, 4, strbuf);
-}
-#endif
-
+u8_t nb_test_info[256] = {0};
 
 #if defined(CONFIG_LWM2M_CARRIER)
 K_SEM_DEFINE(carrier_registered, 0, 1);
@@ -112,40 +111,52 @@ void lwm2m_carrier_event_handler(const lwm2m_carrier_event_t *event)
 	switch (event->type) {
 	case LWM2M_CARRIER_EVENT_BSDLIB_INIT:
 		LOG_INF("LWM2M_CARRIER_EVENT_BSDLIB_INIT\n");
-	#ifdef SHOW_LOG_IN_SCREEN	
-		show_infor("LWM2M_CARRIER_EVENT_BSDLIB_INIT");
-	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LWM2M_CARRIER_EVENT_BSDLIB_INIT");
+			TestNBUpdateINfor();
+		}
 		break;
 	case LWM2M_CARRIER_EVENT_CONNECT:
 		LOG_INF("LWM2M_CARRIER_EVENT_CONNECT\n");
-	#ifdef SHOW_LOG_IN_SCREEN
-		show_infor("LWM2M_CARRIER_EVENT_CONNECT");
-	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LWM2M_CARRIER_EVENT_CONNECT");
+			TestNBUpdateINfor();
+		}
 		break;
 	case LWM2M_CARRIER_EVENT_DISCONNECT:
 		LOG_INF("LWM2M_CARRIER_EVENT_DISCONNECT\n");
-	#ifdef SHOW_LOG_IN_SCREEN
-		show_infor("LWM2M_CARRIER_EVENT_DISCONNECT");
-	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LWM2M_CARRIER_EVENT_DISCONNECT");
+			TestNBUpdateINfor();
+		}
 		break;
 	case LWM2M_CARRIER_EVENT_READY:
 		LOG_INF("LWM2M_CARRIER_EVENT_READY\n");
-	#ifdef SHOW_LOG_IN_SCREEN
-		show_infor("LWM2M_CARRIER_EVENT_READY");
-	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LWM2M_CARRIER_EVENT_READY");
+			TestNBUpdateINfor();
+		}
 		k_sem_give(&carrier_registered);
 		break;
 	case LWM2M_CARRIER_EVENT_FOTA_START:
 		LOG_INF("LWM2M_CARRIER_EVENT_FOTA_START\n");
-	#ifdef SHOW_LOG_IN_SCREEN
-		show_infor("LWM2M_CARRIER_EVENT_FOTA_START");
-	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LWM2M_CARRIER_EVENT_FOTA_START");
+			TestNBUpdateINfor();
+		}
 		break;
 	case LWM2M_CARRIER_EVENT_REBOOT:
 		LOG_INF("LWM2M_CARRIER_EVENT_REBOOT\n");
-	#ifdef SHOW_LOG_IN_SCREEN	
-		show_infor("LWM2M_CARRIER_EVENT_REBOOT");
-	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LWM2M_CARRIER_EVENT_REBOOT");
+			TestNBUpdateINfor();
+		}
 		break;
 	}
 }
@@ -281,11 +292,23 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		if(evt->result != 0)
 		{
 			LOG_INF("MQTT connect failed %d\n", evt->result);
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "MQTT connect failed %d", evt->result);
+				TestNBUpdateINfor();
+			}
+			
 			break;
 		}
 
 		mqtt_connected = true;
 		LOG_INF("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "MQTT connect failed %d", evt->result);
+			TestNBUpdateINfor();
+		}
+		
 		subscribe();
 
 		NbSendDataStart();
@@ -294,6 +317,12 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 
 	case MQTT_EVT_DISCONNECT:
 		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__, __LINE__, evt->result);
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "MQTT client disconnected %d", evt->result);
+			TestNBUpdateINfor();
+		}
+		
 		mqtt_connected = false;
 		
 		NbSendDataStop();
@@ -305,7 +334,11 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			const struct mqtt_publish_param *p = &evt->param.publish;
 
 			LOG_INF("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__, __LINE__, evt->result, p->message.payload.len);
-	
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "MQTT PUBLISH result:%d len:%d\n", evt->result, p->message.payload.len);
+				TestNBUpdateINfor();
+			}
 			err = publish_get_payload(c, p->message.payload.len);
 			if(err >= 0)
 			{
@@ -321,15 +354,20 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			{
 				LOG_INF("mqtt_read_publish_payload: Failed! %d\n", err);
 				LOG_INF("Disconnecting MQTT client...\n");
-			
+				if(test_nb_flag)
+				{
+					strcpy(nb_test_info, "Disconnecting MQTT client...");
+					TestNBUpdateINfor();
+				}
 				err = mqtt_disconnect(c);
 				if(err)
 				{
 					LOG_INF("Could not disconnect: %d\n", err);
-				#ifdef SHOW_LOG_IN_SCREEN	
-					sprintf(tmpbuf, "Could not disconnect: %d", err);
-					show_infor(tmpbuf);
-				#endif
+					if(test_nb_flag)
+					{
+						sprintf(nb_test_info, "Could not disconnect:%d", err);
+						TestNBUpdateINfor();
+					}
 				}
 			}
 		} 
@@ -339,27 +377,54 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		if(evt->result != 0)
 		{
 			LOG_INF("MQTT PUBACK error %d\n", evt->result);
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "Could not disconnect:%d", err);
+				TestNBUpdateINfor();
+			}
+			
 			break;
 		}
 
 		LOG_INF("[%s:%d] PUBACK packet id: %u\n", __func__, __LINE__,
 				evt->param.puback.message_id);
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "PUBACK packet id: %u", evt->param.puback.message_id);
+			TestNBUpdateINfor();
+		}
 		break;
 
 	case MQTT_EVT_SUBACK:
 		if(evt->result != 0)
 		{
 			LOG_INF("MQTT SUBACK error %d\n", evt->result);
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "MQTT SUBACK error:%d", evt->result);
+				TestNBUpdateINfor();
+			}
+			
 			break;
 		}
 
 		LOG_INF("[%s:%d] SUBACK packet id: %u\n", __func__, __LINE__,
 				evt->param.suback.message_id);
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "SUBACK packet id: %u", evt->param.suback.message_id);
+			TestNBUpdateINfor();
+		}
 		break;
 
 	default:
 		LOG_INF("[%s:%d] default: %d\n", __func__, __LINE__,
 				evt->type);
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "default: %d", evt->type);
+			TestNBUpdateINfor();
+		}
 		break;
 	}
 }
@@ -381,6 +446,11 @@ static void broker_init(void)
 	if(err)
 	{
 		LOG_INF("ERROR: getaddrinfo failed %d\n", err);
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "ERROR: getaddrinfo failed:%d", err);
+			TestNBUpdateINfor();
+		}
 		return;
 	}
 
@@ -406,6 +476,11 @@ static void broker_init(void)
 			inet_ntop(AF_INET, &broker4->sin_addr.s_addr,
 				  ipv4_addr, sizeof(ipv4_addr));
 			LOG_INF("IPv4 Address found %s\n", ipv4_addr);
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "IPv4 Address found:%s", ipv4_addr);
+				TestNBUpdateINfor();
+			}
 			break;
 		}
 		else
@@ -414,6 +489,15 @@ static void broker_init(void)
 				(unsigned int)addr->ai_addrlen,
 				(unsigned int)sizeof(struct sockaddr_in),
 				(unsigned int)sizeof(struct sockaddr_in6));
+			
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "ai_addrlen = %u should be %u or %u",
+				(unsigned int)addr->ai_addrlen,
+				(unsigned int)sizeof(struct sockaddr_in),
+				(unsigned int)sizeof(struct sockaddr_in6));
+				TestNBUpdateINfor();
+			}
 		}
 
 		addr = addr->ai_next;
@@ -642,10 +726,15 @@ static void modem_rsrp_handler(char rsrp_value)
 	 * falls outside this range, we should not send the value.
 	 */
 	LOG_INF("rsrp_value:%d\n", rsrp_value);
-
+	if(test_nb_flag)
+	{
+		sprintf(nb_test_info, "rsrp_value:%d", rsrp_value);
+		nb_test_update_flag = true;
+	}
+	
 	if(rsrp_value > 97)
 	{
-		g_nb_sig = NB_SIG_LEVEL_NO;
+		//g_nb_sig = NB_SIG_LEVEL_NO;
 	}
 	else if(rsrp_value >= 80)
 	{
@@ -693,9 +782,11 @@ void modem_data_init(void)
  */
 static void modem_configure(void)
 {
-#ifdef SHOW_LOG_IN_SCREEN
-	show_infor("modem_configure");
-#endif
+	if(test_nb_flag)
+	{
+		strcpy(nb_test_info, "modem_configure");
+		TestNBUpdateINfor();
+	}
 
 #if 1 //xb test 20200927
 	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
@@ -719,27 +810,35 @@ static void modem_configure(void)
 		 * start the connection.
 		 */
 		LOG_INF("Waitng for carrier registration...\n");
-	  #ifdef SHOW_LOG_IN_SCREEN
-		show_infor("Waitng for carrier registration...");
-	  #endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "Waitng for carrier registration...");
+			TestNBUpdateINfor();
+		}
 		k_sem_take(&carrier_registered, K_FOREVER);
 		LOG_INF("Registered!\n");
-	  #ifdef SHOW_LOG_IN_SCREEN
-		show_infor("Registered!");
-	  #endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "Registered!");
+			TestNBUpdateINfor();
+		}
 	#else /* defined(CONFIG_LWM2M_CARRIER) */
 		int err;
 
 		LOG_INF("LTE Link Connecting ...\n");
-	  #ifdef SHOW_LOG_IN_SCREEN	
-		show_infor("LTE Link Connecting ...");
-	  #endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LTE Link Connecting ...");
+			TestNBUpdateINfor();
+		}
 		err = lte_lc_init_and_connect();
 		__ASSERT(err == 0, "LTE link could not be established.");
 		LOG_INF("LTE Link Connected!\n");
-	  #ifdef SHOW_LOG_IN_SCREEN
-		show_infor("LTE Link Connected!");
-	  #endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LTE Link Connected!");
+			TestNBUpdateINfor();
+		}
 #endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
 #endif /* defined(CONFIG_LTE_LINK_CONTROL) */
@@ -750,27 +849,29 @@ void test_nb(void)
 	int err;
 
 	nb_is_running = true;
+	test_nb_flag = true;
 	
 	LOG_INF("Start NB-IoT test!\n");
 
-#ifdef	SHOW_LOG_IN_SCREEN
 	EnterNBTestScreen();
-	show_infor("Start NB-IoT test!");
-#endif
+	TestNBShowInfor();
 
 	modem_configure();
 
+	k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
+#if 0
 	client_init(&client);
 
 	err = mqtt_connect(&client);
 	if(err != 0)
 	{
 		LOG_INF("ERROR: mqtt_connect %d\n", err);
-	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "ERROR: mqtt_connect %d", err);
-		show_infor(tmpbuf);
-	#endif
-	
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "ERROR: mqtt_connect %d", err);
+			TestNBUpdateINfor();
+		}
+
 		return;
 	}
 
@@ -778,10 +879,11 @@ void test_nb(void)
 	if(err != 0)
 	{
 		LOG_INF("ERROR: fds_init %d\n", err);
-	#ifdef SHOW_LOG_IN_SCREEN
-		sprintf(tmpbuf, "ERROR: fds_init %d", err);
-		show_infor(tmpbuf);
-	#endif
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "ERROR: fds_init %d", err);
+			TestNBUpdateINfor();
+		}
 	
 		return;
 	}
@@ -791,11 +893,12 @@ void test_nb(void)
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
 		if(err < 0)
 		{
-			LOG_INF("ERROR: poll %d\n", errno);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "ERROR: poll %d", errno);
-			show_infor(tmpbuf);
-		#endif
+			LOG_INF("ERROR: poll %d\n", err);
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "ERROR: poll %d", err);
+				TestNBUpdateINfor();
+			}
 		
 			break;
 		}
@@ -804,10 +907,11 @@ void test_nb(void)
 		if((err != 0) && (err != -EAGAIN))
 		{
 			LOG_INF("ERROR: mqtt_live %d\n", err);
-		#ifdef SHOW_LOG_IN_SCREEN
-			sprintf(tmpbuf, "ERROR: mqtt_live %d", err);
-			show_infor(tmpbuf);
-		#endif
+			if(test_nb_flag)
+			{
+				sprintf(nb_test_info, "ERROR: mqtt_live %d", err);
+				TestNBUpdateINfor();
+			}
 		
 			break;
 		}
@@ -818,10 +922,11 @@ void test_nb(void)
 			if(err != 0)
 			{
 				LOG_INF("ERROR: mqtt_input %d\n", err);
-			#ifdef SHOW_LOG_IN_SCREEN
-				sprintf(tmpbuf, "ERROR: mqtt_input %d", err);
-				show_infor(tmpbuf);
-			#endif
+				if(test_nb_flag)
+				{
+					sprintf(nb_test_info, "ERROR: mqtt_input %d", err);
+					TestNBUpdateINfor();
+				}
 			
 				break;
 			}
@@ -830,9 +935,11 @@ void test_nb(void)
 		if((fds.revents & POLLERR) == POLLERR)
 		{
 			LOG_INF("POLLERR\n");
-		#ifdef SHOW_LOG_IN_SCREEN	
-			show_infor("POLLERR");
-		#endif
+			if(test_nb_flag)
+			{
+				strcpy(nb_test_info, "POLLERR");
+				TestNBUpdateINfor();
+			}
 		
 			break;
 		}
@@ -840,28 +947,34 @@ void test_nb(void)
 		if((fds.revents & POLLNVAL) == POLLNVAL)
 		{
 			LOG_INF("POLLNVAL\n");
-		#ifdef SHOW_LOG_IN_SCREEN
-			show_infor("POLLNVAL");
-		#endif
+			if(test_nb_flag)
+			{
+				strcpy(nb_test_info, "POLLNVAL");
+				TestNBUpdateINfor();
+			}
 		
 			break;
 		}
 	}
 
 	LOG_INF("Disconnecting MQTT client...\n");
-#ifdef SHOW_LOG_IN_SCREEN	
-	show_infor("Disconnecting MQTT client...");
-#endif
+	if(test_nb_flag)
+	{
+		strcpy(nb_test_info, "Disconnecting MQTT client...");
+		TestNBUpdateINfor();
+	}
 
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
 		LOG_INF("Could not disconnect MQTT client. Error: %d\n", err);
-	#ifdef SHOW_LOG_IN_SCREEN	
-		sprintf(tmpbuf, "Could not disconnect MQTT client. Error: %d", err);
-		show_infor(tmpbuf);
-	#endif
+		if(test_nb_flag)
+		{
+			sprintf(nb_test_info, "Could not disconnect MQTT client. Error: %d\n", err);
+			TestNBUpdateINfor();
+		}
 	}
+#endif	
 }
 
 void APP_Ask_NB(void)
@@ -888,6 +1001,10 @@ void GetModemDateTime(void)
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
 		LOG_INF("Get CCLK fail!\n");
+
+		if(nb_connected)
+			k_timer_start(&get_nw_time_timer, K_MSEC(1000), NULL);
+		
 		return;
 	}
 	LOG_INF("%s\n", timebuf);
@@ -963,22 +1080,27 @@ void GetModemDateTime(void)
 	SaveSystemDateTime();
 }
 
+void GetNetWorkTimeCallBack(struct k_timer *timer_id)
+{
+	get_modem_time_flag = true;
+}
+
 static void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
 
 	ret = add_data_into_send_cache(data, datalen);
-	LOG_INF("%s: data add ret:%d\n", __func__, ret);
+	LOG_INF("[%s]: data add ret:%d\n", __func__, ret);
 	
 	if(mqtt_connected)
 	{
-		LOG_INF("%s: begin 001\n", __func__);
+		LOG_INF("[%s]: begin 001\n", __func__);
 
 		NbSendDataStart();
 	}
 	else
 	{
-		LOG_INF("%s: begin 002\n", __func__);
+		LOG_INF("[%s]: begin 002\n", __func__);
 
 		if(nb_connected)
 		{
@@ -1334,6 +1456,47 @@ static int configure_low_power(void)
 	return err;
 }
 
+void GetModemSignal(void)
+{
+	char *ptr;
+	int i=0,len;
+	u8_t strbuf[128] = {0};
+	u8_t tmpbuf[128] = {0};
+	s32_t rsrp;
+	static s32_t rsrpbk = 0;
+	
+	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get rsrp fail!\n");
+		return;
+	}
+
+	LOG_INF("rsrp:%s\n", tmpbuf);
+	len = strlen(tmpbuf);
+	ptr = tmpbuf;
+	while(i<5)
+	{
+		ptr = strstr(ptr, ",");
+		ptr++;
+		i++;
+	}
+
+	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
+	rsrp = atoi(strbuf);
+	if(rsrp != rsrpbk)
+	{
+		rsrpbk = rsrp;
+		sprintf(nb_test_info, "NB signal(rsrp):%ddb", (rsrp-141));
+		nb_test_update_flag = true;
+	}
+
+}
+
+void GetNetWorkSignalCallBack(struct k_timer *timer_id)
+{
+	get_modem_signal_flag = true;
+}
+
 void GetModemInfor(void)
 {
 	char *ptr;
@@ -1358,22 +1521,6 @@ void GetModemInfor(void)
 
 	LOG_INF("imsi:%s\n", tmpbuf);
 	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
-
-	err = strncmp(g_imsi, "90128", 5);
-	if(err == 0)
-	{
-		if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
-		{
-			LOG_INF("set apn fail!\n");
-		}
-	}
-	
-	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
-	{
-		LOG_INF("Get apn fail!\n");
-		return;
-	}
-	LOG_INF("apn:%s\n", tmpbuf);
 
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
@@ -1405,13 +1552,31 @@ static void SetModemTurnOff(void)
 	LOG_INF("turn off modem success!");
 }
 
+void SetModemAPN(void)
+{
+	u8_t tmpbuf[128] = {0};
+	
+	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("[%s] set apn fail!\n", __func__);
+	}
+
+	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("[%s] Get apn fail!\n", __func__);
+		return;
+	}
+	LOG_INF("[%s] apn:%s\n", __func__, tmpbuf);	
+}
+
 static void nb_link(struct k_work *work)
 {
 	int err;
+	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
 	
 	LOG_INF("[%s] begin\n", __func__);
-	
+
 	configure_low_power();
 
 	err = lte_lc_init_and_connect();
@@ -1439,7 +1604,6 @@ static void nb_link(struct k_work *work)
 	else
 	{
 		LOG_INF("Connected to LTE network");
-
 		nb_connected = true;
 		retry_count = 0;
 		
@@ -1451,7 +1615,7 @@ static void nb_link(struct k_work *work)
 	
 	if(!err)
 	{
-		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 	}
 }
 
@@ -1487,7 +1651,18 @@ void GetNBSignal(void)
 	}
 	LOG_INF("apn:%s\n", str_rsrp);
 
-	
+	if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	{
+		LOG_INF("Get csq fail!\n");
+		return;
+	}
+	LOG_INF("csq:%s\n", str_rsrp);
+}
+
+void nb_test_update(void)
+{
+	if(screen_id == SCREEN_ID_NB_TEST)
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 }
 
 void NBMsgProcess(void)
@@ -1513,6 +1688,18 @@ void NBMsgProcess(void)
 		nb_redraw_sig_flag = false;
 	}
 
+	if(get_modem_signal_flag)
+	{
+		GetModemSignal();
+		get_modem_signal_flag = false;
+	}
+
+	if(get_modem_time_flag)
+	{
+		GetModemDateTime();
+		get_modem_time_flag = false;
+	}
+	
 	if(send_data_flag)
 	{
 		NbSendData();
@@ -1530,6 +1717,12 @@ void NBMsgProcess(void)
 		MqttDisConnect();
 		mqtt_disconnect_flag = false;
 	}
+
+	if(nb_test_update_flag)
+	{
+		nb_test_update_flag = false;
+		nb_test_update();
+	}
 }
 
 void NB_init(struct k_work_q *work_q)
@@ -1542,5 +1735,4 @@ void NB_init(struct k_work_q *work_q)
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
-	//k_work_submit_to_queue(app_work_q, &nb_link_work);
 }

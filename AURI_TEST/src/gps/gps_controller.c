@@ -23,6 +23,8 @@ static struct k_delayed_work start_work;
 static struct k_delayed_work stop_work;
 static int gps_reporting_interval_seconds;
 
+extern bool test_gps_flag;
+
 static void start(struct k_work *work)
 {
 	ARG_UNUSED(work);
@@ -51,6 +53,12 @@ static void start(struct k_work *work)
 	}
 #endif /* CONFIG_GPS_CONTROL_PSM_ENABLE_ON_START */
 
+	if(test_gps_flag)
+	{
+		gps_cfg.nav_mode = GPS_NAV_MODE_CONTINUOUS;
+		gps_cfg.power_mode = GPS_POWER_MODE_DISABLED;
+	}
+	
 	err = gps_start(gps_dev, &gps_cfg);
 	if (err) {
 		LOG_ERR("Failed to enable GPS, error: %d", err);

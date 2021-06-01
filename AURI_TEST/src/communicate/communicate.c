@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u8_t tmpbuf[128] = {0};
 	u32_t i;
 
 	if(wifi_data.count > 0)
@@ -36,8 +35,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 		{
 			strcat(reply, wifi_data.node[i].mac);
 			strcat(reply, "&");
-			sprintf(tmpbuf, "%d", wifi_data.node[i].rssi);
-			strcat(reply, tmpbuf);
+			strcat(reply, wifi_data.node[i].rssi);
 			strcat(reply, "&");
 			if(i < (wifi_data.count-1))
 				strcat(reply, "|");
@@ -212,7 +210,7 @@ void TimeCheckSendLocationData(void)
 	{
 		loc_hour_count = 0;
 		location_wait_gps = true;
-		APP_Ask_GPS_Data();		
+		APP_Ask_GPS_Data();
 	}
 }
 

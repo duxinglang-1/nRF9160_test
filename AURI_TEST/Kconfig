@@ -7,7 +7,7 @@
 menu "MQTT simple sample"
 config APPLICATION_WORKQUEUE_STACK_SIZE
 	int "Application workqueue stack size"
-	default 4096
+	default 1024
 
 config APPLICATION_WORKQUEUE_PRIORITY
 	int "Application workqueue priority"

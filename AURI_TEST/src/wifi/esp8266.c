@@ -97,8 +97,9 @@ void APP_Ask_wifi_data(void)
 {
 	u8_t i;
 	u8_t *str_mac[6] = {"94:77:2b:24:22:6c","7c:94:2a:39:9f:50","7c:94:2a:39:9f:54","","",""};
+	u8_t *str_rssi[6] = {"-54","-87","-62","","",""};
 
-#if 1
+#if 0
 	if(!app_wifi_on)
 	{
 		app_wifi_on = true;
@@ -111,7 +112,7 @@ void APP_Ask_wifi_data(void)
 	wifi_data.count = 3;
 	for(i=0;i<wifi_data.count;i++)
 	{
-		wifi_data.node[i].rssi = -(50+i);
+		strcpy(wifi_data.node[i].rssi, str_rssi[i]);
 		strcpy(wifi_data.node[i].mac, str_mac[i]);
 	}
 
@@ -292,30 +293,30 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 		//rssi
 		ptr1 = strstr(ptr,"-");         //取字符串中的,之后的字符
 		if(ptr1 == NULL)
-			return;
+			break;
 		ptr2 = strstr(ptr1+1,",");
 		if(ptr2 == NULL)
-			return;
+			break;
 		
 		memcpy(wifi_data.node[wifi_data.count].rssi, ptr1+1, ptr2 - (ptr1+1));
 
 		//MAC
 		ptr1 = strstr(ptr2,"\"");
 		if(ptr1 == NULL)
-			return;
+			break;
 		ptr2 = strstr(ptr1+1,"\"");
 		if(ptr2 == NULL)
-			return;
+			break;
 		
 		memcpy(wifi_data.node[wifi_data.count].mac, ptr1+1, ptr2 - (ptr1+1));
 
 		wifi_data.count++;
 		if(wifi_data.count == MAX_SCANNED_WIFI_NODE)
-			return;
+			break;
 		
 		ptr = ptr2+1;
 		if(*ptr == 0x00)
-			return;
+			break;
 	}
 
 	wifi_get_scanned_data();

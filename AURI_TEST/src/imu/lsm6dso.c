@@ -131,9 +131,6 @@ uint8_t init_gpio(void)
 	gpio_add_callback(gpio_imu, &gpio_cb2);
 	gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT2_PIN);
 
-	//暂时将PPG供电关闭，防止LED常亮耗电
-	gpio_pin_configure(gpio_imu, 17, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_imu, 17, 0);
 	return 0;
 }
 
@@ -804,7 +801,6 @@ void lsm6dso_sensitivity(void)
 void fall_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u8_t tmpbuf[128] = {0};
 	u32_t i;
 
 	if(wifi_data.count > 0)
@@ -814,8 +810,7 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 		{
 			strcat(reply, wifi_data.node[i].mac);
 			strcat(reply, "&");
-			sprintf(tmpbuf, "%d", wifi_data.node[i].rssi);
-			strcat(reply, tmpbuf);
+			strcat(reply, wifi_data.node[i].rssi);
 			strcat(reply, "&");
 			if(i < (wifi_data.count-1))
 				strcat(reply, "|");

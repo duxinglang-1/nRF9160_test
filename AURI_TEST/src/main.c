@@ -665,7 +665,7 @@ void work_init(void)
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
 	k_work_q_start(&gps_work_q, gps_stack_area,
-					K_THREAD_STACK_SIZEOF(imu_stack_area),
+					K_THREAD_STACK_SIZEOF(gps_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 }
 
@@ -695,8 +695,6 @@ int main(void)
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();
-//	test_audio_wav();
-//	test_i2s();
 
 	while(1)
 	{
@@ -711,6 +709,8 @@ int main(void)
 		SettingsMsgPorcess();
 		SOSMsgProc();
 		ScreenMsgProcess();
+
+		k_sleep(K_MSEC(5));
 		
 		k_cpu_idle();
 	}

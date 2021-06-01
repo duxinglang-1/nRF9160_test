@@ -5,4 +5,4 @@
 #
 
 zephyr_include_directories(.)
-target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ams7030.c)
+target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/max32674.c)

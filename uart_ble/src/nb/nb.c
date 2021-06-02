@@ -1444,7 +1444,7 @@ static int configure_low_power(void)
 	}
 #endif
 
-#if defined(CONFIG_LTE_RAI_ENABLE)
+#if 0//defined(CONFIG_LTE_RAI_ENABLE)
 	/** Release Assistance Indication  */
 	err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
 	if(err)
@@ -1680,6 +1680,12 @@ void NBMsgProcess(void)
 	{
 		GetModemInfor();
 		get_modem_info_flag = false;
+	}
+
+	if(nb_redraw_sig_flag)
+	{
+		NBRedrawSignal();
+		nb_redraw_sig_flag = false;
 	}
 
 	if(get_modem_signal_flag)

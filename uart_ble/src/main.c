@@ -42,13 +42,13 @@ static u8_t show_pic_count = 0;//Õº∆¨œ‘ æÀ≥–Ú
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
-		      CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+		      2048);
 static struct k_work_q nb_work_q;
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+              1024);
 static struct k_work_q imu_work_q;
 K_THREAD_STACK_DEFINE(gps_stack_area,
-              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+              1024);
 static struct k_work_q gps_work_q;
 
 

@@ -225,3 +225,31 @@ void StepCheckSendLocationData(u16_t steps)
 		APP_Ask_GPS_Data();		
 	}
 }
+
+void SendDevceInforData(void)
+{
+	u8_t tmpbuf[10] = {0};
+	u8_t databuf[128] = {0};
+	
+	//imsi
+	strcpy(databuf, g_imsi);
+	strcat(databuf, ",");
+	
+	//iccid
+	strcat(databuf, g_iccid);
+	strcat(databuf, ",");
+
+	//nb rsrp
+	sprintf(tmpbuf, "%d,", g_rsrp);
+	strcat(databuf, tmpbuf);
+	
+	//time zone
+	strcat(databuf, g_timezone);
+	strcat(databuf, ",");
+	
+	//battery
+	GetBatterySocString(tmpbuf);
+	strcat(databuf, tmpbuf);
+			
+	NBSendDeviceInforData(databuf, strlen(databuf));
+}

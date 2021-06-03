@@ -60,6 +60,7 @@ static bool get_modem_infor = false;
 static bool send_data_flag = false;
 static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
+static bool power_on_data_flag = true;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -94,6 +95,9 @@ bool nb_test_update_flag = false;
 
 u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 u8_t g_imei[IMEI_MAX_LEN+1] = {0};
+u8_t g_iccid[ICCID_MAX_LEN+1] = {0};
+u8_t g_timezone[5] = {0};
+u8_t g_rsrp = 0;
 
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);
@@ -311,7 +315,16 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		
 		subscribe();
 
-		NbSendDataStart();
+		if(power_on_data_flag)
+		{
+			SendDevceInforData();
+			power_on_data_flag = false;
+		}
+		else
+		{
+			NbSendDataStart();
+		}
+
 		MqttDicConnectStart();
 		break;
 
@@ -1044,10 +1057,11 @@ void GetModemDateTime(void)
 
 		ptr+=2;
 		memcpy(tz_dir, ptr, 1);
-
+	
 		ptr+=1;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
+
 		tz_count = atoi(tmpbuf);
 		if(tz_dir[0] == '+')
 		{
@@ -1068,7 +1082,10 @@ void GetModemDateTime(void)
 			daylight = atoi(tmpbuf);
 			TimeDecrease(&date_time, daylight*60);
 		}
-		
+
+		strcpy(g_timezone, tz_dir);
+		sprintf(tmpbuf, "%d", tz_count/4);
+		strcat(g_timezone, tmpbuf);
 	}
 
 	LOG_INF("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d\n", 
@@ -1248,6 +1265,25 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 	strcat(buf, "}");
 
 	LOG_INF("[%s] location data:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendDeviceInforData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[20] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T12:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] device infor data:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1509,7 +1545,6 @@ void GetModemInfor(void)
 		LOG_INF("Get imei fail!\n");
 		return;
 	}
-
 	LOG_INF("imei:%s\n", tmpbuf);
 	strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
 
@@ -1518,16 +1553,22 @@ void GetModemInfor(void)
 		LOG_INF("Get imsi fail!\n");
 		return;
 	}
-
 	LOG_INF("imsi:%s\n", tmpbuf);
 	strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get iccid fail!\n");
+		return;
+	}
+	LOG_INF("iccid:%s\n", &tmpbuf[9]);
+	strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
 
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get rsrp fail!\n");
 		return;
 	}
-
 	LOG_INF("rsrp:%s\n", tmpbuf);
 	len = strlen(tmpbuf);
 	ptr = tmpbuf;
@@ -1539,7 +1580,9 @@ void GetModemInfor(void)
 	}
 
 	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
-	modem_rsrp_handler(atoi(strbuf));
+
+	g_rsrp = atoi(strbuf);
+	modem_rsrp_handler(g_rsrp);
 }
 
 static void SetModemTurnOff(void)

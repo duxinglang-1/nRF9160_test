@@ -15,6 +15,7 @@
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
+#include "img.h"
 #include "datetime.h"
 #include "max20353.h"
 #include "lsm6dso.h"
@@ -22,6 +23,8 @@
 #include "screen.h"
 #include "ucs2.h"
 #include "nb.h"
+#include "sos.h"
+#include "gps.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -446,6 +449,14 @@ void IdleScreenProcess(void)
 	}
 }
 
+bool IsInIdleScreen(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+		return true;
+	else
+		return false;
+}
+
 void AlarmScreenProcess(void)
 {
 	u16_t rect_x,rect_y,rect_w=180,rect_h=80;
@@ -627,6 +638,82 @@ void NotifyScreenProcess(void)
 
 }
 
+
+void TestGPSUpdateInfor(void)
+{
+	LCD_Fill(30, 50, 190, 160, BLACK);
+	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+}
+
+void TestGPSShowInfor(void)
+{
+	u32_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
+	LCD_Clear(BLACK);
+	strcpy(strbuf, "GPS TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+}
+
+void TestGPSScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_GPS_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATED;
+
+		TestGPSShowInfor();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		TestGPSUpdateInfor();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
+}
+
+void TestNBUpdateINfor(void)
+{
+	LCD_Fill(30, 50, 190, 160, BLACK);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+}
+
+void TestNBShowInfor(void)
+{
+	u32_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
+	LCD_Clear(BLACK);
+	strcpy(strbuf, "NB-IoT TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+
+}
+
+void TestNBScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_NB_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATED;
+
+		TestNBUpdateINfor();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		TestNBUpdateINfor();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -697,6 +784,13 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;		
 }
 
+
+void UpdataTestGPSInfo(void)
+{
+	if(screen_id == SCREEN_ID_GPS_TEST)
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+}
+
 void GoBackHistoryScreen(void)
 {
 	SCREEN_ID_ENUM scr_id;
@@ -737,8 +831,10 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_SETTINGS:
 			break;
 		case SCREEN_ID_GPS_TEST:
+			TestGPSScreenProcess();
 			break;
 		case SCREEN_ID_NB_TEST:
+			TestNBScreenProcess();
 			break;
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();

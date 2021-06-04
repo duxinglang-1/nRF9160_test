@@ -686,7 +686,7 @@ int main(void)
 		TimeMsgProcess();
 		NBMsgProcess();
 		GPSMsgProcess();
-		PMUMsgProcess();
+		//PMUMsgProcess();
 		IMUMsgProcess();
 		PPGMsgProcess();
 		LCDMsgProcess();
@@ -697,8 +697,6 @@ int main(void)
 		
 		ScreenMsgProcess();
 
-		k_sleep(K_MSEC(5));
-		
 		k_cpu_idle();
 	}
 }

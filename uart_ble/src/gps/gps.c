@@ -652,14 +652,14 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 	case GPS_EVT_NMEA_FIX:
 		LOG_INF("GPS_EVT_NMEA_FIX");
 		
-		if(gps_fix_time = 0)
-			gps_fix_time = k_uptime_get();
-		
-		LOG_INF("Position fix with NMEA data, fix time:%d", gps_fix_time-gps_start_time);
-		LOG_INF("NMEA:%s\n", evt->nmea.buf);
-
 		if(!test_gps_flag)
 		{
+			if(gps_fix_time = 0)
+				gps_fix_time = k_uptime_get();
+		
+			LOG_INF("Position fix with NMEA data, fix time:%d", gps_fix_time-gps_start_time);
+			LOG_INF("NMEA:%s\n", evt->nmea.buf);
+		
 			APP_Ask_GPS_off();
 
 			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
@@ -723,6 +723,6 @@ void GPSMsgProcess(void)
 	
 	if(gps_is_working())
 	{
-		k_sleep(K_MSEC(5));
+		k_sleep(K_MSEC(1));
 	}
 }

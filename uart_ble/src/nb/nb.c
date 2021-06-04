@@ -84,7 +84,7 @@ static bool mqtt_connected = false;
 /* File descriptor */
 static struct pollfd fds;
 
-bool app_nb_on = false;
+bool test_nb_on = false;
 bool nb_is_running = false;
 bool get_modem_info_flag = false;
 bool get_modem_time_flag = false;
@@ -653,8 +653,6 @@ static void mqtt_link(struct k_work_q *work_q)
 			LOG_INF("POLLNVAL\n");
 			break;
 		}
-
-		//k_sleep(K_MSEC(5000));
 	}
 
 	LOG_INF("[%s]: Disconnecting MQTT client...\n", __func__);
@@ -857,7 +855,7 @@ static void modem_configure(void)
 #endif /* defined(CONFIG_LTE_LINK_CONTROL) */
 }
 
-void test_nb(void)
+void test_nb_start(void)
 {
 	int err;
 
@@ -990,9 +988,9 @@ void test_nb(void)
 #endif	
 }
 
-void APP_Ask_NB(void)
+void test_nb(void)
 {
-	app_nb_on = true;
+	test_nb_on = true;
 }
 
 void NBRedrawSignal(void)
@@ -1009,7 +1007,8 @@ void GetModemDateTime(void)
 	char *ptr;
 	u8_t timebuf[128] = {0};
 	u8_t tmpbuf[10] = {0};
-	u8_t tz_dir[2],tz_count,daylight;
+	u8_t tz_dir[3] = {0};
+	u8_t tz_count,daylight;
 
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
@@ -1522,7 +1521,7 @@ void GetModemSignal(void)
 	if(rsrp != rsrpbk)
 	{
 		rsrpbk = rsrp;
-		sprintf(nb_test_info, "NB signal(rsrp):%ddb", (rsrp-141));
+		sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", rsrp,(rsrp-141));
 		nb_test_update_flag = true;
 	}
 
@@ -1710,13 +1709,13 @@ void nb_test_update(void)
 
 void NBMsgProcess(void)
 {
-	if(app_nb_on)
+	if(test_nb_on)
 	{
-		app_nb_on = false;
+		test_nb_on = false;
 		if(nb_is_running)
 			return;
 		
-		test_nb();
+		test_nb_start();
 	}
 
 	if(get_modem_info_flag)

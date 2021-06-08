@@ -21,9 +21,14 @@ static u8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
-static struct k_timer soc_timer,soc_pwroff;
 
-bool sys_pwr_off = false;
+static void test_soc_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(soc_timer, test_soc_timerout, NULL);
+static void pmu_battery_low_shutdown_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
+static void sys_pwr_off_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(sys_pwroff, sys_pwr_off_timerout, NULL);
+
 bool vibrate_start_flag = false;
 bool vibrate_stop_flag = false;
 bool pmu_trige_flag = false;
@@ -31,16 +36,19 @@ bool pmu_alert_flag = false;
 bool pmu_bat_flag = false;
 bool pmu_check_temp_flag = false;
 bool pmu_redraw_bat_flag = true;
-
+bool sys_pwr_off_flag = true;
 bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
 
 u8_t g_bat_soc = 0;
+
 BAT_CHARGER_STATUS g_chg_status = BAT_CHARGING_NO;
 BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_NORMAL;
 
 maxdev_ctx_t pmu_dev_ctx;
+
+extern bool key_pwroff_flag;
 
 #ifdef SHOW_LOG_IN_SCREEN
 static u8_t tmpbuf[256] = {0};
@@ -116,16 +124,27 @@ void Set_Screen_Backlight_Off(void)
 	ret = MAX20353_LED1(2, 0, false);
 }
 
-void SystemShutDown(void)
+void sys_pwr_off_timerout(struct k_timer *timer_id)
+{
+	sys_pwr_off_flag = true;
+}
+
+void system_power_off(u8_t flag)
 {
 	SaveSystemDateTime();
-	
+	SendPowerOffData(flag);
+
+	k_timer_start(&sys_pwroff, K_MSEC(3*1000), NULL);
+}
+
+void SystemShutDown(void)
+{	
 	MAX20353_PowerOffConfig();
 }
 
-void pmu_battery_low_shutdown_timerout(void)
+void pmu_battery_low_shutdown_timerout(struct k_timer *timer_id)
 {
-	sys_pwr_off = true;
+	system_power_off(1);
 }
 
 void pmu_battery_stop_shutdown(void)
@@ -136,7 +155,6 @@ void pmu_battery_stop_shutdown(void)
 
 void pmu_battery_low_shutdown(void)
 {
-	k_timer_init(&soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
@@ -493,14 +511,13 @@ void test_soc_status(void)
 	LOG_INF("%s", strbuf);
 }
 
-void test_soc_timerout(void)
+void test_soc_timerout(struct k_timer *timer_id)
 {
 	read_soc_status = true;
 }
 
 void test_soc(void)
 {
-	k_timer_init(&soc_timer, test_soc_timerout, NULL);
 	k_timer_start(&soc_timer, K_MSEC(10*1000), K_MSEC(15*1000));
 }
 #endif/*BATTERY_SOC_GAUGE*/
@@ -546,13 +563,19 @@ void PMUMsgProcess(void)
 		
 		pmu_alert_flag = false;
 	}
+
+	if(key_pwroff_flag)
+	{
+		system_power_off(1);
+		key_pwroff_flag = false;
+	}
 	
-	if(sys_pwr_off)
+	if(sys_pwr_off_flag)
 	{
 		if(pmu_check_ok)
 			SystemShutDown();
 		
-		sys_pwr_off = false;		
+		sys_pwr_off_flag = 0;
 	}
 	
 	if(vibrate_start_flag)

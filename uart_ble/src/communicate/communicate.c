@@ -15,7 +15,9 @@
 #include "settings.h"
 #include "nb.h"
 #include "gps.h"
+#ifdef CONFIG_WIFI
 #include "esp8266.h"
+#endif
 #include "datetime.h"
 #include "communicate.h"
 
@@ -23,6 +25,17 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
 
+#ifdef CONFIG_WIFI
+/*****************************************************************************
+ * FUNCTION
+ *  location_get_wifi_data_reply
+ * DESCRIPTION
+ *  定位协议包获取WiFi数据之后的上传数据包处理
+ * PARAMETERS
+ *  wifi_data       [IN]       wifi数据结构体
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
@@ -44,7 +57,19 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 		NBSendLocationData(reply, strlen(reply));
 	}
 }
+#endif
 
+/*****************************************************************************
+ * FUNCTION
+ *  location_get_gps_data_reply
+ * DESCRIPTION
+ *  定位协议包获取GPS数据之后的上传数据包处理
+ * PARAMETERS
+ *	flag			[IN]		GPS数据获取标记, ture:成功 false:失败
+ *  gps_data       	[IN]		GPS数据结构体
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	u8_t reply[128] = {0};
@@ -54,8 +79,10 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 
 	if(!flag)
 	{
+	#ifdef CONFIG_WIFI
 		location_wait_wifi = true;
 		APP_Ask_wifi_data();
+	#endif
 		return;
 	}
 	
@@ -117,6 +144,16 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	NBSendLocationData(reply, strlen(reply));
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  TimeCheckSendHealthData
+ * DESCRIPTION
+ *  定时检测并上传健康数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void TimeCheckSendHealthData(void)
 {
 	u16_t steps,calorie,distance,light_sleep,deep_sleep;
@@ -187,7 +224,16 @@ void TimeCheckSendHealthData(void)
 	}
 }
 
-
+/*****************************************************************************
+ * FUNCTION
+ *  TimeCheckSendLocationData
+ * DESCRIPTION
+ *  定时检测并上传定位数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void TimeCheckSendLocationData(void)
 {
 	static u32_t loc_hour_count = 0;
@@ -214,6 +260,16 @@ void TimeCheckSendLocationData(void)
 	}
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  StepCheckSendLocationData
+ * DESCRIPTION
+ *  计步检测并上传定位数据包
+ * PARAMETERS
+ *	steps			[IN]		当前累计的记步数
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void StepCheckSendLocationData(u16_t steps)
 {
 	static u32_t step_count = 0;
@@ -226,7 +282,17 @@ void StepCheckSendLocationData(u16_t steps)
 	}
 }
 
-void SendDevceInforData(void)
+/*****************************************************************************
+ * FUNCTION
+ *  SendPowerOnData
+ * DESCRIPTION
+ *  发送开机数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendPowerOnData(void)
 {
 	u8_t tmpbuf[10] = {0};
 	u8_t databuf[128] = {0};
@@ -251,5 +317,35 @@ void SendDevceInforData(void)
 	GetBatterySocString(tmpbuf);
 	strcat(databuf, tmpbuf);
 			
-	NBSendDeviceInforData(databuf, strlen(databuf));
+	NBSendPowerOnInfor(databuf, strlen(databuf));
 }
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendPowerOffData
+ * DESCRIPTION
+ *  发送关机数据包
+ * PARAMETERS
+ *	pwroff_mode			[IN]		关机模式 1:低电关机 2:按键关机 3:重启关机 
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendPowerOffData(u8_t pwroff_mode)
+{
+	u8_t tmpbuf[10] = {0};
+	u8_t databuf[128] = {0};
+	
+	//pwr off mode
+	sprintf(databuf, "%d,", pwroff_mode);
+	
+	//nb rsrp
+	sprintf(tmpbuf, "%d,", g_rsrp);
+	strcat(databuf, tmpbuf);
+	
+	//battery
+	GetBatterySocString(tmpbuf);
+	strcat(databuf, tmpbuf);
+			
+	NBSendPowerOffInfor(databuf, strlen(databuf));
+}
+

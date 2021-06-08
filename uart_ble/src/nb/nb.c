@@ -317,7 +317,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 
 		if(power_on_data_flag)
 		{
-			SendDevceInforData();
+			SendPowerOnData();
 			power_on_data_flag = false;
 		}
 		else
@@ -1267,7 +1267,7 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendDeviceInforData(u8_t *data, u32_t datalen)
+void NBSendPowerOnInfor(u8_t *data, u32_t datalen)
 {
 	u8_t buf[128] = {0};
 	u8_t tmpbuf[20] = {0};
@@ -1282,7 +1282,26 @@ void NBSendDeviceInforData(u8_t *data, u32_t datalen)
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 
-	LOG_INF("[%s] device infor data:%s\n", __func__, buf);
+	LOG_INF("[%s] pwr on infor:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendPowerOffInfor(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[20] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T13:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] pwr off infor:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
 }
 

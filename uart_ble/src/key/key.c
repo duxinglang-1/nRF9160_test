@@ -53,7 +53,8 @@ static struct k_timer g_long_press_timer_id;
 
 static bool touch_flag = false;
 
-extern bool sys_pwr_off;
+bool key_pwroff_flag = false;
+
 extern bool app_gps_on;
 
 bool is_wearing(void)
@@ -96,7 +97,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_UP:
 			break;
 		case KEY_LONG_PRESS:
-			sys_pwr_off = true;
+			key_pwroff_flag = true;
 			break;
 		}
 		break;

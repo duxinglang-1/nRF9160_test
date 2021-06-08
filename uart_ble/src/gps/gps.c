@@ -21,8 +21,9 @@
 #include "nb.h"
 #include "sos.h"
 #include "gps_controller.h"
+#ifdef CONFIG_WIFI
 #include "esp8266.h"
-
+#endif
 #if defined(CONFIG_NRF_CLOUD_AGPS)
 #include <net/cloud.h>
 #include <net/nrf_cloud.h>
@@ -222,6 +223,7 @@ static void set_gps_enable(const bool enable)
 		LOG_INF("Stopping GPS");
 		gps_control_stop(K_NO_WAIT);
 		gps_is_on = false;
+		gps_fix_time = 0;
 	}
 }
 
@@ -654,7 +656,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		
 		if(!test_gps_flag)
 		{
-			if(gps_fix_time = 0)
+			if(gps_fix_time == 0)
 				gps_fix_time = k_uptime_get();
 		
 			LOG_INF("Position fix with NMEA data, fix time:%d", gps_fix_time-gps_start_time);

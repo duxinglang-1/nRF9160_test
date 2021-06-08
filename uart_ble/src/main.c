@@ -51,8 +51,6 @@ K_THREAD_STACK_DEFINE(gps_stack_area,
               1024);
 static struct k_work_q gps_work_q;
 
-
-
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
 #elif defined(DIGITAL_CLOCK)

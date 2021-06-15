@@ -56,10 +56,12 @@ static bool touch_flag = false;
 bool key_pwroff_flag = false;
 
 extern bool app_gps_on;
+extern bool uart_wake_flag;
+extern bool uart_sleep_flag;
 
 bool is_wearing(void)
 {
-	return touch_flag;
+	return true;//touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
@@ -68,10 +70,12 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 
 	if(key_type == KEY_UP)
 	{
-		sleep_out_by_wrist = false;
-		lcd_sleep_out = true;
 		if(lcd_is_sleeping)
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
 			return;
+		}
 	}
 
 	switch(key_code)
@@ -82,6 +86,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			uart_wake_flag = true;
 			//FallAlarmStart();
 			break;
 		case KEY_LONG_PRESS:
@@ -95,6 +100,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+			uart_sleep_flag = true;
 			break;
 		case KEY_LONG_PRESS:
 			key_pwroff_flag = true;

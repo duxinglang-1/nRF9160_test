@@ -56,8 +56,11 @@ static bool touch_flag = false;
 bool key_pwroff_flag = false;
 
 extern bool app_gps_on;
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern bool uart_wake_flag;
 extern bool uart_sleep_flag;
+#endif
 
 bool is_wearing(void)
 {
@@ -86,7 +89,9 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT	
 			uart_wake_flag = true;
+		#endif
 			//FallAlarmStart();
 			break;
 		case KEY_LONG_PRESS:
@@ -100,7 +105,9 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
+		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT	
 			uart_sleep_flag = true;
+		#endif
 			break;
 		case KEY_LONG_PRESS:
 			key_pwroff_flag = true;

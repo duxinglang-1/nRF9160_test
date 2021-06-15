@@ -600,6 +600,10 @@ static void mqtt_link(struct k_work_q *work_q)
 
 	LOG_INF("[%s] begin\n", __func__);
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
+
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -696,6 +700,11 @@ static void NbSendData(void)
 
 		k_timer_start(&send_data_timer, K_MSEC(1000), NULL);
 	}
+}
+
+bool MqttIsConnected(void)
+{
+	return mqtt_connected;
 }
 
 static void MqttDisConnect(void)

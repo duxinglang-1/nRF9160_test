@@ -632,10 +632,12 @@ void system_init(void)
 
 	key_init();
 	PPG_init();
+	ble_init();
+
 	IMU_init(&imu_work_q);
-	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
+	
 	EnterIdleScreen();
 }
 
@@ -684,7 +686,7 @@ int main(void)
 		TimeMsgProcess();
 		NBMsgProcess();
 		GPSMsgProcess();
-		//PMUMsgProcess();
+		PMUMsgProcess();
 		IMUMsgProcess();
 		PPGMsgProcess();
 		LCDMsgProcess();
@@ -692,7 +694,7 @@ int main(void)
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
-		
+		UartMsgProc();
 		ScreenMsgProcess();
 
 		k_cpu_idle();

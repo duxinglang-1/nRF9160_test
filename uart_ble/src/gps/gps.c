@@ -93,8 +93,6 @@ enum error_type
 
 static void set_gps_enable(const bool enable);
 
-K_SEM_DEFINE(lte_ready, 0, 1);
-
 bool APP_GPS_data_send(bool fix_flag)
 {
 	bool ret = false;
@@ -182,6 +180,9 @@ bool gps_is_working(void)
 
 void gps_on(void)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif	
 	set_gps_enable(true);
 }
 

@@ -8,7 +8,8 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <drivers/uart.h>
-#include <dk_buttons_and_leds.h>
+#include <drivers/gpio.h>
+
 #include "datetime.h"
 #include "Settings.h"
 #include "Uart_ble.h"
@@ -22,7 +23,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ble, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define BLE_DEV	"UART_0"
+#define BLE_DEV			"UART_0"
+#define BLE_PORT		"GPIO_0"
+#define BLE_INT_PIN		27
 
 #define BUF_MAXSIZE	1024
 
@@ -70,11 +73,19 @@ LOG_MODULE_REGISTER(ble, CONFIG_LOG_DEFAULT_LEVEL);
 
 bool blue_is_on = true;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+bool uart_sleep_flag = false;
+bool uart_wake_flag = false;
+bool uart_is_waked = true;
+#endif
+
 static u32_t rece_len=0;
 static u8_t rx_buf[BUF_MAXSIZE]={0};
 static u8_t tx_buf[BUF_MAXSIZE]={0};
 
 static struct device *uart_ble;
+static struct device *gpio_ble;
+static struct gpio_callback gpio_cb;
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
@@ -95,6 +106,11 @@ ENUM_BLE_STATUS g_ble_status = BLE_STATUS_BROADCAST;
 ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
 extern bool app_find_device;
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void UartSleepInCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_sleep_in_timer, UartSleepInCallBack, NULL);
+#endif
 
 static void MCU_send_heart_rate(void);
 
@@ -1227,6 +1243,10 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 {
     if(blue_is_on)
     {
+    	//LOG_INF("data:%02x\n", data);
+		
+    	ble_send_date_handle(&data, 1);
+	#if 0	
         rx_buf[rece_len++] = data;
         if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	
         {
@@ -1242,6 +1262,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
             memset(rx_buf, 0, sizeof(rx_buf));
             rece_len = 0;
         }
+	#endif	
     }
     else if(wifi_is_on)
     {
@@ -1318,19 +1339,112 @@ static void uart_cb(struct device *x)
 	}
 }
 
+void uart_sleep_out(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(uart_is_waked)
+		return;
+	
+	device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	uart_irq_rx_enable(uart_ble);
+	uart_irq_tx_enable(uart_ble);
+
+	uart_is_waked = true;
+	//k_timer_start(&uart_sleep_in_timer, K_MSEC(10*1000), NULL);
+
+	LOG_INF("uart set active success!\n");
+#endif
+}
+
+void uart_sleep_in(void)\
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(!uart_is_waked)
+		return;
+	
+	uart_irq_rx_disable(uart_ble);
+	uart_irq_tx_disable(uart_ble);
+	device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
+
+	uart_is_waked = false;
+	
+	LOG_INF("uart set low power success!\n");
+#endif
+}
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
+{
+	LOG_INF("ble_interrupt_event\n");
+	//uart_wake_flag = true;
+}
+
+void UartSleepInCallBack(struct k_timer *timer_id)
+{
+	uart_sleep_flag = true;
+}
+#endif
+
 void ble_init(void)
 {
+	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
+
 	LOG_INF("ble_init\n");
-	
+
 	uart_ble = device_get_binding(BLE_DEV);
 	if(!uart_ble)
 	{
 		LOG_INF("Could not get %s device\n", BLE_DEV);
 		return;
 	}
-
+	
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	gpio_ble = device_get_binding(BLE_PORT);
+	if(!gpio_ble)
+	{
+		LOG_INF("Could not get %s port\n", BLE_PORT);
+		return;
+	}	
+	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
+	gpio_pin_disable_callback(gpio_ble, BLE_INT_PIN);
+	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
+	gpio_add_callback(gpio_ble, &gpio_cb);
+	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
+
+	//k_timer_start(&uart_sleep_in_timer, K_MSEC(3*10*1000), NULL);
+#endif
+}
+
+void UartMsgProc(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(uart_wake_flag)
+	{
+		LOG_INF("uart_wake!\n");
+		
+		uart_wake_flag = false;
+		uart_sleep_out();
+	}
+
+	if(uart_sleep_flag)
+	{
+		LOG_INF("uart_sleep!\n");
+
+		uart_sleep_flag = false;
+		
+		if(!gps_is_working() && !MqttIsConnected())
+		{
+			uart_sleep_in();
+		}
+		else
+		{
+			k_timer_start(&uart_sleep_in_timer, K_MSEC(10*1000), NULL);
+		}
+	}
+#endif	
 }
 
 void test_uart_ble(void)
@@ -1341,7 +1455,7 @@ void test_uart_ble(void)
 
 	while(1)
 	{
-		ble_send_date_handle("Hello World!", strlen("Hello World!"));
+		ble_send_date_handle("Hello World!\n", strlen("Hello World!\n"));
 		k_sleep(K_MSEC(1000));
 	}
 }

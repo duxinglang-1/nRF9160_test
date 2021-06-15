@@ -240,7 +240,7 @@ void TimeCheckSendLocationData(void)
 	bool flag = false;
 	
 	loc_hour_count++;
-	if(date_time.hour >= 21 || date_time.hour <= 9)
+	if(date_time.hour >= 21 || date_time.hour < 9)
 	{
 		if(loc_hour_count == 360)
 		{

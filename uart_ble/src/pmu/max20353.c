@@ -36,7 +36,8 @@ bool pmu_alert_flag = false;
 bool pmu_bat_flag = false;
 bool pmu_check_temp_flag = false;
 bool pmu_redraw_bat_flag = true;
-bool sys_pwr_off_flag = true;
+bool lowbat_pwr_off_flag = false;
+bool sys_pwr_off_flag = false;
 bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
@@ -144,7 +145,7 @@ void SystemShutDown(void)
 
 void pmu_battery_low_shutdown_timerout(struct k_timer *timer_id)
 {
-	system_power_off(1);
+	lowbat_pwr_off_flag = true;
 }
 
 void pmu_battery_stop_shutdown(void)
@@ -564,9 +565,15 @@ void PMUMsgProcess(void)
 		pmu_alert_flag = false;
 	}
 
-	if(key_pwroff_flag)
+	if(lowbat_pwr_off_flag)
 	{
 		system_power_off(1);
+		lowbat_pwr_off_flag = false;
+	}
+	
+	if(key_pwroff_flag)
+	{
+		system_power_off(2);
 		key_pwroff_flag = false;
 	}
 	
@@ -575,7 +582,7 @@ void PMUMsgProcess(void)
 		if(pmu_check_ok)
 			SystemShutDown();
 		
-		sys_pwr_off_flag = 0;
+		sys_pwr_off_flag = false;
 	}
 	
 	if(vibrate_start_flag)

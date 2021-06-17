@@ -306,7 +306,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		}
 
 		mqtt_connected = true;
-		LOG_INF("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
+		LOG_INF("MQTT client connected!\n");
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "MQTT connect failed %d", evt->result);
@@ -329,7 +329,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	case MQTT_EVT_DISCONNECT:
-		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__, __LINE__, evt->result);
+		LOG_INF("MQTT client disconnected %d\n", evt->result);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "MQTT client disconnected %d", evt->result);
@@ -346,7 +346,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		{
 			const struct mqtt_publish_param *p = &evt->param.publish;
 
-			LOG_INF("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__, __LINE__, evt->result, p->message.payload.len);
+			LOG_INF("MQTT PUBLISH result=%d len=%d\n", evt->result, p->message.payload.len);
 			if(test_nb_flag)
 			{
 				sprintf(nb_test_info, "MQTT PUBLISH result:%d len:%d\n", evt->result, p->message.payload.len);
@@ -399,8 +399,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		LOG_INF("[%s:%d] PUBACK packet id: %u\n", __func__, __LINE__,
-				evt->param.puback.message_id);
+		LOG_INF("PUBACK packet id: %u\n", evt->param.puback.message_id);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "PUBACK packet id: %u", evt->param.puback.message_id);
@@ -421,8 +420,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		LOG_INF("[%s:%d] SUBACK packet id: %u\n", __func__, __LINE__,
-				evt->param.suback.message_id);
+		LOG_INF("SUBACK packet id: %u\n", evt->param.suback.message_id);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "SUBACK packet id: %u", evt->param.suback.message_id);
@@ -431,8 +429,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	default:
-		LOG_INF("[%s:%d] default: %d\n", __func__, __LINE__,
-				evt->type);
+		LOG_INF("default: %d\n", evt->type);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "default: %d", evt->type);
@@ -1523,8 +1520,8 @@ void GetModemSignal(void)
 {
 	char *ptr;
 	int i=0,len;
-	u8_t strbuf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t strbuf[64] = {0};
+	u8_t tmpbuf[64] = {0};
 	s32_t rsrp;
 	static s32_t rsrpbk = 0;
 	
@@ -1564,8 +1561,8 @@ void GetModemInfor(void)
 {
 	char *ptr;
 	int i=0,len,err;
-	u8_t tmpbuf[128] = {0};
-	u8_t strbuf[128] = {0};
+	u8_t tmpbuf[64] = {0};
+	u8_t strbuf[64] = {0};
 
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
@@ -1586,7 +1583,6 @@ void GetModemInfor(void)
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get iccid fail!\n");
-		return;
 	}
 	LOG_INF("iccid:%s\n", &tmpbuf[9]);
 	strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
@@ -1596,6 +1592,7 @@ void GetModemInfor(void)
 		LOG_INF("Get rsrp fail!\n");
 		return;
 	}
+	
 	LOG_INF("rsrp:%s\n", tmpbuf);
 	len = strlen(tmpbuf);
 	ptr = tmpbuf;

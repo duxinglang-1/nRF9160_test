@@ -27,6 +27,8 @@
 #define BL_AUTH_INDEX         0x34
 #define BL_ST_PAGE_IDEX       0x4C
 
+#define BL_FLASH_PARTIAL_SIZE	(4000)
+
 #define SS_DUMP_REG_SLEEP_MS        (100)
 #define SS_ENABLE_SENSOR_SLEEP_MS   (20)
 #define SS_DEFAULT_CMD_SLEEP_MS     (2)

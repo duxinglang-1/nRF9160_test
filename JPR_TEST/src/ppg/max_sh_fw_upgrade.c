@@ -135,7 +135,7 @@ s32_t SH_OTA_upgrade_process(void)
 		LOG_INF("Setting the authentication is done \n");
 	}
 
-	u32_t u32_partialSize = 2000;
+	u32_t u32_partialSize = BL_FLASH_PARTIAL_SIZE;
 	s32_status = sh_set_bootloader_partial_write_size(u32_partialSize);
 	if(s32_status != SS_SUCCESS)
 	{

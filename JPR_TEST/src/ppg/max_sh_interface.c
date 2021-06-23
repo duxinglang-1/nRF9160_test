@@ -141,15 +141,20 @@ void SH_pull_mfio_to_high (void)
 
 void SH_rst_to_BL_mode(void)
 {
-	//set rst and mfio low
-	gpio_pin_write(gpio_ppg, PPG_RST_PIN, 0);
+	//set all high
+	gpio_pin_write(gpio_ppg, PPG_RST_PIN, 1);
+	gpio_pin_write(gpio_ppg, PPG_MFIO_PIN, 1);
+	k_sleep(K_MSEC(10));
+
+	//set mfio low
 	gpio_pin_write(gpio_ppg, PPG_MFIO_PIN, 0);
 	k_sleep(K_MSEC(10));
-	
-	//set rst high
-	gpio_pin_write(gpio_ppg, PPG_RST_PIN, 1);
-	k_sleep(K_MSEC(50));
 
+	//reset sensor hub
+	gpio_pin_write(gpio_ppg, PPG_RST_PIN, 0);
+	k_sleep(K_MSEC(100));
+	gpio_pin_write(gpio_ppg, PPG_RST_PIN, 1);
+	
 	//enter bootloader mode
 	int s32_status = sh_put_in_bootloader();
 	if(s32_status != SS_SUCCESS)
@@ -157,6 +162,9 @@ void SH_rst_to_BL_mode(void)
 		LOG_INF("set bl mode fail, %x \n", s32_status);
 		return;
 	}
+
+	k_sleep(K_MSEC(50));
+	gpio_pin_write(gpio_ppg, PPG_MFIO_PIN, 1);
 
 	LOG_INF("set bl mode success!\n");
 }
@@ -840,7 +848,7 @@ s32_t sh_set_bootloader_erase(void)
 
 
 #ifdef SH_OTA_DATA_STORE_IN_FLASH
-u8_t Fw_data[4000];
+u8_t Fw_data[BL_FLASH_PARTIAL_SIZE];
 s32_t sh_set_bootloader_flashpages(u32_t FwData_addr, u8_t u8_pageSize)
 {
 	s32_t status = -1;
@@ -852,13 +860,13 @@ s32_t sh_set_bootloader_flashpages(u32_t FwData_addr, u8_t u8_pageSize)
 	{
 		u32_dataIdx = BL_ST_PAGE_IDEX + i * u32_pageDataLen;
 
-		for(u32_t j = 0; j < 5; j++)
+		for(u32_t j = 0; j < (1+(8000/BL_FLASH_PARTIAL_SIZE)); j++)
 		{
 			u32_t part_index,part_len;
 
-			part_index = 2000*j;
-			part_len = 2000;
-			if(j == 4)
+			part_index = BL_FLASH_PARTIAL_SIZE*j;
+			part_len = BL_FLASH_PARTIAL_SIZE;
+			if(j == (8000/BL_FLASH_PARTIAL_SIZE))
 				part_len = 208;
 			
 			SpiFlash_Read(Fw_data, FwData_addr+u32_dataIdx+part_index, part_len);

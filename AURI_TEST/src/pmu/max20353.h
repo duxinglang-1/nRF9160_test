@@ -47,4 +47,5 @@ extern void Set_Screen_Backlight_Off(void);
 extern void SystemShutDown(void);
 extern void PMUMsgProcess(void);
 extern void GetBatterySocString(u8_t *str_utc);
+extern void system_power_off(u8_t flag);
 #endif/*__MAX20353_H__*/

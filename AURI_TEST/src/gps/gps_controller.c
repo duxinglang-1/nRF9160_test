@@ -46,9 +46,12 @@ static void start(struct k_work *work)
 	LOG_INF("Enabling PSM");
 
 	err = lte_lc_psm_req(true);
-	if (err) {
+	if(err)
+	{
 		LOG_ERR("PSM request failed, error: %d", err);
-	} else {
+	}
+	else
+	{
 		LOG_INF("PSM enabled");
 	}
 #endif /* CONFIG_GPS_CONTROL_PSM_ENABLE_ON_START */
@@ -60,7 +63,8 @@ static void start(struct k_work *work)
 	}
 	
 	err = gps_start(gps_dev, &gps_cfg);
-	if (err) {
+	if(err)
+	{
 		LOG_ERR("Failed to enable GPS, error: %d", err);
 		return;
 	}
@@ -69,11 +73,6 @@ static void start(struct k_work *work)
 	gps_control_set_active(true);
 
 	LOG_INF("GPS started successfully. Searching for satellites ");
-	LOG_INF("to get position fix. This may take several minutes.");
-	LOG_INF("The device will attempt to get a fix for %d seconds, ",
-		CONFIG_GPS_CONTROL_FIX_TRY_TIME);
-	LOG_INF("before the GPS is stopped. It's restarted every %d seconds",
-		gps_reporting_interval_seconds);
 #if !defined(CONFIG_GPS_SIM)
 #if IS_ENABLED(CONFIG_GPS_START_ON_MOTION)
 	LOG_INF("or as soon as %d seconds later when movement occurs.",
@@ -87,7 +86,8 @@ static void stop(struct k_work *work)
 	ARG_UNUSED(work);
 	int err;
 
-	if (gps_dev == NULL) {
+	if(gps_dev == NULL)
+	{
 		LOG_ERR("GPS controller is not initialized");
 		return;
 	}
@@ -96,14 +96,15 @@ static void stop(struct k_work *work)
 	LOG_INF("Disabling PSM");
 
 	err = lte_lc_psm_req(false);
-	if (err) {
-		LOG_ERR("PSM mode could not be disabled, error: %d",
-			err);
+	if(err)
+	{
+		LOG_ERR("PSM mode could not be disabled, error: %d", err);
 	}
 #endif /* CONFIG_GPS_CONTROL_PSM_DISABLE_ON_STOP */
 
 	err = gps_stop(gps_dev);
-	if (err) {
+	if(err)
+	{
 		LOG_ERR("Failed to disable GPS, error: %d", err);
 		return;
 	}

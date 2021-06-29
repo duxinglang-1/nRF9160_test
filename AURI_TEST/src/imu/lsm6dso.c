@@ -21,8 +21,9 @@ Take 26Hz data rate
 #include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#ifdef CONFIG_WIFI
 #include "esp8266.h"
-
+#endif
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
@@ -798,6 +799,7 @@ void lsm6dso_sensitivity(void)
 	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
 }
 
+#ifdef CONFIG_WIFI
 void fall_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
@@ -819,6 +821,7 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 
 	NBSendFallWifiData(reply, strlen(reply));
 }
+#endif
 
 void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
@@ -899,8 +902,10 @@ void FallAlarmStart(void)
 {
 	GetSystemTimeSecString(fall_trigger_time);
 
+#ifdef CONFIG_WIFI
 	fall_wait_wifi = true;
 	APP_Ask_wifi_data();
+#endif
 	fall_wait_gps = true;
 	APP_Ask_GPS_Data();
 }

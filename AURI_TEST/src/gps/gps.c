@@ -21,7 +21,9 @@
 #include "nb.h"
 #include "sos.h"
 #include "gps_controller.h"
+#ifdef CONFIG_WIFI
 #include "esp8266.h"
+#endif
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -210,16 +212,18 @@ static void set_gps_enable(const bool enable)
 
 static void send_agps_request(struct k_work *work)
 {
-	ARG_UNUSED(work);
-
 #if defined(CONFIG_NRF_CLOUD_AGPS)
 	int err;
-	static s64_t last_request_timestamp;
-
+	static s64_t last_request_timestamp = 0;
+	
+	ARG_UNUSED(work);
+	
+	nrf_cloud_start();
+	
 	if((last_request_timestamp != 0) &&
 	    (k_uptime_get() - last_request_timestamp < K_HOURS(1)))
 	{
-		LOG_WRN("A-GPS request was sent less than 1 hour ago");
+		LOG_INF("A-GPS request was sent less than 1 hour ago");
 		return;
 	}
 
@@ -228,7 +232,7 @@ static void send_agps_request(struct k_work *work)
 	err = nrf_cloud_agps_request_all();
 	if(err)
 	{
-		LOG_ERR("A-GPS request failed, error: %d", err);
+		LOG_INF("A-GPS request failed, error: %d", err);
 		return;
 	}
 
@@ -372,14 +376,14 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 	case GPS_EVT_NMEA_FIX:
 		LOG_INF("GPS_EVT_NMEA_FIX");
 		
-		if(gps_fix_time = 0)
-			gps_fix_time = k_uptime_get();
-		
-		LOG_INF("Position fix with NMEA data, fix time:%d", gps_fix_time-gps_start_time);
-		LOG_INF("NMEA:%s\n", evt->nmea.buf);
-
 		if(!test_gps_flag)
 		{
+			if(gps_fix_time == 0)
+				gps_fix_time = k_uptime_get();
+		
+			LOG_INF("Position fix with NMEA data, fix time:%d", gps_fix_time-gps_start_time);
+			LOG_INF("NMEA:%s\n", evt->nmea.buf);
+		
 			APP_Ask_GPS_off();
 
 			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
@@ -443,6 +447,6 @@ void GPSMsgProcess(void)
 	
 	if(gps_is_working())
 	{
-		k_sleep(K_MSEC(5));
+		k_sleep(K_MSEC(1));
 	}
 }

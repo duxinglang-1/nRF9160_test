@@ -22,8 +22,9 @@
 #include "lcd.h"
 #include "gps.h"
 #include "screen.h"
+#ifdef CONFIG_WIFI
 #include "esp8266.h"
-
+#endif
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
@@ -73,6 +74,7 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 	}
 }
 
+#ifdef CONFIG_WIFI
 void sos_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
@@ -94,6 +96,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 
 	NBSendSosWifiData(reply, strlen(reply));
 }
+#endif
 
 void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
@@ -206,8 +209,10 @@ void SOSStart(void)
 
 	GetSystemTimeSecString(sos_trigger_time);
 
+#ifdef CONFIG_WIFI
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
+#endif
 	sos_wait_gps = true;
 	APP_Ask_GPS_Data();
 

@@ -43,16 +43,14 @@ static u8_t show_pic_count = 0;//图片显示顺序
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
-		      CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+		      2048);
 static struct k_work_q nb_work_q;
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+              1024);
 static struct k_work_q imu_work_q;
 K_THREAD_STACK_DEFINE(gps_stack_area,
-              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+              1024);
 static struct k_work_q gps_work_q;
-
-
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -369,26 +367,27 @@ void test_show_digital_clock(void)
 
 void test_show_image(void)
 {
-	u8_t i=0;
+	u8_t i=LCD_WIDTH;
 	u16_t x,y,w=0,h=0;
 
 	LOG_INF("test_show_image\n");
 	
-	LCD_Clear(BLACK);
+	LCD_Clear(WHITE);
 
-	//LCD_ShowImg(0, 0, jjph_gc_96X32);
-	LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
+	//LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_ShowImg(0, 0, peppa_pig_160X160);
 	//LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
 	//LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
-	while(0)
+	while(1)
 	{
+	#if 0
 		switch(i)
 		{
 			case 0:
+				LCD_Clear(BLACK);
 				//LCD_ShowImg(w*0,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
 				//LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_160X160_ADDR);
@@ -396,6 +395,7 @@ void test_show_image(void)
 				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
+				LCD_Clear(WHITE);
 				//LCD_ShowImg(w*1,h*0,peppa_pig_160X160);
 				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
 				//LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_160X160_ADDR);
@@ -429,12 +429,16 @@ void test_show_image(void)
 				LCD_Fill(w*0,h*1,w,h,BLACK);
 				break;
 		}
+	#endif
+
+		i--;
+		if(i==0)
+			i=LCD_WIDTH-1;
+
+		//LCD_Clear(BLACK);
+		LCD_ShowImg(i, 0, jjph_gc_96X32);
 		
-		i++;
-		if(i>=8)
-			i=0;
-		
-		k_sleep(K_MSEC(1000));								//软件延时1000ms
+		k_sleep(K_MSEC(100));								//软件延时1000ms
 	}
 }
 
@@ -517,12 +521,12 @@ void test_show_string(void)
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
 
-	sprintf(tmpbuf, "%f", longitude);
-	LCD_ShowString(0,0,tmpbuf);
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%f", latitude);	
-	LCD_ShowString(0,2,tmpbuf);
-	return;
+	//sprintf(tmpbuf, "%f", longitude);
+	//LCD_ShowString(0,0,tmpbuf);
+	//memset(tmpbuf,0,sizeof(tmpbuf));
+	//sprintf(tmpbuf, "%f", latitude);	
+	//LCD_ShowString(0,2,tmpbuf);
+	//return;
 
 #ifdef FONTMAKER_UNICODE_FONT
 #ifdef FONT_16
@@ -571,7 +575,7 @@ void test_show_string(void)
 	LCD_ShowUniString(x,y,en_unibuf);
 #endif
 #else
-	strcpy(enbuf, "Aa");
+	strcpy(enbuf, "A6");
 	strcpy(cnbuf, "哈");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
@@ -648,11 +652,13 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
-	IMU_init(&imu_work_q);
 	audio_init();
-	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
+	ble_init();
+
+	IMU_init(&imu_work_q);
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
+	
 	EnterIdleScreen();
 }
 
@@ -708,10 +714,9 @@ int main(void)
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
+		UartMsgProc();
 		ScreenMsgProcess();
 
-		k_sleep(K_MSEC(5));
-		
 		k_cpu_idle();
 	}
 }

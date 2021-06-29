@@ -31,6 +31,8 @@
 #include "LCD_LH096TIG11G_ST7735SV.h"
 #elif defined(LCD_VGM068A4W01_SH1106G)
 #include "LCD_VGM068A4W01_SH1106G.h"
+#elif defined(LCD_VGM096064A6W01_SP5090)
+#include "LCD_VGM096064A6W01_SP5090.h"
 #endif 
 
 //LCD屏幕的高度和宽度
@@ -217,7 +219,7 @@ void LCD_Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r)
 
 #ifdef IMG_FONT_FROM_FLASH
 
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //在指定位置显示flash中一个字符
 //x,y:起始坐标
 //num:要显示的字符:" "--->"~"
@@ -342,7 +344,7 @@ void LCD_ShowCn_from_flash(u16_t x, u16_t y, u16_t num)
 	#endif
 	}
 } 
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 //在指定位置显示flash中一个字符
 //x,y:起始坐标
@@ -1010,7 +1012,7 @@ void LCD_get_pic_size_from_flash(u32_t pic_addr, uint16_t *width, uint16_t *heig
 
 	SpiFlash_Read(databuf, pic_addr, 6);
 
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	*width = databuf[2]+256*databuf[3]; 			//获取图片宽度
 	*height = databuf[4]+256*databuf[5];			//获取图片高度
 #else
@@ -1083,7 +1085,7 @@ void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
 	}
 }
 
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //指定位置显示flash中的图片
 //pic_addr:图片在flash中的地址
 //x:图片显示X坐标
@@ -1145,7 +1147,7 @@ void LCD_dis_img_from_flash(u16_t x, u16_t y, u32_t pic_addr)
 		BlockWrite(x,y+i,show_w,show_h);	//设置刷新位置
 	}
 }
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 //指定位置显示flash中的图片
 //color:图片数据指针
@@ -1153,17 +1155,17 @@ void LCD_dis_img_from_flash(u16_t x, u16_t y, u32_t pic_addr)
 //y:图片显示Y坐标
 void LCD_ShowImg_From_Flash(u16_t x, u16_t y, u32_t img_addr)
 {
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_dis_img_from_flash(x, y, img_addr);
 #else
 	LCD_dis_pic_from_flash(x, y, img_addr);
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 }
 
 
 #else/*IMG_FONT_FROM_FLASH*/
 
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //在指定位置显示一个字符
 //x,y:起始坐标
 //num:要显示的字符:" "--->"~"
@@ -1271,7 +1273,7 @@ void LCD_ShowCn(u16_t x, u16_t y, u16_t num)
 	#endif
 	}
 }  
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 //在指定位置显示一个字符
 //x,y:起始坐标
@@ -1631,7 +1633,7 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 //height:获取到的图片高度输出地址
 void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height)
 {
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	*width = 256*color[2]+color[3];
 	*height = 256*color[4]+color[5];
 #else
@@ -2251,7 +2253,7 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 	}
 }
 
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //指定位置显示图片
 //color:图片数据指针
 //x:图片显示X坐标
@@ -2306,13 +2308,13 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 			offset += readlen;
 
 		i++;
-		if(((y%PAGE_MAX)+i)>3)
+		if(((y%PAGE_MAX)+i)>(PAGE_MAX-1))
 			return;
 			
 		BlockWrite(x,y+i,show_w,show_h);	//设置刷新位置
 	}
 }
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 //指定位置显示图片
 //color:图片数据指针
@@ -2320,17 +2322,17 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 //y:图片显示Y坐标
 void LCD_ShowImg(u16_t x, u16_t y, unsigned char *color)
 {
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_dis_img(x, y, color);
 #else
 	LCD_dis_pic(x, y, color);
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 }
 
 #endif/*IMG_FONT_FROM_FLASH*/
 
 
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //在指定矩形区域内显示中英文字符串
 //x,y:起点坐标
 //width,height:区域大小 (height<PAGE_MAX) 
@@ -2374,7 +2376,7 @@ void LCD_ShowStrInRect(u16_t x, u16_t y, u16_t width, u16_t height, u8_t *p)
 	}
 }
 
-#endif/*LCD_VGM068A4W01_SH1106G*/
+#endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 //在指定矩形区域内显示中英文字符串
 //x,y:起点坐标
@@ -2438,7 +2440,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 			width = LCD_Show_Mbcs_Char_from_flash(x,y,*p,0);
 		  	x += width;
 		  #else
-		   #ifdef LCD_VGM068A4W01_SH1106G
+		   #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 			LCD_ShowEn_from_flash(x,y,*p);
 		   #else
 			LCD_ShowChar_from_flash(x,y,*p,0);
@@ -2450,7 +2452,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 			width = LCD_Show_Mbcs_Char(x,y,*p,0);
 		  	x += width;
 		  #else
-		   #ifdef LCD_VGM068A4W01_SH1106G
+		   #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 			LCD_ShowEn(x,y,*p);
 		   #else
 			LCD_ShowChar(x,y,*p,0);
@@ -2469,14 +2471,14 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 		  #ifdef FONTMAKER_MBCS_FONT
 			LCD_Show_Mbcs_CJK_Char_from_flash(x,y,phz,0);
 		  #else
-		   #ifdef LCD_VGM068A4W01_SH1106G
+		   #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 			LCD_ShowCn_from_flash(x,y,phz);
 		   #else
 			LCD_ShowChineseChar_from_flash(x,y,phz,0);
 		   #endif
 		  #endif
 		#else
-		  #ifdef LCD_VGM068A4W01_SH1106G
+		  #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 			LCD_ShowCn(x,y,phz);
 		  #else
 			LCD_ShowChineseChar(x,y,phz,0);

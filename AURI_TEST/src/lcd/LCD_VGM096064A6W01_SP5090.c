@@ -394,8 +394,8 @@ void LCD_Init(void)
 	WriteComm(0xAD); //DC-DC Control Mode Set
 	WriteComm(0x8B); //DC-DC ON/OFF Mode Set
 	WriteComm(0x33); //Set Pump voltage value
-	WriteComm(0xA1); //Segment Remap
-	WriteComm(0xC8); //Sst COM Output Scan Direction
+	WriteComm(0xA0); //Segment Remap
+	WriteComm(0xC0); //Sst COM Output Scan Direction
 	WriteComm(0xDA); //Common pads hardware: alternative
 	WriteComm(0x12);
 	WriteComm(0x81); //Contrast control

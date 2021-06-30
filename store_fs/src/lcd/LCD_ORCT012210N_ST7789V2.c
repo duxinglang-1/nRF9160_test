@@ -27,14 +27,7 @@ static struct spi_cs_control spi_cs_ctr;
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
-static u32_t bk_time = 0;
-
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
-
-bool lcd_is_sleeping = true;
-
-extern bool lcd_sleep_in;
-extern bool lcd_sleep_out;
 
 static void LCD_SPI_Init(void)
 {
@@ -312,34 +305,9 @@ void LCD_SleepOut(void)
 {
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
-
-	switch(global_settings.backlight_time)
-	{
-	case BACKLIGHT_15_SEC:
-		bk_time = 15;
-		break;
-	case BACKLIGHT_30_SEC:
-		bk_time = 30;
-		break;
-	case BACKLIGHT_1_MIN:
-		bk_time = 60;
-		break;
-	case BACKLIGHT_2_MIN:
-		bk_time = 120;
-		break;
-	case BACKLIGHT_5_MIN:
-		bk_time = 300;
-		break;
-	case BACKLIGHT_10_MIN:
-		bk_time = 600;
-		break;
-	case BACKLIGHT_ALWAYS_ON:
-		bk_time = 0;
-		break;
-	}
 	
-	if(bk_time > 0)
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
 
 	if(!lcd_is_sleeping)
 		return;
@@ -486,33 +454,8 @@ void LCD_Init(void)
 
 	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
 
-	switch(global_settings.backlight_time)
-	{
-	case BACKLIGHT_15_SEC:
-		bk_time = 15;
-		break;
-	case BACKLIGHT_30_SEC:
-		bk_time = 30;
-		break;
-	case BACKLIGHT_1_MIN:
-		bk_time = 60;
-		break;
-	case BACKLIGHT_2_MIN:
-		bk_time = 120;
-		break;
-	case BACKLIGHT_5_MIN:
-		bk_time = 300;
-		break;
-	case BACKLIGHT_10_MIN:
-		bk_time = 600;
-		break;
-	case BACKLIGHT_ALWAYS_ON:
-		bk_time = 0;
-		break;
-	}
-	
-	if(bk_time > 0)
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_SECONDS(bk_time));	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);	
 }
 
 #endif

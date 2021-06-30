@@ -23,7 +23,7 @@
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 
 static u8_t show_pic_count = 0;//Í¼Æ¬ÏÔÊ¾Ë³Ðò
@@ -216,10 +216,10 @@ void BootUpShowLoGo(void)
 		
 	if(screen_id == SCREEN_BOOTUP)
 	{
-		LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
+		LCD_get_pic_size_from_flash(IMG_PEPPA_320X320_ADDR, &w, &h);
 		x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
 		y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-		LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+		LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_320X320_ADDR);
 	}
 }
 
@@ -233,7 +233,7 @@ void system_init(void)
 	flash_init();
 	pmu_init();
 	LCD_Init();
-	BootUpShowLoGo();
+	//BootUpShowLoGo();
 
 	InitSystemSettings();
 
@@ -252,10 +252,10 @@ int main(void)
 {
 	system_init();
 
-	test_show_string();
+//	test_show_string();
 //	test_show_image();
 //	test_nvs();
-//	test_flash();
+	test_flash();
 //	test_uart_ble();
 //	test_sensor();
 //	test_show_digital_clock();
@@ -267,7 +267,7 @@ int main(void)
 //	test_gps();
 //	test_nb();
 
-	while(1)
+	while(0)
 	{
 		PMUMsgProcess();
 		LCDMsgProcess();

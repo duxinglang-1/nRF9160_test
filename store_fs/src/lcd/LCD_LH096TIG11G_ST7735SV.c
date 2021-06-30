@@ -18,8 +18,6 @@ static struct spi_cs_control spi_cs_ctr;
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
-bool lcd_is_sleeping = true;
-
 static void spi_init(void)
 {
 	printk("spi_init\n");

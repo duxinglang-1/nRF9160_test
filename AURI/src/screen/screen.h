@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 //big num
-#define BIG_NUM_W		12
+#define BIG_NUM_W		16
 #define BIG_NUM_H		32
 
 //small num
@@ -29,19 +29,19 @@ extern "C" {
 
 //time
 #define X_OFFSET		2
-#define IDLE_HOUR_H_X	18
+#define IDLE_HOUR_H_X	7
 #define IDLE_HOUR_H_Y	0
-#define IDLE_HOUR_L_X	(IDLE_HOUR_H_X+BIG_NUM_W)
+#define IDLE_HOUR_L_X	24	//(IDLE_HOUR_H_X+BIG_NUM_W)
 #define IDLE_HOUR_L_Y	0
 
-#define IDLE_COLON_X	(IDLE_HOUR_L_X+BIG_NUM_W+X_OFFSET)
+#define IDLE_COLON_X	43	//(IDLE_HOUR_L_X+BIG_NUM_W+X_OFFSET)
 #define IDLE_COLON_Y	0
-#define IDLE_COLON_W	5
+#define IDLE_COLON_W	7
 #define IDLE_COLON_H	32
 
-#define IDLE_MIN_H_X	(IDLE_COLON_X+IDLE_COLON_W+X_OFFSET)
+#define IDLE_MIN_H_X	50	//(IDLE_COLON_X+IDLE_COLON_W+X_OFFSET)
 #define IDLE_MIN_H_Y	0
-#define IDLE_MIN_L_X	(IDLE_MIN_H_X+BIG_NUM_W)
+#define IDLE_MIN_L_X	67	//(IDLE_MIN_H_X+BIG_NUM_W)
 #define IDLE_MIN_L_Y	0
 
 //date
@@ -53,11 +53,11 @@ extern "C" {
 #define IDLE_WEEK_SHOW_Y	0
 
 //NB signal
-#define NB_SIGNAL_X			5
+#define NB_SIGNAL_X			1
 #define NB_SIGNAL_Y			0
 
 //battery soc
-#define BAT_LEVEL_X		80
+#define BAT_LEVEL_X		87
 #define BAT_LEVEL_Y		0
 
 //battery soc

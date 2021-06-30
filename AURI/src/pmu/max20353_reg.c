@@ -40,7 +40,6 @@ static u8_t SOC_1, SOC_2;
 static u8_t original_OCV_1, original_OCV_2;
 static u16_t SOC;
 static u8_t SOC_percent;
-static u8_t PMICIntMasks[3];
 
 static struct k_timer ntc_check_timer;
 
@@ -55,6 +54,8 @@ int WriteMulti(u8_t *data, u8_t len);
 
 static u8_t HardwareID;
 static u8_t FirmwareID;
+
+static u8_t PMICIntMasks[3];
 
 u8_t i2cbuffer_[16];
 u8_t appdatainoutbuffer_[8];
@@ -266,7 +267,7 @@ int MAX20353_LDO1Config(void)
     int32_t ret = 0;
 
     appcmdoutvalue_ = 0x40;
-    appdatainoutbuffer_[0] = 0x01;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,使能   LDO1  
+    appdatainoutbuffer_[0] = 0x05;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,使能   LDO1  
     appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
     ret = MAX20353_AppWrite(2);
     
@@ -312,13 +313,28 @@ int MAX20353_ChargePumpConfig(void)
 
 /// @brief BuckBoost to 5.0V output rail **/
 //******************************************************************************
+int MAX20353_BuckBoostDisable(void) 
+{
+    int32_t ret = 0;
+    appcmdoutvalue_ = 0x70;
+    appdatainoutbuffer_[0] = 0x00;
+    appdatainoutbuffer_[1] = 0x00;
+    appdatainoutbuffer_[2] = 0x00;
+    appdatainoutbuffer_[3] = 0x00;     
+    ret = MAX20353_AppWrite(4);
+
+    return ret;
+}
+
+/// @brief BuckBoost to 5.0V output rail **/
+//******************************************************************************
 int MAX20353_BuckBoostConfig(void) 
 {
     int32_t ret = 0;
     appcmdoutvalue_ = 0x70;
     appdatainoutbuffer_[0] = 0x00;
     appdatainoutbuffer_[1] = 0x04;
-    appdatainoutbuffer_[2] = 0x19;		// 2.5V + (0.1V * number) = 5.0V
+    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 5.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
 
@@ -542,7 +558,6 @@ int MAX20353_AppWrite(uint8_t dataoutlen)
 
 	k_sleep(K_MSEC(10));
 	ret |= MAX20353_ReadReg(REG_AP_RESPONSE, &appcmdoutvalue_);//0x18
-
 	if(ret != 0)
 		ret = MAX20353_ERROR;
 	else
@@ -864,24 +879,26 @@ void MAX20353_GetDeviceID(u8_t *Device_ID)
 	MAX20353_ReadReg(REG_HARDWARE_ID, Device_ID);
 }
 
-void MAX20353_Init(void)
+bool MAX20353_Init(void)
 {
 	MAX20353_GetDeviceID(&HardwareID);
 	if(HardwareID != MAX20353_HARDWARE_ID)
-	{
-		return;
-	}
+		return false;
+
+	//MAX20353_SoftResetConfig();
 	
 	//供电电压及电流配置
-	MAX20353_Buck1Config();	//1.8v  350mA
-	MAX20353_Buck2Config(); //3.3V  350mA
-	MAX20353_LDO1Config();	//1.8v 50mA
+	MAX20353_Buck1Config();		//1.8v  350mA
+	MAX20353_Buck2Config(); 	//3.3V  350mA
+	//MAX20353_LDO1Config();	//1.8v 50mA switch mode
 	//MAX20353_LDO2Config();	//2.8V 100mA
 	//MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
 
 	//电荷泵及BUCK/BOOST配置
-	MAX20353_ChargePumpConfig();
-	MAX20353_BuckBoostConfig();
+	//MAX20353_ChargePumpConfig();
+
+	//MAX20353_BuckBoostDisable();
+	//MAX20353_BuckBoostConfig();
 
 	//马达驱动
 #ifdef MOTOR_TYPE_ERM
@@ -892,10 +909,14 @@ void MAX20353_Init(void)
 #endif
 
 	//电量计
+#ifdef BATTERY_SOC_GAUGE
 	MAX20353_SOCInit();
+#endif
 
 	//充电配置
 	MAX20353_ChargerInit();
+
+	return true;
 }
 
 #ifdef BATTERY_SOC_GAUGE	//xb add 2020-11-05 增加有关电量计的代码

@@ -16,8 +16,8 @@
 #include "Max20353.h"
 #endif
 
-#ifdef LCD_VGM068A4W01_SH1106G
-#include "LCD_VGM068A4W01_SH1106G.h"
+#ifdef LCD_VGM096064A6W01_SP5090
+#include "LCD_VGM096064A6W01_SP5090.h"
 
 #define SPI_BUF_LEN	8
 
@@ -47,7 +47,7 @@ static void LCD_SPI_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 }
 
@@ -288,14 +288,14 @@ void LCD_Clear(u16_t color)
 		data = 0x00;
 	else
 		data = 0xff;
-	
+
 	for(page=0;page<PAGE_MAX;page++)
 	{
 		WriteComm(0xb0+page);
 		WriteComm(0x11);
 		WriteComm(0x02);
 
-		DispColor(COL,data);
+		DispColor(COL, data);
 	}
 } 
 
@@ -386,16 +386,16 @@ void LCD_Init(void)
 	WriteComm(0xAE); //Set Display Off
 	WriteComm(0xD5); //Display divide ratio/osc. freq. mode
 	WriteComm(0x51);
-	WriteComm(0xA8); //Multiplex ration mode:
-	WriteComm(0x1F);
+	WriteComm(0xA8); //Multiplex ration mode:63
+	WriteComm(0x3F);
 	WriteComm(0xD3); //Set Display Offset
-	WriteComm(0x10);
+	WriteComm(0x00);
 	WriteComm(0x40); //Set Display Start Line
 	WriteComm(0xAD); //DC-DC Control Mode Set
 	WriteComm(0x8B); //DC-DC ON/OFF Mode Set
-	WriteComm(0x31); //Set Pump voltage value
-	WriteComm(0xA1); //Segment Remap
-	WriteComm(0xC8); //Sst COM Output Scan Direction
+	WriteComm(0x33); //Set Pump voltage value
+	WriteComm(0xA0); //Segment Remap
+	WriteComm(0xC0); //Sst COM Output Scan Direction
 	WriteComm(0xDA); //Common pads hardware: alternative
 	WriteComm(0x12);
 	WriteComm(0x81); //Contrast control
@@ -403,7 +403,7 @@ void LCD_Init(void)
 	WriteComm(0xD9); //Set pre-charge period
 	WriteComm(0x22);
 	WriteComm(0xDB); //VCOM deselect level mode
-	WriteComm(0x25);
+	WriteComm(0x2B);
 	WriteComm(0xA4); //Set Entire Display On/Off
 	WriteComm(0xA6); //Set Normal Display
 

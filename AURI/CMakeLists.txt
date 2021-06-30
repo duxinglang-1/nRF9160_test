@@ -6,9 +6,8 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-include($ENV{ZEPHYR_BASE}/../nrf/cmake/boilerplate.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(store_fs)
+project(AURI)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
@@ -33,8 +32,11 @@ add_subdirectory(src/screen)
 add_subdirectory(src/pmu)
 add_subdirectory(src/ppg)
 add_subdirectory(src/audio)
+if(CONFIG_WIFI)
 add_subdirectory(src/wifi)
+endif()
 add_subdirectory(src/sos)
 add_subdirectory(src/codetrans)
 add_subdirectory(src/ucs2)
+add_subdirectory(src/communicate)
 #add_subdirectory(src/cryptoauthentication)

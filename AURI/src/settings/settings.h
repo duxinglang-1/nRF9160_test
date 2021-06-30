@@ -61,18 +61,32 @@ typedef struct{
 }phd_measure_t;
 
 typedef struct{
+	u32_t steps;
+	u32_t time;
+}location_interval_t;
+
+typedef struct{
+	u32_t systolic;		// ’Àı—π
+	u32_t diastolic;	// Ê’≈—π
+}bp_calibra_t;
+
+typedef struct{
 	bool init;		//system inited flag
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
 	bool wake_screen_by_wrist;
+	bool wrist_off_check;
 	u16_t target_steps;
+	u32_t health_interval;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
 	CLOCK_MODE idle_colck_mode;
 	BACKLIGHT_TIME backlight_time;
 	phd_measure_t phd_infor;
+	location_interval_t dot_interval;
+	bp_calibra_t bp_calibra;
 	alarm_infor_t alarm[ALARM_MAX];
 }global_settings_t;
 

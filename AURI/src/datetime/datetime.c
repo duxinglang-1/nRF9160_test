@@ -49,9 +49,11 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
+u64_t beginstamp=0;
 
 static void clock_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(clock_timer, clock_timer_handler, NULL);
+
 
 u8_t CheckYearIsLeap(u32_t years)
 {
@@ -329,7 +331,7 @@ void RedrawSystemTime(void)
 void UpdateSystemTime(void)
 {
 	u64_t timestamp,timeskip;
-	static u64_t laststamp=0;
+
 	
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
 
@@ -337,7 +339,7 @@ void UpdateSystemTime(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
 	//timestamp = k_uptime_get();
-	//timeskip = timestamp - laststamp;
+	//timeskip = timestamp - beginstamp;
 	//laststamp = timestamp;
 
 	date_time.second++;	// += (timeskip/1000);
@@ -435,6 +437,9 @@ void UpdateSystemTime(void)
 		//SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 		AlarmRemindCheck(date_time);
+		
+		TimeCheckSendHealthData();
+		TimeCheckSendLocationData();
 	}
 
 	if((date_time_changed&0x08) != 0)
@@ -479,7 +484,7 @@ bool CheckSystemDateTimeIsValid(sys_date_timer_t systime)
 	return ret;
 }
 
-void GetSystemTimeSecStrings(u8_t *str_utc)
+void GetSystemTimeSecString(u8_t *str_utc)
 {
 	u32_t i;
 	u32_t total_sec,total_day=0;
@@ -673,7 +678,7 @@ void TimeMsgProcess(void)
 	{
 		sys_time_count = false;
 		UpdateSystemTime();
-
+		
 		if(lcd_is_sleeping)
 			return;
 		

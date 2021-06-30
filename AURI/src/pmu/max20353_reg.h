@@ -141,7 +141,7 @@ int MAX20353_Pattern2(int Mode);
 int MAX20353_DirectWrite(int Amplitude, int time); 
 
 extern int MAX20353_LED1(int IStep, int Amplitude, bool flag);
-extern void MAX20353_Init(void);
+extern bool MAX20353_Init(void);
 
 #ifdef __cplusplus
 }

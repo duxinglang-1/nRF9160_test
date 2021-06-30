@@ -53,7 +53,8 @@ static struct k_timer g_long_press_timer_id;
 
 static bool touch_flag = false;
 
-extern bool sys_pwr_off;
+bool key_pwroff_flag = false;
+
 extern bool app_gps_on;
 
 bool is_wearing(void)
@@ -63,14 +64,16 @@ bool is_wearing(void)
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
+	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
 
 	if(key_type == KEY_UP)
 	{
-		sleep_out_by_wrist = false;
-		lcd_sleep_out = true;
 		if(lcd_is_sleeping)
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
 			return;
+		}
 	}
 
 	switch(key_code)
@@ -100,7 +103,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			EntryMainMenuScreen();
 			break;
 		case KEY_LONG_PRESS:
-			sys_pwr_off = true;
+			key_pwroff_flag = true;
 			break;
 		}
 		break;

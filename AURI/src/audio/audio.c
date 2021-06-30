@@ -3,8 +3,8 @@
 ** Descriptions:			audio process source file
 ** Created By:				xie biao
 ** Created Date:			2021-03-04
-** Modified Date:      		2021-03-04 
-** Version:			    	V1.0
+** Modified Date:      		2021-05-08 
+** Version:			    	V1.1
 ******************************************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,14 +16,15 @@
 #include <drivers/gpio.h>
 #include <nrfx.h>
 #include <nrfx_i2s.h>
-
-#include "audio_wav.h"
-#include "external_flash.h"
+//#include "audio_wav.h"
+//#include "external_flash.h"
+#include "audio.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(audio, CONFIG_LOG_DEFAULT_LEVEL);
 
+#if 0
 #define I2S_MCK		25
 #define I2S_LRCK	13
 #define I2S_BCK		14
@@ -48,7 +49,123 @@ static bool             m_error_encountered;
 
 static u32_t       * volatile mp_block_to_fill  = NULL;
 static u32_t const * volatile mp_block_to_check = NULL;
+#endif
 
+#define AUDIO_PORT	"GPIO_0"
+#define WTN_DATA	13      //接 13脚
+#define LDO_EN      0
+
+static struct device *gpio_audio;
+
+//延时函数
+void Delay_ms(unsigned int dly)
+{
+	k_sleep(dly);
+}
+
+void Delay_us(unsigned int dly)
+{
+	k_usleep(dly);
+}
+
+//发送一个字节数据
+void Audio_Send_ByteData(u8_t data)
+{
+	u8_t j;
+	
+	gpio_pin_write(gpio_audio, WTN_DATA, 0);
+	Delay_ms(5);
+	
+	for(j=0;j<8;j++)
+	{
+		if(data&0x01)
+		{
+			gpio_pin_write(gpio_audio, WTN_DATA, 1);
+			Delay_us(600);
+			gpio_pin_write(gpio_audio, WTN_DATA, 0);
+			Delay_us(200);
+		}
+		else
+		{
+			gpio_pin_write(gpio_audio, WTN_DATA, 1);
+			Delay_us(200);
+			gpio_pin_write(gpio_audio, WTN_DATA, 0);
+			Delay_us(600);
+			
+		}
+		data >>= 1;
+	}
+	
+	gpio_pin_write(gpio_audio, WTN_DATA, 1);
+}
+
+//控制音量
+void Volume_Control(unsigned char vol)  //E0  ------  EF
+{
+	Audio_Send_ByteData(vol);
+	Delay_us(400);
+}
+
+//播放语音
+void Voice_Start(u8_t voice_addr)  //0  -----------  6
+{
+	Audio_Send_ByteData(voice_addr);
+}
+
+//停止播放
+void Voice_Stop(void)
+{
+	Audio_Send_ByteData(0xFE);
+}
+
+//循环播放当前语音
+void Voice_Loop(void)
+{	
+	Delay_us(400);
+	Audio_Send_ByteData(0xF2);
+}
+
+//播放120报警声
+void audio_play_alarm(void)
+{
+	Voice_Start(3);
+}
+
+//播放中文语音提示
+void audio_play_chn_voice(void)
+{
+	Voice_Start(1);
+}
+
+//播放英文语音提示
+void audio_play_en_voice(void)
+{
+	Voice_Start(2);
+}
+
+//停止播放
+void audio_stop(void)
+{
+	Voice_Stop();
+}
+
+//io口初始化 
+void audio_init(void)
+{
+	gpio_audio = device_get_binding(AUDIO_PORT);
+	
+	/* Set LED pin as output */
+	gpio_pin_configure(gpio_audio, WTN_DATA, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_audio, LDO_EN, GPIO_DIR_OUT);
+	
+	/* Set pin to HIGH/LOW */
+	gpio_pin_write(gpio_audio, WTN_DATA, 1);
+	gpio_pin_write(gpio_audio, LDO_EN, 1);
+
+	Delay_ms(100);
+}
+
+#if 0
 void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk *info_fmt, wav_data_chunk *info_data)
 {
 	u32_t index;
@@ -172,18 +289,6 @@ void audio_get_wav_time(u32_t aud_addr, u32_t *time)
 		*time = pcm_data.data_size/fmt_data.byte_freq;
 	else
 		*time = 0;
-}
-
-void i2s_init(void)
-{
-
-} 
-
-void audio_init(void)
-{
-	Audio_device_init();
-
-	i2s_init();
 }
 
 void test_audio_wav(void)
@@ -413,3 +518,4 @@ void test_i2s(void)
 		k_sleep(K_MSEC(PAUSE_TIME));
     }
 }
+#endif

@@ -306,7 +306,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		}
 
 		mqtt_connected = true;
-		LOG_INF("[%s:%d] MQTT client connected!\n", __func__, __LINE__);
+		LOG_INF("MQTT client connected!\n");
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "MQTT connect failed %d", evt->result);
@@ -317,7 +317,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 
 		if(power_on_data_flag)
 		{
-			SendDevceInforData();
+			SendPowerOnData();
 			power_on_data_flag = false;
 		}
 		else
@@ -329,7 +329,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	case MQTT_EVT_DISCONNECT:
-		LOG_INF("[%s:%d] MQTT client disconnected %d\n", __func__, __LINE__, evt->result);
+		LOG_INF("MQTT client disconnected %d\n", evt->result);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "MQTT client disconnected %d", evt->result);
@@ -346,7 +346,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		{
 			const struct mqtt_publish_param *p = &evt->param.publish;
 
-			LOG_INF("[%s:%d] MQTT PUBLISH result=%d len=%d\n", __func__, __LINE__, evt->result, p->message.payload.len);
+			LOG_INF("MQTT PUBLISH result=%d len=%d\n", evt->result, p->message.payload.len);
 			if(test_nb_flag)
 			{
 				sprintf(nb_test_info, "MQTT PUBLISH result:%d len:%d\n", evt->result, p->message.payload.len);
@@ -399,8 +399,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		LOG_INF("[%s:%d] PUBACK packet id: %u\n", __func__, __LINE__,
-				evt->param.puback.message_id);
+		LOG_INF("PUBACK packet id: %u\n", evt->param.puback.message_id);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "PUBACK packet id: %u", evt->param.puback.message_id);
@@ -421,8 +420,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		LOG_INF("[%s:%d] SUBACK packet id: %u\n", __func__, __LINE__,
-				evt->param.suback.message_id);
+		LOG_INF("SUBACK packet id: %u\n", evt->param.suback.message_id);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "SUBACK packet id: %u", evt->param.suback.message_id);
@@ -431,8 +429,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	default:
-		LOG_INF("[%s:%d] default: %d\n", __func__, __LINE__,
-				evt->type);
+		LOG_INF("default: %d\n", evt->type);
 		if(test_nb_flag)
 		{
 			sprintf(nb_test_info, "default: %d", evt->type);
@@ -600,6 +597,10 @@ static void mqtt_link(struct k_work_q *work_q)
 
 	LOG_INF("[%s] begin\n", __func__);
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
+
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -696,6 +697,11 @@ static void NbSendData(void)
 
 		k_timer_start(&send_data_timer, K_MSEC(1000), NULL);
 	}
+}
+
+bool MqttIsConnected(void)
+{
+	return mqtt_connected;
 }
 
 static void MqttDisConnect(void)
@@ -1267,7 +1273,7 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendDeviceInforData(u8_t *data, u32_t datalen)
+void NBSendPowerOnInfor(u8_t *data, u32_t datalen)
 {
 	u8_t buf[128] = {0};
 	u8_t tmpbuf[20] = {0};
@@ -1282,7 +1288,26 @@ void NBSendDeviceInforData(u8_t *data, u32_t datalen)
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 
-	LOG_INF("[%s] device infor data:%s\n", __func__, buf);
+	LOG_INF("[%s] pwr on infor:%s\n", __func__, buf);
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendPowerOffInfor(u8_t *data, u32_t datalen)
+{
+	u8_t buf[128] = {0};
+	u8_t tmpbuf[20] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T13:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+
+	LOG_INF("[%s] pwr off infor:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1495,8 +1520,8 @@ void GetModemSignal(void)
 {
 	char *ptr;
 	int i=0,len;
-	u8_t strbuf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t strbuf[64] = {0};
+	u8_t tmpbuf[64] = {0};
 	s32_t rsrp;
 	static s32_t rsrpbk = 0;
 	
@@ -1536,8 +1561,8 @@ void GetModemInfor(void)
 {
 	char *ptr;
 	int i=0,len,err;
-	u8_t tmpbuf[128] = {0};
-	u8_t strbuf[128] = {0};
+	u8_t tmpbuf[64] = {0};
+	u8_t strbuf[64] = {0};
 
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
@@ -1558,7 +1583,6 @@ void GetModemInfor(void)
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 		LOG_INF("Get iccid fail!\n");
-		return;
 	}
 	LOG_INF("iccid:%s\n", &tmpbuf[9]);
 	strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
@@ -1568,6 +1592,7 @@ void GetModemInfor(void)
 		LOG_INF("Get rsrp fail!\n");
 		return;
 	}
+	
 	LOG_INF("rsrp:%s\n", tmpbuf);
 	len = strlen(tmpbuf);
 	ptr = tmpbuf;
@@ -1625,10 +1650,11 @@ static void nb_link(struct k_work *work)
 	if(err)
 	{
 		LOG_INF("Can't connected to LTE network");
-		SetModemTurnOff();
+		//SetModemTurnOff();
 
 		nb_connected = false;
 		
+	#if 0	
 		retry_count++;
 		if(retry_count <= 5)	//5次以内每半分钟重连一次
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(30));
@@ -1642,6 +1668,7 @@ static void nb_link(struct k_work *work)
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1800));
 		else						//26次以上每1小时重连一次
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(3600));
+	#endif	
 	}
 	else
 	{

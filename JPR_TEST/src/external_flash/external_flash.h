@@ -16,10 +16,10 @@
 #define FLASH_DEVICE 	"SPI_2"
 #define FLASH_NAME 		"W25Q64FW"
 #define FLASH_PORT		"GPIO_0"
-#define CS		2
-#define CLK		3
-#define MOSI	4
-#define MISO	5
+#define FLASH_CS_PIN		(2)
+#define FLASH_CLK_PIN		(3)
+#define FLASH_MOSI_PIN		(4)
+#define FLASH_MISO_PIN		(5)
 
 //W25Q64 ID
 #define	W25Q64_ID	0XEF16
@@ -125,6 +125,16 @@
 
 
 #define FONT_END_ADDR			0x6FFFFF
+
+//资料 flash里占用1M的空间(0x700000~0x7FFFFF)
+#define DATA_START_ADDR			0x700000
+#define DATA_OFFSET				4
+
+#define PPG_ALGO_FW_ADDR		DATA_START_ADDR
+#define PPG_ALGO_FW_SIZE 		(279152)
+#define PPG_ALGO_FW_END			(PPG_ALGO_FW_ADDR+PPG_ALGO_FW_SIZE)
+
+#define DATA_END_ADDR			0x7FFFFF
 
 
 void SPI_Flash_Init(void);

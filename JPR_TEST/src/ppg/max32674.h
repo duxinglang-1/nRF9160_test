@@ -32,9 +32,10 @@ typedef struct {
   void *handle;
 }ppgdev_ctx_t;
 
-ppgdev_ctx_t ppg_dev_ctx;
+extern ppgdev_ctx_t ppg_dev_ctx;
 
-extern u8_t g_heart_rate;
+extern u16_t g_hr;
+extern u16_t g_spo2;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);

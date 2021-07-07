@@ -211,103 +211,103 @@ s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
 	s32_status = sh_put_in_bootloader();
 	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("set bl mode fail, %x\n", s32_status);
-	return s32_status;
+		LOG_INF("set bl mode fail, %x\n", s32_status);
+		return s32_status;
 	}
 
 	//check MCU type
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("Read MCU type fail, %x\n", s32_status);
-	return s32_status;
+		LOG_INF("Read MCU type fail, %x\n", s32_status);
+		return s32_status;
 	}
 	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
 
 	//check working mode and FW version
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("read FW version fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("read FW version fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
 	//read page size
 	u16_t u16_pageSize;
 	s32_status = sh_get_bootloader_pagesz(&u16_pageSize);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("read FW version fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("read FW version fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("page size is %x \n", u16_pageSize);
+		LOG_INF("page size is %x \n", u16_pageSize);
 	}
 
 	//set page number
 	u8_t u8_pageNumber = u8p_FwData[BL_PAGE_COUNT_INDEX];
 	s32_status =  sh_set_bootloader_numberofpages(u8_pageNumber);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("set page count fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("set page count fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("set page count is done \n");
+		LOG_INF("set page count is done \n");
 	}
 
 	//Set vector bytes
 	u8_t* u8p_ivData = &u8p_FwData[BL_IV_INDEX];
 	s32_status =  sh_set_bootloader_iv(u8p_ivData);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("Set the  vector bytes fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("Set the  vector bytes fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("Setting the  vector bytes is done \n");
+		LOG_INF("Setting the  vector bytes is done \n");
 	}
 
 	//Set vector bytes
 	u8_t* u8p_authData = &u8p_FwData[BL_AUTH_INDEX];
-	s32_status =  sh_set_bootloader_auth(u8p_authData);
-	if (s32_status != SS_SUCCESS)
+	s32_status = sh_set_bootloader_auth(u8p_authData);
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("Set the  authentication fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("Set the  authentication fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("Setting the authentication is done \n");
+		LOG_INF("Setting the authentication is done \n");
 	}
 
 	s32_status =  sh_set_bootloader_erase();
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("Erase flash fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("Erase flash fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("Erasing flash is done \n");
+		LOG_INF("Erasing flash is done \n");
 	}
 
 	s32_status = sh_set_bootloader_flashpages(u8p_FwData, u8_pageNumber);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("Write page fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("Write page fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("All page is flashed \n");
+		LOG_INF("All page is flashed \n");
 	}
 
 	SH_rst_to_APP_mode();
@@ -316,21 +316,21 @@ s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("Read MCU type fail, %x \n", s32_status);
-	return s32_status;
+		LOG_INF("Read MCU type fail, %x \n", s32_status);
+		return s32_status;
 	}
 	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
 
 	//check working mode and FW version
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
-	LOG_INF("read FW version fail %x \n", s32_status);
-	return s32_status;
+		LOG_INF("read FW version fail %x \n", s32_status);
+		return s32_status;
 	}
 	else
 	{
-	LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
 	return s32_status;

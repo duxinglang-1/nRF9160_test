@@ -16,6 +16,7 @@
 #include "img.h"
 #include "font.h"
 #include "external_flash.h"
+#include "max_fw_data_674_1_1_0.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -42,12 +43,12 @@ static struct spi_cs_control spi_cs_ctr;
 
 void SpiFlash_CS_LOW(void)
 {
-	gpio_pin_write(gpio_flash, CS, 0);
+	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 0);
 }
 
 void SpiFlash_CS_HIGH(void)
 {
-	gpio_pin_write(gpio_flash, CS, 1);
+	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 1);
 }
 
 /*****************************************************************************
@@ -455,7 +456,7 @@ void SPI_Flash_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 }
 
@@ -470,8 +471,8 @@ void flash_init(void)
 		return;
 	}
 
-	gpio_pin_configure(gpio_flash, CS, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_flash, CS, 1);
+	gpio_pin_configure(gpio_flash, FLASH_CS_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 1);
 
 	SPI_Flash_Init();
 }
@@ -516,12 +517,12 @@ void test_flash(void)
 	//LCD_ShowString(0,100,"FLASH写入图片3成功!");
 
 	//写入数据
-	//LCD_ShowString(0,80,"FLASH写入图片4数据...");
+	LCD_ShowString(0,80,"FLASH写入图片4数据...");
 	//SpiFlash_Write_Buf(peppa_pig_320X320_1, IMG_PEPPA_320X320_ADDR, 51208);
 	//SpiFlash_Write_Buf(peppa_pig_320X320_2, IMG_PEPPA_320X320_ADDR+51208, 51200);
 	//SpiFlash_Write_Buf(peppa_pig_320X320_3, IMG_PEPPA_320X320_ADDR+51208+51200, 51200);
-	//SpiFlash_Write_Buf(peppa_pig_320X320_4, IMG_PEPPA_320X320_ADDR+51208+2*51200, 51200);
-	//LCD_ShowString(0,100,"FLASH写入图片4成功!");
+	SpiFlash_Write_Buf(peppa_pig_320X320_4, IMG_PEPPA_320X320_ADDR+51208+2*51200, 51200);
+	LCD_ShowString(0,100,"FLASH写入图片4成功!");
 
 	//写入数据
 	//LCD_ShowString(0,80,"FLASH写入RM_LOGO图片数据...");
@@ -549,11 +550,11 @@ void test_flash(void)
 
 #if 0
 	//写入数据
-	//LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
-	//SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
+	LCD_ShowString(0,80,"FLASH写入16X16中文字库...");
+	SpiFlash_Write_Buf(chinese_1616_1, FONT_CHN_SM_1616_ADDR+(2726*32)*0, (2726*32));
 	//SpiFlash_Write_Buf(chinese_1616_2, FONT_CHN_SM_1616_ADDR+(2726*32)*1, (2726*32));
 	//SpiFlash_Write_Buf(chinese_1616_3, FONT_CHN_SM_1616_ADDR+(2726*32)*2, (2726*32));	
-	//LCD_ShowString(0,100,"FLASH写入16X16中文成功");
+	LCD_ShowString(0,100,"FLASH写入16X16中文成功");
 #endif
 
 #if 0
@@ -635,6 +636,15 @@ void test_flash(void)
 	//LCD_ShowString(0,100,"FLASH写入RM24X24日文成功");
 #endif
 
+#if 0
+	//写入ppg(max32674心率算法)
+	LCD_ShowString(0,80,"FLASH写入PPG算法...");
+	SpiFlash_Write_Buf(Msbl_674_V1_1_0_001, PPG_ALGO_FW_ADDR+72000*0, 72000);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_002, PPG_ALGO_FW_ADDR+72000*1, 72000);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_003, PPG_ALGO_FW_ADDR+72000*2, 72000);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_004, PPG_ALGO_FW_ADDR+72000*3, 63152);
+	LCD_ShowString(0,100,"FLASH写入PPG算法成功");
+#endif
 	//读出数据
 	//SpiFlash_Read(my_rx_buf,0,len);
 	//LCD_ShowString(0,140,"FLASH读出数据:");

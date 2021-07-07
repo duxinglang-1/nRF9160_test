@@ -120,8 +120,8 @@ static void sh_init_gpio(void)
 	gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN);
 
 	//PPG供电打开
-	//gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
-	//gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
 
 	//PPG模式选择(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_DIR_OUT);
@@ -181,8 +181,8 @@ void SH_rst_to_APP_mode(void)
 	wait_ms(50);
 	
 	//enter application mode end delay for initialization finishes
-	wait_ms(1500);
-
+	wait_ms(2000);
+	
 	LOG_INF("set app mode success!\n");
 }
 
@@ -364,9 +364,9 @@ s32_t sh_get_sensorhub_operating_mode(u8_t *hubMode)
 s32_t sh_get_hub_fw_version(u8_t* fw_version)
 {
 	u8_t u8_work_mode;
-    u8_t cmd_bytes[2];
-    u8_t rxbuf[4];
-    u32_t status;
+	u8_t cmd_bytes[2];
+	u8_t rxbuf[4];
+	u32_t status;
 
 	sh_get_sensorhub_operating_mode(&u8_work_mode);
 
@@ -385,13 +385,13 @@ s32_t sh_get_hub_fw_version(u8_t* fw_version)
 		return status;
 	}
 
-    status = sh_read_cmd( &cmd_bytes[0], sizeof(cmd_bytes),
-             	 	 	 	  0, 0,
-							  &rxbuf[0], sizeof(rxbuf),
-							  SS_DEFAULT_CMD_SLEEP_MS );
+	status = sh_read_cmd(&cmd_bytes[0], sizeof(cmd_bytes),
+							0, 0,
+							&rxbuf[0], sizeof(rxbuf),
+							SS_DEFAULT_CMD_SLEEP_MS );
 
-    memcpy(fw_version, &rxbuf[1],sizeof(rxbuf) - 1);
-    return status;
+	memcpy(fw_version, &rxbuf[1],sizeof(rxbuf) - 1);
+	return status;
 }
 
 int sh_set_sensorhub_operating_mode(u8_t hubMode)
@@ -631,14 +631,13 @@ int sh_disable_algo(int idx)
     return status;
 }
 
-int sh_set_algo_cfg(int algo_idx, int cfg_idx, u8_t *cfg, int cfg_sz)
+int sh_set_algo_cfg(int algo_idx, int cfg_idx, uint8_t *cfg, int cfg_sz)
 {
 	u8_t ByteSeq[] = { 0x50 , ((u8_t) algo_idx) , ((u8_t) cfg_idx) };
 
 	int status = sh_write_cmd_with_data( &ByteSeq[0], sizeof(ByteSeq),
 			                             cfg, cfg_sz,
 										 SS_DEFAULT_CMD_SLEEP_MS);
-
 	return status;
 }
 
@@ -762,25 +761,25 @@ s32_t sh_get_bootloader_MCU_tye(u8_t *type)
 s32_t sh_get_bootloader_pagesz(u16_t *pagesz)
 {
 	u8_t ByteSeq[]= { 0x81, 0x01 };
-    u8_t rxbuf[3];
-    int sz = 0;
+	u8_t rxbuf[3];
+	int sz = 0;
 
-    int status = sh_read_cmd( &ByteSeq[0], sizeof(ByteSeq),
-                          0, 0,
-                          &rxbuf[0], sizeof(rxbuf),
-						  SS_DEFAULT_CMD_SLEEP_MS);
-    if (status == 0x00)
-    {
-            sz = (256*(int)rxbuf[1]) + rxbuf[2];
-            if(sz > BL_MAX_PAGE_SIZE )
-            {
-                   sz = -2;
-            }
-    }
+	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
+								0, 0,
+								&rxbuf[0], sizeof(rxbuf),
+								SS_DEFAULT_CMD_SLEEP_MS);
+	if(status == 0x00)
+	{
+		sz = (256*(int)rxbuf[1]) + rxbuf[2];
+		if(sz > BL_MAX_PAGE_SIZE )
+		{
+			sz = -2;
+		}
+	}
 
-    *pagesz = sz;
+	*pagesz = sz;
 
-    return status;
+	return status;
 }
 
 s32_t sh_set_bootloader_numberofpages(u8_t pageCount)
@@ -934,22 +933,6 @@ int SH_Max8614x_get_ppgreg(const u8_t addr , u32_t *regVal)
 	return status;
 }
 
-int sh_set_cfg_wearablesuite_algomode( const u8_t algoMode )
-{
-	u8_t Temp[1] = { algoMode };
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_ALGO_MODE, &Temp[0], 1);
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_algomode( u8_t *algoMode )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_ALGO_MODE, &rxBuff[0], sizeof(rxBuff) );
-	*algoMode =  rxBuff[1];
-	return status;
-}
-
-
 int sh_set_cfg_wearablesuite_aecenable(const u8_t isAecEnable )
 {
 	u8_t Temp[1] = { isAecEnable };
@@ -966,417 +949,6 @@ int sh_get_cfg_wearablesuite_aecenable( u8_t *isAecEnable )
 
 	return status;
 }
-
-int sh_set_cfg_wearablesuite_scdenable( const u8_t isScdcEnable )
-{
-	u8_t Temp[1] = { isScdcEnable };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_SCD_ENABLE, &Temp[0], 1);
-	return status;
-
-}
-
-int sh_get_cfg_wearablesuite_scdenable( u8_t *isScdEnable )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_SCD_ENABLE, &rxBuff[0], sizeof(rxBuff) );
-	*isScdEnable =  rxBuff[1];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_targetpdcurrent(const u16_t targetPdCurr_x10)
-{
-	u8_t Temp[2] = { (u8_t)((targetPdCurr_x10 >> (1*8)) & 0xFF),  (u8_t)((targetPdCurr_x10 >> (0*8)) & 0xFF)};
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_TARGET_PD_CURRENT, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_targetpdcurrent(u16_t *targetPdCurr_x10)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-    int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_TARGET_PD_CURRENT, &rxBuff[0], sizeof(rxBuff));
-    *targetPdCurr_x10 = (rxBuff[1] << 8) +  rxBuff[2] ;
-
-    return status;
-}
-
-int sh_set_cfg_wearablesuite_minpdcurrent(const u16_t minPdCurr_x10)
-{
-	u8_t Temp[2] = { (u8_t)((minPdCurr_x10 >> (1*8)) & 0xFF),  (u8_t)((minPdCurr_x10 >> (0*8)) & 0xFF)};
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_PD_CURRENT, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_minpdcurrent(u16_t *minPdCurr_x10)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-    int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_PD_CURRENT, &rxBuff[0], sizeof(rxBuff));
-    *minPdCurr_x10 = (rxBuff[1] << 8) +  rxBuff[2] ;
-
-    return status;
-}
-
-int sh_set_cfg_wearablesuite_initialpdcurrent(const u16_t initPdCurr_x10)
-{
-	u8_t Temp[2] = { (u8_t)((initPdCurr_x10 >> (1*8)) & 0xFF),  (u8_t)((initPdCurr_x10 >> (0*8)) & 0xFF)};
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_INIT_PD_CURRENT, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_initialpdcurrent(u16_t *initPdCurr_x10)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-    int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_INIT_PD_CURRENT, &rxBuff[0], sizeof(rxBuff));
-    *initPdCurr_x10 = (rxBuff[1] << 8) +  rxBuff[2] ;
-
-    return status;
-}
-
-int sh_set_cfg_wearablesuite_autopdcurrentenable(const u8_t isAutoPdCurrEnable)
-{
-	u8_t Temp[1] = { isAutoPdCurrEnable };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_AUTO_PD_CURRENT_ENABLE, &Temp[0], 1);
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_autopdcurrentenable(u8_t *isAutoPdCurrEnable)
-{
-
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_AUTO_PD_CURRENT_ENABLE, &rxBuff[0], sizeof(rxBuff) );
-	*isAutoPdCurrEnable =  rxBuff[1];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_spo2cal(const u32_t val[3])
-{
-	u8_t CalCoef[12] = { (u8_t)((val[0] >> (3*8)) & 0xFF),  (u8_t)((val[0] >> (2*8)) & 0xFF), (u8_t)((val[0] >> (1*8)) & 0xFF), (u8_t)((val[0] >> (0*8)) & 0xFF), // A
-							(u8_t)((val[1] >> (3*8)) & 0xFF),  (u8_t)((val[1] >> (2*8)) & 0xFF), (u8_t)((val[1] >> (1*8)) & 0xFF), (u8_t)((val[1] >> (0*8)) & 0xFF), // B
-							(u8_t)((val[2] >> (3*8)) & 0xFF),  (u8_t)((val[2] >> (2*8)) & 0xFF), (u8_t)((val[2] >> (1*8)) & 0xFF), (u8_t)((val[2] >> (0*8)) & 0xFF)  // C
-						   };
-
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_SPO2_CAL, &CalCoef[0], 12);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_spo2cal(s32_t val[3])
-{
-	u8_t rxBuff[12+1];  // first byte is status
-    int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_SPO2_CAL, &rxBuff[0], sizeof(rxBuff));
-
-    val[0] = (rxBuff[1] << 24) + (rxBuff[2] << 16) + (rxBuff[3] << 8) + (rxBuff[4] );
-    val[1] = (rxBuff[5] << 24) + (rxBuff[6] << 16) + (rxBuff[7] << 8) + (rxBuff[8] );
-    val[2] = (rxBuff[9] << 24) + (rxBuff[10] << 16) + (rxBuff[11] << 8) + (rxBuff[12] );
-
-	return status;
-}
-
-/*  WARNING: GRANULARITY SHOULD BE 0.01 WILL TALK TO AFSHIN!!!!*/
-int sh_set_cfg_wearablesuite_motionthreshold( const u16_t motionThresh)
-{
-    u8_t Temp[2] = { (u8_t)((motionThresh >> (1*8)) & 0xFF),  (u8_t)((motionThresh >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_MOTION_MAG_THRESHOLD, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_motionthreshold( u16_t *motionThresh)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_MOTION_MAG_THRESHOLD, &rxBuff[0], sizeof(rxBuff));
-	*motionThresh = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_targetpdperiod( const u16_t targPdPeriod)
-{
-    u8_t Temp[2] = { (u8_t)((targPdPeriod >> (1*8)) & 0xFF),  (u8_t)((targPdPeriod >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_TARGET_PD_CURRENT_PERIOD, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_targetpdperiod( u16_t *targPdPeriod)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_TARGET_PD_CURRENT_PERIOD, &rxBuff[0], sizeof(rxBuff));
-	*targPdPeriod = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_spo2motionperiod( const u16_t spo2MotnPeriod)
-{
-    u8_t Temp[2] = { (u8_t)((spo2MotnPeriod >> (1*8)) & 0xFF),  (u8_t)((spo2MotnPeriod >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_MOTION_PERIOD, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_spo2motionperiod( u16_t *spo2MotnPeriod)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_MOTION_PERIOD, &rxBuff[0], sizeof(rxBuff));
-	*spo2MotnPeriod = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_spo2motionthreshold( const u32_t spo2MotnThresh )
-{
-	u8_t Temp[4] = { (u8_t)((spo2MotnThresh >> (3*8)) & 0xFF),  (u8_t)((spo2MotnThresh >> (2*8)) & 0xFF),
-			            (u8_t)((spo2MotnThresh >> (1*8)) & 0xFF), (u8_t)((spo2MotnThresh >> (0*8)) & 0xFF)   };
-
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_MOTION_THRESHOLD, &Temp[0], 4);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_spo2motionthreshold( u32_t *spo2MotnThresh)
-{
-	u8_t rxBuff[4+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_MOTION_THRESHOLD, &rxBuff[0], sizeof(rxBuff));
-    *spo2MotnThresh = (rxBuff[1] << 24) + (rxBuff[2] << 16) + (rxBuff[3] << 8) + (rxBuff[4]);
-
-    return status;
-}
-
-
-int sh_set_cfg_wearablesuite_spo2afecontrltimeout( const u8_t spo2AfeCtrlTimeout )
-{
-	u8_t Temp[1] = { spo2AfeCtrlTimeout };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_AFE_TIMEOUT, &Temp[0], 1);
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_spo2afecontrltimeout( u8_t *spo2AfeCtrlTimeout )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_AFE_TIMEOUT, &rxBuff[0], sizeof(rxBuff) );
-	*spo2AfeCtrlTimeout =  rxBuff[1];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_spo2timeout( const u8_t spo2AlgoTimeout )
-{
-	u8_t Temp[1] = { spo2AlgoTimeout };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_TIMEOUT, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_spo2timeout( u8_t *spo2AlgoTimeout )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_WSPO2_TIMEOUT, &rxBuff[0], sizeof(rxBuff) );
-	*spo2AlgoTimeout =  rxBuff[1];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_initialhr( const u8_t initialHr )
-{
-	u8_t Temp[1] = { initialHr };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_HR, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_initialhr( u8_t *initialHr )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_HR, &rxBuff[0], sizeof(rxBuff) );
-	*initialHr =  rxBuff[1];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_personheight( const u16_t personHeight)
-{
-    u8_t Temp[2] = { (u8_t)((personHeight >> (1*8)) & 0xFF),  (u8_t)((personHeight >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_HEIGHT, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_personheight( u16_t *personHeight)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_HEIGHT, &rxBuff[0], sizeof(rxBuff));
-	*personHeight = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_personweight( const u16_t personWeight)
-{
-    u8_t Temp[2] = { (u8_t)((personWeight >> (1*8)) & 0xFF),  (u8_t)((personWeight >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_WEIGHT, &Temp[0], 2);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_personweight( u16_t *personWeight)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_WEIGHT, &rxBuff[0], sizeof(rxBuff));
-	*personWeight = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_personage( const u8_t personAge )
-{
-	u8_t Temp[1] = { personAge };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,   SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_AGE, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_personage( u8_t *personAge )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_AGE, &rxBuff[0], sizeof(rxBuff) );
-	*personAge =  rxBuff[1];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_persongender( const u8_t personGender )
-{
-	u8_t Temp[1] = { personGender };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,   SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_GENDER, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_persongender( u8_t *personGender )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_PERSON_GENDER, &rxBuff[0], sizeof(rxBuff) );
-	*personGender =  rxBuff[1];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_mintintoption( const u8_t minIntegrationTimeOpt )
-{
-	u8_t Temp[1] = { minIntegrationTimeOpt };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,   SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_INTEGRATION_TIME, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_mintintoption( u8_t *minIntegrationTimeOpt )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_INTEGRATION_TIME, &rxBuff[0], sizeof(rxBuff) );
-	*minIntegrationTimeOpt =  rxBuff[1];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_maxtintoption( const u8_t maxIntegrationTimeOpt )
-{
-	u8_t Temp[1] = { maxIntegrationTimeOpt };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,   SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_INTEGRATION_TIME, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_maxtintoption( u8_t *maxIntegrationTimeOpt )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_INTEGRATION_TIME, &rxBuff[0], sizeof(rxBuff) );
-	*maxIntegrationTimeOpt =  rxBuff[1];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_minfsmpoption( const u8_t minSampRateAveragingOpt )
-{
-	u8_t Temp[1] = { minSampRateAveragingOpt };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,   SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_SAMPLING_AVERAGE, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_minfsmpoption( u8_t *minSampRateAveragingOpt )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_SAMPLING_AVERAGE, &rxBuff[0], sizeof(rxBuff) );
-	*minSampRateAveragingOpt =  rxBuff[1];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_maxfsmpoption( const u8_t maxSampRateAveragingOpt )
-{
-	u8_t Temp[1] = { maxSampRateAveragingOpt };
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,   SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_SAMPLING_AVERAGE, &Temp[0], 1);
-
-	return status;
-}
-
-int sh_get_cfg_wearablesuite_maxfsmpoption( u8_t *maxSampRateAveragingOpt )
-{
-	u8_t rxBuff[1+1]; // first byte is status
-	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE,  SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_SAMPLING_AVERAGE, &rxBuff[0], sizeof(rxBuff) );
-	*maxSampRateAveragingOpt =  rxBuff[1];
-
-	return status;
-}
-
-int sh_set_cfg_wearablesuite_whrmledpdconfig( const u16_t whrmledpdconfig )
-{
-	u8_t Temp[2] = { (u8_t)((whrmledpdconfig >> (1*8)) & 0xFF),  (u8_t)((whrmledpdconfig >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WHRMLEDPDCONFIGURATION, &Temp[0], 2);
-	return status;
-}
-
-
-int sh_get_cfg_wearablesuite_whrmledpdconfig( u16_t *whrmledpdconfig) 
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_WHRMLEDPDCONFIGURATION, &rxBuff[0], sizeof(rxBuff));
-	*whrmledpdconfig = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
-
-int sh_set_cfg_wearablesuite_spo2ledpdconfig( const u16_t spo2ledpdconfig )
-{
-	u8_t Temp[2] = { (u8_t)((spo2ledpdconfig >> (1*8)) & 0xFF),  (u8_t)((spo2ledpdconfig >> (0*8)) & 0xFF)};
-    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_SPO2LEDPDCONFIGURATION, &Temp[0], 2);
-	return status;
-}
-
-
-int sh_get_cfg_wearablesuite_spo2ledpdconfig( u16_t *spo2ledpdconfig)
-{
-	u8_t rxBuff[2+1];  // first byte is status
-	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_SPO2LEDPDCONFIGURATION, &rxBuff[0], sizeof(rxBuff));
-	*spo2ledpdconfig = (rxBuff[1] << 8) + rxBuff[2];
-
-	return status;
-}
-
 
 /*
  *  Sensorhub Authentication Related Functions
@@ -1430,7 +1002,8 @@ int sh_get_authentication( u8_t *response, int response_sz)
 bool sh_init_interface(void)
 {
 	s32_t s32_status;
-	u8_t u8_rxbuf[3];
+	u8_t u8_rxbuf[3] = {0};
+	u8_t mcu_type;
 
 	sh_init_i2c();
 	sh_init_gpio();
@@ -1446,7 +1019,8 @@ bool sh_init_interface(void)
 		return false;
 	}
 	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
-
+	mcu_type = u8_rxbuf[0];
+	
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
@@ -1458,8 +1032,16 @@ bool sh_init_interface(void)
 		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
+	if(mcu_type != 1)
+	{
+		NotifyShowStrings("PPG is upgrading firmware, please wait a few minutes!");
+		SH_OTA_upgrade_process();
+		LCD_SleepOut();
+	}
+
+#if 0
 	u8_t ByteSeq[] = {0x83, 0x01, 0x01};
-	u8_t rxbuf[2]  = { 0 };
+	u8_t rxbuf[2]  = {0};
 	sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 								0, 0,
 								&rxbuf[0], sizeof(rxbuf),
@@ -1475,7 +1057,7 @@ bool sh_init_interface(void)
 								SS_DEFAULT_CMD_SLEEP_MS);
 
 	LOG_INF("send 83 01 00 and read back %d, %d \n",rxbuf1[0], rxbuf1[1] );
-
+#endif
 	return true;
 }
 

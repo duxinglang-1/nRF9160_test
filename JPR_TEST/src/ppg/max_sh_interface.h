@@ -54,6 +54,14 @@
 
 #define SH_NUM_CURRENT_ALGOS	6
 
+// Sensor/Algo indicies
+#define SH_SENSORIDX_ACCEL	    0x04
+#define SH_SENSORIDX_MAX86176	0x06
+#define SH_SENSORIDX_ALGOHUB	0x07
+
+#define SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X	 0x08
+#define SH_NUM_CURRENT_ALGOS	8
+
 #define PADDING_BYTE            (0xEE)
 #define DATA_BYTE               (0xED)
 
@@ -139,7 +147,7 @@
 #define SS_FAM_W_SENSORMODE		0x44
 #define SS_FAM_R_SENSORMODE		0x45
 #define SS_FAM_W_SENSOR_CONFIG	0x46
-	#define SS_CFGIDX_OPERATING_CONFIG	0x00
+#define SS_CFGIDX_OPERATING_CONFIG	0x00
 
 
 //TODO: Fill in known configuration parameters
@@ -171,10 +179,31 @@
     #define SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_SAMPLING_AVERAGE         0x16
     #define SS_CFGIDX_WHRM_WSPO2_SUITE_WHRMLEDPDCONFIGURATION       0x17
     #define SS_CFGIDX_WHRM_WSPO2_SUITE_SPO2LEDPDCONFIGURATION       0x18
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_DRIVER_LED_SELECT			0x19
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_D_OFT_OPTION				0x1C
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_LED_CURR_OPTION			0x1D
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_MAX_LED_CURR_OPTION			0x1E
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_MIN_LED_CURR_STEP_OPTION		0x1F
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_MASTER_CH_SEL_OPTION			0x20
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_FULL_SCALE_PD_CURR_OPTION	0x21
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_AFE_TYPE_OPTION				0x22
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_T_INT_OPTION			0x1A
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_F_SMP_OPTION			0x1B
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_D_OFF_PPG1_OPTION	0x23
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_D_OFF_PPG2_OPTION	0x24
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_INITIAL_LED_CURR_OPTION		0x25
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_RESET_ALGO_CONFIG			0x26
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_GET_AFE_REQUEST_OPTION		0x27
+	#define SS_CFGIDX_WHRM_WSPO2_SUITE_CLEAR_AFE_REQUEST_OPTION		0x28
 
 
 #define SS_FAM_W_ALGOMODE	0x52
 #define SS_FAM_R_ALGOMODE	0x53
+
+#define SS_FAM_W_SPI_SELECT	0x54
+	#define SS_CMDIDX_SPI_RELASE	0x00
+	#define SS_CMDIDX_SPI_USE		0x01
+#define SS_FAM_R_SPI_SELECT 0x55
 
 #define SS_FAM_W_EXTERNSENSORMODE	0x60
 #define SS_FAM_R_EXTERNSENSORMODE	0x61
@@ -191,6 +220,9 @@
 #define SS_FAM_R_BOOTLOADER	0x81
 	#define SS_CMDIDX_BOOTFWVERSION	0x00
 	#define SS_CMDIDX_PAGESIZE		0x01
+	#define SS_CMDIDX_READUSN 		0x02
+
+#define USN_SIZE	24
 
 #define SS_FAM_W_BOOTLOADER_CFG	0x82
 #define SS_FAM_R_BOOTLOADER_CFG	0x83
@@ -218,6 +250,16 @@
 #define SS_FAM_W_LOG_CFG			0x91
 	#define SS_CMDIDX_LOG_GET_LEVEL	0x00
 	#define SS_CMDIDX_LOG_SET_LEVEL	0x01
+/*
+ *  Test Comamnd
+ */
+#define SS_FAM_W_RUN_TEST					0xF0
+	#define SS_CMDIDX_TEST_SENSORHUB		0x00
+	#define SS_CMDIDX_TEST_OPTICAL_SENSOR	0x01
+	#define SS_CMDIDX_TEST_ACCEL_SENSOR		0x02
+	// To manage a sync test cases
+	#define SS_CMDIDX_TEST_START			0x10
+	#define SS_CMDIDX_TEST_GET_RESULT		0x20
 
 #define SS_FAM_R_IDENTITY			0xFF
 	#define SS_CMDIDX_PLATTYPE		0x00
@@ -252,7 +294,8 @@
 #define SH_OTA_DATA_STORE_IN_FLASH
 #define WAIT_MS wait_ms
 
-typedef enum{
+typedef enum
+{
 	SS_SUCCESS             =0x00,
 	SS_ERR_COMMAND         =0x01,
 	SS_ERR_UNAVAILABLE     =0x02,
@@ -260,27 +303,38 @@ typedef enum{
 	SS_ERR_INPUT_VALUE     =0x04,
 	SS_ERR_BTLDR_GENERAL   =0x80,
 	SS_ERR_BTLDR_CHECKSUM  =0x81,
+	SS_BTLDR_SUCCESS       =0xAA,
+	SS_BTLDR_PARTIAL_ACK   =0xAB,
 	SS_ERR_TRY_AGAIN       =0xFE,
 	SS_ERR_UNKNOWN         =0xFF,
 }SS_STATUS;
 
+typedef enum
+{
+	E_NO_ERROR 		= 0,
+	E_BAD_PARAM 	= -1,
+	E_NONE_AVAIL    = -2,
+}SS_ERROR;
+
+#define SYSTEM_USES_MFIO_PIN
+#define SYSTEM_USES_RST_PIN
 
 /**
-* @brief	Func to write to sensor hub via sending generic command byte sequences
+* @brief	Func to write to algohub/sensorhub via sending generic command byte sequences
 *
 * @param[in]	tx_buf   - command byte sequence
 * @param[in]	tx_len   - command byte sequence length in bytes
-* @param[in]	sleep_ms - time to wait for sensor hub to report statuss
+* @param[in]	sleep_ms - time to wait for sensor hub to report status
 *
 * @return 1 byte status: 0x00 (SS_SUCCESS) on success
 */
-int sh_write_cmd(uint8_t *tx_buf,
-		         int tx_len,
-				 int sleep_ms);
+int sh_write_cmd( uint8_t *tx_buf,
+		          int tx_len,
+				  int sleep_ms );
 
 
 /**
-* @brief	Func to write to sensor hub via sending generic command byte sequences and data bytes
+* @brief	Func to write to algohub/sensorhub via sending generic command byte sequences and data bytes
 *
 * @param[in]	cmd_bytes      - command byte sequence
 * @param[in]	cmd_bytes_len  - command byte sequence length in bytes
@@ -298,7 +352,7 @@ int sh_write_cmd_with_data(uint8_t *cmd_bytes,
 
 
 /**
-* @brief	Func to read from sensor hub via sending generic command byte sequences
+* @brief	Func to read from algohub/sensorhub via sending generic command byte sequences
 *
 * @param[in]	cmd_bytes      - command byte sequence
 * @param[in]	cmd_bytes_len  - command byte sequence length in bytes
@@ -310,14 +364,436 @@ int sh_write_cmd_with_data(uint8_t *cmd_bytes,
 *
 * @return 1 byte status: 0x00 (SS_SUCCESS) on success
 */
-int sh_read_cmd(uint8_t *cmd_bytes,
-		        int cmd_bytes_len,
-	            uint8_t *data,
-				int data_len,
-	            uint8_t *rxbuf,
-				int rxbuf_sz,
-                int sleep_ms);
+int sh_read_cmd( uint8_t *cmd_bytes,
+		         int cmd_bytes_len,
+	             uint8_t *data,
+				 int data_len,
+	             uint8_t *rxbuf,
+				 int rxbuf_sz,
+                 int sleep_ms );
 
+
+/**
+* @brief	func to read algohub/sensorhub status
+* @param[out]	hubStatus   - pointer to output byte sesnor hub status will be written
+* @details	 ensor hub status byte:   [2:0] ->  0 : no Err ,              1: comm failure with sensor
+ *                                    [3]   ->  0 : FIFO below threshold; 1: FIFO filled to threshold or above.
+ *                                    [4]   ->  0 : No FIFO overflow;     1: Sensor Hub Output FIFO overflowed, data lost.
+ *                                    [5]   ->  0 : No FIFO overflow;     1: Sensor Hub Input FIFO overflowed, data lost.
+ *                                    [6]   ->  0 : Sensor Hub ready;     1: Sensor Hub is busy processing.
+ *                                    [6]   ->  reserved.
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_get_sensorhub_status(uint8_t *hubStatus);
+
+
+/**
+* @brief	func to read algohub/sensorhub operating mode
+*
+* @param[in]	hubMode   - pointer to output byte mode will be written
+* @details      0x00: application operating mode
+*               0x08: bootloader operating mode
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_get_sensorhub_operating_mode(uint8_t *hubMode);
+
+
+/**
+* @brief	func to set algohub/sensorhub operating mode
+*
+* @param[out]	hubMode   - pointer to output byte mode will be written
+* @details      0x00: application operating mode
+*               0x02: soft reset
+*               0x08: bootloader operating mode
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_set_sensorhub_operating_mode(uint8_t hubMode);
+
+
+/**
+* @brief	func to set algohub/sensorhub data output mode
+*
+* @param[in]	data_type : 1 byte output format
+* @details      outpur format 0x00 : no data
+ *                            0x01 : sensor data  SS_DATATYPE_RAW
+ *                            0x02 : algo data    SS_DATATYPE_ALGO
+ *                            0x03 : algo+sensor  SS_DATATYPE_BOTH
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_set_data_type(int data_type, bool sc_en);
+
+
+/**
+* @brief	func to get algohub/sensorhub data output mode
+*
+* @param[out]	data_type   - pointer to  byte, output format will be written to.
+*
+* @param[out]    sc_en     -  pointer to  boolean, sample count enable/disable status format will be written to.
+*                            If true, SmartSensor is prepending data with 1 byte sample count.
+*
+* @details      output format 0x00 : only algorithm data
+ *                            0x01 : only raw sensor data
+ *                            0x02 : algo + raw sensor data
+ *                            0x03 : no data
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_get_data_type(int *data_type, bool *sc_en);
+
+
+/**
+ * @brief	func to set the number of samples for the SmartSensor to collect
+ *			before issuing an mfio event reporting interrupt
+ *
+ * @param[in]	thresh - Number of samples (1-255) to collect before interrupt
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_fifo_thresh( int threshold );
+
+
+/**
+ * @brief	func to get the number of samples the SmartSensor will collect
+ *			before issuing an mfio event reporting interrupt
+ *
+ * @param[out]	thresh - Number of samples (1-255) collected before interrupt
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_fifo_thresh(int *thresh);
+
+
+/**
+ * @brief	func to check that the SmartSensor is connected
+ *
+ * @return 1 byte connection status 0x00: on connection
+ */
+int sh_ss_comm_check(void);
+
+
+/**
+* @brief	func to get the number of available samples in SmartSensor output FIFO
+*
+* @param[out]	numSamples -  number of data struct samples (1-255)
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_num_avail_samples(int *numSamples);
+
+
+/**
+* @brief	func to pull samples from SmartSensor output FIFO
+*
+* @param[in]	numSamples  - number of data struct samples to be pulled
+* @param[in]    sampleSize  - size of cumulative data sample struct (based on enabled sesnors+algorithms) in bytes
+* @param[out]   databuf     - buffer samples be written
+* @param[in]    databufSize - size of provided buffer size samples to be written
+*
+* @return 1 byte status: 0x00 (SS_SUCCESS) on success
+*/
+int sh_read_fifo_data( int numSamples, int sampleSize, uint8_t* databuf, int databufSz);
+
+
+/**
+ * @brief	func to set register of a device
+ *
+ * @param[in] idx   - Index of device to read
+ * @param[in] addr  - Register address
+ * @param[in] val   - Register value
+ * @param[in] regSz - Size of sensor device register in bytes
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_reg(int idx, uint8_t addr, uint32_t val, int regSz);
+
+
+/**
+ * @brief	func to read register from a device
+ *
+ * @param[in]  idx - Index of device to read
+ * @param[in]  addr - Register address
+ * @param[out] val - Register value
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_reg(int idx, uint8_t addr, uint32_t *val);
+
+/**
+ * @brief	func to enable a sensor device onboard SmartSensor
+ *
+ * @param[in] idx             - index of sensor device( i.e max86176) to enable
+ * @param[in] mode            - sensor mode defined in associated Sensor Hub API document
+ * @param[in] ext_mode        - enable extermal data input to Sensot Hub, ie accelerometer data for WHRM+WSPo2
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_sensor_enable_( int idx , int mode, uint8_t ext_mode );
+
+
+/**
+ * @brief	func to disable a device on the SmartSensor
+ *
+ * @param[in] idx - Index of device
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_sensor_disable( int idx );
+
+
+/**
+ * @brief	func to get the total number of samples the input FIFO can hold
+ *
+ * @param[in] fifo_size - integer input FIFO capacity will be written to.
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_input_fifo_size(int *fifo_size);
+
+
+/**
+ * @brief	func to send ass external sensor data (accelerometer) to sensor hub's input FIFO
+ *
+ * @param[in]  tx_buf     - host sample data to be send to sensor hub input FIFO
+ * @param[in]  tx_buf_sz  - number of bytes of tx_buf
+ * @param[out] nb_written - number of samples succesfully written to sensor hub's input FIFO
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_feed_to_input_fifo(uint8_t *tx_buf, int tx_buf_sz, int *nb_written);
+
+
+/**
+ * @brief	func to get the total number of bytes in the sensor hub's input FIFO
+ *
+ * @param[in]  fifo_size - total number of sample bytes available in input FIFO
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_num_bytes_in_input_fifo(int *fifo_size);
+
+
+/**
+ * @brief	func to enable an algorithm on  SmartSensor
+ *
+ * @param[in] idx            - index of algorithm to enable
+ * @param[in] mode           - algorithm mode defined in associated Sensor Hub API document
+ *
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_enable_algo_(int idx, int mode);
+
+
+
+/**
+ * @brief	func to disable an algorithm on the SmartSensor
+ *
+ * @param[in] idx - index of algorithm to disable
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_disable_algo(int idx);
+
+
+/**
+ * @brief	func to set the value of an algorithm configuration parameter
+ *
+ * @param[in] algo_idx   - index of algorithm
+ * @param[in] cfg_idx    - index of configuration parameter
+ * @param[in] cfg Array  - byte array of configuration
+ * @param[in] cfg_sz     - size of cfg array
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_algo_cfg(int algo_idx, int cfg_idx, uint8_t *cfg, int cfg_sz);
+
+
+/**
+ * @brief	func to get the value of an algorithm configuration parameter
+ *
+ * @param[in] algo_idx  - index of algorithm
+ * @param[in] cfg_idx   - index of configuration parameter
+ * @param[out] cfg      - array of configuration bytes to be filled in
+ * @param[in] cfg_sz    - number of configuration parameter bytes to be read
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_algo_cfg(int algo_idx, int cfg_idx, uint8_t *cfg, int cfg_sz);
+
+/**
+ * @brief	func to get the version of the algorithm
+ *
+ * @param[out] algoVersion - version of the algorithm
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_algo_version(uint8_t algoVersion[3]);
+
+/**
+ * @brief	func to get the value of an sensor configuration parameter
+ *
+ * @param[in] sens_idx  - index of sensor
+ * @param[in] cfg_idx   - index of configuration parameter
+ * @param[out] cfg      - array of configuration bytes to be filled in
+ * @param[in] cfg_sz    - number of configuration parameter bytes to be read
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_sens_cfg(int sens_idx, int cfg_idx, uint8_t *cfg, int cfg_sz);
+
+/**
+ * @brief	func to set the value of an sensor configuration parameter
+ *
+ * @param[in] sens_idx   - index of sensor
+ * @param[in] cfg_idx    - index of configuration parameter
+ * @param[in] cfg Array  - byte array of configuration
+ * @param[in] cfg_sz     - size of cfg array
+ *
+ * @return 1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_sens_cfg(int sens_idx, int cfg_idx, uint8_t *cfg, int cfg_sz);
+
+
+/**
+ * @brief		run the self test commands
+ * param[in]	idx - the id of the sensor for the self test
+ * param[in]	result - self-test response
+ * param[in]	sleep_ms - duration of wait for read command
+ *
+ * @return		1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_self_test(int idx, uint8_t *result, int sleep_ms);
+
+
+/**
+ * @brief		transition from bootloder mode to application mode
+ *
+ * @return		1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_exit_from_bootloader(void);
+
+
+/**
+ * @brief		transition from application mode to bootloader mode
+ *
+ * @return		1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_put_in_bootloader(void);
+
+/**
+ * @brief	Check if SmartSensor is in bootloader mode
+ *
+ * @return	1 byte mode info : 1 if in bootloader mode, 0 if in main app, -1 if comm error
+ */
+int sh_checkif_bootldr_mode(void);
+
+
+/**
+ * @brief		send raw string to I2C
+ * @param[in]	rawdata - Raw data string, after slave address
+ * @param[out]	rawdata_sz - Raw data size
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int  sh_send_raw(uint8_t *rawdata, int rawdata_sz);
+
+/**
+ * @brief		get length of hub debug log data available
+ * @param[out]	log_len - length of hub log data available
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_log_len(int *log_len);
+
+
+/**
+ * @brief		read hub debug log data available
+ * @details	    first call sh_get_log_len() to get available log data in bytes then
+ *              call this function with parameter num_bytes with a value smaller then available log data in bytes
+ *
+ * @param[in]	num_bytes  - number of log data bytes to be read
+ * @param[in]	log_buf_sz - byte size of buffer log data will be dumped to
+ * @param[out]	log_buf    - byte buffer log data will be dumped to
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_read_ss_log(int num_bytes, uint8_t *log_buf, int log_buf_sz);
+
+
+/**
+ * @brief		read sensor hub firmaware version
+ *
+ * @param[out]	fwDesciptor - byte array fw version will be written to
+ * @param[out]	fwDescSz    - array size of firmware descriptor in bytes
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ *
+ **/
+int sh_get_ss_fw_version(uint8_t *fwDesciptor  , uint8_t *fwDescSz);
+
+
+/**
+ * @brief		Makes a request for Algohub/Sensorhub to release SPI lines
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ *
+ **/
+int sh_spi_release();
+
+/**
+ * @brief		Makes a request for Algohub/Sensorhub to use SPI lines
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ *
+ **/
+int sh_spi_use();
+
+/**
+ * @brief		Returns the status of SPI lines it uses SPI lines or not
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ *
+ **/
+int sh_spi_status(uint8_t * spi_status);
+
+/**
+ * @brief		Set the reporting period
+ *
+ * @return      1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ *
+ **/
+int sh_set_report_period(uint8_t period);
+
+
+
+
+/* ***************************************************************************************** *
+ *																							 *
+ *			BOOTLOADER ADDITIONS                     									     *
+ *                                                    										 *
+ * ***************************************************************************************** */
+s32_t sh_get_bootloader_pagesz(u16_t *pagesz);
+s32_t sh_set_bootloader_iv(u8_t* iv_bytes);
+s32_t sh_set_bootloader_auth(u8_t* auth_bytes);
+s32_t sh_set_bootloader_erase(void);
+int sh_bootloader_flashpage(uint8_t *flashDataPreceedByCmdBytes , const int page_size);
+int sh_set_bootloader_delayfactor(const int factor );
+const int sh_get_bootloader_delayfactor(void);
+int sh_set_ebl_mode(const uint8_t mode);
+const int sh_get_ebl_mode(void);
+int sh_reset_to_bootloader(void);
+int sh_reset_to_main_app(void);
+int sh_debug_reset_to_bootloader(void);
+int exit_from_bootloader(void);
+int sh_get_usn(unsigned char* usn);
+
+
+void sh_init_hwcomm_interface();
+int sh_hard_reset(int wakeupMode);
 void wait_ms(int ms);
 void SH_rst_to_BL_mode(void);
 void SH_rst_to_APP_mode(void);

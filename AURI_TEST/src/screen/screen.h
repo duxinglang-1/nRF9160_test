@@ -20,45 +20,57 @@ extern "C" {
 #endif
 
 //big num
-#define BIG_NUM_W		16
-#define BIG_NUM_H		32
+#define BIG_NUM_W		20
+#define BIG_NUM_H		24
 
 //small num
 #define SMALL_NUM_W		10
-#define SMALL_NUM_H		32
+#define SMALL_NUM_H		24
 
 //time
 #define X_OFFSET		2
-#define IDLE_HOUR_H_X	7
-#define IDLE_HOUR_H_Y	0
-#define IDLE_HOUR_L_X	24	//(IDLE_HOUR_H_X+BIG_NUM_W)
-#define IDLE_HOUR_L_Y	0
+#define IDLE_HOUR_H_X	2
+#define IDLE_HOUR_H_Y	16
+#define IDLE_HOUR_L_X	23	//(IDLE_HOUR_H_X+BIG_NUM_W)
+#define IDLE_HOUR_L_Y	16
 
 #define IDLE_COLON_X	43	//(IDLE_HOUR_L_X+BIG_NUM_W+X_OFFSET)
-#define IDLE_COLON_Y	0
-#define IDLE_COLON_W	7
-#define IDLE_COLON_H	32
+#define IDLE_COLON_Y	16
+#define IDLE_COLON_W	11
+#define IDLE_COLON_H	24
 
-#define IDLE_MIN_H_X	50	//(IDLE_COLON_X+IDLE_COLON_W+X_OFFSET)
-#define IDLE_MIN_H_Y	0
-#define IDLE_MIN_L_X	67	//(IDLE_MIN_H_X+BIG_NUM_W)
-#define IDLE_MIN_L_Y	0
+#define IDLE_MIN_H_X	54	//(IDLE_COLON_X+IDLE_COLON_W+X_OFFSET)
+#define IDLE_MIN_H_Y	16
+#define IDLE_MIN_L_X	75	//(IDLE_MIN_H_X+BIG_NUM_W)
+#define IDLE_MIN_L_Y	16
 
 //date
-#define IDLE_DATE_SHOW_X	0
-#define IDLE_DATE_SHOW_Y	0
+#define IDLE_MONTH_H_X	3
+#define IDLE_MONTH_H_Y	44
+#define IDLE_MONTH_L_X	14
+#define IDLE_MONTH_L_Y	44
+
+#define IDLE_DATE_LINK_X	24
+#define IDLE_DATE_LINK_Y	40
+#define IDLE_DATE_LINK_W	10
+#define IDLE_DATE_LINK_H	24
+
+#define IDLE_DAY_H_X	34
+#define IDLE_DAY_H_Y	44
+#define IDLE_DAY_L_X	45
+#define IDLE_DAY_L_Y	44
 
 //week
-#define IDLE_WEEK_SHOW_X	0
-#define IDLE_WEEK_SHOW_Y	0
+#define IDLE_WEEK_SHOW_X	63
+#define IDLE_WEEK_SHOW_Y	44
 
 //NB signal
-#define NB_SIGNAL_X			1
-#define NB_SIGNAL_Y			0
+#define NB_SIGNAL_X			2
+#define NB_SIGNAL_Y			3
 
 //battery soc
-#define BAT_LEVEL_X		87
-#define BAT_LEVEL_Y		0
+#define BAT_LEVEL_X		75
+#define BAT_LEVEL_Y		2
 
 //battery soc
 #define BAT_PS_OFFSET_H		5

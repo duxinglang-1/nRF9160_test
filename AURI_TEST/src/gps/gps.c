@@ -281,7 +281,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
 					tracked++;
-				#ifdef LCD_VGM068A4W01_SH1106G
+				#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 					if(tracked<8)
 					{
 						sprintf(buf, "%02d|", evt->pvt.sv[i].cn0/10);
@@ -338,7 +338,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
 					tracked++;
-				#ifdef LCD_VGM068A4W01_SH1106G
+				#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 					if(tracked<8)
 					{
 						sprintf(buf, "%02d|", evt->pvt.sv[i].cn0/10);

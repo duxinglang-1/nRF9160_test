@@ -2278,7 +2278,9 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 	else
 		show_h = h;
 
+	y = y/PAGE_MAX;
 	BlockWrite(x,y,show_w,show_h);	//…Ë÷√À¢–¬Œª÷√
+
 	datelen = show_w*(show_h/8+((show_h%8)?1:0));
 	if(show_w < w)
 		readlen = show_w;

@@ -43,17 +43,10 @@ void ShowBootUpLogo(void)
 {
 	u16_t x,y,w,h;
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_get_pic_size_from_flash(IMG_AURI_LOGO_ADDR, &w, &h);
+	LCD_get_pic_size(jjph_gc_96X64, &w, &h);
 	x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
 	y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-	LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
-#else
-	//LCD_get_pic_size(jjph_gc_96X32, &w, &h);
-	//x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
-	//y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-	//LCD_ShowImg(0, 0, jjph_gc_96X32);
-#endif
+	LCD_ShowImg(0, 0, jjph_gc_96X64);
 }
 
 void ExitNotifyScreen(void)
@@ -110,118 +103,55 @@ void DisplayPopUp(u8_t *message)
 	
 	EnterNotifyScreen();
 }
+
 void IdleShowSystemDate(void)
 {
-	u16_t x,y,w,h;
-	u8_t str_date[20] = {0};
+	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
+							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
 
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
-
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-#endif
-
-#ifdef FONTMAKER_UNICODE_FONT
-	GetSystemDateStrings(str_date);
-	LCD_MeasureUniString(str_date,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_DATE_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
-	LCD_ShowUniString(x,y,str_date);
-	
-#else
-
-	GetSystemDateStrings(str_date);
-	LCD_MeasureString(str_date,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_DATE_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
-	LCD_ShowString(x,y,str_date);
-#endif
+	LCD_ShowImg(IDLE_MONTH_H_X, IDLE_MONTH_H_Y, img[date_time.month/10]);
+	LCD_ShowImg(IDLE_MONTH_L_X, IDLE_MONTH_L_Y, img[date_time.month%10]);
+	LCD_ShowImg(IDLE_DATE_LINK_X, IDLE_DATE_LINK_Y, IMG_DATE_LINK);
+	LCD_ShowImg(IDLE_DAY_H_X, IDLE_DAY_H_Y, img[date_time.day/10]);
+	LCD_ShowImg(IDLE_DAY_L_X, IDLE_DAY_L_Y, img[date_time.day%10]);
 }
 
 void IdleShowSystemTime(void)
 {
 	static bool colon_flag = true;
 	
-#ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[10] = {IMG_BIG_NUM_0_ADDR,IMG_BIG_NUM_1_ADDR,IMG_BIG_NUM_2_ADDR,IMG_BIG_NUM_3_ADDR,IMG_BIG_NUM_4_ADDR,
-						  IMG_BIG_NUM_5_ADDR,IMG_BIG_NUM_6_ADDR,IMG_BIG_NUM_7_ADDR,IMG_BIG_NUM_8_ADDR,IMG_BIG_NUM_9_ADDR};
-	u32_t img_colon_addr[2] = {IMG_NO_COLON_ADDR,IMG_COLON_ADDR};
-#else
 	unsigned char *img[10] = {IMG_BIG_NUM_0,IMG_BIG_NUM_1,IMG_BIG_NUM_2,IMG_BIG_NUM_3,IMG_BIG_NUM_4,
 							  IMG_BIG_NUM_5,IMG_BIG_NUM_6,IMG_BIG_NUM_7,IMG_BIG_NUM_8,IMG_BIG_NUM_9};
 	unsigned char *img_colon[2] = {IMG_NO_COLON,IMG_COLON};
-#endif
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(IDLE_HOUR_H_X, IDLE_HOUR_H_Y, img_addr[date_time.hour/10]);
-	LCD_ShowImg_From_Flash(IDLE_HOUR_L_X, IDLE_HOUR_L_Y, img_addr[date_time.hour%10]);
-	LCD_ShowImg_From_Flash(IDLE_COLON_X, IDLE_COLON_Y, img_colon_addr[colon_flag]);
-	LCD_ShowImg_From_Flash(IDLE_MIN_H_X, IDLE_MIN_H_Y, img_addr[date_time.minute/10]);
-	LCD_ShowImg_From_Flash(IDLE_MIN_L_X, IDLE_MIN_L_Y, img_addr[date_time.minute%10]);
-#else
 	LCD_ShowImg(IDLE_HOUR_H_X, IDLE_HOUR_H_Y, img[date_time.hour/10]);
 	LCD_ShowImg(IDLE_HOUR_L_X, IDLE_HOUR_L_Y, img[date_time.hour%10]);
 	LCD_ShowImg(IDLE_COLON_X, IDLE_COLON_Y, img_colon[colon_flag]);
 	LCD_ShowImg(IDLE_MIN_H_X, IDLE_MIN_H_Y, img[date_time.minute/10]);
 	LCD_ShowImg(IDLE_MIN_L_X, IDLE_MIN_L_Y, img[date_time.minute%10]);
-#endif
 
 	colon_flag = !colon_flag;
 }
 
 void IdleShowSystemWeek(void)
 {
-	u16_t x,y,w,h;
-	u8_t str_week[128] = {0};
+	unsigned char *img_week_cn[7] = {IMG_SUN_CN,IMG_MON_CN,IMG_TUE_CN,IMG_WED_CN,IMG_THU_CN,IMG_FRI_CN,IMG_SAT_CN};
+	unsigned char *img_week_en[7] = {IMG_SUN_EN,IMG_MON_EN,IMG_TUE_EN,IMG_WED_EN,IMG_THU_EN,IMG_FRI_EN,IMG_SAT_EN};
+	unsigned char *img_week;
 
-	POINT_COLOR=WHITE;
-	BACK_COLOR=BLACK;
-
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-#endif
-
-	GetSystemWeekStrings(str_week);
-
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_MeasureUniString(str_week,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_WEEK_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
-	LCD_ShowUniString(x,y,str_week);
-
-#else
-	//xb add 2020-11-06
 	if(global_settings.language == LANGUAGE_CHN)
-		strcpy(str_week,"It has no chinese font!");
-	else if(global_settings.language == LANGUAGE_JPN)
-		strcpy(str_week,"It has no japanese font!");
-	//xb end
-
-	LCD_MeasureString(str_week,&w,&h);
-	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
-	y = IDLE_WEEK_SHOW_Y;
-	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);
-	LCD_ShowString(x,y,str_week);
-#endif
+		img_week = img_week_cn[date_time.week];
+	else
+		img_week = img_week_en[date_time.week];
+	
+	LCD_ShowImg(IDLE_WEEK_SHOW_X, IDLE_WEEK_SHOW_Y, img_week);
 }
 
 void IdleShowDateTime(void)
 {
 	IdleShowSystemTime();
-	//IdleShowSystemDate();
-	//IdleShowSystemWeek();
+	IdleShowSystemDate();
+	IdleShowSystemWeek();
 }
 
 void IdleUpdateBatSoc(void)
@@ -264,27 +194,16 @@ void IdleUpdateBatSoc(void)
 
 void IdleShowSignal(void)
 {
-#ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[5] = {IMG_SIG_0_ADDR,IMG_SIG_1_ADDR,IMG_SIG_2_ADDR,IMG_SIG_3_ADDR,IMG_SIG_4_ADDR};
-#else
 	unsigned char *img[5] = {IMG_SIG_0,IMG_SIG_1,IMG_SIG_2,IMG_SIG_3,IMG_SIG_4};
-#endif
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(NB_SIGNAL_X, NB_SIGNAL_Y, img_addr[g_nb_sig]);
-#else
 	LCD_ShowImg(NB_SIGNAL_X, NB_SIGNAL_Y, img[g_nb_sig]);
-#endif
 }
 
 void IdleShowBatSoc(void)
 {
 	static u8_t index = 0;
-#ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[6] = {IMG_BAT_0_ADDR,IMG_BAT_1_ADDR,IMG_BAT_2_ADDR,IMG_BAT_3_ADDR,IMG_BAT_4_ADDR,IMG_BAT_5_ADDR};
-#else
+
 	unsigned char *img[6] = {IMG_BAT_0,IMG_BAT_1,IMG_BAT_2,IMG_BAT_3,IMG_BAT_4,IMG_BAT_5};
-#endif
 
 	if(charger_is_connected&&g_chg_status == BAT_CHARGING_PROGRESS)
 	{
@@ -297,11 +216,7 @@ void IdleShowBatSoc(void)
 		index = g_bat_level;
 	}
 	
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(BAT_LEVEL_X, BAT_LEVEL_Y, img_addr[index]);
-#else
 	LCD_ShowImg(BAT_LEVEL_X, BAT_LEVEL_Y, img[index]);
-#endif
 }
 
 void IdleUpdateSportData(void)
@@ -425,12 +340,12 @@ void IdleScreenProcess(void)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_DATE)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_DATE);
-			//IdleShowSystemDate();
+			IdleShowSystemDate();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_WEEK)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_WEEK);
-			//IdleShowSystemWeek();
+			IdleShowSystemWeek();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)
 		{
@@ -1036,7 +951,7 @@ void WristScreenProcess(void)
 
 void TestGPSUpdateInfor(void)
 {
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_Clear(BLACK);
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, gps_test_info);
 #else
@@ -1052,7 +967,7 @@ void TestGPSShowInfor(void)
 	
 	LCD_Clear(BLACK);
 	
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, gps_test_info);
 #else
 	strcpy(strbuf, "GPS TESTING");
@@ -1083,7 +998,7 @@ void TestGPSScreenProcess(void)
 
 void TestNBUpdateINfor(void)
 {
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_Clear(BLACK);
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, nb_test_info);
 #else
@@ -1098,7 +1013,7 @@ void TestNBShowInfor(void)
 	u8_t strbuf[128] = {0};
 	
 	LCD_Clear(BLACK);
-#ifdef LCD_VGM068A4W01_SH1106G
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, nb_test_info);
 #else	
 	strcpy(strbuf, "NB-IoT TESTING");

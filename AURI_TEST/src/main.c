@@ -372,7 +372,8 @@ void test_show_image(void)
 
 	LOG_INF("test_show_image\n");
 	
-	LCD_Clear(WHITE);
+	LCD_Clear(BLACK);
+	LCD_ShowImg(0, 0, IDLE_72);
 
 	//LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
 	
@@ -381,7 +382,7 @@ void test_show_image(void)
 	//LCD_ShowImg(0, 0, peppa_pig_160X160);
 	//LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
 	//LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
-	while(1)
+	while(0)
 	{
 	#if 0
 		switch(i)
@@ -436,7 +437,7 @@ void test_show_image(void)
 			i=LCD_WIDTH-1;
 
 		//LCD_Clear(BLACK);
-		LCD_ShowImg(i, 0, jjph_gc_96X32);
+		LCD_ShowImg(i, 0, IDLE_72);
 		
 		k_sleep(K_MSEC(100));								//»Ìº˛—” ±1000ms
 	}
@@ -646,7 +647,6 @@ void system_init(void)
 	InitSystemSettings();
 	
 	pmu_init();
-	flash_init();
 	LCD_Init();
 	
 	ShowBootUpLogo();
@@ -710,7 +710,6 @@ int main(void)
 		PMUMsgProcess();
 		IMUMsgProcess();
 		LCDMsgProcess();
-		//TPMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();

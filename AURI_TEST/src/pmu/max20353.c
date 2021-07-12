@@ -417,40 +417,83 @@ void PmuAlertHandle(void)
 
 void MAX20353_InitData(void)
 {
-	pmu_interrupt_proc();
-
-#ifdef BATTERY_SOC_GAUGE	
-	g_bat_soc = MAX20353_CalculateSOC();
-	if(g_bat_soc>100)
-		g_bat_soc = 100;
-
-	if(g_bat_soc < 10)
+	u8_t status0,status1;
+	
+	MAX20353_ReadReg(REG_STATUS0, &status0);
+	switch((status0&0x07))
 	{
-		g_bat_level = BAT_LEVEL_0;
+	case 0x00://Charger off
+	case 0x01://Charging suspended due to temperature (see battery charger state diagram)
+	case 0x07://Charger fault condition (see battery charger state diagram)
+		g_chg_status = BAT_CHARGING_NO;
+		break;
+		
+	case 0x02://Pre-charge in progress
+	case 0x03://Fast-charge constant current mode in progress
+	case 0x04://Fast-charge constant voltage mode in progress
+	case 0x05://Maintain charge in progress
+		g_chg_status = BAT_CHARGING_PROGRESS;
+		break;
+		
+	case 0x06://Maintain charger timer done
+		pmu_charge_complete();
+		g_chg_status = BAT_CHARGING_FINISHED;
+		break;
 	}
-	else if(g_bat_soc < 20)
+	
+	MAX20353_ReadReg(REG_STATUS1, &status1);
+	if((status1&0x08) == 0x08) //USB OK   
 	{
-		g_bat_level = BAT_LEVEL_1;
-	}
-	else if(g_bat_soc < 40)
-	{
-		g_bat_level = BAT_LEVEL_2;
-	}
-	else if(g_bat_soc < 60)
-	{
-		g_bat_level = BAT_LEVEL_3;
-	}
-	else if(g_bat_soc < 80)
-	{
-		g_bat_level = BAT_LEVEL_4;
+		pmu_battery_stop_shutdown();
+		InitCharger();
+		pmu_charge_connected();
+		
+		charger_is_connected = true;
+		g_chg_status = BAT_CHARGING_PROGRESS;
 	}
 	else
-	{
-		g_bat_level = BAT_LEVEL_5;
-	}
-#endif
+	{	
+		pmu_charge_disconnected();
+		
+		charger_is_connected = false;
+		g_chg_status = BAT_CHARGING_NO;
 
-	//test_soc();
+	#ifdef BATTERY_SOC_GAUGE	
+		g_bat_soc = MAX20353_CalculateSOC();
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+		
+		if(g_bat_soc < 5)
+		{
+			g_bat_level = BAT_LEVEL_0;
+			pmu_battery_low_shutdown();
+		}
+		else if(g_bat_soc < 10)
+		{
+			g_bat_level = BAT_LEVEL_0;
+		}
+		else if(g_bat_soc < 20)
+		{
+			g_bat_level = BAT_LEVEL_1;
+		}
+		else if(g_bat_soc < 40)
+		{
+			g_bat_level = BAT_LEVEL_2;
+		}
+		else if(g_bat_soc < 60)
+		{
+			g_bat_level = BAT_LEVEL_3;
+		}
+		else if(g_bat_soc < 80)
+		{
+			g_bat_level = BAT_LEVEL_4;
+		}
+		else
+		{
+			g_bat_level = BAT_LEVEL_5;
+		}
+	#endif
+	}
 }
 
 void pmu_init(void)

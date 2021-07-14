@@ -57,7 +57,7 @@ K_TIMER_DEFINE(app_send_gps_timer, APP_Send_GPS_Data_timerout, NULL);
 
 static bool gps_is_on = false;
 
-static s64_t gps_start_time=0,gps_fix_time=0;
+static s64_t gps_start_time=0,gps_fix_time=0,gps_local_time=0;
 
 static struct k_work_q *app_work_q;
 static struct k_work send_agps_request_work;
@@ -176,15 +176,24 @@ void gps_test_update(void)
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 }
 
-void test_gps(void)
+void test_gps_on(void)
 {
 	test_gps_flag = true;
 	EnterGPSTestScreen();
 	gps_on();
 }
 
+void test_gps_off(void)
+{
+	test_gps_flag = false;
+	gps_off();
+	EnterIdleScreen();
+}
+
 static void set_gps_enable(const bool enable)
 {
+	u8_t tmpbuf[128] = {0};
+	
 	if(enable == gps_control_is_enabled())
 	{
 		return;
@@ -192,9 +201,9 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
-		if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
+		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
 		{
-			LOG_INF("Can't turn on modem!");
+			LOG_INF("Can't active gps modem!");
 			return;
 		}
 		
@@ -209,6 +218,13 @@ static void set_gps_enable(const bool enable)
 		gps_control_stop(K_NO_WAIT);
 		gps_is_on = false;
 		gps_fix_time = 0;
+		gps_local_time = 0;
+
+		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
+		{
+			LOG_INF("Can't deactive gps modem!");
+			return;
+		}
 	}
 }
 
@@ -341,6 +357,11 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 
 			sprintf(gps_test_info, "%d,", tracked);
 			strcat(gps_test_info, strbuf);
+			strcat(gps_test_info, "\n");
+			sprintf(strbuf, "Longitude:%f, Latitude:%f\n", evt->pvt.longitude, evt->pvt.latitude);
+			strcat(gps_test_info, strbuf);
+			sprintf(strbuf, "fix time:%d", gps_local_time/1000);
+			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
 			
 			//LOG_INF("%s\n",gps_test_info);
@@ -363,13 +384,16 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		
 	case GPS_EVT_NMEA_FIX:
 		LOG_INF("GPS_EVT_NMEA_FIX");
+
+		if(gps_fix_time == 0)
+		{
+			gps_fix_time = k_uptime_get();
+			gps_local_time = gps_fix_time-gps_start_time;
+		}
 		
 		if(!test_gps_flag)
 		{
-			if(gps_fix_time == 0)
-				gps_fix_time = k_uptime_get();
-		
-			LOG_INF("Position fix with NMEA data, fix time:%d", gps_fix_time-gps_start_time);
+			LOG_INF("Position fix with NMEA data, fix time:%d", gps_local_time);
 			LOG_INF("NMEA:%s\n", evt->nmea.buf);
 		
 			APP_Ask_GPS_off();

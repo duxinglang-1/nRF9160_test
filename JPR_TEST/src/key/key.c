@@ -68,7 +68,7 @@ extern bool uart_sleep_flag;
 
 bool is_wearing(void)
 {
-	return true;//touch_flag;
+	return touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
@@ -116,9 +116,6 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		}
 		break;
 	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
-		if(SOSIsRunning())
-			break;
-		
 		switch(key_type)
 		{
 		case KEY_DOWN://´÷ÉÏ

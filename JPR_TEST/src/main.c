@@ -622,7 +622,7 @@ void test_show_string(void)
 void system_init(void)
 {
 	InitSystemSettings();
-	
+
 	pmu_init();
 	flash_init();
 	LCD_Init();
@@ -630,8 +630,8 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
-	PPG_init();
 	ble_init();
+	PPG_init();
 
 	IMU_init(&imu_work_q);
 	NB_init(&nb_work_q);
@@ -675,7 +675,7 @@ int main(void)
 //	test_crypto();
 //	test_imei();
 //	test_tp();
-//	test_gps();
+//	test_gps_on();
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();

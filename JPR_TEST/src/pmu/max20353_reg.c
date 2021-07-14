@@ -326,7 +326,7 @@ int MAX20353_BuckBoostDisable(void)
     return ret;
 }
 
-/// @brief BuckBoost to 5.0V output rail **/
+/// @brief BuckBoost to 4.0V output rail **/
 //******************************************************************************
 int MAX20353_BuckBoostConfig(void) 
 {
@@ -334,7 +334,7 @@ int MAX20353_BuckBoostConfig(void)
     appcmdoutvalue_ = 0x70;
     appdatainoutbuffer_[0] = 0x00;
     appdatainoutbuffer_[1] = 0x04;
-    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 5.0V
+    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 4.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
 

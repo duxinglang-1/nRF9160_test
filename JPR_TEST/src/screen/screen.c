@@ -182,6 +182,22 @@ void IdleShowSystemTime(void)
 	y = IDLE_TIME_SHOW_Y+offset;
 	LCD_ShowString(x,y,str_ampm);
 #endif
+
+	//xb test 2021-07-14 增加一个脱腕状态显示
+	if(is_wearing())
+	{
+		LCD_MeasureString("wear on ",&w,&h);
+		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+		y = 210;
+		LCD_ShowString(x,y,"wear on ");
+	}
+	else
+	{
+		LCD_MeasureString("wear off",&w,&h);
+		x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+		y = 210;
+		LCD_ShowString(x,y,"wear off");
+	}
 }
 
 void IdleShowSystemWeek(void)

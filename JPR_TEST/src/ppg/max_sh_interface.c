@@ -128,6 +128,20 @@ static void sh_init_gpio(void)
 	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_DIR_OUT);
 }
 
+void SH_Power_On(void)
+{
+	//PPG供电打开
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
+}
+
+void SH_Power_Off(void)
+{
+	//PPG供电关闭
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
+}
+
 void SH_mfio_to_low_and_keep(int waitDurationInUs)
 {
 	gpio_pin_write(gpio_ppg, PPG_MFIO_PIN, 0);

@@ -375,15 +375,69 @@ void PmuAlertHandle(void)
 
 void MAX20353_InitData(void)
 {
-	pmu_interrupt_proc();
+	u8_t status0,status1;
 	
-#ifdef BATTERY_SOC_GAUGE	
-	g_bat_soc = MAX20353_CalculateSOC();
-	if(g_bat_soc>100)
-		g_bat_soc = 100;
-#endif
+	MAX20353_ReadReg(REG_STATUS0, &status0);
+	switch((status0&0x07))
+	{
+	case 0x00://Charger off
+	case 0x01://Charging suspended due to temperature (see battery charger state diagram)
+	case 0x07://Charger fault condition (see battery charger state diagram)
+		g_chg_status = BAT_CHARGING_NO;
+		break;
+		
+	case 0x02://Pre-charge in progress
+	case 0x03://Fast-charge constant current mode in progress
+	case 0x04://Fast-charge constant voltage mode in progress
+	case 0x05://Maintain charge in progress
+		g_chg_status = BAT_CHARGING_PROGRESS;
+		break;
+		
+	case 0x06://Maintain charger timer done
+		g_chg_status = BAT_CHARGING_FINISHED;
+		break;
+	}
+	
 
-	//test_soc();
+	MAX20353_ReadReg(REG_STATUS1, &status1);
+	if((status1&0x08) == 0x08) //USB OK   
+	{
+		pmu_battery_stop_shutdown();
+		InitCharger();
+
+		charger_is_connected = true;
+		g_chg_status = BAT_CHARGING_PROGRESS;
+		g_bat_level = BAT_LEVEL_NORMAL;
+	}
+	else
+	{			
+		charger_is_connected = false;
+		g_chg_status = BAT_CHARGING_NO;
+		
+	#ifdef BATTERY_SOC_GAUGE	
+		g_bat_soc = MAX20353_CalculateSOC();
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+		
+		if(g_bat_soc < 5)
+		{
+			g_bat_level = BAT_LEVEL_VERY_LOW;
+			pmu_battery_low_shutdown();
+		}
+		else if(g_bat_soc < 20)
+		{
+			g_bat_level = BAT_LEVEL_LOW;
+		}
+		else if(g_bat_soc < 80)
+		{
+			g_bat_level = BAT_LEVEL_NORMAL;
+		}
+		else
+		{
+			g_bat_level = BAT_LEVEL_GOOD;
+		}
+	#endif
+	}
 }
 
 void pmu_init(void)

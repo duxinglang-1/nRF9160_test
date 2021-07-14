@@ -918,6 +918,9 @@ static void mt_fall_detection(struct k_work *work)
 
 		if(!imu_check_ok)
 			return;
+
+		if(PPGIsWorking())
+			return;
 		
 		if(!is_wearing())
 			return;
@@ -949,6 +952,9 @@ static void mt_fall_detection(struct k_work *work)
 		int2_event = false;
 
 		if(!imu_check_ok)
+			return;
+
+		if(PPGIsWorking())
 			return;
 		
 		if(!is_wearing()||fall_testing)
@@ -997,6 +1003,9 @@ static void mt_fall_detection(struct k_work *work)
 		update_sleep_parameter = false;
 
 		if(!imu_check_ok)
+			return;
+
+		if(PPGIsWorking())
 			return;
 		
 		UpdateSleepPara();

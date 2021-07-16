@@ -697,7 +697,7 @@ int main(void)
 //	test_crypto();
 //	test_imei();
 //	test_tp();
-//	test_gps();
+//	test_gps_on();
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();

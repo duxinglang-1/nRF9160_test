@@ -362,6 +362,38 @@ void MAX20353_InitData(void)
 	g_bat_soc = MAX20353_CalculateSOC();
 	if(g_bat_soc>100)
 		g_bat_soc = 100;
+
+	LOG_INF("SOC:%d\n", g_bat_soc);
+	if(g_bat_soc < 5)
+	{
+		g_bat_level = BAT_LEVEL_VERY_LOW;
+		if(!charger_is_connected)
+		{
+			DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
+			pmu_battery_low_shutdown();
+		}
+	}
+	else if(g_bat_soc < 20)
+	{
+		g_bat_level = BAT_LEVEL_LOW;
+		if(!charger_is_connected)
+		{
+			DisplayPopUp("Battery voltage is low, please charge in time!");
+		}
+	}
+	else if(g_bat_soc < 80)
+	{
+		g_bat_level = BAT_LEVEL_NORMAL;
+	}
+	else
+	{
+		g_bat_level = BAT_LEVEL_GOOD;
+	}
+
+	if(charger_is_connected)
+	{
+		g_bat_level = BAT_LEVEL_NORMAL;
+	}
 #endif
 
 	//test_soc();

@@ -122,9 +122,6 @@ uint8_t init_gpio(void)
 	gpio_add_callback(gpio_imu, &gpio_cb2);
 	gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT2_PIN);
 
-	//暂时将PPG供电关闭，防止LED常亮耗电
-	gpio_pin_configure(gpio_imu, 17, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_imu, 17, 0);
 	return 0;
 }
 

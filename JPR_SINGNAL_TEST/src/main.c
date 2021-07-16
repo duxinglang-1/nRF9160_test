@@ -6,9 +6,11 @@
 
 #include <nrf9160.h>
 #include <zephyr.h>
+#include <kernel_structs.h>
 #include <device.h>
 #include <stdio.h>
 #include <sys/printk.h>
+#include <power/reboot.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
@@ -30,7 +32,7 @@
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_ble, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -221,7 +223,7 @@ void idle_show_analog_clock(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 
 	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
-	if(language_mode == 0)
+	if(global_settings.language == LANGUAGE_CHN)
 		strcpy(str_week, week_cn[date_time.week]);
 	else
 		strcpy(str_week, week_en[date_time.week]);
@@ -605,30 +607,11 @@ void test_show_string(void)
 #endif
 }
 
-/**@brief Initializes buttons and LEDs, using the DK buttons and LEDs
- * library.
- */
-static void buttons_leds_init(void)
-{
-	int err;
-
-	err = dk_leds_init();
-	if (err)
-	{
-		LOG_INF("Could not initialize leds, err code: %d\n", err);
-	}
-
-	err = dk_set_leds_state(0x00, DK_ALL_LEDS_MSK);
-	if (err)
-	{
-		LOG_INF("Could not set leds state, err code: %d\n", err);
-	}
-}
-
 void system_init(void)
 {
 	InitSystemSettings();
-	
+
+	PPG_init();//ppg必须先上电，否则会拉死I2C
 	pmu_init();
 	flash_init();
 	LCD_Init();
@@ -636,13 +619,13 @@ void system_init(void)
 	//ShowBootUpLogo();
 
 	key_init();
+	
 	IMU_init();
 	ble_init();//蓝牙UART_0跟AT指令共用，需要AT指令时要关闭这条语句
 
 	EnterIdleScreen();
 }
 
-extern void motion_sensor_msg_proc(void);
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 
@@ -676,6 +659,7 @@ int main(void)
 		GPSMsgProcess();
 		PMUMsgProcess();
 		IMUMsgProcess();
+		PPGMsgProcess();
 		LCDMsgProcess();
 		//TPMsgProcess();
 		AlarmMsgProcess();

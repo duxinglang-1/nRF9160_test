@@ -267,7 +267,7 @@ int MAX20353_LDO1Config(void)
     int32_t ret = 0;
 
     appcmdoutvalue_ = 0x40;
-    appdatainoutbuffer_[0] = 0x05;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,使能   LDO1  
+    appdatainoutbuffer_[0] = 0x01;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,使能   LDO1  
     appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
     ret = MAX20353_AppWrite(2);
     
@@ -293,8 +293,8 @@ int MAX20353_BoostConfig(void)
 	appcmdoutvalue_ = 0x30;
 	appdatainoutbuffer_[0] = 0x01;
 	appdatainoutbuffer_[1] = 0x00;
-	appdatainoutbuffer_[2] = 0x00;
-	appdatainoutbuffer_[3] = 0x00;     // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
+	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
 	ret = MAX20353_AppWrite(4);
 
 	return ret;
@@ -339,6 +339,23 @@ int MAX20353_BuckBoostConfig(void)
     ret = MAX20353_AppWrite(4);
 
     return ret;
+}
+
+//[B2] SFOUT Output Voltage Setting 
+//	0 = 5V 1 = 3.3V  
+//[B1 B0] SFOUT LDO Enable Configuration
+//	00 = Disabled (regardless of CHGIN)
+//	01 = Enabled when CHGIN is present
+//	10 = Enabled when CHGIN is present and Controlled by MPC_Config_Write command
+//	11 = RESERVED
+int MAX20353_SFOUTConfig(void)
+{
+    int32_t ret = 0;
+    appcmdoutvalue_ = 0x48;
+    appdatainoutbuffer_[0] = 0x05;	//3.3v
+    ret = MAX20353_AppWrite(1);
+
+    return ret;	
 }
 
 int MAX20353_PowerOffConfig(void) 
@@ -884,8 +901,6 @@ bool MAX20353_Init(void)
 	MAX20353_GetDeviceID(&HardwareID);
 	if(HardwareID != MAX20353_HARDWARE_ID)
 		return false;
-
-	//MAX20353_SoftResetConfig();
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();		//1.8v  350mA
@@ -893,11 +908,10 @@ bool MAX20353_Init(void)
 	MAX20353_LDO1Config();	//1.8v 50mA switch mode
 	MAX20353_LDO2Config();	//2.8V 100mA
 	MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
+	MAX20353_SFOUTConfig();
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();
-
-	//MAX20353_BuckBoostDisable();
 	MAX20353_BuckBoostConfig();
 
 	//马达驱动

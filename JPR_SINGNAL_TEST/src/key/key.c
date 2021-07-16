@@ -65,6 +65,16 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 {
 	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
 
+	if(key_type == KEY_UP)
+	{
+		if(lcd_is_sleeping)
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
+			return;
+		}
+	}
+
 	switch(key_code)
 	{
 	case KEY_SOS:
@@ -73,7 +83,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			APP_Ask_NB();
+			test_gps_on();
 			break;
 		case KEY_LONG_PRESS:
 			break;
@@ -85,7 +95,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_DOWN:
 			break;
 		case KEY_UP:
-			test_gps();
+			test_gps_off();
 			break;
 		case KEY_LONG_PRESS:
 			sys_pwr_off = true;
@@ -115,17 +125,6 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 
 	if(key_code != KEY_TOUCH)
 	{
-		//power key will wakeup lcd
-		if((key_code == KEY_PWR) && (key_type == KEY_UP))
-		{
-			sleep_out_by_wrist = false;
-			
-			if(lcd_is_sleeping)
-				lcd_sleep_out = true;
-			//else
-			//	lcd_sleep_in = true;
-		}
-
 		if(alarm_is_running)
 		{
 			AlarmRemindStop();

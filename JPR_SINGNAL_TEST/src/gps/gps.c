@@ -79,8 +79,8 @@ static bool gps_is_inited = false;
 static bool gps_is_on = false;
 static bool update_terminal;
 
-static u64_t fix_timestamp;
-static u64_t open_timestamp;
+static u64_t fix_timestamp=0;
+static u64_t open_timestamp=0;
 
 bool got_first_fix = false;
 bool gps_data_incoming = false;
@@ -94,13 +94,13 @@ extern bool show_date_time_first;
 K_SEM_DEFINE(lte_ready, 0, 1);
 
 #ifdef SHOW_LOG_IN_SCREEN
-static u8_t tmpbuf[128] = {0};
+static u8_t tmpbuf[512] = {0};
 
 static void show_infor(u8_t *strbuf)
 {
 	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_ShowStringInRect(30,50,180,160,strbuf);
+	LCD_ShowStringInRect(25,60,190,120,strbuf);
 }
 #endif
 
@@ -355,7 +355,7 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 		{
 			tracked++;
 			
-			sprintf(buf, "%d|%d;", pvt_data->pvt.sv[i].sv, pvt_data->pvt.sv[i].cn0/10);
+			sprintf(buf, "%02d|%02d;", pvt_data->pvt.sv[i].sv, pvt_data->pvt.sv[i].cn0/10);
 			strcat(strbuf, buf);
 
 			if (pvt_data->pvt.sv[i].flags & NRF_GNSS_SV_FLAG_USED_IN_FIX)
@@ -371,8 +371,16 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 	}
 
 #ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "%d,", tracked);
+	sprintf(tmpbuf, "%02d\n", tracked);
 	strcat(tmpbuf, strbuf);
+	strcat(tmpbuf, "\n");
+	sprintf(strbuf, "Longitude:   %f\nLatitude:    %f\n", pvt_data->pvt.longitude, pvt_data->pvt.latitude);
+	strcat(tmpbuf, strbuf);
+	if(got_first_fix)
+	{
+		sprintf(strbuf, "fix time:    %dS", (fix_timestamp-open_timestamp)/1000);
+		strcat(tmpbuf, strbuf);	
+	}
 	show_infor(tmpbuf);
 #else
 	LOG_INF("Tracking: %d Using: %d Unhealthy: %d", tracked, in_fix, unhealthy);
@@ -387,7 +395,7 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 	//LCD_Fill(0,20,240,200,BLACK);
 	
 #ifdef SHOW_LOG_IN_SCREEN
-	sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u", 
+	sprintf(tmpbuf, "Longitude:  %f\nLatitude:   %f\nAltitude:   %f\nSpeed:      %f\nHeading:    %f\nDate:       %02u-%02u-%02u\nTime (UTC): %02u:%02u:%02u\nfixtime:    %dS", 
 					pvt_data->pvt.longitude,
 					pvt_data->pvt.latitude,
 					pvt_data->pvt.altitude,
@@ -398,7 +406,8 @@ static void print_pvt_data(nrf_gnss_data_frame_t *pvt_data)
 					pvt_data->pvt.datetime.day,
 					pvt_data->pvt.datetime.hour,
 					pvt_data->pvt.datetime.minute,
-					pvt_data->pvt.datetime.seconds);
+					pvt_data->pvt.datetime.seconds,
+					(fix_timestamp-open_timestamp)/1000);
 	show_infor(tmpbuf);
 #else
 	LOG_INF("Longitude:  %f\n", pvt_data->pvt.longitude);
@@ -444,12 +453,12 @@ int process_gps_data(nrf_gnss_data_frame_t *gps_data)
 		case NRF_GNSS_PVT_DATA_ID:
 			if((gps_data->pvt.flags & NRF_GNSS_PVT_FLAG_FIX_VALID_BIT)	== NRF_GNSS_PVT_FLAG_FIX_VALID_BIT)
 			{
-				if (!got_first_fix)
+				if(!got_first_fix)
 				{
 					got_first_fix = true;
+					fix_timestamp = k_uptime_get();
 				}
 
-				fix_timestamp = k_uptime_get();
 				memcpy(&last_fix,
 				       gps_data,
 				       sizeof(nrf_gnss_data_frame_t));
@@ -681,7 +690,7 @@ void gps_data_receive(void)
 		//LOG_INF("\033[1;1H");
 		//LOG_INF("\033[2J");
 
-		print_satellite_stats(&gps_data);
+		print_satellite_stats(&last_fix);
 
 		//LOG_INF("---------------------------------\n");
 		//print_pvt_data(&last_fix);
@@ -785,8 +794,6 @@ void gps_init(void)
 		return;
 	}
 
-	open_timestamp = k_uptime_get();
-
 	gps_is_inited = true;
 
 	k_timer_init(&gps_data_timer, gps_data_wait_timerout, NULL);
@@ -803,12 +810,15 @@ void gps_off(void)
 	{
 		LOG_INF("gps is been truned off\n");
 	#ifdef SHOW_LOG_IN_SCREEN	
-		show_infor("gps is been truned off");
+		//show_infor("gps is been truned off");
 	#endif
 
-		GoBackHistoryScreen();
+		//GoBackHistoryScreen();
 		return;
 	}
+
+	fix_timestamp = 0;
+	open_timestamp = 0;
 	
 	gps_is_on = false;
 	got_first_fix = false;
@@ -828,7 +838,7 @@ void gps_off(void)
 	//#endif	
 	//}
 
-	GoBackHistoryScreen();
+	EnterIdleScreen();
 }
 
 void gps_on(void)
@@ -873,6 +883,7 @@ void gps_on(void)
 
 	cnt = 0;
 	gps_is_on = true;
+	open_timestamp = k_uptime_get();
 	
 #ifdef CONFIG_SUPL_CLIENT_LIB
 	int rc = supl_init(&supl_api);
@@ -909,7 +920,12 @@ void GPSMsgProcess(void)
 	}	
 }
 
-void test_gps(void)
+void test_gps_on(void)
 {
 	gps_on();
+}
+
+void test_gps_off(void)
+{
+	gps_off();
 }

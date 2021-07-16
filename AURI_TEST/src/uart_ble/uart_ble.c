@@ -17,6 +17,7 @@
 #include "gps.h"
 #include "max20353.h"
 #include "screen.h"
+#include "inner_flash.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
@@ -90,6 +91,8 @@ static struct gpio_callback gpio_cb;
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
+
+static sys_date_timer_t refresh_time = {0};
 
 struct uart_data_t
 {
@@ -578,6 +581,12 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	u16_t steps,calorie,distance,light_sleep,deep_sleep;	
 	u32_t i,reply_len = 0;
 
+	refresh_time.year = 2000 + buf[7];
+	refresh_time.month = buf[8];
+	refresh_time.day = buf[9];
+	refresh_time.hour = buf[10];
+	refresh_time.minute = buf[11];
+	
 	GetSportData(&steps, &calorie, &distance);
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	wake = 8;
@@ -622,7 +631,8 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 
 	//上传心率数据
-	MCU_send_heart_rate();
+	//MCU_send_heart_rate();
+	MCU_send_health_sport(refresh_time);
 }
 
 void APP_get_location_data(u8_t *buf, u32_t len)
@@ -1000,6 +1010,72 @@ void MCU_send_find_phone(void)
 
 	ble_send_date_handle(reply, reply_len);	
 
+}
+
+//手环上报整点测量的运动数据
+void MCU_send_health_sport(sys_date_timer_t begin_time)
+{
+	bool ret;
+	u8_t count = 0,reply[128] = {0};
+	u32_t i,reply_len = 0;
+	sport_record_t sport_data = {0};
+	
+	while(1)
+	{
+		ret = get_sport_record_from_time(&sport_data, begin_time, count++);
+		if(ret)
+		{
+			//packet head
+			reply[reply_len++] = PACKET_HEAD;
+			//data_len
+			reply[reply_len++] = 0x00;
+			reply[reply_len++] = 0x16;
+			//data ID
+			reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+			reply[reply_len++] = (u8_t)(PULL_REFRESH_ID&0x00ff);
+			//status
+			reply[reply_len++] = 0x85;
+			//control
+			reply[reply_len++] = 0x00;
+			//year
+			reply[reply_len++] = (u8_t)(sport_data.timestamp.year-2000);
+			//month|day
+			reply[reply_len++] = (sport_data.timestamp.month<<4)|(sport_data.timestamp.day&0x0f);
+			//hour
+			reply[reply_len++] = sport_data.timestamp.hour;
+			//steps
+			reply[reply_len++] = (sport_data.steps>>8);		
+			reply[reply_len++] = (u8_t)(sport_data.steps&0x00ff);
+			//calorie
+			reply[reply_len++] = (sport_data.calorie>>8);		
+			reply[reply_len++] = (u8_t)(sport_data.calorie&0x00ff);
+			//hr
+			reply[reply_len++] = 0;
+			//spo2
+			reply[reply_len++] = 0;
+			//systolic
+			reply[reply_len++] = 0;
+			//diastolic
+			reply[reply_len++] = 0;
+			//light sleep
+			reply[reply_len++] = (sport_data.light_sleep>>8);		
+			reply[reply_len++] = (u8_t)(sport_data.light_sleep&0x00ff);
+			//deep sleep
+			reply[reply_len++] = (sport_data.deep_sleep>>8);		
+			reply[reply_len++] = (u8_t)(sport_data.deep_sleep&0x00ff);
+			//wake times
+			reply[reply_len++] = 0;		
+			//CRC
+			reply[reply_len++] = 0x00;
+			//packet end
+			reply[reply_len++] = PACKET_END;
+
+			for(i=0;i<(reply_len-2);i++)
+				reply[reply_len-2] += reply[i];
+
+			ble_send_date_handle(reply, reply_len);	
+		}
+	}	
 }
 
 //手环上报整点心率数据

@@ -372,8 +372,11 @@ static void print_satellite_stats(nrf_gnss_data_frame_t *pvt_data)
 
 #ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "%02d\n", tracked);
-	strcat(tmpbuf, strbuf);
-	strcat(tmpbuf, "\n");
+	if(tracked > 0)
+	{
+		strcat(tmpbuf, strbuf);
+		strcat(tmpbuf, "\n");
+	}
 	sprintf(strbuf, "Longitude:   %f\nLatitude:    %f\n", pvt_data->pvt.longitude, pvt_data->pvt.latitude);
 	strcat(tmpbuf, strbuf);
 	if(got_first_fix)

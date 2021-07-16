@@ -66,8 +66,8 @@ typedef struct{
 }location_interval_t;
 
 typedef struct{
-	u32_t systolic;		// ’Àı—π
-	u32_t diastolic;	// Ê’≈—π
+	u8_t systolic;		// ’Àı—π
+	u8_t diastolic;		// Ê’≈—π
 }bp_calibra_t;
 
 typedef struct{

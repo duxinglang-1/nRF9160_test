@@ -117,14 +117,12 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			if(!touch_flag)
 			{
 				touch_flag = true;
-				ExitWristScreen();
 			}			
 			break;
 		case KEY_UP://мяоб
 			if(touch_flag)
 			{
 				touch_flag = false;
-				EnterWristScreen();
 			}
 			break;
 		case KEY_LONG_PRESS:

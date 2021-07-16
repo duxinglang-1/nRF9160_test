@@ -77,6 +77,8 @@ typedef struct _PALETTE
 #endif
 
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+extern unsigned char IDLE_72[774];
+extern unsigned char IDLE_300[774];
 extern unsigned char jjph_gc_96X64[774];
 extern unsigned char jjph_gc_96X32[390];
 
@@ -116,6 +118,25 @@ extern unsigned char IMG_NUM_6[46];
 extern unsigned char IMG_NUM_7[46];
 extern unsigned char IMG_NUM_8[46];
 extern unsigned char IMG_NUM_9[46];
+
+extern unsigned char IMG_DATE_LINK[36];
+
+extern unsigned char IMG_MON_EN[93];
+extern unsigned char IMG_TUE_EN[93];
+extern unsigned char IMG_WED_EN[93];
+extern unsigned char IMG_THU_EN[93];
+extern unsigned char IMG_FRI_EN[93];
+extern unsigned char IMG_SAT_EN[93];
+extern unsigned char IMG_SUN_EN[93];
+
+extern unsigned char IMG_MON_CN[93];
+extern unsigned char IMG_TUE_CN[93];
+extern unsigned char IMG_WED_CN[93];
+extern unsigned char IMG_THU_CN[93];
+extern unsigned char IMG_FRI_CN[93];
+extern unsigned char IMG_SAT_CN[93];
+extern unsigned char IMG_SUN_CN[93];
+
 
 extern unsigned char IMG_FALL_ICON[114];
 extern unsigned char IMG_FALL_CN[194];

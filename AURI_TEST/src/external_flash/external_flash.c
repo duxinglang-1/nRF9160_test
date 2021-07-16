@@ -43,12 +43,12 @@ static struct spi_cs_control spi_cs_ctr;
 
 void SpiFlash_CS_LOW(void)
 {
-	gpio_pin_write(gpio_flash, CS, 0);
+	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 0);
 }
 
 void SpiFlash_CS_HIGH(void)
 {
-	gpio_pin_write(gpio_flash, CS, 1);
+	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 1);
 }
 
 /*****************************************************************************
@@ -456,7 +456,7 @@ void SPI_Flash_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 }
 
@@ -471,8 +471,8 @@ void flash_init(void)
 		return;
 	}
 
-	gpio_pin_configure(gpio_flash, CS, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_flash, CS, 1);
+	gpio_pin_configure(gpio_flash, FLASH_CS_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 1);
 
 	SPI_Flash_Init();
 }

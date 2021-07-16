@@ -1,11 +1,18 @@
-/* * Copyright (c) 2018 Laczen * * SPDX-License-Identifier: Apache-2.0 */
-
+/****************************************Copyright (c)************************************************
+** File Name:			    inner_flash.c
+** Descriptions:			nrf9160 inner flash management source file
+** Created By:				xie biao
+** Created Date:			2021-01-07
+** Modified Date:      		2021-07-12
+** Version:			    	V1.1
+******************************************************************************************************/
 #include <fs/nvs.h>
 #include <drivers/flash.h>
 #include <device.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "inner_flash.h"
 
 #define value1  "53.760241,-5.147095,1.023,11:20:22"
 #define value2  "53.760241,-5.147095,1.023,11:20:23"
@@ -83,5 +90,50 @@ void test_nvs(void)
 		printk("Bytes read from nvs: %d at ID %d\n", bytes_read, i);
 		printk("Data read from nvs: %s at ID %d\n", nvs_rx_buff, i);
 	}
+}
+
+bool save_local_to_record(local_record_t *local_data)
+{
+	return true;
+}
+
+bool save_health_to_record(health_record_t *health_data)
+{
+	return true;
+}
+
+bool save_sport_to_record(sport_record_t *sport_data)
+{
+	return true;
+}
+
+bool get_local_record(local_record_t *local_data, u32_t index)
+{
+	return true;
+}
+
+bool get_local_record_from_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index)
+{
+	return true;
+}
+
+bool get_health_record(health_record_t *health_data, u32_t index)
+{
+	return true;
+}
+
+bool get_health_record_from_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index)
+{
+	return true;
+}
+
+bool get_sport_record(sport_record_t *sport_data, u32_t index)
+{
+	return true;
+}
+
+bool get_sport_record_from_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index)
+{
+	return true;
 }
 

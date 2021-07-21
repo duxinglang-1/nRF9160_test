@@ -320,13 +320,22 @@ static void buttons_scan_fn(struct k_work *work)
 static int set_trig_mode(int trig_mode)
 {
 	int err = 0;
-	int flags = (IS_ENABLED(CONFIG_DK_LIBRARY_INVERT_BUTTONS) ?
-				(GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW) :
-				(GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH));
-	flags |= (GPIO_DIR_IN | GPIO_INT | trig_mode);
-
+	int flag1 = (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW);
+	int flag2 = (GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH);
+	int flags;
+	
 	for(size_t i = 0; (i < ARRAY_SIZE(button_pins)) && !err; i++)
 	{
+		switch(button_pins[i].active_flag)
+		{
+		case ACTIVE_LOW:
+			flags = flag1 | (GPIO_DIR_IN | GPIO_INT | trig_mode);
+			break;
+		case ACTIVE_HIGH:
+			flags = flag2 | (GPIO_DIR_IN | GPIO_INT | trig_mode);
+			break;
+		}
+		
 		err = gpio_pin_configure(button_devs[i], button_pins[i].number, flags);
 	}
 
@@ -400,7 +409,16 @@ static int buttons_init(button_handler_t button_handler)
 			return -ENODEV;
 		}
 
-		err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
+		switch(button_pins[i].active_flag)
+		{
+		case ACTIVE_LOW:
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
+			break;
+		case ACTIVE_HIGH:
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+			break;
+		}
+
 		if(err)
 		{
 			LOG_INF("Cannot configure button gpio");

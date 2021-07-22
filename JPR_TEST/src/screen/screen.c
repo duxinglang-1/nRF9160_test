@@ -40,6 +40,9 @@ SCREEN_ID_ENUM history_screen_id = SCREEN_ID_BOOTUP;
 screen_msg scr_msg[SCREEN_ID_MAX] = {0};
 notify_infor notify_msg = {0};
 
+extern bool key_pwroff_flag;
+
+
 void ShowBootUpLogo(void)
 {
 	u16_t x,y,w,h;
@@ -904,6 +907,8 @@ void EnterIdleScreen(void)
 	screen_id = SCREEN_ID_IDLE;
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
+
+	Key_Event_register_Handler(IdleScreenProcess,IdleScreenProcess);
 }
 
 void EnterAlarmScreen(void)
@@ -962,6 +967,83 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;		
 }
 
+void poweroff_leftkeyfunc(void)
+{
+	//Key_Event_Unregister_Handler();
+	EnterIdleScreen();
+
+}
+
+void poweroff_rightkeyfunc(void)
+{
+//	Key_Event_Unregister_Handler();
+	key_pwroff_flag = true;
+
+
+}
+void EnterPoweroffScreen(void)
+{
+	if(screen_id == SCREEN_ID_POWEROFF)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_POWEROFF;	
+	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;		
+
+	Key_Event_register_Handler(poweroff_rightkeyfunc, poweroff_rightkeyfunc);
+}
+
+void PowerOffScreenProcess(void)
+{
+	
+	u16_t rect_x,rect_y,rect_w=180,rect_h=120;
+	u16_t x,y,w,h;
+	u8_t notify[128] = "POWER OFF!";
+	
+
+	switch(scr_msg[SCREEN_ID_POWEROFF].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATED;
+				
+		rect_x = (LCD_WIDTH-rect_w)/2;
+		rect_y = (LCD_HEIGHT-rect_h)/2;
+		
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+
+	#ifdef FONT_24
+		LCD_SetFontSize(FONT_SIZE_24);
+	#else
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
+		LCD_MeasureString(notify,&w,&h);
+		x = (w > rect_w)? 0 : (rect_w-w)/2;
+		y = (h > rect_h)? 0 : (rect_h-h)/2;
+		x += rect_x;
+		y += rect_y;
+		LOG_INF("%d,%d",x,y);
+		LCD_ShowString(60,80,notify);
+//		LCD_DrawRectangle(55, 125, 50, 40);
+//		LCD_DrawRectangle(140, 125, 50, 40);
+		LCD_ShowString(60,130,"YES");
+		LCD_ShowString(150,130,"NO");
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
+	
+			
+	
+}
 
 void UpdataTestGPSInfo(void)
 {
@@ -1013,6 +1095,9 @@ void ScreenMsgProcess(void)
 			break;
 		case SCREEN_ID_NB_TEST:
 			TestNBScreenProcess();
+			break;
+		case SCREEN_ID_POWEROFF:
+			PowerOffScreenProcess();
 			break;
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();

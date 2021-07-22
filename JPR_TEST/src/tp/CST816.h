@@ -81,6 +81,9 @@ typedef enum
 	TP_EVENT_MAX
 }tp_event;
 
+
+typedef void (*tp_handler_t)(void);
+
 extern bool tp_trige_flag;
 
 extern void CST816_init(void);

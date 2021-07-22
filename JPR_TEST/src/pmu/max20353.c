@@ -407,6 +407,11 @@ void MAX20353_InitData(void)
 
 		charger_is_connected = true;
 		g_chg_status = BAT_CHARGING_PROGRESS;
+	#ifdef BATTERY_SOC_GAUGE	
+		g_bat_soc = MAX20353_CalculateSOC();
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+	#endif
 		g_bat_level = BAT_LEVEL_NORMAL;
 	}
 	else

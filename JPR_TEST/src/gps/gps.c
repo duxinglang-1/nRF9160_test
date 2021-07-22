@@ -164,9 +164,6 @@ bool gps_is_working(void)
 
 void gps_on(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif	
 	set_gps_enable(true);
 }
 
@@ -201,10 +198,16 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
-		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
+		at_cmd_write("AT+CFUN?", tmpbuf, sizeof(tmpbuf), NULL);
+		LOG_INF("modem status:%s", tmpbuf);
+		if(strcmp(tmpbuf, "+CFUN: 1") != 0)
 		{
-			LOG_INF("Can't active gps modem!");
-			return;
+			if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
+			{
+				LOG_INF("Can't turn on modem!");
+				EnterIdleScreen();
+				return;
+			}
 		}
 		
 		LOG_INF("Starting GPS");
@@ -219,12 +222,6 @@ static void set_gps_enable(const bool enable)
 		gps_is_on = false;
 		gps_fix_time = 0;
 		gps_local_time = 0;
-
-		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
-		{
-			LOG_INF("Can't deactive gps modem!");
-			return;
-		}
 	}
 }
 
@@ -288,7 +285,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		if(test_gps_flag)
 		{
 			u8_t i,tracked;
-			u8_t strbuf[128] = {0};
+			u8_t strbuf[256] = {0};
 
 			memset(gps_test_info, 0x00, sizeof(gps_test_info));
 			
@@ -308,10 +305,6 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 			sprintf(gps_test_info, "%d,", tracked);
 			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
-			
-			//LOG_INF("%s\n",gps_test_info);
-			//UpdataTestGPSInfo();
-			//TestGPSShowInfor();
 		}
 		else
 		{
@@ -338,13 +331,13 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		if(test_gps_flag)
 		{
 			u8_t i,tracked;
-			u8_t strbuf[128] = {0};
+			u8_t strbuf[256] = {0};
 
 			memset(gps_test_info, 0x00, sizeof(gps_test_info));
 			
 			for(i=0;i<GPS_PVT_MAX_SV_COUNT;i++)
 			{
-				u8_t buf[128] = {0};
+				u8_t buf[256] = {0};
 				
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{

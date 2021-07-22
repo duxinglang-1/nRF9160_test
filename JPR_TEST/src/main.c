@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #define DIGITAL_CLOCK
 #define PI 3.1415926
 
+static bool sys_pwron_completed_flag = false;
 static u8_t show_pic_count = 0;//图片显示顺序
 
 /* Stack definition for application workqueue */
@@ -653,6 +654,17 @@ void work_init(void)
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 }
 
+bool system_is_completed(void)
+{
+	return sys_pwron_completed_flag;
+}
+
+void system_init_completed(void)
+{
+	if(!sys_pwron_completed_flag)
+		sys_pwron_completed_flag = true;
+}
+
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 
@@ -696,6 +708,7 @@ int main(void)
 		UartMsgProc();
 		ScreenMsgProcess();
 
+		system_init_completed();
 		k_cpu_idle();
 	}
 }

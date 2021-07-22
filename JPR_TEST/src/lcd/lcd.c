@@ -2853,9 +2853,11 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
-		lcd_sleep_in = false;
 		if(!test_gps_flag && !test_nb_flag)
+		{
 			LCD_SleepIn();
+			lcd_sleep_in = false;
+		}
 	}
 
 	if(lcd_sleep_out)

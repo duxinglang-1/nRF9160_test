@@ -36,8 +36,7 @@ bool ppg_redraw_data_flag = false;
 
 static u8_t whoamI=0, rst=0;
 
-ppgdev_ctx_t ppg_dev_ctx;
-
+u8_t g_ppg_trigger = 0;
 u16_t g_hr = 0;
 u16_t g_spo2 = 0;
 u64_t timestamp = 0;
@@ -62,11 +61,12 @@ void GetHeartRate(u8_t *HR)
 	}
 }
 
-void GetPPGVersion(ppgdev_ctx_t *ctx, u8_t *buff)
+void GetPPGData(u8_t *hr, u8_t *spo2, u8_t *systolic, u8_t *diastolic)
 {
-	//max32674_read_reg(ctx, 0x81, 0x01, buff, 1);
-
-	LOG_INF("[%s] version:%x\n", __func__, buff);
+	*hr = g_hr;
+	*spo2 = g_spo2;
+	*systolic = 120;
+	*diastolic = 80;
 }
 
 bool PPGIsWorking(void)
@@ -274,6 +274,22 @@ void PPGStopCheck(void)
 	k_timer_stop(&ppg_get_hr_timer);
 	timestamp = k_uptime_get();
 	ppg_is_power_on = false;
+
+	if((g_ppg_trigger&PPG_TRIGGER_BY_ONE_KEY) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_ONE_KEY);
+		MCU_send_one_key_measure_data();
+	}
+
+	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_MENU);
+	}
+
+	if((g_ppg_trigger&PPG_TRIGGER_BY_HOURLY) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_HOURLY);
+	}
 }
 
 void PPGStartCheck(void)

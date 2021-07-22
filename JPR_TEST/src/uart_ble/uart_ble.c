@@ -16,6 +16,7 @@
 #include "CST816.h"
 #include "gps.h"
 #include "max20353.h"
+#include "max32674.h"
 #include "screen.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
@@ -129,43 +130,33 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 
 void CTP_notify_handle(u8_t *buf, u32_t len)
 {
-	u8_t tmpbuf[128] = {0};
 	u8_t tp_type = TP_EVENT_MAX;
 	u16_t tp_x,tp_y;
 	
-	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
 	switch(buf[5])
 	{
 	case GESTURE_NONE:
-		sprintf(tmpbuf, "GESTURE_NONE        ");
 		break;
 	case GESTURE_MOVING_UP:
 		tp_type = TP_EVENT_MOVING_UP;
-		sprintf(tmpbuf, "MOVING_UP   ");
 		break;
 	case GESTURE_MOVING_DOWN:
 		tp_type = TP_EVENT_MOVING_DOWN;
-		sprintf(tmpbuf, "MOVING_DOWN ");
 		break;
 	case GESTURE_MOVING_LEFT:
 		tp_type = TP_EVENT_MOVING_LEFT;
-		sprintf(tmpbuf, "MOVING_LEFT ");
 		break;
 	case GESTURE_MOVING_RIGHT:
 		tp_type = TP_EVENT_MOVING_RIGHT;
-		sprintf(tmpbuf, "MOVING_RIGHT");
 		break;
 	case GESTURE_SINGLE_CLICK:
 		tp_type = TP_EVENT_SINGLE_CLICK;
-		sprintf(tmpbuf, "SINGLE_CLICK");
 		break;
 	case GESTURE_DOUBLE_CLICK:
 		tp_type = TP_EVENT_DOUBLE_CLICK;
-		sprintf(tmpbuf, "DOUBLE_CLICK");
 		break;
 	case GESTURE_LONG_PRESS:
 		tp_type = TP_EVENT_LONG_PRESS;
-		sprintf(tmpbuf, "LONG_PRESS  ");
 		break;
 	}
 
@@ -572,6 +563,52 @@ void APP_set_target_steps(u8_t *buf, u32_t len)
 	need_save_settings = true;
 }
 
+void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
+{
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	LOG_INF("APP_get_one_key_measure_data: %02X\n", buf[6]);
+
+	if(buf[6] == 1)//开启
+	{
+		g_ppg_trigger |= PPG_TRIGGER_BY_ONE_KEY; 
+		PPGStartCheck();
+	}
+	else
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x0A;
+		//data ID
+		reply[reply_len++] = (ONE_KEY_MEASURE_ID>>8);		
+		reply[reply_len++] = (u8_t)(ONE_KEY_MEASURE_ID&0x00ff);
+		//status
+		reply[reply_len++] = 0x80;
+		//control
+		reply[reply_len++] = 0x00;
+		//data hr
+		reply[reply_len++] = 0x00;
+		//data spo2
+		reply[reply_len++] = 0x00;
+		//data systolic
+		reply[reply_len++] = 0x00;
+		//data diastolic
+		reply[reply_len++] = 0x00;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
+
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		ble_send_date_handle(reply, reply_len);
+	}
+}
+
 void APP_get_current_data(u8_t *buf, u32_t len)
 {
 	u8_t wake,reply[128] = {0};
@@ -731,6 +768,8 @@ void APP_get_battery_level(u8_t *buf, u32_t len)
 	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
+	LOG_INF("[%s]\n", __func__);
+
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
@@ -805,7 +844,7 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 	{
 	case 0x01://实时测量心率
 		break;
-	case 0x02://单词测量心率
+	case 0x02://单次测量心率
 		break;
 	}
 
@@ -1002,6 +1041,48 @@ void MCU_send_find_phone(void)
 
 }
 
+//手环上报一键测量数据
+void MCU_send_one_key_measure_data(void)
+{
+	u8_t heart_rate,spo2,systolic,diastolic;
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	LOG_INF("[%s]\n", __func__);
+	
+	GetPPGData(&heart_rate, &spo2, &systolic, &diastolic);
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x0A;
+	//data ID
+	reply[reply_len++] = (ONE_KEY_MEASURE_ID>>8);		
+	reply[reply_len++] = (u8_t)(ONE_KEY_MEASURE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x01;
+	//data hr
+	reply[reply_len++] = heart_rate;
+	//data spo2
+	reply[reply_len++] = spo2;
+	//data systolic
+	reply[reply_len++] = systolic;
+	//data diastolic
+	reply[reply_len++] = diastolic;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
 //手环上报整点心率数据
 void MCU_send_heart_rate(void)
 {
@@ -1043,8 +1124,7 @@ void MCU_send_heart_rate(void)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);	
-
+	ble_send_date_handle(reply, reply_len);
 }
 
 void get_nrf52810_ver_response(u8_t *buf, u32_t len)
@@ -1147,6 +1227,7 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 	case BLOOD_PRESSURE_ID:		//血压
 		break;
 	case ONE_KEY_MEASURE_ID:	//一键测量
+		APP_get_one_key_measure_data(buf, len);
 		break;
 	case PULL_REFRESH_ID:		//下拉刷新
 		APP_get_current_data(buf, len);
@@ -1232,7 +1313,14 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
-	LOG_INF("ble_send_date_handle\n");
+	u32_t i;
+	
+	LOG_INF("[%s]\n", __func__);
+
+	for(i=0;i<len;i++)
+	{
+		LOG_INF("data[%d]:%02X\n", i, buf[i]);
+	}
 
 #ifdef CONFIG_WIFI
 	switch_to_ble();
@@ -1247,13 +1335,13 @@ static void uart_receive_data(u8_t data, u32_t datalen)
     if(blue_is_on)
     {
     	//LOG_INF("data:%02x\n", data);
-		
+
+	#if 0
     	ble_send_date_handle(&data, 1);
-	#if 0	
+	#else
         rx_buf[rece_len++] = data;
         if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	
         {
-            //ble_send_date_handle(rx_buf, rece_len);
             ble_receive_data_handle(rx_buf, rece_len);
             
             memset(rx_buf, 0, sizeof(rx_buf));

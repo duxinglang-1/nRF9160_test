@@ -597,10 +597,6 @@ static void mqtt_link(struct k_work_q *work_q)
 
 	LOG_INF("[%s] begin\n", __func__);
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif
-
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -1650,7 +1646,8 @@ static void nb_link(struct k_work *work)
 	if(err)
 	{
 		LOG_INF("Can't connected to LTE network");
-		SetModemTurnOff();
+		if(!gps_is_working())
+			SetModemTurnOff();
 
 		nb_connected = false;
 		

@@ -308,7 +308,7 @@ void PPGStartCheck(void)
 	if(ret)
 	{
 		ppg_is_power_on = true;
-		k_timer_start(&ppg_stop_timer, K_MSEC(30*1000), NULL);
+		k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
 	}
 }
 

@@ -592,7 +592,7 @@ void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
 
 	if(buf[6] == 1)//开启
 	{
-		g_ppg_trigger |= PPG_TRIGGER_BY_ONE_KEY; 
+		g_ppg_trigger |= PPG_TRIGGER_BY_APP_ONE_KEY; 
 		PPGStartCheck();
 	}
 	else
@@ -681,7 +681,7 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 
 	//上传心率数据
-	MCU_send_heart_rate();
+	//MCU_send_heart_rate();
 }
 
 void APP_get_location_data(u8_t *buf, u32_t len)
@@ -883,32 +883,38 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 	case 1://打开传感器
 		break;
 	}
-	
-	GetHeartRate(&heart_rate);
-	
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x07;
-	//data ID
-	reply[reply_len++] = (HEART_RATE_ID>>8);		
-	reply[reply_len++] = (u8_t)(HEART_RATE_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x02;
-	//control
-	reply[reply_len++] = 0x01;
-	//heart rate
-	reply[reply_len++] = heart_rate;	//V2.0
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
 
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
+	if(buf[6] == 0)
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x07;
+		//data ID
+		reply[reply_len++] = (HEART_RATE_ID>>8);		
+		reply[reply_len++] = (u8_t)(HEART_RATE_ID&0x00ff);
+		//status
+		reply[reply_len++] = 0x02;
+		//control
+		reply[reply_len++] = 0x01;
+		//heart rate
+		reply[reply_len++] = 0;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
 
-	ble_send_date_handle(reply, reply_len);
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		ble_send_date_handle(reply, reply_len);	
+	}
+	else
+	{
+		g_ppg_trigger |= PPG_TRIGGER_BY_APP_HR; 
+		PPGStartCheck();
+	}
 }
 
 //APP回复手环查找手机
@@ -1079,7 +1085,7 @@ void MCU_send_find_phone(void)
 }
 
 //手环上报一键测量数据
-void MCU_send_one_key_measure_data(void)
+void MCU_send_app_one_key_measure_data(void)
 {
 	u8_t heart_rate,spo2,systolic,diastolic;
 	u8_t reply[128] = {0};
@@ -1109,6 +1115,41 @@ void MCU_send_one_key_measure_data(void)
 	reply[reply_len++] = systolic;
 	//data diastolic
 	reply[reply_len++] = diastolic;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void MCU_send_app_get_hr_data(void)
+{
+	u8_t heart_rate;
+	u8_t reply[128] = {0};
+	u32_t i,reply_len = 0;
+
+	LOG_INF("[%s]\n", __func__);
+	
+	GetPPGData(&heart_rate, NULL, NULL, NULL);
+	
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x07;
+	//data ID
+	reply[reply_len++] = (HEART_RATE_ID>>8);		
+	reply[reply_len++] = (u8_t)(HEART_RATE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x02;
+	//control
+	reply[reply_len++] = 0x01;
+	//heart rate
+	reply[reply_len++] = heart_rate;
 	//CRC
 	reply[reply_len++] = 0x00;
 	//packet end
@@ -1352,14 +1393,7 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
-	u32_t i;
-	
 	LOG_INF("[%s]\n", __func__);
-
-	//for(i=0;i<len;i++)
-	//{
-	//	LOG_INF("data[%d]:%02X\n", i, buf[i]);
-	//}
 
 #ifdef CONFIG_WIFI
 	switch_to_ble();
@@ -1369,8 +1403,22 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 	uart_irq_tx_enable(uart_ble); 
 }
 
+#ifdef CONFIG_WIFI
+void wifi_send_data_handle(u8_t *buf, u32_t len)
+{
+	LOG_INF("[%s]\n", __func__);
+
+	switch_to_wifi();
+
+	uart_fifo_fill(uart_ble, buf, len);
+	uart_irq_tx_enable(uart_ble);
+}
+#endif
+
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
+	static u32_t data_len = 0;
+	
     if(blue_is_on)
     {
     	//LOG_INF("data:%02x\n", data);
@@ -1379,18 +1427,22 @@ static void uart_receive_data(u8_t data, u32_t datalen)
     	ble_send_date_handle(&data, 1);
 	#else
         rx_buf[rece_len++] = data;
-        if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	
+		if(rece_len == 3)
+			data_len = (256*rx_buf[1]+rx_buf[2]+3);
+		
+        if(rece_len == data_len)	
         {
             ble_receive_data_handle(rx_buf, rece_len);
             
             memset(rx_buf, 0, sizeof(rx_buf));
             rece_len = 0;
+			data_len = 0;
         }
-		
-        if(data == 0x88)
+		else if((rece_len >= data_len)&&(data == 0x88))
         {
             memset(rx_buf, 0, sizeof(rx_buf));
             rece_len = 0;
+			data_len = 0;
         }
 	#endif	
     }
@@ -1399,7 +1451,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
     {
        
         rx_buf[rece_len++] = data;
-        if(rece_len==256)  
+        if(rece_len==256)
         {
             wifi_receive_data_handle(rx_buf, rece_len);
 
@@ -1407,7 +1459,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
             rece_len = 0;
         }
 
-        if((rx_buf[rece_len-1] == 0X4B) || (rece_len==BUF_MAXSIZE-256))	
+        if((rx_buf[rece_len-1] == 0x4B) || (rece_len==BUF_MAXSIZE-256))	
         {
             memset(rx_buf, 0, sizeof(rx_buf));
             rece_len = 0;

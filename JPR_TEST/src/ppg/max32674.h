@@ -13,9 +13,10 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define PPG_TRIGGER_BY_MENU		0x01
-#define	PPG_TRIGGER_BY_ONE_KEY	0x02
-#define	PPG_TRIGGER_BY_HOURLY	0x04
+#define PPG_TRIGGER_BY_MENU			0x01
+#define	PPG_TRIGGER_BY_APP_ONE_KEY	0x02
+#define	PPG_TRIGGER_BY_APP_HR		0x04
+#define	PPG_TRIGGER_BY_HOURLY		0x08
 
 extern u8_t g_ppg_trigger;
 extern u16_t g_hr;

@@ -63,10 +63,14 @@ void GetHeartRate(u8_t *HR)
 
 void GetPPGData(u8_t *hr, u8_t *spo2, u8_t *systolic, u8_t *diastolic)
 {
-	*hr = g_hr;
-	*spo2 = g_spo2;
-	*systolic = 120;
-	*diastolic = 80;
+	if(hr != NULL)
+		*hr = g_hr;
+	if((hr != NULL) != NULL)
+		*spo2 = g_spo2;
+	if(systolic != NULL)
+		*systolic = 120;
+	if(diastolic != NULL)
+		*diastolic = 80;
 }
 
 bool PPGIsWorking(void)
@@ -275,12 +279,16 @@ void PPGStopCheck(void)
 	timestamp = k_uptime_get();
 	ppg_is_power_on = false;
 
-	if((g_ppg_trigger&PPG_TRIGGER_BY_ONE_KEY) != 0)
+	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_ONE_KEY) != 0)
 	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_ONE_KEY);
-		MCU_send_one_key_measure_data();
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_ONE_KEY);
+		MCU_send_app_one_key_measure_data();
 	}
-
+	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_HR) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_HR);
+		MCU_send_app_get_hr_data();
+	}	
 	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_MENU);

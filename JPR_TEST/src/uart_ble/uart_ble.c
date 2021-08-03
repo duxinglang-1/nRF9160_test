@@ -445,7 +445,7 @@ void APP_set_PHD_interval(u8_t *buf, u32_t len)
 	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
-	LOG_INF("[%s]\n", __func__);
+	LOG_INF("[%s] flag:%d, interval:%d\n", __func__, buf[6], buf[7]);
 	
 	if(buf[6] == 1)
 		global_settings.phd_infor.is_on = true;
@@ -485,7 +485,7 @@ void APP_set_wake_screen_by_wrist(u8_t *buf, u32_t len)
 	u8_t reply[128] = {0};
 	u32_t i,reply_len = 0;
 
-	LOG_INF("[%s]\n", __func__);
+	LOG_INF("[%s] flag:%d\n", __func__, buf[6]);
 	
 	if(buf[6] == 1)
 		global_settings.wake_screen_by_wrist = true;
@@ -593,7 +593,7 @@ void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
 	if(buf[6] == 1)//¿ªÆô
 	{
 		g_ppg_trigger |= PPG_TRIGGER_BY_APP_ONE_KEY; 
-		PPGStartCheck();
+		APPStartPPG();
 	}
 	else
 	{
@@ -866,7 +866,7 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 	u8_t heart_rate,reply[128] = {0};
 	u32_t i,reply_len = 0;
 
-	LOG_INF("[%s]\n", __func__);
+	LOG_INF("[%s] type:%d, flag:%d\n", __func__, buf[5], buf[6]);
 	
 	switch(buf[5])
 	{
@@ -895,9 +895,9 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 		reply[reply_len++] = (HEART_RATE_ID>>8);		
 		reply[reply_len++] = (u8_t)(HEART_RATE_ID&0x00ff);
 		//status
-		reply[reply_len++] = 0x02;
+		reply[reply_len++] = buf[5];
 		//control
-		reply[reply_len++] = 0x01;
+		reply[reply_len++] = buf[6];
 		//heart rate
 		reply[reply_len++] = 0;
 		//CRC
@@ -913,7 +913,7 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 	else
 	{
 		g_ppg_trigger |= PPG_TRIGGER_BY_APP_HR; 
-		PPGStartCheck();
+		APPStartPPG();
 	}
 }
 
@@ -922,12 +922,7 @@ void APP_reply_find_phone(u8_t *buf, u32_t len)
 {
 	u32_t i;
 
-	LOG_INF("APP_reply_find_phone\n");
-	
-	for(i=0;i<len;i++)
-	{
-		LOG_INF("i:%d, data:%02X\n", i, buf[i]);
-	}
+	LOG_INF("[%s]\n", __func__);
 }
 
 void MCU_get_nrf52810_ver(void)

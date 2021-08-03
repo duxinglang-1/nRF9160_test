@@ -65,10 +65,13 @@ void GetPPGData(u8_t *hr, u8_t *spo2, u8_t *systolic, u8_t *diastolic)
 {
 	if(hr != NULL)
 		*hr = g_hr;
-	if((hr != NULL) != NULL)
+	
+	if(spo2 != NULL)
 		*spo2 = g_spo2;
+	
 	if(systolic != NULL)
 		*systolic = 120;
+	
 	if(diastolic != NULL)
 		*diastolic = 80;
 }
@@ -298,6 +301,11 @@ void PPGStopCheck(void)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_HOURLY);
 	}
+}
+
+void APPStartPPG(void)
+{
+	ppg_start_flag = true;
 }
 
 void PPGStartCheck(void)

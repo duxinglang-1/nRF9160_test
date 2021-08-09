@@ -57,12 +57,12 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 		
 		case SOS_STATUS_RECEIVED:
 			sos_state = SOS_STATUS_IDLE;
-			ExitNotifyScreen();
+			EnterIdleScreen();
 			break;
 		
 		case SOS_STATUS_CANCEL:
 			sos_state = SOS_STATUS_IDLE;
-			ExitNotifyScreen();
+			EnterIdleScreen();
 			break;
 		}
 		
@@ -205,7 +205,7 @@ void SOSStart(void)
 	lcd_sleep_out = true;
 	sos_state = SOS_STATUS_SENDING;
 
-	//EnterSOSScreen();
+	EnterSOSScreen();
 
 	GetSystemTimeSecString(sos_trigger_time);
 

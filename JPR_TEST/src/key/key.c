@@ -115,10 +115,10 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			leftkey_handler_cb();
 			break;
 		case KEY_UP:
-			//ppg_start_flag = true;
-			//ppg_fw_upgrade_flag = true;
-			//get_modem_info_flag = true;
-			//test_gps_on();
+			if(!SOSIsRunning())
+			{
+				EntryIdleScreen();
+			}
 			break;
 		case KEY_LONG_PRESS:
 			SOSStart();
@@ -143,6 +143,9 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		}
 		break;
 	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
+		if(SOSIsRunning())
+			break;
+		
 		switch(key_type)
 		{
 		case KEY_DOWN://´÷ÉÏ
@@ -175,7 +178,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			FindDeviceStop();
 		}
 
-		ExitNotifyScreen();
+		//ExitNotifyScreen();	
 	}
 }
 

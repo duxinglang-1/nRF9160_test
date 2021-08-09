@@ -26,6 +26,7 @@
 #include "nb.h"
 #include "sos.h"
 #include "gps.h"
+#include "uart_ble.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -208,6 +209,12 @@ void IdleShowSystemTime(void)
 		y = 210;
 		LCD_ShowString(x,y,"wear off");
 	}
+#else
+	sprintf(str_time, "TG steps:%05d", global_settings.target_steps);
+	LCD_MeasureString(str_time, &w, &h);
+	x = (LCD_WIDTH > w) ? (LCD_WIDTH-w)/2 : 0;
+	y = 210;
+	LCD_ShowString(x,y,str_time);
 #endif	
 }
 
@@ -1005,7 +1012,7 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
-	Key_Event_register_Handler(IdleScreenProcess,IdleScreenProcess);
+	Key_Event_register_Handler(MCU_send_find_phone, IdleScreenProcess);
 }
 
 void EnterAlarmScreen(void)

@@ -57,11 +57,17 @@ void ShowBootUpLogo(void)
 
 void ExitNotifyScreen(void)
 {
+#if 0
 	if(screen_id == SCREEN_ID_NOTIFY)
 	{
 		k_timer_stop(&notify_timer);
 		GoBackHistoryScreen();
 	}
+#else
+	sos_state = SOS_STATUS_IDLE;
+	k_timer_stop(&notify_timer);
+	EntryIdleScreen();
+#endif
 }
 
 void NotifyTimerOutCallBack(struct k_timer *timer_id)
@@ -187,6 +193,7 @@ void IdleShowSystemTime(void)
 #endif
 
 	//xb test 2021-07-14 增加一个脱腕状态显示
+#if 0	
 	if(is_wearing())
 	{
 		LCD_MeasureString("wear on ",&w,&h);
@@ -201,6 +208,7 @@ void IdleShowSystemTime(void)
 		y = 210;
 		LCD_ShowString(x,y,"wear off");
 	}
+#endif	
 }
 
 void IdleShowSystemWeek(void)
@@ -819,6 +827,95 @@ void NotifyScreenProcess(void)
 
 }
 
+void SOSShowStatus(void)
+{
+	u32_t img_addr;
+	u8_t *img;
+	
+	LCD_Clear(BLACK);
+
+	switch(sos_state)
+	{
+	case SOS_STATUS_IDLE:
+		break;
+		
+	case SOS_STATUS_SENDING:
+	#if 0
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_ADDR;
+	#else
+		img = IMG_SOS;
+	#endif
+	#endif
+		NotifyShowStrings("SOS is sending, please wait a few seconds!");
+		break;
+	
+	case SOS_STATUS_SENT:
+	#if 0
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_SEND_ADDR;
+	#else
+		img = IMG_SOS_SEND;
+	#endif
+	#endif
+		NotifyShowStrings("SOS has been sent!");
+		break;
+	
+	case SOS_STATUS_RECEIVED:
+	#if 0
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_RECE_ADDR;
+	#else
+		img = IMG_SOS_RECE;
+	#endif
+	#endif
+		NotifyShowStrings("Server has received the SOS alert!");
+		break;
+	
+	case SOS_STATUS_CANCEL:
+	#if 0	
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_SOS_ADDR;
+	#else
+		img = IMG_SOS;
+	#endif
+	#endif
+		NotifyShowStrings("SOS has been canceled!");
+		break;
+	}
+
+#if 0
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(SOS_X, SOS_Y, img_addr);
+#else
+	LCD_ShowImg(SOS_X, SOS_Y, img);
+#endif
+#endif
+}
+
+void SOSScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_SOS].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATED;
+
+		SOSShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_SOS].para&SCREEN_EVENT_UPDATE_SOS)
+		{
+			scr_msg[SCREEN_ID_SOS].para &= (~SCREEN_EVENT_UPDATE_SOS);
+			SOSShowStatus();
+		}
+
+		if(scr_msg[SCREEN_ID_SOS].para == SCREEN_EVENT_UPDATE_NO)
+			scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_NO;
+		break;
+	}
+}
 
 void TestGPSUpdateInfor(void)
 {
@@ -967,6 +1064,20 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;		
 }
 
+void EnterSOSScreen(void)
+{
+	if(screen_id == SCREEN_ID_SOS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SOS;	
+	scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
+}
+
 void poweroff_leftkeyfunc(void)
 {
 	//Key_Event_Unregister_Handler();
@@ -1002,37 +1113,34 @@ void PowerOffScreenProcess(void)
 	
 	u16_t rect_x,rect_y,rect_w=180,rect_h=120;
 	u16_t x,y,w,h;
-	u8_t notify[128] = "POWER OFF!";
+	u8_t notify[128] = "power off?";
 	
-
 	switch(scr_msg[SCREEN_ID_POWEROFF].act)
 	{
 	case SCREEN_ACTION_ENTER:
 		scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATED;
-				
-		rect_x = (LCD_WIDTH-rect_w)/2;
-		rect_y = (LCD_HEIGHT-rect_h)/2;
-		
-		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
-		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
 
 	#ifdef FONT_24
 		LCD_SetFontSize(FONT_SIZE_24);
 	#else
 		LCD_SetFontSize(FONT_SIZE_16);
 	#endif
+	
+		rect_x = (LCD_WIDTH-rect_w)/2;
+		rect_y = (LCD_HEIGHT-rect_h)/2;
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+		
 		LCD_MeasureString(notify,&w,&h);
 		x = (w > rect_w)? 0 : (rect_w-w)/2;
 		y = (h > rect_h)? 0 : (rect_h-h)/2;
 		x += rect_x;
 		y += rect_y;
-		LOG_INF("%d,%d",x,y);
 		LCD_ShowString(60,80,notify);
-//		LCD_DrawRectangle(55, 125, 50, 40);
-//		LCD_DrawRectangle(140, 125, 50, 40);
-		LCD_ShowString(60,130,"YES");
-		LCD_ShowString(150,130,"NO");
+
+		LCD_ShowString(40,130,"PWR(Y)");
+		LCD_ShowString(130,130,"SOS(N)");
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
@@ -1059,9 +1167,25 @@ void GoBackHistoryScreen(void)
 	scr_msg[scr_id].act = SCREEN_ACTION_NO;
 	scr_msg[scr_id].status = SCREEN_STATUS_NO;
 
-	screen_id = history_screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_ENTER;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_CREATING;	
+	screen_id = SCREEN_ID_IDLE;
+	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;	
+}
+
+void EntryIdleScreen(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+		return;
+
+	k_timer_stop(&notify_timer);
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_IDLE;	
+	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 }
 
 void ScreenMsgProcess(void)
@@ -1087,6 +1211,9 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_ECG:
 			break;
 		case SCREEN_ID_BP:
+			break;
+		case SCREEN_ID_SOS:
+			SOSScreenProcess();
 			break;
 		case SCREEN_ID_SETTINGS:
 			break;

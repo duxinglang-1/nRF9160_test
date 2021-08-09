@@ -140,6 +140,7 @@ void system_power_off(u8_t flag)
 
 void SystemShutDown(void)
 {	
+	LOG_INF("SystemShutDown\n");
 	MAX20353_PowerOffConfig();
 }
 

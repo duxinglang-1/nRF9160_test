@@ -126,7 +126,7 @@ void APP_Ask_GPS_Data(void)
 	if(!gps_is_on)
 	{
 		app_gps_on = true;
-		k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
+		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), NULL);
 	}
 #else
 	gps_pvt_data.datetime.year = 2020;

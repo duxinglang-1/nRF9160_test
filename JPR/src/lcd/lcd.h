@@ -14,10 +14,12 @@
 #include "font.h"
 //#include "boards.h"
 
+//#define LCD_R108101_GC9307
+#define LCD_ORCZ010903C_GC9A01
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
 //#define LCD_ORCT012210N_ST7789V2
-#define LCD_R108101_GC9307
+//#define LCD_VGM068A4W01_SH1106G
 
 //#define LCD_TYPE_PARALLEL		//²¢¿Ú
 //#define LCD_TYPE_I2C			//I2C
@@ -85,12 +87,16 @@ void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void LCD_Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r);
 void LCD_ShowString(uint16_t x, uint16_t y, uint8_t *p);
 void LCD_ShowStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t *p);
+#ifdef LCD_VGM068A4W01_SH1106G
+void LCD_ShowStrInRect(u16_t x, u16_t y, u16_t width, u16_t height, u8_t *p);
+#endif/*LCD_VGM068A4W01_SH1106G*/
 void LCD_ShowNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len);
 void LCD_ShowxNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len,uint8_t mode);
+void LCD_ShowImg(u16_t x, u16_t y, unsigned char *color);
+void LCD_ShowImg_From_Flash(u16_t x, u16_t y, u32_t img_addr);
 void LCD_SetFontSize(uint8_t font_size);
 void LCD_MeasureString(uint8_t *p, uint16_t *width, uint16_t *height);
 void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height);
-void LCD_dis_pic(uint16_t x,uint16_t y, unsigned char *color);
 void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans);
 void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned int rotate);
 void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate);

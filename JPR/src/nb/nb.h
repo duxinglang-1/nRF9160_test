@@ -9,7 +9,10 @@
 ******************************************************************************************************/
 #define CMD_GET_IMEI	"AT+CGSN"
 #define CMD_GET_IMSI	"AT+CIMI"
+#define CMD_GET_ICCID	"AT%XICCID"
 #define CMD_GET_RSRP	"AT+CESQ"
+#define CMD_GET_APN		"AT+CGDCONT?"
+#define CMD_GET_CSQ		"AT+CSQ=?"
 
 #define CMD_SET_CREG	 	"AT+CEREG=5"
 #if defined(CONFIG_LTE_LEGACY_PCO_MODE)
@@ -17,10 +20,11 @@
 #endif
 #define CMD_SET_NW_MODE		"AT%XSYSTEMMODE=0,1,1,0"	//Preferred network mode: Narrowband-IoT and GPS
 #define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
+#define CMD_SET_RAI		 	"AT%XRAI=3"					//Set the modem rai parament
 
-#define IMEI_MAX_LEN	(15+1)
-#define IMSI_MAX_LEN	(15+1)
-
+#define IMEI_MAX_LEN	(15)
+#define IMSI_MAX_LEN	(15)
+#define ICCID_MAX_LEN	(20)
 
 typedef enum
 {
@@ -35,5 +39,16 @@ typedef enum
 
 extern NB_SIGNL_LEVEL g_nb_sig;
 
+extern bool get_modem_info_flag;
+extern bool test_nb_flag;
+
+extern u8_t nb_test_info[256];
+extern u8_t g_imsi[IMSI_MAX_LEN+1];
+extern u8_t g_imei[IMEI_MAX_LEN+1];
+extern u8_t g_iccid[ICCID_MAX_LEN+1];
+extern u8_t g_timezone[5];
+extern u8_t g_rsrp;
+
 extern void NB_init(struct k_work_q *work_q);
 extern void NBMsgProcess(void);
+extern void NBSendSosData(u8_t *data, u32_t datalen);

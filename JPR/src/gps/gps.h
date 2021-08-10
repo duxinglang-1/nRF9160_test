@@ -5,12 +5,19 @@
  */
 
 #include <zephyr.h>
-#include <nrf_socket.h>
-#include <net/socket.h>
 #include <stdio.h>
+#include <drivers/gps.h>
 
 extern bool app_gps_on;
 extern bool app_gps_off;
 
-extern void gps_init(void);
+extern bool ble_wait_gps;
+extern bool sos_wait_gps;
+extern bool fall_wait_gps;
+extern bool location_wait_gps;
+extern bool test_gps_flag;
+
+extern u8_t gps_test_info[256];
+
+extern void GPS_init(struct k_work_q *work_q);
 extern void GPSMsgProcess(void);

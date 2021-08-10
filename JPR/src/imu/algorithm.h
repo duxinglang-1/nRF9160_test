@@ -10,8 +10,8 @@ typedef union{
 
 #define TWI_INSTANCE_ID               0
 #define LSM6DSO_I2C_ADD               LSM6DSO_I2C_ADD_L >> 1 //need to shift 1 bit to the right.
-#define ACC_GYRO_FIFO_BUF_LEN         100
-#define VERIFY_DATA_BUF_LEN           100
+#define ACC_GYRO_FIFO_BUF_LEN         200
+#define VERIFY_DATA_BUF_LEN           200
 #define PATTERN_LEN                   2*ACC_GYRO_FIFO_BUF_LEN
 #define TWI_BUFFER_SIZE               14
 #define TWI_TIMEOUT                   1000

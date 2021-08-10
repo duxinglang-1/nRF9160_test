@@ -9,12 +9,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr.h>
-#include <sys/printk.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
 #include "CST816.h"
 #include "CST816_update.h"
+
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(CTP, CONFIG_LOG_DEFAULT_LEVEL);
 
 bool tp_trige_flag = false;
 
@@ -28,13 +31,13 @@ static u8_t init_i2c(void)
 	i2c_ctp = device_get_binding(CTP_DEV);
 	if(!i2c_ctp)
 	{
-		printf("ERROR SETTING UP I2C\r\n");
+		LOG_INF("ERROR SETTING UP I2C\r\n");
 		return -1;
 	} 
 	else
 	{
 		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_FAST));
-		printf("I2C CONFIGURED\r\n");
+		LOG_INF("I2C CONFIGURED\r\n");
 		return 0;
 	}
 }
@@ -47,7 +50,7 @@ static s32_t platform_write(u8_t reg, u8_t *bufp, u16_t len)
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
 	rslt = i2c_write(i2c_ctp, data, len+1, CST816_I2C_ADDRESS);
-	printf("rslt:%d\n", rslt);
+	LOG_INF("rslt:%d\n", rslt);
 
 	return rslt;
 }
@@ -61,7 +64,7 @@ static s32_t platform_read(u8_t reg, u8_t *bufp, u16_t len)
 	{
 		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
 	}
-	printf("rslt:%d\n", rslt);
+	LOG_INF("rslt:%d\n", rslt);
 	return rslt;
 }
 
@@ -80,7 +83,7 @@ static s32_t platform_write_word(u16_t reg, u8_t *bufp, u16_t len)
 
 	memcpy(&data[2], bufp, len);
 	rslt = i2c_write(i2c_ctp, data, len+2, CST816_I2C_ADDRESS);
-	printf("rslt:%d\n", rslt);
+	LOG_INF("rslt:%d\n", rslt);
 
 	return rslt;
 }
@@ -99,14 +102,14 @@ static s32_t platform_read_word(u16_t reg, u8_t *bufp, u16_t len)
 #endif
 
 	rslt = i2c_write(i2c_ctp, data, 2, CST816_I2C_ADDRESS);
-	printf("rslt:%d\n", rslt);
+	LOG_INF("rslt:%d\n", rslt);
 
 	if(rslt == 0)
 	{
 		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
 	}
 
-	printf("rslt:%d\n", rslt);
+	LOG_INF("rslt:%d\n", rslt);
 	return rslt;
 }
 
@@ -268,30 +271,35 @@ bool ctp_hynitron_update(void)
 	return false;
 }
 
+void register_touch_event_handle(tp_event tp_type, u16_t x_start, u16_t x_end, u16_t y_start, u16_t y_end, tp_handler_t touch_handler)
+{
+	
+}
+
 void touch_panel_event_handle(tp_event tp_type, u16_t x_pos, u16_t y_pos)
 {
 	switch(tp_type)
 	{
 	case TP_EVENT_MOVING_UP:
-		printk("tp moving up!\n");
+		LOG_INF("tp moving up!\n");
 		break;
 	case TP_EVENT_MOVING_DOWN:
-		printk("tp moving down!\n");
+		LOG_INF("tp moving down!\n");
 		break;
 	case TP_EVENT_MOVING_LEFT:
-		printk("tp moving left!\n");
+		LOG_INF("tp moving left!\n");
 		break;
 	case TP_EVENT_MOVING_RIGHT:
-		printk("tp moving right!\n");
+		LOG_INF("tp moving right!\n");
 		break;
 	case TP_EVENT_SINGLE_CLICK:
-		printk("tp single click! x:%d, y:%d\n", x_pos,y_pos);
+		LOG_INF("tp single click! x:%d, y:%d\n", x_pos,y_pos);
 		break;
 	case TP_EVENT_DOUBLE_CLICK:
-		printk("tp double click! x:%d, y:%d\n", x_pos,y_pos);
+		LOG_INF("tp double click! x:%d, y:%d\n", x_pos,y_pos);
 		break;
 	case TP_EVENT_LONG_PRESS:
-		printk("tp long press! x:%d, y:%d\n", x_pos,y_pos);
+		LOG_INF("tp long press! x:%d, y:%d\n", x_pos,y_pos);
 		break;
 	case TP_EVENT_MAX:
 		break;
@@ -314,7 +322,7 @@ void tp_interrupt_proc(void)
 	platform_read(CST816_REG_XPOS_L, &tp_temp[2], 1);//x坐标低位
 	platform_read(CST816_REG_YPOS_L, &tp_temp[3], 1);//y坐标低位
 
-	printk("tp_temp=%x,%x,%x,%x\n",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3]);
+	LOG_INF("tp_temp=%x,%x,%x,%x\n",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3]);
 	switch(tp_temp[0])
 	{
 	case GESTURE_NONE:
@@ -371,7 +379,7 @@ void CST816_init(void)
   	gpio_ctp = device_get_binding(CTP_PORT);
 	if(!gpio_ctp)
 	{
-		printk("Cannot bind gpio device\n");
+		LOG_INF("Cannot bind gpio device\n");
 		return;
 	}
 
@@ -392,7 +400,7 @@ void CST816_init(void)
 	platform_read(CST816_REG_CHIPID, &tp_temp_id, 1);
 	if(tp_temp_id == CST816_CHIP_ID)
 	{
-		printk("It's CST816!\n");
+		LOG_INF("It's CST816!\n");
 	}
 
 	sprintf(tmpbuf, "CTP ID:%x", tp_temp_id);

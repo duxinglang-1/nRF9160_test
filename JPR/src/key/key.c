@@ -17,6 +17,7 @@
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
+#include "max32674.h"
 #include "Alarm.h"
 #include "lcd.h"
 
@@ -35,10 +36,13 @@ static sys_slist_t button_handlers;
 
 #define KEY_SOS			BIT(0)
 #define KEY_PWR			BIT(1)
+#define KEY_TOUCH		BIT(2)
+
 static const key_cfg button_pins[] = 
 {
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 26, ACTIVE_LOW},
-	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15, ACTIVE_HIGH},
+	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15, ACTIVE_LOW},
+	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 06, ACTIVE_LOW},
 };
 
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
@@ -48,10 +52,38 @@ static struct k_delayed_work buttons_scan;
 static struct k_mutex button_handler_mut;
 static struct k_timer g_long_press_timer_id;
 
-static bool touch_flag = true;
+static bool touch_flag = false;
 
-extern bool sys_pwr_off;
+bool key_pwroff_flag = false;
+
 extern bool app_gps_on;
+extern bool ppg_fw_upgrade_flag;
+extern bool ppg_start_flag;
+extern bool ppg_stop_flag;
+extern bool get_modem_info_flag;
+extern u8_t g_ppg_trigger;
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+extern bool uart_wake_flag;
+extern bool uart_sleep_flag;
+#endif
+
+
+typedef void (*VoidFunc)(void);
+
+VoidFunc leftkey_handler_cb = NULL,rightkey_handler_cb = NULL;
+
+void Key_Event_register_Handler(VoidFunc leftkeyfunc,VoidFunc rightkeyfunc)
+{
+	leftkey_handler_cb = leftkeyfunc;
+	rightkey_handler_cb = rightkeyfunc;
+}
+
+void Key_Event_Unregister_Handler(void)
+{
+	leftkey_handler_cb = NULL;
+	rightkey_handler_cb = NULL;
+}
 
 bool is_wearing(void)
 {
@@ -60,7 +92,19 @@ bool is_wearing(void)
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type,	KEY_SOS, KEY_PWR);
+	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
+	if(!system_is_completed())
+		return;
+
+	if(key_type == KEY_UP)
+	{
+		if(lcd_is_sleeping)
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
+			return;
+		}
+	}
 
 	switch(key_code)
 	{
@@ -68,10 +112,16 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
+			leftkey_handler_cb();
 			break;
 		case KEY_UP:
+			if(!SOSIsRunning())
+			{
+				EntryIdleScreen();
+			}
 			break;
 		case KEY_LONG_PRESS:
+			SOSStart();
 			break;
 		}
 		break;
@@ -79,38 +129,54 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
+			rightkey_handler_cb();
 			break;
 		case KEY_UP:
 			break;
 		case KEY_LONG_PRESS:
-			sys_pwr_off = true;
+			EnterPoweroffScreen();
+			//key_pwroff_flag = true;
 			break;
 		}
-		break;	
-	}
-
-	//power key will wakeup lcd
-	if((key_type == KEY_UP))
-	{
-		sleep_out_by_wrist = false;
+		break;
+	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
+		if(SOSIsRunning())
+			break;
 		
-		if(lcd_is_sleeping)
-			lcd_sleep_out = true;
-		else
-			lcd_sleep_in = true;
+		switch(key_type)
+		{
+		case KEY_DOWN://´÷ÉÏ
+			if(!touch_flag)
+			{
+				touch_flag = true;
+			}			
+			break;
+		case KEY_UP://ÍÑÏÂ
+			if(touch_flag)
+			{
+				touch_flag = false;
+			}
+			break;
+		case KEY_LONG_PRESS:
+			break;
+		}		
+		break;
 	}
 
-	if(alarm_is_running)
+	if(key_code != KEY_TOUCH)
 	{
-		AlarmRemindStop();
-	}
+		if(alarm_is_running)
+		{
+			AlarmRemindStop();
+		}
 
-	if(find_is_running)
-	{
-		FindDeviceStop();
-	}
+		if(find_is_running)
+		{
+			FindDeviceStop();
+		}
 
-	ExitNotifyScreen();
+		//ExitNotifyScreen();	
+	}
 }
 
 static void button_handler(u32_t button_state, u32_t has_changed)
@@ -286,13 +352,22 @@ static void buttons_scan_fn(struct k_work *work)
 static int set_trig_mode(int trig_mode)
 {
 	int err = 0;
-	int flags = (IS_ENABLED(CONFIG_DK_LIBRARY_INVERT_BUTTONS) ?
-				(GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW) :
-				(GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH));
-	flags |= (GPIO_DIR_IN | GPIO_INT | trig_mode);
-
+	int flag1 = (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW);
+	int flag2 = (GPIO_PUD_PULL_DOWN | GPIO_INT_ACTIVE_HIGH);
+	int flags;
+	
 	for(size_t i = 0; (i < ARRAY_SIZE(button_pins)) && !err; i++)
 	{
+		switch(button_pins[i].active_flag)
+		{
+		case ACTIVE_LOW:
+			flags = flag1 | (GPIO_DIR_IN | GPIO_INT | trig_mode);
+			break;
+		case ACTIVE_HIGH:
+			flags = flag2 | (GPIO_DIR_IN | GPIO_INT | trig_mode);
+			break;
+		}
+		
 		err = gpio_pin_configure(button_devs[i], button_pins[i].number, flags);
 	}
 
@@ -366,7 +441,16 @@ static int buttons_init(button_handler_t button_handler)
 			return -ENODEV;
 		}
 
-		err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
+		switch(button_pins[i].active_flag)
+		{
+		case ACTIVE_LOW:
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
+			break;
+		case ACTIVE_HIGH:
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+			break;
+		}
+
 		if(err)
 		{
 			LOG_INF("Cannot configure button gpio");

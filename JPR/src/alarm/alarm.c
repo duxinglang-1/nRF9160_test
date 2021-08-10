@@ -187,7 +187,8 @@ void FindDeviceStop(void)
 
 	k_timer_stop(&find_timer);
 
-	GoBackHistoryScreen();
+	//GoBackHistoryScreen();
+	EnterIdleScreen();
 }
 
 void FindDeviceTimeout(struct k_timer *timer)
@@ -218,9 +219,12 @@ void FindDeviceTimeout(struct k_timer *timer)
 
 void FindDeviceStart(void)
 {
+	if(find_is_running)
+		return;
+
 	lcd_sleep_out = true;
 	find_is_running = true;
-	
+
 	count = FIND_VIN_REPEAT_MAX;
 	vibrating = true;
 

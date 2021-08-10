@@ -58,7 +58,17 @@ typedef struct{
 typedef struct{
 	bool is_on;
 	u8_t interval;
-}phd_measure_t;
+}phd_measure_t;		//整点测量
+
+typedef struct{
+	u32_t steps;
+	u32_t time;
+}location_interval_t;
+
+typedef struct{
+	u8_t systolic;		//收缩压
+	u8_t diastolic;		//舒张压
+}bp_calibra_t;
 
 typedef struct{
 	bool init;		//system inited flag
@@ -66,13 +76,17 @@ typedef struct{
 	bool bp_is_on;	//blood pressure
 	bool bo_is_on;	//blood oxygen
 	bool wake_screen_by_wrist;
+	bool wrist_off_check;
 	u16_t target_steps;
+	u32_t health_interval;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
 	CLOCK_MODE idle_colck_mode;
 	BACKLIGHT_TIME backlight_time;
 	phd_measure_t phd_infor;
+	location_interval_t dot_interval;
+	bp_calibra_t bp_calibra;
 	alarm_infor_t alarm[ALARM_MAX];
 }global_settings_t;
 

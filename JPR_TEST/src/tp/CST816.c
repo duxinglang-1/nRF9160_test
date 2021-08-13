@@ -20,6 +20,9 @@
 LOG_MODULE_REGISTER(CTP, CONFIG_LOG_DEFAULT_LEVEL);
 
 bool tp_trige_flag = false;
+bool tp_redraw_flag = false;
+
+tp_message tp_msg = {0};
 
 struct device *i2c_ctp;
 struct device *gpio_ctp;
@@ -271,12 +274,12 @@ bool ctp_hynitron_update(void)
 	return false;
 }
 
-void register_touch_event_handle(tp_event tp_type, u16_t x_start, u16_t x_end, u16_t y_start, u16_t y_end, tp_handler_t touch_handler)
+void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_end, u16_t y_start, u16_t y_end, tp_handler_t touch_handler)
 {
 	
 }
 
-void touch_panel_event_handle(tp_event tp_type, u16_t x_pos, u16_t y_pos)
+void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 {
 	switch(tp_type)
 	{
@@ -416,7 +419,45 @@ void test_tp(void)
 
 	sprintf(tmpbuf, "test_tp");
 	LCD_ShowString(20,80,tmpbuf);
-	CST816_init();
+	//CST816_init();
+}
+
+void tp_show_infor(void)
+{
+	u8_t tmpbuf[128] = {0};
+	
+	switch(tp_msg.evt_id)
+	{
+	case TP_EVENT_NONE:
+		strcpy(tmpbuf, "NONE        ");
+		break;
+	case TP_EVENT_MOVING_UP:
+		strcpy(tmpbuf, "MOVING_UP   ");
+		break;
+	case TP_EVENT_MOVING_DOWN:
+		strcpy(tmpbuf, "MOVING_DOWN ");
+		break;
+	case TP_EVENT_MOVING_LEFT:
+		strcpy(tmpbuf, "MOVING_LEFT ");
+		break;
+	case TP_EVENT_MOVING_RIGHT:
+		strcpy(tmpbuf, "MOVING_RIGHT");
+		break;
+	case TP_EVENT_SINGLE_CLICK:
+		strcpy(tmpbuf, "SINGLE_CLICK");
+		break;
+	case TP_EVENT_DOUBLE_CLICK:
+		strcpy(tmpbuf, "DOUBLE_CLICK");
+		break;
+	case TP_EVENT_LONG_PRESS:
+		strcpy(tmpbuf, "LONG_PRESS  ");
+		break;
+	}
+	
+	LCD_ShowString(20,120,tmpbuf);
+	
+	sprintf(tmpbuf, "x:%5d, y:%5d", tp_msg.x_pos, tp_msg.y_pos);
+	LCD_ShowString(20,140,tmpbuf);
 }
 
 void TPMsgProcess(void)
@@ -425,5 +466,11 @@ void TPMsgProcess(void)
 	{
 		tp_trige_flag = false;
 		tp_interrupt_proc();
+	}
+
+	if(tp_redraw_flag)
+	{
+		tp_redraw_flag = false;
+		tp_show_infor();
 	}
 }

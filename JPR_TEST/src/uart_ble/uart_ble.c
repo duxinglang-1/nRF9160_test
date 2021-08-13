@@ -138,6 +138,7 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 	switch(buf[5])
 	{
 	case GESTURE_NONE:
+		tp_type = TP_EVENT_NONE;
 		break;
 	case GESTURE_MOVING_UP:
 		tp_type = TP_EVENT_MOVING_UP;
@@ -168,6 +169,11 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		tp_y = buf[9]*0x100+buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
+
+	tp_msg.evt_id = tp_type;
+	tp_msg.x_pos = tp_x;
+	tp_msg.y_pos = tp_y;
+	tp_redraw_flag = true;
 }
 
 void APP_set_find_device(u8_t *buf, u32_t len)

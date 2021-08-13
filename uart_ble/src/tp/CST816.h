@@ -71,6 +71,7 @@
 
 typedef enum
 {
+	TP_EVENT_NONE,
 	TP_EVENT_MOVING_UP,
 	TP_EVENT_MOVING_DOWN,
 	TP_EVENT_MOVING_LEFT,
@@ -79,9 +80,21 @@ typedef enum
 	TP_EVENT_DOUBLE_CLICK,
 	TP_EVENT_LONG_PRESS,
 	TP_EVENT_MAX
-}tp_event;
+}TP_EVENT;
+
+typedef struct
+{
+	TP_EVENT evt_id;
+	u16_t x_pos;
+	u16_t y_pos;
+}tp_message;
+
+typedef void (*tp_handler_t)(void);
 
 extern bool tp_trige_flag;
+extern bool tp_redraw_flag;
+
+extern tp_message tp_msg;
 
 extern void CST816_init(void);
 extern void tp_interrupt_proc(void);

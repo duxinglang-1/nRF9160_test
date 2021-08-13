@@ -280,7 +280,7 @@ int MAX20353_LDO2Config(void)
 	
     appcmdoutvalue_ = 0x42;
     appdatainoutbuffer_[0] = 0x01;
-    appdatainoutbuffer_[1] = 0x13;     // 0.9V + (0.1V * number)   =  2.8V 
+    appdatainoutbuffer_[1] = 0x18;     // 0.9V + (0.1V * number)   =  3.3V 
     ret = MAX20353_AppWrite(2);
 
     return ret;
@@ -293,8 +293,8 @@ int MAX20353_BoostConfig(void)
 	appcmdoutvalue_ = 0x30;
 	appdatainoutbuffer_[0] = 0x01;
 	appdatainoutbuffer_[1] = 0x00;
-	appdatainoutbuffer_[2] = 0x00;
-	appdatainoutbuffer_[3] = 0x00;     // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
+	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
 	ret = MAX20353_AppWrite(4);
 
 	return ret;
@@ -326,7 +326,7 @@ int MAX20353_BuckBoostDisable(void)
     return ret;
 }
 
-/// @brief BuckBoost to 5.0V output rail **/
+/// @brief BuckBoost to 4.0V output rail **/
 //******************************************************************************
 int MAX20353_BuckBoostConfig(void) 
 {
@@ -334,11 +334,44 @@ int MAX20353_BuckBoostConfig(void)
     appcmdoutvalue_ = 0x70;
     appdatainoutbuffer_[0] = 0x00;
     appdatainoutbuffer_[1] = 0x04;
-    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 5.0V
+    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 4.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
 
     return ret;
+}
+
+/// @brief MPC0~MPC4 output rail **/
+//******************************************************************************
+int MAX20353_MPCConfig(void)
+{
+	int32_t ret = 0;
+	appcmdoutvalue_ = 0x06;
+	appdatainoutbuffer_[0] = 0x00;		//MPC0
+	appdatainoutbuffer_[1] = 0x00;		//MPC1
+	appdatainoutbuffer_[2] = 0x00;		//MPC2
+	appdatainoutbuffer_[3] = 0x40;		//MPC3
+	appdatainoutbuffer_[4] = 0x00;		//MPC4 SFOUTMPCEn
+	ret = MAX20353_AppWrite(5);
+
+	return ret; 
+}
+
+//[B2] SFOUT Output Voltage Setting 
+//	0 = 5V 1 = 3.3V  
+//[B1 B0] SFOUT LDO Enable Configuration
+//	00 = Disabled (regardless of CHGIN)
+//	01 = Enabled when CHGIN is present
+//	10 = Enabled when CHGIN is present and Controlled by MPC_Config_Write command
+//	11 = RESERVED
+int MAX20353_SFOUTConfig(void)
+{
+    int32_t ret = 0;
+    appcmdoutvalue_ = 0x48;
+    appdatainoutbuffer_[0] = 0x05;	//3.3v
+    ret = MAX20353_AppWrite(1);
+
+    return ret;	
 }
 
 int MAX20353_PowerOffConfig(void) 
@@ -884,20 +917,16 @@ bool MAX20353_Init(void)
 	MAX20353_GetDeviceID(&HardwareID);
 	if(HardwareID != MAX20353_HARDWARE_ID)
 		return false;
-
-	//MAX20353_SoftResetConfig();
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();		//1.8v  350mA
 	MAX20353_Buck2Config(); 	//3.3V  350mA
 	MAX20353_LDO1Config();	//1.8v 50mA switch mode
-	MAX20353_LDO2Config();	//2.8V 100mA
+	MAX20353_LDO2Config();	//3.3V 100mA 给CTP供电
 	MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();
-
-	//MAX20353_BuckBoostDisable();
 	MAX20353_BuckBoostConfig();
 
 	//马达驱动

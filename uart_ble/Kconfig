@@ -189,6 +189,14 @@ config GPS_START_ON_MOTION
 
 endmenu # GPS
 
+menu "TOUCH"
+
+config TOUCH_SUPPORT
+	bool "touch support"
+	default n
+	
+endmenu #TOUCH
+
 menu "FOTA_MQTT"
 
 config FOTA_DOWNLOAD_HOST

@@ -58,6 +58,12 @@ extern "C" {
 #define IMU_STEPS_SHOW_W	210
 #define IMU_STEPS_SHOW_H	20
 
+//health
+#define PPG_DATA_SHOW_X	40
+#define PPG_DATA_SHOW_Y	190
+#define PPG_DATA_SHOW_W	160
+#define PPG_DATA_SHOW_H	20
+
 //SOS
 #define SOS_X	9
 #define SOS_Y	0
@@ -106,9 +112,12 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_DATE		0x00000008
 #define SCREEN_EVENT_UPDATE_WEEK		0x00000010
 #define SCREEN_EVENT_UPDATE_SPORT		0x00000020
-#define SCREEN_EVENT_UPDATE_SLEEP		0x00000040
-#define SCREEN_EVENT_UPDATE_SOS			0x00000080
-#define SCREEN_EVENT_UPDATE_WRIST		0x00000100
+#define SCREEN_EVENT_UPDATE_HEALTH		0x00000040
+#define SCREEN_EVENT_UPDATE_SLEEP		0x00000080
+#define SCREEN_EVENT_UPDATE_SOS			0x00000100
+#define SCREEN_EVENT_UPDATE_WRIST		0x00000200
+#define SCREEN_EVENT_UPDATE_FOTA		0x00004000
+
 
 //notify
 #define NOTIFY_TEXT_MAX_LEN		80
@@ -133,6 +142,8 @@ typedef enum
 	SCREEN_ID_GPS_TEST,
 	SCREEN_ID_NB_TEST,
 	SCREEN_ID_NOTIFY,
+	SCREEN_ID_POWEROFF,
+	SCREEN_ID_FOTA,
 	SCREEN_ID_MAX
 }SCREEN_ID_ENUM;
 
@@ -192,6 +203,7 @@ extern void EnterNBTestScreen(void);
 extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
 extern void ExitNotifyScreen(void);
+extern void EnterFOTAScreen(void);
 extern void DisplayPopUp(u8_t *message);
 
 #ifdef __cplusplus

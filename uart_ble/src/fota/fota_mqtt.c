@@ -39,7 +39,7 @@ static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
 static struct k_work fota_work;
-
+static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
@@ -148,7 +148,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	int sec_tag;
 
 	LOG_INF("[%s]\n", __func__);
-	
+
 #ifndef CONFIG_USE_HTTPS
 	sec_tag = -1;
 #else
@@ -162,8 +162,46 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	{
 		LOG_INF("fota_download_start() failed, err %d\n", retval);
 		fota_run_flag = false;
+		fota_cur_status = FOTA_STATUS_ERROR;
+		fota_redraw_pro_flag = true;
 	}
+}
 
+void ExitFotaScreen(void)
+{
+	fota_run_flag = false;
+	fota_cur_status = FOTA_STATUS_MAX;
+	
+	EnterIdleScreen();
+}
+
+static void fota_timer_handler(struct k_timer *timer)
+{
+	switch(fota_cur_status)
+	{
+	case FOTA_STATUS_PREPARE:
+		break;
+		
+	case FOTA_STATUS_LINKING:
+		break;
+		
+	case FOTA_STATUS_DOWNLOADING:
+		break;
+		
+	case FOTA_STATUS_FINISHED:
+		fota_cur_status = FOTA_STATUS_MAX;
+		fota_reboot_flag = true;
+		break;
+		
+	case FOTA_STATUS_ERROR:
+		fota_run_flag = false;
+		fota_cur_status = FOTA_STATUS_MAX;
+		ExitFotaScreen();
+		break;
+		
+	case FOTA_STATUS_MAX:
+		break;
+	}
 }
 
 void fota_work_init(struct k_work_q *work_q)
@@ -171,6 +209,11 @@ void fota_work_init(struct k_work_q *work_q)
 	app_work_q = work_q;
 
 	k_delayed_work_init(&fota_work, app_dfu_transfer_start);
+}
+
+FOTA_STATUS_ENUM get_fota_status(void)
+{
+	return fota_cur_status;
 }
 
 bool fota_is_running(void)
@@ -183,16 +226,30 @@ void fota_begin(void)
 	fota_start_flag = true;
 }
 
-
 void fota_start(void)
 {
 	if(!fota_run_flag)
 	{
 		fota_run_flag = true;
-
-		//EnterFOTAScreen();
-		k_delayed_work_submit_to_queue(app_work_q, &fota_work, K_SECONDS(2));
+		fota_cur_status = FOTA_STATUS_PREPARE;
+		
+		EnterFOTAScreen();		
 	}
+}
+
+void fota_start_confirm(void)
+{
+	fota_cur_status = FOTA_STATUS_LINKING;
+	fota_redraw_pro_flag = true;
+	
+	DisconnectAppMqttLink();
+	
+	k_delayed_work_submit_to_queue(app_work_q, &fota_work, K_SECONDS(2));
+}
+
+void fota_reboot_confirm(void)
+{
+	fota_reboot_flag = true;
 }
 
 void fota_dl_handler(const struct fota_download_evt *evt)
@@ -201,25 +258,25 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 	{
 	case FOTA_DOWNLOAD_EVT_ERROR:
 		LOG_INF("[%s] Received error\n", __func__);
+		fota_cur_status = FOTA_STATUS_ERROR;
 		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:
 		LOG_INF("[%s] Received progress:%d\n", __func__, evt->progress);
 		g_fota_progress = evt->progress;
-		//FOTARedrawProgress();
-		//fota_redraw_pro_flag = true;
+		fota_cur_status = FOTA_STATUS_DOWNLOADING;
 		break;
 		
 	case FOTA_DOWNLOAD_EVT_FINISHED:
 		LOG_INF("[%s] Received finished!\n", __func__);
-		fota_reboot_flag = true;
+		fota_cur_status = FOTA_STATUS_FINISHED;
 		break;
 
 	default:
 		break;
 	}
 
-	fota_run_flag = false;
+	fota_redraw_pro_flag = true;
 }
 
 static int application_init(void)
@@ -302,15 +359,11 @@ void fota_init(void)
 
 void FOTARedrawProgress(void)
 {
-#if 0
 	if(screen_id == SCREEN_ID_FOTA)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_FOTA;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
-#else
-	FOTAUpdateStatus();
-#endif
 }
 
 void FotaMsgProc(void)
@@ -337,10 +390,10 @@ void FotaMsgProc(void)
 		sys_reboot(0);
 	}
 
-	//if(fota_is_running())
-	//{
-	//	k_sleep(K_MSEC(1));
-	//}
+	if(fota_run_flag)
+	{
+		k_sleep(K_MSEC(1));
+	}
 }
 
 #endif/*CONFIG_FOTA_DOWNLOAD*/

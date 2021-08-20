@@ -42,6 +42,9 @@ extern void MCU_get_nrf52810_ver(void);
 extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);
 extern void MCU_set_ble_work_mode(u8_t work_mode);
-
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+extern void uart_sleep_out(void);
+extern void uart_sleep_in(void);
+#endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
 
 #endif/*__UART_BLE_H__*/

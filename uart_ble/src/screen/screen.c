@@ -27,6 +27,9 @@
 #include "sos.h"
 #include "gps.h"
 #include "uart_ble.h"
+#ifdef CONFIG_TOUCH_SUPPORT
+#include "CST816.h"
+#endif
 #ifdef CONFIG_FOTA_DOWNLOAD
 #include "fota_mqtt.h"
 #endif/*CONFIG_FOTA_DOWNLOAD*/
@@ -1208,6 +1211,11 @@ void FOTAShowStatus(void)
 	LCD_ShowString(x,y,"PWR(N)");
 
 	Key_Event_register_Handler(fota_start_confirm, ExitFotaScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_X+FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_Y+FOTA_NOTIFY_NO_H, ExitFotaScreen);
+#endif
+	
 }
 
 void FOTAUpdateStatus(void)
@@ -1500,7 +1508,9 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
+#ifdef CONFIG_FOTA_DOWNLOAD
 	Key_Event_register_Handler(fota_start, IdleScreenProcess);
+#endif
 }
 
 void EnterAlarmScreen(void)

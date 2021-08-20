@@ -205,7 +205,11 @@ static char *get_mqtt_topic(void)
 {
 	static char str_sub_topic[256] = {0};
 
+#if 1	//xb test 2021/07/27
+	sprintf(str_sub_topic, "%s", CONFIG_MQTT_SUB_TOPIC);
+#else
 	sprintf(str_sub_topic, "%s%s", CONFIG_MQTT_SUB_TOPIC, g_imei);
+#endif
 	return str_sub_topic;
 }
 
@@ -533,9 +537,14 @@ static void client_init(struct mqtt_client *client)
 	client->broker = &broker;
 	
 	client->evt_cb = mqtt_evt_handler;
-	
-	client->client_id.utf8 = (u8_t *)g_imei;	//xb add 2021-03-24 CONFIG_MQTT_CLIENT_ID;
+
+#if 1	//xb test 2021/07/27 RM server test
+	client->client_id.utf8 = (u8_t *)CONFIG_MQTT_CLIENT_ID;
+	client->client_id.size = strlen(CONFIG_MQTT_CLIENT_ID);
+#else
+	client->client_id.utf8 = (u8_t *)g_imei;
 	client->client_id.size = strlen(g_imei);
+#endif
 
 	password.utf8 = (u8_t *)CONFIG_MQTT_PASSWORD;
 	password.size = strlen(CONFIG_MQTT_PASSWORD);
@@ -598,7 +607,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	LOG_INF("[%s] begin\n", __func__);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
+	//uart_sleep_out();
 #endif
 
 	client_init(&client);
@@ -702,6 +711,18 @@ static void NbSendData(void)
 bool MqttIsConnected(void)
 {
 	return mqtt_connected;
+}
+
+void DisconnectAppMqttLink(void)
+{
+	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+		k_timer_stop(&mqtt_disconnect_timer);
+
+	if(mqtt_connected)
+	{
+		mqtt_connected = false;
+		mqtt_disconnect_flag = true;
+	}
 }
 
 static void MqttDisConnect(void)
@@ -1479,13 +1500,13 @@ static int configure_low_power(void)
 	err = lte_lc_psm_req(true);
 	if(err)
 	{
-		LOG_INF("lte_lc_psm_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_psm_req, error: %d\n", __func__, err);
 	}
 #else
 	err = lte_lc_psm_req(false);
 	if(err)
 	{
-		LOG_INF("lte_lc_psm_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_psm_req, error: %d\n", __func__, err);
 	}
 #endif
 
@@ -1494,13 +1515,13 @@ static int configure_low_power(void)
 	err = lte_lc_edrx_req(true);
 	if(err)
 	{
-		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_edrx_req, error: %d\n", __func__, err);
 	}
 #else
 	err = lte_lc_edrx_req(false);
 	if(err)
 	{
-		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_edrx_req, error: %d\n", err);
 	}
 #endif
 
@@ -1638,7 +1659,7 @@ void SetModemAPN(void)
 
 static void nb_link(struct k_work *work)
 {
-	int err;
+	int err=0;
 	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
 	
@@ -1650,7 +1671,8 @@ static void nb_link(struct k_work *work)
 	if(err)
 	{
 		LOG_INF("Can't connected to LTE network");
-		SetModemTurnOff();
+		if(!gps_is_working())
+			SetModemTurnOff();
 
 		nb_connected = false;
 		
@@ -1800,6 +1822,9 @@ void NB_init(struct k_work_q *work_q)
 
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
+#ifdef CONFIG_FOTA_DOWNLOAD
+	fota_work_init(work_q);
+#endif
 
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 }

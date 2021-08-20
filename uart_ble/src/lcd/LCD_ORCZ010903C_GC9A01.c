@@ -39,7 +39,7 @@ static void LCD_SPI_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);

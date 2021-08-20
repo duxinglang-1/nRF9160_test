@@ -436,8 +436,10 @@ void UpdateSystemTime(void)
 	{
 		//SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
-		
+
+	#ifdef CONFIG_FOTA_DOWNLOAD	
 		if(!fota_is_running())
+	#endif		
 		{
 			AlarmRemindCheck(date_time);
 			TimeCheckSendHealthData();

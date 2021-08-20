@@ -58,7 +58,7 @@ typedef struct{
 typedef struct{
 	bool is_on;
 	u8_t interval;
-}phd_measure_t;
+}phd_measure_t;		//整点测量
 
 typedef struct{
 	u32_t steps;
@@ -66,8 +66,8 @@ typedef struct{
 }location_interval_t;
 
 typedef struct{
-	u32_t systolic;		//收缩压
-	u32_t diastolic;	//舒张压
+	u8_t systolic;		//收缩压
+	u8_t diastolic;		//舒张压
 }bp_calibra_t;
 
 typedef struct{

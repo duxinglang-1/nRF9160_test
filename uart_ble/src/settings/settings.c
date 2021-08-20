@@ -57,7 +57,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
-	BACKLIGHT_15_SEC,		//backlight time
+	BACKLIGHT_ALWAYS_ON,		//backlight time
 	{true,1},				//PHD
 	{500,60},				//position interval
 	{120,70},				//pb calibration

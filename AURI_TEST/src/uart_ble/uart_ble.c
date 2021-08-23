@@ -1308,7 +1308,7 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
-	LOG_INF("ble_send_date_handle\n");
+	LOG_INF("[%s]\n", __func__);
 
 #ifdef CONFIG_WIFI
 	switch_to_ble();
@@ -1317,6 +1317,18 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 	uart_fifo_fill(uart_ble, buf, len);
 	uart_irq_tx_enable(uart_ble); 
 }
+
+#ifdef CONFIG_WIFI
+void wifi_send_date_handle(u8_t *buf, u32_t len)
+{
+	LOG_INF("[%s]\n", __func__);
+
+	switch_to_wifi();
+
+	uart_fifo_fill(uart_ble, buf, len);
+	uart_irq_tx_enable(uart_ble); 
+}
+#endif
 
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
@@ -1341,9 +1353,8 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 #ifdef CONFIG_WIFI	
     else if(wifi_is_on)
     {
-       
         rx_buf[rece_len++] = data;
-        if(rece_len==256)  
+        if(rece_len == 256)  
         {
             wifi_receive_data_handle(rx_buf, rece_len);
 

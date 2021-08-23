@@ -1646,7 +1646,7 @@ static void nb_link(struct k_work *work)
 	if(err)
 	{
 		LOG_INF("Can't connected to LTE network");
-		SetModemTurnOff();
+		//SetModemTurnOff();
 
 		nb_connected = false;
 		

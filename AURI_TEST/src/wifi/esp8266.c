@@ -99,7 +99,7 @@ void APP_Ask_wifi_data(void)
 	u8_t *str_mac[6] = {"94:77:2b:24:22:6c","7c:94:2a:39:9f:50","7c:94:2a:39:9f:54","","",""};
 	u8_t *str_rssi[6] = {"-54","-87","-62","","",""};
 
-#if 0
+#if 1
 	if(!app_wifi_on)
 	{
 		app_wifi_on = true;
@@ -130,7 +130,7 @@ void APP_Ask_wifi_data(void)
 ==============================================================================*/
 void Send_Cmd_To_Esp8285(u8_t *cmd, u32_t WaitTime)
 {
-	ble_send_date_handle(cmd, strlen(cmd));//发送命令
+	wifi_send_date_handle(cmd, strlen(cmd));//发送命令
 	delay_ms(WaitTime);
 }
 
@@ -251,6 +251,8 @@ void wifi_start_scanning(void)
 
 	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
 	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
+	k_sleep(K_MSEC(500));
+	Send_Cmd_To_Esp8285("AT+CWLAP\r\n",50);
 }
 
 /*============================================================================
@@ -264,6 +266,7 @@ void wifi_start_scanning(void)
 void wifi_turn_on_and_scanning(void)
 {
     switch_to_wifi();
+	k_sleep(K_MSEC(20));
     wifi_enable();
     wifi_start_scanning();
 }

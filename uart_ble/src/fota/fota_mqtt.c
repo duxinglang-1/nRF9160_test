@@ -392,7 +392,7 @@ void FotaMsgProc(void)
 
 	if(fota_run_flag)
 	{
-		k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(50));
 	}
 }
 

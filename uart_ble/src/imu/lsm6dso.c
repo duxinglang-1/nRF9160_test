@@ -1135,8 +1135,10 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
+#ifdef CONFIG_FOTA_DOWNLOAD
 	if(fota_is_running())
 		return;
-	
+#endif
+
 	k_work_submit_to_queue(imu_work_q, &imu_work);
 }

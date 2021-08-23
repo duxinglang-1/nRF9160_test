@@ -5,6 +5,8 @@
  *Create      : 2020-08-21
  *Copyright   : August
 **************************************************************************/
+#ifdef CONFIG_TOUCH_SUPPORT
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -12,6 +14,7 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
+#include "lcd.h"
 #include "CST816.h"
 #include "CST816_update.h"
 
@@ -28,6 +31,9 @@ struct device *i2c_ctp;
 struct device *gpio_ctp;
 
 static struct gpio_callback gpio_cb;
+
+static TPInfo tp_event_info = {0};
+static TpEventNode *tp_event_tail = NULL;
 
 static u8_t init_i2c(void)
 {
@@ -53,8 +59,6 @@ static s32_t platform_write(u8_t reg, u8_t *bufp, u16_t len)
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
 	rslt = i2c_write(i2c_ctp, data, len+1, CST816_I2C_ADDRESS);
-	LOG_INF("rslt:%d\n", rslt);
-
 	return rslt;
 }
 
@@ -67,7 +71,6 @@ static s32_t platform_read(u8_t reg, u8_t *bufp, u16_t len)
 	{
 		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
 	}
-	LOG_INF("rslt:%d\n", rslt);
 	return rslt;
 }
 
@@ -86,8 +89,6 @@ static s32_t platform_write_word(u16_t reg, u8_t *bufp, u16_t len)
 
 	memcpy(&data[2], bufp, len);
 	rslt = i2c_write(i2c_ctp, data, len+2, CST816_I2C_ADDRESS);
-	LOG_INF("rslt:%d\n", rslt);
-
 	return rslt;
 }
 
@@ -105,14 +106,11 @@ static s32_t platform_read_word(u16_t reg, u8_t *bufp, u16_t len)
 #endif
 
 	rslt = i2c_write(i2c_ctp, data, 2, CST816_I2C_ADDRESS);
-	LOG_INF("rslt:%d\n", rslt);
-
 	if(rslt == 0)
 	{
 		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
 	}
 
-	LOG_INF("rslt:%d\n", rslt);
 	return rslt;
 }
 
@@ -274,39 +272,236 @@ bool ctp_hynitron_update(void)
 	return false;
 }
 
-void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_end, u16_t y_start, u16_t y_end, tp_handler_t touch_handler)
+void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, u16_t y_start, u16_t y_stop, tp_handler_t touch_handler)
 {
+	TpEventNode *ppre,*pnext;
 	
+	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
+	{
+		LOG_INF("[%s]: 001\n", __func__);
+		return;
+	}
+	else
+	{
+		ppre = NULL;
+		pnext = tp_event_info.cache;
+		
+		do
+		{
+			if((pnext->x_begin == x_start)&&(pnext->x_end == x_stop)&&(pnext->y_begin == y_start)&&(pnext->y_end == y_stop)
+				&&(pnext->evt_id == tp_type)
+				&&(pnext->func == touch_handler))
+			{
+				if(pnext == tp_event_info.cache)
+				{
+					LOG_INF("[%s]: 002\n", __func__);
+					tp_event_info.cache = pnext->next;
+					tp_event_info.count--;
+					k_free(pnext);
+				}
+				else if(pnext == tp_event_tail)
+				{
+					LOG_INF("[%s]: 003\n", __func__);
+					tp_event_tail = ppre;
+					tp_event_tail->next = NULL;
+					tp_event_info.count--;
+					k_free(pnext);
+				}
+				else
+				{
+					LOG_INF("[%s]: 004\n", __func__);
+					ppre = pnext->next;
+					tp_event_info.count--;
+					k_free(pnext);
+				}
+
+				return;
+			}
+			else
+			{
+				ppre = pnext;
+				pnext = pnext->next;
+			}
+				
+		}while(pnext != NULL);
+
+		LOG_INF("[%s]: 005\n", __func__);
+	}
+}
+
+void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, u16_t y_start, u16_t y_stop, tp_handler_t touch_handler)
+{
+	TpEventNode *pnew;
+
+	if(tp_event_info.cache == NULL)
+	{
+	#ifdef TRANSFER_LOG
+		LOG_INF("[%s]: begin 001\n", __func__);
+	#endif
+	
+		tp_event_info.count = 0;
+		tp_event_info.cache = NULL;
+
+		tp_event_tail = k_malloc(sizeof(TpEventNode));
+		if(tp_event_tail == NULL) 
+			return;
+	
+		memset(tp_event_tail, 0, sizeof(TpEventNode));
+		
+		tp_event_tail->x_begin = x_start;
+		tp_event_tail->x_end = x_stop;
+		tp_event_tail->y_begin = y_start;
+		tp_event_tail->y_end = y_stop;
+		tp_event_tail->evt_id = tp_type;
+		tp_event_tail->func = touch_handler;
+		tp_event_tail->next = NULL;
+		
+		tp_event_info.cache = tp_event_tail;
+		tp_event_info.count = 1;
+		return;
+	}
+	else
+	{
+	#ifdef TRANSFER_LOG
+		LOG_INF("[%s]: begin 002\n", __func__);
+	#endif
+	
+		if(tp_event_tail == NULL)
+		{
+			tp_event_tail = tp_event_info.cache;
+			while(1)
+			{
+				if(tp_event_tail->next == NULL)
+					break;
+				else
+					tp_event_tail = tp_event_tail->next;
+			}
+		}
+
+		pnew = k_malloc(sizeof(TpEventNode));
+		if(pnew == NULL) 
+			return;
+
+		memset(pnew, 0, sizeof(TpEventNode));
+		
+		pnew->x_begin = x_start;
+		pnew->x_end = x_stop;
+		pnew->y_begin = y_start;
+		pnew->y_end = y_stop;
+		pnew->evt_id = tp_type;
+		pnew->func = touch_handler;
+		pnew->next = NULL;
+
+		tp_event_tail->next = pnew;
+		tp_event_tail = pnew;
+		tp_event_info.count++;
+		
+		return;
+	}
+}
+
+bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
+{
+	TpEventNode *pnew;
+	
+	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
+	{
+		LOG_INF("[%s]: 001\n", __func__);
+		return false;
+	}
+	else
+	{
+		pnew = tp_event_info.cache;
+		
+		do
+		{
+			if((x_pos >= pnew->x_begin)&&(x_pos <= pnew->x_end)&&(y_pos >= pnew->y_begin)&&(y_pos <= pnew->y_end)
+				&&(pnew->evt_id == tp_type))
+			{
+				if(pnew->func != NULL)
+					pnew->func();
+
+				LOG_INF("[%s]: 002\n", __func__);
+				return true;
+			}
+			else
+			{
+				pnew = pnew->next;
+			}
+				
+		}while(pnew != NULL);
+
+		LOG_INF("[%s]: 003\n", __func__);
+		return false;
+	}
 }
 
 void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 {
+	u8_t tmpbuf[128] = {0};
+	u8_t strbuf[128] = {0};
+	u16_t x,y,w,h;
+
 	switch(tp_type)
 	{
+	case TP_EVENT_NONE:
+		LOG_INF("tp none!\n");
+		sprintf(strbuf, "GESTURE_NONE");
+		break;
 	case TP_EVENT_MOVING_UP:
 		LOG_INF("tp moving up!\n");
+		sprintf(strbuf, "MOVING_UP   ");
 		break;
 	case TP_EVENT_MOVING_DOWN:
 		LOG_INF("tp moving down!\n");
+		sprintf(strbuf, "MOVING_DOWN ");
 		break;
 	case TP_EVENT_MOVING_LEFT:
 		LOG_INF("tp moving left!\n");
+		sprintf(strbuf, "MOVING_LEFT ");
 		break;
 	case TP_EVENT_MOVING_RIGHT:
 		LOG_INF("tp moving right!\n");
+		sprintf(strbuf, "MOVING_RIGHT");
 		break;
 	case TP_EVENT_SINGLE_CLICK:
 		LOG_INF("tp single click! x:%d, y:%d\n", x_pos,y_pos);
+		sprintf(strbuf, "SINGLE_CLICK");
 		break;
 	case TP_EVENT_DOUBLE_CLICK:
 		LOG_INF("tp double click! x:%d, y:%d\n", x_pos,y_pos);
+		sprintf(strbuf, "DOUBLE_CLICK");
 		break;
 	case TP_EVENT_LONG_PRESS:
 		LOG_INF("tp long press! x:%d, y:%d\n", x_pos,y_pos);
+		sprintf(strbuf, "LONG_PRESS  ");
 		break;
 	case TP_EVENT_MAX:
 		break;
 	}
+
+	LCD_Clear(BLACK);
+
+	sprintf(tmpbuf, "x:%03d, y:%03d", x_pos, y_pos);
+	LCD_MeasureString(tmpbuf, &w, &h);
+
+	LCD_Draw_Circle(x_pos, y_pos, 10);
+
+	x = x_pos - (w/2);
+	y = y_pos + 15;
+
+	if(x_pos < (w/2))
+		x = x_pos + 15;
+	else if(x_pos > (LCD_WIDTH-(w/2)))
+		x = x_pos - w - 15;
+
+	if(y_pos > (LCD_HEIGHT- 2*h - 15))
+		y = y_pos - 2*h - 15;
+
+	LCD_ShowString(x, y, tmpbuf);
+	LCD_ShowString(x, y+h, strbuf);
+
+	check_touch_event_handle(tp_type, x_pos, y_pos);
 }
 
 void CaptouchInterruptHandle(void)
@@ -316,59 +511,52 @@ void CaptouchInterruptHandle(void)
 
 void tp_interrupt_proc(void)
 {
-	u8_t tmpbuf[128] = {0};
 	u8_t TP_type = TP_EVENT_MAX;
 	u8_t tp_temp[10]={0};
-
+	u16_t x_pos,y_pos;
+	
 	platform_read(CST816_REG_GESTURE, &tp_temp[0], 1);//手势
 	platform_read(CST816_REG_FINGER_NUM, &tp_temp[1], 1);//手指个数
-	platform_read(CST816_REG_XPOS_L, &tp_temp[2], 1);//x坐标低位
-	platform_read(CST816_REG_YPOS_L, &tp_temp[3], 1);//y坐标低位
+	platform_read(CST816_REG_XPOS_H, &tp_temp[2], 1);//x坐标高位 (&0x0f,取低4位)
+	platform_read(CST816_REG_XPOS_L, &tp_temp[3], 1);//x坐标低位
+	platform_read(CST816_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
+	platform_read(CST816_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
-	LOG_INF("tp_temp=%x,%x,%x,%x\n",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3]);
+	LOG_INF("tp_temp=%x,%x,%x,%x,%x,%x\n",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3],tp_temp[4],tp_temp[5]);
 	switch(tp_temp[0])
 	{
 	case GESTURE_NONE:
-		sprintf(tmpbuf, "GESTURE_NONE        ");
+		TP_type = TP_EVENT_NONE;
 		break;
 	case GESTURE_MOVING_UP:
 		TP_type = TP_EVENT_MOVING_UP;
-		sprintf(tmpbuf, "MOVING_UP   ");
 		break;
 	case GESTURE_MOVING_DOWN:
 		TP_type = TP_EVENT_MOVING_DOWN;
-		sprintf(tmpbuf, "MOVING_DOWN ");
 		break;
 	case GESTURE_MOVING_LEFT:
 		TP_type = TP_EVENT_MOVING_LEFT;
-		sprintf(tmpbuf, "MOVING_LEFT ");
 		break;
 	case GESTURE_MOVING_RIGHT:
 		TP_type = TP_EVENT_MOVING_RIGHT;
-		sprintf(tmpbuf, "MOVING_RIGHT");
 		break;
 	case GESTURE_SINGLE_CLICK:
 		TP_type = TP_EVENT_SINGLE_CLICK;
-		sprintf(tmpbuf, "SINGLE_CLICK");
 		break;
 	case GESTURE_DOUBLE_CLICK:
 		TP_type = TP_EVENT_DOUBLE_CLICK;
-		sprintf(tmpbuf, "DOUBLE_CLICK");
 		break;
 	case GESTURE_LONG_PRESS:
 		TP_type = TP_EVENT_LONG_PRESS;
-		sprintf(tmpbuf, "LONG_PRESS  ");
 		break;
 	}
 
-	LCD_ShowString(20,120,tmpbuf);
-	
-	sprintf(tmpbuf, "x:%03d, y:%03d", tp_temp[2], tp_temp[3]);
-	LCD_ShowString(20,140,tmpbuf);
+	x_pos = (0x0f&tp_temp[2])<<8 | tp_temp[3];
+	y_pos = (0x0f&tp_temp[4])<<8 | tp_temp[5];
 	
 	if(TP_type != TP_EVENT_MAX)
 	{
-		touch_panel_event_handle(TP_type, tp_temp[2], tp_temp[3]);
+		touch_panel_event_handle(TP_type, x_pos, y_pos);
 	}
 }
 
@@ -419,7 +607,7 @@ void test_tp(void)
 
 	sprintf(tmpbuf, "test_tp");
 	LCD_ShowString(20,80,tmpbuf);
-	//CST816_init();
+	CST816_init();
 }
 
 void tp_show_infor(void)
@@ -454,10 +642,10 @@ void tp_show_infor(void)
 		break;
 	}
 	
-	LCD_ShowString(20,120,tmpbuf);
+	//LCD_ShowString(20,120,tmpbuf);
 	
-	sprintf(tmpbuf, "x:%5d, y:%5d", tp_msg.x_pos, tp_msg.y_pos);
-	LCD_ShowString(20,140,tmpbuf);
+	//sprintf(tmpbuf, "x:%5d, y:%5d", tp_msg.x_pos, tp_msg.y_pos);
+	//LCD_ShowString(20,140,tmpbuf);
 }
 
 void TPMsgProcess(void)
@@ -474,3 +662,4 @@ void TPMsgProcess(void)
 		tp_show_infor();
 	}
 }
+#endif

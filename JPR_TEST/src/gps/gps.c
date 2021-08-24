@@ -71,6 +71,7 @@ bool sos_wait_gps = false;
 bool fall_wait_gps = false;
 bool location_wait_gps = false;
 bool test_gps_flag = false;
+bool gps_start_flag = false;
 bool gps_test_update_flag = false;
 
 u8_t gps_test_info[256] = {0};
@@ -198,16 +199,25 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
-		at_cmd_write("AT+CFUN?", tmpbuf, sizeof(tmpbuf), NULL);
-		LOG_INF("modem status:%s", tmpbuf);
-		if(strcmp(tmpbuf, "+CFUN: 1") != 0)
+		//at_cmd_write("AT+CFUN?", tmpbuf, sizeof(tmpbuf), NULL);
+		//LOG_INF("modem status:%s", tmpbuf);
+		//if(strcmp(tmpbuf, "+CFUN: 1") != 0)
+		//{
+		//	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
+		//	{
+		//		LOG_INF("Can't turn on modem!");
+		//		EnterIdleScreen();
+		//		return;
+		//	}
+		//}
+
+		SetModemTurnOff();
+		
+		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
 		{
-			if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) != 0)
-			{
-				LOG_INF("Can't turn on modem!");
-				EnterIdleScreen();
-				return;
-			}
+			LOG_INF("Can't turn on modem for gpa!");
+			EnterIdleScreen();
+			return;
 		}
 		
 		LOG_INF("Starting GPS");
@@ -219,6 +229,12 @@ static void set_gps_enable(const bool enable)
 	{
 		LOG_INF("Stopping GPS");
 		gps_control_stop(K_NO_WAIT);
+
+		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
+		{
+			LOG_INF("Can't turn off modem for gps!");
+		}
+		
 		gps_is_on = false;
 		gps_fix_time = 0;
 		gps_local_time = 0;
@@ -302,7 +318,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 				}
 			}
 
-			sprintf(gps_test_info, "%d,", tracked);
+			sprintf(gps_test_info, "%02d\n", tracked);
 			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
 		}
@@ -331,13 +347,14 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		if(test_gps_flag)
 		{
 			u8_t i,tracked;
-			u8_t strbuf[256] = {0};
-
+			u8_t strbuf[128] = {0};
+			s32_t lon,lat;
+			
 			memset(gps_test_info, 0x00, sizeof(gps_test_info));
 			
 			for(i=0;i<GPS_PVT_MAX_SV_COUNT;i++)
 			{
-				u8_t buf[256] = {0};
+				u8_t buf[128] = {0};
 				
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
@@ -348,12 +365,15 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 				}
 			}
 
-			sprintf(gps_test_info, "%d,", tracked);
+			sprintf(gps_test_info, "%02d\n", tracked);
 			strcat(gps_test_info, strbuf);
-			strcat(gps_test_info, "\n");
-			sprintf(strbuf, "Longitude:%f, Latitude:%f\n", evt->pvt.longitude, evt->pvt.latitude);
+			strcat(gps_test_info, "\n \n");
+			
+			lon = evt->pvt.longitude*1000000;
+			lat = evt->pvt.latitude*1000000;
+			sprintf(strbuf, "Longitude:   %d.%06d\nLatitude:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 			strcat(gps_test_info, strbuf);
-			sprintf(strbuf, "fix time:%d", gps_local_time/1000);
+			sprintf(strbuf, "fix time:    %dS", gps_local_time/1000);
 			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
 			
@@ -432,6 +452,11 @@ void GPS_init(struct k_work_q *work_q)
 
 void GPSMsgProcess(void)
 {
+	if(gps_start_flag)
+	{
+		gps_start_flag = false;
+		test_gps_on();
+	}
 	if(app_gps_on)
 	{
 		app_gps_on = false;
@@ -452,6 +477,6 @@ void GPSMsgProcess(void)
 	
 	if(gps_is_working())
 	{
-		k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(20));
 	}
 }

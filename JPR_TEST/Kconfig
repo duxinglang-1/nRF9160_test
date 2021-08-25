@@ -189,6 +189,33 @@ config GPS_START_ON_MOTION
 
 endmenu # GPS
 
+menu "TOUCH"
+
+config TOUCH_SUPPORT
+	bool "touch support"
+	default n
+	
+endmenu #TOUCH
+
+menu "FOTA_MQTT"
+
+config FOTA_DOWNLOAD_HOST
+	string "Download host name"
+
+config FOTA_DOWNLOAD_FILE
+	string "The file to download"
+
+config APPLICATION_VERSION
+	int "Application version"
+	default 1
+
+config USE_HTTPS
+	bool
+	prompt "Use HTTPS for download"
+	depends on DOWNLOAD_CLIENT_TLS
+
+endmenu #FOTA_MQTT
+
 menu "Zephyr Kernel"
 source "$ZEPHYR_BASE/Kconfig.zephyr"
 endmenu

@@ -170,10 +170,10 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
 
-	tp_msg.evt_id = tp_type;
-	tp_msg.x_pos = tp_x;
-	tp_msg.y_pos = tp_y;
-	tp_redraw_flag = true;
+	//tp_msg.evt_id = tp_type;
+	//tp_msg.x_pos = tp_x;
+	//tp_msg.y_pos = tp_y;
+	//tp_redraw_flag = true;
 }
 
 void APP_set_find_device(u8_t *buf, u32_t len)
@@ -1600,7 +1600,7 @@ void ble_init(void)
 	gpio_add_callback(gpio_ble, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
 
-	k_timer_start(&uart_sleep_in_timer, K_MSEC(10*60*1000), NULL);
+	k_timer_start(&uart_sleep_in_timer, K_MSEC(3*60*1000), NULL);
 #endif
 }
 

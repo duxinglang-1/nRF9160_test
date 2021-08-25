@@ -27,13 +27,23 @@
 #include "sos.h"
 #include "gps.h"
 #include "uart_ble.h"
+#ifdef CONFIG_TOUCH_SUPPORT
+#include "CST816.h"
+#endif
+#ifdef CONFIG_FOTA_DOWNLOAD
+#include "fota_mqtt.h"
+#endif/*CONFIG_FOTA_DOWNLOAD*/
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(screen, CONFIG_LOG_DEFAULT_LEVEL);
 
+static u8_t scr_index=0;
+
 static void NotifyTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
+static void MainMenuTimerOutCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mainmenu_timer, MainMenuTimerOutCallBack, NULL);
 
 
 SCREEN_ID_ENUM screen_id = SCREEN_ID_BOOTUP;
@@ -43,6 +53,7 @@ notify_infor notify_msg = {0};
 
 extern bool key_pwroff_flag;
 
+static void EnterHRScreen(void);
 
 void ShowBootUpLogo(void)
 {
@@ -67,13 +78,27 @@ void ExitNotifyScreen(void)
 #else
 	sos_state = SOS_STATUS_IDLE;
 	k_timer_stop(&notify_timer);
-	EntryIdleScreen();
+	EnterIdleScreen();
 #endif
 }
 
 void NotifyTimerOutCallBack(struct k_timer *timer_id)
 {
 	ExitNotifyScreen();
+}
+
+extern bool ppg_start_flag;
+extern bool gps_start_flag;
+void MainMenuTimerOutCallBack(struct k_timer *timer_id)
+{
+	if(screen_id == SCREEN_ID_HR)
+	{
+		ppg_start_flag = true;
+	}
+	else if(screen_id == SCREEN_ID_GPS_TEST)
+	{
+		gps_start_flag = true;
+	}
 }
 
 void EnterNotifyScreen(void)
@@ -642,19 +667,57 @@ void FindDeviceScreenProcess(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 }
 
-void NotifyShowStrings(u8_t *strbuf)
+void HeartRateScreenProcess(void)
 {
-	u16_t rect_x,rect_y,rect_w=180,rect_h=120;
+	u16_t x,y,w,h;
+	u8_t notify[64] = "Heart Rate";
+	u8_t tmpbuf[64] = {0};
+	
+	switch(scr_msg[SCREEN_ID_HR].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATED;
+				
+		LCD_Clear(BLACK);
+		LCD_SetFontSize(FONT_SIZE_24);
+		LCD_MeasureString(notify,&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 50;
+		LCD_ShowString(x,y,notify);
+		
+		LCD_SetFontSize(FONT_SIZE_32);
+		strcpy(tmpbuf, "0");
+		LCD_MeasureString(tmpbuf,&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 120;
+		LCD_ShowString(x,y,tmpbuf);
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		LCD_SetFontSize(FONT_SIZE_32);
+		LCD_MeasureString("0000",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 120-2;
+		LCD_Fill(x, y, w, h+4, BLACK);
+		
+		sprintf(tmpbuf, "%d", g_hr);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 120;
+		LCD_ShowString(x,y,tmpbuf);
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_NO;
+}
+
+void ShowStringsInRect(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, SYSTEM_FONT_SIZE font_size, u8_t *strbuf)
+{
 	u16_t x,y,w,h;
 	u16_t offset_w=4,offset_h=4;
 
-	rect_x = (LCD_WIDTH-rect_w)/2;
-	rect_y = (LCD_HEIGHT-rect_h)/2;
-	
-	LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
-	LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
-	
-	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_SetFontSize(font_size);
 	LCD_MeasureString(strbuf, &w, &h);
 
 	if(w > (rect_w-2*offset_w))
@@ -672,7 +735,7 @@ void NotifyShowStrings(u8_t *strbuf)
 		text_len = strlen(strbuf);
 		y = ((rect_h-2*offset_h)-line_count*line_h)/2;
 		y += (rect_y+offset_h);
-		while(line_no<line_count)
+		while(line_no < line_count)
 		{
 			u8_t tmpbuf[128] = {0};
 			u8_t i=0;
@@ -687,29 +750,29 @@ void NotifyShowStrings(u8_t *strbuf)
 					LCD_MeasureString(tmpbuf, &w, &h);
 				}
 				else
+				{
 					break;
+				}
 			}
 
 			if(byte_no < text_len)
 			{
-				i -= 2;
-				byte_no -= 2;
+				//first few rows
+				i--;
+				byte_no--;
 				tmpbuf[i] = 0x00;
 
-				LCD_MeasureString(tmpbuf, &w, &h);
-				x = ((rect_w-2*offset_w)-w)/2;
-				x += (rect_x+offset_w);
+				x = (rect_x+offset_w);
 				LCD_ShowString(x,y,tmpbuf);
 
 				y += line_h;
+				line_no++;
 			}
 			else
 			{
-				LCD_MeasureString(tmpbuf, &w, &h);
-				x = ((rect_w-2*offset_w)-w)/2;
-				x += (rect_x+offset_w);
+				//last row
+				x = (rect_x+offset_w);
 				LCD_ShowString(x,y,tmpbuf);
-
 				break;
 			}
 		}
@@ -722,6 +785,14 @@ void NotifyShowStrings(u8_t *strbuf)
 		y += (rect_y+offset_h);
 		LCD_ShowString(x,y,strbuf);				
 	}
+}
+
+void NotifyShowStrings(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, SYSTEM_FONT_SIZE font_size, u8_t *strbuf)
+{
+	LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+	LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+	
+	ShowStringsInRect(rect_x, rect_y, rect_w, rect_h, font_size, strbuf);	
 }
 
 void NotifyShow(void)
@@ -756,7 +827,7 @@ void NotifyShow(void)
 			text_len = strlen(notify_msg.text);
 			y = ((rect_h-2*offset_h)-line_count*line_h)/2;
 			y += (rect_y+offset_h);
-			while(line_no<line_count)
+			while(line_no < line_count)
 			{
 				u8_t tmpbuf[128] = {0};
 				u8_t i=0;
@@ -776,8 +847,8 @@ void NotifyShow(void)
 
 				if(byte_no < text_len)
 				{
-					i -= 2;
-					byte_no -= 2;
+					i--;
+					byte_no--;
 					tmpbuf[i] = 0x00;
 
 					LCD_MeasureString(tmpbuf, &w, &h);
@@ -786,6 +857,7 @@ void NotifyShow(void)
 					LCD_ShowString(x,y,tmpbuf);
 
 					y += line_h;
+					line_no++;
 				}
 				else
 				{
@@ -854,7 +926,7 @@ void SOSShowStatus(void)
 		img = IMG_SOS;
 	#endif
 	#endif
-		NotifyShowStrings("SOS is sending, please wait a few seconds!");
+		NotifyShowStrings(SOS_NOTIFY_RECT_X, SOS_NOTIFY_RECT_Y, SOS_NOTIFY_RECT_W, SOS_NOTIFY_RECT_H, FONT_SIZE_16, "SOS is sending, please wait a few seconds!");
 		break;
 	
 	case SOS_STATUS_SENT:
@@ -865,7 +937,7 @@ void SOSShowStatus(void)
 		img = IMG_SOS_SEND;
 	#endif
 	#endif
-		NotifyShowStrings("SOS has been sent!");
+		NotifyShowStrings(SOS_NOTIFY_RECT_X, SOS_NOTIFY_RECT_Y, SOS_NOTIFY_RECT_W, SOS_NOTIFY_RECT_H, FONT_SIZE_16, "SOS has been sent!");
 		break;
 	
 	case SOS_STATUS_RECEIVED:
@@ -876,7 +948,7 @@ void SOSShowStatus(void)
 		img = IMG_SOS_RECE;
 	#endif
 	#endif
-		NotifyShowStrings("Server has received the SOS alert!");
+		NotifyShowStrings(SOS_NOTIFY_RECT_X, SOS_NOTIFY_RECT_Y, SOS_NOTIFY_RECT_W, SOS_NOTIFY_RECT_H, FONT_SIZE_16, "Server has received the SOS alert!");
 		break;
 	
 	case SOS_STATUS_CANCEL:
@@ -887,7 +959,7 @@ void SOSShowStatus(void)
 		img = IMG_SOS;
 	#endif
 	#endif
-		NotifyShowStrings("SOS has been canceled!");
+		NotifyShowStrings(SOS_NOTIFY_RECT_X, SOS_NOTIFY_RECT_Y, SOS_NOTIFY_RECT_W, SOS_NOTIFY_RECT_H, FONT_SIZE_16, "SOS has been canceled!");
 		break;
 	}
 
@@ -924,10 +996,194 @@ void SOSScreenProcess(void)
 	}
 }
 
+
+#ifdef CONFIG_FOTA_DOWNLOAD
+void FOTAShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t str_title[] = "FOTA RUNNING";
+	
+	LCD_DrawRectangle(FOTA_NOTIFY_RECT_X, FOTA_NOTIFY_RECT_Y, FOTA_NOTIFY_RECT_W, FOTA_NOTIFY_RECT_H);
+	LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_RECT_Y+1, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-1, BLACK);
+	
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_MeasureString(str_title, &w, &h);
+	x = (w > (FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W))? 0 : ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
+	x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
+	y = FOTA_NOTIFY_RECT_Y+2;
+	LCD_ShowString(x,y,str_title);
+
+	ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
+					  FOTA_NOTIFY_STRING_Y, 
+					  FOTA_NOTIFY_STRING_W, 
+					  FOTA_NOTIFY_STRING_H, 
+					  FONT_SIZE_16, 
+					  "Make sure the battery is sufficient and do not do anything during the upgrade!");
+
+	LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
+	LCD_MeasureString("SOS(Y)", &w, &h);
+	x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
+	y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
+	LCD_ShowString(x,y,"SOS(Y)");
+
+	LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
+	LCD_MeasureString("PWR(N)", &w, &h);
+	x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
+	y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
+	LCD_ShowString(x,y,"PWR(N)");
+
+	Key_Event_register_Handler(fota_start_confirm, ExitFotaScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_X+FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_Y+FOTA_NOTIFY_NO_H, ExitFotaScreen);
+#endif
+	
+}
+
+void FOTAUpdateStatus(void)
+{
+	u16_t pro_len;
+	u16_t x,y,w,h;
+	u8_t pro_buf[16] = {0};
+	static bool flag = false;
+	static u16_t pro_str_x,pro_str_y;
+	
+	switch(get_fota_status())
+	{
+	case FOTA_STATUS_PREPARE:
+		flag = false;
+		break;
+		
+	case FOTA_STATUS_LINKING:
+		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
+						  FOTA_NOTIFY_STRING_Y,
+						  FOTA_NOTIFY_STRING_W,
+						  FOTA_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "Linking to server...");
+
+		Key_Event_Unregister_Handler();
+		break;
+		
+	case FOTA_STATUS_DOWNLOADING:
+		if(!flag)
+		{
+			flag = true;
+			
+			LCD_Fill(FOTA_NOTIFY_STRING_X, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_STRING_W, FOTA_NOTIFY_STRING_H, BLACK);
+			ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
+							  FOTA_NOTIFY_STRING_Y,
+							  FOTA_NOTIFY_STRING_W,
+							  40,
+							  FONT_SIZE_16,
+							  "Downloading data...");
+			
+			LCD_DrawRectangle(FOTA_NOTIFY_PRO_X, FOTA_NOTIFY_PRO_Y, FOTA_NOTIFY_PRO_W, FOTA_NOTIFY_PRO_H);
+			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, FOTA_NOTIFY_PRO_W-1, FOTA_NOTIFY_PRO_H-1, BLACK);
+
+			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			LCD_MeasureString(pro_buf, &w, &h);
+			pro_str_x = ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
+			pro_str_x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
+			pro_str_y = FOTA_NOTIFY_PRO_Y + FOTA_NOTIFY_PRO_H + 5;
+			
+			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+		}
+		else
+		{
+			pro_len = (g_fota_progress*FOTA_NOTIFY_PRO_W)/100;
+			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, pro_len, FOTA_NOTIFY_PRO_H-1, WHITE);
+
+			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+		}
+
+		Key_Event_Unregister_Handler();
+		break;
+		
+	case FOTA_STATUS_FINISHED:
+		flag = false;
+		
+		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
+						  FOTA_NOTIFY_STRING_Y,
+						  FOTA_NOTIFY_STRING_W,
+						  FOTA_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "It upgraded successfully! Do you want to reboot the device immediately?");
+
+		LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
+		LCD_MeasureString("SOS(Y)", &w, &h);
+		x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
+		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
+		LCD_ShowString(x,y,"SOS(Y)");
+
+		LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
+		LCD_MeasureString("PWR(N)", &w, &h);
+		x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
+		y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
+		LCD_ShowString(x,y,"PWR(N)");
+
+		Key_Event_register_Handler(fota_reboot_confirm, ExitFotaScreen);	
+		break;
+		
+	case FOTA_STATUS_ERROR:
+		flag = false;
+
+		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
+						  FOTA_NOTIFY_STRING_Y,
+						  FOTA_NOTIFY_STRING_W,
+						  FOTA_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "It failed to upgrade! Please check the network or server.");
+
+		LCD_DrawRectangle((LCD_WIDTH-FOTA_NOTIFY_YES_W)/2, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
+		LCD_MeasureString("SOS(Y)", &w, &h);
+		x = (LCD_WIDTH-FOTA_NOTIFY_YES_W)/2+(FOTA_NOTIFY_YES_W-w)/2;
+		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
+		LCD_ShowString(x,y,"SOS(Y)");
+
+		Key_Event_register_Handler(ExitFotaScreen, ExitFotaScreen);			
+		break;
+		
+	case FOTA_STATUS_MAX:
+		flag = false;
+		break;
+	}
+}
+
+void FOTAScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_FOTA].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATED;
+
+		FOTAShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_FOTA].para&SCREEN_EVENT_UPDATE_FOTA)
+		{
+			scr_msg[SCREEN_ID_FOTA].para &= (~SCREEN_EVENT_UPDATE_FOTA);
+			FOTAUpdateStatus();
+		}
+
+		if(scr_msg[SCREEN_ID_FOTA].para == SCREEN_EVENT_UPDATE_NO)
+			scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_NO;
+		break;
+	}
+}
+#endif/*CONFIG_FOTA_DOWNLOAD*/
+
 void TestGPSUpdateInfor(void)
 {
-	LCD_Fill(30, 50, 190, 160, BLACK);
-	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+	LCD_Fill((LCD_WIDTH-194)/2, 50, 194, 160, BLACK);
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_ShowStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, gps_test_info);
 }
 
 void TestGPSShowInfor(void)
@@ -937,9 +1193,10 @@ void TestGPSShowInfor(void)
 	
 	LCD_Clear(BLACK);
 	strcpy(strbuf, "GPS TESTING");
+	LCD_SetFontSize(FONT_SIZE_16);
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
-	LCD_ShowStringInRect(30, 50, 180, 160, gps_test_info);
+	LCD_ShowStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, "GPS Starting...");
 }
 
 void TestGPSScreenProcess(void)
@@ -1003,6 +1260,10 @@ void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
 		return;
+
+	k_timer_stop(&notify_timer);
+	if(gps_is_working())
+		test_gps_off();
 	
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -1012,7 +1273,11 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
-	Key_Event_register_Handler(MCU_send_find_phone, IdleScreenProcess);
+#ifdef CONFIG_FOTA_DOWNLOAD
+	Key_Event_register_Handler(fota_start, EnterIdleScreen);	
+#else
+	Key_Event_register_Handler(EnterHRScreen, EnterIdleScreen);
+#endif
 }
 
 void EnterAlarmScreen(void)
@@ -1054,7 +1319,13 @@ void EnterGPSTestScreen(void)
 
 	screen_id = SCREEN_ID_GPS_TEST;	
 	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;	
+	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;
+
+	PPGStopCheck();
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+	Key_Event_register_Handler(EnterIdleScreen, EnterIdleScreen);	
 }
 
 void EnterNBTestScreen(void)
@@ -1085,20 +1356,56 @@ void EnterSOSScreen(void)
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
 }
 
+void EnterHRScreen(void)
+{
+	if(screen_id == SCREEN_ID_HR)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_HR;	
+	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+	Key_Event_register_Handler(EnterGPSTestScreen, EnterIdleScreen);
+}
+
+void ExitFOTAScreen(void)
+{
+	if(screen_id == SCREEN_ID_FOTA)
+	{
+		EnterIdleScreen();
+	}
+}
+
+void EnterFOTAScreen(void)
+{
+	if(screen_id == SCREEN_ID_FOTA)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FOTA;	
+	scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATING;		
+}
 void poweroff_leftkeyfunc(void)
 {
-	//Key_Event_Unregister_Handler();
 	EnterIdleScreen();
-
 }
 
 void poweroff_rightkeyfunc(void)
 {
-//	Key_Event_Unregister_Handler();
 	key_pwroff_flag = true;
-
-
 }
+
 void EnterPoweroffScreen(void)
 {
 	if(screen_id == SCREEN_ID_POWEROFF)
@@ -1155,9 +1462,6 @@ void PowerOffScreenProcess(void)
 	}
 	
 	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
-	
-			
-	
 }
 
 void UpdataTestGPSInfo(void)
@@ -1179,22 +1483,6 @@ void GoBackHistoryScreen(void)
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;	
 }
 
-void EntryIdleScreen(void)
-{
-	if(screen_id == SCREEN_ID_IDLE)
-		return;
-
-	k_timer_stop(&notify_timer);
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_IDLE;	
-	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
-}
-
 void ScreenMsgProcess(void)
 {
 	if(scr_msg[screen_id].act != SCREEN_ACTION_NO)
@@ -1214,6 +1502,7 @@ void ScreenMsgProcess(void)
 			FindDeviceScreenProcess();
 			break;
 		case SCREEN_ID_HR:
+			HeartRateScreenProcess();
 			break;
 		case SCREEN_ID_ECG:
 			break;
@@ -1236,6 +1525,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();
 			break;
+	#ifdef CONFIG_FOTA_DOWNLOAD
+		case SCREEN_ID_FOTA:
+			FOTAScreenProcess();
+			break;
+	#endif
 		}
 	}
 }

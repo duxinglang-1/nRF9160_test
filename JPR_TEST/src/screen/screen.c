@@ -88,16 +88,16 @@ void NotifyTimerOutCallBack(struct k_timer *timer_id)
 }
 
 extern bool ppg_start_flag;
-extern bool gps_start_flag;
+extern bool gps_test_start_flag;
 void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 {
 	if(screen_id == SCREEN_ID_HR)
 	{
-		ppg_start_flag = true;
+		MenuStartPPG();
 	}
 	else if(screen_id == SCREEN_ID_GPS_TEST)
 	{
-		gps_start_flag = true;
+		MenuStartGPS();
 	}
 }
 
@@ -1262,8 +1262,6 @@ void EnterIdleScreen(void)
 		return;
 
 	k_timer_stop(&notify_timer);
-	if(gps_is_working())
-		test_gps_off();
 	
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -1308,6 +1306,16 @@ void EnterFindDeviceScreen(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
 }
 
+void ExitGPSTestScreen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+	
+	if(gps_is_working())
+		MenuStopGPS();
+	
+	EnterIdleScreen();
+}
+
 void EnterGPSTestScreen(void)
 {
 	if(screen_id == SCREEN_ID_GPS_TEST)
@@ -1325,7 +1333,7 @@ void EnterGPSTestScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	Key_Event_register_Handler(EnterIdleScreen, EnterIdleScreen);	
+	Key_Event_register_Handler(ExitGPSTestScreen, ExitGPSTestScreen);	
 }
 
 void EnterNBTestScreen(void)
@@ -1356,6 +1364,16 @@ void EnterSOSScreen(void)
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
 }
 
+void ExitHRScreen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+	
+	if(PPGIsWorking())
+		MenuStopPPG();
+		
+	EnterIdleScreen();
+}
+
 void EnterHRScreen(void)
 {
 	if(screen_id == SCREEN_ID_HR)
@@ -1372,7 +1390,7 @@ void EnterHRScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	Key_Event_register_Handler(EnterGPSTestScreen, EnterIdleScreen);
+	Key_Event_register_Handler(EnterGPSTestScreen, ExitHRScreen);
 }
 
 void ExitFOTAScreen(void)

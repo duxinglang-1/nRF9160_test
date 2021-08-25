@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <drivers/gps.h>
 
-extern bool app_gps_on;
-extern bool app_gps_off;
+extern bool gps_on_flag;
+extern bool gps_off_flag;
 
 extern bool ble_wait_gps;
 extern bool sos_wait_gps;

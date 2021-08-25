@@ -435,6 +435,20 @@ void test_show_image(void)
 	}
 }
 
+void test_show_stripe(void)
+{
+	u16_t x,y,w,h;
+	u8_t i;
+	u16_t color[] = {WHITE,BLACK,RED,GREEN,BLUE,GBLUE,MAGENTA,CYAN,YELLOW,BROWN,BRRED,GRAY};
+	
+	h = LCD_HEIGHT/8;
+
+	for(i=0;i<8;i++)
+	{
+		LCD_Fill(0, h*i, LCD_WIDTH, h, color[i%5]);
+	}
+}
+
 void test_show_color(void)
 {
 	u8_t i=0;
@@ -452,45 +466,39 @@ void test_show_color(void)
 				LCD_Clear(BLACK);
 				break;
 			case 2:
-				LCD_Clear(BLUE);
+				LCD_Clear(RED);
 				break;
 			case 3:
-				LCD_Clear(BRED);
+				LCD_Clear(GREEN);
 				break;
 			case 4:
-				LCD_Clear(GRED);
+				LCD_Clear(BLUE);
 				break;
 			case 5:
-				LCD_Clear(GBLUE);
+				LCD_Clear(YELLOW);
 				break;
 			case 6:
-				LCD_Clear(RED);
+				LCD_Clear(GBLUE);
 				break;
 			case 7:
 				LCD_Clear(MAGENTA);
 				break;
 			case 8:
-				LCD_Clear(GREEN);
-				break;
-			case 9:
 				LCD_Clear(CYAN);
 				break;
-			case 10:
-				LCD_Clear(YELLOW);
-				break;
-			case 11:
+			case 9:
 				LCD_Clear(BROWN);
 				break;
-			case 12:
+			case 10:
 				LCD_Clear(BRRED);
 				break;
-			case 13:
+			case 11:
 				LCD_Clear(GRAY);
 				break;					
 		}
 		
 		i++;
-		if(i>=14)
+		if(i>=12)
 			i=0;
 		
 		k_sleep(K_MSEC(1000));								//»Ìº˛—” ±1000ms
@@ -622,6 +630,10 @@ void test_show_string(void)
 
 void system_init(void)
 {
+#ifdef CONFIG_FOTA_DOWNLOAD
+	fota_init();
+#endif
+
 	InitSystemSettings();
 
 	pmu_init();
@@ -677,6 +689,8 @@ int main(void)
 
 //	test_show_string();
 //	test_show_image();
+//	test_show_color();
+//	test_show_stripe();
 //	test_nvs();
 //	test_flash();
 //	test_uart_ble();
@@ -701,13 +715,15 @@ int main(void)
 		IMUMsgProcess();
 		PPGMsgProcess();
 		LCDMsgProcess();
-		//TPMsgProcess();
+		TPMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
 		UartMsgProc();
 		ScreenMsgProcess();
-
+	#ifdef CONFIG_FOTA_DOWNLOAD
+		FotaMsgProc();
+	#endif
 		system_init_completed();
 		k_cpu_idle();
 	}

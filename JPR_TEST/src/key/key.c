@@ -56,7 +56,7 @@ static bool touch_flag = false;
 
 bool key_pwroff_flag = false;
 
-extern bool app_gps_on;
+extern bool gps_on_flag;
 extern bool ppg_fw_upgrade_flag;
 extern bool ppg_start_flag;
 extern bool ppg_stop_flag;
@@ -112,13 +112,11 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			leftkey_handler_cb();
+			if(rightkey_handler_cb != NULL)
+				leftkey_handler_cb();
 			break;
 		case KEY_UP:
-			if(!SOSIsRunning())
-			{
-				EntryIdleScreen();
-			}
+
 			break;
 		case KEY_LONG_PRESS:
 			SOSStart();
@@ -129,16 +127,13 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			rightkey_handler_cb();
+			if(rightkey_handler_cb != NULL)
+				rightkey_handler_cb();
 			break;
 		case KEY_UP:
-			//ppg_stop_flag = true;
-			//test_gps_off();
-			//FindDeviceStart();
 			break;
 		case KEY_LONG_PRESS:
 			EnterPoweroffScreen();
-			//key_pwroff_flag = true;
 			break;
 		}
 		break;

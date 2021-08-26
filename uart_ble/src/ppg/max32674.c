@@ -30,6 +30,7 @@ bool ppg_int_event = false;
 bool ppg_is_power_on = false;
 bool ppg_fw_upgrade_flag = false;
 bool ppg_start_flag = false;
+bool ppg_test_flag = false;
 bool ppg_stop_flag = false;
 bool ppg_get_hr_spo2 = false;
 bool ppg_redraw_data_flag = false;
@@ -88,6 +89,10 @@ void PPGRedrawData(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HEALTH;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
+	else if(screen_id == SCREEN_ID_HR)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void ppg_get_hr_timerout(struct k_timer *timer_id)
@@ -140,9 +145,9 @@ void PPGGetSensorHubData(void)
 		if(ret == SS_SUCCESS)
 		{
 			u16_t heart_rate=0,spo2=0;
-			u32_t i,index = 0;
+			u32_t i,j,index = 0;
 
-			for(i=0;i<u32_sampleCnt;i++)
+			for(i=0,j=0;i<u32_sampleCnt;i++)
 			{
 				index = i * SS_NORMAL_PACKAGE_SIZE + 1;
 				
@@ -150,14 +155,21 @@ void PPGGetSensorHubData(void)
 				max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
 				whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE] );
 
-				heart_rate += sensorhub_out.hr;
-				spo2 += sensorhub_out.spo2;
-
-				LOG_INF("heart_rate:%d, spo2:%d\n", heart_rate, spo2);
+				LOG_INF("skin:%d, hr:%d, spo2:%d\n", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
+				
+				if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+				{
+					heart_rate += sensorhub_out.hr;
+					spo2 += sensorhub_out.spo2;
+					j++;
+				}				
 			}
 
-			heart_rate = heart_rate/u32_sampleCnt;
-			spo2 = spo2/u32_sampleCnt;
+			if(j > 0)
+			{
+				heart_rate = heart_rate/j;
+				spo2 = spo2/j;
+			}
 			
 			g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
 			g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
@@ -308,6 +320,17 @@ void APPStartPPG(void)
 	ppg_start_flag = true;
 }
 
+void MenuStartPPG(void)
+{
+	g_ppg_trigger |= PPG_TRIGGER_BY_MENU;
+	ppg_start_flag = true;
+}
+
+void MenuStopPPG(void)
+{
+	ppg_stop_flag = true;
+}
+
 void PPGStartCheck(void)
 {
 	bool ret = false;
@@ -323,14 +346,22 @@ void PPGStartCheck(void)
 	ret = demoSensorhub();
 	if(ret)
 	{
+		LOG_INF("[%s] ppg start success!\n", __func__);
 		ppg_is_power_on = true;
-		k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
+		
+		if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) == 0)
+			k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
+	}
+	else
+	{
+		LOG_INF("[%s] ppg start false!\n", __func__);
 	}
 }
 
 void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
-	ppg_stop_flag = true;
+	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) == 0)
+		ppg_stop_flag = true;
 }
 
 void PPG_init(void)

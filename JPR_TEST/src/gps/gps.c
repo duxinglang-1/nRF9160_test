@@ -379,16 +379,16 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 			sprintf(strbuf, "fix time:    %dS", gps_local_time/1000);
 			strcat(gps_test_info, strbuf);
 			gps_test_update_flag = true;
-			
-			//LOG_INF("%s\n",gps_test_info);
-			//UpdataTestGPSInfo();
-			//TestGPSShowInfor();
 		}		
 		else
 		{
-			sprintf(tmpbuf, "Longitude:%f, Latitude:%f", evt->pvt.longitude, evt->pvt.latitude);
+			s32_t lon,lat;
+
+			lon = evt->pvt.longitude*1000000;
+			lat = evt->pvt.latitude*1000000;
+			sprintf(tmpbuf, "Longitude:%d.%06d,Latitude:%d.%06d", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 			LOG_INF("%s\n",tmpbuf);
-		
+			
 			memcpy(&gps_pvt_data, &(evt->pvt), sizeof(evt->pvt));
 		}
 		break;

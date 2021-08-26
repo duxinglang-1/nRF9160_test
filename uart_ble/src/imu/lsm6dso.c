@@ -914,6 +914,7 @@ static void mt_fall_detection(struct k_work *work)
 {
 	if(int1_event)	//steps or tilt
 	{
+		LOG_INF("[%s] int1 evt!\n", __func__);
 		int1_event = false;
 
 		if(!imu_check_ok)
@@ -949,6 +950,8 @@ static void mt_fall_detection(struct k_work *work)
 
 	if(int2_event) //fall
 	{
+		LOG_INF("[%s] int2 evt!\n", __func__);
+		
 		int2_event = false;
 
 		if(!imu_check_ok)
@@ -971,7 +974,7 @@ static void mt_fall_detection(struct k_work *work)
 		}
         else
         {
-			//LOG_INF("Not Fall.\n");
+			LOG_INF("Not Fall.\n");
         }
 
 		fall_testing = false;
@@ -1129,6 +1132,10 @@ void IMURedrawSteps(void)
 	if(screen_id == SCREEN_ID_IDLE)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPORT;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	else if(screen_id == SCREEN_ID_STEPS)
+	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }

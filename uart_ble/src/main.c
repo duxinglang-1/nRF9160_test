@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #define DIGITAL_CLOCK
 #define PI 3.1415926
 
+static bool sys_pwron_completed_flag = false;
 static u8_t show_pic_count = 0;//图片显示顺序
 
 /* Stack definition for application workqueue */
@@ -435,6 +436,20 @@ void test_show_image(void)
 	}
 }
 
+void test_show_stripe(void)
+{
+	u16_t x,y,w,h;
+	u8_t i;
+	u16_t color[] = {WHITE,BLACK,RED,GREEN,BLUE,GBLUE,MAGENTA,CYAN,YELLOW,BROWN,BRRED,GRAY};
+	
+	h = LCD_HEIGHT/8;
+
+	for(i=0;i<8;i++)
+	{
+		LCD_Fill(0, h*i, LCD_WIDTH, h, color[i%5]);
+	}
+}
+
 void test_show_color(void)
 {
 	u8_t i=0;
@@ -452,45 +467,39 @@ void test_show_color(void)
 				LCD_Clear(BLACK);
 				break;
 			case 2:
-				LCD_Clear(BLUE);
+				LCD_Clear(RED);
 				break;
 			case 3:
-				LCD_Clear(BRED);
+				LCD_Clear(GREEN);
 				break;
 			case 4:
-				LCD_Clear(GRED);
+				LCD_Clear(BLUE);
 				break;
 			case 5:
-				LCD_Clear(GBLUE);
+				LCD_Clear(YELLOW);
 				break;
 			case 6:
-				LCD_Clear(RED);
+				LCD_Clear(GBLUE);
 				break;
 			case 7:
 				LCD_Clear(MAGENTA);
 				break;
 			case 8:
-				LCD_Clear(GREEN);
-				break;
-			case 9:
 				LCD_Clear(CYAN);
 				break;
-			case 10:
-				LCD_Clear(YELLOW);
-				break;
-			case 11:
+			case 9:
 				LCD_Clear(BROWN);
 				break;
-			case 12:
+			case 10:
 				LCD_Clear(BRRED);
 				break;
-			case 13:
+			case 11:
 				LCD_Clear(GRAY);
 				break;					
 		}
 		
 		i++;
-		if(i>=14)
+		if(i>=12)
 			i=0;
 		
 		k_sleep(K_MSEC(1000));								//软件延时1000ms
@@ -562,68 +571,73 @@ void test_show_string(void)
 	y = y + h + 2;
 	LCD_ShowUniString(x,y,en_unibuf);
 #endif
-//#else
+#else
 	strcpy(enbuf, "August Shenzhen Digital Ltd");
 	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
-#ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
-#elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
-#elif defined(FONT_16)
+//#ifdef FONT_32
+//	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
+//#elif defined(FONT_24)
+//	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
+//#elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
-#endif
+//#endif
 
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = y + h + 2;	
 	LCD_ShowString(x,y,enbuf);
 	
-	LCD_MeasureString(cnbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;
-	LCD_ShowString(x,y,cnbuf);
+//	LCD_MeasureString(cnbuf,&w,&h);
+//	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+//	y = y + h + 2;
+//	LCD_ShowString(x,y,cnbuf);
 	
-	LCD_MeasureString(jpbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;
-	LCD_ShowString(x,y,jpbuf);
+//	LCD_MeasureString(jpbuf,&w,&h);
+//	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+//	y = y + h + 2;
+//	LCD_ShowString(x,y,jpbuf);
 
-#if 0
+#if 1
 #ifdef FONT_24
 	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
 #endif
-	LCD_MeasureString(cnbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;	
-	LCD_ShowString(x,y,cnbuf);
-	
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = y + h + 2;	
 	LCD_ShowString(x,y,enbuf);
+
+	//LCD_MeasureString(cnbuf,&w,&h);
+	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	//y = y + h + 2;	
+	//LCD_ShowString(x,y,cnbuf);
 
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小
 #endif
-	LCD_MeasureString(cnbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;	
-	LCD_ShowString(x,y,cnbuf);
-	
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = y + h + 2;
 	LCD_ShowString(x,y,enbuf);
+
+	//LCD_MeasureString(cnbuf,&w,&h);
+	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	//y = y + h + 2;	
+	//LCD_ShowString(x,y,cnbuf);
+	
 #endif
 #endif
 }
 
 void system_init(void)
 {
+#ifdef CONFIG_FOTA_DOWNLOAD
+	fota_init();
+#endif
+
 	InitSystemSettings();
-	
+
 	//pmu_init();
 	flash_init();
 	LCD_Init();
@@ -631,13 +645,13 @@ void system_init(void)
 	//ShowBootUpLogo();
 
 	key_init();
-	PPG_init();
 	ble_init();
+	PPG_init();
 
 	IMU_init(&imu_work_q);
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
-	
+
 	EnterIdleScreen();
 }
 
@@ -654,6 +668,17 @@ void work_init(void)
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 }
 
+bool system_is_completed(void)
+{
+	return sys_pwron_completed_flag;
+}
+
+void system_init_completed(void)
+{
+	if(!sys_pwron_completed_flag)
+		sys_pwron_completed_flag = true;
+}
+
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 
@@ -666,6 +691,8 @@ int main(void)
 
 //	test_show_string();
 //	test_show_image();
+//	test_show_color();
+//	test_show_stripe();
 //	test_nvs();
 //	test_flash();
 //	test_uart_ble();
@@ -676,7 +703,7 @@ int main(void)
 //	test_crypto();
 //	test_imei();
 //	test_tp();
-//	test_gps();
+//	test_gps_on();
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();
@@ -686,17 +713,20 @@ int main(void)
 		TimeMsgProcess();
 		NBMsgProcess();
 		GPSMsgProcess();
-		PMUMsgProcess();
+		//PMUMsgProcess();
 		IMUMsgProcess();
 		PPGMsgProcess();
 		LCDMsgProcess();
-		//TPMsgProcess();
+		TPMsgProcess();
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
 		UartMsgProc();
 		ScreenMsgProcess();
-
+	#ifdef CONFIG_FOTA_DOWNLOAD
+		FotaMsgProc();
+	#endif
+		system_init_completed();
 		k_cpu_idle();
 	}
 }

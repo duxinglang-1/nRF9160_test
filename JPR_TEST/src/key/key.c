@@ -96,14 +96,16 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	if(!system_is_completed())
 		return;
 
-	if(key_type == KEY_UP)
+
+	if(lcd_is_sleeping)
 	{
-		if(lcd_is_sleeping)
+		if(key_type == KEY_UP)
 		{
 			sleep_out_by_wrist = false;
 			lcd_sleep_out = true;
-			return;
 		}
+		
+		return;
 	}
 
 	switch(key_code)

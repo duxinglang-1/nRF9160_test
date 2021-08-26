@@ -61,6 +61,7 @@ static bool send_data_flag = false;
 static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 static bool power_on_data_flag = true;
+static bool nb_connecting_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -324,11 +325,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			SendPowerOnData();
 			power_on_data_flag = false;
 		}
-		else
-		{
-			NbSendDataStart();
-		}
 
+		NbSendDataStart();
 		MqttDicConnectStart();
 		break;
 
@@ -1630,7 +1628,7 @@ void GetModemInfor(void)
 	modem_rsrp_handler(g_rsrp);
 }
 
-static void SetModemTurnOff(void)
+void SetModemTurnOff(void)
 {
 	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) != 0)
 	{
@@ -1638,6 +1636,7 @@ static void SetModemTurnOff(void)
 		return;
 	}	
 	LOG_INF("turn off modem success!");
+	nb_connected = false;
 }
 
 void SetModemAPN(void)
@@ -1667,6 +1666,8 @@ static void nb_link(struct k_work *work)
 
 	configure_low_power();
 
+	nb_connecting_flag = true;
+	
 	err = lte_lc_init_and_connect();
 	if(err)
 	{
@@ -1700,6 +1701,8 @@ static void nb_link(struct k_work *work)
 		modem_data_init();
 	}
 
+	nb_connecting_flag = false;
+	
 	GetModemInfor();
 	
 	if(!err)
@@ -1746,6 +1749,11 @@ void GetNBSignal(void)
 		return;
 	}
 	LOG_INF("csq:%s\n", str_rsrp);
+}
+
+bool nb_is_connecting(void)
+{
+	return nb_connecting_flag;
 }
 
 void nb_test_update(void)
@@ -1811,6 +1819,11 @@ void NBMsgProcess(void)
 	{
 		nb_test_update_flag = false;
 		nb_test_update();
+	}
+
+	if(nb_connecting_flag)
+	{
+		k_sleep(K_MSEC(10));
 	}
 }
 

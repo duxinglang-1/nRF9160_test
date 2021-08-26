@@ -56,7 +56,7 @@ static bool touch_flag = false;
 
 bool key_pwroff_flag = false;
 
-extern bool app_gps_on;
+extern bool gps_on_flag;
 extern bool ppg_fw_upgrade_flag;
 extern bool ppg_start_flag;
 extern bool ppg_stop_flag;
@@ -96,14 +96,16 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 	if(!system_is_completed())
 		return;
 
-	if(key_type == KEY_UP)
+
+	if(lcd_is_sleeping)
 	{
-		if(lcd_is_sleeping)
+		if(key_type == KEY_UP)
 		{
 			sleep_out_by_wrist = false;
 			lcd_sleep_out = true;
-			return;
 		}
+		
+		return;
 	}
 
 	switch(key_code)
@@ -112,20 +114,14 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			leftkey_handler_cb();
+			if(rightkey_handler_cb != NULL)
+				leftkey_handler_cb();
 			break;
 		case KEY_UP:
-			if(!SOSIsRunning()
-				#ifdef CONFIG_FOTA_DOWNLOAD
-					&&!fota_is_running()
-				#endif
-				)
-			{
-				EnterIdleScreen();
-			}
+
 			break;
 		case KEY_LONG_PRESS:
-			//SOSStart();
+			SOSStart();
 			break;
 		}
 		break;
@@ -133,13 +129,13 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			rightkey_handler_cb();
+			if(rightkey_handler_cb != NULL)
+				rightkey_handler_cb();
 			break;
 		case KEY_UP:
 			break;
 		case KEY_LONG_PRESS:
 			EnterPoweroffScreen();
-			//key_pwroff_flag = true;
 			break;
 		}
 		break;

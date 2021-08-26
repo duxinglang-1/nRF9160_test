@@ -480,6 +480,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 		break;
 	}
 
+#if 0
 	LCD_Clear(BLACK);
 
 	sprintf(tmpbuf, "x:%03d, y:%03d", x_pos, y_pos);
@@ -500,6 +501,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 
 	LCD_ShowString(x, y, tmpbuf);
 	LCD_ShowString(x, y+h, strbuf);
+#endif
 
 	check_touch_event_handle(tp_type, x_pos, y_pos);
 }

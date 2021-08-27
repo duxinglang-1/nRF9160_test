@@ -167,6 +167,7 @@ void pmu_interrupt_proc(void)
 	
 	do
 	{
+		int0 = 0;
 		MAX20353_ReadReg(REG_INT0, &int0);
 		//LOG_INF("pmu_interrupt_proc REG_INT0:%02X\n", int0);
 
@@ -251,7 +252,13 @@ void pmu_interrupt_proc(void)
 
 		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
 		{
-			//LOG_INF("Cannot get pin");
+			LOG_INF("[%s] read pmu int false", __func__);
+			break;
+		}
+
+		if(int0 == 0x00)
+		{
+			LOG_INF("[%s] int0 register is empty", __func__);
 			break;
 		}
 	}while(!val);

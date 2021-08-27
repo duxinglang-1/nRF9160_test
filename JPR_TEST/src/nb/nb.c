@@ -1666,15 +1666,15 @@ static void nb_link(struct k_work *work)
 		
 		retry_count++;
 		if(retry_count <= 5)	//5次以内每半分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(30));
-		else if(retry_count <= 10)	//6到10次每分钟重连一次
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(60));
+		else if(retry_count <= 10)	//6到10次每分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(300));
 		else if(retry_count <= 15)	//11到15次每5分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(300));		
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(600));		
 		else if(retry_count <= 20)	//16到20次每10分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(600));
-		else if(retry_count <= 25)	//21到25次每30分钟重连一次
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1800));
+		else if(retry_count <= 25)	//21到25次每30分钟重连一次
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(3600));
 		else						//26次以上每1小时重连一次
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(3600));
 	}

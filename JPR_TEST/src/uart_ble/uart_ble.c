@@ -1422,11 +1422,6 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 	
     if(blue_is_on)
     {
-    	//LOG_INF("data:%02x\n", data);
-
-	#if 0
-    	ble_send_date_handle(&data, 1);
-	#else
         rx_buf[rece_len++] = data;
 		if(rece_len == 3)
 			data_len = (256*rx_buf[1]+rx_buf[2]+3);
@@ -1445,14 +1440,12 @@ static void uart_receive_data(u8_t data, u32_t datalen)
             rece_len = 0;
 			data_len = 0;
         }
-	#endif	
     }
 #ifdef CONFIG_WIFI	
     else if(wifi_is_on)
     {
-       
         rx_buf[rece_len++] = data;
-        if(rece_len==256)
+        if(rece_len == 256)
         {
             wifi_receive_data_handle(rx_buf, rece_len);
 

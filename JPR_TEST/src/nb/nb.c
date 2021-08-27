@@ -757,7 +757,7 @@ static void modem_rsrp_handler(char rsrp_value)
 	
 	if(rsrp_value > 97)
 	{
-		g_nb_sig = NB_SIG_LEVEL_NO;
+		//g_nb_sig = NB_SIG_LEVEL_NO;
 	}
 	else if(rsrp_value >= 80)
 	{

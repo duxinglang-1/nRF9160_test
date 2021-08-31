@@ -27,7 +27,9 @@
 #include "nb.h"
 #include "screen.h"
 #include "sos.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "transfer_cache.h"
 
 #include <logging/log_ctrl.h>
@@ -1200,6 +1202,7 @@ void NBSendSosGpsData(u8_t *data, u32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void NBSendFallWifiData(u8_t *data, u32_t datalen)
 {
 	u8_t buf[128] = {0};
@@ -1237,6 +1240,7 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 	LOG_INF("[%s] fall gps data:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
 }
+#endif
 
 void NBSendHealthData(u8_t *data, u32_t datalen)
 {

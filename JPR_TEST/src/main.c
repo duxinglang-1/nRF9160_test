@@ -22,13 +22,20 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
+#ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
+#endif
 #include "Max20353.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "Alarm.h"
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
+#ifdef CONFIG_AUDIO_SUPPORT
+#include "audio.h"
+#endif
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -45,14 +52,16 @@ static u8_t show_pic_count = 0;//Õº∆¨œ‘ æÀ≥–Ú
 K_THREAD_STACK_DEFINE(nb_stack_area,
 		      2048);
 static struct k_work_q nb_work_q;
+
+#ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
               1024);
 static struct k_work_q imu_work_q;
+#endif
+
 K_THREAD_STACK_DEFINE(gps_stack_area,
               1024);
 static struct k_work_q gps_work_q;
-
-
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -644,9 +653,12 @@ void system_init(void)
 
 	key_init();
 	ble_init();
+#ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
-
+#endif
+#ifdef CONFIG_IMU_SUPPORT
 	IMU_init(&imu_work_q);
+#endif
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 
@@ -658,9 +670,11 @@ void work_init(void)
 	k_work_q_start(&nb_work_q, nb_stack_area,
 					K_THREAD_STACK_SIZEOF(nb_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+#ifdef CONFIG_IMU_SUPPORT	
 	k_work_q_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+#endif
 	k_work_q_start(&gps_work_q, gps_stack_area,
 					K_THREAD_STACK_SIZEOF(gps_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
@@ -712,10 +726,16 @@ int main(void)
 		NBMsgProcess();
 		GPSMsgProcess();
 		PMUMsgProcess();
+	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
+	#endif
+	#ifdef CONFIG_PPG_SUPPORT	
 		PPGMsgProcess();
+	#endif
 		LCDMsgProcess();
+	#ifdef CONFIG_TOUCH_SUPPORT
 		TPMsgProcess();
+	#endif
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();

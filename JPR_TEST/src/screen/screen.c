@@ -18,8 +18,12 @@
 #include "img.h"
 #include "datetime.h"
 #include "max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
+#endif
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "external_flash.h"
 #include "screen.h"
 #include "ucs2.h"
@@ -93,7 +97,9 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 {
 	if(screen_id == SCREEN_ID_HR)
 	{
+	#ifdef CONFIG_PPG_SUPPORT
 		MenuStartPPG();
+	#endif
 	}
 	else if(screen_id == SCREEN_ID_GPS_TEST)
 	{
@@ -384,6 +390,7 @@ void IdleShowBatSoc(void)
 #endif
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void IdleUpdateSportData(void)
 {
 	u16_t x,y,w,h;
@@ -471,6 +478,7 @@ void IdleShowSportData(void)
 	LCD_ShowString(IMU_STEPS_SHOW_X+2*IMU_STEPS_SHOW_W/3, IMU_STEPS_SHOW_Y, strbuf);
 #endif
 }
+#endif
 
 void IdleUpdateHealthData(void)
 {
@@ -496,7 +504,7 @@ void IdleUpdateHealthData(void)
 	LCD_ShowUniString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, tmpbuf);
 
 #else
-
+#ifdef CONFIG_PPG_SUPPORT
 	LCD_MeasureString("HR:", &w, &h);		
 	LCD_Fill(PPG_DATA_SHOW_X+w, PPG_DATA_SHOW_Y, 50, PPG_DATA_SHOW_H, BLACK);
 	sprintf(strbuf, "%d", g_hr);
@@ -506,6 +514,7 @@ void IdleUpdateHealthData(void)
 	LCD_Fill(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, 50, PPG_DATA_SHOW_H, BLACK);
 	sprintf(strbuf, "%d", g_spo2);
 	LCD_ShowString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, strbuf);
+#endif	
 #endif
 }
 
@@ -529,6 +538,7 @@ void IdleShowHealthData(void)
 	LCD_ShowUniString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2, PPG_DATA_SHOW_Y, tmpbuf);
 
 #else
+#ifdef CONFIG_PPG_SUPPORT
 	LCD_Fill(PPG_DATA_SHOW_X,PPG_DATA_SHOW_Y,PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_H,BLACK);
 	sprintf(strbuf, "HR:%d", g_hr);
 	LCD_ShowString(PPG_DATA_SHOW_X, PPG_DATA_SHOW_Y, strbuf);
@@ -536,7 +546,7 @@ void IdleShowHealthData(void)
 	LCD_Fill(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_Y,PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_H,BLACK);
 	sprintf(strbuf, "SPO2:%d", g_spo2);
 	LCD_ShowString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2, PPG_DATA_SHOW_Y, strbuf);
-
+#endif
 #endif
 }
 
@@ -552,7 +562,9 @@ void IdleScreenProcess(void)
 		IdleShowSignal();
 		IdleShowBatSoc();
 		IdleShowDateTime();
+	#ifdef CONFIG_IMU_SUPPORT	
 		IdleShowSportData();
+	#endif
 		IdleShowHealthData();
 		break;
 		
@@ -582,11 +594,13 @@ void IdleScreenProcess(void)
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_WEEK);
 			IdleShowSystemWeek();
 		}
+	#ifdef CONFIG_IMU_SUPPORT	
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SPORT);
 			IdleUpdateSportData();
 		}
+	#endif
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_HEALTH)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_HEALTH);
@@ -686,6 +700,7 @@ void FindDeviceScreenProcess(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 }
 
+#ifdef CONFIG_PPG_SUPPORT
 void HeartRateScreenProcess(void)
 {
 	u16_t x,y,w,h;
@@ -730,6 +745,7 @@ void HeartRateScreenProcess(void)
 	
 	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_NO;
 }
+#endif
 
 void ShowStringsInRect(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, SYSTEM_FONT_SIZE font_size, u8_t *strbuf)
 {
@@ -1015,6 +1031,7 @@ void SOSScreenProcess(void)
 	}
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void SleepScreenProcess(void)
 {
 	u16_t x,y,w,h;
@@ -1222,6 +1239,7 @@ void FallScreenProcess(void)
 	
 	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_NO;
 }
+#endif
 
 #ifdef CONFIG_FOTA_DOWNLOAD
 void FOTAShowStatus(void)
@@ -1499,8 +1517,10 @@ void EnterIdleScreen(void)
 
 #ifdef CONFIG_FOTA_DOWNLOAD
 	Key_Event_register_Handler(fota_start, EnterIdleScreen);	
+#elif defined(CONFIG_PPG_SUPPORT)
+	Key_Event_register_Handler(EnterHRScreen, EnterIdleScreen);
 #else
-	Key_Event_register_Handler(APPStartPPG, EnterIdleScreen);
+	Key_Event_register_Handler(EnterGPSTestScreen, EnterIdleScreen);
 #endif
 }
 
@@ -1532,6 +1552,7 @@ void EnterFindDeviceScreen(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void ExitStepsScreen(void)
 {
 	EnterIdleScreen();
@@ -1576,6 +1597,7 @@ void EnterSleepScreen(void)
 
 	Key_Event_register_Handler(EnterStepsScreen, ExitSleepScreen);
 }
+#endif
 
 void ExitGPSTestScreen(void)
 {
@@ -1600,11 +1622,18 @@ void EnterGPSTestScreen(void)
 	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;
 
+#ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
+#endif
+
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	Key_Event_register_Handler(EnterSleepScreen, ExitGPSTestScreen);	
+#ifdef CONFIG_IMU_SUPPORT
+	Key_Event_register_Handler(EnterSleepScreen, ExitGPSTestScreen);
+#else
+	Key_Event_register_Handler(ExitGPSTestScreen, ExitGPSTestScreen);
+#endif
 }
 
 void EnterNBTestScreen(void)
@@ -1635,6 +1664,7 @@ void EnterSOSScreen(void)
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
 }
 
+#ifdef CONFIG_PPG_SUPPORT
 void ExitHRScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
@@ -1663,6 +1693,7 @@ void EnterHRScreen(void)
 
 	Key_Event_register_Handler(EnterGPSTestScreen, ExitHRScreen);
 }
+#endif/*CONFIG_PPG_SUPPORT*/
 
 void EnterFallScreen(void)
 {
@@ -1715,6 +1746,7 @@ void poweroff_rightkeyfunc(void)
 
 void EnterPoweroffScreen(void)
 {
+	LOG_INF("[%s] screen_id:%d,SCREEN_ID_POWEROFF:%d\n", __func__,screen_id,SCREEN_ID_POWEROFF);
 	if(screen_id == SCREEN_ID_POWEROFF)
 		return;
 
@@ -1823,9 +1855,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_FIND_DEVICE:
 			FindDeviceScreenProcess();
 			break;
+	#ifdef CONFIG_PPG_SUPPORT	
 		case SCREEN_ID_HR:
 			HeartRateScreenProcess();
 			break;
+	#endif
 		case SCREEN_ID_ECG:
 			break;
 		case SCREEN_ID_BP:
@@ -1833,6 +1867,7 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_SOS:
 			SOSScreenProcess();
 			break;
+	#ifdef CONFIG_IMU_SUPPORT	
 		case SCREEN_ID_SLEEP:
 			SleepScreenProcess();
 			break;
@@ -1841,7 +1876,8 @@ void ScreenMsgProcess(void)
 			break;
 		case SCREEN_ID_FALL:
 			FallScreenProcess();
-			break;
+			break;	
+	#endif
 		case SCREEN_ID_SETTINGS:
 			break;
 		case SCREEN_ID_GPS_TEST:

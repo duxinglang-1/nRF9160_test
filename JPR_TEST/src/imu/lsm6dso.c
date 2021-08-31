@@ -3,6 +3,7 @@ Last Update: 16/12/2020 by Jiahe
 this code includes wrist tilt detection, step counter
 Take 26Hz data rate
 */
+#ifdef CONFIG_IMU_SUPPORT
 
 #include <nrf9160.h>
 #include <zephyr.h>
@@ -54,7 +55,6 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
-bool fall_testing = false;
 
 u8_t fall_trigger_time[16] = {0};
 u16_t g_steps = 0;
@@ -919,10 +919,12 @@ static void mt_fall_detection(struct k_work *work)
 
 		if(!imu_check_ok)
 			return;
-
+		
+	#ifdef CONFIG_PPG_SUPPORT
 		if(PPGIsWorking())
 			return;
-		
+	#endif
+
 		if(!is_wearing())
 			return;
 		
@@ -947,7 +949,7 @@ static void mt_fall_detection(struct k_work *work)
 			imu_redraw_steps_flag = true;	
 		}
 	}
-
+	
 	if(int2_event) //fall
 	{
 		LOG_INF("[%s] int2 evt!\n", __func__);
@@ -957,13 +959,16 @@ static void mt_fall_detection(struct k_work *work)
 		if(!imu_check_ok)
 			return;
 
+	#ifdef CONFIG_PPG_SUPPORT
 		if(PPGIsWorking())
 			return;
-		
-		if(!is_wearing()||fall_testing)
+	#endif
+
+		if(!is_wearing())
 			return;
 
 		fall_detection();
+
 		if(fall_result)
 		{
 			LOG_INF("Fall trigger!\n");
@@ -972,12 +977,10 @@ static void mt_fall_detection(struct k_work *work)
 			lcd_sleep_out = true;
 			FallAlarmStart();
 		}
-        else
-        {
+		else
+		{
 			LOG_INF("Not Fall.\n");
-        }
-
-		fall_testing = false;
+		}
 	}
 	
 	if(reset_steps)
@@ -1008,9 +1011,11 @@ static void mt_fall_detection(struct k_work *work)
 		if(!imu_check_ok)
 			return;
 
+	#ifdef CONFIG_PPG_SUPPORT
 		if(PPGIsWorking())
 			return;
-		
+	#endif
+
 		UpdateSleepPara();
 	}
 }
@@ -1149,3 +1154,4 @@ void IMUMsgProcess(void)
 
 	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
+#endif/*CONFIG_IMU_SUPPORT*/

@@ -17,7 +17,9 @@
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
+#endif
 #include "Alarm.h"
 #include "lcd.h"
 
@@ -92,7 +94,7 @@ bool is_wearing(void)
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
+	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
 	
 	if(key_code == KEY_TOUCH)
 	{

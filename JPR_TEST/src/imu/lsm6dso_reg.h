@@ -17,7 +17,7 @@
  *
  ******************************************************************************
  */
-
+#ifdef CONFIG_IMU_SUPPORT
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LSM6DSO_REGS_H
 #define LSM6DSO_REGS_H
@@ -2649,6 +2649,6 @@ int32_t lsm6dso_sh_status_get(stmdev_ctx_t *ctx,
 }
 #endif
 
-#endif /*LSM6DSO_DRIVER_H */
-
+#endif/*LSM6DSO_DRIVER_H */
+#endif/*CONFIG_IMU_SUPPORT*/
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -72,6 +72,7 @@ config LTE_RAI_ENABLE
 	
 endmenu
 
+
 menu "GPS"
 
 choice
@@ -189,6 +190,7 @@ config GPS_START_ON_MOTION
 
 endmenu # GPS
 
+
 menu "TOUCH"
 
 config TOUCH_SUPPORT
@@ -196,6 +198,34 @@ config TOUCH_SUPPORT
 	default n
 	
 endmenu #TOUCH
+
+
+menu "PPG"
+
+config PPG_SUPPORT
+	bool "ppg support"
+	default n
+	
+endmenu #PPG
+
+
+menu "IMU"
+
+config IMU_SUPPORT
+	bool "imu support"
+	default n
+	
+endmenu #IMU
+
+
+menu "AUDIO"
+
+config AUDIO_SUPPORT
+	bool "ppg support"
+	default n
+	
+endmenu #AUDIO
+
 
 menu "FOTA_MQTT"
 

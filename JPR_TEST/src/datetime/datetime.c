@@ -16,7 +16,9 @@
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "max20353.h"
 #include "screen.h"
 #include "ucs2.h"
@@ -457,7 +459,9 @@ void UpdateSystemTime(void)
 	if((date_time_changed&0x08) != 0)
 	{
 		date_time_changed = date_time_changed&0xF7;
+	#ifdef CONFIG_IMU_SUPPORT
 		reset_steps = true;
+	#endif
 	}
 }
 

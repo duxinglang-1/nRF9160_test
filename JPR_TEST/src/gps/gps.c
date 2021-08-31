@@ -96,12 +96,14 @@ bool APP_GPS_data_send(bool fix_flag)
 		ret = true;
 	}
 
+#ifdef CONFIG_IMU_SUPPORT
 	if(fall_wait_gps)
 	{
 		fall_get_gps_data_reply(fix_flag, gps_pvt_data);
 		fall_wait_gps = false;
 		ret = true;
 	}
+#endif
 
 	if(location_wait_gps)
 	{

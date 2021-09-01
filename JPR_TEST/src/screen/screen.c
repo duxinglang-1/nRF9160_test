@@ -1072,7 +1072,7 @@ void SleepScreenProcess(void)
 		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 		y = 140;
 		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep);
+		sprintf(tmpbuf, "%d (min)", light_sleep);
 		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
 		break;
 		
@@ -1097,7 +1097,7 @@ void SleepScreenProcess(void)
 		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 		y = 140;
 		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep);
+		sprintf(tmpbuf, "%d (min)", light_sleep);
 		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
 		break;
 	}

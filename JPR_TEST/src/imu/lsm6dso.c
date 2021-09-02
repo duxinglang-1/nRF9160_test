@@ -912,111 +912,19 @@ void FallAlarmStart(void)
 
 static void mt_fall_detection(struct k_work *work)
 {
-	if(int1_event)	//steps or tilt
+	fall_detection();
+
+	if(fall_result)
 	{
-		LOG_INF("[%s] int1 evt!\n", __func__);
-		int1_event = false;
-
-		if(!imu_check_ok)
-			return;
+		LOG_INF("[%s] Fall trigger!\n", __func__);
 		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-		
-		is_tilt();
-		if(wrist_tilt)
-		{
-			LOG_INF("tilt trigger!\n");
-			
-			wrist_tilt = false;
-
-			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
-			{
-				sleep_out_by_wrist = true;
-				lcd_sleep_out = true;
-			}
-		}
-		else
-		{
-			LOG_INF("steps trigger!\n");
-			
-			UpdateIMUData();
-			imu_redraw_steps_flag = true;	
-		}
+		fall_result = false;
+		lcd_sleep_out = true;
+		FallAlarmStart();
 	}
-	
-	if(int2_event) //fall
+	else
 	{
-		LOG_INF("[%s] int2 evt!\n", __func__);
-		
-		int2_event = false;
-
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-
-		fall_detection();
-
-		if(fall_result)
-		{
-			LOG_INF("Fall trigger!\n");
-			
-			fall_result = false;
-			lcd_sleep_out = true;
-			FallAlarmStart();
-		}
-		else
-		{
-			LOG_INF("Not Fall.\n");
-		}
-	}
-	
-	if(reset_steps)
-	{
-		reset_steps = false;
-
-		if(!imu_check_ok)
-			return;
-		
-		ReSetImuSteps();
-		imu_redraw_steps_flag = true;
-	}
-
-	if(imu_redraw_steps_flag)
-	{
-		imu_redraw_steps_flag = false;
-
-		if(!imu_check_ok)
-			return;
-		
-		IMURedrawSteps();
-	}
-
-	if(update_sleep_parameter)
-	{
-		update_sleep_parameter = false;
-
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		UpdateSleepPara();
+		LOG_INF("[%s] Not Fall.\n", __func__);
 	}
 }
 
@@ -1025,7 +933,7 @@ void IMU_init(struct k_work_q *work_q)
 	LOG_INF("IMU_init\n");
 	
 	imu_work_q = work_q;
-	k_work_init(&imu_work, mt_fall_detection);
+	//k_work_init(&imu_work, mt_fall_detection);
 	
 	if(init_i2c() != 0)
 		return;
@@ -1152,6 +1060,98 @@ void IMUMsgProcess(void)
 		return;
 #endif
 
-	k_work_submit_to_queue(imu_work_q, &imu_work);
+	if(int1_event)	//steps or tilt
+	{
+		LOG_INF("[%s] int1 evt!\n", __func__);
+		int1_event = false;
+
+		if(!imu_check_ok)
+			return;
+		
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		//if(!is_wearing())
+		//	return;
+		
+		is_tilt();
+		if(wrist_tilt)
+		{
+			LOG_INF("[%s ]tilt trigger!\n", __func__);
+			
+			wrist_tilt = false;
+
+			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
+				lcd_sleep_out = true;
+			}
+		}
+		else
+		{
+			LOG_INF("[%s] steps trigger!\n", __func__);
+			
+			UpdateIMUData();
+			imu_redraw_steps_flag = true;	
+		}
+	}
+		
+	if(int2_event) //fall
+	{
+		LOG_INF("[%s] int2 evt!\n", __func__);
+		
+		int2_event = false;
+
+		if(!imu_check_ok)
+			return;
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		//if(!is_wearing())
+		//	return;
+
+		//k_work_submit_to_queue(imu_work_q, &imu_work);
+	}
+	
+	if(reset_steps)
+	{
+		reset_steps = false;
+
+		if(!imu_check_ok)
+			return;
+		
+		ReSetImuSteps();
+		imu_redraw_steps_flag = true;
+	}
+
+	if(imu_redraw_steps_flag)
+	{
+		imu_redraw_steps_flag = false;
+
+		if(!imu_check_ok)
+			return;
+		
+		IMURedrawSteps();
+	}
+
+	if(update_sleep_parameter)
+	{
+		update_sleep_parameter = false;
+
+		if(!imu_check_ok)
+			return;
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		UpdateSleepPara();
+	}
 }
 #endif/*CONFIG_IMU_SUPPORT*/

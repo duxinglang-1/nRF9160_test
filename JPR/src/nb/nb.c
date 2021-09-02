@@ -27,7 +27,9 @@
 #include "nb.h"
 #include "screen.h"
 #include "sos.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "transfer_cache.h"
 
 #include <logging/log_ctrl.h>
@@ -46,6 +48,8 @@ static void GetNetWorkTimeCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_time_timer, GetNetWorkTimeCallBack, NULL);
 static void GetNetWorkSignalCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_rsrp_timer, GetNetWorkSignalCallBack, NULL);
+static void NBReconnectCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
 
 
 static struct k_work_q *app_work_q;
@@ -61,6 +65,8 @@ static bool send_data_flag = false;
 static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 static bool power_on_data_flag = true;
+static bool nb_connecting_flag = false;
+static bool nb_reconnect_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -320,11 +326,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			SendPowerOnData();
 			power_on_data_flag = false;
 		}
-		else
-		{
-			NbSendDataStart();
-		}
 
+		NbSendDataStart();
 		MqttDicConnectStart();
 		break;
 
@@ -700,6 +703,18 @@ bool MqttIsConnected(void)
 	return mqtt_connected;
 }
 
+void DisconnectAppMqttLink(void)
+{
+	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+		k_timer_stop(&mqtt_disconnect_timer);
+
+	if(mqtt_connected)
+	{
+		mqtt_connected = false;
+		mqtt_disconnect_flag = true;
+	}
+}
+
 static void MqttDisConnect(void)
 {
 	int err;
@@ -747,7 +762,7 @@ static void modem_rsrp_handler(char rsrp_value)
 	
 	if(rsrp_value > 97)
 	{
-		g_nb_sig = NB_SIG_LEVEL_NO;
+		//g_nb_sig = NB_SIG_LEVEL_NO;
 	}
 	else if(rsrp_value >= 80)
 	{
@@ -1122,14 +1137,16 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 
 		if(nb_connected)
 		{
+			LOG_INF("[%s]: begin 003\n", __func__);
 			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 		}
 		else
 		{
-			if(k_work_pending(&nb_link_work))
-				k_delayed_work_cancel(&nb_link_work);
-			
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_NO_WAIT);
+			LOG_INF("[%s]: begin 004\n", __func__);
+			if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+				k_timer_stop(&nb_reconnect_timer);
+
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
 		}
 	}
 }
@@ -1190,6 +1207,7 @@ void NBSendSosGpsData(u8_t *data, u32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void NBSendFallWifiData(u8_t *data, u32_t datalen)
 {
 	u8_t buf[128] = {0};
@@ -1227,6 +1245,7 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 	LOG_INF("[%s] fall gps data:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
 }
+#endif
 
 void NBSendHealthData(u8_t *data, u32_t datalen)
 {
@@ -1475,13 +1494,13 @@ static int configure_low_power(void)
 	err = lte_lc_psm_req(true);
 	if(err)
 	{
-		LOG_INF("lte_lc_psm_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_psm_req, error: %d\n", __func__, err);
 	}
 #else
 	err = lte_lc_psm_req(false);
 	if(err)
 	{
-		LOG_INF("lte_lc_psm_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_psm_req, error: %d\n", __func__, err);
 	}
 #endif
 
@@ -1490,13 +1509,13 @@ static int configure_low_power(void)
 	err = lte_lc_edrx_req(true);
 	if(err)
 	{
-		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_edrx_req, error: %d\n", __func__, err);
 	}
 #else
 	err = lte_lc_edrx_req(false);
 	if(err)
 	{
-		LOG_INF("lte_lc_edrx_req, error: %d\n", err);
+		LOG_INF("[%s] lte_lc_edrx_req, error: %d\n", err);
 	}
 #endif
 
@@ -1605,7 +1624,7 @@ void GetModemInfor(void)
 	modem_rsrp_handler(g_rsrp);
 }
 
-static void SetModemTurnOff(void)
+void SetModemTurnOff(void)
 {
 	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) != 0)
 	{
@@ -1613,6 +1632,7 @@ static void SetModemTurnOff(void)
 		return;
 	}	
 	LOG_INF("turn off modem success!");
+	nb_connected = false;
 }
 
 void SetModemAPN(void)
@@ -1632,9 +1652,15 @@ void SetModemAPN(void)
 	LOG_INF("[%s] apn:%s\n", __func__, tmpbuf);	
 }
 
+
+static void NBReconnectCallBack(struct k_timer *timer_id)
+{
+	nb_reconnect_flag = true;
+}
+
 static void nb_link(struct k_work *work)
 {
-	int err;
+	int err=0;
 	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
 	
@@ -1642,6 +1668,8 @@ static void nb_link(struct k_work *work)
 
 	configure_low_power();
 
+	nb_connecting_flag = true;
+	
 	err = lte_lc_init_and_connect();
 	if(err)
 	{
@@ -1652,18 +1680,18 @@ static void nb_link(struct k_work *work)
 		nb_connected = false;
 		
 		retry_count++;
-		if(retry_count <= 5)	//5次以内每半分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(30));
+		if(retry_count <= 5)		//5次以内每半分钟重连一次
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
 		else if(retry_count <= 10)	//6到10次每分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(60));
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
 		else if(retry_count <= 15)	//11到15次每5分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(300));		
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
 		else if(retry_count <= 20)	//16到20次每10分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(600));
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
 		else if(retry_count <= 25)	//21到25次每30分钟重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1800));
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
 		else						//26次以上每1小时重连一次
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(3600));
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
 	}
 	else
 	{
@@ -1675,6 +1703,8 @@ static void nb_link(struct k_work *work)
 		modem_data_init();
 	}
 
+	nb_connecting_flag = false;
+	
 	GetModemInfor();
 	
 	if(!err)
@@ -1721,6 +1751,11 @@ void GetNBSignal(void)
 		return;
 	}
 	LOG_INF("csq:%s\n", str_rsrp);
+}
+
+bool nb_is_connecting(void)
+{
+	return nb_connecting_flag;
 }
 
 void nb_test_update(void)
@@ -1787,6 +1822,17 @@ void NBMsgProcess(void)
 		nb_test_update_flag = false;
 		nb_test_update();
 	}
+
+	if(nb_reconnect_flag)
+	{
+		nb_reconnect_flag = false;
+		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+	}
+	
+	if(nb_connecting_flag)
+	{
+		k_sleep(K_MSEC(10));
+	}
 }
 
 void NB_init(struct k_work_q *work_q)
@@ -1797,6 +1843,9 @@ void NB_init(struct k_work_q *work_q)
 
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
+#ifdef CONFIG_FOTA_DOWNLOAD
+	fota_work_init(work_q);
+#endif
 
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 }

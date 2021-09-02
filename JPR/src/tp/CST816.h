@@ -5,6 +5,7 @@
  *Create      : 2020-08-21
  *Copyright   : August
 **************************************************************************/
+#ifdef CONFIG_TOUCH_SUPPORT
 #ifndef __CST816_H__
 #define __CST816_H__
 
@@ -71,6 +72,7 @@
 
 typedef enum
 {
+	TP_EVENT_NONE,
 	TP_EVENT_MOVING_UP,
 	TP_EVENT_MOVING_DOWN,
 	TP_EVENT_MOVING_LEFT,
@@ -79,14 +81,46 @@ typedef enum
 	TP_EVENT_DOUBLE_CLICK,
 	TP_EVENT_LONG_PRESS,
 	TP_EVENT_MAX
-}tp_event;
+}TP_EVENT;
 
+typedef struct
+{
+	TP_EVENT evt_id;
+	u16_t x_pos;
+	u16_t y_pos;
+}tp_message;
 
 typedef void (*tp_handler_t)(void);
 
+struct tpnode
+{
+	u16_t x_begin;
+	u16_t x_end;
+	u16_t y_begin;
+	u16_t y_end;
+	TP_EVENT evt_id;
+	tp_handler_t func;
+	struct node *next;
+};
+
+typedef struct
+{
+	u32_t count;
+	struct tpnode *cache;
+}TPInfo;
+
+typedef struct tpnode TpEventNode;
+
+
 extern bool tp_trige_flag;
+extern bool tp_redraw_flag;
+
+extern tp_message tp_msg;
 
 extern void CST816_init(void);
 extern void tp_interrupt_proc(void);
 extern void TPMsgProcess(void);
+extern void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, u16_t y_start, u16_t y_stop, tp_handler_t touch_handler);
+extern void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, u16_t y_start, u16_t y_stop, tp_handler_t touch_handler);
 #endif/*__CST816_H__*/
+#endif/*CONFIG_TOUCH_SUPPORT*/

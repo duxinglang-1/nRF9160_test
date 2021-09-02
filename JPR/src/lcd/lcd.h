@@ -47,17 +47,15 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 extern SYSTEM_FONT_SIZE system_font;
 
 //画笔颜色
-#define WHITE         	 0xFFFF
-#define BLACK         	 0x0000	  
-#define BLUE         	 0x001F  
-#define BRED             0XF81F
-#define GRED 			 0XFFE0
-#define GBLUE			 0X07FF
-#define RED           	 0xF800
-#define MAGENTA       	 0xF81F
-#define GREEN         	 0x07E0
-#define CYAN          	 0x7FFF
-#define YELLOW        	 0xFFE0
+#define WHITE         	 0xFFFF	//白色
+#define BLACK         	 0x0000	//黑色
+#define BLUE         	 0x001F	//蓝色
+#define GBLUE			 0X07FF	//蓝绿色
+#define RED           	 0xF800	//红色
+#define MAGENTA       	 0xF81F	//玫瑰红
+#define GREEN         	 0x07E0	//绿色
+#define CYAN          	 0x7FFF	//青色
+#define YELLOW        	 0xFFE0	//黄色
 #define BROWN 			 0XBC40 //棕色
 #define BRRED 			 0XFC07 //棕红色
 #define GRAY  			 0X8430 //灰色

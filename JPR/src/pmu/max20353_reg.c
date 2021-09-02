@@ -280,7 +280,7 @@ int MAX20353_LDO2Config(void)
 	
     appcmdoutvalue_ = 0x42;
     appdatainoutbuffer_[0] = 0x01;
-    appdatainoutbuffer_[1] = 0x13;     // 0.9V + (0.1V * number)   =  2.8V 
+    appdatainoutbuffer_[1] = 0x18;     // 0.9V + (0.1V * number)   =  3.3V 
     ret = MAX20353_AppWrite(2);
 
     return ret;
@@ -906,7 +906,7 @@ bool MAX20353_Init(void)
 	MAX20353_Buck1Config();		//1.8v  350mA
 	MAX20353_Buck2Config(); 	//3.3V  350mA
 	MAX20353_LDO1Config();	//1.8v 50mA switch mode
-	MAX20353_LDO2Config();	//2.8V 100mA
+	MAX20353_LDO2Config();	//3.3V 100mA 给CTP供电
 	MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
 
 	//电荷泵及BUCK/BOOST配置

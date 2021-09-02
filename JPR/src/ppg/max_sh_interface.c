@@ -12,6 +12,8 @@
 #include <drivers/gpio.h>
 #include "max_sh_interface.h"
 #include "external_flash.h"
+#include "lcd.h"
+#include "font.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -1048,30 +1050,11 @@ bool sh_init_interface(void)
 
 	if(mcu_type != 1)
 	{
-		NotifyShowStrings("PPG is upgrading firmware, please wait a few minutes!");
+		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, FONT_SIZE_16, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
 		LCD_SleepOut();
 	}
 
-#if 0
-	u8_t ByteSeq[] = {0x83, 0x01, 0x01};
-	u8_t rxbuf[2]  = {0};
-	sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
-								0, 0,
-								&rxbuf[0], sizeof(rxbuf),
-								SS_DEFAULT_CMD_SLEEP_MS);
-
-	LOG_INF("send 83 01 01 and read back %d, %d \n",rxbuf[0], rxbuf[1] );
-
-	u8_t ByteSeq1[] = {0x83, 0x01, 0x00};
-	u8_t rxbuf1[2]  = { 0 };
-	sh_read_cmd(&ByteSeq1[0], sizeof(ByteSeq1),
-								0, 0,
-								&rxbuf1[0], sizeof(rxbuf1),
-								SS_DEFAULT_CMD_SLEEP_MS);
-
-	LOG_INF("send 83 01 00 and read back %d, %d \n",rxbuf1[0], rxbuf1[1] );
-#endif
 	return true;
 }
 

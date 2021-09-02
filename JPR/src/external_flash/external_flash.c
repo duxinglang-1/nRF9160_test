@@ -16,8 +16,9 @@
 #include "img.h"
 #include "font.h"
 #include "external_flash.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max_fw_data_674_1_1_0.h"
-
+#endif
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(external_flash, CONFIG_LOG_DEFAULT_LEVEL);

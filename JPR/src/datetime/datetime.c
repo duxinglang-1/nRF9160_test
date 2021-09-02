@@ -16,7 +16,9 @@
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "max20353.h"
 #include "screen.h"
 #include "ucs2.h"
@@ -49,7 +51,7 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 u8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
-u64_t beginstamp=0;
+u64_t laststamp = 0;
 
 static void clock_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(clock_timer, clock_timer_handler, NULL);
@@ -331,28 +333,35 @@ void RedrawSystemTime(void)
 void UpdateSystemTime(void)
 {
 	u64_t timestamp,timeskip;
+	static u64_t timeoffset=0;
 
-	
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
 
 	if(screen_id == SCREEN_ID_IDLE)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
-	//timestamp = k_uptime_get();
-	//timeskip = timestamp - beginstamp;
-	//laststamp = timestamp;
+	timestamp = k_uptime_get();
+	timeskip = timestamp - laststamp;
+	laststamp = timestamp;
 
-	date_time.second++;	// += (timeskip/1000);
+	timeoffset += (timeskip%1000);
+	if(timeoffset >= 1000)
+	{
+		timeskip += 1000;
+		timeoffset -= 1000;
+	}
+
+	date_time.second += (timeskip/1000);
 	if(date_time.second > 59)
 	{
+		date_time.minute += date_time.second/60;
 		date_time.second = date_time.second%60;
-		date_time.minute++;
 		date_time_changed = date_time_changed|0x02;
 		//date_time_changed = date_time_changed|0x04;//分针在变动的同时，时针也会同步缓慢变动
 		if(date_time.minute > 59)
 		{
-			date_time.minute = 0;
-			date_time.hour++;
+			date_time.hour += date_time.minute/60;
+			date_time.minute = date_time.minute%60;
 			date_time_changed = date_time_changed|0x04;
 			if(date_time.hour > 23)
 			{
@@ -436,16 +445,23 @@ void UpdateSystemTime(void)
 	{
 		//SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
-		AlarmRemindCheck(date_time);
-		
-		TimeCheckSendHealthData();
-		TimeCheckSendLocationData();
+
+	#ifdef CONFIG_FOTA_DOWNLOAD	
+		if(!fota_is_running())
+	#endif		
+		{
+			AlarmRemindCheck(date_time);
+			TimeCheckSendHealthData();
+			TimeCheckSendLocationData();
+		}
 	}
 
 	if((date_time_changed&0x08) != 0)
 	{
 		date_time_changed = date_time_changed&0xF7;
+	#ifdef CONFIG_IMU_SUPPORT
 		reset_steps = true;
+	#endif
 	}
 }
 

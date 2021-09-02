@@ -17,7 +17,9 @@
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
+#endif
 #include "Alarm.h"
 #include "lcd.h"
 
@@ -56,7 +58,7 @@ static bool touch_flag = false;
 
 bool key_pwroff_flag = false;
 
-extern bool app_gps_on;
+extern bool gps_on_flag;
 extern bool ppg_fw_upgrade_flag;
 extern bool ppg_start_flag;
 extern bool ppg_stop_flag;
@@ -92,57 +94,10 @@ bool is_wearing(void)
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
-	if(!system_is_completed())
-		return;
-
-	if(key_type == KEY_UP)
+	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
+	
+	if(key_code == KEY_TOUCH)
 	{
-		if(lcd_is_sleeping)
-		{
-			sleep_out_by_wrist = false;
-			lcd_sleep_out = true;
-			return;
-		}
-	}
-
-	switch(key_code)
-	{
-	case KEY_SOS:
-		switch(key_type)
-		{
-		case KEY_DOWN:
-			leftkey_handler_cb();
-			break;
-		case KEY_UP:
-			if(!SOSIsRunning())
-			{
-				EntryIdleScreen();
-			}
-			break;
-		case KEY_LONG_PRESS:
-			SOSStart();
-			break;
-		}
-		break;
-	case KEY_PWR:
-		switch(key_type)
-		{
-		case KEY_DOWN:
-			rightkey_handler_cb();
-			break;
-		case KEY_UP:
-			break;
-		case KEY_LONG_PRESS:
-			EnterPoweroffScreen();
-			//key_pwroff_flag = true;
-			break;
-		}
-		break;
-	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
-		if(SOSIsRunning())
-			break;
-		
 		switch(key_type)
 		{
 		case KEY_DOWN://´÷ÉÏ
@@ -160,6 +115,51 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		case KEY_LONG_PRESS:
 			break;
 		}		
+	}
+	
+	if(!system_is_completed())
+		return;
+
+	if(lcd_is_sleeping)
+	{
+		if(key_type == KEY_UP)
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
+		}
+		
+		return;
+	}
+
+	switch(key_code)
+	{
+	case KEY_SOS:
+		switch(key_type)
+		{
+		case KEY_DOWN:
+			if(leftkey_handler_cb != NULL)
+				leftkey_handler_cb();
+			break;
+		case KEY_UP:
+			break;
+		case KEY_LONG_PRESS:
+			SOSStart();
+			break;
+		}
+		break;
+	case KEY_PWR:
+		switch(key_type)
+		{
+		case KEY_DOWN:
+			if(rightkey_handler_cb != NULL)
+				rightkey_handler_cb();
+			break;
+		case KEY_UP:
+			break;
+		case KEY_LONG_PRESS:
+			EnterPoweroffScreen();
+			break;
+		}
 		break;
 	}
 

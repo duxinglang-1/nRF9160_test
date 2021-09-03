@@ -640,10 +640,10 @@ void test_flash(void)
 #if 0
 	//写入ppg(max32674心率算法)
 	LCD_ShowString(0,80,"FLASH写入PPG算法...");
-	SpiFlash_Write_Buf(Msbl_674_V1_1_0_001, PPG_ALGO_FW_ADDR+72000*0, 72000);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_001, PPG_ALGO_FW_ADDR+72000*0, 72000);
 	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_002, PPG_ALGO_FW_ADDR+72000*1, 72000);
 	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_003, PPG_ALGO_FW_ADDR+72000*2, 72000);
-	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_004, PPG_ALGO_FW_ADDR+72000*3, 63152);
+	SpiFlash_Write_Buf(Msbl_674_V1_1_0_004, PPG_ALGO_FW_ADDR+72000*3, 71360);
 	LCD_ShowString(0,100,"FLASH写入PPG算法成功");
 #endif
 	//读出数据

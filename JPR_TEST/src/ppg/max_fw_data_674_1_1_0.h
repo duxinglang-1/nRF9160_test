@@ -12,6 +12,6 @@
 //extern unsigned char Msbl_674_V1_1_0_001[72000];
 //extern unsigned char Msbl_674_V1_1_0_002[72000];
 //extern unsigned char Msbl_674_V1_1_0_003[72000];
-//extern unsigned char Msbl_674_V1_1_0_004[63152];
+//extern unsigned char Msbl_674_V1_1_0_004[71360];
 
 #endif/*__MAX_FW_DATA_674_1_1_0_H__*/

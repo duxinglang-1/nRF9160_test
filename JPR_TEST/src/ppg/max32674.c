@@ -157,7 +157,7 @@ void PPGGetSensorHubData(void)
 
 				LOG_INF("skin:%d, hr:%d, spo2:%d\n", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
 				
-				if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+				//if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
 				{
 					heart_rate += sensorhub_out.hr;
 					spo2 += sensorhub_out.spo2;
@@ -270,51 +270,6 @@ bool demoSensorhub(void)
 	return true;
 }
 
-
-void PPGStopCheck(void)
-{
-	int status = -1;
-
-	if(!ppg_is_power_on)
-		return;
-	
-	status = sh_sensor_disable(SH_SENSORIDX_MAX86176);
-	if(status != SS_SUCCESS)
-		LOG_INF("sh_sensor_disble_MAX86176 eorr %d \n", status);
-
-	status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
-	if(status != SS_SUCCESS)
-		LOG_INF("sh_sensor_disable_ACC eorr %d \n", status);
-
-	status = sh_disable_algo(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X);
-	if(status != SS_SUCCESS)
-		LOG_INF("sh_sensor_disble_algo eorr %d \n", status);
-
-	k_timer_stop(&ppg_get_hr_timer);
-	timestamp = k_uptime_get();
-	ppg_is_power_on = false;
-
-	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_ONE_KEY) != 0)
-	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_ONE_KEY);
-		MCU_send_app_one_key_measure_data();
-	}
-	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_HR) != 0)
-	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_HR);
-		MCU_send_app_get_hr_data();
-	}	
-	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) != 0)
-	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_MENU);
-	}
-
-	if((g_ppg_trigger&PPG_TRIGGER_BY_HOURLY) != 0)
-	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_HOURLY);
-	}
-}
-
 void APPStartPPG(void)
 {
 	ppg_start_flag = true;
@@ -339,10 +294,13 @@ void PPGStartCheck(void)
 	if(ppg_is_power_on)
 		return;
 
-	starttime = k_uptime_get();
-	if((starttime-timestamp) < 5000)
-		return;
+	//starttime = k_uptime_get();
+	//if((starttime-timestamp) < 5000)
+	//	return;
 
+	//SH_Power_On();
+	//Set_PPG_Power_On();
+	
 	ret = demoSensorhub();
 	if(ret)
 	{
@@ -355,6 +313,53 @@ void PPGStartCheck(void)
 	else
 	{
 		LOG_INF("[%s] ppg start false!\n", __func__);
+	}
+}
+
+void PPGStopCheck(void)
+{
+	int status = -1;
+
+	if(!ppg_is_power_on)
+		return;
+	
+	status = sh_sensor_disable(SH_SENSORIDX_MAX86176);
+	if(status != SS_SUCCESS)
+		LOG_INF("sh_sensor_disble_MAX86176 eorr %d \n", status);
+
+	status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
+	if(status != SS_SUCCESS)
+		LOG_INF("sh_sensor_disable_ACC eorr %d \n", status);
+
+	status = sh_disable_algo(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X);
+	if(status != SS_SUCCESS)
+		LOG_INF("sh_sensor_disble_algo eorr %d \n", status);
+
+	//Set_PPG_Power_Off();
+	//SH_Power_Off();
+
+	k_timer_stop(&ppg_get_hr_timer);
+	timestamp = k_uptime_get();
+	ppg_is_power_on = false;
+
+	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_ONE_KEY) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_ONE_KEY);
+		MCU_send_app_one_key_measure_data();
+	}
+	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_HR) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_HR);
+		MCU_send_app_get_hr_data();
+	}	
+	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_MENU);
+	}
+
+	if((g_ppg_trigger&PPG_TRIGGER_BY_HOURLY) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_HOURLY);
 	}
 }
 

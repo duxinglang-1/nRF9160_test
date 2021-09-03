@@ -83,6 +83,22 @@ void wait_ms(int ms)
 	k_sleep(K_MSEC(ms));
 }
 
+void SH_Power_On(void)
+{
+	//PPG供电打开
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
+
+	wait_ms(50);
+}
+
+void SH_Power_Off(void)
+{
+	//PPG供电关闭
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
+}
+
 static void sh_init_i2c(void)
 {
 	i2c_ppg = device_get_binding(PPG_DEV);
@@ -121,27 +137,12 @@ static void sh_init_gpio(void)
 	gpio_add_callback(gpio_ppg, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN);
 
-	//PPG供电打开
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
-
+	
 	//PPG模式选择(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_DIR_OUT);
 	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_DIR_OUT);
-}
-
-void SH_Power_On(void)
-{
-	//PPG供电打开
-	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
-}
-
-void SH_Power_Off(void)
-{
-	//PPG供电关闭
-	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
 }
 
 void SH_mfio_to_low_and_keep(int waitDurationInUs)
@@ -1048,13 +1049,16 @@ bool sh_init_interface(void)
 		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
-	if(mcu_type != 1)
+	if((mcu_type != 1) || (u8_rxbuf[2] == 0))
 	{
 		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, FONT_SIZE_16, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
 		LCD_SleepOut();
 	}
 
+	//Set_PPG_Power_Off();
+	//SH_Power_Off();
+	
 	return true;
 }
 

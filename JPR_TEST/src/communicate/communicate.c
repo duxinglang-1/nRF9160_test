@@ -165,6 +165,8 @@ void TimeCheckSendHealthData(void)
 	health_hour_count++;
 	if(health_hour_count == global_settings.health_interval)
 	{
+		LOG_INF("[%s]\n", __func__);
+		
 		health_hour_count = 0;
 
 	#ifdef CONFIG_IMU_SUPPORT
@@ -244,6 +246,7 @@ void TimeCheckSendLocationData(void)
 	loc_hour_count++;
 	if(loc_hour_count == global_settings.dot_interval.time)
 	{
+		LOG_INF("[%s]\n", __func__);
 		loc_hour_count = 0;
 		location_wait_gps = true;
 		APP_Ask_GPS_Data();
@@ -324,7 +327,7 @@ void SendPowerOffData(u8_t pwroff_mode)
 {
 	u8_t tmpbuf[10] = {0};
 	u8_t databuf[128] = {0};
-	
+
 	//pwr off mode
 	sprintf(databuf, "%d,", pwroff_mode);
 	

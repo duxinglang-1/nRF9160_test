@@ -274,6 +274,18 @@ int MAX20353_LDO1Config(void)
     return ret;
 }
 
+int MAX20353_LDO1Disable(void)
+{
+    int32_t ret = 0;
+
+    appcmdoutvalue_ = 0x40;
+    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,Ê¹ÄÜ   LDO1  
+    appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
+    ret = MAX20353_AppWrite(2);
+    
+    return ret;
+}
+
 int MAX20353_LDO2Config(void)
 {
     int32_t ret = 0;

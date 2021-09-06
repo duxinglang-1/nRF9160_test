@@ -142,10 +142,7 @@ bool sensor_init(void)
 		return false;
 
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	do
-	{
-		lsm6dso_reset_get(&imu_dev_ctx, &rst);
-	}while(rst);
+	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
 	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
 
@@ -205,14 +202,14 @@ bool sensor_init(void)
 
 	/* route single tap, wrist tilt to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
-	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+	//int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	//int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
@@ -223,10 +220,7 @@ bool sensor_init(void)
 void sensor_reset(void)
 {  
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	do
-	{
-		lsm6dso_reset_get(&imu_dev_ctx, &rst);
-	}while(rst);
+	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
 	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
 
@@ -771,7 +765,7 @@ void UpdateIMUData(void)
 	GetImuSteps(&g_steps);
 
 	g_distance = 0.7*g_steps;
-	g_calorie = 0.8214*60*(g_distance/1000);
+	g_calorie = (0.8214*60*g_distance)/1000;
 
 	LOG_INF("g_steps:%d,g_distance:%d,g_calorie:%d\n", g_steps, g_distance, g_calorie);
 
@@ -1060,7 +1054,7 @@ void IMUMsgProcess(void)
 		return;
 #endif
 
-	if(int1_event)	//steps or tilt
+	if(int1_event)	//steps
 	{
 		LOG_INF("[%s] int1 evt!\n", __func__);
 		int1_event = false;
@@ -1076,29 +1070,13 @@ void IMUMsgProcess(void)
 		//if(!is_wearing())
 		//	return;
 		
-		is_tilt();
-		if(wrist_tilt)
-		{
-			LOG_INF("[%s ]tilt trigger!\n", __func__);
-			
-			wrist_tilt = false;
-
-			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
-			{
-				sleep_out_by_wrist = true;
-				lcd_sleep_out = true;
-			}
-		}
-		else
-		{
-			LOG_INF("[%s] steps trigger!\n", __func__);
-			
-			UpdateIMUData();
-			imu_redraw_steps_flag = true;	
-		}
+		LOG_INF("[%s] steps trigger!\n", __func__);
+		
+		UpdateIMUData();
+		imu_redraw_steps_flag = true;	
 	}
 		
-	if(int2_event) //fall
+	if(int2_event) //tilt
 	{
 		LOG_INF("[%s] int2 evt!\n", __func__);
 		
@@ -1115,7 +1093,19 @@ void IMUMsgProcess(void)
 		//if(!is_wearing())
 		//	return;
 
-		//k_work_submit_to_queue(imu_work_q, &imu_work);
+		is_tilt();
+		if(wrist_tilt)
+		{
+			LOG_INF("[%s] tilt trigger!\n", __func__);
+			
+			wrist_tilt = false;
+
+			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
+				lcd_sleep_out = true;
+			}
+		}
 	}
 	
 	if(reset_steps)

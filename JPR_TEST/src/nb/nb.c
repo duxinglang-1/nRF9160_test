@@ -671,7 +671,7 @@ static void SendDataCallBack(struct k_timer *timer)
 
 static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(500), NULL);
+	k_timer_start(&send_data_timer, K_MSEC(100), NULL);
 }
 
 static void NbSendDataStop(void)
@@ -694,7 +694,7 @@ static void NbSendData(void)
 			delete_data_from_send_cache();
 		}
 
-		k_timer_start(&send_data_timer, K_MSEC(1000), NULL);
+		k_timer_start(&send_data_timer, K_MSEC(500), NULL);
 	}
 }
 
@@ -1681,13 +1681,13 @@ static void nb_link(struct k_work *work)
 		
 		retry_count++;
 		if(retry_count <= 5)		//5次以内每半分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
-		else if(retry_count <= 10)	//6到10次每分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
-		else if(retry_count <= 15)	//11到15次每5分钟重连一次
+		else if(retry_count <= 10)	//6到10次每分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
-		else if(retry_count <= 20)	//16到20次每10分钟重连一次
+		else if(retry_count <= 15)	//11到15次每5分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
+		else if(retry_count <= 20)	//16到20次每10分钟重连一次
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
 		else if(retry_count <= 25)	//21到25次每30分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
 		else						//26次以上每1小时重连一次
@@ -1756,6 +1756,11 @@ void GetNBSignal(void)
 bool nb_is_connecting(void)
 {
 	return nb_connecting_flag;
+}
+
+bool nb_is_connected(void)
+{
+	return nb_connected;
 }
 
 void nb_test_update(void)

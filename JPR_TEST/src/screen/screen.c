@@ -64,10 +64,10 @@ void ShowBootUpLogo(void)
 	u16_t x,y,w,h;
 
 #ifdef IMG_FONT_FROM_FLASH
-	LCD_get_pic_size_from_flash(IMG_PEPPA_320X320_ADDR, &w, &h);
+	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
 	x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
 	y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_320X320_ADDR);
+	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
 #endif	
 }
 
@@ -1432,7 +1432,7 @@ void TestGPSUpdateInfor(void)
 
 void TestGPSShowInfor(void)
 {
-	u32_t x,y,w,h;
+	u16_t x,y,w,h;
 	u8_t strbuf[128] = {0};
 	
 	LCD_Clear(BLACK);
@@ -1470,7 +1470,7 @@ void TestNBUpdateINfor(void)
 
 void TestNBShowInfor(void)
 {
-	u32_t x,y,w,h;
+	u16_t x,y,w,h;
 	u8_t strbuf[128] = {0};
 	
 	LCD_Clear(BLACK);
@@ -1507,6 +1507,13 @@ void EnterIdleScreen(void)
 
 	k_timer_stop(&notify_timer);
 	
+	k_timer_stop(&mainmenu_timer);
+	if(gps_is_working())
+		MenuStopGPS();
+#ifdef CONFIG_PPG_SUPPORT
+	PPGStopCheck();
+#endif
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;

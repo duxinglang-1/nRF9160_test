@@ -611,13 +611,15 @@ void LCD_Init(void)
 	WriteComm(0x35);	
 	WriteData(0x00); 
 	WriteComm(0x21);
-	Delay(120);
 	//--------end gamma setting--------------//
 
 	WriteComm(0x11);
 	Delay(120);
 	WriteComm(0x29);
 	WriteComm(0x2C);
+
+	LCD_Clear(BLACK);		//清屏为黑色
+	Delay(30);
 
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
@@ -626,10 +628,8 @@ void LCD_Init(void)
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
 	gpio_pin_write(gpio_lcd, LEDA, 1);
 #endif
-	
-	lcd_is_sleeping = false;
 
-	LCD_Clear(BLACK);		//清屏为黑色
+	lcd_is_sleeping = false;
 
 	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
 

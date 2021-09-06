@@ -408,6 +408,7 @@ void LCD_Init(void)
 	WriteComm(0xA6); //Set Normal Display
 
 	LCD_Clear(BLACK);
+	Delay(30);
 
 	WriteComm(0xAF); //Set Display On
 

@@ -446,12 +446,13 @@ void LCD_Init(void)
 	WriteComm(0x21);     //Display inversion
 	WriteComm(0x29);     //Display on
 
+	LCD_Clear(BLACK);		//清屏为黑色
+	Delay(30);
+
 	//点亮背光
 	gpio_pin_write(gpio_lcd, LEDK, 0);
 
-	lcd_is_sleeping = false;
-
-	LCD_Clear(BLACK);		//清屏为黑色
+	lcd_is_sleeping = false;	
 }
 
 #endif

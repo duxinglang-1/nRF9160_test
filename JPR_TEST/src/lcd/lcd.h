@@ -25,7 +25,7 @@
 //#define LCD_TYPE_I2C			//I2C
 #define LCD_TYPE_SPI			//SPI
 
-//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 #define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 

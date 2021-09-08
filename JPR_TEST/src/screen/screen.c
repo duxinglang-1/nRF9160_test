@@ -1599,8 +1599,9 @@ void EnterSleepScreen(void)
 	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
 
-	MenuStopGPS();
 	k_timer_stop(&mainmenu_timer);
+
+	MenuStopGPS();
 
 	Key_Event_register_Handler(EnterStepsScreen, ExitSleepScreen);
 }
@@ -1629,12 +1630,12 @@ void EnterGPSTestScreen(void)
 	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
 #ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
 #endif
-
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
 #ifdef CONFIG_IMU_SUPPORT
 	Key_Event_register_Handler(EnterSleepScreen, ExitGPSTestScreen);

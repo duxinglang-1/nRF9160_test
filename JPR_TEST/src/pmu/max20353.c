@@ -41,6 +41,7 @@ bool sys_pwr_off_flag = false;
 bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
+bool sys_shutdown_is_running = false;
 
 u8_t g_bat_soc = 0;
 
@@ -126,7 +127,6 @@ void Set_Screen_Backlight_On(void)
 	int ret = 0;
 
 	ret = MAX20353_LED1(2, 31, true);
-	LOG_INF("[%s] ret:%d\n", __func__, ret);
 }
 
 void Set_Screen_Backlight_Off(void)
@@ -134,7 +134,6 @@ void Set_Screen_Backlight_Off(void)
 	int ret = 0;
 
 	ret = MAX20353_LED1(2, 0, false);
-	LOG_INF("[%s] ret:%d\n", __func__, ret);
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)
@@ -144,15 +143,20 @@ void sys_pwr_off_timerout(struct k_timer *timer_id)
 
 void system_power_off(u8_t flag)
 {
-	SaveSystemDateTime();
-	if(nb_is_connected())
+	if(!sys_shutdown_is_running)
 	{
-		SendPowerOffData(flag);
-		k_timer_start(&sys_pwroff, K_MSEC(2*1000), NULL);
-	}
-	else
-	{
-		sys_pwr_off_flag = true;
+		sys_shutdown_is_running = true;
+		
+		SaveSystemDateTime();
+		if(nb_is_connected())
+		{
+			SendPowerOffData(flag);
+			k_timer_start(&sys_pwroff, K_MSEC(2*1000), NULL);
+		}
+		else
+		{
+			sys_pwr_off_flag = true;
+		}
 	}
 }
 

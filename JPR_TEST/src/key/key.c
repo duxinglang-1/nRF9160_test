@@ -131,6 +131,8 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		return;
 	}
 
+	LCD_ResetBL_Timer();
+
 	switch(key_code)
 	{
 	case KEY_SOS:

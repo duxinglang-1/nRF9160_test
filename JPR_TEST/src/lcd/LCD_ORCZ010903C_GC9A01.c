@@ -1,6 +1,5 @@
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
@@ -179,7 +178,7 @@ void DispColor(u32_t total, u16_t color)
 	}
 }
 
-void DispDate(u32_t total, u8_t *data)
+void DispData(u32_t total, u8_t *data)
 {
 	u32_t i,remain;      
 
@@ -317,7 +316,6 @@ void LCD_SleepOut(void)
 	WriteComm(0x29);
 
 	//点亮背光
-	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
@@ -326,6 +324,16 @@ void LCD_SleepOut(void)
 #endif	
 	
 	lcd_is_sleeping = false;
+}
+
+//屏幕重置背光延时
+void LCD_ResetBL_Timer(void)
+{
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
 }
 
 //LCD初始化函数

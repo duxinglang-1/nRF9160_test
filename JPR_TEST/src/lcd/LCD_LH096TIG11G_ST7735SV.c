@@ -1,8 +1,11 @@
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
 #include "lcd.h"
-#include "font.h" 
+#include "font.h"
+#include "settings.h"
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+#include "Max20353.h"
+#endif
 
 #ifdef LCD_LH096TIG11G_ST7735SV
 #include "LCD_LH096TIG11G_ST7735SV.h"
@@ -12,25 +15,31 @@
 struct device *spi_lcd;
 struct device *gpio_lcd;
 
+struct spi_buf_set tx_bufs,rx_bufs;
+struct spi_buf tx_buff,rx_buff;
+
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
+
+static struct k_timer backlight_timer;
 
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
-static void spi_init(void)
+u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
+
+
+static void LCD_SPI_Init(void)
 {
-	printk("spi_init\n");
-	
 	spi_lcd = device_get_binding(LCD_DEV);
-	if (!spi_lcd) 
+	if(!spi_lcd) 
 	{
 		printk("Could not get %s device\n", LCD_DEV);
 		return;
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
@@ -45,10 +54,38 @@ static void spi_init(void)
 	spi_cfg.cs = &spi_cs_ctr;
 }
 
+
+static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t rxbuflen)
+{
+	int err;
+	
+	tx_buff.buf = txbuf;
+	tx_buff.len = txbuflen;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+
+	rx_buff.buf = rxbuf;
+	rx_buff.len = rxbuflen;
+	rx_bufs.buffers = &rx_buff;
+	rx_bufs.count = 1;
+
+	err = spi_transceive(spi_lcd, &spi_cfg, &tx_bufs, &rx_bufs);
+	if(err)
+	{
+		printk("SPI error: %d\n", err);
+	}
+
+}
+
 //LCD延时函数
 void Delay(unsigned int dly)
 {
 	k_sleep(K_MSEC(dly));
+}
+
+static void backlight_timer_handler(struct k_timer *timer)
+{
+	lcd_sleep_in = true;
 }
 
 //数据接口函数
@@ -149,24 +186,59 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	WriteComm(0x2c);
 }
 
-void DispColor(unsigned int color)
+void DispColor(u32_t total, u16_t color)
 {
-	unsigned int i,j;
+	u32_t i,remain;      
 
-	BlockWrite(0,0,COL,ROW);
-
-	//gpio_pin_write(gpio_lcd, CS, 0);
 	gpio_pin_write(gpio_lcd, RS, 1);
-
-	for(i=0;i<ROW;i++)
+	
+	while(1)
 	{
-		for(j=0;j<COL;j++)
-		{    
-			WriteDispData(color>>8, color);
+		if(total <= LCD_DATA_LEN)
+			remain = total;
+		else
+			remain = LCD_DATA_LEN;
+		
+		for(i=0;i<remain;i++)
+		{
+			lcd_data_buffer[2*i] = color>>8;
+			lcd_data_buffer[2*i+1] = color;
 		}
-	}
+		
+		LCD_SPI_Transceive(lcd_data_buffer, 2*remain, NULL, 0);
 
-	//gpio_pin_write(gpio_lcd, CS, 1);
+		if(remain == total)
+			break;
+
+		total -= remain;
+	}
+}
+
+void DispData(u32_t total, u8_t *data)
+{
+	u32_t i,remain;      
+
+	gpio_pin_write(gpio_lcd, RS, 1);
+	
+	while(1)
+	{
+		if(total <= 2*LCD_DATA_LEN)
+			remain = total;
+		else
+			remain = 2*LCD_DATA_LEN;
+		
+		for(i=0;i<remain;i++)
+		{
+			lcd_data_buffer[i] = data[i];
+		}
+		
+		LCD_SPI_Transceive(lcd_data_buffer, remain, NULL, 0);
+
+		if(remain == total)
+			break;
+
+		total -= remain;
+	}
 }
 
 //测试函数（显示RGB条纹）
@@ -312,6 +384,16 @@ void LCD_SleepOut(void)
 	lcd_is_sleeping = false;
 }
 
+//屏幕重置背光延时
+void LCD_ResetBL_Timer(void)
+{
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
 //LCD初始化函数
 void LCD_Init(void)
 {
@@ -332,7 +414,7 @@ void LCD_Init(void)
 	gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
 	gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
 
-	spi_init();
+	LCD_SPI_Init();
 
 	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(10);

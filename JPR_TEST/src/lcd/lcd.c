@@ -115,7 +115,7 @@ void LCD_Pic_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char 
 			databuf[2*j+1] = color[8+2*(i*width+j)+1];
 		}
 
-		DispDate(2*w, databuf);
+		DispData(2*w, databuf);
 	#else
 		for(j=0;j<w;j++)
 			WriteDispData(color[8+2*(i*width+j)],color[8+2*(i*width+j)+1]);	//显示颜色 
@@ -238,7 +238,7 @@ void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 			SpiFlash_Read(fontbuf, FONT_ASC_0804_ADDR+csize*num, csize);
 			BlockWrite(x, y, (system_font/2),1);
 			memcpy(databuf, fontbuf, (system_font/2));
-			DispDate((system_font/2), databuf);
+			DispData((system_font/2), databuf);
 			break;
 	#endif
 	
@@ -249,7 +249,7 @@ void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &fontbuf[(system_font/2)*i],(system_font/2));
-				DispDate((system_font/2), databuf);
+				DispData((system_font/2), databuf);
 			}
 			break;
 	#endif
@@ -261,7 +261,7 @@ void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &fontbuf[(system_font/2)*i],(system_font/2));
-				DispDate((system_font/2), databuf);
+				DispData((system_font/2), databuf);
 			}
 			break;
 	#endif
@@ -273,7 +273,7 @@ void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &fontbuf[(system_font/2)*i],(system_font/2));
-				DispDate((system_font/2), databuf);
+				DispData((system_font/2), databuf);
 			}
 			break;
 	#endif
@@ -301,7 +301,7 @@ void LCD_ShowCn_from_flash(u16_t x, u16_t y, u16_t num)
 			SpiFlash_Read(fontbuf, FONT_CHN_SM_0808_ADDR+csize*index, csize);
 			BlockWrite(x, y, system_font, 1);
 			memcpy(databuf, fontbuf, system_font);
-			DispDate(system_font, databuf);
+			DispData(system_font, databuf);
 			break;
 	#endif
 	
@@ -312,7 +312,7 @@ void LCD_ShowCn_from_flash(u16_t x, u16_t y, u16_t num)
 			{
 				BlockWrite(x, y+i, system_font,1);
 				memcpy(databuf, &fontbuf[system_font*i], system_font);
-				DispDate(system_font, databuf);
+				DispData(system_font, databuf);
 			}
 			break;
 	#endif
@@ -324,7 +324,7 @@ void LCD_ShowCn_from_flash(u16_t x, u16_t y, u16_t num)
 			{
 				BlockWrite(x, y+i, system_font, 1);
 				memcpy(databuf, &fontbuf[system_font*i], system_font);
-				DispDate(system_font, databuf);
+				DispData(system_font, databuf);
 			}
 			break;
 	#endif
@@ -336,7 +336,7 @@ void LCD_ShowCn_from_flash(u16_t x, u16_t y, u16_t num)
 			{
 				BlockWrite(x, y+i, system_font, 1);
 				memcpy(databuf, &fontbuf[system_font*i], system_font);
-				DispDate(system_font, databuf);
+				DispData(system_font, databuf);
 			}
 			break;
 	#endif
@@ -410,7 +410,7 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -422,7 +422,7 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			}
 			if((x-x0)==(system_font/2))
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -522,7 +522,7 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -533,7 +533,7 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 			}
 			if((x-x0)==(system_font))
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -653,7 +653,7 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -664,7 +664,7 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 			}
 			if((x-x0)==cbyte)
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -810,7 +810,7 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 			x++;
 			if(x>=LCD_WIDTH)							//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -821,7 +821,7 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 			}
 			if((x-x0)==(system_font))
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -952,7 +952,7 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -964,7 +964,7 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 			}
 			if((x-x0)==cbyte)
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -1075,7 +1075,7 @@ void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
 			pic_addr += readlen;
 
 	#ifdef LCD_TYPE_SPI
-		DispDate(readlen, databuf);
+		DispData(readlen, databuf);
 	#else
 		for(i=0;i<(readlen/2);i++)
 			WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
@@ -1131,7 +1131,7 @@ void LCD_dis_img_from_flash(u16_t x, u16_t y, u32_t pic_addr)
 		
 		memset(databuf, 0, COL);
 		SpiFlash_Read(databuf, pic_addr, readlen);
-		DispDate(readlen, databuf);
+		DispData(readlen, databuf);
 		
 		if(show_w < w)
 			pic_addr += w;
@@ -1179,7 +1179,7 @@ void LCD_ShowEn(u16_t x,u16_t y,u8_t num)
 		case FONT_SIZE_8:
 			BlockWrite(x,y,(system_font/2),1);
 			memcpy(databuf, &asc2_SH1106_0804[num][0],(system_font/2));
-			DispDate((system_font/2), databuf);
+			DispData((system_font/2), databuf);
 			break;
 	#endif
 	
@@ -1189,7 +1189,7 @@ void LCD_ShowEn(u16_t x,u16_t y,u8_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &asc2_SH1106_1608[num][(system_font/2)*i],(system_font/2));
-				DispDate((system_font/2), databuf);
+				DispData((system_font/2), databuf);
 			}
 			break;
 	#endif
@@ -1200,7 +1200,7 @@ void LCD_ShowEn(u16_t x,u16_t y,u8_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &asc2_SH1106_2412[num][(system_font/2)*i],(system_font/2));
-				DispDate((system_font/2), databuf);
+				DispData((system_font/2), databuf);
 			}
 			break;
 	#endif
@@ -1211,7 +1211,7 @@ void LCD_ShowEn(u16_t x,u16_t y,u8_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &asc2_SH1106_3216[num][(system_font/2)*i],(system_font/2));
-				DispDate((system_font/2), databuf);
+				DispData((system_font/2), databuf);
 			}
 			break;
 	#endif
@@ -1233,7 +1233,7 @@ void LCD_ShowCn(u16_t x, u16_t y, u16_t num)
 		case FONT_SIZE_8:
 			BlockWrite(x,y+i,system_font,1);
 			memcpy(databuf, &chinse_SH1106_0808[index][system_font*i],system_font);
-			DispDate(system_font, databuf);
+			DispData(system_font, databuf);
 			break;
 	#endif
 	
@@ -1243,7 +1243,7 @@ void LCD_ShowCn(u16_t x, u16_t y, u16_t num)
 			{
 				BlockWrite(x,y+i,system_font,1);
 				memcpy(databuf, &chinse_SH1106_1616[index][system_font*i],system_font);
-				DispDate(system_font, databuf);
+				DispData(system_font, databuf);
 			}
 			break;
 	#endif
@@ -1254,7 +1254,7 @@ void LCD_ShowCn(u16_t x, u16_t y, u16_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &chinse_SH1106_2424[index][system_font*i],system_font);
-				DispDate(system_font, databuf);
+				DispData(system_font, databuf);
 			}
 			break;
 	#endif
@@ -1265,7 +1265,7 @@ void LCD_ShowCn(u16_t x, u16_t y, u16_t num)
 			{
 				BlockWrite(x,y+i,(system_font/2),1);
 				memcpy(databuf, &chinse_SH1106_3232[index][system_font*i],system_font);
-				DispDate(system_font, databuf);
+				DispData(system_font, databuf);
 			}
 			break;
 	#endif
@@ -1338,7 +1338,7 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 
 				x=x0;
@@ -1350,7 +1350,7 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			}
 			if((x-x0)==(system_font/2))
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -1449,7 +1449,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 
 				x=x0;
@@ -1460,7 +1460,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 			}
 			if((x-x0)==(system_font))
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -1577,7 +1577,7 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 
 				x=x0;
@@ -1589,7 +1589,7 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 			}
 			if((x-x0)==cbyte)
 			{
-				DispDate(2*i, databuf);
+				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
@@ -1691,7 +1691,7 @@ void LCD_dis_pic(uint16_t x, uint16_t y, unsigned char *color)
 			offset += readlen;
 
 	#ifdef LCD_TYPE_SPI
-		DispDate(readlen, databuf);
+		DispData(readlen, databuf);
 	#else
 		for(i=0;i<(readlen/2);i++)
 			WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
@@ -1759,7 +1759,7 @@ void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t tr
 		}
 		
 	#ifdef LCD_TYPE_SPI
-		DispDate(readlen, databuf);
+		DispData(readlen, databuf);
 	#else
 		for(i=0;i<(readlen/2);i++)
 			WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
@@ -1823,7 +1823,7 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 				offset += readlen;
 
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
@@ -1876,7 +1876,7 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 			}
 			
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
@@ -1929,7 +1929,7 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 			}
 			
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
@@ -1982,7 +1982,7 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 			}
 			
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
@@ -2056,7 +2056,7 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 			}
 			
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
@@ -2118,7 +2118,7 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 			}
 					
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
@@ -2179,7 +2179,7 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 				}
 			}	
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
@@ -2241,7 +2241,7 @@ void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 			}
 					
 		#ifdef LCD_TYPE_SPI
-			DispDate(readlen, databuf);
+			DispData(readlen, databuf);
 		#else
 			for(i=0;i<(readlen/2);i++)
 				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
@@ -2298,7 +2298,7 @@ void LCD_dis_img(u16_t x, u16_t y, unsigned char *color)
 		
 		memset(databuf, 0, COL);
 		memcpy(databuf, &color[offset], readlen);
-		DispDate(readlen, databuf);
+		DispData(readlen, databuf);
 
 		if(show_w < w)
 			offset += w;

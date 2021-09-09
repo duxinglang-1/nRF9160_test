@@ -378,8 +378,13 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 			lat = evt->pvt.latitude*1000000;
 			sprintf(strbuf, "Longitude:   %d.%06d\nLatitude:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 			strcat(gps_test_info, strbuf);
-			sprintf(strbuf, "fix time:    %dS", gps_local_time/1000);
-			strcat(gps_test_info, strbuf);
+
+			if(gps_fix_time > 0)
+			{
+				sprintf(strbuf, "fix time:    %dS", gps_local_time/1000);
+				strcat(gps_test_info, strbuf);
+			}
+			
 			gps_test_update_flag = true;
 		}		
 		else

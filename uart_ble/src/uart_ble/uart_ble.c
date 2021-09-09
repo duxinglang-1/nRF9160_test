@@ -13,11 +13,16 @@
 #include "datetime.h"
 #include "Settings.h"
 #include "Uart_ble.h"
+#ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
+#endif
 #include "gps.h"
 #include "max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
+#endif
 #include "screen.h"
+#include "inner_flash.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
@@ -92,6 +97,8 @@ static struct gpio_callback gpio_cb;
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
 
+static sys_date_timer_t refresh_time = {0};
+
 struct uart_data_t
 {
 	void  *fifo_reserved;
@@ -128,6 +135,7 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 }
 
+#ifdef CONFIG_TOUCH_SUPPORT
 void CTP_notify_handle(u8_t *buf, u32_t len)
 {
 	u8_t tp_type = TP_EVENT_MAX;
@@ -169,12 +177,8 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		tp_y = buf[9]*0x100+buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
-
-	//tp_msg.evt_id = tp_type;
-	//tp_msg.x_pos = tp_x;
-	//tp_msg.y_pos = tp_y;
-	//tp_redraw_flag = true;
 }
+#endif
 
 void APP_set_find_device(u8_t *buf, u32_t len)
 {
@@ -589,6 +593,7 @@ void APP_set_target_steps(u8_t *buf, u32_t len)
 	need_save_settings = true;
 }
 
+#ifdef CONFIG_PPG_SUPPORT
 void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
 {
 	u8_t reply[128] = {0};
@@ -634,17 +639,26 @@ void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
 		ble_send_date_handle(reply, reply_len);
 	}
 }
+#endif
 
 void APP_get_current_data(u8_t *buf, u32_t len)
 {
 	u8_t wake,reply[128] = {0};
-	u16_t steps,calorie,distance,light_sleep,deep_sleep;	
+	u16_t steps=0,calorie=0,distance=0;
+	u16_t light_sleep=0,deep_sleep=0;	
 	u32_t i,reply_len = 0;
 
-	LOG_INF("[%s]\n", __func__);
-	
+	refresh_time.year = 2000 + buf[7];
+	refresh_time.month = buf[8];
+	refresh_time.day = buf[9];
+	refresh_time.hour = buf[10];
+	refresh_time.minute = buf[11];
+
+#ifdef CONFIG_IMU_SUPPORT	
 	GetSportData(&steps, &calorie, &distance);
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
+	
 	wake = 8;
 	
 	//packet head
@@ -687,7 +701,9 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 
 	//上传心率数据
-	//MCU_send_heart_rate();
+#ifdef CONFIG_PPG_SUPPORT	
+	MCU_send_heart_rate();
+#endif
 }
 
 void APP_get_location_data(u8_t *buf, u32_t len)
@@ -867,6 +883,7 @@ void APP_get_firmware_version(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 }
 
+#ifdef CONFIG_PPG_SUPPORT
 void APP_get_heart_rate(u8_t *buf, u32_t len)
 {
 	u8_t heart_rate,reply[128] = {0};
@@ -922,6 +939,7 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 		APPStartPPG();
 	}
 }
+#endif
 
 //APP回复手环查找手机
 void APP_reply_find_phone(u8_t *buf, u32_t len)
@@ -1301,14 +1319,18 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 	switch(data_ID)
 	{
 	case HEART_RATE_ID:			//心率
+	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_heart_rate(buf, len);
+	#endif
 		break;
 	case BLOOD_OXYGEN_ID:		//血氧
 		break;
 	case BLOOD_PRESSURE_ID:		//血压
 		break;
 	case ONE_KEY_MEASURE_ID:	//一键测量
+	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_one_key_measure_data(buf, len);
+	#endif
 		break;
 	case PULL_REFRESH_ID:		//下拉刷新
 		APP_get_current_data(buf, len);
@@ -1373,7 +1395,9 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 		ble_connect_or_disconnect_handle(buf, len);
 		break;
 	case CTP_NOTIFY_ID:
+	#ifdef CONFIG_TOUCH_SUPPORT
 		CTP_notify_handle(buf, len);
+	#endif
 		break;
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);
@@ -1422,11 +1446,6 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 	
     if(blue_is_on)
     {
-    	//LOG_INF("data:%02x\n", data);
-
-	#if 0
-    	ble_send_date_handle(&data, 1);
-	#else
         rx_buf[rece_len++] = data;
 		if(rece_len == 3)
 			data_len = (256*rx_buf[1]+rx_buf[2]+3);
@@ -1445,14 +1464,12 @@ static void uart_receive_data(u8_t data, u32_t datalen)
             rece_len = 0;
 			data_len = 0;
         }
-	#endif	
     }
 #ifdef CONFIG_WIFI	
     else if(wifi_is_on)
     {
-       
         rx_buf[rece_len++] = data;
-        if(rece_len==256)
+        if(rece_len == 256)
         {
             wifi_receive_data_handle(rx_buf, rece_len);
 
@@ -1567,7 +1584,7 @@ static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *
 void UartSleepInCallBack(struct k_timer *timer_id)
 {
 	LOG_INF("UartSleepInCallBack\n");
-	//uart_sleep_flag = true;
+	uart_sleep_flag = true;
 }
 #endif
 

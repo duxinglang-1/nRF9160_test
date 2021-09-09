@@ -16,6 +16,7 @@
  *
  ******************************************************************************
  */
+#ifdef CONFIG_IMU_SUPPORT
 
 #include "lsm6dso_reg.h"
 
@@ -9086,7 +9087,7 @@ int32_t lsm6dso_sh_status_get(stmdev_ctx_t *ctx,
 
   return ret;
 }
-
+#endif/*CONFIG_IMU_SUPPORT*/
 /**
   * @}
   *

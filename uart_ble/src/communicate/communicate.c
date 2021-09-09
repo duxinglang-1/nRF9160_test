@@ -156,7 +156,8 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
  *****************************************************************************/
 void TimeCheckSendHealthData(void)
 {
-	u16_t steps,calorie,distance,light_sleep,deep_sleep;
+	u16_t steps=0,calorie=0,distance=0;
+	u16_t light_sleep=0,deep_sleep=0;
 	u8_t tmpbuf[20] = {0};
 	u8_t databuf[128] = {0};
 	static u32_t health_hour_count = 0;
@@ -166,9 +167,11 @@ void TimeCheckSendHealthData(void)
 	{
 		health_hour_count = 0;
 
+	#ifdef CONFIG_IMU_SUPPORT
 		GetSportData(&steps, &calorie, &distance);
 		GetSleepTimeData(&deep_sleep, &light_sleep);
-		
+	#endif
+	
 		//steps
 		sprintf(tmpbuf, "%d,", steps);
 		strcpy(databuf, tmpbuf);

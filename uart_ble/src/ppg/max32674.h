@@ -27,5 +27,6 @@ extern void PPGMsgProcess(void);
 
 /*heart rate*/
 extern void GetHeartRate(u8_t *HR);
+extern void APPStartPPG(void);
 
 #endif/*__MAX32674_H__*/

@@ -61,7 +61,7 @@ LOG_MODULE_REGISTER(max_sh_interface, CONFIG_LOG_DEFAULT_LEVEL);
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
 #define MFIO_LOW_DURATION        550
-#define SS_DEFAULT_RETRIES       ((int) (4))
+#define SS_DEFAULT_RETRIES       ((int) (5))
 //max size is used for bootloader page loading
 #define SS_TX_BUF_SIZE		(BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE+BL_FLASH_CMD_LEN)
 
@@ -83,6 +83,20 @@ void wait_ms(int ms)
 	k_sleep(K_MSEC(ms));
 }
 
+void SH_Power_On(void)
+{
+	//PPG供电打开
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
+}
+
+void SH_Power_Off(void)
+{
+	//PPG供电关闭
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
+}
+
 static void sh_init_i2c(void)
 {
 	i2c_ppg = device_get_binding(PPG_DEV);
@@ -93,13 +107,6 @@ static void sh_init_i2c(void)
 	else
 	{
 		i2c_configure(i2c_ppg, I2C_SPEED_SET(I2C_SPEED_FAST));
-		
-		LOG_INF("Value of NRF_TWIM1_NS->PSEL.SCL: %ld \n",NRF_TWIM1_NS->PSEL.SCL);
-		LOG_INF("Value of NRF_TWIM1_NS->PSEL.SDA: %ld \n",NRF_TWIM1_NS->PSEL.SDA);
-		LOG_INF("Value of NRF_TWIM1_NS->FREQUENCY: %ld \n",NRF_TWIM1_NS->FREQUENCY);
-		LOG_INF("26738688 -> 100k\n");
-		LOG_INF("67108864 -> 250k\n");
-		LOG_INF("104857600 -> 400k\n");	
 	}
 }
 
@@ -121,27 +128,12 @@ static void sh_init_gpio(void)
 	gpio_add_callback(gpio_ppg, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN);
 
-	//PPG供电打开
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
-
+	
 	//PPG模式选择(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_DIR_OUT);
 	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_DIR_OUT);
-}
-
-void SH_Power_On(void)
-{
-	//PPG供电打开
-	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
-}
-
-void SH_Power_Off(void)
-{
-	//PPG供电关闭
-	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
 }
 
 void SH_mfio_to_low_and_keep(int waitDurationInUs)
@@ -1032,6 +1024,9 @@ bool sh_init_interface(void)
 	if(s32_status != SS_SUCCESS)
 	{
 		LOG_INF("Read MCU type fail, %x \n", s32_status);
+
+		SH_Power_Off();
+		//Set_PPG_Power_Off();
 		return false;
 	}
 	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
@@ -1041,6 +1036,9 @@ bool sh_init_interface(void)
 	if (s32_status != SS_SUCCESS)
 	{
 		LOG_INF("read FW version fail %x \n", s32_status);
+
+		SH_Power_Off();
+		//Set_PPG_Power_Off();
 		return false;
 	}
 	else
@@ -1055,6 +1053,9 @@ bool sh_init_interface(void)
 		LCD_SleepOut();
 	}
 
+	SH_Power_Off();
+	//Set_PPG_Power_Off();
+	
 	return true;
 }
 

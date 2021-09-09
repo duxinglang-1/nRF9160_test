@@ -1,6 +1,5 @@
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
@@ -179,7 +178,7 @@ void DispColor(u32_t total, u16_t color)
 	}
 }
 
-void DispDate(u32_t total, u8_t *data)
+void DispData(u32_t total, u8_t *data)
 {
 	u32_t i,remain;      
 
@@ -317,7 +316,6 @@ void LCD_SleepOut(void)
 	WriteComm(0x29);
 
 	//点亮背光
-	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
@@ -326,6 +324,16 @@ void LCD_SleepOut(void)
 #endif	
 	
 	lcd_is_sleeping = false;
+}
+
+//屏幕重置背光延时
+void LCD_ResetBL_Timer(void)
+{
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
 }
 
 //LCD初始化函数
@@ -410,7 +418,7 @@ void LCD_Init(void)
 
 	WriteComm(0xB6);			
 	WriteData(0x00); 
-	WriteData(0x00); //GS  SS  0x20
+	WriteData(0x00);//GS  SS  0x20
 
 	WriteComm(0x36);			
 	WriteData(0x48);
@@ -611,13 +619,15 @@ void LCD_Init(void)
 	WriteComm(0x35);	
 	WriteData(0x00); 
 	WriteComm(0x21);
-	Delay(120);
 	//--------end gamma setting--------------//
 
 	WriteComm(0x11);
 	Delay(120);
 	WriteComm(0x29);
 	WriteComm(0x2C);
+
+	LCD_Clear(BLACK);		//清屏为黑色
+	Delay(30);
 
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
@@ -626,10 +636,8 @@ void LCD_Init(void)
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
 	gpio_pin_write(gpio_lcd, LEDA, 1);
 #endif
-	
-	lcd_is_sleeping = false;
 
-	LCD_Clear(BLACK);		//清屏为黑色
+	lcd_is_sleeping = false;
 
 	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
 

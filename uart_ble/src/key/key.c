@@ -17,7 +17,9 @@
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
+#endif
 #include "Alarm.h"
 #include "lcd.h"
 
@@ -92,10 +94,31 @@ bool is_wearing(void)
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
+	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
+	
+	if(key_code == KEY_TOUCH)
+	{
+		switch(key_type)
+		{
+		case KEY_DOWN://´÷ÉÏ
+			if(!touch_flag)
+			{
+				touch_flag = true;
+			}			
+			break;
+		case KEY_UP://ÍÑÏÂ
+			if(touch_flag)
+			{
+				touch_flag = false;
+			}
+			break;
+		case KEY_LONG_PRESS:
+			break;
+		}		
+	}
+	
 	if(!system_is_completed())
 		return;
-
 
 	if(lcd_is_sleeping)
 	{
@@ -108,17 +131,18 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		return;
 	}
 
+	LCD_ResetBL_Timer();
+
 	switch(key_code)
 	{
 	case KEY_SOS:
 		switch(key_type)
 		{
 		case KEY_DOWN:
-			if(rightkey_handler_cb != NULL)
+			if(leftkey_handler_cb != NULL)
 				leftkey_handler_cb();
 			break;
 		case KEY_UP:
-
 			break;
 		case KEY_LONG_PRESS:
 			SOSStart();
@@ -138,28 +162,6 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			EnterPoweroffScreen();
 			break;
 		}
-		break;
-	case KEY_TOUCH:	//´©´÷´¥Ãþ¼ì²â
-		if(SOSIsRunning())
-			break;
-		
-		switch(key_type)
-		{
-		case KEY_DOWN://´÷ÉÏ
-			if(!touch_flag)
-			{
-				touch_flag = true;
-			}			
-			break;
-		case KEY_UP://ÍÑÏÂ
-			if(touch_flag)
-			{
-				touch_flag = false;
-			}
-			break;
-		case KEY_LONG_PRESS:
-			break;
-		}		
 		break;
 	}
 

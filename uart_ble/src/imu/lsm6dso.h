@@ -1,3 +1,5 @@
+#ifdef CONFIG_IMU_SUPPORT
+
 #include <nrf9160.h>
 #include <zephyr.h>
 #include <device.h>
@@ -36,3 +38,5 @@ extern void lsm6dso_sensitivity(void);
 extern void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp,int hr,int hour,int charging);
 extern int get_light_sleep_time(void); //return light sleep time in minutes
 extern int get_deep_sleep_time(void); //return deep sleep time in minutes
+
+#endif/*CONFIG_IMU_SUPPORT*/

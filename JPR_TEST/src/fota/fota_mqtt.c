@@ -167,12 +167,12 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	}
 }
 
-void ExitFotaScreen(void)
+void fota_exit(void)
 {
 	fota_run_flag = false;
 	fota_cur_status = FOTA_STATUS_MAX;
 	
-	EnterIdleScreen();
+	ExitFOTAScreen();
 }
 
 static void fota_timer_handler(struct k_timer *timer)
@@ -196,7 +196,7 @@ static void fota_timer_handler(struct k_timer *timer)
 	case FOTA_STATUS_ERROR:
 		fota_run_flag = false;
 		fota_cur_status = FOTA_STATUS_MAX;
-		ExitFotaScreen();
+		fota_exit();
 		break;
 		
 	case FOTA_STATUS_MAX:

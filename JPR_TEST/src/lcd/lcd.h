@@ -27,7 +27,7 @@
 
 #define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
-#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
+//#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
 //LCD睡眠唤醒
 extern bool lcd_sleep_in;
@@ -77,6 +77,14 @@ extern SYSTEM_FONT_SIZE system_font;
 #define X_max 0x07AE
 #define Y_min 0x00A1
 #define Y_max 0x0759
+
+typedef enum
+{
+	LCD_BL_ALWAYS_ON,
+	LCD_BL_AUTO,
+	LCD_BL_OFF,
+	LCD_BL_MAX
+}LCD_BL_MODE;
 
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void LCD_Pic_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char *color);

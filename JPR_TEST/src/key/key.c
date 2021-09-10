@@ -515,6 +515,7 @@ static int buttons_init(button_handler_t button_handler)
 void key_init(void)
 {
 	int err;
+	u32_t ret = 0;
 
 	LOG_INF("key_init\n");
 	
@@ -526,4 +527,15 @@ void key_init(void)
 	}
 
 	k_timer_init(&g_long_press_timer_id, long_press_timer_handler, NULL);
+
+	if(gpio_pin_read(button_devs[2], button_pins[2].number, &ret))
+	{
+		LOG_INF("Cannot read gpio pin");
+		return;
+	}
+
+	if(button_pins[2].active_flag == ret)
+	{
+		touch_flag = true;
+	}
 }

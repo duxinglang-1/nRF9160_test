@@ -27,7 +27,7 @@
 
 #define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
-//#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
+#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
 //LCD睡眠唤醒
 extern bool lcd_sleep_in;

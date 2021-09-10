@@ -1025,6 +1025,208 @@ void SOSScreenProcess(void)
 	}
 }
 
+#ifdef CONFIG_FOTA_DOWNLOAD
+void FOTAShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t str_title[] = "FOTA RUNNING";
+
+	LCD_Clear(BLACK);
+	//LCD_DrawRectangle(FOTA_NOTIFY_RECT_X, FOTA_NOTIFY_RECT_Y, FOTA_NOTIFY_RECT_W, FOTA_NOTIFY_RECT_H);
+	//LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_RECT_Y+1, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-1, BLACK);
+	
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_MeasureString(str_title, &w, &h);
+	x = (w > (FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W))? 0 : ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
+	x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
+	y = 20;
+	LCD_ShowString(x,y,str_title);
+
+	ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
+					  FOTA_NOTIFY_STRING_Y, 
+					  FOTA_NOTIFY_STRING_W, 
+					  FOTA_NOTIFY_STRING_H, 
+					  FONT_SIZE_16, 
+					  "Make sure the battery is at least 20% full and don't do anything during the upgrade!");
+
+	LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
+	LCD_MeasureString("SOS(Y)", &w, &h);
+	x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
+	y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
+	LCD_ShowString(x,y,"SOS(Y)");
+
+	LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
+	LCD_MeasureString("PWR(N)", &w, &h);
+	x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
+	y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
+	LCD_ShowString(x,y,"PWR(N)");
+
+	Key_Event_register_Handler(fota_start_confirm, fota_exit);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_X+FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_Y+FOTA_NOTIFY_NO_H, fota_exit);
+#endif
+	
+}
+
+void FOTAUpdateStatus(void)
+{
+	u16_t pro_len;
+	u16_t x,y,w,h;
+	u8_t pro_buf[16] = {0};
+	static bool flag = false;
+	static u16_t pro_str_x,pro_str_y;
+	
+	switch(get_fota_status())
+	{
+	case FOTA_STATUS_PREPARE:
+		flag = false;
+		break;
+		
+	case FOTA_STATUS_LINKING:
+		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
+						  FOTA_NOTIFY_STRING_Y,
+						  FOTA_NOTIFY_STRING_W,
+						  FOTA_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "Linking to server...");
+
+		Key_Event_Unregister_Handler();
+		break;
+		
+	case FOTA_STATUS_DOWNLOADING:
+		if(!flag)
+		{
+			flag = true;
+			
+			LCD_Fill(FOTA_NOTIFY_STRING_X, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_STRING_W, FOTA_NOTIFY_STRING_H, BLACK);
+			ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
+							  FOTA_NOTIFY_STRING_Y,
+							  FOTA_NOTIFY_STRING_W,
+							  40,
+							  FONT_SIZE_16,
+							  "Downloading data...");
+			
+			LCD_DrawRectangle(FOTA_NOTIFY_PRO_X, FOTA_NOTIFY_PRO_Y, FOTA_NOTIFY_PRO_W, FOTA_NOTIFY_PRO_H);
+			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, FOTA_NOTIFY_PRO_W-1, FOTA_NOTIFY_PRO_H-1, BLACK);
+
+			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			LCD_MeasureString(pro_buf, &w, &h);
+			pro_str_x = ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
+			pro_str_x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
+			pro_str_y = FOTA_NOTIFY_PRO_Y + FOTA_NOTIFY_PRO_H + 5;
+			
+			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+		}
+		else
+		{
+			pro_len = (g_fota_progress*FOTA_NOTIFY_PRO_W)/100;
+			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, pro_len, FOTA_NOTIFY_PRO_H-1, WHITE);
+
+			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+		}
+
+		Key_Event_Unregister_Handler();
+		break;
+		
+	case FOTA_STATUS_FINISHED:
+		flag = false;
+		
+		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
+						  FOTA_NOTIFY_STRING_Y,
+						  FOTA_NOTIFY_STRING_W,
+						  FOTA_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "It upgraded successfully! Do you want to reboot the device immediately?");
+
+		LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
+		LCD_MeasureString("SOS(Y)", &w, &h);
+		x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
+		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
+		LCD_ShowString(x,y,"SOS(Y)");
+
+		LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
+		LCD_MeasureString("PWR(N)", &w, &h);
+		x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
+		y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
+		LCD_ShowString(x,y,"PWR(N)");
+
+		Key_Event_register_Handler(fota_reboot_confirm, fota_exit);	
+		break;
+		
+	case FOTA_STATUS_ERROR:
+		flag = false;
+
+		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
+						  FOTA_NOTIFY_STRING_Y,
+						  FOTA_NOTIFY_STRING_W,
+						  FOTA_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "It failed to upgrade! Please check the network or server.");
+
+		LCD_DrawRectangle((LCD_WIDTH-FOTA_NOTIFY_YES_W)/2, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
+		LCD_MeasureString("SOS(Y)", &w, &h);
+		x = (LCD_WIDTH-FOTA_NOTIFY_YES_W)/2+(FOTA_NOTIFY_YES_W-w)/2;
+		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
+		LCD_ShowString(x,y,"SOS(Y)");
+
+		Key_Event_register_Handler(fota_exit, fota_exit);			
+		break;
+		
+	case FOTA_STATUS_MAX:
+		flag = false;
+		break;
+	}
+}
+
+void FOTAScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_FOTA].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATED;
+
+		FOTAShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_FOTA].para&SCREEN_EVENT_UPDATE_FOTA)
+		{
+			scr_msg[SCREEN_ID_FOTA].para &= (~SCREEN_EVENT_UPDATE_FOTA);
+			FOTAUpdateStatus();
+		}
+
+		if(scr_msg[SCREEN_ID_FOTA].para == SCREEN_EVENT_UPDATE_NO)
+			scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_NO;
+		break;
+	}
+}
+
+void ExitFOTAScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterFOTAScreen(void)
+{
+	if(screen_id == SCREEN_ID_FOTA)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FOTA;	
+	scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATING;
+}
+#endif/*CONFIG_FOTA_DOWNLOAD*/
+
 #ifdef CONFIG_IMU_SUPPORT
 void SleepScreenProcess(void)
 {
@@ -1235,189 +1437,6 @@ void FallScreenProcess(void)
 }
 #endif
 
-#ifdef CONFIG_FOTA_DOWNLOAD
-void FOTAShowStatus(void)
-{
-	u16_t x,y,w,h;
-	u8_t str_title[] = "FOTA RUNNING";
-	
-	LCD_DrawRectangle(FOTA_NOTIFY_RECT_X, FOTA_NOTIFY_RECT_Y, FOTA_NOTIFY_RECT_W, FOTA_NOTIFY_RECT_H);
-	LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_RECT_Y+1, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-1, BLACK);
-	
-	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_MeasureString(str_title, &w, &h);
-	x = (w > (FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W))? 0 : ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
-	x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
-	y = FOTA_NOTIFY_RECT_Y+2;
-	LCD_ShowString(x,y,str_title);
-
-	ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
-					  FOTA_NOTIFY_STRING_Y, 
-					  FOTA_NOTIFY_STRING_W, 
-					  FOTA_NOTIFY_STRING_H, 
-					  FONT_SIZE_16, 
-					  "Make sure the battery is sufficient and do not do anything during the upgrade!");
-
-	LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
-	LCD_MeasureString("SOS(Y)", &w, &h);
-	x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
-	y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
-	LCD_ShowString(x,y,"SOS(Y)");
-
-	LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
-	LCD_MeasureString("PWR(N)", &w, &h);
-	x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
-	y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
-	LCD_ShowString(x,y,"PWR(N)");
-
-	Key_Event_register_Handler(fota_start_confirm, ExitFotaScreen);
-#ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_X+FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_Y+FOTA_NOTIFY_NO_H, ExitFotaScreen);
-#endif
-	
-}
-
-void FOTAUpdateStatus(void)
-{
-	u16_t pro_len;
-	u16_t x,y,w,h;
-	u8_t pro_buf[16] = {0};
-	static bool flag = false;
-	static u16_t pro_str_x,pro_str_y;
-	
-	switch(get_fota_status())
-	{
-	case FOTA_STATUS_PREPARE:
-		flag = false;
-		break;
-		
-	case FOTA_STATUS_LINKING:
-		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
-		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
-						  FOTA_NOTIFY_STRING_Y,
-						  FOTA_NOTIFY_STRING_W,
-						  FOTA_NOTIFY_STRING_H,
-						  FONT_SIZE_16,
-						  "Linking to server...");
-
-		Key_Event_Unregister_Handler();
-		break;
-		
-	case FOTA_STATUS_DOWNLOADING:
-		if(!flag)
-		{
-			flag = true;
-			
-			LCD_Fill(FOTA_NOTIFY_STRING_X, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_STRING_W, FOTA_NOTIFY_STRING_H, BLACK);
-			ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
-							  FOTA_NOTIFY_STRING_Y,
-							  FOTA_NOTIFY_STRING_W,
-							  40,
-							  FONT_SIZE_16,
-							  "Downloading data...");
-			
-			LCD_DrawRectangle(FOTA_NOTIFY_PRO_X, FOTA_NOTIFY_PRO_Y, FOTA_NOTIFY_PRO_W, FOTA_NOTIFY_PRO_H);
-			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, FOTA_NOTIFY_PRO_W-1, FOTA_NOTIFY_PRO_H-1, BLACK);
-
-			sprintf(pro_buf, "%3d%%", g_fota_progress);
-			LCD_MeasureString(pro_buf, &w, &h);
-			pro_str_x = ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
-			pro_str_x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
-			pro_str_y = FOTA_NOTIFY_PRO_Y + FOTA_NOTIFY_PRO_H + 5;
-			
-			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
-		}
-		else
-		{
-			pro_len = (g_fota_progress*FOTA_NOTIFY_PRO_W)/100;
-			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, pro_len, FOTA_NOTIFY_PRO_H-1, WHITE);
-
-			sprintf(pro_buf, "%3d%%", g_fota_progress);
-			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
-		}
-
-		Key_Event_Unregister_Handler();
-		break;
-		
-	case FOTA_STATUS_FINISHED:
-		flag = false;
-		
-		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
-		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
-						  FOTA_NOTIFY_STRING_Y,
-						  FOTA_NOTIFY_STRING_W,
-						  FOTA_NOTIFY_STRING_H,
-						  FONT_SIZE_16,
-						  "It upgraded successfully! Do you want to reboot the device immediately?");
-
-		LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
-		LCD_MeasureString("SOS(Y)", &w, &h);
-		x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
-		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
-		LCD_ShowString(x,y,"SOS(Y)");
-
-		LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
-		LCD_MeasureString("PWR(N)", &w, &h);
-		x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
-		y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
-		LCD_ShowString(x,y,"PWR(N)");
-
-		Key_Event_register_Handler(fota_reboot_confirm, ExitFotaScreen);	
-		break;
-		
-	case FOTA_STATUS_ERROR:
-		flag = false;
-
-		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
-		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
-						  FOTA_NOTIFY_STRING_Y,
-						  FOTA_NOTIFY_STRING_W,
-						  FOTA_NOTIFY_STRING_H,
-						  FONT_SIZE_16,
-						  "It failed to upgrade! Please check the network or server.");
-
-		LCD_DrawRectangle((LCD_WIDTH-FOTA_NOTIFY_YES_W)/2, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
-		LCD_MeasureString("SOS(Y)", &w, &h);
-		x = (LCD_WIDTH-FOTA_NOTIFY_YES_W)/2+(FOTA_NOTIFY_YES_W-w)/2;
-		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
-		LCD_ShowString(x,y,"SOS(Y)");
-
-		Key_Event_register_Handler(ExitFotaScreen, ExitFotaScreen);			
-		break;
-		
-	case FOTA_STATUS_MAX:
-		flag = false;
-		break;
-	}
-}
-
-void FOTAScreenProcess(void)
-{
-	switch(scr_msg[SCREEN_ID_FOTA].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATED;
-
-		FOTAShowStatus();
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		if(scr_msg[SCREEN_ID_FOTA].para&SCREEN_EVENT_UPDATE_FOTA)
-		{
-			scr_msg[SCREEN_ID_FOTA].para &= (~SCREEN_EVENT_UPDATE_FOTA);
-			FOTAUpdateStatus();
-		}
-
-		if(scr_msg[SCREEN_ID_FOTA].para == SCREEN_EVENT_UPDATE_NO)
-			scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_NO;
-		break;
-	}
-}
-#endif/*CONFIG_FOTA_DOWNLOAD*/
-
-
 void WristShowStatus(void)
 {
 #if 0
@@ -1577,9 +1596,7 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
-#ifdef CONFIG_FOTA_DOWNLOAD
-	Key_Event_register_Handler(fota_start, EnterIdleScreen);	
-#elif defined(CONFIG_PPG_SUPPORT)
+#if defined(CONFIG_PPG_SUPPORT)
 	Key_Event_register_Handler(EnterHRScreen, EnterIdleScreen);
 #else
 	Key_Event_register_Handler(EnterGPSTestScreen, EnterIdleScreen);
@@ -1633,7 +1650,11 @@ void EnterStepsScreen(void)
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
 
+#ifdef CONFIG_FOTA_DOWNLOAD
+	Key_Event_register_Handler(fota_start, fota_exit);
+#else
 	Key_Event_register_Handler(ExitStepsScreen, ExitStepsScreen);
+#endif
 }
 
 void ExitSleepScreen(void)
@@ -1694,6 +1715,8 @@ void EnterGPSTestScreen(void)
 
 #ifdef CONFIG_IMU_SUPPORT
 	Key_Event_register_Handler(EnterSleepScreen, ExitGPSTestScreen);
+#elif defined(CONFIG_FOTA_DOWNLOAD)
+	Key_Event_register_Handler(fota_start, fota_exit);
 #else
 	Key_Event_register_Handler(ExitGPSTestScreen, ExitGPSTestScreen);
 #endif
@@ -1772,28 +1795,6 @@ void EnterFallScreen(void)
 	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;
 
 	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
-}
-
-void ExitFOTAScreen(void)
-{
-	if(screen_id == SCREEN_ID_FOTA)
-	{
-		EnterIdleScreen();
-	}
-}
-
-void EnterFOTAScreen(void)
-{
-	if(screen_id == SCREEN_ID_FOTA)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_FOTA;	
-	scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATING;		
 }
 
 void ExitWristScreen(void)

@@ -60,5 +60,6 @@ extern void LCD_Clear(uint16_t color);
 extern void LCD_SleepIn(void);
 extern void LCD_SleepOut(void);
 extern void LCD_ResetBL_Timer(void);
+extern void LCD_Set_BL_Mode(LCD_BL_MODE mode);
 
 #endif/*LCD_R154101_ST7796S*/

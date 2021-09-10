@@ -10,9 +10,11 @@
 #ifdef LCD_R154101_ST7796S
 #include "LCD_R154101_ST7796S.h"
 
-static struct device *lcd_gpio;
+static struct device *gpio_lcd;
 
 static struct k_timer backlight_timer;
+
+static LCD_BL_MODE bl_mode = LCD_BL_AUTO;
 
 uint8_t m_db_list[8] = DBS_LIST;	//定义屏幕数据接口数组
 
@@ -37,9 +39,9 @@ void Write_Data(uint8_t i)
 	for(t = 0; t < 8; t++)
 	{
 		if(i & 0x01)						//将数据写入数据接口
-			gpio_pin_write(lcd_gpio, m_db_list[t], 1);
+			gpio_pin_write(gpio_lcd, m_db_list[t], 1);
 		else
-			gpio_pin_write(lcd_gpio, m_db_list[t], 0);
+			gpio_pin_write(gpio_lcd, m_db_list[t], 0);
 		
 		i >>= 1;							//数据右移一位
 	}
@@ -50,60 +52,60 @@ void Write_Data(uint8_t i)
 //i:寄存器值
 void WriteComm(unsigned int i)
 {
-	gpio_pin_write(lcd_gpio, CS, 0);				//CS置0
-	gpio_pin_write(lcd_gpio, RD, 1);				//RD置1
-	gpio_pin_write(lcd_gpio, RS, 0);				//RS清0
+	gpio_pin_write(gpio_lcd, CS, 0);				//CS置0
+	gpio_pin_write(gpio_lcd, RD, 1);				//RD置1
+	gpio_pin_write(gpio_lcd, RS, 0);				//RS清0
 		
 	Write_Data(i);  
 
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
-	gpio_pin_write(lcd_gpio, CS, 1);	
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
+	gpio_pin_write(gpio_lcd, CS, 1);	
 }
 
 //写LCD数据
 //i:要写入的值
 void WriteData(unsigned int i)
 {
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RD, 1);
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RD, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
 	Write_Data(i);  
 
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
-	gpio_pin_write(lcd_gpio, CS, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
+	gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 void WriteDispData(unsigned char DataH,unsigned char DataL)
 {
 	Write_Data(DataH);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 	
 	Write_Data(DataL);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 }
 
 //LCD画点函数
 //color:要填充的颜色
 void WriteOneDot(unsigned int color)
 { 
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RD, 1);
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RD, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 
 	Write_Data(color>>8);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 
 	Write_Data(color);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 
-	gpio_pin_write(lcd_gpio, CS, 1);
+	gpio_pin_write(gpio_lcd, CS, 1);
 }
 
  void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
@@ -128,40 +130,40 @@ void DispColor(u32_t total, u16_t color)
 {
 	u32_t i;
 
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RS, 1);
-	gpio_pin_write(lcd_gpio, RD, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_write(gpio_lcd, RD, 1);
 
 	for(i=0;i<total;i++)
 	{
 		Write_Data(color>>8);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 
 		Write_Data(color);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 	}
 
-	gpio_pin_write(lcd_gpio, CS, 1);
+	gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 void DispData(u32_t total, u8_t *data)
 {
 	u32_t i;      
 
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RS, 1);
-	gpio_pin_write(lcd_gpio, RD, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_write(gpio_lcd, RD, 1);
 
 	for(i=0;i<total;i++)
 	{
 		Write_Data(data[i]);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 	}
 
-	gpio_pin_write(lcd_gpio, CS, 1);
+	gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 //测试函数（显示RGB条纹）
@@ -174,9 +176,9 @@ void DispBand(void)
 
    	BlockWrite(0,0,COL,ROW);
 
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RD, 1);
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RD, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 	
 	for(i=0;i<8;i++)
 	{
@@ -185,12 +187,12 @@ void DispBand(void)
 	        for(k=0;k<COL;k++)
 			{
 				Write_Data(color[i]>>8);
-				gpio_pin_write(lcd_gpio, WR, 0);
-				gpio_pin_write(lcd_gpio, WR, 1);
+				gpio_pin_write(gpio_lcd, WR, 0);
+				gpio_pin_write(gpio_lcd, WR, 1);
 
 				Write_Data(color[i]);
-				gpio_pin_write(lcd_gpio, WR, 0);
-				gpio_pin_write(lcd_gpio, WR, 1);
+				gpio_pin_write(gpio_lcd, WR, 0);
+				gpio_pin_write(gpio_lcd, WR, 1);
 			} 
 		}
 	}
@@ -199,16 +201,16 @@ void DispBand(void)
 		for(k=0;k<COL;k++)
 		{
 			Write_Data(color[7]>>8);
-			gpio_pin_write(lcd_gpio, WR, 0);
-			gpio_pin_write(lcd_gpio, WR, 1);
+			gpio_pin_write(gpio_lcd, WR, 0);
+			gpio_pin_write(gpio_lcd, WR, 1);
 
 			Write_Data(color[7]);
-			gpio_pin_write(lcd_gpio, WR, 0);
-			gpio_pin_write(lcd_gpio, WR, 1);
+			gpio_pin_write(gpio_lcd, WR, 0);
+			gpio_pin_write(gpio_lcd, WR, 1);
 		} 
 	}
 
-	gpio_pin_write(lcd_gpio, CS, 1);
+	gpio_pin_write(gpio_lcd, CS, 1);
 }
 
 //测试函数（画边框）
@@ -218,95 +220,95 @@ void DispFrame(void)
 	
 	BlockWrite(0,0,COL,ROW);
 
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RD, 1);
-	gpio_pin_write(lcd_gpio, RS, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RD, 1);
+	gpio_pin_write(gpio_lcd, RS, 1);
 		
 	Write_Data(0xf8);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 	
 	Write_Data(0x00);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 
 	for(i=0;i<COL-2;i++)
 	{
 		Write_Data(0xFF);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 		
 		Write_Data(0xFF);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 	}
 	
 	Write_Data(0x00);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 	
 	Write_Data(0x1F);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 
 	for(j=0;j<ROW-2;j++)
 	{
 		Write_Data(0xf8);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 		
 		Write_Data(0x00);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 		
 		for(i=0;i<COL-2;i++)
 		{
 			Write_Data(0x00);
-			gpio_pin_write(lcd_gpio, WR, 0);
-			gpio_pin_write(lcd_gpio, WR, 1);
+			gpio_pin_write(gpio_lcd, WR, 0);
+			gpio_pin_write(gpio_lcd, WR, 1);
 			
 			Write_Data(0x00);
-			gpio_pin_write(lcd_gpio, WR, 0);
-			gpio_pin_write(lcd_gpio, WR, 1);
+			gpio_pin_write(gpio_lcd, WR, 0);
+			gpio_pin_write(gpio_lcd, WR, 1);
 		}
 		
 		Write_Data(0x00);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 		
 		Write_Data(0x1f);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 	}
 
 	Write_Data(0xf8);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 	
 	Write_Data(0x00);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 
 	for(i=0;i<COL-2;i++)
 	{
 		Write_Data(0xff);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 		
 		Write_Data(0xff);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 	}
 	
 	Write_Data(0x00);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 	
 	Write_Data(0x1f);
-	gpio_pin_write(lcd_gpio, WR, 0);
-	gpio_pin_write(lcd_gpio, WR, 1);
+	gpio_pin_write(gpio_lcd, WR, 0);
+	gpio_pin_write(gpio_lcd, WR, 1);
 
-	gpio_pin_write(lcd_gpio, CS, 0);
+	gpio_pin_write(gpio_lcd, CS, 0);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -320,22 +322,22 @@ void LCD_Clear(uint16_t color)
 	
 	BlockWrite(0,0,COL,ROW);//定位
 
-	gpio_pin_write(lcd_gpio, CS, 0);
-	gpio_pin_write(lcd_gpio, RS, 1);
-	gpio_pin_write(lcd_gpio, RD, 1);
+	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_write(gpio_lcd, RD, 1);
 
 	for(index=0;index<totalpoint;index++)
 	{
 		Write_Data(color>>8);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 
 		Write_Data(color);
-		gpio_pin_write(lcd_gpio, WR, 0);
-		gpio_pin_write(lcd_gpio, WR, 1);
+		gpio_pin_write(gpio_lcd, WR, 0);
+		gpio_pin_write(gpio_lcd, WR, 1);
 	}
 
-	gpio_pin_write(lcd_gpio, CS, 0);
+	gpio_pin_write(gpio_lcd, CS, 0);
 } 
 
 //屏幕睡眠
@@ -348,8 +350,8 @@ void LCD_SleepIn(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_Off();
 #else
-	//gpio_pin_write(gpio_lcd, LEDK, 1);
-	gpio_pin_write(gpio_lcd, LEDA, 0);
+	gpio_pin_write(gpio_lcd, LEDK_1, 1);
+	gpio_pin_write(gpio_lcd, LEDK_2, 1);
 #endif
 
 	WriteComm(0x28);	
@@ -379,8 +381,8 @@ void LCD_SleepOut(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
-	//gpio_pin_write(gpio_lcd, LEDK, 0);
-	gpio_pin_write(gpio_lcd, LEDA, 1);                                                                                                           
+	gpio_pin_write(gpio_lcd, LEDK_1, 0);
+	gpio_pin_write(gpio_lcd, LEDK_2, 0);                                                                                                         
 #endif	
 	
 	lcd_is_sleeping = false;
@@ -389,11 +391,45 @@ void LCD_SleepOut(void)
 //屏幕重置背光延时
 void LCD_ResetBL_Timer(void)
 {
+	if(bl_mode == LCD_BL_ALWAYS_ON)
+		return;
+	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
 	
 	if(global_settings.backlight_time != 0)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//屏幕背光模式设置
+void LCD_Set_BL_Mode(LCD_BL_MODE mode)
+{
+	if(bl_mode == mode)
+		return;
+	
+	switch(mode)
+	{
+	case LCD_BL_ALWAYS_ON:
+		if(lcd_is_sleeping)
+			LCD_SleepOut();
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		break;
+
+	case LCD_BL_AUTO:
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		if(global_settings.backlight_time != 0)
+			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		break;
+
+	case LCD_BL_OFF:
+		if(!lcd_is_sleeping)
+			LCD_SleepIn();
+		break;
+	}
+
+	bl_mode = mode;
 }
 
 //LCD初始化函数
@@ -402,29 +438,29 @@ void LCD_Init(void)
 	int i;
 	
 	//端口初始化
-	lcd_gpio = device_get_binding(LCD_PORT);
+	gpio_lcd = device_get_binding(LCD_PORT);
 
-	gpio_pin_configure(lcd_gpio, CS, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, RST, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, RS, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, WR, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, RD, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, WR, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, RD, GPIO_DIR_OUT);
 
-	gpio_pin_configure(lcd_gpio, LEDK_1, GPIO_DIR_OUT);
-	gpio_pin_configure(lcd_gpio, LEDK_2, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, LEDK_1, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, LEDK_2, GPIO_DIR_OUT);
 
 	for(i=0;i<8;i++)
 	{
-		gpio_pin_configure(lcd_gpio, m_db_list[i], GPIO_DIR_OUT);
+		gpio_pin_configure(gpio_lcd, m_db_list[i], GPIO_DIR_OUT);
 	}
 
-	gpio_pin_write(lcd_gpio, RST, 1);
+	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(10);
 
-	gpio_pin_write(lcd_gpio, RST, 0);
+	gpio_pin_write(gpio_lcd, RST, 0);
 	Delay(10);
 
-	gpio_pin_write(lcd_gpio, RST, 1);
+	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(120);
 
 	WriteComm(0x36);
@@ -519,8 +555,8 @@ void LCD_Init(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
-	gpio_pin_write(lcd_gpio, LEDK_1, 0);
-	gpio_pin_write(lcd_gpio, LEDK_2, 0);
+	gpio_pin_write(gpio_lcd, LEDK_1, 0);
+	gpio_pin_write(gpio_lcd, LEDK_2, 0);
 #endif
 
 	lcd_is_sleeping = false;

@@ -14,8 +14,8 @@
 #include "font.h"
 //#include "boards.h"
 
-#define LCD_R108101_GC9307
-//#define LCD_ORCZ010903C_GC9A01
+//#define LCD_R108101_GC9307
+#define LCD_ORCZ010903C_GC9A01
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
 //#define LCD_ORCT012210N_ST7789V2
@@ -77,6 +77,14 @@ extern SYSTEM_FONT_SIZE system_font;
 #define X_max 0x07AE
 #define Y_min 0x00A1
 #define Y_max 0x0759
+
+typedef enum
+{
+	LCD_BL_ALWAYS_ON,
+	LCD_BL_AUTO,
+	LCD_BL_OFF,
+	LCD_BL_MAX
+}LCD_BL_MODE;
 
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void LCD_Pic_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char *color);

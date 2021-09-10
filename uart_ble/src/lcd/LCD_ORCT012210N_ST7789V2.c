@@ -24,6 +24,8 @@ static struct k_timer backlight_timer;
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
+static LCD_BL_MODE bl_mode = LCD_BL_AUTO;
+
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
@@ -330,11 +332,45 @@ void LCD_SleepOut(void)
 //屏幕重置背光延时
 void LCD_ResetBL_Timer(void)
 {
+	if(bl_mode == LCD_BL_ALWAYS_ON)
+		return;
+	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
 	
 	if(global_settings.backlight_time != 0)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//屏幕背光模式设置
+void LCD_Set_BL_Mode(LCD_BL_MODE mode)
+{
+	if(bl_mode == mode)
+		return;
+	
+	switch(mode)
+	{
+	case LCD_BL_ALWAYS_ON:
+		if(lcd_is_sleeping)
+			LCD_SleepOut();
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		break;
+
+	case LCD_BL_AUTO:
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		if(global_settings.backlight_time != 0)
+			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		break;
+
+	case LCD_BL_OFF:
+		if(!lcd_is_sleeping)
+			LCD_SleepIn();
+		break;
+	}
+
+	bl_mode = mode;
 }
 
 //LCD初始化函数

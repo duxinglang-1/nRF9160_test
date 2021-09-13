@@ -11,6 +11,7 @@
 #define COL 240			//宽
 #define ROW 210			//高
 
+#define LCD_TYPE_SPI			//SPI
 
 //LCD的画笔颜色和背景色	   
 extern uint16_t  POINT_COLOR;//默认红色    
@@ -55,9 +56,11 @@ extern u8_t lcd_data_buffer[2*LCD_DATA_LEN];
 extern void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h);
 extern void WriteOneDot(unsigned int color);
 extern void Write_Data(uint8_t i);
-extern void LCD_Clear(uint16_t color);
 extern void LCD_Init(void);
+extern void LCD_Clear(uint16_t color);
 extern void LCD_SleepIn(void);
 extern void LCD_SleepOut(void);
+extern void LCD_ResetBL_Timer(void);
+extern void LCD_Set_BL_Mode(LCD_BL_MODE mode);
 
 #endif/*LCD_R108101_GC9307*/

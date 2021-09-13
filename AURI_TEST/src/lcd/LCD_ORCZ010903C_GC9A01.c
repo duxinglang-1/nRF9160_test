@@ -1,6 +1,5 @@
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
@@ -24,6 +23,8 @@ static struct k_timer backlight_timer;
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
+static LCD_BL_MODE bl_mode = LCD_BL_AUTO;
+
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
@@ -39,7 +40,7 @@ static void LCD_SPI_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
@@ -179,7 +180,7 @@ void DispColor(u32_t total, u16_t color)
 	}
 }
 
-void DispDate(u32_t total, u8_t *data)
+void DispData(u32_t total, u8_t *data)
 {
 	u32_t i,remain;      
 
@@ -317,7 +318,6 @@ void LCD_SleepOut(void)
 	WriteComm(0x29);
 
 	//点亮背光
-	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
@@ -326,6 +326,50 @@ void LCD_SleepOut(void)
 #endif	
 	
 	lcd_is_sleeping = false;
+}
+
+//屏幕重置背光延时
+void LCD_ResetBL_Timer(void)
+{
+	if(bl_mode == LCD_BL_ALWAYS_ON)
+		return;
+	
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//屏幕背光模式设置
+void LCD_Set_BL_Mode(LCD_BL_MODE mode)
+{
+	if(bl_mode == mode)
+		return;
+	
+	switch(mode)
+	{
+	case LCD_BL_ALWAYS_ON:
+		if(lcd_is_sleeping)
+			LCD_SleepOut();
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		break;
+
+	case LCD_BL_AUTO:
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		if(global_settings.backlight_time != 0)
+			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		break;
+
+	case LCD_BL_OFF:
+		if(!lcd_is_sleeping)
+			LCD_SleepIn();
+		break;
+	}
+
+	bl_mode = mode;
 }
 
 //LCD初始化函数
@@ -360,159 +404,180 @@ void LCD_Init(void)
 	gpio_pin_write(gpio_lcd, RST, 1);
 	Delay(120);
 
-	WriteComm(0x11);     //Sleep out
-	Delay(120);          //Delay 120ms
-
-	WriteComm(0xFE);
+	WriteComm(0xFE);			 
 	WriteComm(0xEF); 
+
 	WriteComm(0xEB);	
 	WriteData(0x14); 
-	
+
 	WriteComm(0x84);			
-	WriteData(0x40); 
+	WriteData(0x60); //40->60 0xb5 en  20200924  james
+
+	WriteComm(0x85);
+	WriteData(0xFF); 
+
+	WriteComm(0x86);            
+	WriteData(0xFF); 
+
+	WriteComm(0x87);            
+	WriteData(0xFF);
+
+	WriteComm(0x8E);        
+	WriteData(0xFF); 
+
+	WriteComm(0x8F);     
+	WriteData(0xFF); 
+
 	WriteComm(0x88);			
 	WriteData(0x0A);
-	
+
 	WriteComm(0x89);			
-	WriteData(0x21); 
+	WriteData(0x23); ///spi 2data reg en
+
 	WriteComm(0x8A);			
 	WriteData(0x00); 
+
 	WriteComm(0x8B);			
 	WriteData(0x80); 
+
 	WriteComm(0x8C);			
 	WriteData(0x01); 
+
 	WriteComm(0x8D);			
 	WriteData(0x01); 
-	WriteComm(0x8F);			
-	WriteData(0xFF); 
-	
+
+	WriteComm(0xB5);   
+	WriteData(0x08);
+	WriteData(0x09);//08->09  james 20200924
+	WriteData(0x14);
+	WriteData(0x08);
+
 	WriteComm(0xB6);			
 	WriteData(0x00); 
-	WriteData(0x60); //GS SS
-	
+	WriteData(0x00);//GS  SS  0x20
+
 	WriteComm(0x36);			
-	WriteData(0x88);
-	
+	WriteData(0x48);
+
 	WriteComm(0x3A);			
 	WriteData(0x05); 
-	
+
 	WriteComm(0x90);			
 	WriteData(0x08);
 	WriteData(0x08);
 	WriteData(0x08);
 	WriteData(0x08); 
-	
+
 	WriteComm(0xBD);			
 	WriteData(0x06);
+
 	WriteComm(0xBC);			
 	WriteData(0x00);	
-	
+
 	WriteComm(0xFF);			
 	WriteData(0x60);
 	WriteData(0x01);
 	WriteData(0x04);
-	
+
 	WriteComm(0xC3);			
-	WriteData(0x2F);
+	WriteData(0x1d);
 	WriteComm(0xC4);			
-	WriteData(0x2F);
-	
+	WriteData(0x1d);
+
 	WriteComm(0xC9);			
 	WriteData(0x25);
-	
+
 	WriteComm(0xBE);			
 	WriteData(0x11); 
-	
+
 	WriteComm(0xE1);
 	WriteData(0x10);
 	WriteData(0x0E);
-	
+
 	WriteComm(0xDF);			
 	WriteData(0x21);
-	WriteData(0x10);
+	WriteData(0x0c);
 	WriteData(0x02);
-	
+
 	WriteComm(0xF0);   
-	WriteData(0x49);
-	WriteData(0x0e);
+	WriteData(0x45);
 	WriteData(0x09);
-	WriteData(0x09);
-	WriteData(0x25);
-	WriteData(0x2e);
-	
-	WriteComm(0xF1);	
-	WriteData(0x44);
+	WriteData(0x08);
+	WriteData(0x08);
+	WriteData(0x26);
+	WriteData(0x2A);
+
+	WriteComm(0xF1);    
+	WriteData(0x43);
 	WriteData(0x70);
-	WriteData(0x73);
-	WriteData(0x2F);
-	WriteData(0x30);  
+	WriteData(0x72);
+	WriteData(0x36);
+	WriteData(0x37);  
 	WriteData(0x6F);
-	
+
 	WriteComm(0xF2);   
-	WriteData(0x49);
-	WriteData(0x0e);
+	WriteData(0x45);
 	WriteData(0x09);
-	WriteData(0x09);
-	WriteData(0x25);
-	WriteData(0x2e);
-	
+	WriteData(0x08);
+	WriteData(0x08);
+	WriteData(0x26);
+	WriteData(0x2A);
+
 	WriteComm(0xF3);   
-	WriteData(0x44);
+	WriteData(0x43);
 	WriteData(0x70);
-	WriteData(0x73);
-	WriteData(0x2F);
-	WriteData(0x30);  
+	WriteData(0x72);
+	WriteData(0x36);
+	WriteData(0x37); 
 	WriteData(0x6F);
-	
+
 	WriteComm(0xED);	
 	WriteData(0x1B); 
-	WriteData(0x8B); 
-	
+	WriteData(0x0B); 
+
 	WriteComm(0xAE);			
 	WriteData(0x77);
-	
+
 	WriteComm(0xCD);			
 	WriteData(0x63);		
-	
-	WriteComm(0xAC);			
-	WriteData(0x27);
-	
+
 	WriteComm(0x70);			
 	WriteData(0x07);
 	WriteData(0x07);
 	WriteData(0x04);
-	WriteData(0x06);//VGH
-	WriteData(0x0F); //VGL
+	WriteData(0x0E); 
+	WriteData(0x0F); 
 	WriteData(0x09);
 	WriteData(0x07);
 	WriteData(0x08);
 	WriteData(0x03);
-	
+
 	WriteComm(0xE8);			
-	WriteData(0x24);
-	
+	WriteData(0x14);
+	/////////////////////////////////////////////
 	WriteComm(0x60);		
 	WriteData(0x38);
 	WriteData(0x0B);
 	WriteData(0x6D);
 	WriteData(0x6D);
-	
+
 	WriteData(0x39);
 	WriteData(0xF0);
 	WriteData(0x6D);
 	WriteData(0x6D);
-	
+
 	WriteComm(0x61);
 	WriteData(0x38);
 	WriteData(0xF4);
 	WriteData(0x6D);
 	WriteData(0x6D);
-	
+
 	WriteData(0x38);
+	//WriteData(0xF7); //20200718
 	WriteData(0xF7);
 	WriteData(0x6D);
 	WriteData(0x6D);
-
+	/////////////////////////////////////
 	WriteComm(0x62);
 	WriteData(0x38);
 	WriteData(0x0D);
@@ -526,7 +591,7 @@ void LCD_Init(void)
 	WriteData(0xEF);
 	WriteData(0x70); 
 	WriteData(0x70);
-	
+
 	WriteComm(0x63);			
 	WriteData(0x38);
 	WriteData(0x11);
@@ -540,7 +605,7 @@ void LCD_Init(void)
 	WriteData(0xF3);
 	WriteData(0x70); 
 	WriteData(0x70);
-	
+	///////////////////////////////////////////////////////
 	WriteComm(0x64);			
 	WriteData(0x28);
 	WriteData(0x29);
@@ -548,52 +613,57 @@ void LCD_Init(void)
 	WriteData(0x01);
 	WriteData(0xF1);
 	WriteData(0x00);
-	WriteData(0x1a);
-	
-	WriteComm(0x66);
+	WriteData(0x07);
+
+	WriteComm(0x66);			
 	WriteData(0x3C);
 	WriteData(0x00);
-	WriteData(0x98);
-	WriteData(0x10);
-	WriteData(0x32);
-	WriteData(0x45);
-	WriteData(0x01);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteComm(0x67);
-	WriteData(0x00);
-	WriteData(0x3C);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0x00);
-	WriteData(0x10);
-	WriteData(0x54);
+	WriteData(0xCD);
 	WriteData(0x67);
 	WriteData(0x45);
-	WriteData(0xcd);
-	
+	WriteData(0x45);
+	WriteData(0x10);
+	WriteData(0x00);
+	WriteData(0x00);
+	WriteData(0x00);
+
+	WriteComm(0x67);			
+	WriteData(0x00);
+	WriteData(0x3C);
+	WriteData(0x00);
+	WriteData(0x00);
+	WriteData(0x00);
+	WriteData(0x01);
+	WriteData(0x54);
+	WriteData(0x10);
+	WriteData(0x32);
+	WriteData(0x98);
+
 	WriteComm(0x74);			
 	WriteData(0x10);	
-	WriteData(0x68);	//85
+	WriteData(0x85);	
 	WriteData(0x80);
 	WriteData(0x00); 
 	WriteData(0x00); 
 	WriteData(0x4E);
 	WriteData(0x00);					
-	
+
 	WriteComm(0x98);			
 	WriteData(0x3e);
 	WriteData(0x07);
-	
+
 	WriteComm(0x35);	
+	WriteData(0x00); 
 	WriteComm(0x21);
-	Delay(120);
+	//--------end gamma setting--------------//
 
 	WriteComm(0x11);
 	Delay(120);
 	WriteComm(0x29);
 	WriteComm(0x2C);
+
+	LCD_Clear(BLACK);		//清屏为黑色
+	Delay(30);
 
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
@@ -602,10 +672,8 @@ void LCD_Init(void)
 	//gpio_pin_write(gpio_lcd, LEDK, 0);
 	gpio_pin_write(gpio_lcd, LEDA, 1);
 #endif
-	
-	lcd_is_sleeping = false;
 
-	LCD_Clear(BLACK);		//清屏为黑色
+	lcd_is_sleeping = false;
 
 	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
 

@@ -24,7 +24,7 @@
 
 //#define LCD_TYPE_PARALLEL		//并口
 //#define LCD_TYPE_I2C			//I2C
-#define LCD_TYPE_SPI			//SPI
+//#define LCD_TYPE_SPI			//SPI
 
 //#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
@@ -48,17 +48,15 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 extern SYSTEM_FONT_SIZE system_font;
 
 //画笔颜色
-#define WHITE         	 0xFFFF
-#define BLACK         	 0x0000	  
-#define BLUE         	 0x001F  
-#define BRED             0XF81F
-#define GRED 			 0XFFE0
-#define GBLUE			 0X07FF
-#define RED           	 0xF800
-#define MAGENTA       	 0xF81F
-#define GREEN         	 0x07E0
-#define CYAN          	 0x7FFF
-#define YELLOW        	 0xFFE0
+#define WHITE         	 0xFFFF	//白色
+#define BLACK         	 0x0000	//黑色
+#define BLUE         	 0x001F	//蓝色
+#define GBLUE			 0X07FF	//蓝绿色
+#define RED           	 0xF800	//红色
+#define MAGENTA       	 0xF81F	//玫瑰红
+#define GREEN         	 0x07E0	//绿色
+#define CYAN          	 0x7FFF	//青色
+#define YELLOW        	 0xFFE0	//黄色
 #define BROWN 			 0XBC40 //棕色
 #define BRRED 			 0XFC07 //棕红色
 #define GRAY  			 0X8430 //灰色
@@ -80,6 +78,14 @@ extern SYSTEM_FONT_SIZE system_font;
 #define X_max 0x07AE
 #define Y_min 0x00A1
 #define Y_max 0x0759
+
+typedef enum
+{
+	LCD_BL_ALWAYS_ON,
+	LCD_BL_AUTO,
+	LCD_BL_OFF,
+	LCD_BL_MAX
+}LCD_BL_MODE;
 
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void LCD_Pic_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char *color);

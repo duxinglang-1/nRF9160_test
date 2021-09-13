@@ -32,6 +32,8 @@ static struct k_timer backlight_timer;
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
+static LCD_BL_MODE bl_mode = LCD_BL_AUTO;
+
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
@@ -184,12 +186,12 @@ void DispColor(u32_t total, u8_t color)
 	gpio_pin_write(gpio_lcd, CS, 1);
 }
 
-void DispDate(u32_t total, u8_t *data)
+void DispData(u32_t total, u8_t *data)
 {
 	u32_t i,remain;      
 
-	gpio_pin_write(gpio_lcd, RS, 1);
 	gpio_pin_write(gpio_lcd, CS, 0);
+	gpio_pin_write(gpio_lcd, RS, 1);
 	
 	while(1)
 	{
@@ -288,14 +290,14 @@ void LCD_Clear(u16_t color)
 		data = 0x00;
 	else
 		data = 0xff;
-
+	
 	for(page=0;page<PAGE_MAX;page++)
 	{
 		WriteComm(0xb0+page);
 		WriteComm(0x11);
 		WriteComm(0x02);
 
-		DispColor(COL, data);
+		DispColor(COL,data);
 	}
 } 
 
@@ -355,6 +357,50 @@ void LCD_SleepOut(void)
 	lcd_is_sleeping = false;
 }
 
+//屏幕重置背光延时
+void LCD_ResetBL_Timer(void)
+{
+	if(bl_mode == LCD_BL_ALWAYS_ON)
+		return;
+	
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//屏幕背光模式设置
+void LCD_Set_BL_Mode(LCD_BL_MODE mode)
+{
+	if(bl_mode == mode)
+		return;
+	
+	switch(mode)
+	{
+	case LCD_BL_ALWAYS_ON:
+		if(lcd_is_sleeping)
+			LCD_SleepOut();
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		break;
+
+	case LCD_BL_AUTO:
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		if(global_settings.backlight_time != 0)
+			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		break;
+
+	case LCD_BL_OFF:
+		if(!lcd_is_sleeping)
+			LCD_SleepIn();
+		break;
+	}
+
+	bl_mode = mode;
+}
+
 //LCD初始化函数
 void LCD_Init(void)
 {
@@ -408,6 +454,7 @@ void LCD_Init(void)
 	WriteComm(0xA6); //Set Normal Display
 
 	LCD_Clear(BLACK);
+	Delay(30);
 
 	WriteComm(0xAF); //Set Display On
 

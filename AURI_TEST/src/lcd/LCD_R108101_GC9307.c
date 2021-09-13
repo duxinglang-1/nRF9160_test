@@ -1,6 +1,5 @@
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
 #include "lcd.h"
 #include "font.h" 
 #include "settings.h"
@@ -20,9 +19,10 @@ struct spi_buf_set tx_bufs,rx_bufs;
 struct spi_buf tx_buff,rx_buff;
 
 static struct k_timer backlight_timer;
-
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
+
+static LCD_BL_MODE bl_mode = LCD_BL_AUTO;
 
 static u8_t tx_buffer[SPI_BUF_LEN] = {0};
 static u8_t rx_buffer[SPI_BUF_LEN] = {0};
@@ -39,7 +39,7 @@ static void LCD_SPI_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
@@ -179,7 +179,7 @@ void DispColor(u32_t total, u16_t color)
 	}
 }
 
-void DispDate(u32_t total, u8_t *data)
+void DispData(u32_t total, u8_t *data)
 {
 	u32_t i,remain;      
 
@@ -339,6 +339,50 @@ void LCD_SleepOut(void)
 	lcd_is_sleeping = false;
 }
 
+//屏幕重置背光延时
+void LCD_ResetBL_Timer(void)
+{
+	if(bl_mode == LCD_BL_ALWAYS_ON)
+		return;
+	
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//屏幕背光模式设置
+void LCD_Set_BL_Mode(LCD_BL_MODE mode)
+{
+	if(bl_mode == mode)
+		return;
+	
+	switch(mode)
+	{
+	case LCD_BL_ALWAYS_ON:
+		if(lcd_is_sleeping)
+			LCD_SleepOut();
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		break;
+
+	case LCD_BL_AUTO:
+		if(k_timer_remaining_get(&backlight_timer) > 0)
+			k_timer_stop(&backlight_timer);
+		if(global_settings.backlight_time != 0)
+			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		break;
+
+	case LCD_BL_OFF:
+		if(!lcd_is_sleeping)
+			LCD_SleepIn();
+		break;
+	}
+
+	bl_mode = mode;
+}
+
 //LCD初始化函数
 void LCD_Init(void)
 {
@@ -459,7 +503,7 @@ void LCD_Init(void)
 	WriteComm(0x2c);
 
 	LCD_Clear(BLACK);		//清屏为黑色
-	Delay(20);
+	Delay(30);
 
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU

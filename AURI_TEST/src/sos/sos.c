@@ -57,12 +57,12 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 		
 		case SOS_STATUS_RECEIVED:
 			sos_state = SOS_STATUS_IDLE;
-			ExitNotifyScreen();
+			EnterIdleScreen();
 			break;
 		
 		case SOS_STATUS_CANCEL:
 			sos_state = SOS_STATUS_IDLE;
-			ExitNotifyScreen();
+			EnterIdleScreen();
 			break;
 		}
 		
@@ -175,6 +175,7 @@ void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 
 void SOSTrigger(void)
 {
+	LOG_INF("[%s]\n", __func__);
 	sos_trigger_flag = true;
 }
 
@@ -223,6 +224,7 @@ void SOSMsgProc(void)
 {
 	if(sos_trigger_flag)
 	{
+		LOG_INF("[%s]\n", __func__);
 		SOSStart();
 		sos_trigger_flag = false;
 	}

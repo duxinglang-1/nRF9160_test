@@ -42,7 +42,6 @@ extern void MCU_get_nrf52810_ver(void);
 extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);
 extern void MCU_set_ble_work_mode(u8_t work_mode);
-extern void uart_sleep_out(void);
-extern void uart_sleep_in(void);
+extern void MCU_send_find_phone(void);
 
 #endif/*__UART_BLE_H__*/

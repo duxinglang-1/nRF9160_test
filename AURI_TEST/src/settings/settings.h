@@ -48,6 +48,20 @@ typedef enum
 	BACKLIGHT_MAX
 }BACKLIGHT_TIME;
 
+typedef enum
+{
+	BACKLIGHT_LEVEL_MIN,
+	BACKLIGHT_LEVEL_1=BACKLIGHT_LEVEL_MIN,
+	BACKLIGHT_LEVEL_2,
+	BACKLIGHT_LEVEL_3,
+	BACKLIGHT_LEVEL_4,
+	BACKLIGHT_LEVEL_5,
+	BACKLIGHT_LEVEL_6,
+	BACKLIGHT_LEVEL_7,
+	BACKLIGHT_LEVEL_8,
+	BACKLIGHT_LEVEL_MAX=BACKLIGHT_LEVEL_8
+}BACKLIGHT_LEVEL;
+
 typedef struct{
 	bool is_on;
 	u8_t hour;
@@ -58,7 +72,7 @@ typedef struct{
 typedef struct{
 	bool is_on;
 	u8_t interval;
-}phd_measure_t;
+}phd_measure_t;		//Õûµã²âÁ¿
 
 typedef struct{
 	u32_t steps;
@@ -84,6 +98,7 @@ typedef struct{
 	DATE_FORMAT date_format;
 	CLOCK_MODE idle_colck_mode;
 	BACKLIGHT_TIME backlight_time;
+	BACKLIGHT_LEVEL backlight_level;
 	phd_measure_t phd_infor;
 	location_interval_t dot_interval;
 	bp_calibra_t bp_calibra;

@@ -23,10 +23,28 @@ typedef struct
 	wifi_node_infor node[MAX_SCANNED_WIFI_NODE];
 }wifi_infor;
 
+
+typedef struct
+  {
+
+	 char rssi[10];
+	 
+  }wifi_node;
+
+
+typedef struct 
+{
+	u8_t count;
+	wifi_node  node[50];
+
+}wifi_infor1;
+
 extern bool wifi_is_on;
 extern bool sos_wait_wifi;
 extern bool fall_wait_wifi;
 extern bool location_wait_wifi;
+
+extern u8_t wifi_test_info[256];
 
 extern void ble_turn_on(void);
 extern void wifi_receive_data_handle(u8_t *buf, u32_t len);

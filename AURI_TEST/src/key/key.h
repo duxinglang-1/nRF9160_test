@@ -27,7 +27,7 @@ extern "C" {
 #define KEY_DOWN 		1
 #define KEY_LONG_PRESS	2
 
-#define TIMER_FOR_LONG_PRESSED 5*1000
+#define TIMER_FOR_LONG_PRESSED 3*1000
 
 typedef enum{
 	ACTIVE_LOW,

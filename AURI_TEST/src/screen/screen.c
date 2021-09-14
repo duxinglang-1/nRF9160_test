@@ -110,15 +110,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	}
 	else if(screen_id == SCREEN_ID_NB_TEST)
 	{
-		//if(nb_is_connected())
-		//{
-		//	sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", g_rsrp,(g_rsrp-141));
-		//	TestNBUpdateINfor();
-		//}
-		//else
-		{
-			MenuStartNB();
-		}
+		MenuStartNB();
 	}
 	else if(screen_id == SCREEN_ID_BLE_TEST)
 	{
@@ -127,6 +119,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	else if(screen_id == SCREEN_ID_WIFI_TEST)
 	{
 		MenuStartWifi();
+	}
+	else if(screen_id == SCREEN_ID_POWEROFF)
+	{
+		key_pwroff_flag = true;
 	}
 }
 
@@ -1448,20 +1444,23 @@ void TestNBScreenProcess(void)
 
 void TestBLEShowInfor(void)
 {
-	u32_t x,y,w,h;
+	u16_t x,y,w,h;
 	u8_t strbuf[128] = {0};
-
+	
 	LCD_Clear(BLACK);
-	
-	strcpy(strbuf, "BLE TESTING");
+
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "BLE TESTING");
+#else	
+	strcpy(strbuf, "NB-IoT TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
-	LCD_ShowString(0, 10, strbuf);
-	
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, ""BLE TESTING"");
+#endif
 }
 
 void TestBLEUpdateINfor(void)
 {
-
 }
 
 void TestBLEScreenProcess(void)
@@ -1639,6 +1638,78 @@ void EnterSleepScreen(void)
 }
 #endif
 
+void poweroff_leftkeyfunc(void)
+{
+	LOG_INF("[%s]\n", __func__);
+	key_pwroff_flag = true;
+}
+
+void poweroff_rightkeyfunc(void)
+{
+	LOG_INF("[%s]\n", __func__);
+	EnterIdleScreen();
+}
+
+void ExitPoweroffScreen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+	EnterIdleScreen();
+}
+
+void EnterPoweroffScreen(void)
+{
+	if(screen_id == SCREEN_ID_POWEROFF)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_POWEROFF;	
+	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	Key_Event_register_Handler(ExitPoweroffScreen, ExitPoweroffScreen);	
+}
+
+void PowerOffShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
+	LCD_Clear(BLACK);
+
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "It will shut-down after 5 seconds");
+#else	
+	strcpy(strbuf, "WIFI TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+#endif
+}
+
+void PowerOffScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_POWEROFF].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATED;
+
+		PowerOffShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
+}
+
 void ExitGPSTestScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
@@ -1694,7 +1765,7 @@ void EnterBLETestScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	MenuStopWifi();
 	
-	Key_Event_register_Handler(ExitBLETestScreen, ExitBLETestScreen);	
+	Key_Event_register_Handler(EnterPoweroffScreen, ExitBLETestScreen);	
 }
 
 void ExitWifiTestScreen(void)
@@ -1835,92 +1906,6 @@ void EnterWristScreen(void)
 	scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATING;
 
 	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), NULL);
-}
-
-void poweroff_leftkeyfunc(void)
-{
-	LOG_INF("[%s]\n", __func__);
-	key_pwroff_flag = true;
-}
-
-void poweroff_rightkeyfunc(void)
-{
-	LOG_INF("[%s]\n", __func__);
-	EnterIdleScreen();
-}
-
-void EnterPoweroffScreen(void)
-{
-	LOG_INF("[%s] screen_id:%d,SCREEN_ID_POWEROFF:%d\n", __func__,screen_id,SCREEN_ID_POWEROFF);
-	if(screen_id == SCREEN_ID_POWEROFF)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_POWEROFF;	
-	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;		
-}
-
-void PowerOffShowStatus(void)
-{
-	u16_t x,y,w,h;
-	u8_t str_title[] = "POWER OFF";
-	
-	LCD_DrawRectangle(PWR_OFF_NOTIFY_RECT_X, PWR_OFF_NOTIFY_RECT_Y, PWR_OFF_NOTIFY_RECT_W, PWR_OFF_NOTIFY_RECT_H);
-	LCD_Fill(PWR_OFF_NOTIFY_RECT_X+1, PWR_OFF_NOTIFY_RECT_Y+1, PWR_OFF_NOTIFY_RECT_W-1, PWR_OFF_NOTIFY_RECT_H-1, BLACK);
-	
-	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_MeasureString(str_title, &w, &h);
-	x = (w > (PWR_OFF_NOTIFY_RECT_W-2*PWR_OFF_NOTIFY_OFFSET_W))? 0 : ((PWR_OFF_NOTIFY_RECT_W-2*PWR_OFF_NOTIFY_OFFSET_W)-w)/2;
-	x += (PWR_OFF_NOTIFY_RECT_X+PWR_OFF_NOTIFY_OFFSET_W);
-	y = PWR_OFF_NOTIFY_RECT_Y+2;
-	LCD_ShowString(x,y,str_title);
-
-	ShowStringsInRect(PWR_OFF_NOTIFY_STRING_X, 
-					  PWR_OFF_NOTIFY_STRING_Y, 
-					  PWR_OFF_NOTIFY_STRING_W, 
-					  PWR_OFF_NOTIFY_STRING_H, 
-					  FONT_SIZE_16, 
-					  "Are you sure you want to turn it off?");
-
-	LCD_DrawRectangle(PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_H);
-	LCD_MeasureString("SOS(Y)", &w, &h);
-	x = PWR_OFF_NOTIFY_YES_X+(PWR_OFF_NOTIFY_YES_W-w)/2;
-	y = PWR_OFF_NOTIFY_YES_Y+(PWR_OFF_NOTIFY_YES_H-h)/2;	
-	LCD_ShowString(x,y,"SOS(Y)");
-
-	LCD_DrawRectangle(PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_H);
-	LCD_MeasureString("PWR(N)", &w, &h);
-	x = PWR_OFF_NOTIFY_NO_X+(PWR_OFF_NOTIFY_NO_W-w)/2;
-	y = PWR_OFF_NOTIFY_NO_Y+(PWR_OFF_NOTIFY_NO_H-h)/2;	
-	LCD_ShowString(x,y,"PWR(N)");
-
-	Key_Event_register_Handler(poweroff_leftkeyfunc, poweroff_rightkeyfunc);
-#ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_leftkeyfunc);
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_rightkeyfunc);
-#endif
-}
-
-void PowerOffScreenProcess(void)
-{
-	switch(scr_msg[SCREEN_ID_POWEROFF].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATED;
-
-		PowerOffShowStatus();
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
 }
 
 void UpdataTestGPSInfo(void)

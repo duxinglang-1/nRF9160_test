@@ -187,7 +187,8 @@ void FindDeviceStop(void)
 
 	k_timer_stop(&find_timer);
 
-	GoBackHistoryScreen();
+	//GoBackHistoryScreen();
+	EnterIdleScreen();
 }
 
 void FindDeviceTimeout(struct k_timer *timer)

@@ -3,6 +3,7 @@ Last Update: 16/12/2020 by Jiahe
 this code includes wrist tilt detection, step counter
 Take 26Hz data rate
 */
+#ifdef CONFIG_IMU_SUPPORT
 
 #include <nrf9160.h>
 #include <zephyr.h>
@@ -54,7 +55,6 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
-bool fall_testing = false;
 
 u8_t fall_trigger_time[16] = {0};
 u16_t g_steps = 0;
@@ -142,10 +142,7 @@ bool sensor_init(void)
 		return false;
 
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	do
-	{
-		lsm6dso_reset_get(&imu_dev_ctx, &rst);
-	}while(rst);
+	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
 	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
 
@@ -223,10 +220,7 @@ bool sensor_init(void)
 void sensor_reset(void)
 {  
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	do
-	{
-		lsm6dso_reset_get(&imu_dev_ctx, &rst);
-	}while(rst);
+	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
 	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
 
@@ -771,7 +765,7 @@ void UpdateIMUData(void)
 	GetImuSteps(&g_steps);
 
 	g_distance = 0.7*g_steps;
-	g_calorie = 0.8214*60*(g_distance/1000);
+	g_calorie = (0.8214*60*g_distance)/1000;
 
 	LOG_INF("g_steps:%d,g_distance:%d,g_calorie:%d\n", g_steps, g_distance, g_calorie);
 
@@ -914,11 +908,17 @@ static void mt_fall_detection(struct k_work *work)
 {
 	if(int1_event)	//steps or tilt
 	{
+		LOG_INF("[%s] int1 evt!\n", __func__);
 		int1_event = false;
 
 		if(!imu_check_ok)
 			return;
 		
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
 		if(!is_wearing())
 			return;
 		
@@ -946,12 +946,19 @@ static void mt_fall_detection(struct k_work *work)
 
 	if(int2_event) //fall
 	{
+		LOG_INF("[%s] int2 evt!\n", __func__);
+		
 		int2_event = false;
 
 		if(!imu_check_ok)
 			return;
-		
-		if(!is_wearing()||fall_testing)
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		if(!is_wearing())
 			return;
 
 		fall_detection();
@@ -966,10 +973,8 @@ static void mt_fall_detection(struct k_work *work)
 		}
         else
         {
-			//LOG_INF("Not Fall.\n");
+			LOG_INF("Not Fall.\n");
         }
-
-		fall_testing = false;
 	}
 	
 	if(reset_steps)
@@ -999,7 +1004,12 @@ static void mt_fall_detection(struct k_work *work)
 
 		if(!imu_check_ok)
 			return;
-		
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
 		UpdateSleepPara();
 	}
 }
@@ -1130,5 +1140,11 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
+#ifdef CONFIG_FOTA_DOWNLOAD
+	if(fota_is_running())
+		return;
+#endif
+
 	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
+#endif/*CONFIG_IMU_SUPPORT*/

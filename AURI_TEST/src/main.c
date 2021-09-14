@@ -22,14 +22,20 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
+#ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
+#endif
 #include "Max20353.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "Alarm.h"
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
+#ifdef CONFIG_AUDIO_SUPPORT
 #include "audio.h"
+#endif
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -39,15 +45,20 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #define DIGITAL_CLOCK
 #define PI 3.1415926
 
+static bool sys_pwron_completed_flag = false;
 static u8_t show_pic_count = 0;//图片显示顺序
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
 		      2048);
 static struct k_work_q nb_work_q;
+
+#ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
               1024);
 static struct k_work_q imu_work_q;
+#endif
+
 K_THREAD_STACK_DEFINE(gps_stack_area,
               1024);
 static struct k_work_q gps_work_q;
@@ -443,6 +454,20 @@ void test_show_image(void)
 	}
 }
 
+void test_show_stripe(void)
+{
+	u16_t x,y,w,h;
+	u8_t i;
+	u16_t color[] = {WHITE,BLACK,RED,GREEN,BLUE,GBLUE,MAGENTA,CYAN,YELLOW,BROWN,BRRED,GRAY};
+	
+	h = LCD_HEIGHT/8;
+
+	for(i=0;i<8;i++)
+	{
+		LCD_Fill(0, h*i, LCD_WIDTH, h, color[i%5]);
+	}
+}
+
 void test_show_color(void)
 {
 	u8_t i=0;
@@ -460,54 +485,44 @@ void test_show_color(void)
 				LCD_Clear(BLACK);
 				break;
 			case 2:
-				LCD_Clear(BLUE);
+				LCD_Clear(RED);
 				break;
 			case 3:
-				LCD_Clear(BRED);
+				LCD_Clear(GREEN);
 				break;
 			case 4:
-				LCD_Clear(GRED);
+				LCD_Clear(BLUE);
 				break;
 			case 5:
-				LCD_Clear(GBLUE);
+				LCD_Clear(YELLOW);
 				break;
 			case 6:
-				LCD_Clear(RED);
+				LCD_Clear(GBLUE);
 				break;
 			case 7:
 				LCD_Clear(MAGENTA);
 				break;
 			case 8:
-				LCD_Clear(GREEN);
-				break;
-			case 9:
 				LCD_Clear(CYAN);
 				break;
-			case 10:
-				LCD_Clear(YELLOW);
-				break;
-			case 11:
+			case 9:
 				LCD_Clear(BROWN);
 				break;
-			case 12:
+			case 10:
 				LCD_Clear(BRRED);
 				break;
-			case 13:
+			case 11:
 				LCD_Clear(GRAY);
 				break;					
 		}
 		
 		i++;
-		if(i>=14)
+		if(i>=12)
 			i=0;
 		
 		k_sleep(K_MSEC(1000));								//软件延时1000ms
 	}
 }
-
-double longitude = 22.222222;
-double latitude = 114.888888;
-char tmpbuf[128] = {0};
 
 void test_show_string(void)
 {
@@ -518,24 +533,23 @@ void test_show_string(void)
 	u16_t en_unibuf[64] = {0x0041,0x0075,0x0067,0x0075,0x0073,0x0074,0x0020,0x0053,0x0068,0x0065,0x006E,0x007A,0x0068,0x0065,0x006E,0x0020,0x0044,0x0049,0x0067,0x0049,0x0074,0x0061,0x006C,0x0020,0x004C,0x0074,0x0064,0x0000};
 	u16_t cn_unibuf[64] = {0x6DF1,0x5733,0x5E02,0x5965,0x79D1,0x65AF,0x6570,0x7801,0x6709,0x9650,0x516C,0x53F8,0x0000};
 	u16_t jp_unibuf[64] = {0x6DF1,0x30BB,0x30F3,0x5E02,0x30AA,0x30FC,0x30B3,0x30B9,0x30C7,0x30B8,0x30BF,0x30EB,0x6709,0x9650,0x4F1A,0x793E,0x0000};
+
+	LCD_Clear(BLACK);
 	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
 
-	//sprintf(tmpbuf, "%f", longitude);
-	//LCD_ShowString(0,0,tmpbuf);
-	//memset(tmpbuf,0,sizeof(tmpbuf));
-	//sprintf(tmpbuf, "%f", latitude);	
-	//LCD_ShowString(0,2,tmpbuf);
-	//return;
-
 #ifdef FONTMAKER_UNICODE_FONT
-#ifdef FONT_16
+#ifdef FONT_32
+	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
+#elif defined(FONT_24)
+	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
+#elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
 	LCD_MeasureUniString(en_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = 60;	
+	y = 30;	
 	LCD_ShowUniString(x,y,en_unibuf);
 
 	LCD_MeasureUniString(cn_unibuf,&w,&h);
@@ -644,6 +658,10 @@ void test_show_string(void)
 
 void system_init(void)
 {
+#ifdef CONFIG_FOTA_DOWNLOAD
+	fota_init();
+#endif
+
 	InitSystemSettings();
 	
 	pmu_init();
@@ -652,13 +670,19 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
+#ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
+#endif
 	ble_init();
-
+#ifdef CONFIG_PPG_SUPPORT	
+	PPG_init();
+#endif
+#ifdef CONFIG_IMU_SUPPORT
 	IMU_init(&imu_work_q);
+#endif
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
-	
+
 	EnterIdleScreen();
 }
 
@@ -667,12 +691,25 @@ void work_init(void)
 	k_work_q_start(&nb_work_q, nb_stack_area,
 					K_THREAD_STACK_SIZEOF(nb_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+#ifdef CONFIG_IMU_SUPPORT	
 	k_work_q_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+#endif
 	k_work_q_start(&gps_work_q, gps_stack_area,
 					K_THREAD_STACK_SIZEOF(gps_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
+}
+
+bool system_is_completed(void)
+{
+	return sys_pwron_completed_flag;
+}
+
+void system_init_completed(void)
+{
+	if(!sys_pwron_completed_flag)
+		sys_pwron_completed_flag = true;
 }
 
 /***************************************************************************
@@ -687,6 +724,8 @@ int main(void)
 
 //	test_show_string();
 //	test_show_image();
+//	test_show_color();
+//	test_show_stripe();
 //	test_nvs();
 //	test_flash();
 //	test_uart_ble();
@@ -701,21 +740,34 @@ int main(void)
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();
+	Set_Audio_Power_On();
 
 	while(1)
 	{
 		TimeMsgProcess();
 		NBMsgProcess();
+		WifiProcess();
 		GPSMsgProcess();
 		PMUMsgProcess();
+	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
+	#endif
+	#ifdef CONFIG_PPG_SUPPORT	
+		PPGMsgProcess();
+	#endif
 		LCDMsgProcess();
+	#ifdef CONFIG_TOUCH_SUPPORT
+		TPMsgProcess();
+	#endif
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
 		UartMsgProc();
 		ScreenMsgProcess();
-
+	#ifdef CONFIG_FOTA_DOWNLOAD
+		FotaMsgProc();
+	#endif
+		system_init_completed();
 		k_cpu_idle();
 	}
 }

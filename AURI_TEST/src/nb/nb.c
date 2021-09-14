@@ -595,6 +595,26 @@ bool MqttIsConnected(void)
 	return mqtt_connected;
 }
 
+void DisConnectMqttLink(void)
+{
+	int err;
+		
+	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+		k_timer_stop(&mqtt_disconnect_timer);
+
+	if(mqtt_connected)
+	{
+		err = mqtt_disconnect(&client);
+		if(err)
+		{
+			LOG_INF("[%s]: Could not disconnect MQTT client. Error: %d\n", __func__, err);
+		}
+		
+		mqtt_connected = false;
+		mqtt_disconnect_flag = true;
+	}
+}
+
 void DisconnectAppMqttLink(void)
 {
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
@@ -1566,6 +1586,12 @@ void NBMsgProcess(void)
 		{
 			strcpy(nb_test_info, "LTE Link Connecting ...");
 			TestNBUpdateINfor();
+		}
+		else
+		{
+			SetModemTurnOff();
+			modem_configure();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
 		}
 	}
 

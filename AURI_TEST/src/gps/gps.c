@@ -216,6 +216,7 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
+		DisConnectMqttLink();
 		SetModemTurnOff();
 		
 		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)

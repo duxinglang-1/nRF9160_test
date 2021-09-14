@@ -286,6 +286,20 @@ int MAX20353_LDO2Config(void)
     return ret;
 }
 
+int MAX20353_BoostDisable(void)
+{
+	int32_t ret = 0;
+	
+	appcmdoutvalue_ = 0x30;
+	appdatainoutbuffer_[0] = 0x00;
+	appdatainoutbuffer_[1] = 0x00;
+	appdatainoutbuffer_[2] = 0x00;
+	appdatainoutbuffer_[3] = 0x00;     // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	ret = MAX20353_AppWrite(4);
+
+	return ret;
+}
+
 int MAX20353_BoostConfig(void) 
 {
 	int32_t ret = 0;
@@ -326,7 +340,7 @@ int MAX20353_BuckBoostDisable(void)
     return ret;
 }
 
-/// @brief BuckBoost to 5.0V output rail **/
+/// @brief BuckBoost to 3.3V output rail **/
 //******************************************************************************
 int MAX20353_BuckBoostConfig(void) 
 {
@@ -334,7 +348,7 @@ int MAX20353_BuckBoostConfig(void)
     appcmdoutvalue_ = 0x70;
     appdatainoutbuffer_[0] = 0x00;
     appdatainoutbuffer_[1] = 0x04;
-    appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 5.0V
+    appdatainoutbuffer_[2] = 0x08;		// 2.5V + (0.1V * number) = 3.3V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
 
@@ -892,7 +906,7 @@ bool MAX20353_Init(void)
 	MAX20353_Buck2Config(); 	//3.3V  350mA
 	//MAX20353_LDO1Config();	//1.8v 50mA switch mode
 	//MAX20353_LDO2Config();	//2.8V 100mA
-	//MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
+	//MAX20353_BoostConfig(); 	//5V 只有buck2的3.3V关闭，即PPG才会亮
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();

@@ -41,6 +41,7 @@ bool sys_pwr_off_flag = false;
 bool read_soc_status = false;
 bool charger_is_connected = false;
 bool pmu_bat_has_notify = false;
+bool sys_shutdown_is_running = false;
 
 u8_t g_bat_soc = 0;
 
@@ -111,18 +112,32 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 	return rslt;
 }
 
+void Set_Audio_Power_On(void)
+{
+	int ret = 0;
+
+	ret = MAX20353_BuckBoostConfig();
+}
+
+void Set_Audio_Power_Off(void)
+{
+	int ret = 0;
+
+	ret = MAX20353_BuckBoostDisable();
+}
+
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED1(2, 31, true);
+	ret = MAX20353_BoostConfig();
 }
 
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED1(2, 0, false);
+	ret = MAX20353_BoostDisable();
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)
@@ -132,14 +147,26 @@ void sys_pwr_off_timerout(struct k_timer *timer_id)
 
 void system_power_off(u8_t flag)
 {
-	SaveSystemDateTime();
-	SendPowerOffData(flag);
-
-	k_timer_start(&sys_pwroff, K_MSEC(3*1000), NULL);
+	if(!sys_shutdown_is_running)
+	{
+		sys_shutdown_is_running = true;
+		
+		SaveSystemDateTime();
+		if(nb_is_connected())
+		{
+			SendPowerOffData(flag);
+			k_timer_start(&sys_pwroff, K_MSEC(2*1000), NULL);
+		}
+		else
+		{
+			sys_pwr_off_flag = true;
+		}
+	}
 }
 
 void SystemShutDown(void)
 {	
+	LOG_INF("[%s]\n", __func__);
 	MAX20353_PowerOffConfig();
 }
 
@@ -179,18 +206,25 @@ void pmu_charge_disconnected(void)
 
 void pmu_interrupt_proc(void)
 {
-	u8_t int0,status0,status1;
+	u8_t int0,int1,int2,status0,status1;
 	u8_t val;
 	
 	do
 	{
+		int0 = 0;
 		MAX20353_ReadReg(REG_INT0, &int0);
-		//LOG_INF("pmu_interrupt_proc REG_INT0:%02X\n", int0);
-
+	#if 1	
+		MAX20353_ReadReg(REG_INT1, &int1);
+		MAX20353_ReadReg(REG_INT2, &int2);
+		LOG_INF("[%s] REG_INT0:%02X,REG_INT1:%02X,REG_INT2:%02X\n", __func__, int0,int1,int2);
+	#else
+		LOG_INF("[%s] REG_INT0:%02X\n", __func__, int0);
+	#endif
+	
 		if((int0&0x40) == 0x40) //Charger status change INT  
 		{
 			MAX20353_ReadReg(REG_STATUS0, &status0);
-			//LOG_INF("REG_STATUS0:%02X\n", status0);
+			LOG_INF("[%s] REG_STATUS0:%02X\n", __func__, status0);
 			switch((status0&0x07))
 			{
 			case 0x00://Charger off
@@ -286,7 +320,13 @@ void pmu_interrupt_proc(void)
 
 		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
 		{
-			//LOG_INF("Cannot get pin");
+			LOG_INF("[%s] read pmu int false", __func__);
+			break;
+		}
+
+		if((int0&0x48) == 0x00)
+		{
+			LOG_INF("[%s] int0 register is empty", __func__);
 			break;
 		}
 	}while(!val);
@@ -307,7 +347,7 @@ void pmu_alert_proc(void)
 
 #ifdef BATTERY_SOC_GAUGE
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
-	//LOG_INF("pmu_alert_proc status:%02X\n", MSB);
+	LOG_INF("[%s] status:%02X\n", __func__, MSB);
 	if(MSB&0x40)
 	{
 		//EnVr (enable voltage reset alert)
@@ -450,6 +490,27 @@ void MAX20353_InitData(void)
 		
 		charger_is_connected = true;
 		g_chg_status = BAT_CHARGING_PROGRESS;
+
+	#ifdef BATTERY_SOC_GAUGE	
+		g_bat_soc = MAX20353_CalculateSOC();
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+
+		if(g_bat_soc < 5)
+			g_bat_level = BAT_LEVEL_0;
+		else if(g_bat_soc < 10)
+			g_bat_level = BAT_LEVEL_0;
+		else if(g_bat_soc < 20)
+			g_bat_level = BAT_LEVEL_1;
+		else if(g_bat_soc < 40)
+			g_bat_level = BAT_LEVEL_2;
+		else if(g_bat_soc < 60)
+ 			g_bat_level = BAT_LEVEL_3;
+		else if(g_bat_soc < 80)
+			g_bat_level = BAT_LEVEL_4;
+		else
+			g_bat_level = BAT_LEVEL_5;
+	#endif
 	}
 	else
 	{	
@@ -661,6 +722,8 @@ void PMUMsgProcess(void)
 {
 	if(pmu_trige_flag)
 	{
+		LOG_INF("[%s] int", __func__);
+		
 		if(pmu_check_ok)
 			pmu_interrupt_proc();
 		
@@ -669,6 +732,8 @@ void PMUMsgProcess(void)
 	
 	if(pmu_alert_flag)
 	{
+		LOG_INF("[%s] alert", __func__);
+		
 		if(pmu_check_ok)
 			pmu_alert_proc();
 		
@@ -748,7 +813,7 @@ void MAX20353_ReadStatus(void)
 	MAX20353_ReadReg(REG_STATUS1, &Status1);
 	MAX20353_ReadReg(REG_STATUS2, &Status2);
 	MAX20353_ReadReg(REG_STATUS3, &Status3);
-
+	
 	LOG_INF("Status0=0x%02X,Status1=0x%02X,Status2=0x%02X,Status3=0x%02X\n", Status0, Status1, Status2, Status3); 
 }
 

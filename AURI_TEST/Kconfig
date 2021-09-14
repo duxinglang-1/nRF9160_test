@@ -209,6 +209,15 @@ config PPG_SUPPORT
 endmenu #PPG
 
 
+menu "IMU"
+
+config IMU_SUPPORT
+	bool "imu support"
+	default n
+	
+endmenu #IMU
+
+
 menu "AUDIO"
 
 config AUDIO_SUPPORT

@@ -13,33 +13,20 @@
 #include <zephyr.h>
 #include <device.h>
 
-/** @addtogroup  Interfaces_Functions
-  * @brief       This section provide a set of functions used to read and
-  *              write a generic register of the device.
-  *              MANDATORY: return 0 -> no Error.
-  * @{
-  *
-  */
+#define PPG_TRIGGER_BY_MENU			0x01
+#define	PPG_TRIGGER_BY_APP_ONE_KEY	0x02
+#define	PPG_TRIGGER_BY_APP_HR		0x04
+#define	PPG_TRIGGER_BY_HOURLY		0x08
 
-typedef int32_t (*ppgdev_write_ptr)(void *, u8_t, u8_t, u8_t*, u16_t);
-typedef int32_t (*ppgdev_read_ptr) (void *, u8_t, u8_t, u8_t*, u16_t);
-
-typedef struct {
-  /** Component mandatory fields **/
-  ppgdev_write_ptr  write_reg;
-  ppgdev_read_ptr   read_reg;
-  /** Customizable optional pointer **/
-  void *handle;
-}ppgdev_ctx_t;
-
-ppgdev_ctx_t ppg_dev_ctx;
-
-extern u8_t g_heart_rate;
+extern u8_t g_ppg_trigger;
+extern u16_t g_hr;
+extern u16_t g_spo2;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
 /*heart rate*/
 extern void GetHeartRate(u8_t *HR);
+extern void APPStartPPG(void);
 
 #endif/*__MAX32674_H__*/

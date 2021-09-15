@@ -520,6 +520,6 @@ void GPSMsgProcess(void)
 	
 	if(gps_is_working())
 	{
-		k_sleep(K_MSEC(20));
+		k_sleep(K_MSEC(50));
 	}
 }

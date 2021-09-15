@@ -1733,14 +1733,14 @@ void EnterGPSTestScreen(void)
 	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
 #ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
 #endif
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	Key_Event_register_Handler(EnterNBTestScreen, ExitGPSTestScreen);
 }

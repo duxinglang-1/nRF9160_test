@@ -1654,7 +1654,7 @@ void NBMsgProcess(void)
 	
 	if(nb_connecting_flag)
 	{
-		k_sleep(K_MSEC(10));
+		k_sleep(K_MSEC(50));
 	}
 }
 

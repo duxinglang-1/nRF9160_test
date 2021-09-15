@@ -1765,6 +1765,8 @@ void EnterBLETestScreen(void)
 	scr_msg[SCREEN_ID_BLE_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_BLE_TEST].status = SCREEN_STATUS_CREATING;
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 	k_timer_stop(&mainmenu_timer);
 	MenuStopWifi();
 	
@@ -1791,6 +1793,8 @@ void EnterWifiTestScreen(void)
 	scr_msg[SCREEN_ID_WIFI_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_WIFI_TEST].status = SCREEN_STATUS_CREATING;	
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 	k_timer_stop(&mainmenu_timer);
 	MenuStopNB();
 	
@@ -1819,6 +1823,8 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;	
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 	k_timer_stop(&mainmenu_timer);
 	MenuStopGPS();
 	

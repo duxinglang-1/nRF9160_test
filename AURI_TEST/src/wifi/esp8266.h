@@ -9,7 +9,12 @@
 #ifndef __ESP8266_H__
 #define __ESP8266_H__
 
-#define MAX_SCANNED_WIFI_NODE	5
+#define WIFI_NODE_MAX	5
+#define WIFI_DATA_HEAD			"+CWLAP:"
+#define WIFI_DATA_RSSI_BEGIN	"("
+#define WIFI_DATA_RSSI_END		","
+#define WIFI_DATA_MAC_BEGIN		"\""
+#define WIFI_DATA_MAC_END		"\")"
 
 typedef struct
 {
@@ -20,24 +25,8 @@ typedef struct
 typedef struct
 {
 	u8_t count;
-	wifi_node_infor node[MAX_SCANNED_WIFI_NODE];
+	wifi_node_infor node[WIFI_NODE_MAX];
 }wifi_infor;
-
-
-typedef struct
-  {
-
-	 char rssi[10];
-	 
-  }wifi_node;
-
-
-typedef struct 
-{
-	u8_t count;
-	wifi_node  node[50];
-
-}wifi_infor1;
 
 extern bool wifi_is_on;
 extern bool sos_wait_wifi;

@@ -53,7 +53,6 @@ K_TIMER_DEFINE(wifi_rescan_timer, wifi_rescan_timerout, NULL);
 
 static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
 {
-	LOG_INF("[%s]\n", __func__);
 	app_wifi_on = false;
 	wifi_turn_off();
 
@@ -78,7 +77,6 @@ static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
 
 static void wifi_rescan_timerout(struct k_timer *timer_id)
 {
-	LOG_INF("[%s]\n", __func__);
 	wifi_rescanning_flag = true;
 }
 
@@ -269,12 +267,12 @@ void wifi_disable(void)
 void wifi_start_scanning(void)
 {
 	//设置工作模式 1:station模式 2:AP模式 3:兼容AP+station模式
-	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",100);
+	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",300);
 
 	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
 	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
 	//Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,4\r\n",30);
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(500));
 	Send_Cmd_To_Esp8285("AT+CWLAP\r\n",50);
 }
 
@@ -296,16 +294,12 @@ void wifi_turn_on_and_scanning(void)
 
 void wifi_turn_off(void)
 {
-	LOG_INF("[%s]\n", __func__);
-
 	wifi_disable();
 	switch_to_ble();
 }
 
 void wifi_rescanning(void)
 {
-	LOG_INF("[%s] wifi_is_on:%d\n", __func__, wifi_is_on);
-
 	if(!wifi_is_on)
 		return;
 
@@ -322,6 +316,8 @@ void wifi_rescanning(void)
 ==============================================================================*/
 void wifi_receive_data_handle(u8_t *buf, u32_t len)
 {
+	u8_t count = 0;
+	u8_t tmpbuf[256] = {0};
 	u8_t *ptr = buf;
 	u8_t *ptr1 = NULL;
 	u8_t *ptr2 = NULL;
@@ -330,84 +326,121 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 	
 	while(1)
 	{
-		//rssi
-		ptr1 = strstr(ptr,"-");         //取字符串中的,之后的字符
+		u8_t len;
+	    u8_t str_rssi[8]={0};
+		u8_t str_mac[32]={0};
+
+		//head
+		ptr1 = strstr(ptr,WIFI_DATA_HEAD);
 		if(ptr1 == NULL)
-			break;
-		ptr2 = strstr(ptr1+1,",");
-		if(ptr2 == NULL)
-			break;
+		{
+			ptr2 = ptr;
+			goto loop;
+		}
 		
-		memcpy(wifi_data.node[wifi_data.count].rssi, ptr1+1, ptr2 - (ptr1+1));
+		//rssi
+		ptr += strlen(WIFI_DATA_HEAD);
+		ptr1 = strstr(ptr,WIFI_DATA_RSSI_BEGIN);         //取字符串中的,之后的字符
+		if(ptr1 == NULL)
+		{
+			ptr2 = ptr;
+			goto loop;
+		}
+		
+		ptr2 = strstr(ptr1+1,WIFI_DATA_RSSI_END);
+		if(ptr2 == NULL)
+		{
+			ptr2 = ptr1+1;
+			goto loop;
+		}
+
+		len = ptr2 - (ptr1+1);
+		if(len > 4)
+		{
+			goto loop;
+		}
+		
+		memcpy(str_rssi, ptr1+1, len);
 
 		//MAC
-		ptr1 = strstr(ptr2,"\"");
+		ptr1 = strstr(ptr2,WIFI_DATA_MAC_BEGIN);
 		if(ptr1 == NULL)
-			break;
-		ptr2 = strstr(ptr1+1,"\"");
-		if(ptr2 == NULL)
-			break;
-		
-		memcpy(wifi_data.node[wifi_data.count].mac, ptr1+1, ptr2 - (ptr1+1));
+		{
+			goto loop;
+		}
 
-		wifi_data.count++;
-		if(wifi_data.count == MAX_SCANNED_WIFI_NODE)
-			break;
+		ptr2 = strstr(ptr1+1,WIFI_DATA_MAC_END);
+		if(ptr2 == NULL)
+		{
+			ptr2 = ptr1+1;
+			goto loop;
+		}
+
+		len = ptr2 - (ptr1+1);
+		if(len != 17)
+		{
+			goto loop;
+		}
+
+		memcpy(str_mac, ptr1+1, len);
 		
+		if(test_wifi_flag)
+		{
+			u8_t buf[128] = {0};
+
+			count++;
+		#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+			if(count<12)
+			{
+				sprintf(buf, "%02d|", -(atoi(str_rssi)));
+				strcat(tmpbuf, buf);
+			}
+		#else
+			sprintf(buf, "%s|%02d;", str_mac, -(atoi(str_rssi)));
+			strcat(tmpbuf, buf);
+		#endif
+		}
+		else
+		{
+			strcpy(wifi_data.node[wifi_data.count].rssi, str_rssi);
+			strcpy(wifi_data.node[wifi_data.count].mac, str_mac);
+			
+			wifi_data.count++;
+			if(wifi_data.count == WIFI_NODE_MAX)
+				break;
+		}
+
+	loop:
 		ptr = ptr2+1;
 		if(*ptr == 0x00)
 			break;
 	}
 
-	wifi_get_scanned_data();
-
-	LOG_INF("[%s] test_wifi_flag:%d\n", __func__, test_wifi_flag);
 	if(test_wifi_flag)
 	{
-		u8_t i,j;
-		u8_t tmpbuf[128] = {0};
-
-		LOG_INF("[%s] 001\n", __func__);
-		sprintf(wifi_test_info, "%02d,", wifi_data.count);
-		
-		for(i=0,j=0;i<wifi_data.count;i++)
+		if(count>0)
 		{
-			u8_t buf[128] = {0};
-
-			j++;
-		#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-			if(j<12)
-			{
-				sprintf(buf, "%02d|", atoi(wifi_data.node[i].rssi));
-				strcat(tmpbuf, buf);
-			}
-		#else
-			sprintf(buf, "%s|%02d;", wifi_data.node[i].mac, atoi(wifi_data.node[i].rssi));
-			strcat(tmpbuf, buf);
-		#endif
+			sprintf(wifi_test_info, "%02d,", count);
+			strcat(wifi_test_info, tmpbuf);
+			wifi_test_update_flag = true;
 		}
-		
-		strcat(wifi_test_info, tmpbuf);
-		wifi_test_update_flag = true;
 	}
 	else
 	{
-		LOG_INF("[%s] 002\n", __func__);
+		wifi_get_scanned_data();
 		wifi_turn_off();
 	}
 }
 
 void MenuStartWifi(void)
 {
-	LOG_INF("[%s]\n", __func__);
 	wifi_on_flag = true;
 	test_wifi_flag = true;
 }
 
 void MenuStopWifi(void)
 {
-	LOG_INF("[%s]\n", __func__);
-	//wifi_off_flag = true;
+	wifi_off_flag = true;
 	test_wifi_flag = false;	
 }
 
@@ -435,7 +468,6 @@ void WifiProcess(void)
 	
 	if(wifi_off_flag)
 	{
-		LOG_INF("[%s] wifi_off_flag:%d\n", __func__, wifi_off_flag);
 		wifi_off_flag = false;
 		wifi_turn_off();
 		
@@ -444,11 +476,13 @@ void WifiProcess(void)
 			k_timer_stop(&wifi_rescan_timer);
 		}
 	}
+
 	if(wifi_rescanning_flag)
 	{
 		wifi_rescanning_flag = false;
 		wifi_rescanning();
 	}
+
 	if(wifi_test_update_flag)
 	{
 		wifi_test_update_flag = false;

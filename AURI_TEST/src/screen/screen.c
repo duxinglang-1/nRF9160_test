@@ -1451,11 +1451,12 @@ void TestBLEShowInfor(void)
 
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "BLE TESTING");
+	LCD_ShowStrInRect(0, 2, LCD_WIDTH, LCD_HEIGHT, "please test it on your phone's APP");
 #else	
 	strcpy(strbuf, "NB-IoT TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
-	LCD_ShowStringInRect(30, 50, 180, 160, ""BLE TESTING"");
+	LCD_ShowStringInRect(30, 50, 180, 160, "BLE TESTING");
 #endif
 }
 

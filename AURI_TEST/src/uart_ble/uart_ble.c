@@ -1469,21 +1469,19 @@ static void uart_receive_data(u8_t data, u32_t datalen)
     else if(wifi_is_on)
     {
         rx_buf[rece_len++] = data;
-        if(rece_len == 256)
-        {
-            wifi_receive_data_handle(rx_buf, rece_len);
 
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-        }
-
-        if((rx_buf[rece_len-1] == 0x4B) || (rece_len==BUF_MAXSIZE-256))	
+        if((rx_buf[rece_len-2] == 0x4F) && (rx_buf[rece_len-1] == 0x4B))	//"OK"
         {
         	wifi_receive_data_handle(rx_buf, rece_len);
 			
             memset(rx_buf, 0, sizeof(rx_buf));
             rece_len = 0;
-        }      
+        }
+		else if(rece_len == BUF_MAXSIZE)
+		{
+			memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+		}
    }
 #endif	
 }

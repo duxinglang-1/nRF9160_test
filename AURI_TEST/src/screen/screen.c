@@ -1534,8 +1534,9 @@ void EnterIdleScreen(void)
 	if(screen_id == SCREEN_ID_IDLE)
 		return;
 
-	k_timer_stop(&notify_timer);
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
+	k_timer_stop(&notify_timer);
 	k_timer_stop(&mainmenu_timer);
 	if(gps_is_working())
 		MenuStopGPS();
@@ -1670,7 +1671,7 @@ void EnterPoweroffScreen(void)
 	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;
 
 	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
 	Key_Event_register_Handler(ExitPoweroffScreen, ExitPoweroffScreen);	
 }
@@ -1683,7 +1684,7 @@ void PowerOffShowStatus(void)
 	LCD_Clear(BLACK);
 
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "It will shut-down after 5 seconds");
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "It will shut-down after 3 seconds");
 #else	
 	strcpy(strbuf, "WIFI TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
@@ -1738,6 +1739,8 @@ void EnterGPSTestScreen(void)
 #ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
 #endif
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	Key_Event_register_Handler(EnterNBTestScreen, ExitGPSTestScreen);
 }

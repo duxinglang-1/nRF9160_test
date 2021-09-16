@@ -384,7 +384,7 @@ void test_show_image(void)
 	LOG_INF("test_show_image\n");
 	
 	LCD_Clear(BLACK);
-	LCD_ShowImg(0, 0, IDLE_72);
+	LCD_ShowImg(0, 0, logo_5_96X64);
 
 	//LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
 	
@@ -448,7 +448,7 @@ void test_show_image(void)
 			i=LCD_WIDTH-1;
 
 		//LCD_Clear(BLACK);
-		LCD_ShowImg(i, 0, IDLE_72);
+		LCD_ShowImg(i, 0, logo_5_96X64);
 		
 		k_sleep(K_MSEC(100));								//»Ìº˛—” ±1000ms
 	}

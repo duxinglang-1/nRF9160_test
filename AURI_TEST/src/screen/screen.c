@@ -64,14 +64,31 @@ extern bool wifi_update_flag;
 
 static void EnterHRScreen(void);
 
+static char *logo_img[] = 
+{
+	logo_1_96X64,
+	logo_2_96X64,
+	logo_3_96X64,
+	logo_4_96X64,
+	logo_5_96X64
+};
+
 void ShowBootUpLogo(void)
 {
+	u8_t i,count=0;
 	u16_t x,y,w,h;
 
-	LCD_get_pic_size(jjph_gc_96X64, &w, &h);
-	x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
-	y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-	LCD_ShowImg(0, 0, jjph_gc_96X64);
+	count = ARRAY_SIZE((logo_img));
+
+	for(i=0;i<count;i++)
+	{
+		LCD_get_pic_size(logo_img[i], &w, &h);
+		x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
+		y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
+		LCD_ShowImg(0, 0, logo_img[i]);
+
+		k_sleep(K_MSEC(200));
+	}
 }
 
 void ExitNotifyScreen(void)

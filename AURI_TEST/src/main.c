@@ -683,7 +683,7 @@ void system_init(void)
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 
-	EnterIdleScreen();
+	//EnterIdleScreen();
 }
 
 void work_init(void)
@@ -767,6 +767,7 @@ int main(void)
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		FotaMsgProc();
 	#endif
+		AnimaMsgProcess();
 		system_init_completed();
 		k_cpu_idle();
 	}

@@ -19,50 +19,51 @@
 extern "C" {
 #endif
 
-//big num
-#define BIG_NUM_W		20
-#define BIG_NUM_H		24
-
-//small num
-#define SMALL_NUM_W		10
-#define SMALL_NUM_H		24
-
 //time
-#define X_OFFSET		2
-#define IDLE_HOUR_H_X	2
+#define IDLE_HOUR_H_X	9
 #define IDLE_HOUR_H_Y	16
-#define IDLE_HOUR_L_X	23	//(IDLE_HOUR_H_X+BIG_NUM_W)
+#define IDLE_HOUR_L_X	26
 #define IDLE_HOUR_L_Y	16
 
-#define IDLE_COLON_X	43	//(IDLE_HOUR_L_X+BIG_NUM_W+X_OFFSET)
+#define IDLE_COLON_X	42
 #define IDLE_COLON_Y	16
-#define IDLE_COLON_W	11
-#define IDLE_COLON_H	24
 
-#define IDLE_MIN_H_X	54	//(IDLE_COLON_X+IDLE_COLON_W+X_OFFSET)
+#define IDLE_MIN_H_X	54
 #define IDLE_MIN_H_Y	16
-#define IDLE_MIN_L_X	75	//(IDLE_MIN_H_X+BIG_NUM_W)
+#define IDLE_MIN_L_X	71
 #define IDLE_MIN_L_Y	16
 
+//AM/PM
+#define IDLE_AM_PM_X	55
+#define IDLE_AM_PM_Y	0
+#define IDLE_AM_PM_W	14
+#define IDLE_AM_PM_H	16
+
+//ble
+#define IDLE_BLE_X		45
+#define IDLE_BLE_Y		0
+#define IDLE_BLE_W		7
+#define IDLE_BLE_H		16
+
 //date
-#define IDLE_MONTH_H_X	3
-#define IDLE_MONTH_H_Y	44
-#define IDLE_MONTH_L_X	14
-#define IDLE_MONTH_L_Y	44
+#define IDLE_MONTH_X	65
+#define IDLE_MONTH_Y	40
 
-#define IDLE_DATE_LINK_X	24
+#define IDLE_DATA_NUM_1_X	43
+#define IDLE_DATA_NUM_1_Y	48
+#define IDLE_DATA_NUM_2_X	53
+#define IDLE_DATA_NUM_2_Y	48
+#define IDLE_DATA_NUM_3_X	69
+#define IDLE_DATA_NUM_3_Y	48
+#define IDLE_DATA_NUM_4_X	79
+#define IDLE_DATA_NUM_4_Y	48
+
+#define IDLE_DATE_LINK_X	62
 #define IDLE_DATE_LINK_Y	40
-#define IDLE_DATE_LINK_W	10
-#define IDLE_DATE_LINK_H	24
-
-#define IDLE_DAY_H_X	34
-#define IDLE_DAY_H_Y	44
-#define IDLE_DAY_L_X	45
-#define IDLE_DAY_L_Y	44
 
 //week
-#define IDLE_WEEK_SHOW_X	63
-#define IDLE_WEEK_SHOW_Y	44
+#define IDLE_WEEK_SHOW_X	9
+#define IDLE_WEEK_SHOW_Y	47
 
 //NB signal
 #define NB_SIGNAL_X			2
@@ -71,17 +72,6 @@ extern "C" {
 //battery soc
 #define BAT_LEVEL_X		75
 #define BAT_LEVEL_Y		2
-
-//battery soc
-#define BAT_PS_OFFSET_H		5
-#define BAT_POSITIVE_X		85
-#define BAT_POSITIVE_Y		20
-#define BAT_POSITIVE_W		10
-#define BAT_POSITIVE_H		10
-#define BAT_SUBJECT_X		(BAT_POSITIVE_X+BAT_POSITIVE_W)
-#define BAT_SUBJECT_Y		(BAT_POSITIVE_Y-BAT_PS_OFFSET_H)
-#define BAT_SUBJECT_W		60
-#define BAT_SUBJECT_H		(BAT_POSITIVE_H+2*BAT_PS_OFFSET_H)
 
 //sport
 #define IMU_STEPS_SHOW_X	15
@@ -94,18 +84,21 @@ extern "C" {
 #define SOS_Y	0
 
 //sleep
-#define SLEEP_ICON_X	9
+#define SLEEP_ICON_X	0
 #define SLEEP_ICON_Y	0
-#define SLEEP_NUM_X	32
-#define SLEEP_NUM_Y	0
-#define SLEEP_CN_HOUR_W	8
-#define SLEEP_CN_HOUR_H	32
-#define SLEEP_CN_MIN_W	8
-#define SLEEP_CN_MIN_H	32
-#define SLEEP_EN_HOUR_W	6
-#define SLEEP_EN_HOUR_H	32
-#define SLEEP_EN_MIN_W	7
-#define SLEEP_EN_MIN_H	32
+#define SLEEP_HOUR_X	7
+#define SLEEP_HOUR_Y	32
+#define SLEEP_MIN_X		7
+#define SLEEP_MIN_Y		32
+#define SLEEP_NUM_1_X	32
+#define SLEEP_NUM_1_Y	0
+#define SLEEP_NUM_2_X	8
+#define SLEEP_NUM_2_Y	32
+#define SLEEP_NUM_3_X	8
+#define SLEEP_NUM_3_Y	32
+#define SLEEP_NUM_4_X	6
+#define SLEEP_NUM_4_Y	32
+
 
 //steps
 #define STEPS_ICON_X	9

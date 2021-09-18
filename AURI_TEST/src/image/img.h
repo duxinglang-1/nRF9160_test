@@ -63,101 +63,174 @@ typedef struct _PALETTE
 仅在256色模式下存在调色板数据结构,调色板数据结构紧跟在数据结构HEADGRAY之后。
 */
 
-#if 0
-//extern unsigned char peppa_pig_80X160[25608];
-//extern unsigned char peppa_pig_160X160[51208];
-//extern unsigned char peppa_pig_240X240_1[57608];
-//extern unsigned char peppa_pig_240X240_2[57600];
-//extern unsigned char peppa_pig_320X320_1[51208];
-//extern unsigned char peppa_pig_320X320_2[51200];
-//extern unsigned char peppa_pig_320X320_3[51200];
-//extern unsigned char peppa_pig_320X320_4[51200];
-//extern unsigned char RM_LOGO_240X240_1[57608];
-//extern unsigned char RM_LOGO_240X240_2[57600];
-#endif
-
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-extern unsigned char IDLE_72[774];
-extern unsigned char IDLE_300[774];
-extern unsigned char jjph_gc_96X64[774];
-extern unsigned char jjph_gc_96X32[390];
-
+//LOGO
+extern unsigned char logo_1_96X64[774];
+extern unsigned char logo_2_96X64[774];
+extern unsigned char logo_3_96X64[774];
+extern unsigned char logo_4_96X64[774];
+extern unsigned char logo_5_96X64[774];
+//BATTERY
 extern unsigned char IMG_BAT_0[38];
 extern unsigned char IMG_BAT_1[38];
 extern unsigned char IMG_BAT_2[38];
 extern unsigned char IMG_BAT_3[38];
 extern unsigned char IMG_BAT_4[38];
 extern unsigned char IMG_BAT_5[38];
-
+//SIGNAL
 extern unsigned char IMG_SIG_0[22];
 extern unsigned char IMG_SIG_1[22];
 extern unsigned char IMG_SIG_2[22];
 extern unsigned char IMG_SIG_3[22];
 extern unsigned char IMG_SIG_4[22];
-
-extern unsigned char IMG_COLON[34];
-extern unsigned char IMG_NO_COLON[34];
-extern unsigned char IMG_BIG_NUM_0[70];
-extern unsigned char IMG_BIG_NUM_1[70];
-extern unsigned char IMG_BIG_NUM_2[70];
-extern unsigned char IMG_BIG_NUM_3[70];
-extern unsigned char IMG_BIG_NUM_4[70];
-extern unsigned char IMG_BIG_NUM_5[70];
-extern unsigned char IMG_BIG_NUM_6[70];
-extern unsigned char IMG_BIG_NUM_7[70];
-extern unsigned char IMG_BIG_NUM_8[70];
-extern unsigned char IMG_BIG_NUM_9[70];
-
-extern unsigned char IMG_NUM_0[46];
-extern unsigned char IMG_NUM_1[46];
-extern unsigned char IMG_NUM_2[46];
-extern unsigned char IMG_NUM_3[46];
-extern unsigned char IMG_NUM_4[46];
-extern unsigned char IMG_NUM_5[46];
-extern unsigned char IMG_NUM_6[46];
-extern unsigned char IMG_NUM_7[46];
-extern unsigned char IMG_NUM_8[46];
-extern unsigned char IMG_NUM_9[46];
-
-extern unsigned char IMG_DATE_LINK[36];
-
-extern unsigned char IMG_MON_EN[93];
-extern unsigned char IMG_TUE_EN[93];
-extern unsigned char IMG_WED_EN[93];
-extern unsigned char IMG_THU_EN[93];
-extern unsigned char IMG_FRI_EN[93];
-extern unsigned char IMG_SAT_EN[93];
-extern unsigned char IMG_SUN_EN[93];
-
-extern unsigned char IMG_MON_CN[93];
-extern unsigned char IMG_TUE_CN[93];
-extern unsigned char IMG_WED_CN[93];
-extern unsigned char IMG_THU_CN[93];
-extern unsigned char IMG_FRI_CN[93];
-extern unsigned char IMG_SAT_CN[93];
-extern unsigned char IMG_SUN_CN[93];
-
-
-extern unsigned char IMG_FALL_ICON[114];
-extern unsigned char IMG_FALL_CN[194];
-extern unsigned char IMG_FALL_EN[114];
-
-extern unsigned char IMG_SLP_ICON[36];
-extern unsigned char IMG_STEP_ICON[66];
-
-extern unsigned char IMG_HOUR_CN[38];
-extern unsigned char IMG_MIN_CN[38];
-extern unsigned char IMG_HOUR_EN[30];
-extern unsigned char IMG_MIN_EN[34];
-
-extern unsigned char IMG_SOS[314];
-extern unsigned char IMG_SOS_RECE[342];
-extern unsigned char IMG_SOS_SEND[342];
-
-extern unsigned char IMG_WRIST_ICON[90];
-extern unsigned char IMG_WRIST_CN[194];
-extern unsigned char IMG_WRIST_EN[226];
+//AM&PM
+extern unsigned char IMG_AM_CN[40];
+extern unsigned char IMG_AM_EN[34];
+extern unsigned char IMG_PM_CN[40];
+extern unsigned char IMG_PM_EN[34];
+//DATE
+extern unsigned char IMG_DATE_LINK[24];
+extern unsigned char IMG_DATE_NUM_0[36];
+extern unsigned char IMG_DATE_NUM_1[36];
+extern unsigned char IMG_DATE_NUM_2[36];
+extern unsigned char IMG_DATE_NUM_3[36];
+extern unsigned char IMG_DATE_NUM_4[36];
+extern unsigned char IMG_DATE_NUM_5[36];
+extern unsigned char IMG_DATE_NUM_6[36];
+extern unsigned char IMG_DATE_NUM_7[36];
+extern unsigned char IMG_DATE_NUM_8[36];
+extern unsigned char IMG_DATE_NUM_9[36];
+//TIME
+extern unsigned char IMG_TIME_SPE_NO[42];
+extern unsigned char IMG_TIME_SPE[42];
+extern unsigned char IMG_TIME_NUM_0[57];
+extern unsigned char IMG_TIME_NUM_1[57];
+extern unsigned char IMG_TIME_NUM_2[57];
+extern unsigned char IMG_TIME_NUM_3[57];
+extern unsigned char IMG_TIME_NUM_4[57];
+extern unsigned char IMG_TIME_NUM_5[57];
+extern unsigned char IMG_TIME_NUM_6[57];
+extern unsigned char IMG_TIME_NUM_7[57];
+extern unsigned char IMG_TIME_NUM_8[57];
+extern unsigned char IMG_TIME_NUM_9[57];
+//MONTH
+extern unsigned char IMG_MON_JAN[78];
+extern unsigned char IMG_MON_FEB[78];
+extern unsigned char IMG_MON_MAR[78];
+extern unsigned char IMG_MON_APR[78];
+extern unsigned char IMG_MON_MAY[78];
+extern unsigned char IMG_MON_JUN[78];
+extern unsigned char IMG_MON_JUL[78];
+extern unsigned char IMG_MON_AUG[78];
+extern unsigned char IMG_MON_SEP[78];
+extern unsigned char IMG_MON_OCT[78];
+extern unsigned char IMG_MON_NOV[78];
+extern unsigned char IMG_MON_DEC[78];
+//WEEK
+extern unsigned char IMG_WEEK_1[84];
+extern unsigned char IMG_WEEK_2[93];
+extern unsigned char IMG_WEEK_3[93];
+extern unsigned char IMG_WEEK_4[93];
+extern unsigned char IMG_WEEK_5[93];
+extern unsigned char IMG_WEEK_6[93];
+extern unsigned char IMG_WEEK_7[93];
+extern unsigned char IMG_WEEK_MON[84];
+extern unsigned char IMG_WEEK_TUE[84];
+extern unsigned char IMG_WEEK_WED[84];
+extern unsigned char IMG_WEEK_THU[84];
+extern unsigned char IMG_WEEK_FRI[84];
+extern unsigned char IMG_WEEK_SAT[84];
+extern unsigned char IMG_WEEK_SUN[84];
+//BLE
+extern unsigned char IMG_BLE_LINKED[20];
+//STEP
+extern unsigned char IMG_STEP_ICON_1[390];
+extern unsigned char IMG_STEP_ICON_2[390];
+extern unsigned char IMG_STEP_CN[50];
+extern unsigned char IMG_STEP_EN[90];
+extern unsigned char IMG_STEP_NOTE_ICON_1[390];
+extern unsigned char IMG_STEP_NOTE_ICON_2[390];
+extern unsigned char IMG_STEP_NOTE_CN[66];
+extern unsigned char IMG_STEP_NOTE_EN[122];
+//DISTANCE
+extern unsigned char IMG_DISTANCE_ICON_1[390];
+extern unsigned char IMG_DISTANCE_ICON_2[390];
+extern unsigned char IMG_KM_CN[102];
+extern unsigned char IMG_KM_EN[102];
+extern unsigned char IMG_MILE_CN[102];
+extern unsigned char IMG_MILE_EN[102];
+//CALORIE
+extern unsigned char IMG_CAL_ICON_1[390];
+extern unsigned char IMG_CAL_ICON_2[390];
+extern unsigned char IMG_CAL_CN[106];
+extern unsigned char IMG_CAL_EN[94];
+//SLEEP
+extern unsigned char IMG_SLEEP_ICON_1[390];
+extern unsigned char IMG_SLEEP_ICON_2[390];
+extern unsigned char IMG_SLEEP_ICON_3[390];
+extern unsigned char IMG_SLEEP_ICON_4[390];
+extern unsigned char IMG_SLEEP_HR_CN[54];
+extern unsigned char IMG_SLEEP_HR_EN[54];
+extern unsigned char IMG_SLEEP_MIN_CN[66];
+extern unsigned char IMG_SLEEP_MIN_EN[66];
+//FALL
+extern unsigned char IMG_FALL_ICON_1[390];
+extern unsigned char IMG_FALL_ICON_2[390];
+extern unsigned char IMG_FALL_ICON_3[390];
+//FIND
+extern unsigned char IMG_FIND_ICON_1[390];
+extern unsigned char IMG_FIND_ICON_2[390];
+extern unsigned char IMG_FIND_ICON_3[390];
+extern unsigned char IMG_FIND_CN[390];
+extern unsigned char IMG_FIND_EN[390];
+//CHARGING
+extern unsigned char IMG_CHARGING_OK[774];
+extern unsigned char IMG_CHARGE_PLS_CN[774];
+extern unsigned char IMG_CHARGE_PLS_EN[774];
+extern unsigned char IMG_CHARGING_CN_0[774];
+extern unsigned char IMG_CHARGING_CN_1[774];
+extern unsigned char IMG_CHARGING_CN_2[774];
+extern unsigned char IMG_CHARGING_CN_3[774];
+extern unsigned char IMG_CHARGING_CN_4[774];
+extern unsigned char IMG_CHARGING_CN_5[774];
+extern unsigned char IMG_CHARGING_EN_0[774];
+extern unsigned char IMG_CHARGING_EN_1[774];
+extern unsigned char IMG_CHARGING_EN_2[774];
+extern unsigned char IMG_CHARGING_EN_3[774];
+extern unsigned char IMG_CHARGING_EN_4[774];
+extern unsigned char IMG_CHARGING_EN_5[774];
+//SOS
+extern unsigned char IMG_SOS_ICON[390];
+extern unsigned char IMG_SOS_SENDING_1[390];
+extern unsigned char IMG_SOS_SENDING_2[390];
+extern unsigned char IMG_SOS_SENDING_3[390];
+extern unsigned char IMG_SOS_SENDING_OK[390];
+//WRIST OFF
+extern unsigned char IMG_WRIST_OFF_CN[774];
+extern unsigned char IMG_WRIST_OFF_EN[774];
+//ALARM
+extern unsigned char IMG_ALARM_ICON_1[390];
+extern unsigned char IMG_ALARM_ICON_2[390];
+extern unsigned char IMG_ALARM_ICON_3[390];
+//NUM
+extern unsigned char IMG_MID_NUM_0[62];
+extern unsigned char IMG_MID_NUM_1[62];
+extern unsigned char IMG_MID_NUM_2[62];
+extern unsigned char IMG_MID_NUM_3[62];
+extern unsigned char IMG_MID_NUM_4[62];
+extern unsigned char IMG_MID_NUM_5[62];
+extern unsigned char IMG_MID_NUM_6[62];
+extern unsigned char IMG_MID_NUM_7[62];
+extern unsigned char IMG_MID_NUM_8[62];
+extern unsigned char IMG_MID_NUM_9[58];
+//DOT
+extern unsigned char IMG_DOT[21];
+//POWER
+extern unsigned char IMG_PWROFF_KEY_CN[774];
+extern unsigned char IMG_PWROFF_KEY_EN[774];
+extern unsigned char IMG_PWROFF_CN[774];
+extern unsigned char IMG_PWROFF_EN[774];
 
 #endif/*LCD_VGM068A4W01_SH1106G*/
 
-#endif/*__FONT_H__*/
+#endif/*__IMG_H__*/

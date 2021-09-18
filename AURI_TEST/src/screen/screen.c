@@ -52,7 +52,6 @@ K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
 static void MainMenuTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mainmenu_timer, MainMenuTimerOutCallBack, NULL);
 
-
 SCREEN_ID_ENUM screen_id = SCREEN_ID_BOOTUP;
 SCREEN_ID_ENUM history_screen_id = SCREEN_ID_BOOTUP;
 screen_msg scr_msg[SCREEN_ID_MAX] = {0};
@@ -77,7 +76,7 @@ void ShowBootUpLogo(void)
 {
 	u8_t i,count=0;
 	u16_t x,y,w,h;
-
+#if 0
 	count = ARRAY_SIZE((logo_img));
 
 	for(i=0;i<count;i++)
@@ -89,6 +88,9 @@ void ShowBootUpLogo(void)
 
 		k_sleep(K_MSEC(200));
 	}
+#else
+	AnimaShow(0, 0, logo_img, ARRAY_SIZE(logo_img), true, EnterIdleScreen);
+#endif
 }
 
 void ExitNotifyScreen(void)
@@ -180,26 +182,100 @@ void DisplayPopUp(u8_t *message)
 
 void IdleShowSystemDate(void)
 {
-	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
-							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
+	unsigned char *img_num[10] = {IMG_DATE_NUM_0,IMG_DATE_NUM_1,IMG_DATE_NUM_2,IMG_DATE_NUM_3,IMG_DATE_NUM_4,
+							  		IMG_DATE_NUM_5,IMG_DATE_NUM_6,IMG_DATE_NUM_7,IMG_DATE_NUM_8,IMG_DATE_NUM_9};
+	unsigned char *img_month[12] = {IMG_MON_JAN,IMG_MON_FEB,IMG_MON_MAR,IMG_MON_APR,IMG_MON_MAY,IMG_MON_JUN,
+							  		IMG_MON_JUL,IMG_MON_AUG,IMG_MON_SEP,IMG_MON_OCT,IMG_MON_NOV,IMG_MON_DEC};
 
-	LCD_ShowImg(IDLE_MONTH_H_X, IDLE_MONTH_H_Y, img[date_time.month/10]);
-	LCD_ShowImg(IDLE_MONTH_L_X, IDLE_MONTH_L_Y, img[date_time.month%10]);
-	LCD_ShowImg(IDLE_DATE_LINK_X, IDLE_DATE_LINK_Y, IMG_DATE_LINK);
-	LCD_ShowImg(IDLE_DAY_H_X, IDLE_DAY_H_Y, img[date_time.day/10]);
-	LCD_ShowImg(IDLE_DAY_L_X, IDLE_DAY_L_Y, img[date_time.day%10]);
+	switch(global_settings.language)
+	{
+	case LANGUAGE_EN:
+	case LANGUAGE_JPN:
+		LCD_ShowImg(IDLE_DATA_NUM_1_X, IDLE_DATA_NUM_1_Y, img_num[date_time.day/10]);
+		LCD_ShowImg(IDLE_DATA_NUM_2_X, IDLE_DATA_NUM_2_Y, img_num[date_time.day%10]);
+		LCD_ShowImg(IDLE_MONTH_X, IDLE_MONTH_Y, img_month[date_time.month]);
+		break;
+
+	case LANGUAGE_CHN:
+		LCD_ShowImg(IDLE_DATA_NUM_1_X, IDLE_DATA_NUM_1_Y, img_num[date_time.month/10]);
+		LCD_ShowImg(IDLE_DATA_NUM_2_X, IDLE_DATA_NUM_1_Y, img_num[date_time.month%10]);
+		LCD_ShowImg(IDLE_DATE_LINK_X, IDLE_DATE_LINK_Y, IMG_DATE_LINK);
+		LCD_ShowImg(IDLE_DATA_NUM_3_X, IDLE_DATA_NUM_3_Y, img_num[date_time.day/10]);
+		LCD_ShowImg(IDLE_DATA_NUM_4_X, IDLE_DATA_NUM_4_Y, img_num[date_time.day%10]);
+		break;
+	}
+}
+
+void IdleShowBleStatus(bool flag)
+{
+	static bool cur_flag = false;
+
+	if(cur_flag == flag)
+		return;
+	
+	if(flag)
+	{
+		LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_LINKED);
+	}
+	else
+	{
+		LCD_Fill(IDLE_BLE_X, IDLE_BLE_Y, IDLE_BLE_W, IDLE_BLE_H, BLACK);
+	}
+}
+
+void IdleShowTime12Format(bool flag)
+{
+	static bool cur_flag = false;
+	unsigned char *img_cn[2] = {IMG_AM_CN, IMG_PM_CN};
+	unsigned char *img_en[2] = {IMG_AM_EN, IMG_PM_EN};
+
+	if(cur_flag == flag)
+		return;
+
+	if(flag)
+	{
+		switch(global_settings.language)
+		{
+		case LANGUAGE_EN:
+		case LANGUAGE_JPN:
+			LCD_ShowImg(IDLE_AM_PM_X, IDLE_AM_PM_Y, img_cn[date_time.hour/12]);
+			break;
+
+		case LANGUAGE_CHN:
+			LCD_ShowImg(IDLE_AM_PM_X, IDLE_AM_PM_Y, img_en[date_time.hour/12]);
+			break;
+		}
+	}
+	else
+	{
+		LCD_Fill(IDLE_AM_PM_X, IDLE_AM_PM_Y, IDLE_AM_PM_W, IDLE_AM_PM_H, BLACK);
+	}
 }
 
 void IdleShowSystemTime(void)
 {
 	static bool colon_flag = true;
-	
-	unsigned char *img[10] = {IMG_BIG_NUM_0,IMG_BIG_NUM_1,IMG_BIG_NUM_2,IMG_BIG_NUM_3,IMG_BIG_NUM_4,
-							  IMG_BIG_NUM_5,IMG_BIG_NUM_6,IMG_BIG_NUM_7,IMG_BIG_NUM_8,IMG_BIG_NUM_9};
-	unsigned char *img_colon[2] = {IMG_NO_COLON,IMG_COLON};
+	u8_t hour;
+	unsigned char *img[10] = {IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,
+							  IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0};
+	unsigned char *img_colon[2] = {IMG_TIME_SPE_NO,IMG_TIME_SPE};
 
-	LCD_ShowImg(IDLE_HOUR_H_X, IDLE_HOUR_H_Y, img[date_time.hour/10]);
-	LCD_ShowImg(IDLE_HOUR_L_X, IDLE_HOUR_L_Y, img[date_time.hour%10]);
+	switch(global_settings.time_format)
+	{
+	case TIME_FORMAT_12:
+		if(date_time.hour > 12)
+			hour -= 12;
+
+		IdleShowTime12Format(true);
+		break;
+	case TIME_FORMAT_24:
+		hour = date_time.hour;
+		IdleShowTime12Format(false);
+		break;
+	}
+
+	LCD_ShowImg(IDLE_HOUR_H_X, IDLE_HOUR_H_Y, img[hour/10]);
+	LCD_ShowImg(IDLE_HOUR_L_X, IDLE_HOUR_L_Y, img[hour%10]);
 	LCD_ShowImg(IDLE_COLON_X, IDLE_COLON_Y, img_colon[colon_flag]);
 	LCD_ShowImg(IDLE_MIN_H_X, IDLE_MIN_H_Y, img[date_time.minute/10]);
 	LCD_ShowImg(IDLE_MIN_L_X, IDLE_MIN_L_Y, img[date_time.minute%10]);
@@ -209,8 +285,8 @@ void IdleShowSystemTime(void)
 
 void IdleShowSystemWeek(void)
 {
-	unsigned char *img_week_cn[7] = {IMG_SUN_CN,IMG_MON_CN,IMG_TUE_CN,IMG_WED_CN,IMG_THU_CN,IMG_FRI_CN,IMG_SAT_CN};
-	unsigned char *img_week_en[7] = {IMG_SUN_EN,IMG_MON_EN,IMG_TUE_EN,IMG_WED_EN,IMG_THU_EN,IMG_FRI_EN,IMG_SAT_EN};
+	unsigned char *img_week_cn[7] = {IMG_WEEK_7,IMG_WEEK_1,IMG_WEEK_2,IMG_WEEK_3,IMG_WEEK_4,IMG_WEEK_5,IMG_WEEK_6};
+	unsigned char *img_week_en[7] = {IMG_WEEK_SUN,IMG_WEEK_MON,IMG_WEEK_TUE,IMG_WEEK_WED,IMG_WEEK_THU,IMG_WEEK_FRI,IMG_WEEK_SAT};
 	unsigned char *img_week;
 
 	if(global_settings.language == LANGUAGE_CHN)
@@ -226,44 +302,6 @@ void IdleShowDateTime(void)
 	IdleShowSystemTime();
 	IdleShowSystemDate();
 	IdleShowSystemWeek();
-}
-
-void IdleUpdateBatSoc(void)
-{
-	u16_t x,y,w,h;
-	u8_t strbuf[10] = {0};
-	u8_t tmpbuf[128] = {0};
-	
-	//LCD_Fill(BAT_SUBJECT_X+1,BAT_SUBJECT_Y+1,BAT_SUBJECT_W-2,BAT_SUBJECT_H-2,BLACK);
-	
-	switch(g_chg_status)
-	{
-	case BAT_CHARGING_NO:
-		sprintf(strbuf, "%02d", g_bat_soc);
-		break;
-	case BAT_CHARGING_PROGRESS:
-		strcpy(strbuf, "CHG");
-		break;
-	case BAT_CHARGING_FINISHED:
-		strcpy(strbuf, "OK");
-		break;
-	}
-
-	LCD_SetFontSize(FONT_SIZE_16);
-	
-#ifdef FONTMAKER_UNICODE_FONT
-	mmi_asc_to_ucs2(tmpbuf,strbuf);
-	LCD_MeasureUniString(tmpbuf, &w, &h);
-	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
-	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
-	LCD_ShowUniString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, tmpbuf);
-	
-#else
-	LCD_MeasureString(strbuf, &w, &h);
-	x = (w > BAT_SUBJECT_W ? BAT_SUBJECT_X : (BAT_SUBJECT_W-w)/2);
-	y = (h > BAT_SUBJECT_H ? BAT_SUBJECT_Y : (BAT_SUBJECT_H-h)/2);
-	LCD_ShowString(BAT_SUBJECT_X+x, BAT_SUBJECT_Y+y, strbuf);
-#endif
 }
 
 void IdleShowSignal(void)
@@ -394,6 +432,7 @@ void IdleScreenProcess(void)
 		LCD_Clear(BLACK);
 		IdleShowSignal();
 		IdleShowDateTime();
+		IdleShowBleStatus(g_ble_connected);
 		IdleShowBatSoc();
 		break;
 		
@@ -781,7 +820,7 @@ void SOSShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_SOS_ADDR;
 	#else
-		img = IMG_SOS;
+		//img = IMG_SOS;
 	#endif
 		break;
 	
@@ -789,7 +828,7 @@ void SOSShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_SOS_SEND_ADDR;
 	#else
-		img = IMG_SOS_SEND;
+		//img = IMG_SOS_SEND;
 	#endif
 		break;
 	
@@ -797,7 +836,7 @@ void SOSShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_SOS_RECE_ADDR;
 	#else
-		img = IMG_SOS_RECE;
+		//img = IMG_SOS_RECE;
 	#endif
 		break;
 	
@@ -805,7 +844,7 @@ void SOSShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_SOS_ADDR;
 	#else
-		img = IMG_SOS;
+		//img = IMG_SOS;
 	#endif
 		break;
 	}
@@ -843,17 +882,10 @@ void SOSScreenProcess(void)
 
 void SleepShowStatus(void)
 {
-	u16_t x,y,img_hour_w,img_hour_h;
 	u16_t deep_sleep,light_sleep,total_sleep;
-	u32_t img_h_addr,img_m_addr;
 	u8_t *img_h,*img_m;
-#ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
-						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
-#else
-	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
-							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
-#endif
+	unsigned char *img[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	total_sleep = deep_sleep + light_sleep;
@@ -863,63 +895,22 @@ void SleepShowStatus(void)
 	switch(global_settings.language)
 	{
 	case LANGUAGE_EN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_h_addr = IMG_HOUR_EN_ADDR;
-		img_m_addr = IMG_MIN_EN_ADDR;
-	#else
-		img_h = IMG_HOUR_EN;
-		img_m = IMG_MIN_EN;
-	#endif
-
-		img_hour_w = SLEEP_EN_HOUR_W;
-		img_hour_h = SLEEP_EN_HOUR_H;
+		img_h =  IMG_SLEEP_HR_EN;
+		img_m =  IMG_SLEEP_MIN_EN;
 		break;
 		
 	case LANGUAGE_CHN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_h_addr = IMG_HOUR_CN_ADDR;
-		img_m_addr = IMG_MIN_CN_ADDR;
-	#else
-		img_h = IMG_HOUR_CN;
-		img_m = IMG_MIN_CN;
-	#endif
-
-		img_hour_w = SLEEP_CN_HOUR_W;
-		img_hour_h = SLEEP_CN_HOUR_H;	
+		img_h =  IMG_SLEEP_HR_CN;
+		img_m =  IMG_SLEEP_MIN_CN;
 		break;
 	}
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(SLEEP_ICON_X, SLEEP_ICON_Y, IMG_SLP_ICON_ADDR);
-	x = SLEEP_NUM_X;
-	y = SLEEP_NUM_Y;
-	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep/60)/10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep/60)%10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg_From_Flash(x, y, img_h_addr);
-	x += img_hour_w;
-	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep%60)/10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg_From_Flash(x, y, img_addr[(total_sleep%60)%10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg_From_Flash(x, y, img_m_addr);
-#else
-	LCD_ShowImg(SLEEP_ICON_X, SLEEP_ICON_Y, IMG_SLP_ICON);
-	x = SLEEP_NUM_X;
-	y = SLEEP_NUM_Y;
-	LCD_ShowImg(x, y, img[(total_sleep/60)/10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg(x, y, img[(total_sleep/60)%10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg(x, y, img_h);
-	x += img_hour_w;
-	LCD_ShowImg(x, y, img[(total_sleep%60)/10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg(x, y, img[(total_sleep%60)%10]);
-	x += SMALL_NUM_W;
-	LCD_ShowImg(x, y, img_m);
-#endif
+	LCD_ShowImg(SLEEP_NUM_1_X, SLEEP_NUM_1_Y, img[(total_sleep/60)/10]);
+	LCD_ShowImg(SLEEP_NUM_2_X, SLEEP_NUM_2_Y, img[(total_sleep/60)%10]);
+	LCD_ShowImg(SLEEP_HOUR_X, SLEEP_HOUR_Y, img_h);
+	LCD_ShowImg(SLEEP_NUM_3_X, SLEEP_NUM_3_Y, img[(total_sleep%60)/10]);
+	LCD_ShowImg(SLEEP_NUM_4_X, SLEEP_NUM_4_Y, img[(total_sleep%60)%10]);
+	LCD_ShowImg(SLEEP_MIN_X, SLEEP_MIN_Y, img_m);
 }
 
 void SleepScreenProcess(void)
@@ -948,8 +939,8 @@ void StepsUpdateStatus(void)
 	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
 						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
 #else
-	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
-							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
+	unsigned char *img[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
 #endif
 
 	GetImuSteps(&s_count);
@@ -958,25 +949,17 @@ void StepsUpdateStatus(void)
 	x = STEPS_NUM_X;
 	y = STEPS_NUM_Y;
 	LCD_ShowImg_From_Flash(x, y, img_addr[s_count/10000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%10000)/1000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%1000)/100]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%100)/10]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[s_count%10]);
 #else
 	x = STEPS_NUM_X;
 	y = STEPS_NUM_Y;
 	LCD_ShowImg(x, y, img[s_count/10000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[(s_count%10000)/1000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[(s_count%1000)/100]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[(s_count%100)/10]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[s_count%10]);
 #endif
 }
@@ -989,8 +972,8 @@ void StepsShowStatus(void)
 	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
 						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
 #else
-	unsigned char *img[10] = {IMG_NUM_0,IMG_NUM_1,IMG_NUM_2,IMG_NUM_3,IMG_NUM_4,
-							  IMG_NUM_5,IMG_NUM_6,IMG_NUM_7,IMG_NUM_8,IMG_NUM_9};
+	unsigned char *img[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
 #endif
 
 	GetImuSteps(&s_count);
@@ -1002,26 +985,18 @@ void StepsShowStatus(void)
 	x = STEPS_NUM_X;
 	y = STEPS_NUM_Y;
 	LCD_ShowImg_From_Flash(x, y, img_addr[s_count/10000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%10000)/1000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%1000)/100]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%100)/10]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg_From_Flash(x, y, img_addr[s_count%10]);
 #else
-	LCD_ShowImg(STEPS_ICON_X, STEPS_ICON_Y, IMG_STEP_ICON);
+	//LCD_ShowImg(STEPS_ICON_X, STEPS_ICON_Y, IMG_STEP_ICON);
 	x = STEPS_NUM_X;
 	y = STEPS_NUM_Y;
 	LCD_ShowImg(x, y, img[s_count/10000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[(s_count%10000)/1000]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[(s_count%1000)/100]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[(s_count%100)/10]);
-	x += SMALL_NUM_W;
 	LCD_ShowImg(x, y, img[s_count%10]);
 #endif
 }
@@ -1061,7 +1036,7 @@ void FallShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_FALL_EN_ADDR;
 	#else
-		img = IMG_FALL_EN;
+		//img = IMG_FALL_EN;
 	#endif
 		x = FALL_EN_TEXT_X;
 		y = FALL_CN_TEXT_Y;
@@ -1071,7 +1046,7 @@ void FallShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_FALL_CN_ADDR;
 	#else
-		img = IMG_FALL_CN;
+		//img = IMG_FALL_CN;
 	#endif
 		x = FALL_CN_TEXT_X;
 		y = FALL_CN_TEXT_Y;	
@@ -1082,7 +1057,7 @@ void FallShowStatus(void)
 	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON_ADDR);
 	LCD_ShowImg_From_Flash(x, y, img_addr);
 #else
-	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON);
+	//LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON);
 	LCD_ShowImg(x, y, img);
 #endif
 }
@@ -1119,7 +1094,7 @@ void WristShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_WRIST_EN_ADDR;
 	#else
-		img = IMG_WRIST_EN;
+		//img = IMG_WRIST_EN;
 	#endif
 		x = WRIST_EN_TEXT_X;
 		y = WRIST_EN_TEXT_Y;
@@ -1129,7 +1104,7 @@ void WristShowStatus(void)
 	#ifdef IMG_FONT_FROM_FLASH
 		img_addr = IMG_WRIST_CN_ADDR;
 	#else
-		img = IMG_WRIST_CN;
+		//img = IMG_WRIST_CN;
 	#endif
 		x = WRIST_CN_TEXT_X;
 		y = WRIST_CN_TEXT_Y;	
@@ -1140,7 +1115,7 @@ void WristShowStatus(void)
 	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON_ADDR);
 	LCD_ShowImg_From_Flash(x, y, img_addr);
 #else
-	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
+	//LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
 	LCD_ShowImg(x, y, img);
 #endif
 }

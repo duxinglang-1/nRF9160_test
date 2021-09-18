@@ -37,6 +37,16 @@ static void AnimaTimerCallBack(struct k_timer *timer_id)
 	anima_redraw_flag = true;
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  delete_anima_info_link
+ * DESCRIPTION
+ *  Delete an animated display list
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void delete_anima_info_link(void)
 {
 	while(anima_show.cache != NULL && anima_show.count != 0)
@@ -57,7 +67,17 @@ void delete_anima_info_link(void)
 	anima_show.callback = NULL;
 }
 
-
+/*****************************************************************************
+ * FUNCTION
+ *  add_anima_info_link
+ * DESCRIPTION
+ *  Create an animated display list
+ * PARAMETERS
+ *	anima_img:	Array of picture pointers that need to be animated 
+ *	anima_count:Number of images that need to be animated
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void add_anima_info_link(u32_t *anima_img, u8_t anima_count)
 {
 	u8_t i;
@@ -95,12 +115,37 @@ void add_anima_info_link(u32_t *anima_img, u8_t anima_count)
 	anima_show.count = i;
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaStopShow
+ * DESCRIPTION
+ *  Stop animation display
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void AnimaStopShow(void)
 {
 	k_timer_stop(&anima_redraw_timer);
 	delete_anima_info_link();
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaShow
+ * DESCRIPTION
+ *  Start animation display
+ * PARAMETERS
+ *	x: 			The x starting coordinates of the animation playback
+ *	y: 			The y starting coordinates of the animation playback
+ *	anima_img: 	Array of picture pointers that need to be animated 
+ *	anima_count:Number of images that need to be animated
+ *	loop_flag: 	Animation show mode (true:loop show false:only one round show)
+ *	callback: 	The callback function at the end of animation playback (only valid in round mode)
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, bool loop_flag, ShowFinishCB callback)
 {
 	if(anima_img == NULL)
@@ -126,6 +171,16 @@ void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, bool loop_f
 	}
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaShowNextImg
+ * DESCRIPTION
+ *  Displays the next frame of the animation
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 static void AnimaShowNextImg(void)
 {
 	anima_head = anima_head->next;
@@ -151,6 +206,16 @@ static void AnimaShowNextImg(void)
 	}
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaShowNextImg
+ * DESCRIPTION
+ *  Displays the next frame of the animation
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
 void AnimaMsgProcess(void)
 {
 	if(anima_redraw_flag)

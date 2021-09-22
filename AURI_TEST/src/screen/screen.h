@@ -20,9 +20,9 @@ extern "C" {
 #endif
 
 //time
-#define IDLE_HOUR_H_X	9
+#define IDLE_HOUR_H_X	8
 #define IDLE_HOUR_H_Y	16
-#define IDLE_HOUR_L_X	26
+#define IDLE_HOUR_L_X	25
 #define IDLE_HOUR_L_Y	16
 
 #define IDLE_COLON_X	42
@@ -49,29 +49,29 @@ extern "C" {
 #define IDLE_MONTH_X	65
 #define IDLE_MONTH_Y	40
 
-#define IDLE_DATA_NUM_1_X	43
-#define IDLE_DATA_NUM_1_Y	48
-#define IDLE_DATA_NUM_2_X	53
-#define IDLE_DATA_NUM_2_Y	48
-#define IDLE_DATA_NUM_3_X	69
-#define IDLE_DATA_NUM_3_Y	48
-#define IDLE_DATA_NUM_4_X	79
-#define IDLE_DATA_NUM_4_Y	48
+#define IDLE_DATA_NUM_1_X	42
+#define IDLE_DATA_NUM_1_Y	40
+#define IDLE_DATA_NUM_2_X	52
+#define IDLE_DATA_NUM_2_Y	40
+#define IDLE_DATA_NUM_3_X	68
+#define IDLE_DATA_NUM_3_Y	40
+#define IDLE_DATA_NUM_4_X	78
+#define IDLE_DATA_NUM_4_Y	40
 
 #define IDLE_DATE_LINK_X	62
 #define IDLE_DATE_LINK_Y	40
 
 //week
-#define IDLE_WEEK_SHOW_X	9
-#define IDLE_WEEK_SHOW_Y	47
+#define IDLE_WEEK_SHOW_X	8
+#define IDLE_WEEK_SHOW_Y	40
 
 //NB signal
 #define NB_SIGNAL_X			2
-#define NB_SIGNAL_Y			3
+#define NB_SIGNAL_Y			0
 
 //battery soc
 #define BAT_LEVEL_X		75
-#define BAT_LEVEL_Y		2
+#define BAT_LEVEL_Y		0
 
 //sport
 #define IMU_STEPS_SHOW_X	15
@@ -83,28 +83,68 @@ extern "C" {
 #define SOS_X	9
 #define SOS_Y	0
 
+//steps
+#define STEPS_ICON_X	0
+#define STEPS_ICON_Y	0
+#define STEPS_CN_OFFSET	5
+#define STEPS_UNIT_X	75
+#define STEPS_UNIT_Y	32
+#define STEPS_NUM_1_X	4
+#define STEPS_NUM_1_Y	32
+#define STEPS_NUM_2_X	18
+#define STEPS_NUM_2_Y	32
+#define STEPS_NUM_3_X	32
+#define STEPS_NUM_3_Y	32
+#define STEPS_NUM_4_X	44
+#define STEPS_NUM_4_Y	32
+#define STEPS_NUM_5_X	58
+#define STEPS_NUM_5_Y	32
+
 //sleep
 #define SLEEP_ICON_X	0
 #define SLEEP_ICON_Y	0
-#define SLEEP_HOUR_X	7
+#define SLEEP_HOUR_X	36
 #define SLEEP_HOUR_Y	32
-#define SLEEP_MIN_X		7
+#define SLEEP_MIN_X		80
 #define SLEEP_MIN_Y		32
-#define SLEEP_NUM_1_X	32
-#define SLEEP_NUM_1_Y	0
-#define SLEEP_NUM_2_X	8
+#define SLEEP_NUM_1_X	6
+#define SLEEP_NUM_1_Y	32
+#define SLEEP_NUM_2_X	21
 #define SLEEP_NUM_2_Y	32
-#define SLEEP_NUM_3_X	8
+#define SLEEP_NUM_3_X	49
 #define SLEEP_NUM_3_Y	32
-#define SLEEP_NUM_4_X	6
+#define SLEEP_NUM_4_X	64
 #define SLEEP_NUM_4_Y	32
 
+//distance
+#define DIS_ICON_X		0
+#define DIS_ICON_Y		0
+#define DIS_KM_X		69
+#define DIS_KM_Y		32
+#define DIS_NUM_1_X		4
+#define DIS_NUM_1_Y		32
+#define DIS_NUM_2_X		19
+#define DIS_NUM_2_Y		32
+#define DIS_DOT_X		34
+#define DIS_DOT_Y		31
+#define DIS_NUM_3_X		39
+#define DIS_NUM_3_Y		32
+#define DIS_NUM_4_X		54
+#define DIS_NUM_4_Y		32
 
-//steps
-#define STEPS_ICON_X	9
-#define STEPS_ICON_Y	0
-#define STEPS_NUM_X	31
-#define STEPS_NUM_Y	0
+//calorie
+#define CAL_ICON_X		0
+#define CAL_ICON_Y		0
+#define CAL_UNIT_X		67
+#define CAL_UNIT_Y		32
+#define CAL_NUM_1_X		9
+#define CAL_NUM_1_Y		32
+#define CAL_NUM_2_X		24
+#define CAL_NUM_2_Y		32
+#define CAL_NUM_3_X		39
+#define CAL_NUM_3_Y		32
+#define CAL_NUM_4_X		54
+#define CAL_NUM_4_Y		32
 
 //fall
 #define FALL_ICON_X	9
@@ -121,6 +161,12 @@ extern "C" {
 #define WRIST_CN_TEXT_Y	0
 #define WRIST_EN_TEXT_X	31
 #define WRIST_EN_TEXT_Y	0
+
+//find
+#define FIND_ICON_X		0
+#define FIND_ICON_Y		0
+#define FIND_TEXT_X		0
+#define FIND_TEXT_Y		32
 
 //idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000
@@ -180,6 +226,8 @@ typedef enum
 	SCREEN_ID_SOS,
 	SCREEN_ID_SLEEP,
 	SCREEN_ID_STEPS,
+	SCREEN_ID_DISTANCE,
+	SCREEN_ID_CALORIE,
 	SCREEN_ID_FALL,
 	SCREEN_ID_WRIST,
 	SCREEN_ID_SETTINGS,
@@ -248,6 +296,7 @@ extern void EnterAlarmScreen(void);
 extern void EnterFindDeviceScreen(void);
 extern void EnterGPSTestScreen(void);
 extern void EnterNBTestScreen(void);
+extern void EnterPoweroffScreen(void);
 extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
 extern void ExitNotifyScreen(void);

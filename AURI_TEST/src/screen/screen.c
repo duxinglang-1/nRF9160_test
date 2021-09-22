@@ -89,7 +89,7 @@ void ShowBootUpLogo(void)
 		k_sleep(K_MSEC(200));
 	}
 #else
-	AnimaShow(0, 0, logo_img, ARRAY_SIZE(logo_img), true, EnterIdleScreen);
+	AnimaShow(0, 0, logo_img, ARRAY_SIZE(logo_img), 200, false, EnterIdleScreen);
 #endif
 }
 
@@ -193,12 +193,12 @@ void IdleShowSystemDate(void)
 	case LANGUAGE_JPN:
 		LCD_ShowImg(IDLE_DATA_NUM_1_X, IDLE_DATA_NUM_1_Y, img_num[date_time.day/10]);
 		LCD_ShowImg(IDLE_DATA_NUM_2_X, IDLE_DATA_NUM_2_Y, img_num[date_time.day%10]);
-		LCD_ShowImg(IDLE_MONTH_X, IDLE_MONTH_Y, img_month[date_time.month]);
+		LCD_ShowImg(IDLE_MONTH_X, IDLE_MONTH_Y, img_month[date_time.month-1]);
 		break;
 
 	case LANGUAGE_CHN:
 		LCD_ShowImg(IDLE_DATA_NUM_1_X, IDLE_DATA_NUM_1_Y, img_num[date_time.month/10]);
-		LCD_ShowImg(IDLE_DATA_NUM_2_X, IDLE_DATA_NUM_1_Y, img_num[date_time.month%10]);
+		LCD_ShowImg(IDLE_DATA_NUM_2_X, IDLE_DATA_NUM_2_Y, img_num[date_time.month%10]);
 		LCD_ShowImg(IDLE_DATE_LINK_X, IDLE_DATE_LINK_Y, IMG_DATE_LINK);
 		LCD_ShowImg(IDLE_DATA_NUM_3_X, IDLE_DATA_NUM_3_Y, img_num[date_time.day/10]);
 		LCD_ShowImg(IDLE_DATA_NUM_4_X, IDLE_DATA_NUM_4_Y, img_num[date_time.day%10]);
@@ -208,29 +208,20 @@ void IdleShowSystemDate(void)
 
 void IdleShowBleStatus(bool flag)
 {
-	static bool cur_flag = false;
-
-	if(cur_flag == flag)
-		return;
-	
 	if(flag)
 	{
-		LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_LINKED);
+		LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_LINK);
 	}
 	else
 	{
-		LCD_Fill(IDLE_BLE_X, IDLE_BLE_Y, IDLE_BLE_W, IDLE_BLE_H, BLACK);
+		LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_UNLINK);
 	}
 }
 
 void IdleShowTime12Format(bool flag)
 {
-	static bool cur_flag = false;
 	unsigned char *img_cn[2] = {IMG_AM_CN, IMG_PM_CN};
 	unsigned char *img_en[2] = {IMG_AM_EN, IMG_PM_EN};
-
-	if(cur_flag == flag)
-		return;
 
 	if(flag)
 	{
@@ -238,11 +229,11 @@ void IdleShowTime12Format(bool flag)
 		{
 		case LANGUAGE_EN:
 		case LANGUAGE_JPN:
-			LCD_ShowImg(IDLE_AM_PM_X, IDLE_AM_PM_Y, img_cn[date_time.hour/12]);
+			LCD_ShowImg(IDLE_AM_PM_X, IDLE_AM_PM_Y, img_en[date_time.hour/12]);
 			break;
 
 		case LANGUAGE_CHN:
-			LCD_ShowImg(IDLE_AM_PM_X, IDLE_AM_PM_Y, img_en[date_time.hour/12]);
+			LCD_ShowImg(IDLE_AM_PM_X, IDLE_AM_PM_Y, img_cn[date_time.hour/12]);
 			break;
 		}
 	}
@@ -256,8 +247,8 @@ void IdleShowSystemTime(void)
 {
 	static bool colon_flag = true;
 	u8_t hour;
-	unsigned char *img[10] = {IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,
-							  IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0,IMG_TIME_NUM_0};
+	unsigned char *img[10] = {IMG_TIME_NUM_0,IMG_TIME_NUM_1,IMG_TIME_NUM_2,IMG_TIME_NUM_3,IMG_TIME_NUM_4,
+							  IMG_TIME_NUM_5,IMG_TIME_NUM_6,IMG_TIME_NUM_7,IMG_TIME_NUM_8,IMG_TIME_NUM_9};
 	unsigned char *img_colon[2] = {IMG_TIME_SPE_NO,IMG_TIME_SPE};
 
 	switch(global_settings.time_format)
@@ -265,6 +256,8 @@ void IdleShowSystemTime(void)
 	case TIME_FORMAT_12:
 		if(date_time.hour > 12)
 			hour -= 12;
+		else
+			hour = date_time.hour;
 
 		IdleShowTime12Format(true);
 		break;
@@ -525,11 +518,25 @@ void AlarmScreenProcess(void)
 	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
 }
 
+void FindShowStatus(void)
+{
+//	unsigned char *img_anima[3] = {IMG_FIND_ICON_1,IMG_FIND_ICON_2,IMG_FIND_ICON_3};
+//	unsigned char *img[2] = {IMG_FIND_CN,IMG_FIND_EN};
+	
+//	LCD_Clear(BLACK);
+
+//	AnimaShow(FIND_ICON_X, FIND_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+
+//	if(global_settings.language == LANGUAGE_CHN)
+//		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[0]);
+//	else
+//		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[1]);	
+}
+
 void FindDeviceScreenProcess(void)
 {
 	u16_t rect_x,rect_y,rect_w=180,rect_h=80;
 	u16_t x,y,w,h;
-	u8_t notify[128] = "Find Device!";
 
 	switch(scr_msg[SCREEN_ID_FIND_DEVICE].act)
 	{
@@ -537,23 +544,7 @@ void FindDeviceScreenProcess(void)
 		scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATED;
 				
-		rect_x = (LCD_WIDTH-rect_w)/2;
-		rect_y = (LCD_HEIGHT-rect_h)/2;
-		
-		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
-		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
-		
-	#ifdef FONT_24
-		LCD_SetFontSize(FONT_SIZE_24);
-	#else
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > rect_w)? 0 : (rect_w-w)/2;
-		y = (h > rect_h)? 0 : (rect_h-h)/2;
-		x += rect_x;
-		y += rect_y;
-		LCD_ShowString(x,y,notify);
+		FindShowStatus();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
@@ -880,37 +871,52 @@ void SOSScreenProcess(void)
 	}
 }
 
+void SleepUpdateStatus(void)
+{
+	u16_t total_sleep,deep_sleep,light_sleep;
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
+	
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+	total_sleep = deep_sleep+light_sleep;
+	
+	LCD_ShowImg(SLEEP_NUM_1_X, SLEEP_NUM_1_Y, img_num[(total_sleep/60)/10]);
+	LCD_ShowImg(SLEEP_NUM_2_X, SLEEP_NUM_2_Y, img_num[(total_sleep/60)%10]);
+	LCD_ShowImg(SLEEP_NUM_3_X, SLEEP_NUM_3_Y, img_num[(total_sleep%60)/10]);
+	LCD_ShowImg(SLEEP_NUM_4_X, SLEEP_NUM_4_Y, img_num[(total_sleep%60)%10]);
+}
+
 void SleepShowStatus(void)
 {
-	u16_t deep_sleep,light_sleep,total_sleep;
-	u8_t *img_h,*img_m;
-	unsigned char *img[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+	u16_t total_sleep,deep_sleep,light_sleep;
+	unsigned char *img_anima[4] = {IMG_SLEEP_ICON_1,IMG_SLEEP_ICON_2,IMG_SLEEP_ICON_3,IMG_SLEEP_ICON_4};
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
 							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
-
+	unsigned char *img_uint_hr[2] = {IMG_SLEEP_HR_CN, IMG_SLEEP_HR_EN};
+	unsigned char *img_uint_min[2] = {IMG_SLEEP_MIN_CN, IMG_SLEEP_MIN_EN};
+	
 	GetSleepTimeData(&deep_sleep, &light_sleep);
-	total_sleep = deep_sleep + light_sleep;
-
+	total_sleep = deep_sleep+light_sleep;
+	
 	LCD_Clear(BLACK);
 
-	switch(global_settings.language)
-	{
-	case LANGUAGE_EN:
-		img_h =  IMG_SLEEP_HR_EN;
-		img_m =  IMG_SLEEP_MIN_EN;
-		break;
-		
-	case LANGUAGE_CHN:
-		img_h =  IMG_SLEEP_HR_CN;
-		img_m =  IMG_SLEEP_MIN_CN;
-		break;
-	}
+	AnimaShow(SLEEP_ICON_X, SLEEP_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
 
-	LCD_ShowImg(SLEEP_NUM_1_X, SLEEP_NUM_1_Y, img[(total_sleep/60)/10]);
-	LCD_ShowImg(SLEEP_NUM_2_X, SLEEP_NUM_2_Y, img[(total_sleep/60)%10]);
-	LCD_ShowImg(SLEEP_HOUR_X, SLEEP_HOUR_Y, img_h);
-	LCD_ShowImg(SLEEP_NUM_3_X, SLEEP_NUM_3_Y, img[(total_sleep%60)/10]);
-	LCD_ShowImg(SLEEP_NUM_4_X, SLEEP_NUM_4_Y, img[(total_sleep%60)%10]);
-	LCD_ShowImg(SLEEP_MIN_X, SLEEP_MIN_Y, img_m);
+	LCD_ShowImg(SLEEP_NUM_1_X, SLEEP_NUM_1_Y, img_num[(total_sleep/60)/10]);
+	LCD_ShowImg(SLEEP_NUM_2_X, SLEEP_NUM_2_Y, img_num[(total_sleep/60)%10]);
+	LCD_ShowImg(SLEEP_NUM_3_X, SLEEP_NUM_3_Y, img_num[(total_sleep%60)/10]);
+	LCD_ShowImg(SLEEP_NUM_4_X, SLEEP_NUM_4_Y, img_num[(total_sleep%60)%10]);
+
+	if(global_settings.language == LANGUAGE_CHN)
+	{
+		LCD_ShowImg(SLEEP_HOUR_X, SLEEP_HOUR_Y, img_uint_hr[0]);
+		LCD_ShowImg(SLEEP_MIN_X, SLEEP_MIN_Y, img_uint_min[0]);
+	}
+	else
+	{
+		LCD_ShowImg(SLEEP_HOUR_X, SLEEP_HOUR_Y, img_uint_hr[1]);
+		LCD_ShowImg(SLEEP_MIN_X, SLEEP_MIN_Y, img_uint_min[1]);
+	}
 }
 
 void SleepScreenProcess(void)
@@ -925,6 +931,7 @@ void SleepScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		SleepUpdateStatus();
 		break;
 	}
 	
@@ -933,72 +940,55 @@ void SleepScreenProcess(void)
 
 void StepsUpdateStatus(void)
 {
-	u16_t s_count;
-	u16_t x,y;
-#ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
-						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
-#else
-	unsigned char *img[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+	u16_t steps;
+	u16_t offset_x;
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
 							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
-#endif
+	
+	GetSportData(&steps,NULL,NULL);
 
-	GetImuSteps(&s_count);
+	if(global_settings.language == LANGUAGE_CHN)
+		offset_x = STEPS_CN_OFFSET;
+	else
+		offset_x = 0;
 
-#ifdef IMG_FONT_FROM_FLASH
-	x = STEPS_NUM_X;
-	y = STEPS_NUM_Y;
-	LCD_ShowImg_From_Flash(x, y, img_addr[s_count/10000]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%10000)/1000]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%1000)/100]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%100)/10]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[s_count%10]);
-#else
-	x = STEPS_NUM_X;
-	y = STEPS_NUM_Y;
-	LCD_ShowImg(x, y, img[s_count/10000]);
-	LCD_ShowImg(x, y, img[(s_count%10000)/1000]);
-	LCD_ShowImg(x, y, img[(s_count%1000)/100]);
-	LCD_ShowImg(x, y, img[(s_count%100)/10]);
-	LCD_ShowImg(x, y, img[s_count%10]);
-#endif
+	LCD_ShowImg(STEPS_NUM_1_X+offset_x, STEPS_NUM_1_Y, img_num[steps/10000]);
+	LCD_ShowImg(STEPS_NUM_2_X+offset_x, STEPS_NUM_2_Y, img_num[(steps%10000)/1000]);
+	LCD_ShowImg(STEPS_NUM_3_X+offset_x, STEPS_NUM_3_Y, img_num[(steps%1000)/100]);
+	LCD_ShowImg(STEPS_NUM_4_X+offset_x, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
+	LCD_ShowImg(STEPS_NUM_5_X+offset_x, STEPS_NUM_5_Y, img_num[steps%10]);	
 }
 
 void StepsShowStatus(void)
 {
-	u16_t s_count;
-	u16_t x,y;
-#ifdef IMG_FONT_FROM_FLASH
-	u32_t img_addr[10] = {IMG_NUM_0_ADDR,IMG_NUM_1_ADDR,IMG_NUM_2_ADDR,IMG_NUM_3_ADDR,IMG_NUM_4_ADDR,
-						  IMG_NUM_5_ADDR,IMG_NUM_6_ADDR,IMG_NUM_7_ADDR,IMG_NUM_8_ADDR,IMG_NUM_9_ADDR};
-#else
-	unsigned char *img[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+	u16_t steps;
+	u16_t offset_x;
+	unsigned char *img_anima[2] = {IMG_STEP_ICON_1, IMG_STEP_ICON_2};
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
 							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
-#endif
-
-	GetImuSteps(&s_count);
+	unsigned char *img_uint[2] = {IMG_STEP_CN, IMG_STEP_EN};
+	
+	GetSportData(&steps,NULL,NULL);
 
 	LCD_Clear(BLACK);
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(STEPS_ICON_X, STEPS_ICON_X, IMG_STEP_ICON_ADDR);
-	x = STEPS_NUM_X;
-	y = STEPS_NUM_Y;
-	LCD_ShowImg_From_Flash(x, y, img_addr[s_count/10000]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%10000)/1000]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%1000)/100]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[(s_count%100)/10]);
-	LCD_ShowImg_From_Flash(x, y, img_addr[s_count%10]);
-#else
-	//LCD_ShowImg(STEPS_ICON_X, STEPS_ICON_Y, IMG_STEP_ICON);
-	x = STEPS_NUM_X;
-	y = STEPS_NUM_Y;
-	LCD_ShowImg(x, y, img[s_count/10000]);
-	LCD_ShowImg(x, y, img[(s_count%10000)/1000]);
-	LCD_ShowImg(x, y, img[(s_count%1000)/100]);
-	LCD_ShowImg(x, y, img[(s_count%100)/10]);
-	LCD_ShowImg(x, y, img[s_count%10]);
-#endif
+	AnimaShow(STEPS_ICON_X, STEPS_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+
+	if(global_settings.language == LANGUAGE_CHN)
+		offset_x = STEPS_CN_OFFSET;
+	else
+		offset_x = 0;
+
+	LCD_ShowImg(STEPS_NUM_1_X+offset_x, STEPS_NUM_1_Y, img_num[steps/10000]);
+	LCD_ShowImg(STEPS_NUM_2_X+offset_x, STEPS_NUM_2_Y, img_num[(steps%10000)/1000]);
+	LCD_ShowImg(STEPS_NUM_3_X+offset_x, STEPS_NUM_3_Y, img_num[(steps%1000)/100]);
+	LCD_ShowImg(STEPS_NUM_4_X+offset_x, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
+	LCD_ShowImg(STEPS_NUM_5_X+offset_x, STEPS_NUM_5_Y, img_num[steps%10]);
+
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(STEPS_UNIT_X+offset_x, STEPS_UNIT_Y, img_uint[0]);
+	else
+		LCD_ShowImg(STEPS_UNIT_X, STEPS_UNIT_Y, img_uint[1]);	
 }
 
 void StepsScreenProcess(void)
@@ -1021,6 +1011,130 @@ void StepsScreenProcess(void)
 
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
 }
+
+void DistanceUpdateStatus(void)
+{
+	u16_t distance;
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
+
+	GetSportData(NULL,NULL,&distance);
+
+	LCD_ShowImg(DIS_NUM_1_X, DIS_NUM_1_Y, img_num[distance/10000]);
+	LCD_ShowImg(DIS_NUM_2_X, DIS_NUM_2_Y, img_num[(distance%10000)/1000]);
+	LCD_ShowImg(DIS_DOT_X, DIS_DOT_Y, IMG_DOT);
+	LCD_ShowImg(DIS_NUM_3_X, DIS_NUM_3_Y, img_num[(distance%100)/10]);
+	LCD_ShowImg(DIS_NUM_4_X, DIS_NUM_4_Y, img_num[distance%10]);
+}
+
+void DistanceShowStatus(void)
+{
+	u16_t distance;
+	unsigned char *img_anima[2] = {IMG_DISTANCE_ICON_1, IMG_DISTANCE_ICON_2};
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
+	unsigned char *img_km[2] = {IMG_KM_CN, IMG_KM_EN};
+	
+	GetSportData(NULL,NULL,&distance);
+
+	LCD_Clear(BLACK);
+	
+	AnimaShow(DIS_ICON_X, DIS_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+
+	LCD_ShowImg(DIS_NUM_1_X, DIS_NUM_1_Y, img_num[distance/10000]);
+	LCD_ShowImg(DIS_NUM_2_X, DIS_NUM_2_Y, img_num[(distance%10000)/1000]);
+	LCD_ShowImg(DIS_DOT_X, DIS_DOT_Y, IMG_DOT);
+	LCD_ShowImg(DIS_NUM_3_X, DIS_NUM_3_Y, img_num[(distance%100)/10]);
+	LCD_ShowImg(DIS_NUM_4_X, DIS_NUM_4_Y, img_num[distance%10]);
+	
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(DIS_KM_X, DIS_KM_Y, img_km[0]);
+	else
+		LCD_ShowImg(DIS_KM_X, DIS_KM_Y, img_km[1]);
+}
+
+void DistanceScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_DISTANCE].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_DISTANCE].status = SCREEN_STATUS_CREATED;
+
+		DistanceShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_DISTANCE].para&SCREEN_EVENT_UPDATE_SPORT)
+			scr_msg[SCREEN_ID_DISTANCE].para &= (~SCREEN_EVENT_UPDATE_SPORT);
+
+		DistanceUpdateStatus();
+		break;
+	}
+
+	scr_msg[SCREEN_ID_DISTANCE].act = SCREEN_ACTION_NO;
+}
+
+void CalorieUpdateStatus(void)
+{
+	u16_t distance;
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
+
+	GetSportData(NULL,NULL,&distance);
+
+	LCD_ShowImg(DIS_NUM_1_X, DIS_NUM_1_Y, img_num[distance/10000]);
+	LCD_ShowImg(DIS_NUM_2_X, DIS_NUM_2_Y, img_num[(distance%10000)/1000]);
+	LCD_ShowImg(DIS_DOT_X, DIS_DOT_Y, IMG_DOT);
+	LCD_ShowImg(DIS_NUM_3_X, DIS_NUM_3_Y, img_num[(distance%1000)/100]);
+	LCD_ShowImg(DIS_NUM_4_X, DIS_NUM_4_Y, img_num[distance%100]);
+}
+
+void CalorieShowStatus(void)
+{
+	u16_t calorie;
+	unsigned char *img_anima[2] = {IMG_CAL_ICON_1, IMG_CAL_ICON_2};
+	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
+							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
+	unsigned char *img_cal[2] = {IMG_CAL_CN, IMG_CAL_EN};
+	
+	GetSportData(NULL,&calorie,NULL);
+
+	LCD_Clear(BLACK);
+	
+	AnimaShow(CAL_ICON_X, CAL_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+
+	LCD_ShowImg(CAL_NUM_1_X, CAL_NUM_1_Y, img_num[calorie/1000]);
+	LCD_ShowImg(CAL_NUM_2_X, CAL_NUM_2_Y, img_num[(calorie%1000)/100]);
+	LCD_ShowImg(CAL_NUM_3_X, CAL_NUM_3_Y, img_num[(calorie%100)/10]);
+	LCD_ShowImg(CAL_NUM_4_X, CAL_NUM_4_Y, img_num[calorie%10]);
+	
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(CAL_UNIT_X, CAL_UNIT_Y, img_cal[0]);
+	else
+		LCD_ShowImg(CAL_UNIT_X, CAL_UNIT_Y, img_cal[1]);
+}
+
+void CalorieScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_CALORIE].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_CALORIE].status = SCREEN_STATUS_CREATED;
+
+		CalorieShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_CALORIE].para&SCREEN_EVENT_UPDATE_SPORT)
+			scr_msg[SCREEN_ID_CALORIE].para &= (~SCREEN_EVENT_UPDATE_SPORT);
+
+		CalorieUpdateStatus();
+		break;
+	}
+
+	scr_msg[SCREEN_ID_CALORIE].act = SCREEN_ACTION_NO;
+}
+
 
 void FallShowStatus(void)
 {
@@ -1082,42 +1196,12 @@ void FallScreenProcess(void)
 
 void WristShowStatus(void)
 {
-	u16_t x,y;
-	u32_t img_addr;
-	u8_t *img;
+//	unsigned char *img[2] = {IMG_WRIST_OFF_CN, IMG_WRIST_OFF_EN};
 
-	LCD_Clear(BLACK);
-
-	switch(global_settings.language)
-	{
-	case LANGUAGE_EN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_addr = IMG_WRIST_EN_ADDR;
-	#else
-		//img = IMG_WRIST_EN;
-	#endif
-		x = WRIST_EN_TEXT_X;
-		y = WRIST_EN_TEXT_Y;
-		break;
-		
-	case LANGUAGE_CHN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_addr = IMG_WRIST_CN_ADDR;
-	#else
-		//img = IMG_WRIST_CN;
-	#endif
-		x = WRIST_CN_TEXT_X;
-		y = WRIST_CN_TEXT_Y;	
-		break;
-	}
-
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON_ADDR);
-	LCD_ShowImg_From_Flash(x, y, img_addr);
-#else
-	//LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
-	LCD_ShowImg(x, y, img);
-#endif
+//	if(global_settings.language == LANGUAGE_CHN)
+//		LCD_ShowImg(CAL_UNIT_X, CAL_UNIT_Y, img[0]);
+//	else
+//		LCD_ShowImg(CAL_UNIT_X, CAL_UNIT_Y, img[1]);
 }
 
 void WristScreenProcess(void)
@@ -1522,90 +1606,7 @@ void TestWIFIScreenProcess(void)
 	scr_msg[SCREEN_ID_WIFI_TEST].act = SCREEN_ACTION_NO;
 }
 
-void EnterIdleScreen(void)
-{
-	if(screen_id == SCREEN_ID_IDLE)
-		return;
-
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
-	
-	k_timer_stop(&notify_timer);
-	k_timer_stop(&mainmenu_timer);
-	if(gps_is_working())
-		MenuStopGPS();
-#ifdef CONFIG_PPG_SUPPORT
-	PPGStopCheck();
-#endif
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_IDLE;
-	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
-
-#if defined(CONFIG_PPG_SUPPORT)
-	Key_Event_register_Handler(EnterHRScreen, EnterIdleScreen);
-#else
-	Key_Event_register_Handler(EnterGPSTestScreen, EnterIdleScreen);
-#endif
-}
-
-void EnterAlarmScreen(void)
-{
-	if(screen_id == SCREEN_ID_ALARM)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_ALARM;	
-	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATING;	
-}
-
-void EnterFindDeviceScreen(void)
-{
-	if(screen_id == SCREEN_ID_FIND_DEVICE)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_FIND_DEVICE;	
-	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
-}
-
 #ifdef CONFIG_IMU_SUPPORT
-void ExitStepsScreen(void)
-{
-	EnterIdleScreen();
-}
-
-void EnterStepsScreen(void)
-{
-	if(screen_id == SCREEN_ID_STEPS)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_STEPS;	
-	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
-
-#ifdef CONFIG_FOTA_DOWNLOAD
-	Key_Event_register_Handler(fota_start, fota_exit);
-#else
-	Key_Event_register_Handler(ExitStepsScreen, ExitStepsScreen);
-#endif
-}
-
 void ExitSleepScreen(void)
 {
 	EnterIdleScreen();
@@ -1627,10 +1628,156 @@ void EnterSleepScreen(void)
 	k_timer_stop(&mainmenu_timer);
 
 	MenuStopGPS();
+	AnimaStopShow();
 
-	Key_Event_register_Handler(EnterStepsScreen, ExitSleepScreen);
+	Key_Event_register_Handler(EnterPoweroffScreen, ExitSleepScreen);
+}
+
+void ExitCalorieScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterCalorieScreen(void)
+{
+	if(screen_id == SCREEN_ID_CALORIE)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_CALORIE;	
+	scr_msg[SCREEN_ID_CALORIE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_CALORIE].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+	
+	MenuStopGPS();
+	AnimaStopShow();
+
+	Key_Event_register_Handler(EnterSleepScreen, ExitCalorieScreen);
+}
+
+void ExitDistanceScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterDistanceScreen(void)
+{
+	if(screen_id == SCREEN_ID_DISTANCE)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_DISTANCE;	
+	scr_msg[SCREEN_ID_DISTANCE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_DISTANCE].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+
+	MenuStopGPS();
+	AnimaStopShow();
+
+	Key_Event_register_Handler(EnterCalorieScreen, ExitDistanceScreen);
+}
+
+void ExitStepsScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterStepsScreen(void)
+{
+	if(screen_id == SCREEN_ID_STEPS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_STEPS;	
+	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
+
+#ifdef CONFIG_FOTA_DOWNLOAD
+	Key_Event_register_Handler(fota_start, fota_exit);
+#else
+	Key_Event_register_Handler(EnterDistanceScreen, ExitStepsScreen);
+#endif
 }
 #endif
+
+void EnterIdleScreen(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+		return;
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
+	AnimaStopShow();
+	k_timer_stop(&notify_timer);
+	k_timer_stop(&mainmenu_timer);
+	if(gps_is_working())
+		MenuStopGPS();
+#ifdef CONFIG_PPG_SUPPORT
+	PPGStopCheck();
+#endif
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_IDLE;
+	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
+
+#if defined(CONFIG_PPG_SUPPORT)
+	Key_Event_register_Handler(EnterHRScreen, EnterIdleScreen);
+#else
+	Key_Event_register_Handler(EnterStepsScreen, EnterIdleScreen);
+#endif
+}
+
+void EnterAlarmScreen(void)
+{
+	if(screen_id == SCREEN_ID_ALARM)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_ALARM;	
+	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATING;	
+}
+
+void ExitFindDeviceScreen(void)
+{
+	if(screen_id == SCREEN_ID_FIND_DEVICE)
+	{
+		EnterIdleScreen();
+	}	
+}
+
+void EnterFindDeviceScreen(void)
+{
+	if(screen_id == SCREEN_ID_FIND_DEVICE)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FIND_DEVICE;	
+	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
+}
+
 
 void poweroff_leftkeyfunc(void)
 {
@@ -1664,6 +1811,8 @@ void EnterPoweroffScreen(void)
 	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;
 
 	k_timer_stop(&mainmenu_timer);
+	AnimaStopShow();
+	
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
 	Key_Event_register_Handler(ExitPoweroffScreen, ExitPoweroffScreen);	
@@ -1965,6 +2114,12 @@ void ScreenMsgProcess(void)
 			break;
 		case SCREEN_ID_STEPS:
 			StepsScreenProcess();
+			break;
+		case SCREEN_ID_DISTANCE:
+			DistanceScreenProcess();
+			break;
+		case SCREEN_ID_CALORIE:
+			CalorieScreenProcess();
 			break;
 		case SCREEN_ID_FALL:
 			FallScreenProcess();

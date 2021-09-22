@@ -63,6 +63,7 @@ void delete_anima_info_link(void)
 
 	anima_show.x = 0;
 	anima_show.y = 0;
+	anima_show.interval = 0;
 	anima_show.loop = false;
 	anima_show.callback = NULL;
 }
@@ -127,8 +128,25 @@ void add_anima_info_link(u32_t *anima_img, u8_t anima_count)
  *****************************************************************************/
 void AnimaStopShow(void)
 {
+	LOG_INF("[%s] 001\n", __func__);
 	k_timer_stop(&anima_redraw_timer);
 	delete_anima_info_link();
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaStop
+ * DESCRIPTION
+ *  Stop animation display for other application
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void AnimaStop(void)
+{
+	LOG_INF("[%s] 001\n", __func__);
+	anima_stop_flag = true;
 }
 
 /*****************************************************************************
@@ -141,32 +159,37 @@ void AnimaStopShow(void)
  *	y: 			The y starting coordinates of the animation playback
  *	anima_img: 	Array of picture pointers that need to be animated 
  *	anima_count:Number of images that need to be animated
+ *	interview:	The interval between frames
  *	loop_flag: 	Animation show mode (true:loop show false:only one round show)
  *	callback: 	The callback function at the end of animation playback (only valid in round mode)
  * RETURNS
  *  Nothing
  *****************************************************************************/
-void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, bool loop_flag, ShowFinishCB callback)
+void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, u32_t interview, bool loop_flag, ShowFinishCB callback)
 {
 	if(anima_img == NULL)
 		return;
 
+	add_anima_info_link(anima_img, anima_count);
+
+	anima_show.interval = interview;
 	anima_show.x = x;
 	anima_show.y = y;
 	anima_show.loop = loop_flag;
 	anima_show.callback = callback;
-	add_anima_info_link(anima_img, anima_count);
-
+	
 	anima_head = anima_show.cache;
 	
 	LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_show.cache->img_addr);
 	
 	if(anima_show.count > 1)
 	{
-		k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_INTERVIEW), NULL);
+		LOG_INF("[%s] 001\n", __func__);
+		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 	}
 	else
 	{
+		LOG_INF("[%s] 002\n", __func__);
 		k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_ONE_DELAY), NULL);
 	}
 }
@@ -188,12 +211,14 @@ static void AnimaShowNextImg(void)
 	{		
 		if(anima_show.loop)	//循环播放
 		{
+			LOG_INF("[%s] 001\n", __func__);
 			anima_head = anima_show.cache;
 			LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
-			k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_INTERVIEW), NULL);
+			k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 		}
 		else				//播放结束
 		{
+			LOG_INF("[%s] 002\n", __func__);
 			if(anima_show.callback != NULL)
 				anima_show.callback();
 			AnimaStopShow();
@@ -201,8 +226,9 @@ static void AnimaShowNextImg(void)
 	}
 	else
 	{
+		LOG_INF("[%s] 003\n", __func__);
 		LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
-		k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_INTERVIEW), NULL);
+		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 	}
 }
 

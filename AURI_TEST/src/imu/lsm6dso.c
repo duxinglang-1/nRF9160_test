@@ -774,9 +774,12 @@ void UpdateIMUData(void)
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
 {
-	*steps = g_steps;
-	*calorie = g_calorie;
-	*distance = g_distance;
+	if(steps != NULL)
+		*steps = g_steps;
+	if(calorie != NULL)
+		*calorie = g_calorie;
+	if(distance != NULL)
+		*distance = g_distance;
 }
 
 /*@Set Sensor sensitivity
@@ -1132,9 +1135,12 @@ void test_i2c(void)
 
 void IMURedrawSteps(void)
 {
-	if(screen_id == SCREEN_ID_STEPS)
+	if(screen_id == SCREEN_ID_STEPS 
+		|| screen_id == SCREEN_ID_DISTANCE 
+		|| screen_id == SCREEN_ID_CALORIE
+		)
 	{
-		StepsUpdateStatus();
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
 

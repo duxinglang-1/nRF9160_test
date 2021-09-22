@@ -32,7 +32,7 @@ typedef enum
 }ENUM_BLE_MODE;
 
 extern bool blue_is_on;
-
+extern bool g_ble_connected;
 extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 

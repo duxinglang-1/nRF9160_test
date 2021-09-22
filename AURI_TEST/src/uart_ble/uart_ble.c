@@ -106,7 +106,7 @@ struct uart_data_t
 	u16_t   len;
 };
 
-bool BLE_is_connected = false;
+bool g_ble_connected = false;
 
 u8_t ble_mac_addr[6] = {0};
 u8_t str_nrf52810_ver[128] = {0};
@@ -128,11 +128,13 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 	LOG_INF("BLE status:%x\n", buf[6]);
 	
 	if(buf[6] == 0x01)				//�鿴controlֵ
-		BLE_is_connected = true;
+		g_ble_connected = true;
 	else if(buf[6] == 0x00)
-		BLE_is_connected = false;
+		g_ble_connected = false;
 	else
-		BLE_is_connected = false;
+		g_ble_connected = false;
+
+	IdleShowBleStatus(g_ble_connected);
 }
 
 #ifdef CONFIG_TOUCH_SUPPORT

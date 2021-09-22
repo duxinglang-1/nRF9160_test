@@ -75,7 +75,8 @@ void LCD_Fast_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
 //在指定区域内填充单个颜色
 //(x,y),(w,h):填充矩形对角坐标,区域大小为:w*h   
 //color:要填充的颜色
-void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+void LCD_FillExtra(uint16_t x, uint16_t y, uint16_t w, uint16_t h, u8_t color)
 {          
 	u32_t i;
 
@@ -83,7 +84,36 @@ void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 		w = LCD_WIDTH - x;
 	if((y+h)>LCD_HEIGHT)
 		h = LCD_HEIGHT - y;
+
+	y = y/PAGE_MAX;
+	h = h/8;
 	
+	if(color != 0x00)
+		color = 0xff;
+	
+#ifdef LCD_TYPE_SPI
+	for(i=0;i<h;i++)
+	{
+		BlockWrite(x,y+i,w,h);
+		DispColor(w, color);
+	}
+#else
+	for(i=0;i<(w*h);i++)
+		WriteOneDot(color); //显示颜色 
+#endif
+}
+#endif
+
+
+void LCD_FillColor(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
+{          
+	u32_t i;
+
+	if((x+w)>LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+
 	BlockWrite(x,y,w,h);
 
 #ifdef LCD_TYPE_SPI
@@ -91,6 +121,15 @@ void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 #else
 	for(i=0;i<(w*h);i++)
 		WriteOneDot(color); //显示颜色 
+#endif
+}
+
+void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
+{          
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+	LCD_FillExtra(x, y, w, h, (u8_t)(color&0x00ff));
+#else
+	LCD_FillColor(x, y, w, h, color);
 #endif
 }
 

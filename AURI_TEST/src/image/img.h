@@ -127,7 +127,7 @@ extern unsigned char IMG_MON_OCT[78];
 extern unsigned char IMG_MON_NOV[78];
 extern unsigned char IMG_MON_DEC[78];
 //WEEK
-extern unsigned char IMG_WEEK_1[84];
+extern unsigned char IMG_WEEK_1[93];
 extern unsigned char IMG_WEEK_2[93];
 extern unsigned char IMG_WEEK_3[93];
 extern unsigned char IMG_WEEK_4[93];
@@ -142,7 +142,8 @@ extern unsigned char IMG_WEEK_FRI[84];
 extern unsigned char IMG_WEEK_SAT[84];
 extern unsigned char IMG_WEEK_SUN[84];
 //BLE
-extern unsigned char IMG_BLE_LINKED[20];
+extern unsigned char IMG_BLE_LINK[20];
+extern unsigned char IMG_BLE_UNLINK[20];
 //STEP
 extern unsigned char IMG_STEP_ICON_1[390];
 extern unsigned char IMG_STEP_ICON_2[390];
@@ -169,20 +170,28 @@ extern unsigned char IMG_SLEEP_ICON_1[390];
 extern unsigned char IMG_SLEEP_ICON_2[390];
 extern unsigned char IMG_SLEEP_ICON_3[390];
 extern unsigned char IMG_SLEEP_ICON_4[390];
-extern unsigned char IMG_SLEEP_HR_CN[54];
+extern unsigned char IMG_SLEEP_HR_CN[50];
 extern unsigned char IMG_SLEEP_HR_EN[54];
-extern unsigned char IMG_SLEEP_MIN_CN[66];
+extern unsigned char IMG_SLEEP_MIN_CN[50];
 extern unsigned char IMG_SLEEP_MIN_EN[66];
 //FALL
-extern unsigned char IMG_FALL_ICON_1[390];
-extern unsigned char IMG_FALL_ICON_2[390];
-extern unsigned char IMG_FALL_ICON_3[390];
+extern unsigned char IMG_FALL_ICON_CN_1[774];
+extern unsigned char IMG_FALL_ICON_CN_2[774];
+extern unsigned char IMG_FALL_ICON_CN_3[774];
+extern unsigned char IMG_FALL_ICON_EN_1[774];
+extern unsigned char IMG_FALL_ICON_EN_2[774];
+extern unsigned char IMG_FALL_ICON_EN_3[774];
+extern unsigned char IMG_FALL_MSG_SEND_CN[774];
+extern unsigned char IMG_FALL_MSG_CANCEL_CN[774];
+extern unsigned char IMG_FALL_MSG_SEND_EN[774];
+extern unsigned char IMG_FALL_MSG_CANCEL_EN[774];
 //FIND
 extern unsigned char IMG_FIND_ICON_1[390];
 extern unsigned char IMG_FIND_ICON_2[390];
 extern unsigned char IMG_FIND_ICON_3[390];
 extern unsigned char IMG_FIND_CN[390];
 extern unsigned char IMG_FIND_EN[390];
+#if 0
 //CHARGING
 extern unsigned char IMG_CHARGING_OK[774];
 extern unsigned char IMG_CHARGE_PLS_CN[774];
@@ -199,6 +208,7 @@ extern unsigned char IMG_CHARGING_EN_2[774];
 extern unsigned char IMG_CHARGING_EN_3[774];
 extern unsigned char IMG_CHARGING_EN_4[774];
 extern unsigned char IMG_CHARGING_EN_5[774];
+#endif
 //SOS
 extern unsigned char IMG_SOS_ICON[390];
 extern unsigned char IMG_SOS_SENDING_1[390];

@@ -103,6 +103,7 @@ bool nb_test_update_flag = false;
 u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 u8_t g_imei[IMEI_MAX_LEN+1] = {0};
 u8_t g_iccid[ICCID_MAX_LEN+1] = {0};
+u8_t g_modem[MODEM_MAX_LEN+1] = {0};
 u8_t g_timezone[5] = {0};
 u8_t g_rsrp = 0;
 
@@ -1396,6 +1397,14 @@ void GetModemInfor(void)
 	}
 	LOG_INF("iccid:%s\n", &tmpbuf[9]);
 	strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
+
+	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	{
+		LOG_INF("Get modem version fail!\n");
+		return;
+	}
+	LOG_INF("MODEM version:%s\n", &tmpbuf);
+	strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
 
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{

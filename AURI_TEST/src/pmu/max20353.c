@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
+#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
@@ -76,7 +77,9 @@ static bool init_i2c(void)
 	i2c_pmu = device_get_binding(PMU_DEV);
 	if(!i2c_pmu)
 	{
+	#ifdef PMU_DEBUG
 		LOG_INF("ERROR SETTING UP I2C\r\n");
+	#endif
 		return false;
 	} 
 	else
@@ -166,7 +169,9 @@ void system_power_off(u8_t flag)
 
 void SystemShutDown(void)
 {	
+#ifdef PMU_DEBUG
 	LOG_INF("[%s]\n", __func__);
+#endif
 	MAX20353_PowerOffConfig();
 }
 
@@ -213,18 +218,18 @@ void pmu_interrupt_proc(void)
 	{
 		int0 = 0;
 		MAX20353_ReadReg(REG_INT0, &int0);
-	#if 1	
+	#ifdef PMU_DEBUG	
 		MAX20353_ReadReg(REG_INT1, &int1);
 		MAX20353_ReadReg(REG_INT2, &int2);
 		LOG_INF("[%s] REG_INT0:%02X,REG_INT1:%02X,REG_INT2:%02X\n", __func__, int0,int1,int2);
-	#else
-		LOG_INF("[%s] REG_INT0:%02X\n", __func__, int0);
 	#endif
 	
 		if((int0&0x40) == 0x40) //Charger status change INT  
 		{
 			MAX20353_ReadReg(REG_STATUS0, &status0);
+		#ifdef PMU_DEBUG	
 			LOG_INF("[%s] REG_STATUS0:%02X\n", __func__, status0);
+		#endif
 			switch((status0&0x07))
 			{
 			case 0x00://Charger off
@@ -320,13 +325,17 @@ void pmu_interrupt_proc(void)
 
 		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
 		{
+		#ifdef PMU_DEBUG
 			LOG_INF("[%s] read pmu int false", __func__);
+		#endif
 			break;
 		}
 
 		if((int0&0x48) == 0x00)
 		{
+		#ifdef PMU_DEBUG
 			LOG_INF("[%s] int0 register is empty", __func__);
+		#endif
 			break;
 		}
 	}while(!val);
@@ -347,13 +356,16 @@ void pmu_alert_proc(void)
 
 #ifdef BATTERY_SOC_GAUGE
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+#ifdef PMU_DEBUG
 	LOG_INF("[%s] status:%02X\n", __func__, MSB);
+#endif
 	if(MSB&0x40)
 	{
 		//EnVr (enable voltage reset alert)
 		MSB = MSB&0xBF;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("voltage reset alert!\n");
+	#endif
 	}
 	if(MSB&0x20)
 	{
@@ -363,8 +375,9 @@ void pmu_alert_proc(void)
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("SOC:%d\n", g_bat_soc);
+	#endif
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_0;
@@ -409,29 +422,33 @@ void pmu_alert_proc(void)
 	{
 		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
 		MSB = MSB&0xEF;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("SOC low alert!\n");
+	#endif
 	}
 	if(MSB&0x08)
 	{
 		//VR (voltage reset) is set after the device has been reset if EnVr is set.
 		MSB = MSB&0xF7;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("voltage reset alert!\n");
+	#endif
 	}
 	if(MSB&0x04)
 	{
 		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
 		MSB = MSB&0xFB;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("voltage low alert!\n");
+	#endif
 	}
 	if(MSB&0x02)
 	{
 		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
 		MSB = MSB&0xFD;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("voltage high alert!\n");
+	#endif
 	}
 	if(MSB&0x01)
 	{
@@ -439,8 +456,9 @@ void pmu_alert_proc(void)
 		//Any time this bit is set, the IC is not configured, so the
 		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
-
+	#ifdef PMU_DEBUG
 		LOG_INF("reset indicator alert!\n");
+	#endif
 
 		MAX20353_QuickStart();
 	}
@@ -562,13 +580,16 @@ void pmu_init(void)
 	bool rst;
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
 
+#ifdef PMU_DEBUG
 	LOG_INF("pmu_init\n");
-
+#endif
   	//端口初始化
   	gpio_pmu = device_get_binding(PMU_PORT);
 	if(!gpio_pmu)
 	{
+	#ifdef PMU_DEBUG
 		LOG_INF("Cannot bind gpio device\n");
+	#endif
 		return;
 	}
 
@@ -599,8 +620,9 @@ void pmu_init(void)
 		return;
 	
 	MAX20353_InitData();
-
+#ifdef PMU_DEBUG
 	LOG_INF("pmu_init done!\n");
+#endif
 }
 
 void test_pmu(void)
@@ -672,7 +694,8 @@ void test_soc_status(void)
 
 	MAX20353_ReadReg(REG_STATUS0, &Status0);
 	Status0 = Status0&0x07;
-	
+
+#ifdef PMU_DEBUG	
 	sprintf(strbuf, "%02d/%02d/%04d-%02d:%02d:%02d %2.3f,%3.8f,0x%02X,%1.5f,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,%d\n", 
 				date_time.day,date_time.month,date_time.year,date_time.hour,date_time.minute,date_time.second,
 				(float)VCell/1000, (float)SOC/256.0,
@@ -681,6 +704,7 @@ void test_soc_status(void)
 				MODE, Version, HIBRT, Config, Status, VALRT, VReset, CMD, OCV, Status0);
 
 	LOG_INF("%s", strbuf);
+#endif
 }
 
 void test_soc_timerout(struct k_timer *timer_id)
@@ -722,8 +746,9 @@ void PMUMsgProcess(void)
 {
 	if(pmu_trige_flag)
 	{
+	#ifdef PMU_DEBUG
 		LOG_INF("[%s] int", __func__);
-		
+	#endif	
 		if(pmu_check_ok)
 			pmu_interrupt_proc();
 		
@@ -732,8 +757,9 @@ void PMUMsgProcess(void)
 	
 	if(pmu_alert_flag)
 	{
+	#ifdef PMU_DEBUG
 		LOG_INF("[%s] alert", __func__);
-		
+	#endif
 		if(pmu_check_ok)
 			pmu_alert_proc();
 		
@@ -813,8 +839,9 @@ void MAX20353_ReadStatus(void)
 	MAX20353_ReadReg(REG_STATUS1, &Status1);
 	MAX20353_ReadReg(REG_STATUS2, &Status2);
 	MAX20353_ReadReg(REG_STATUS3, &Status3);
-	
+#ifdef PMU_DEBUG
 	LOG_INF("Status0=0x%02X,Status1=0x%02X,Status2=0x%02X,Status3=0x%02X\n", Status0, Status1, Status2, Status3); 
+#endif
 }
 
 void test_bat_soc(void)

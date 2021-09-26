@@ -65,11 +65,11 @@ typedef struct _PALETTE
 
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //LOGO
-extern unsigned char logo_1_96X64[774];
-extern unsigned char logo_2_96X64[774];
-extern unsigned char logo_3_96X64[774];
-extern unsigned char logo_4_96X64[774];
-extern unsigned char logo_5_96X64[774];
+extern unsigned char logo_1[198];
+extern unsigned char logo_2[198];
+extern unsigned char logo_3[198];
+extern unsigned char logo_4[198];
+extern unsigned char logo_5[198];
 //BATTERY
 extern unsigned char IMG_BAT_0[38];
 extern unsigned char IMG_BAT_1[38];
@@ -175,23 +175,19 @@ extern unsigned char IMG_SLEEP_HR_EN[54];
 extern unsigned char IMG_SLEEP_MIN_CN[50];
 extern unsigned char IMG_SLEEP_MIN_EN[66];
 //FALL
-extern unsigned char IMG_FALL_ICON_CN_1[774];
-extern unsigned char IMG_FALL_ICON_CN_2[774];
-extern unsigned char IMG_FALL_ICON_CN_3[774];
-extern unsigned char IMG_FALL_ICON_EN_1[774];
-extern unsigned char IMG_FALL_ICON_EN_2[774];
-extern unsigned char IMG_FALL_ICON_EN_3[774];
-extern unsigned char IMG_FALL_MSG_SEND_CN[774];
-extern unsigned char IMG_FALL_MSG_CANCEL_CN[774];
-extern unsigned char IMG_FALL_MSG_SEND_EN[774];
-extern unsigned char IMG_FALL_MSG_CANCEL_EN[774];
+extern unsigned char IMG_FALL_ICON_1[178];
+extern unsigned char IMG_FALL_ICON_2[178];
+extern unsigned char IMG_FALL_ICON_3[178];
+extern unsigned char IMG_FALL_CN[218];
+extern unsigned char IMG_FALL_EN[218];
+extern unsigned char IMG_FALL_MSG_CANCEL_CN[198];
+extern unsigned char IMG_FALL_MSG_CANCEL_EN[390];
 //FIND
 extern unsigned char IMG_FIND_ICON_1[390];
 extern unsigned char IMG_FIND_ICON_2[390];
 extern unsigned char IMG_FIND_ICON_3[390];
 extern unsigned char IMG_FIND_CN[390];
 extern unsigned char IMG_FIND_EN[390];
-#if 0
 //CHARGING
 extern unsigned char IMG_CHARGING_OK[774];
 extern unsigned char IMG_CHARGE_PLS_CN[774];
@@ -208,7 +204,6 @@ extern unsigned char IMG_CHARGING_EN_2[774];
 extern unsigned char IMG_CHARGING_EN_3[774];
 extern unsigned char IMG_CHARGING_EN_4[774];
 extern unsigned char IMG_CHARGING_EN_5[774];
-#endif
 //SOS
 extern unsigned char IMG_SOS_ICON[390];
 extern unsigned char IMG_SOS_SENDING_1[390];

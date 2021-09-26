@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(fota_mqtt, CONFIG_LOG_DEFAULT_LEVEL);
 #define TLS_SEC_TAG 42
 
 static bool fota_start_flag = false;
+static bool fota_confirm_flag = false;
 static bool fota_run_flag = false;
 static bool fota_reboot_flag = false;
 static bool fota_redraw_pro_flag = false;
@@ -39,7 +40,7 @@ static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
 static struct k_work fota_work;
-static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
+static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_DOWNLOADING;
 
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
@@ -239,7 +240,7 @@ void fota_start(void)
 
 void fota_start_confirm(void)
 {
-	fota_cur_status = FOTA_STATUS_LINKING;
+	fota_cur_status = FOTA_STATUS_DOWNLOADING;
 	fota_redraw_pro_flag = true;
 	
 	DisconnectAppMqttLink();
@@ -366,16 +367,25 @@ void FOTARedrawProgress(void)
 	}
 }
 
+void MenuStartFOTA(void)
+{
+	fota_confirm_flag = true;
+}
+
 void FotaMsgProc(void)
 {
 	if(fota_start_flag)
 	{
-		LOG_INF("[%s] fota_start!\n", __func__);
-		
 		fota_start_flag = false;
 		fota_start();
 	}
 
+	if(fota_confirm_flag)
+	{
+		fota_confirm_flag = false;
+		fota_start_confirm();
+	}
+	
 	if(fota_redraw_pro_flag)
 	{
 		fota_redraw_pro_flag = false;

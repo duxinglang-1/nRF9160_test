@@ -15,10 +15,10 @@
 #include <zephyr.h>
 
 extern void audio_init(void);
-extern void audio_play_alarm(void);
-extern void audio_play_chn_voice(void);
-extern void audio_play_en_voice(void);
-extern void audio_stop(void);
-
+extern void SOSStopAlarm(void);
+extern void SOSPlayAlarm(void);
+extern void FallStopAlarm(void);
+extern void FallPlayAlarmCn(void);
+extern void FallPlayAlarmEn(void);
 
 #endif/*__AUDIO_H__*/

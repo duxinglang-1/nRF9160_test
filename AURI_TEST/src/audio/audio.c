@@ -149,6 +149,36 @@ void audio_stop(void)
 	Voice_Stop();
 }
 
+//SOS停止播放报警
+void SOSStopAlarm(void)
+{
+	Voice_Stop();
+}
+
+//SOS播放报警
+void SOSPlayAlarm(void)
+{
+	Voice_Start(3);
+}
+
+//摔倒停止播放报警
+void FallStopAlarm(void)
+{
+	Voice_Stop();
+}
+
+//摔倒播放中文报警
+void FallPlayAlarmCn(void)
+{
+	Voice_Start(1);
+}
+
+//摔倒播放英文报警
+void FallPlayAlarmEn(void)
+{
+	Voice_Start(2);
+}
+
 //io口初始化 
 void audio_init(void)
 {

@@ -6,10 +6,10 @@
 #include <nrf9160.h>
 #include <zephyr.h>
 
-#define FONT_8
+//#define FONT_8
 #define FONT_16
-#define FONT_24
-#define FONT_32
+//#define FONT_24
+//#define FONT_32
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
 //#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据

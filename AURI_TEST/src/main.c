@@ -384,7 +384,7 @@ void test_show_image(void)
 	LOG_INF("test_show_image\n");
 	
 	LCD_Clear(BLACK);
-	LCD_ShowImg(0, 0, logo_5_96X64);
+	LCD_ShowImg(0, 0, logo_5);
 
 	//LCD_ShowImg_From_Flash(0, 0, IMG_AURI_LOGO_ADDR);
 	
@@ -448,7 +448,7 @@ void test_show_image(void)
 			i=LCD_WIDTH-1;
 
 		//LCD_Clear(BLACK);
-		LCD_ShowImg(i, 0, logo_5_96X64);
+		LCD_ShowImg(i, 0, logo_5);
 		
 		k_sleep(K_MSEC(100));								//软件延时1000ms
 	}
@@ -595,27 +595,33 @@ void test_show_string(void)
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
 	x = 0;//(w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;	
-	y = 0;	
-#ifdef FONT_16
+	y = 0;
+
+#ifdef FONT_8
 	LCD_SetFontSize(FONT_SIZE_8);					//设置字体大小
 #endif
 	LCD_MeasureString(enbuf,&w,&h);
 	LCD_ShowString(x,y,enbuf);
 
+#ifdef FONT_16
 	x += w;
 	LCD_SetFontSize(FONT_SIZE_16);
 	LCD_MeasureString(enbuf,&w,&h);
 	LCD_ShowString(x,y,enbuf);
+#endif
 
+#ifdef FONT_24
 	x += w;
 	LCD_SetFontSize(FONT_SIZE_24);
 	LCD_MeasureString(enbuf,&w,&h);
 	LCD_ShowString(x,y,enbuf);	
+#endif
 
+#ifdef FONT_32
 	x += w;
 	LCD_SetFontSize(FONT_SIZE_32);
 	LCD_ShowString(x,y,enbuf);
-	
+#endif	
 	//LCD_MeasureString(cnbuf,&w,&h);
 	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	//y = y + h + 2;
@@ -751,6 +757,7 @@ int main(void)
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
+		FallMsgProcess();
 	#endif
 	#ifdef CONFIG_PPG_SUPPORT	
 		PPGMsgProcess();

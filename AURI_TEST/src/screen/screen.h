@@ -14,10 +14,17 @@
 #include <zephyr/types.h>
 #include <sys/slist.h>
 #include "font.h"
+#include "lcd.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//logo
+#define PWRON_LOGO_W	96
+#define PWRON_LOGO_H	16
+#define PWRON_LOGO_X	0
+#define PWRON_LOGO_Y	24
 
 //time
 #define IDLE_HOUR_H_X	8
@@ -80,8 +87,10 @@ extern "C" {
 #define IMU_STEPS_SHOW_H	20
 
 //SOS
-#define SOS_X	9
-#define SOS_Y	0
+#define MSG_SENDING_X	0
+#define MSG_SENDING_Y	0
+#define SOS_ICON_X	0
+#define SOS_ICON_Y	32
 
 //steps
 #define STEPS_ICON_X	0
@@ -147,12 +156,24 @@ extern "C" {
 #define CAL_NUM_4_Y		32
 
 //fall
-#define FALL_ICON_X	9
+#define FALL_ICON_W	43
+#define FALL_ICON_H	32
+#define FALL_ICON_X	((LCD_WIDTH-FALL_ICON_W)/2)
 #define FALL_ICON_Y	0
-#define FALL_CN_TEXT_X	39
-#define FALL_CN_TEXT_Y	0
-#define FALL_EN_TEXT_X	50
-#define FALL_EN_TEXT_Y	0
+
+#define FALL_TEXT_W	53
+#define FALL_TEXT_H	32
+#define FALL_TEXT_X	((LCD_WIDTH-FALL_TEXT_W)/2)
+#define FALL_TEXT_Y	32
+
+#define FALL_CANCEL_CN_W	96
+#define FALL_CANCEL_CN_H	16
+#define FALL_CANCEL_CN_X	((LCD_WIDTH-FALL_CANCEL_CN_W)/2)
+#define FALL_CANCEL_CN_Y	((LCD_HEIGHT-FALL_CANCEL_CN_H)/2)
+#define FALL_CANCEL_EN_W	96
+#define FALL_CANCEL_EN_H	32
+#define FALL_CANCEL_EN_X	((LCD_WIDTH-FALL_CANCEL_EN_W)/2)
+#define FALL_CANCEL_EN_Y	((LCD_HEIGHT-FALL_CANCEL_EN_H)/2)
 
 //wrist
 #define WRIST_ICON_X	9

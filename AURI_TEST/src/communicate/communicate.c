@@ -39,23 +39,23 @@ LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u32_t i;
+	u32_t count=3,i;
 
 	if(wifi_data.count > 0)
+		count = wifi_data.count;
+	
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
 	{
-		strcat(reply, "3,");
-		for(i=0;i<wifi_data.count;i++)
-		{
-			strcat(reply, wifi_data.node[i].mac);
-			strcat(reply, "&");
-			strcat(reply, wifi_data.node[i].rssi);
-			strcat(reply, "&");
-			if(i < (wifi_data.count-1))
-				strcat(reply, "|");
-		}
-
-		NBSendLocationData(reply, strlen(reply));
+		strcat(reply, wifi_data.node[i].mac);
+		strcat(reply, "&");
+		strcat(reply, wifi_data.node[i].rssi);
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
 	}
+
+	NBSendLocationData(reply, strlen(reply));
 }
 #endif
 

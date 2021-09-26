@@ -1,9 +1,9 @@
 /****************************************Copyright (c)************************************************
-** File Name:			    sos.c
-** Descriptions:			sos message process source file
+** File Name:			    fall.c
+** Descriptions:			sfallos message process source file
 ** Created By:				xie biao
-** Created Date:			2021-01-28
-** Modified Date:      		2021-01-28 
+** Created Date:			2021-09-24
+** Modified Date:      		2021-09-24 
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <stdbool.h>
@@ -16,73 +16,85 @@
 #include <drivers/gpio.h>
 #include <logging/log.h>
 #include <nrfx.h>
+#include "settings.h"
 #include "sos.h"
 #include "Max20353.h"
 #include "Alarm.h"
 #include "lcd.h"
 #include "gps.h"
 #include "screen.h"
+#include "fall.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
+
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(fall, CONFIG_LOG_DEFAULT_LEVEL);
 
-SOS_STATUS sos_state = SOS_STATUS_IDLE;
+FALL_STATUS fall_state = FALL_STATUS_IDLE;
 
-bool sos_trigger_flag = false;
+bool fall_trigger_flag = false;
+bool fall_send_flag = false;
+bool fall_end_flag = false;
 
-u8_t sos_trigger_time[16] = {0};
+u8_t fall_trigger_time[16] = {0};
 
-static void SOSTimerOutCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(sos_timer, SOSTimerOutCallBack, NULL);
+static void FallTimerOutCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(fall_timer, FallTimerOutCallBack, NULL);
 
-void SOSTimerOutCallBack(struct k_timer *timer_id)
+static void FallEnd(void)
 {
-	if(screen_id == SCREEN_ID_SOS)
+	AnimaStopShow();
+	FallStopAlarm();
+	k_timer_stop(&fall_timer);
+
+	fall_state = FALL_STATUS_IDLE;
+	EnterIdleScreen();
+}
+
+static void FallTimerOutCallBack(struct k_timer *timer_id)
+{
+	if(screen_id == SCREEN_ID_FALL)
 	{
-		switch(sos_state)
+		switch(fall_state)
 		{
-		case SOS_STATUS_IDLE:
+		case FALL_STATUS_IDLE:
 			break;
 			
-		case SOS_STATUS_SENDING:
-			sos_state = SOS_STATUS_SENT;
+		case FALL_STATUS_NOTIFY:
+			fall_state = FALL_STATUS_SENDING;
+			fall_send_flag = true;
+			Key_Event_Unregister_Handler();
+			k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), NULL);
 			break;
 		
-		case SOS_STATUS_SENT:
-			sos_state = SOS_STATUS_RECEIVED;
+		case FALL_STATUS_SENDING:
+		case FALL_STATUS_SENT:
+			fall_end_flag = true;
 			break;
-		
-		case SOS_STATUS_RECEIVED:
-			sos_state = SOS_STATUS_IDLE;
-			EnterIdleScreen();
+			
+		case FALL_STATUS_CANCEL:
+			fall_end_flag = true;
 			break;
-		
-		case SOS_STATUS_CANCEL:
-			sos_state = SOS_STATUS_IDLE;
-			EnterIdleScreen();
+
+		case FALL_STATUS_CANCELED:
 			break;
 		}
 		
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SOS;
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-
-		if(sos_state != SOS_STATUS_IDLE)
-			k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
+		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_UPDATE;
 	}
 }
 
 #ifdef CONFIG_WIFI
-void sos_get_wifi_data_reply(wifi_infor wifi_data)
+void fall_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
 	u32_t count=3,i;
 
 	if(wifi_data.count > 0)
 		count = wifi_data.count;
-	
+
 	strcat(reply, "3,");
 	for(i=0;i<count;i++)
 	{
@@ -94,11 +106,11 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 			strcat(reply, "|");
 	}
 
-	NBSendSosWifiData(reply, strlen(reply));
+	NBSendFallWifiData(reply, strlen(reply));
 }
 #endif
 
-void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
+void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	u8_t reply[128] = {0};
 	u8_t tmpbuf[8] = {0};
@@ -165,22 +177,65 @@ void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	strcat(reply, ";");
 
 	//sos trigger time
-	strcat(reply, sos_trigger_time);
+	strcat(reply, fall_trigger_time);
 
 	//semicolon
 	strcat(reply, ";");
 	
-	NBSendSosGpsData(reply, strlen(reply));
+	NBSendFallGpsData(reply, strlen(reply));
 }
 
-void SOSTrigger(void)
+void FallAlarmCancel(void)
 {
-	sos_trigger_flag = true;
+	if(fall_state == FALL_STATUS_NOTIFY)
+	{
+		FallStopAlarm();
+		fall_state = FALL_STATUS_CANCEL;
+		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), NULL);
+
+		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
-bool SOSIsRunning(void)
+void FallStart(void)
 {
-	if(sos_state > SOS_STATUS_IDLE)
+	fall_trigger_flag = true;
+}
+
+void FallAlarmStart(void)
+{
+	if(FallIsRunning())
+		return;
+
+	fall_state = FALL_STATUS_NOTIFY;
+	
+	EnterFallScreen();
+	
+	if(global_settings.language == LANGUAGE_CHN)
+		FallPlayAlarmCn();
+	else
+		FallPlayAlarmEn();
+	
+	GetSystemTimeSecString(fall_trigger_time);
+
+	Key_Event_register_Handler(FallAlarmCancel, FallAlarmCancel);
+
+	k_timer_start(&fall_timer, K_SECONDS(FALL_NOTIFY_TIMEOUT), NULL);
+}
+
+void FallAlarmSend(void)
+{
+#ifdef CONFIG_WIFI
+	fall_wait_wifi = true;
+	APP_Ask_wifi_data();
+#endif
+	fall_wait_gps = true;
+	APP_Ask_GPS_Data();
+}
+
+bool FallIsRunning(void)
+{
+	if(fall_state > FALL_STATUS_IDLE)
 	{
 		LOG_INF("[%s] true\n", __func__);
 		return true;
@@ -192,46 +247,23 @@ bool SOSIsRunning(void)
 	}
 }
 
-void SOSSChangrStatus(void)
+void FallMsgProcess(void)
 {
-	AnimaStopShow();
-	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
-}
-
-void SOSStart(void)
-{
-	LOG_INF("[%s]\n", __func__);
-
-	if(sos_state != SOS_STATUS_IDLE)
+	if(fall_trigger_flag)
 	{
-		LOG_INF("[%s] sos is running!\n", __func__);
-		return;
+		FallAlarmStart();
+		fall_trigger_flag = false;
 	}
-
-	SOSPlayAlarm();
 	
-	GetSystemTimeSecString(sos_trigger_time);
-
-#ifdef CONFIG_WIFI
-	sos_wait_wifi = true;
-	APP_Ask_wifi_data();
-#endif
-	sos_wait_gps = true;
-	APP_Ask_GPS_Data();
-
-	lcd_sleep_out = true;
-	sos_state = SOS_STATUS_SENDING;
-
-	EnterSOSScreen();	
-}
-
-void SOSMsgProc(void)
-{
-	if(sos_trigger_flag)
+	if(fall_send_flag)
 	{
-		LOG_INF("[%s]\n", __func__);
-		SOSStart();
-		sos_trigger_flag = false;
+		FallAlarmSend();
+		fall_send_flag = false;
+	}
+	
+	if(fall_end_flag)
+	{
+		FallEnd();
+		fall_end_flag = false;
 	}
 }
-

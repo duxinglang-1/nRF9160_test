@@ -137,13 +137,13 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 		switch(key_type)
 		{
 		case KEY_DOWN:
+			break;
+		case KEY_UP:
 			if(leftkey_handler_cb != NULL)
 				leftkey_handler_cb();
 			break;
-		case KEY_UP:
-			break;
 		case KEY_LONG_PRESS:
-			//SOSTrigger();
+			SOSTrigger();
 			break;
 		}
 		break;

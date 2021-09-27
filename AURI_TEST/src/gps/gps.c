@@ -75,6 +75,7 @@ bool location_wait_gps = false;
 bool test_gps_flag = false;
 bool gps_test_start_flag = false;
 bool gps_test_update_flag = false;
+bool gps_send_data_flag = false;
 
 u8_t gps_test_info[256] = {0};
 
@@ -121,8 +122,8 @@ void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 {
 	if(!test_gps_flag)
 		gps_off_flag = true;
-	
-	APP_GPS_data_send(false);
+
+	gps_send_data_flag = true;
 }
 
 void APP_Ask_GPS_Data(void)
@@ -151,7 +152,7 @@ void APP_Ask_GPS_Data(void)
 
 void APP_Send_GPS_Data_timerout(struct k_timer *timer)
 {
-	APP_GPS_data_send(true);
+	gps_send_data_flag = true;
 }
 
 void APP_Ask_GPS_off(void)
@@ -232,30 +233,38 @@ static void set_gps_enable(const bool enable)
 				return;
 			}
 		}
+		
 	#ifdef GPS_DEBUG	
 		LOG_INF("Starting GPS");
 	#endif
+	
 		gps_control_start(K_NO_WAIT);
-		gps_is_on = true;
+
+		gps_fix_time = 0;
+		gps_local_time = 0;
 		gps_start_time = k_uptime_get();
+
+		gps_is_on = true;
 	}
 	else
 	{
 	#ifdef GPS_DEBUG
 		LOG_INF("Stopping GPS");
 	#endif
+	
 		gps_control_stop(K_NO_WAIT);
 
-		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
+		if(test_gps_flag)
 		{
-		#ifdef GPS_DEBUG
-			LOG_INF("Can't turn off modem for gps!");
-		#endif
+			if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
+			{
+			#ifdef GPS_DEBUG
+				LOG_INF("Can't turn off modem for gps!");
+			#endif
+			}
 		}
 		
 		gps_is_on = false;
-		gps_fix_time = 0;
-		gps_local_time = 0;
 	}
 }
 
@@ -554,6 +563,19 @@ void GPSMsgProcess(void)
 	{
 		gps_off_flag = false;
 		gps_off();
+	}
+
+	if(gps_send_data_flag)
+	{
+		gps_send_data_flag = false;
+		if(gps_local_time > 0)
+		{
+			APP_GPS_data_send(true);
+		}
+		else
+		{
+			APP_GPS_data_send(false);
+		}
 	}
 	
 	if(gps_test_update_flag)

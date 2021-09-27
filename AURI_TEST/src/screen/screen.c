@@ -1795,7 +1795,7 @@ void EnterIdleScreen(void)
 #if defined(CONFIG_PPG_SUPPORT)
 	Key_Event_register_Handler(EnterHRScreen, ExitHRScreen);
 #else
-	Key_Event_register_Handler(FallAlarmStart, EnterIdleScreen);
+	Key_Event_register_Handler(EnterStepsScreen, EnterIdleScreen);
 #endif
 }
 

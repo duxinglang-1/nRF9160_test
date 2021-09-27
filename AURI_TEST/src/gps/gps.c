@@ -29,6 +29,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gps, CONFIG_LOG_DEFAULT_LEVEL);
 
+//#define GPS_DEBUG
+
 #define AT_XSYSTEMMODE_GPSON      "AT\%XSYSTEMMODE=0,1,1,0"
 #define AT_XSYSTEMMODE_GPSOFF     "AT\%XSYSTEMMODE=0,1,0,0"
 #define AT_ACTIVATE_GPS     "AT+CFUN=31"
@@ -131,7 +133,7 @@ void APP_Ask_GPS_Data(void)
 	if(!gps_is_on)
 	{
 		gps_on_flag = true;
-		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), NULL);
+		k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
 	}
 #else
 	gps_pvt_data.datetime.year = 2020;
@@ -216,29 +218,39 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
-		DisConnectMqttLink();
-		SetModemTurnOff();
-		
-		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
+		if(test_gps_flag)
 		{
-			LOG_INF("Can't turn on modem for gpa!");
-			EnterIdleScreen();
-			return;
+			DisConnectMqttLink();
+			SetModemTurnOff();
+			
+			if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
+			{
+			#ifdef GPS_DEBUG
+				LOG_INF("Can't turn on modem for gpa!");
+			#endif
+				EnterIdleScreen();
+				return;
+			}
 		}
-		
+	#ifdef GPS_DEBUG	
 		LOG_INF("Starting GPS");
+	#endif
 		gps_control_start(K_NO_WAIT);
 		gps_is_on = true;
 		gps_start_time = k_uptime_get();
 	}
 	else
 	{
+	#ifdef GPS_DEBUG
 		LOG_INF("Stopping GPS");
+	#endif
 		gps_control_stop(K_NO_WAIT);
 
 		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
 		{
+		#ifdef GPS_DEBUG
 			LOG_INF("Can't turn off modem for gps!");
+		#endif
 		}
 		
 		gps_is_on = false;
@@ -260,22 +272,27 @@ static void send_agps_request(struct k_work *work)
 	if((last_request_timestamp != 0) &&
 	    (k_uptime_get() - last_request_timestamp < K_HOURS(1)))
 	{
+	#ifdef GPS_DEBUG
 		LOG_INF("A-GPS request was sent less than 1 hour ago");
+	#endif
 		return;
 	}
-
+#ifdef GPS_DEBUG
 	LOG_INF("Sending A-GPS request");
-
+#endif
 	err = nrf_cloud_agps_request_all();
 	if(err)
 	{
+	#ifdef GPS_DEBUG
 		LOG_INF("A-GPS request failed, error: %d", err);
+	#endif
 		return;
 	}
 
 	last_request_timestamp = k_uptime_get();
-
+#ifdef GPS_DEBUG
 	LOG_INF("A-GPS request sent");
+#endif
 #endif /* defined(CONFIG_NRF_CLOUD_AGPS) */
 }
 
@@ -286,24 +303,31 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 	switch (evt->type)
 	{
 	case GPS_EVT_SEARCH_STARTED:
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_SEARCH_STARTED\n");
+	#endif
 		gps_control_set_active(true);
 		break;
 		
 	case GPS_EVT_SEARCH_STOPPED:
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_SEARCH_STOPPED\n");
+	#endif
 		gps_control_set_active(false);
 		break;
 		
 	case GPS_EVT_SEARCH_TIMEOUT:
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_SEARCH_TIMEOUT\n");
+	#endif
 		gps_control_set_active(false);
 		break;
 		
 	case GPS_EVT_PVT:
 		/* Don't spam logs */
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_PVT");
-		
+	#endif	
 		if(test_gps_flag)
 		{
 			u8_t i,tracked;
@@ -340,6 +364,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		}
 		else
 		{
+		#ifdef GPS_DEBUG
 			sprintf(tmpbuf, "Longitude:%f, Latitude:%f, Altitude:%f, Speed:%f, Heading:%f", 
 								evt->pvt.longitude, 
 								evt->pvt.latitude,
@@ -354,12 +379,14 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 			LOG_INF("Time (UTC): %02u:%02u:%02u\n", evt->pvt.datetime.hour,
 						       					  evt->pvt.datetime.minute,
 						      					  evt->pvt.datetime.seconds);
+		#endif	
 		}
 		break;
 	
 	case GPS_EVT_PVT_FIX:
+	#ifdef GPS_DEBUG	
 		LOG_INF("GPS_EVT_PVT_FIX");
-
+	#endif
 		if(test_gps_flag)
 		{
 			u8_t i,tracked;
@@ -422,25 +449,29 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		}		
 		else
 		{
+		#ifdef GPS_DEBUG
 			s32_t lon,lat;
 
 			lon = evt->pvt.longitude*1000000;
 			lat = evt->pvt.latitude*1000000;
 			sprintf(tmpbuf, "Longitude:%d.%06d,Latitude:%d.%06d", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 			LOG_INF("%s\n",tmpbuf);
-			
+		#endif	
 			memcpy(&gps_pvt_data, &(evt->pvt), sizeof(evt->pvt));
 		}
 		break;
 		
 	case GPS_EVT_NMEA:
 		/* Don't spam logs */
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_NMEA\n");
+	#endif
 		break;
 		
 	case GPS_EVT_NMEA_FIX:
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_NMEA_FIX");
-
+	#endif
 		if(gps_fix_time == 0)
 		{
 			gps_fix_time = k_uptime_get();
@@ -449,9 +480,10 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		
 		if(!test_gps_flag)
 		{
+		#ifdef GPS_DEBUG
 			LOG_INF("Position fix with NMEA data, fix time:%d", gps_local_time);
 			LOG_INF("NMEA:%s\n", evt->nmea.buf);
-		
+		#endif
 			APP_Ask_GPS_off();
 
 			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
@@ -462,21 +494,31 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		break;
 		
 	case GPS_EVT_OPERATION_BLOCKED:
+	#ifdef GPS_DEBUG	
 		LOG_INF("GPS_EVT_OPERATION_BLOCKED\n");
+	#endif
 		break;
 		
 	case GPS_EVT_OPERATION_UNBLOCKED:
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_OPERATION_UNBLOCKED\n");
+	#endif
 		break;
 		
 	case GPS_EVT_AGPS_DATA_NEEDED:
+	#ifdef GPS_DEBUG
 		LOG_INF("GPS_EVT_AGPS_DATA_NEEDED\n");
+	#endif
+	#if defined(CONFIG_NRF_CLOUD_AGPS)
 		k_work_submit_to_queue(app_work_q,
 				       &send_agps_request_work);
+	#endif
 		break;
 		
 	case GPS_EVT_ERROR:
+	#ifdef GPS_DEBUG	
 		LOG_INF("GPS_EVT_ERROR\n");
+	#endif
 		break;
 		
 	default:
@@ -488,7 +530,9 @@ void GPS_init(struct k_work_q *work_q)
 {
 	app_work_q = work_q;
 
+#if defined(CONFIG_NRF_CLOUD_AGPS)
 	k_work_init(&send_agps_request_work, send_agps_request);
+#endif
 
 	gps_control_init(app_work_q, gps_handler);
 }

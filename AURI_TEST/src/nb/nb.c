@@ -27,6 +27,7 @@
 #include "nb.h"
 #include "screen.h"
 #include "sos.h"
+#include "fall.h"
 #include "gps.h"
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
@@ -37,7 +38,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define MQTT_CONNECTED_KEEP_TIME	(1*30)
+#define MQTT_CONNECTED_KEEP_TIME	(5*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -947,8 +948,8 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 
 void NBSendSettingReply(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
+	u8_t tmpbuf[32] = {0};
 
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -965,11 +966,8 @@ void NBSendSettingReply(u8_t *data, u32_t datalen)
 
 void NBSendSosWifiData(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
 	
-	LOG_INF("[%s] wifi data:%s len:%d\n", __func__, data, datalen);
-
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T1:");
@@ -984,11 +982,9 @@ void NBSendSosWifiData(u8_t *data, u32_t datalen)
 
 void NBSendSosGpsData(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
+	u8_t tmpbuf[32] = {0};
 	
-	LOG_INF("[%s] gps data:%s len:%d\n", __func__, data, datalen);
-
 	strcpy(buf, "{T2,");
 	strcat(buf, g_imei);
 	strcat(buf, ",[");
@@ -1004,8 +1000,7 @@ void NBSendSosGpsData(u8_t *data, u32_t datalen)
 #ifdef CONFIG_IMU_SUPPORT
 void NBSendFallWifiData(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
 	
 	LOG_INF("[%s] wifi data:%s len:%d\n", __func__, data, datalen);
 
@@ -1023,8 +1018,8 @@ void NBSendFallWifiData(u8_t *data, u32_t datalen)
 
 void NBSendFallGpsData(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
+	u8_t tmpbuf[32] = {0};
 	
 	LOG_INF("[%s] gps data:%s len:%d\n", __func__, data, datalen);
 
@@ -1043,8 +1038,8 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 
 void NBSendHealthData(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
+	u8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1065,8 +1060,8 @@ void NBSendHealthData(u8_t *data, u32_t datalen)
 
 void NBSendLocationData(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
-	u8_t tmpbuf[128] = {0};
+	u8_t buf[256] = {0};
+	u8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1084,7 +1079,7 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 
 void NBSendPowerOnInfor(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
+	u8_t buf[256] = {0};
 	u8_t tmpbuf[20] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1103,7 +1098,7 @@ void NBSendPowerOnInfor(u8_t *data, u32_t datalen)
 
 void NBSendPowerOffInfor(u8_t *data, u32_t datalen)
 {
-	u8_t buf[128] = {0};
+	u8_t buf[256] = {0};
 	u8_t tmpbuf[20] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1468,52 +1463,69 @@ static void nb_link(struct k_work *work)
 	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
 	
-	LOG_INF("[%s] begin\n", __func__);
-
-	configure_low_power();
-
-	nb_connecting_flag = true;
-	
-	err = lte_lc_init_and_connect();
-	if(err)
+	if(gps_is_working())
 	{
-		LOG_INF("Can't connected to LTE network");
-		if(!gps_is_working())
-			SetModemTurnOff();
-
-		nb_connected = false;
-		
-		retry_count++;
+		LOG_INF("[%s] gps is working, continue waiting!\n", __func__);
 		if(retry_count <= 5)		//5次以内每半分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), NULL);
 		else if(retry_count <= 10)	//6到10次每分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
 		else if(retry_count <= 15)	//11到15次每5分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
 		else if(retry_count <= 20)	//16到20次每10分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
 		else if(retry_count <= 25)	//21到25次每30分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
 		else						//26次以上每1小时重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);		
 	}
 	else
 	{
-		LOG_INF("Connected to LTE network");
-		nb_connected = true;
-		retry_count = 0;
+		LOG_INF("[%s] linking\n", __func__);
 		
-		GetModemDateTime();
-		modem_data_init();
-	}
+		configure_low_power();
 
-	nb_connecting_flag = false;
-	
-	GetModemInfor();
-	
-	if(!err && !test_nb_flag)
-	{
-		k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+		nb_connecting_flag = true;
+		
+		err = lte_lc_init_and_connect();
+		if(err)
+		{
+			LOG_INF("Can't connected to LTE network");
+
+			nb_connected = false;
+			
+			retry_count++;
+			if(retry_count <= 5)		//5次以内每半分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(30), NULL);
+			else if(retry_count <= 10)	//6到10次每分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
+			else if(retry_count <= 15)	//11到15次每5分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
+			else if(retry_count <= 20)	//16到20次每10分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
+			else if(retry_count <= 25)	//21到25次每30分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
+			else						//26次以上每1小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
+		}
+		else
+		{
+			LOG_INF("Connected to LTE network");
+			nb_connected = true;
+			retry_count = 0;
+			
+			GetModemDateTime();
+			modem_data_init();
+		}
+
+		nb_connecting_flag = false;
+		
+		GetModemInfor();
+		
+		if(!err && !test_nb_flag)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+		}	
 	}
 }
 
@@ -1679,5 +1691,5 @@ void NB_init(struct k_work_q *work_q)
 	fota_work_init(work_q);
 #endif
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
 }

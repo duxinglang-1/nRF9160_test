@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(wifi, CONFIG_LOG_DEFAULT_LEVEL);
 #define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉低此脚
 #define CTRL_GPIO		"GPIO_0"
 
-#define WIFI_RETRY_COUNT_MAX	3
+#define WIFI_RETRY_COUNT_MAX	6
 #define BUF_MAXSIZE	1024
 
 static u8_t retry = 0;
@@ -248,6 +248,8 @@ void wifi_enable(void)
 
 	gpio_pin_configure(ctrl_switch, WIFI_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 0);
+
+	k_sleep(K_MSEC(100));
 }
 
 /*============================================================================
@@ -285,9 +287,9 @@ void wifi_disable(void)
 void wifi_start_scanning(void)
 {
 	//设置工作模式 1:station模式 2:AP模式 3:兼容AP+station模式
-	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",10);
+	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",30);
 	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
-	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",10);
+	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
 	//Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,4\r\n",30);
 	//启动扫描
 	Send_Cmd_To_Esp8285("AT+CWLAP\r\n",0);
@@ -319,6 +321,8 @@ void wifi_rescanning(void)
 	if(!wifi_is_on)
 		return;
 
+	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
+	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
 	Send_Cmd_To_Esp8285("AT+CWLAP\r\n", 0);
 }
 
@@ -339,7 +343,7 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 	u8_t *ptr2 = NULL;
 	bool flag = false;
 	
-	LOG_INF("[%s] receive:%s\n", __func__, buf);
+	//LOG_INF("[%s] receive:%s\n", __func__, buf);
 	
 	while(1)
 	{

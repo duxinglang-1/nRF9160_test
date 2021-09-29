@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
-#define PMU_DEBUG
+//#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
@@ -218,18 +218,9 @@ void pmu_interrupt_proc(void)
 	{
 		int0 = 0;
 		MAX20353_ReadReg(REG_INT0, &int0);
-	#ifdef PMU_DEBUG	
-		MAX20353_ReadReg(REG_INT1, &int1);
-		MAX20353_ReadReg(REG_INT2, &int2);
-		LOG_INF("[%s] REG_INT0:%02X,REG_INT1:%02X,REG_INT2:%02X\n", __func__, int0,int1,int2);
-	#endif
-	
 		if((int0&0x40) == 0x40) //Charger status change INT  
 		{
 			MAX20353_ReadReg(REG_STATUS0, &status0);
-		#ifdef PMU_DEBUG	
-			LOG_INF("[%s] REG_STATUS0:%02X\n", __func__, status0);
-		#endif
 			switch((status0&0x07))
 			{
 			case 0x00://Charger off

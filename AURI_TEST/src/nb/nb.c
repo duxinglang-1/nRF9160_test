@@ -613,7 +613,6 @@ void DisConnectMqttLink(void)
 		}
 		
 		mqtt_connected = false;
-		mqtt_disconnect_flag = true;
 	}
 }
 
@@ -941,7 +940,7 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 			if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
 				k_timer_stop(&nb_reconnect_timer);
 
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 		}
 	}
 }

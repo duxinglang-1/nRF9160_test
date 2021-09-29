@@ -27,6 +27,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(key, CONFIG_LOG_DEFAULT_LEVEL);
 
+//#define KEY_DEBUG
+
 static u8_t flag;
 static u32_t keycode;
 static u32_t keytype;
@@ -92,8 +94,10 @@ bool is_wearing(void)
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	//LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d\n", key_code, key_type, KEY_SOS);
-	
+#ifdef KEY_DEBUG
+	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d\n", key_code, key_type, KEY_SOS);
+#endif
+
 	if(key_code == KEY_TOUCH)
 	{
 		switch(key_type)
@@ -171,7 +175,9 @@ static void button_handler(u32_t button_state, u32_t has_changed)
 
 	u32_t buttons = (button_state & has_changed);
 
+#ifdef KEY_DEBUG
 	LOG_INF("button_state:%d, has_changed:%d\n", button_state, has_changed);
+#endif
 
 	keycode = has_changed;
 	keytype = (buttons>0 ? KEY_DOWN:KEY_UP);

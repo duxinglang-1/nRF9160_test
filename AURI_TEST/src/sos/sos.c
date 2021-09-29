@@ -31,12 +31,15 @@ LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
 
 SOS_STATUS sos_state = SOS_STATUS_IDLE;
 
-bool sos_trigger_flag = false;
+static bool sos_trigger_flag = false;
+static bool sos_start_gps_flag = false;
 
 u8_t sos_trigger_time[16] = {0};
 
 static void SOSTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_timer, SOSTimerOutCallBack, NULL);
+static void SOSStartGPSCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(sos_gps_timer, SOSStartGPSCallBack, NULL);
 
 void SOSTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -72,6 +75,11 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 		if(sos_state != SOS_STATUS_IDLE)
 			k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
 	}
+}
+
+void SOSStartGPSCallBack(struct k_timer *timer_id)
+{
+	sos_start_gps_flag = true;
 }
 
 #ifdef CONFIG_WIFI
@@ -200,6 +208,8 @@ void SOSSChangrStatus(void)
 
 void SOSStart(void)
 {
+	u8_t delay;
+	
 	LOG_INF("[%s]\n", __func__);
 
 	if(sos_state != SOS_STATUS_IDLE)
@@ -216,22 +226,33 @@ void SOSStart(void)
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
 #endif
-	sos_wait_gps = true;
-	APP_Ask_GPS_Data();
 
 	lcd_sleep_out = true;
 	sos_state = SOS_STATUS_SENDING;
 
-	EnterSOSScreen();	
+	EnterSOSScreen();
+	
+	if(nb_is_connected())
+		delay = 30;
+	else
+		delay = 90;
+
+	k_timer_start(&sos_gps_timer, K_SECONDS(delay), NULL);
 }
 
 void SOSMsgProc(void)
 {
 	if(sos_trigger_flag)
 	{
-		LOG_INF("[%s]\n", __func__);
 		SOSStart();
 		sos_trigger_flag = false;
+	}
+
+	if(sos_start_gps_flag)
+	{
+		sos_wait_gps = true;
+		APP_Ask_GPS_Data();
+		sos_start_gps_flag = false;
 	}
 }
 

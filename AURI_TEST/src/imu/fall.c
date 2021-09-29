@@ -34,14 +34,17 @@ LOG_MODULE_REGISTER(fall, CONFIG_LOG_DEFAULT_LEVEL);
 
 FALL_STATUS fall_state = FALL_STATUS_IDLE;
 
-bool fall_trigger_flag = false;
-bool fall_send_flag = false;
-bool fall_end_flag = false;
+static bool fall_trigger_flag = false;
+static bool fall_send_flag = false;
+static bool fall_end_flag = false;
+static bool fall_start_gps_flag = false;
 
 u8_t fall_trigger_time[16] = {0};
 
 static void FallTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(fall_timer, FallTimerOutCallBack, NULL);
+static void FallStartGPSCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(fall_gps_timer, FallStartGPSCallBack, NULL);
 
 static void FallEnd(void)
 {
@@ -84,6 +87,11 @@ static void FallTimerOutCallBack(struct k_timer *timer_id)
 		
 		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_UPDATE;
 	}
+}
+
+void FallStartGPSCallBack(struct k_timer *timer_id)
+{
+	fall_start_gps_flag = true;
 }
 
 #ifdef CONFIG_WIFI
@@ -225,12 +233,19 @@ void FallAlarmStart(void)
 
 void FallAlarmSend(void)
 {
+	u8_t delay;
+	
 #ifdef CONFIG_WIFI
 	fall_wait_wifi = true;
 	APP_Ask_wifi_data();
 #endif
-	fall_wait_gps = true;
-	APP_Ask_GPS_Data();
+
+	if(nb_is_connected())
+		delay = 30;
+	else
+		delay = 90;
+
+	k_timer_start(&fall_gps_timer, K_SECONDS(delay), NULL);
 }
 
 bool FallIsRunning(void)
@@ -253,6 +268,13 @@ void FallMsgProcess(void)
 	{
 		FallAlarmStart();
 		fall_trigger_flag = false;
+	}
+
+	if(fall_start_gps_flag)
+	{
+		fall_wait_gps = true;
+		APP_Ask_GPS_Data();
+		fall_start_gps_flag = false;
 	}
 	
 	if(fall_send_flag)

@@ -134,7 +134,7 @@ void APP_Ask_GPS_Data(void)
 	if(!gps_is_on)
 	{
 		gps_on_flag = true;
-		k_timer_start(&app_wait_gps_timer, K_MSEC(3*60*1000), NULL);
+		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), NULL);
 	}
 #else
 	gps_pvt_data.datetime.year = 2020;
@@ -210,8 +210,6 @@ void test_gps_off(void)
 
 static void set_gps_enable(const bool enable)
 {
-	u8_t tmpbuf[128] = {0};
-	
 	if(enable == gps_control_is_enabled())
 	{
 		return;
@@ -219,19 +217,14 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
-		if(test_gps_flag)
+		DisConnectMqttLink();
+		SetModemTurnOff();
+		
+		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
 		{
-			DisConnectMqttLink();
-			SetModemTurnOff();
-			
-			if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
-			{
-			#ifdef GPS_DEBUG
-				LOG_INF("Can't turn on modem for gpa!");
-			#endif
-				EnterIdleScreen();
-				return;
-			}
+		#ifdef GPS_DEBUG
+			LOG_INF("Can't turn on modem for gps!");
+		#endif
 		}
 		
 	#ifdef GPS_DEBUG	
@@ -254,16 +247,13 @@ static void set_gps_enable(const bool enable)
 	
 		gps_control_stop(K_NO_WAIT);
 
-		if(test_gps_flag)
+		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
 		{
-			if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
-			{
-			#ifdef GPS_DEBUG
-				LOG_INF("Can't turn off modem for gps!");
-			#endif
-			}
+		#ifdef GPS_DEBUG
+			LOG_INF("Can't turn off modem for gps!");
+		#endif
 		}
-		
+
 		gps_is_on = false;
 	}
 }
@@ -374,14 +364,12 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		else
 		{
 		#ifdef GPS_DEBUG
-			sprintf(tmpbuf, "Longitude:%f, Latitude:%f, Altitude:%f, Speed:%f, Heading:%f", 
-								evt->pvt.longitude, 
-								evt->pvt.latitude,
-								evt->pvt.altitude,
-								evt->pvt.speed,
-								evt->pvt.heading);
+			s32_t lon,lat;
+
+			lon = evt->pvt.longitude*1000000;
+			lat = evt->pvt.latitude*1000000;
+			sprintf(tmpbuf, "Longitude:%d.%06d, Latitude:%d.%06d", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 			LOG_INF("%s",tmpbuf);
-			
 			LOG_INF("Date:       %02u-%02u-%02u", evt->pvt.datetime.year,
 						       					  evt->pvt.datetime.month,
 						       					  evt->pvt.datetime.day);

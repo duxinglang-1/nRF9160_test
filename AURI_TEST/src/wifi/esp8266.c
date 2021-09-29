@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(wifi, CONFIG_LOG_DEFAULT_LEVEL);
 #define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉低此脚
 #define CTRL_GPIO		"GPIO_0"
 
-#define WIFI_RETRY_COUNT_MAX	6
+#define WIFI_RETRY_COUNT_MAX	5
 #define BUF_MAXSIZE	1024
 
 static u8_t retry = 0;

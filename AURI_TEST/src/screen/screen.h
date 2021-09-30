@@ -213,12 +213,12 @@ extern "C" {
 #define PWR_OFF_CN_W	41
 #define PWR_OFF_CN_H	32
 #define PWR_OFF_CN_X	((LCD_WIDTH-PWR_OFF_CN_W)/2)
-#define PWR_OFF_CN_Y	PWR_OFF_ICON_H
+#define PWR_OFF_CN_Y	((LCD_HEIGHT-PWR_OFF_CN_H)/2)
 
 #define PWR_OFF_EN_W	96
 #define PWR_OFF_EN_H	32
 #define PWR_OFF_EN_X	((LCD_WIDTH-PWR_OFF_EN_W)/2)
-#define PWR_OFF_EN_Y	PWR_OFF_ICON_H
+#define PWR_OFF_EN_Y	((LCD_HEIGHT-PWR_OFF_EN_H)/2)
 
 #define PWR_OFF_NOTIFY_OFFSET_W		4
 #define PWR_OFF_NOTIFY_OFFSET_H		4

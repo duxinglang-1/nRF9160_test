@@ -1886,7 +1886,6 @@ void PowerOffUpdateStatus(void)
 
 	LCD_Clear(BLACK);
 
-	LCD_ShowImg(PWR_OFF_ICON_X, PWR_OFF_ICON_Y, IMG_PWROFF_ICON);
 	if(global_settings.language == LANGUAGE_CHN)
 		LCD_ShowImg(PWR_OFF_CN_X, PWR_OFF_CN_Y, img_pwroff[0]);
 	else

@@ -145,31 +145,31 @@ extern unsigned char IMG_WEEK_SUN[84];
 extern unsigned char IMG_BLE_LINK[20];
 extern unsigned char IMG_BLE_UNLINK[20];
 //STEP
-extern unsigned char IMG_STEP_ICON_1[390];
-extern unsigned char IMG_STEP_ICON_2[390];
+extern unsigned char IMG_STEP_ICON_1[122];
+extern unsigned char IMG_STEP_ICON_2[122];
 extern unsigned char IMG_STEP_CN[50];
-extern unsigned char IMG_STEP_EN[90];
-extern unsigned char IMG_STEP_NOTE_ICON_1[390];
-extern unsigned char IMG_STEP_NOTE_ICON_2[390];
+extern unsigned char IMG_STEP_EN[86];
+extern unsigned char IMG_STEP_NOTE_ICON_1[150];
+extern unsigned char IMG_STEP_NOTE_ICON_2[150];
 extern unsigned char IMG_STEP_NOTE_CN[66];
 extern unsigned char IMG_STEP_NOTE_EN[122];
 //DISTANCE
-extern unsigned char IMG_DISTANCE_ICON_1[390];
-extern unsigned char IMG_DISTANCE_ICON_2[390];
+extern unsigned char IMG_DISTANCE_ICON_1[106];
+extern unsigned char IMG_DISTANCE_ICON_2[106];
 extern unsigned char IMG_KM_CN[102];
 extern unsigned char IMG_KM_EN[102];
 extern unsigned char IMG_MILE_CN[102];
 extern unsigned char IMG_MILE_EN[102];
 //CALORIE
-extern unsigned char IMG_CAL_ICON_1[390];
-extern unsigned char IMG_CAL_ICON_2[390];
+extern unsigned char IMG_CAL_ICON_1[106];
+extern unsigned char IMG_CAL_ICON_2[106];
 extern unsigned char IMG_CAL_CN[106];
 extern unsigned char IMG_CAL_EN[94];
 //SLEEP
-extern unsigned char IMG_SLEEP_ICON_1[390];
-extern unsigned char IMG_SLEEP_ICON_2[390];
-extern unsigned char IMG_SLEEP_ICON_3[390];
-extern unsigned char IMG_SLEEP_ICON_4[390];
+extern unsigned char IMG_SLEEP_ICON_1[126];
+extern unsigned char IMG_SLEEP_ICON_2[126];
+extern unsigned char IMG_SLEEP_ICON_3[126];
+extern unsigned char IMG_SLEEP_ICON_4[126];
 extern unsigned char IMG_SLEEP_HR_CN[50];
 extern unsigned char IMG_SLEEP_HR_EN[54];
 extern unsigned char IMG_SLEEP_MIN_CN[50];
@@ -183,9 +183,9 @@ extern unsigned char IMG_FALL_EN[218];
 extern unsigned char IMG_FALL_MSG_CANCEL_CN[198];
 extern unsigned char IMG_FALL_MSG_CANCEL_EN[390];
 //FIND
-extern unsigned char IMG_FIND_ICON_1[390];
-extern unsigned char IMG_FIND_ICON_2[390];
-extern unsigned char IMG_FIND_ICON_3[390];
+extern unsigned char IMG_FIND_ICON_1[166];
+extern unsigned char IMG_FIND_ICON_2[166];
+extern unsigned char IMG_FIND_ICON_3[166];
 extern unsigned char IMG_FIND_CN[390];
 extern unsigned char IMG_FIND_EN[390];
 //CHARGING
@@ -204,19 +204,21 @@ extern unsigned char IMG_CHARGING_EN_2[774];
 extern unsigned char IMG_CHARGING_EN_3[774];
 extern unsigned char IMG_CHARGING_EN_4[774];
 extern unsigned char IMG_CHARGING_EN_5[774];
-//SOS
-extern unsigned char IMG_SOS_ICON[390];
-extern unsigned char IMG_SOS_SENDING_1[390];
-extern unsigned char IMG_SOS_SENDING_2[390];
-extern unsigned char IMG_SOS_SENDING_3[390];
-extern unsigned char IMG_SOS_SENDING_OK[390];
 //WRIST OFF
-extern unsigned char IMG_WRIST_OFF_CN[774];
-extern unsigned char IMG_WRIST_OFF_EN[774];
+extern unsigned char IMG_WRIST_OFF_ICON[126];
+extern unsigned char IMG_WRIST_OFF_CN[390];
+extern unsigned char IMG_WRIST_OFF_EN[390];
 //ALARM
-extern unsigned char IMG_ALARM_ICON_1[390];
-extern unsigned char IMG_ALARM_ICON_2[390];
-extern unsigned char IMG_ALARM_ICON_3[390];
+extern unsigned char IMG_ALARM_ICON_1[150];
+extern unsigned char IMG_ALARM_ICON_2[150];
+extern unsigned char IMG_ALARM_ICON_3[150];
+//SOS
+extern unsigned char IMG_SOS_ICON[294];
+//MSG SENDING
+extern unsigned char IMG_SENDING_1[198];
+extern unsigned char IMG_SENDING_2[198];
+extern unsigned char IMG_SENDING_3[198];
+extern unsigned char IMG_SENDING_OK[150];
 //NUM
 extern unsigned char IMG_MID_NUM_0[62];
 extern unsigned char IMG_MID_NUM_1[62];

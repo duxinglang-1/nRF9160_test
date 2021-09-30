@@ -800,8 +800,10 @@ void SOSUpdateStatus(void)
 		break;
 	
 	case SOS_STATUS_SENT:
-		LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SOS_SENDING_3);
-		LCD_ShowImg(SOS_ICON_X, SOS_ICON_Y, IMG_SOS_SENDING_OK);
+		AnimaStopShow();
+		LCD_Clear(BLACK);
+		LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
+		LCD_ShowImg(MSG_SEND_OK_X, MSG_SEND_OK_Y, IMG_SENDING_OK);
 		sos_state = SOS_STATUS_RECEIVED;
 		break;
 	
@@ -815,10 +817,10 @@ void SOSUpdateStatus(void)
 
 void SOSShowStatus(void)
 {
-	unsigned char *img_anima[9] = {IMG_SOS_SENDING_1,IMG_SOS_SENDING_2,IMG_SOS_SENDING_3,
-								   IMG_SOS_SENDING_1,IMG_SOS_SENDING_2,IMG_SOS_SENDING_3,
-								   IMG_SOS_SENDING_1,IMG_SOS_SENDING_2,IMG_SOS_SENDING_3};
-	unsigned char *img_icon[2] = {IMG_SOS_ICON,IMG_SOS_SENDING_OK};
+	unsigned char *img_anima[9] = {IMG_SENDING_1,IMG_SENDING_2,IMG_SENDING_3,
+								   IMG_SENDING_1,IMG_SENDING_2,IMG_SENDING_3,
+								   IMG_SENDING_1,IMG_SENDING_2,IMG_SENDING_3};
+	unsigned char *img_icon[2] = {IMG_SOS_ICON,IMG_SENDING_OK};
 	
 	LCD_Clear(BLACK);
 
@@ -1116,7 +1118,7 @@ void CalorieScreenProcess(void)
 
 void FallUpdateStatus(void)
 {
-	unsigned char *img_anima_send[3] = {IMG_SOS_SENDING_1, IMG_SOS_SENDING_2, IMG_SOS_SENDING_3};
+	unsigned char *img_anima_send[3] = {IMG_SENDING_1, IMG_SENDING_2, IMG_SENDING_3};
 	unsigned char *img_fall[2] = {IMG_FALL_CN, IMG_FALL_EN};
 	unsigned char *img_cancel[2] = {IMG_FALL_MSG_CANCEL_CN, IMG_FALL_MSG_CANCEL_EN};
 
@@ -1140,11 +1142,15 @@ void FallUpdateStatus(void)
 		break;
 		
 	case FALL_STATUS_SENT:
+		AnimaStopShow();
+		LCD_Clear(BLACK);
+		LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
+		LCD_ShowImg(MSG_SEND_OK_X, MSG_SEND_OK_Y, IMG_SENDING_OK);
 		break;
 		
 	case FALL_STATUS_CANCEL:
 		AnimaStopShow();
-		
+		LCD_Clear(BLACK);
 		if(global_settings.language == LANGUAGE_CHN)
 			LCD_ShowImg(FALL_CANCEL_CN_X, FALL_CANCEL_CN_Y, img_cancel[0]);
 		else

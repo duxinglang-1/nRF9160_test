@@ -229,7 +229,8 @@ void SOSStart(void)
 
 	lcd_sleep_out = true;
 	sos_state = SOS_STATUS_SENDING;
-
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 	EnterSOSScreen();
 	
 	if(nb_is_connected())

@@ -87,13 +87,25 @@ extern "C" {
 #define IMU_STEPS_SHOW_H	20
 
 //SOS
-#define MSG_SENDING_X	0
-#define MSG_SENDING_Y	0
-#define SOS_ICON_X	0
+#define SOS_ICON_W	72
+#define SOS_ICON_H	32
+#define SOS_ICON_X	((LCD_WIDTH-SOS_ICON_W)/2)
 #define SOS_ICON_Y	32
 
+//msg send
+#define MSG_SENDING_W	48
+#define MSG_SENDING_H	32
+#define MSG_SENDING_X	((LCD_WIDTH-MSG_SENDING_W)/2)
+#define MSG_SENDING_Y	0
+#define MSG_SEND_OK_W	36
+#define MSG_SEND_OK_H	32
+#define MSG_SEND_OK_X	((LCD_WIDTH-MSG_SENDING_W)/2)
+#define MSG_SEND_OK_Y	MSG_SEND_OK_H
+
 //steps
-#define STEPS_ICON_X	0
+#define STEPS_ICON_W	29
+#define STEPS_ICON_H	32
+#define STEPS_ICON_X	((LCD_WIDTH-STEPS_ICON_W)/2)
 #define STEPS_ICON_Y	0
 #define STEPS_CN_OFFSET	5
 #define STEPS_UNIT_X	75
@@ -110,7 +122,9 @@ extern "C" {
 #define STEPS_NUM_5_Y	32
 
 //sleep
-#define SLEEP_ICON_X	0
+#define SLEEP_ICON_W	30
+#define SLEEP_ICON_H	32
+#define SLEEP_ICON_X	((LCD_WIDTH-SLEEP_ICON_W)/2)
 #define SLEEP_ICON_Y	0
 #define SLEEP_HOUR_X	36
 #define SLEEP_HOUR_Y	32
@@ -126,7 +140,9 @@ extern "C" {
 #define SLEEP_NUM_4_Y	32
 
 //distance
-#define DIS_ICON_X		0
+#define DIS_ICON_W		25
+#define DIS_ICON_H		32
+#define DIS_ICON_X		((LCD_WIDTH-DIS_ICON_W)/2)
 #define DIS_ICON_Y		0
 #define DIS_KM_X		69
 #define DIS_KM_Y		32
@@ -142,7 +158,9 @@ extern "C" {
 #define DIS_NUM_4_Y		32
 
 //calorie
-#define CAL_ICON_X		0
+#define CAL_ICON_W		25
+#define CAL_ICON_H		32
+#define CAL_ICON_X		((LCD_WIDTH-CAL_ICON_W)/2)
 #define CAL_ICON_Y		0
 #define CAL_UNIT_X		67
 #define CAL_UNIT_Y		32
@@ -176,7 +194,9 @@ extern "C" {
 #define FALL_CANCEL_EN_Y	((LCD_HEIGHT-FALL_CANCEL_EN_H)/2)
 
 //wrist
-#define WRIST_ICON_X	9
+#define WRIST_ICON_W	30
+#define WRIST_ICON_H	32
+#define WRIST_ICON_X	((LCD_WIDTH-WRIST_ICON_W)/2)
 #define WRIST_ICON_Y	0
 #define WRIST_CN_TEXT_X	39
 #define WRIST_CN_TEXT_Y	0
@@ -184,7 +204,9 @@ extern "C" {
 #define WRIST_EN_TEXT_Y	0
 
 //find
-#define FIND_ICON_X		0
+#define FIND_ICON_W		40
+#define FIND_ICON_H		32
+#define FIND_ICON_X		((LCD_WIDTH-FIND_ICON_W)/2)
 #define FIND_ICON_Y		0
 #define FIND_TEXT_X		0
 #define FIND_TEXT_Y		32

@@ -54,6 +54,7 @@ static void FallEnd(void)
 	k_timer_stop(&fall_timer);
 
 	fall_state = FALL_STATUS_IDLE;
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	EnterIdleScreen();
 }
 
@@ -74,6 +75,10 @@ static void FallTimerOutCallBack(struct k_timer *timer_id)
 			break;
 		
 		case FALL_STATUS_SENDING:
+			fall_state = FALL_STATUS_SENT;
+			k_timer_start(&fall_timer, K_SECONDS(FALL_SEND_OK_TIMEOUT), NULL);
+			break;
+			
 		case FALL_STATUS_SENT:
 			fall_end_flag = true;
 			break;
@@ -217,7 +222,7 @@ void FallAlarmStart(void)
 		return;
 
 	fall_state = FALL_STATUS_NOTIFY;
-	
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	EnterFallScreen();
 	
 	if(global_settings.language == LANGUAGE_CHN)

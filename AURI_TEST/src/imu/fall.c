@@ -21,6 +21,7 @@
 #include "Max20353.h"
 #include "Alarm.h"
 #include "lcd.h"
+#include "key.h"
 #include "gps.h"
 #include "screen.h"
 #include "fall.h"
@@ -68,7 +69,7 @@ static void FallTimerOutCallBack(struct k_timer *timer_id)
 		case FALL_STATUS_NOTIFY:
 			fall_state = FALL_STATUS_SENDING;
 			fall_send_flag = true;
-			Key_Event_Unregister_Handler();
+			ClearAllKeyHandler();
 			k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), NULL);
 			break;
 		
@@ -226,7 +227,7 @@ void FallAlarmStart(void)
 	
 	GetSystemTimeSecString(fall_trigger_time);
 
-	Key_Event_register_Handler(FallAlarmCancel, FallAlarmCancel);
+	SetLeftKeyUpHandler(FallAlarmCancel);
 
 	k_timer_start(&fall_timer, K_SECONDS(FALL_NOTIFY_TIMEOUT), NULL);
 }

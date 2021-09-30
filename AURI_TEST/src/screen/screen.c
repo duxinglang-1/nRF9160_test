@@ -16,6 +16,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "img.h"
+#include "key.h"
 #include "datetime.h"
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
@@ -134,11 +135,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		MenuStartFOTA();
 	}
-#endif	
-	else if(screen_id == SCREEN_ID_POWEROFF)
-	{
-		key_pwroff_flag = true;
-	}
+#endif
 }
 
 void EnterNotifyScreen(void)
@@ -1264,7 +1261,7 @@ void FOTAShowStatus(void)
 	y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
 	LCD_ShowString(x,y,"PWR(N)");
 
-	Key_Event_register_Handler(fota_start_confirm, fota_exit);
+	SetLeftKeyUpHandler(fota_start_confirm);
 #endif
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
@@ -1304,7 +1301,7 @@ void FOTAUpdateStatus(void)
 						  FONT_SIZE_16,
 						  "Linking to server...");
 	#endif
-		Key_Event_Unregister_Handler();
+		ClearAllKeyHandler();
 		break;
 		
 	case FOTA_STATUS_DOWNLOADING:
@@ -1348,7 +1345,7 @@ void FOTAUpdateStatus(void)
 			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
 		}
 
-		Key_Event_Unregister_Handler();
+		ClearAllKeyHandler();
 		break;
 		
 	case FOTA_STATUS_FINISHED:
@@ -1382,7 +1379,7 @@ void FOTAUpdateStatus(void)
 		LCD_ShowString(x,y,"PWR(N)");
 	#endif
 
-		Key_Event_register_Handler(fota_reboot_confirm, fota_exit);	
+		SetLeftKeyUpHandler(fota_reboot_confirm);
 		break;
 		
 	case FOTA_STATUS_ERROR:
@@ -1409,7 +1406,7 @@ void FOTAUpdateStatus(void)
 		LCD_ShowString(x,y,"SOS(Y)");
 	#endif
 
-		Key_Event_register_Handler(fota_exit, fota_exit);			
+		SetLeftKeyUpHandler(fota_exit);
 		break;
 		
 	case FOTA_STATUS_MAX:
@@ -1465,7 +1462,7 @@ void EnterFOTAScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 
-	Key_Event_register_Handler(EnterPoweroffScreen, ExitFOTAScreen);	
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
 }
 #endif/*CONFIG_FOTA_DOWNLOAD*/
 
@@ -1678,9 +1675,9 @@ void EnterSleepScreen(void)
 	AnimaStopShow();
 
 #ifdef CONFIG_FOTA_DOWNLOAD
-	Key_Event_register_Handler(fota_start, ExitSleepScreen);
+	SetLeftKeyUpHandler(fota_start);
 #else
-	Key_Event_register_Handler(EnterPoweroffScreen, ExitSleepScreen);
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
 }
 
@@ -1707,7 +1704,7 @@ void EnterCalorieScreen(void)
 	MenuStopGPS();
 	AnimaStopShow();
 
-	Key_Event_register_Handler(EnterSleepScreen, ExitCalorieScreen);
+	SetLeftKeyUpHandler(EnterSleepScreen);
 }
 
 void ExitDistanceScreen(void)
@@ -1733,7 +1730,7 @@ void EnterDistanceScreen(void)
 	MenuStopGPS();
 	AnimaStopShow();
 
-	Key_Event_register_Handler(EnterCalorieScreen, ExitDistanceScreen);
+	SetLeftKeyUpHandler(EnterCalorieScreen);
 }
 
 void ExitStepsScreen(void)
@@ -1754,7 +1751,7 @@ void EnterStepsScreen(void)
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
 
-	Key_Event_register_Handler(EnterDistanceScreen, ExitStepsScreen);
+	SetLeftKeyUpHandler(EnterDistanceScreen);
 }
 
 void EnterFallScreen(void)
@@ -1793,9 +1790,9 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
 #if defined(CONFIG_PPG_SUPPORT)
-	Key_Event_register_Handler(EnterHRScreen, ExitHRScreen);
+	SetLeftKeyUpHandler(EnterHRScreen);
 #else
-	Key_Event_register_Handler(EnterStepsScreen, EnterIdleScreen);
+	SetLeftKeyUpHandler(EnterStepsScreen);
 #endif
 }
 
@@ -1840,6 +1837,10 @@ void poweroff_leftkeyfunc(void)
 {
 	LOG_INF("[%s]\n", __func__);
 	key_pwroff_flag = true;
+	
+	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_UPDATE;
+
+	ClearAllKeyHandler();
 }
 
 void poweroff_rightkeyfunc(void)
@@ -1869,27 +1870,35 @@ void EnterPoweroffScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 	AnimaStopShow();
-	
-	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 
-	Key_Event_register_Handler(ExitPoweroffScreen, ExitPoweroffScreen);	
+	SetLeftKeyUpHandler(ExitPoweroffScreen);
+	SetLeftKeyLongPressHandler(poweroff_leftkeyfunc);
+}
+
+void PowerOffUpdateStatus(void)
+{
+	unsigned char *img_pwroff[2] = {IMG_PWROFF_CN, IMG_PWROFF_EN};
+
+	LCD_Clear(BLACK);
+
+	LCD_ShowImg(PWR_OFF_ICON_X, PWR_OFF_ICON_Y, IMG_PWROFF_ICON);
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(PWR_OFF_CN_X, PWR_OFF_CN_Y, img_pwroff[0]);
+	else
+		LCD_ShowImg(PWR_OFF_EN_X, PWR_OFF_EN_Y, img_pwroff[1]);
 }
 
 void PowerOffShowStatus(void)
 {
-	u16_t x,y,w,h;
-	u8_t strbuf[128] = {0};
+	unsigned char *img_pwroff_key[2] = {IMG_PWROFF_KEY_CN, IMG_PWROFF_KEY_EN};
 	
 	LCD_Clear(BLACK);
 
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "It will shut-down after 5 seconds");
-#else	
-	strcpy(strbuf, "WIFI TESTING");
-	LCD_MeasureString(strbuf, &w, &h);
-	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
-	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
-#endif
+	LCD_ShowImg(PWR_OFF_ICON_X, PWR_OFF_ICON_Y, IMG_PWROFF_ICON);
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(PWR_OFF_KEY_CN_X, PWR_OFF_KEY_CN_Y, img_pwroff_key[0]);
+	else
+		LCD_ShowImg(PWR_OFF_KEY_EN_X, PWR_OFF_KEY_EN_Y, img_pwroff_key[1]);
 }
 
 void PowerOffScreenProcess(void)
@@ -1904,6 +1913,7 @@ void PowerOffScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		PowerOffUpdateStatus();
 		break;
 	}
 	
@@ -1941,7 +1951,7 @@ void EnterGPSTestScreen(void)
 	PPGStopCheck();
 #endif
 
-	Key_Event_register_Handler(EnterNBTestScreen, ExitGPSTestScreen);
+	SetLeftKeyUpHandler(EnterNBTestScreen);
 }
 
 void ExitBLETestScreen(void)
@@ -1968,8 +1978,8 @@ void EnterBLETestScreen(void)
 	
 	k_timer_stop(&mainmenu_timer);
 	MenuStopWifi();
-	
-	Key_Event_register_Handler(EnterPoweroffScreen, ExitBLETestScreen);	
+
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
 }
 
 #ifdef CONFIG_WIFI
@@ -1999,8 +2009,8 @@ void EnterWifiTestScreen(void)
 	MenuStopNB();
 	
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-	
-	Key_Event_register_Handler(EnterBLETestScreen, ExitWifiTestScreen);	
+
+	SetLeftKeyUpHandler(EnterBLETestScreen);
 }
 #endif
 
@@ -2030,10 +2040,10 @@ void EnterNBTestScreen(void)
 	MenuStopGPS();
 	
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-#ifdef CONFIG_WIFI	
-	Key_Event_register_Handler(EnterWifiTestScreen, ExitNBTestScreen);	
+#ifdef CONFIG_WIFI
+	SetLeftKeyUpHandler(EnterWifiTestScreen);
 #else
-	Key_Event_register_Handler(EnterBLETestScreen, ExitBLETestScreen);	
+	SetLeftKeyUpHandler(EnterBLETestScreen);
 #endif
 }
 
@@ -2054,7 +2064,7 @@ void EnterSOSScreen(void)
 	MenuStopGPS();
 	AnimaStopShow();
 
-	Key_Event_Unregister_Handler();
+	ClearAllKeyHandler();
 }
 
 #ifdef CONFIG_PPG_SUPPORT
@@ -2084,7 +2094,7 @@ void EnterHRScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	Key_Event_register_Handler(EnterGPSTestScreen, ExitHRScreen);
+	SetLeftKeyUpHandler(EnterGPSTestScreen);
 }
 #endif/*CONFIG_PPG_SUPPORT*/
 

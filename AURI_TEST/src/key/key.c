@@ -3,8 +3,8 @@
 ** Descriptions:			Key message process source file
 ** Created By:				xie biao
 ** Created Date:			2020-07-13
-** Modified Date:      		2020-10-10 
-** Version:			    	V1.1
+** Modified Date:      		2021-09-29 
+** Version:			    	V1.2
 ******************************************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
@@ -38,8 +38,8 @@ static button_handler_t button_handler_cb;
 static atomic_t my_buttons;
 static sys_slist_t button_handlers;
 
-#define KEY_SOS			BIT(0)
-#define KEY_TOUCH		BIT(1)
+#define SOS			BIT(0)
+#define TOUCH		BIT(1)
 
 static const key_cfg button_pins[] = 
 {
@@ -70,21 +70,98 @@ extern bool uart_wake_flag;
 extern bool uart_sleep_flag;
 #endif
 
+static FuncPtr currKeyFuncPtrs[KEY_MAX][KEY_EVENT_MAX] = {0};
 
-typedef void (*VoidFunc)(void);
-
-VoidFunc leftkey_handler_cb = NULL,rightkey_handler_cb = NULL;
-
-void Key_Event_register_Handler(VoidFunc leftkeyfunc,VoidFunc rightkeyfunc)
+void ClearAllKeyHandler(void)
 {
-	leftkey_handler_cb = leftkeyfunc;
-	rightkey_handler_cb = rightkeyfunc;
+	u8_t i,j;
+
+	for(i=0;i<KEY_MAX;i++)
+	{
+		for(j=0;j<KEY_EVENT_MAX;j++)
+		{
+			currKeyFuncPtrs[i][j] = NULL;
+		}
+	}
 }
 
-void Key_Event_Unregister_Handler(void)
+void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype)
 {
-	leftkey_handler_cb = NULL;
-	rightkey_handler_cb = NULL;
+	currKeyFuncPtrs[keycode][keytype] = funcPtr;
+}
+
+void SetLeftKeyUpHandler(FuncPtr funcPtr)
+{
+	currKeyFuncPtrs[KEY_SOFT_LEFT][KEY_EVENT_UP] = funcPtr;
+}
+
+void SetLeftKeyDownHandler(FuncPtr funcPtr)
+{
+	currKeyFuncPtrs[KEY_SOFT_LEFT][KEY_EVENT_DOWN] = funcPtr;
+}
+
+void SetLeftKeyLongPressHandler(FuncPtr funcPtr)
+{
+	currKeyFuncPtrs[KEY_SOFT_LEFT][KEY_EVENT_LONG_PRESS] = funcPtr;
+}
+
+void SetRightKeyUpHandler(FuncPtr funcPtr)
+{
+	currKeyFuncPtrs[KEY_SOFT_RIGHT][KEY_EVENT_UP] = funcPtr;
+}
+
+void SetRightKeyDownHandler(FuncPtr funcPtr)
+{
+	currKeyFuncPtrs[KEY_SOFT_RIGHT][KEY_EVENT_DOWN] = funcPtr;
+}
+
+void SetRightKeyLongPressHandler(FuncPtr funcPtr)
+{
+	currKeyFuncPtrs[KEY_SOFT_RIGHT][KEY_EVENT_LONG_PRESS] = funcPtr;
+}
+
+FuncPtr GetKeyHandler(u8_t keycode, u8_t keytype)
+{
+    FuncPtr ptr;
+    
+    if(keycode >= KEY_MAX)
+    {
+        ptr = NULL;
+    }
+    else
+    {
+        if (keytype < KEY_EVENT_MAX)
+        {
+            ptr = (currKeyFuncPtrs[keycode][keytype]);
+        }
+        else
+        {
+            ptr = NULL;
+        }
+    }
+
+    return ptr;
+}
+
+void ExecKeyHandler(u8_t keycode, u8_t keytype)
+{
+	u8_t i;
+	FuncPtr curr_func_ptr;
+
+	for(i=0;i<32;i++)
+	{
+		if(BIT(i) == keycode)
+			break;
+	}
+
+	if(i >= 32)
+		return;
+
+	curr_func_ptr = GetKeyHandler(i, keytype);
+	if(curr_func_ptr)
+	{  
+		(*curr_func_ptr)();    
+	}
 }
 
 bool is_wearing(void)
@@ -135,23 +212,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 
 	LCD_ResetBL_Timer();
 
-	switch(key_code)
-	{
-	case KEY_SOS:
-		switch(key_type)
-		{
-		case KEY_DOWN:
-			break;
-		case KEY_UP:
-			if(leftkey_handler_cb != NULL)
-				leftkey_handler_cb();
-			break;
-		case KEY_LONG_PRESS:
-			SOSTrigger();
-			break;
-		}
-		break;
-	}
+	ExecKeyHandler(key_code, key_type);
 
 	if(key_code != KEY_TOUCH)
 	{

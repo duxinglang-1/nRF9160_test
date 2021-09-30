@@ -231,10 +231,11 @@ extern unsigned char IMG_MID_NUM_9[58];
 //DOT
 extern unsigned char IMG_DOT[21];
 //POWER
-extern unsigned char IMG_PWROFF_KEY_CN[774];
-extern unsigned char IMG_PWROFF_KEY_EN[774];
-extern unsigned char IMG_PWROFF_CN[774];
-extern unsigned char IMG_PWROFF_EN[774];
+extern unsigned char IMG_PWROFF_ICON[118];
+extern unsigned char IMG_PWROFF_KEY_CN[390];
+extern unsigned char IMG_PWROFF_KEY_EN[390];
+extern unsigned char IMG_PWROFF_CN[170];
+extern unsigned char IMG_PWROFF_EN[390];
 
 #endif/*LCD_VGM068A4W01_SH1106G*/
 

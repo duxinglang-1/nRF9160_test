@@ -158,12 +158,9 @@ void system_power_off(u8_t flag)
 		if(nb_is_connected())
 		{
 			SendPowerOffData(flag);
-			k_timer_start(&sys_pwroff, K_MSEC(2*1000), NULL);
 		}
-		else
-		{
-			sys_pwr_off_flag = true;
-		}
+
+		k_timer_start(&sys_pwroff, K_MSEC(3*1000), NULL);
 	}
 }
 

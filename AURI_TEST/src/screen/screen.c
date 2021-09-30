@@ -31,6 +31,7 @@
 #include "ucs2.h"
 #include "nb.h"
 #include "sos.h"
+#include "alarm.h"
 #include "gps.h"
 #include "uart_ble.h"
 #ifdef CONFIG_TOUCH_SUPPORT
@@ -513,17 +514,17 @@ void AlarmScreenProcess(void)
 
 void FindShowStatus(void)
 {
-//	unsigned char *img_anima[3] = {IMG_FIND_ICON_1,IMG_FIND_ICON_2,IMG_FIND_ICON_3};
-//	unsigned char *img[2] = {IMG_FIND_CN,IMG_FIND_EN};
+	unsigned char *img_anima[3] = {IMG_FIND_ICON_1,IMG_FIND_ICON_2,IMG_FIND_ICON_3};
+	unsigned char *img[2] = {IMG_FIND_CN,IMG_FIND_EN};
 	
-//	LCD_Clear(BLACK);
+	LCD_Clear(BLACK);
 
-//	AnimaShow(FIND_ICON_X, FIND_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+	AnimaShow(FIND_ICON_X, FIND_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
 
-//	if(global_settings.language == LANGUAGE_CHN)
-//		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[0]);
-//	else
-//		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[1]);	
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[0]);
+	else
+		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[1]);	
 }
 
 void FindDeviceScreenProcess(void)
@@ -1794,6 +1795,7 @@ void EnterIdleScreen(void)
 #else
 	SetLeftKeyUpHandler(EnterStepsScreen);
 #endif
+	SetLeftKeyLongPressHandler(SOSTrigger);
 }
 
 void EnterAlarmScreen(void)
@@ -1830,6 +1832,9 @@ void EnterFindDeviceScreen(void)
 	screen_id = SCREEN_ID_FIND_DEVICE;	
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
+
+	ClearAllKeyHandler();
+	SetLeftKeyUpHandler(FindDeviceStop);
 }
 
 

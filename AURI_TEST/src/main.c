@@ -746,7 +746,6 @@ int main(void)
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();
-	Set_Audio_Power_On();
 
 	while(1)
 	{
@@ -773,6 +772,9 @@ int main(void)
 		ScreenMsgProcess();
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		FotaMsgProc();
+	#endif
+	#ifdef CONFIG_AUDIO_SUPPORT
+		AudioMsgProcess();
 	#endif
 		AnimaMsgProcess();
 		system_init_completed();

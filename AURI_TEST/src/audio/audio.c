@@ -53,9 +53,12 @@ static u32_t const * volatile mp_block_to_check = NULL;
 
 #define AUDIO_PORT	"GPIO_0"
 #define WTN_DATA	13      //接 13脚
-#define LDO_EN      0
+#define WTN_BUSY	14		//busy脚,音频播放之后由低变高
+
+static bool audio_trige_flag = false;
 
 static struct device *gpio_audio;
+static struct gpio_callback gpio_cb;
 
 //延时函数
 void Delay_ms(unsigned int dly)
@@ -179,20 +182,42 @@ void FallPlayAlarmEn(void)
 	Voice_Start(2);
 }
 
+void AudioInterruptHandle(void)
+{
+	LOG_INF("[%s]", __func__);
+	audio_trige_flag = true;
+}
+
 //io口初始化 
 void audio_init(void)
 {
+	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
+	
+	Set_Audio_Power_On();
+	
 	gpio_audio = device_get_binding(AUDIO_PORT);
 	
-	/* Set LED pin as output */
 	gpio_pin_configure(gpio_audio, WTN_DATA, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_audio, LDO_EN, GPIO_DIR_OUT);
-	
-	/* Set pin to HIGH/LOW */
 	gpio_pin_write(gpio_audio, WTN_DATA, 1);
-	gpio_pin_write(gpio_audio, LDO_EN, 1);
+
+	//busy interrupt
+	gpio_pin_configure(gpio_audio, WTN_BUSY, flag);
+	gpio_pin_disable_callback(gpio_audio, WTN_BUSY);
+	gpio_init_callback(&gpio_cb, AudioInterruptHandle, BIT(WTN_BUSY));
+	gpio_add_callback(gpio_audio, &gpio_cb);
+	gpio_pin_enable_callback(gpio_audio, WTN_BUSY);
 
 	Delay_ms(100);
+
+	//Set_Audio_Power_Off();
+}
+
+void AudioMsgProcess(void)
+{
+	if(audio_trige_flag)
+	{
+		audio_trige_flag = false;
+	}
 }
 
 #if 0

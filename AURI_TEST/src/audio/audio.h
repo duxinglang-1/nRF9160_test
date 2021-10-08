@@ -15,6 +15,7 @@
 #include <zephyr.h>
 
 extern void audio_init(void);
+extern void AudioMsgProcess(void);
 extern void SOSStopAlarm(void);
 extern void SOSPlayAlarm(void);
 extern void FallStopAlarm(void);

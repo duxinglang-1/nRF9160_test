@@ -148,13 +148,13 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 	u8_t i;
 	FuncPtr curr_func_ptr;
 
-	for(i=0;i<32;i++)
+	for(i=0;i<KEY_MAX;i++)
 	{
 		if(BIT(i) == keycode)
 			break;
 	}
 
-	if(i >= 32)
+	if(i >= KEY_MAX)
 		return;
 
 	curr_func_ptr = GetKeyHandler(i, keytype);

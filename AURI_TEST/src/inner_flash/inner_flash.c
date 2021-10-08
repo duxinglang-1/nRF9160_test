@@ -314,12 +314,12 @@ bool Get_SportData_from_time(void *data, sys_date_timer_t begin_time,u16_t index
 			
 		}
 
-			node = record+index;
-			if((node-100)>sport_record)
-				return false;
+		node = record+index;
+		if((node-100)>sport_record)
+			return false;
 
-			if(node>1100)
-				node= node-100;
+		if(node>1100)
+			node= node-100;
 		bytes_read = nvs_read(&fs, node, data, 20);
 		if(bytes_read<=0)
 		{
@@ -362,6 +362,4 @@ bool Get_SportData_from_time(void *data, sys_date_timer_t begin_time,u16_t index
 	}
 
 	return true;
-
-
 }

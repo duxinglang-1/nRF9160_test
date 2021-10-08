@@ -203,6 +203,7 @@ void FallAlarmCancel(void)
 {
 	if(fall_state == FALL_STATUS_NOTIFY)
 	{
+		AnimaStopShow();
 		FallStopAlarm();
 		fall_state = FALL_STATUS_CANCEL;
 		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), NULL);

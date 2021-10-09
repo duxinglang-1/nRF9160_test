@@ -139,6 +139,74 @@ void AnimaStopShow(void)
 
 /*****************************************************************************
  * FUNCTION
+ *  AnimaPaushShow
+ * DESCRIPTION
+ *  Paush animation display
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void AnimaPaushShow(void)
+{
+#ifdef ANIMA_DEBUG
+	LOG_INF("[%s] 001\n", __func__);
+#endif
+	k_timer_stop(&anima_redraw_timer);
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaResumeShow
+ * DESCRIPTION
+ *  Resume animation display
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void AnimaResumeShow(void)
+{
+	if(anima_show.count > 1)
+	{
+	#ifdef ANIMA_DEBUG
+		LOG_INF("[%s] 001\n", __func__);
+	#endif
+		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
+	}
+	else
+	{
+	#ifdef ANIMA_DEBUG
+		LOG_INF("[%s] 002\n", __func__);
+	#endif
+		k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_ONE_DELAY), NULL);
+	}
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  AnimaIsShowing
+ * DESCRIPTION
+ *  Resume animation display
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  TRUE: Animation img is playing
+ *  FALSE:	Animation img is not playing
+ *****************************************************************************/
+bool AnimaIsShowing(void)
+{
+#ifdef ANIMA_DEBUG
+	LOG_INF("[%s] 001\n", __func__);
+#endif
+	if(anima_head)
+		return true;
+	else
+		return false;
+}
+
+/*****************************************************************************
+ * FUNCTION
  *  AnimaStop
  * DESCRIPTION
  *  Stop animation display for other application

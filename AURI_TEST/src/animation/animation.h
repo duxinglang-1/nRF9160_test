@@ -30,6 +30,9 @@ typedef struct
 
 typedef struct node AnimaNode;
 
+extern bool AnimaIsShowing(void);
 extern void AnimaStopShow(void);
+extern void AnimaPaushShow(void);
+extern void AnimaResumeShow(void);
 extern void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, u32_t interview, bool loop_flag, ShowFinishCB callback);
 #endif/*__ANIMATION_H__*/

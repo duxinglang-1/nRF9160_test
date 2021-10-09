@@ -22,6 +22,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wifi, CONFIG_LOG_DEFAULT_LEVEL);
 
+//#define WIFI_DEBUG
+
 #define UART_CTRL_PIN 	1	//拉低切换到WIFI，拉高切换到BLE
 #define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉低此脚
 #define CTRL_GPIO		"GPIO_0"
@@ -123,13 +125,9 @@ void wifi_get_scanned_data(void)
 
 void APP_Ask_wifi_data(void)
 {
-	u8_t i;
-	u8_t *str_mac[6] = {"94:77:2b:24:22:6c","7c:94:2a:39:9f:50","7c:94:2a:39:9f:54","","",""};
-	u8_t *str_rssi[6] = {"-54","-87","-62","","",""};
-
-#if 1
+#ifdef WIFI_DEBUG
 	LOG_INF("[%s]\n", __func__);
-
+#endif
 	if(!app_wifi_on)
 	{
 		retry = 0;
@@ -139,16 +137,6 @@ void APP_Ask_wifi_data(void)
 		wifi_turn_on_and_scanning();
 		k_timer_start(&wifi_scan_timer, K_MSEC(5*1000), NULL);	
 	}
-#else
-	wifi_data.count = 3;
-	for(i=0;i<wifi_data.count;i++)
-	{
-		strcpy(wifi_data.node[i].rssi, str_rssi[i]);
-		strcpy(wifi_data.node[i].mac, str_mac[i]);
-	}
-
-	k_timer_start(&wifi_scan_timer, K_MSEC(10*1000), NULL);
-#endif	
 }
 
 /*============================================================================
@@ -184,7 +172,9 @@ void switch_to_ble(void)
 		ctrl_switch = device_get_binding(CTRL_GPIO);
 		if(!ctrl_switch)
 		{
+		#ifdef WIFI_DEBUG
 			LOG_INF("Could not get %s device\n", CTRL_GPIO);
+		#endif
 			return;
 		}
 	}
@@ -214,7 +204,9 @@ void switch_to_wifi(void)
 		ctrl_switch = device_get_binding(CTRL_GPIO);
 		if(!ctrl_switch)
 		{
+		#ifdef WIFI_DEBUG
 			LOG_INF("Could not get %s device\n", CTRL_GPIO);
+		#endif
 			return;
 		}
 	}
@@ -241,15 +233,17 @@ void wifi_enable(void)
 		ctrl_switch = device_get_binding(CTRL_GPIO);
 		if(!ctrl_switch)
 		{
+		#ifdef WIFI_DEBUG
 			LOG_INF("Could not get %s device\n", CTRL_GPIO);
+		#endif
 			return;
 		}
 	}
 
 	gpio_pin_configure(ctrl_switch, WIFI_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 0);
-
+	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 1);
 	k_sleep(K_MSEC(100));
+	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 0);
 }
 
 /*============================================================================
@@ -262,18 +256,7 @@ void wifi_enable(void)
 ==============================================================================*/
 void wifi_disable(void)
 {
-	if(ctrl_switch == NULL)
-	{
-		ctrl_switch = device_get_binding(CTRL_GPIO);
-		if(!ctrl_switch)
-		{
-			LOG_INF("Could not get %s device\n", CTRL_GPIO);
-			return;
-		}
-	}
-
-	gpio_pin_configure(ctrl_switch, WIFI_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 1);
+	Send_Cmd_To_Esp8285("AT+GSLP=0\r\n",30);
 }
 
 /*============================================================================
@@ -290,7 +273,6 @@ void wifi_start_scanning(void)
 	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",30);
 	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
 	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
-	//Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,4\r\n",30);
 	//启动扫描
 	Send_Cmd_To_Esp8285("AT+CWLAP\r\n",0);
 }
@@ -342,9 +324,10 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 	u8_t *ptr1 = NULL;
 	u8_t *ptr2 = NULL;
 	bool flag = false;
-	
-	//LOG_INF("[%s] receive:%s\n", __func__, buf);
-	
+
+#ifdef WIFI_DEBUG	
+	LOG_INF("[%s] receive:%s\n", __func__, buf);
+#endif
 	while(1)
 	{
 		u8_t len;
@@ -454,7 +437,7 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 		if(flag)	//扫描有效数据
 		{
 			wifi_get_scanned_data();
-			wifi_turn_off();
+			wifi_off_flag = true;
 		}
 	}
 }
@@ -499,9 +482,7 @@ void WifiProcess(void)
 		wifi_turn_off();
 		
 		if(k_timer_remaining_get(&wifi_rescan_timer) > 0)
-		{
 			k_timer_stop(&wifi_rescan_timer);
-		}
 	}
 
 	if(wifi_rescanning_flag)

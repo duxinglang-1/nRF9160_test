@@ -145,7 +145,8 @@ void APP_Ask_GPS_Data(void)
 	gps_pvt_data.datetime.seconds = 40;
 	gps_pvt_data.longitude = 114.025254;
 	gps_pvt_data.latitude = 22.667808;
-
+	gps_local_time = 1000;
+	
 	APP_Ask_GPS_Data_timerout(NULL);
 #endif
 }
@@ -173,6 +174,9 @@ bool gps_is_working(void)
 
 void gps_on(void)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
 	set_gps_enable(true);
 }
 

@@ -38,7 +38,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nb, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define MQTT_CONNECTED_KEEP_TIME	(5*60)
+#define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -494,6 +494,10 @@ static void mqtt_link(struct k_work_q *work_q)
 
 	LOG_INF("[%s] begin\n", __func__);
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
+
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -780,7 +784,7 @@ static void modem_configure(void)
 			strcpy(nb_test_info, "LTE Link Connected!");
 			TestNBUpdateINfor();
 		}
-#endif /* defined(CONFIG_LWM2M_CARRIER) */
+	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
 #endif /* defined(CONFIG_LTE_LINK_CONTROL) */
 }
@@ -1481,10 +1485,12 @@ static void nb_link(struct k_work *work)
 	else
 	{
 		LOG_INF("[%s] linking\n", __func__);
-		
-		configure_low_power();
 
 		nb_connecting_flag = true;
+	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		uart_sleep_out();
+	#endif
+		configure_low_power();
 		
 		err = lte_lc_init_and_connect();
 		if(err)
@@ -1516,15 +1522,15 @@ static void nb_link(struct k_work *work)
 			GetModemDateTime();
 			modem_data_init();
 		}
-
-		nb_connecting_flag = false;
 		
 		GetModemInfor();
 		
 		if(!err && !test_nb_flag)
 		{
 			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
-		}	
+		}
+
+		nb_connecting_flag = false;
 	}
 }
 
@@ -1609,6 +1615,9 @@ void NBMsgProcess(void)
 		}
 		else
 		{
+		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+			uart_sleep_out();
+		#endif
 			SetModemTurnOff();
 			modem_configure();
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
@@ -1616,7 +1625,10 @@ void NBMsgProcess(void)
 	}
 
 	if(get_modem_info_flag)
-	{
+	{	
+	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		uart_sleep_out();
+	#endif
 		GetModemInfor();
 		get_modem_info_flag = false;
 	}
@@ -1629,12 +1641,18 @@ void NBMsgProcess(void)
 
 	if(get_modem_signal_flag)
 	{
+	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		uart_sleep_out();
+	#endif
 		GetModemSignal();
 		get_modem_signal_flag = false;
 	}
 
 	if(get_modem_time_flag)
-	{
+	{	
+	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		uart_sleep_out();
+	#endif
 		GetModemDateTime();
 		get_modem_time_flag = false;
 	}

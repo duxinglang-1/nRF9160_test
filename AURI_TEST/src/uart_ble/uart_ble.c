@@ -1493,6 +1493,10 @@ void ble_send_date_handle(u8_t *buf, u32_t len)
 	LOG_INF("[%s]\n", __func__);
 #endif
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
+
 #ifdef CONFIG_WIFI
 	switch_to_ble();
 #endif
@@ -1506,6 +1510,10 @@ void wifi_send_data_handle(u8_t *buf, u32_t len)
 {
 #ifdef UART_DEBUG
 	LOG_INF("[%s] cmd:%s\n", __func__, buf);
+#endif
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
 #endif
 
 	switch_to_wifi();
@@ -1737,7 +1745,11 @@ void UartMsgProc(void)
 	#endif
 		uart_sleep_flag = false;
 		
-		if(!gps_is_working() && !MqttIsConnected())
+		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting()
+			#ifdef CONFIG_FOTA_DOWNLOAD
+			 && !fota_is_running()
+			#endif
+			)
 		{
 			uart_sleep_in();
 		}

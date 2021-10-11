@@ -206,127 +206,132 @@ void pmu_charge_disconnected(void)
 	MAX20353_LED2(2,10,false);//red led off
 }
 
-void pmu_interrupt_proc(void)
+void pmu_reg_proc(void)
 {
-	u8_t int0,int1,int2,status0,status1;
-	u8_t val;
-	
-	do
+	u8_t int0,int1,int2;
+	u8_t status0,status1,status2,status3;
+
+	MAX20353_ReadReg(REG_INT0, &int0);
+#ifdef PMU_DEBUG	
+	MAX20353_ReadReg(REG_INT1, &int1);
+	MAX20353_ReadReg(REG_INT2, &int2);
+	LOG_INF("[%s] INT:%02X, %02X, %02X\n", __func__, int0,int1,int2);
+#endif	
+
+#ifdef PMU_DEBUG
+	MAX20353_ReadReg(REG_STATUS0, &status0);
+	MAX20353_ReadReg(REG_STATUS1, &status1);
+	MAX20353_ReadReg(REG_STATUS2, &status2);
+	MAX20353_ReadReg(REG_STATUS3, &status3);
+	LOG_INF("[%s] status:%02X, %02X, %02X, %02X\n", __func__, status0,status1,status2,status3);
+#endif
+	if((int0&0x40) == 0x40) //Charger status change INT  
 	{
-		int0 = 0;
-		MAX20353_ReadReg(REG_INT0, &int0);
-		if((int0&0x40) == 0x40) //Charger status change INT  
-		{
-			MAX20353_ReadReg(REG_STATUS0, &status0);
-			switch((status0&0x07))
-			{
-			case 0x00://Charger off
-			case 0x01://Charging suspended due to temperature (see battery charger state diagram)
-			case 0x07://Charger fault condition (see battery charger state diagram)
-				g_chg_status = BAT_CHARGING_NO;
-				break;
-				
-			case 0x02://Pre-charge in progress
-			case 0x03://Fast-charge constant current mode in progress
-			case 0x04://Fast-charge constant voltage mode in progress
-			case 0x05://Maintain charge in progress
-				g_chg_status = BAT_CHARGING_PROGRESS;
-				break;
-				
-			case 0x06://Maintain charger timer done
-				pmu_charge_complete();
-				
-				g_chg_status = BAT_CHARGING_FINISHED;
-				lcd_sleep_out = true;
-				break;
-			}
-
-			pmu_redraw_bat_flag = true;
-		}
+		MAX20353_ReadReg(REG_STATUS0, &status0);
+	#ifdef PMU_DEBUG	
+		LOG_INF("[%s] REG_STATUS0:%02X\n", __func__, status0);
+	#endif
 		
-		if((int0&0x08) == 0x08) //USB OK Int
+		switch((status0&0x07))
 		{
-			MAX20353_ReadReg(REG_STATUS1, &status1);
-			if((status1&0x08) == 0x08) //USB OK   
+		case 0x00://Charger off
+		case 0x01://Charging suspended due to temperature (see battery charger state diagram)
+		case 0x07://Charger fault condition (see battery charger state diagram)
+			g_chg_status = BAT_CHARGING_NO;
+			break;
+			
+		case 0x02://Pre-charge in progress
+		case 0x03://Fast-charge constant current mode in progress
+		case 0x04://Fast-charge constant voltage mode in progress
+		case 0x05://Maintain charge in progress
+			g_chg_status = BAT_CHARGING_PROGRESS;
+			break;
+			
+		case 0x06://Maintain charger timer done
+			pmu_charge_complete();
+			
+			g_chg_status = BAT_CHARGING_FINISHED;
+			lcd_sleep_out = true;
+			break;
+		}
+
+		pmu_redraw_bat_flag = true;
+	}
+	
+	if((int0&0x08) == 0x08) //USB OK Int
+	{
+		MAX20353_ReadReg(REG_STATUS1, &status1);
+		
+		if((status1&0x08) == 0x08) //USB OK   
+		{
+			pmu_battery_stop_shutdown();
+			
+			InitCharger();
+
+			pmu_charge_connected();
+			
+			charger_is_connected = true;
+			
+			g_chg_status = BAT_CHARGING_PROGRESS;
+
+			lcd_sleep_out = true;
+		}
+		else
+		{	
+			pmu_charge_disconnected();
+			
+			charger_is_connected = false;
+			
+			g_chg_status = BAT_CHARGING_NO;
+
+		#ifdef BATTERY_SOC_GAUGE	
+			g_bat_soc = MAX20353_CalculateSOC();
+			if(g_bat_soc>100)
+				g_bat_soc = 100;
+			
+			if(g_bat_soc < 5)
 			{
-				pmu_battery_stop_shutdown();
-				
-				InitCharger();
-
-				pmu_charge_connected();
-				
-				charger_is_connected = true;
-				
-				g_chg_status = BAT_CHARGING_PROGRESS;
-
-				lcd_sleep_out = true;
+				g_bat_level = BAT_LEVEL_0;
+				pmu_battery_low_shutdown();
+			}
+			else if(g_bat_soc < 10)
+			{
+				g_bat_level = BAT_LEVEL_0;
+			}
+			else if(g_bat_soc < 20)
+			{
+				g_bat_level = BAT_LEVEL_1;
+			}
+			else if(g_bat_soc < 40)
+			{
+				g_bat_level = BAT_LEVEL_2;
+			}
+			else if(g_bat_soc < 60)
+			{
+				g_bat_level = BAT_LEVEL_3;
+			}
+			else if(g_bat_soc < 80)
+			{
+				g_bat_level = BAT_LEVEL_4;
 			}
 			else
-			{	
-				pmu_charge_disconnected();
-				
-				charger_is_connected = false;
-				
-				g_chg_status = BAT_CHARGING_NO;
-
-			#ifdef BATTERY_SOC_GAUGE	
-				g_bat_soc = MAX20353_CalculateSOC();
-				if(g_bat_soc>100)
-					g_bat_soc = 100;
-				
-				if(g_bat_soc < 5)
-				{
-					g_bat_level = BAT_LEVEL_0;
-					pmu_battery_low_shutdown();
-				}
-				else if(g_bat_soc < 10)
-				{
-					g_bat_level = BAT_LEVEL_0;
-				}
-				else if(g_bat_soc < 20)
-				{
-					g_bat_level = BAT_LEVEL_1;
-				}
-				else if(g_bat_soc < 40)
-				{
-					g_bat_level = BAT_LEVEL_2;
-				}
-				else if(g_bat_soc < 60)
-				{
-					g_bat_level = BAT_LEVEL_3;
-				}
-				else if(g_bat_soc < 80)
-				{
-					g_bat_level = BAT_LEVEL_4;
-				}
-				else
-				{
-					g_bat_level = BAT_LEVEL_5;
-				}
-			#endif
-			
-				lcd_sleep_out = true;
+			{
+				g_bat_level = BAT_LEVEL_5;
 			}
-
-			pmu_redraw_bat_flag = true;
-		}
-
-		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
-		{
-		#ifdef PMU_DEBUG
-			LOG_INF("[%s] read pmu int false", __func__);
 		#endif
-			break;
+		
+			lcd_sleep_out = true;
 		}
 
-		if((int0&0x48) == 0x00)
-		{
-		#ifdef PMU_DEBUG
-			LOG_INF("[%s] int0 register is empty", __func__);
-		#endif
-			break;
-		}
-	}while(!val);
+		pmu_redraw_bat_flag = true;
+	}	
+}
+
+void pmu_interrupt_proc(void)
+{
+	u8_t val;
+	
+	pmu_reg_proc();
 }
 
 void PmuInterruptHandle(void)
@@ -732,6 +737,11 @@ void GetBatterySocString(u8_t *str_utc)
 
 void PMUMsgProcess(void)
 {
+	u8_t val;
+#ifdef PMU_DEBUG	
+	static u32_t i=0;
+#endif
+
 	if(pmu_trige_flag)
 	{
 	#ifdef PMU_DEBUG
@@ -741,6 +751,24 @@ void PMUMsgProcess(void)
 			pmu_interrupt_proc();
 		
 		pmu_trige_flag = false;
+	}
+
+	if(gpio_pin_read(gpio_pmu, PMU_EINT, &val) == 0)	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
+	{
+		if(val == 0)
+		{
+		#ifdef PMU_DEBUG
+			i++;
+			LOG_INF("[%s] count:%d\n", __func__, i);
+		#endif	
+			pmu_reg_proc();
+		}
+	#ifdef PMU_DEBUG
+		else
+		{
+			i = 0;
+		}
+	#endif	
 	}
 	
 	if(pmu_alert_flag)

@@ -38,7 +38,6 @@ typedef enum
 typedef enum
 {
 	KEY_SOS,
-	KEY_TOUCH,
 	KEY_MAX
 }KEY_CODE;
 

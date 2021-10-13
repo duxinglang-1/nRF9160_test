@@ -14,6 +14,12 @@
 #include <zephyr/types.h>
 #include <drivers/gps.h>
 #include "datetime.h"
+#include "Settings.h"
+
+#define DATETIME_ID 			1
+#define SETTINGS_ID 			2
+#define SPORT_RECORD_ID 		10
+#define SPORT_LENGTH_ID    		11	
 
 typedef struct
 {
@@ -46,6 +52,10 @@ typedef struct
 }local_record_t;
 
 extern void test_nvs(void);
+extern void ReadSettingsFromInnerFlash(global_settings_t *settings);
+extern void SaveSettingsToInnerFlash(global_settings_t settings);
+extern void ReadDateTimeFromInnerFlash(sys_date_timer_t *time);
+extern void SaveDateTimeToInnerFlash(sys_date_timer_t time);
 extern bool save_local_to_record(local_record_t *local_data);
 extern bool save_health_to_record(health_record_t *health_data);
 extern bool save_sport_to_record(sport_record_t *sport_data);

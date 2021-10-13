@@ -99,7 +99,7 @@ extern "C" {
 #define MSG_SENDING_Y	0
 #define MSG_SEND_OK_W	36
 #define MSG_SEND_OK_H	32
-#define MSG_SEND_OK_X	((LCD_WIDTH-MSG_SENDING_W)/2)
+#define MSG_SEND_OK_X	((LCD_WIDTH-MSG_SEND_OK_W)/2)
 #define MSG_SEND_OK_Y	MSG_SEND_OK_H
 
 //steps

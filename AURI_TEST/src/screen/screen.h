@@ -110,15 +110,15 @@ extern "C" {
 #define STEPS_CN_OFFSET	5
 #define STEPS_UNIT_X	75
 #define STEPS_UNIT_Y	32
-#define STEPS_NUM_1_X	4
+#define STEPS_NUM_1_X	13
 #define STEPS_NUM_1_Y	32
-#define STEPS_NUM_2_X	18
+#define STEPS_NUM_2_X	27
 #define STEPS_NUM_2_Y	32
-#define STEPS_NUM_3_X	32
+#define STEPS_NUM_3_X	41
 #define STEPS_NUM_3_Y	32
-#define STEPS_NUM_4_X	44
+#define STEPS_NUM_4_X	55
 #define STEPS_NUM_4_Y	32
-#define STEPS_NUM_5_X	58
+#define STEPS_NUM_5_X	69
 #define STEPS_NUM_5_Y	32
 
 //sleep

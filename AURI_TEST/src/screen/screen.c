@@ -966,10 +966,10 @@ void StepsShowStatus(void)
 	LCD_ShowImg(STEPS_NUM_4_X+offset_x, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
 	LCD_ShowImg(STEPS_NUM_5_X+offset_x, STEPS_NUM_5_Y, img_num[steps%10]);
 
-	if(global_settings.language == LANGUAGE_CHN)
-		LCD_ShowImg(STEPS_UNIT_X+offset_x, STEPS_UNIT_Y, img_uint[0]);
-	else
-		LCD_ShowImg(STEPS_UNIT_X, STEPS_UNIT_Y, img_uint[1]);	
+	//if(global_settings.language == LANGUAGE_CHN)
+	//	LCD_ShowImg(STEPS_UNIT_X+offset_x, STEPS_UNIT_Y, img_uint[0]);
+	//else
+	//	LCD_ShowImg(STEPS_UNIT_X, STEPS_UNIT_Y, img_uint[1]);	
 }
 
 void StepsScreenProcess(void)

@@ -751,7 +751,9 @@ int main(void)
 	{
 		TimeMsgProcess();
 		NBMsgProcess();
+	#ifdef CONFIG_WIFI	
 		WifiProcess();
+	#endif
 		GPSMsgProcess();
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	

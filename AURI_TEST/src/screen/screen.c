@@ -1987,8 +1987,9 @@ void EnterBLETestScreen(void)
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	
 	k_timer_stop(&mainmenu_timer);
+#ifdef CONFIG_WIFI	
 	MenuStopWifi();
-
+#endif
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 }
 
@@ -2212,9 +2213,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_BLE_TEST:
 			TestBLEScreenProcess();
 			break;
+	#ifdef CONFIG_WIFI		
 		case SCREEN_ID_WIFI_TEST:
 			TestWIFIScreenProcess();
 			break;
+	#endif		
 		case SCREEN_ID_POWEROFF:
 			PowerOffScreenProcess();
 			break;

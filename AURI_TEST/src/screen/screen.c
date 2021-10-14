@@ -852,6 +852,7 @@ void SOSScreenProcess(void)
 	}
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void SleepUpdateStatus(void)
 {
 	u16_t total_sleep,deep_sleep,light_sleep;
@@ -1177,7 +1178,6 @@ void FallShowStatus(void)
 		LCD_ShowImg(FALL_TEXT_X, FALL_TEXT_Y, img_fall[1]);
 }
 
-
 void FallScreenProcess(void)
 {
 	switch(scr_msg[SCREEN_ID_FALL].act)
@@ -1196,6 +1196,7 @@ void FallScreenProcess(void)
 	
 	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_NO;
 }
+#endif
 
 void WristShowStatus(void)
 {
@@ -1798,8 +1799,10 @@ void EnterIdleScreen(void)
 
 #if defined(CONFIG_PPG_SUPPORT)
 	SetLeftKeyUpHandler(EnterHRScreen);
-#else
+#elif defined(CONFIG_IMU_SUPPORT)
 	SetLeftKeyUpHandler(EnterStepsScreen);
+#else
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
 	SetLeftKeyLongPressHandler(SOSTrigger);
 }

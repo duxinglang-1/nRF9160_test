@@ -74,13 +74,13 @@ static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
 			sos_get_wifi_data_reply(wifi_data);	
 			sos_wait_wifi = false;
 		}
-
+	#ifdef CONFIG_IMU_SUPPORT
 		if(fall_wait_wifi)
 		{
 			fall_get_wifi_data_reply(wifi_data);	
 			fall_wait_wifi = false;
 		}
-
+	#endif
 		if(location_wait_wifi)
 		{
 			location_get_wifi_data_reply(wifi_data);

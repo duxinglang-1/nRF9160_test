@@ -27,10 +27,10 @@
 #include "nb.h"
 #include "screen.h"
 #include "sos.h"
-#include "fall.h"
 #include "gps.h"
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#include "fall.h"
 #endif
 #include "transfer_cache.h"
 

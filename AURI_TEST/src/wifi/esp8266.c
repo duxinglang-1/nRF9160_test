@@ -45,6 +45,9 @@ static bool wifi_off_flag = false;
 static bool test_wifi_flag = false;
 static bool wifi_test_update_flag = false;
 static bool wifi_rescanning_flag = false;
+static bool wifi_wait_timerout_flag = false;
+static bool wifi_off_retry_flag = false;
+static bool wifi_off_ok_flag = false;
 
 static wifi_infor wifi_data = {0};
 
@@ -54,13 +57,31 @@ static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_scan_timer, APP_Ask_wifi_Data_timerout, NULL);
 static void wifi_rescan_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_rescan_timer, wifi_rescan_timerout, NULL);
+static void wifi_off_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_off_retry_timer, wifi_off_timerout, NULL);
 
 static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
+{
+	wifi_wait_timerout_flag = true;
+}
+
+static void wifi_rescan_timerout(struct k_timer *timer_id)
+{
+	wifi_rescanning_flag = true;
+}
+
+static void wifi_off_timerout(struct k_timer *timer_id)
+{
+	wifi_off_retry_flag = true;
+}
+
+void wifi_scanned_wait_timerout(void)
 {
 	retry++;
 	if(retry < WIFI_RETRY_COUNT_MAX)
 	{
 		wifi_rescanning_flag = true;
+		memset(&wifi_data, 0, sizeof(wifi_data));
 		k_timer_start(&wifi_scan_timer, K_MSEC(5000), NULL);	
 	}
 	else
@@ -87,11 +108,6 @@ static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
 			location_wait_wifi = false;
 		}	
 	}
-}
-
-static void wifi_rescan_timerout(struct k_timer *timer_id)
-{
-	wifi_rescanning_flag = true;
 }
 
 void wifi_get_scanned_data(void)
@@ -256,7 +272,7 @@ void wifi_enable(void)
 ==============================================================================*/
 void wifi_disable(void)
 {
-	Send_Cmd_To_Esp8285("AT+GSLP=0\r\n",30);
+	Send_Cmd_To_Esp8285(WIFI_SLEEP_CMD,30);
 }
 
 /*============================================================================
@@ -292,10 +308,25 @@ void wifi_turn_on_and_scanning(void)
 	wifi_start_scanning();
 }
 
+void wifi_turn_off_success(void)
+{
+#ifdef WIFI_DEBUG	
+	LOG_INF("[%s]\n", __func__);
+#endif
+
+	wifi_off_retry_flag = false;
+	k_timer_stop(&wifi_off_retry_timer);
+	
+	switch_to_ble();
+}
+
 void wifi_turn_off(void)
 {
+#ifdef WIFI_DEBUG	
+	LOG_INF("[%s]\n", __func__);
+#endif
 	wifi_disable();
-	switch_to_ble();
+	k_timer_start(&wifi_off_retry_timer, K_MSEC(1000), NULL);
 }
 
 void wifi_rescanning(void)
@@ -328,6 +359,13 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 #ifdef WIFI_DEBUG	
 	LOG_INF("[%s] receive:%s\n", __func__, buf);
 #endif
+
+	if(strstr(ptr, WIFI_SLEEP_REPLY))
+	{
+		wifi_off_ok_flag = true;
+		return;
+	}
+	
 	while(1)
 	{
 		u8_t len;
@@ -434,7 +472,7 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 	}
 	else
 	{
-		if(flag)	//扫描有效数据
+		if(flag && (wifi_data.count >= 3))	//扫描有效数据
 		{
 			wifi_get_scanned_data();
 			wifi_off_flag = true;
@@ -491,6 +529,24 @@ void WifiProcess(void)
 		wifi_rescanning();
 	}
 
+	if(wifi_off_ok_flag)
+	{
+		wifi_off_ok_flag = false;
+		wifi_turn_off_success();
+	}
+	
+	if(wifi_off_retry_flag)
+	{
+		wifi_off_retry_flag = false;
+		wifi_turn_off();
+	}
+	
+	if(wifi_wait_timerout_flag)
+	{
+		wifi_wait_timerout_flag = false;
+		wifi_scanned_wait_timerout();
+	}
+	
 	if(wifi_test_update_flag)
 	{
 		wifi_test_update_flag = false;

@@ -15,6 +15,8 @@
 #define WIFI_DATA_RSSI_END		","
 #define WIFI_DATA_MAC_BEGIN		"\""
 #define WIFI_DATA_MAC_END		"\")"
+#define WIFI_SLEEP_CMD			"AT+GSLP=0\r\n"
+#define WIFI_SLEEP_REPLY		"AT+GSLP=0\r\n\r\nOK"
 
 typedef struct
 {

@@ -29,6 +29,7 @@
 #include "sos.h"
 #include "lsm6dso.h"
 #include "transfer_cache.h"
+#include "esp8266.h"
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -1096,6 +1097,38 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 
 	LOG_INF("[%s] location data:%s\n", __func__, buf);
 	MqttSendData(buf, strlen(buf));
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  location_get_wifi_data_reply
+ * DESCRIPTION
+ *  定位协议包获取WiFi数据之后的上传数据包处理
+ * PARAMETERS
+ *  wifi_data       [IN]       wifi数据结构体
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void location_get_wifi_data_reply(wifi_infor wifi_data)
+{
+	u8_t reply[256] = {0};
+	u32_t count=3,i;
+
+	if(wifi_data.count > 0)
+		count = wifi_data.count;
+	
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
+	{
+		strcat(reply, wifi_data.node[i].mac);
+		strcat(reply, "&");
+		strcat(reply, wifi_data.node[i].rssi);
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
+	}
+
+	NBSendLocationData(reply, strlen(reply));
 }
 
 /*****************************************************************************

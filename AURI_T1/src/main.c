@@ -701,6 +701,9 @@ int main(void)
 	{
 		TimeMsgProcess();
 		NBMsgProcess();
+	#ifdef CONFIG_WIFI	
+		WifiProcess();
+	#endif
 		//GPSMsgProcess();
 		PMUMsgProcess();
 		IMUMsgProcess();
@@ -709,7 +712,7 @@ int main(void)
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
-		BLEMsgProc();
+		UartMsgProc();
 		ScreenMsgProcess();
 		
 		k_cpu_idle();

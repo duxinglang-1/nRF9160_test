@@ -30,12 +30,15 @@ LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
 
 SOS_STATUS sos_state = SOS_STATUS_IDLE;
 
-bool sos_trigger_flag = false;
+static bool sos_trigger_flag = false;
+static bool sos_start_gps_flag = false;
 
 u8_t sos_trigger_time[16] = {0};
 
 static void SOSTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_timer, SOSTimerOutCallBack, NULL);
+static void SOSStartGPSCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(sos_gps_timer, SOSStartGPSCallBack, NULL);
 
 void SOSTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -73,25 +76,28 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 	}
 }
 
+void SOSStartGPSCallBack(struct k_timer *timer_id)
+{
+	sos_start_gps_flag = true;
+}
+
 void sos_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u8_t tmpbuf[128] = {0};
-	u32_t i;
+	u32_t count=3,i;
 
 	if(wifi_data.count > 0)
+		count = wifi_data.count;
+	
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
 	{
-		strcat(reply, "3,");
-		for(i=0;i<wifi_data.count;i++)
-		{
-			strcat(reply, wifi_data.node[i].mac);
-			strcat(reply, "&");
-			sprintf(tmpbuf, "%d", wifi_data.node[i].rssi);
-			strcat(reply, tmpbuf);
-			strcat(reply, "&");
-			if(i < (wifi_data.count-1))
-				strcat(reply, "|");
-		}
+		strcat(reply, wifi_data.node[i].mac);
+		strcat(reply, "&");
+		strcat(reply, wifi_data.node[i].rssi);
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
 	}
 
 	NBSendSosWifiData(reply, strlen(reply));
@@ -190,6 +196,8 @@ bool SOSIsRunning(void)
 
 void SOSStart(void)
 {
+	u8_t delay;
+	
 	LOG_INF("[%s]\n", __func__);
 
 	if(sos_state != SOS_STATUS_IDLE)
@@ -219,6 +227,13 @@ void SOSMsgProc(void)
 	{
 		SOSStart();
 		sos_trigger_flag = false;
+	}
+
+	if(sos_start_gps_flag)
+	{
+		sos_wait_gps = true;
+		APP_Ask_GPS_Data();
+		sos_start_gps_flag = false;
 	}
 }
 

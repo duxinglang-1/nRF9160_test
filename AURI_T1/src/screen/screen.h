@@ -14,6 +14,7 @@
 #include <zephyr/types.h>
 #include <sys/slist.h>
 #include "font.h"
+#include "lcd.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,12 +147,18 @@ typedef enum
 	SCREEN_ID_SOS,
 	SCREEN_ID_SLEEP,
 	SCREEN_ID_STEPS,
+	SCREEN_ID_DISTANCE,
+	SCREEN_ID_CALORIE,
 	SCREEN_ID_FALL,
 	SCREEN_ID_WRIST,
 	SCREEN_ID_SETTINGS,
 	SCREEN_ID_GPS_TEST,
 	SCREEN_ID_NB_TEST,
+	SCREEN_ID_WIFI_TEST,
+	SCREEN_ID_BLE_TEST,
 	SCREEN_ID_NOTIFY,
+	SCREEN_ID_POWEROFF,
+	SCREEN_ID_FOTA,
 	SCREEN_ID_MAX
 }SCREEN_ID_ENUM;
 

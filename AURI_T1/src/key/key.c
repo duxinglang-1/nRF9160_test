@@ -87,7 +87,7 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 			}
 			break;
 		case KEY_LONG_PRESS:
-			SOSStart();
+			SOSTrigger();
 			break;
 		}
 		break;

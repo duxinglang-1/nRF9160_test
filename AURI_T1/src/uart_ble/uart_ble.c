@@ -17,17 +17,19 @@
 #include "gps.h"
 #include "max20353.h"
 #include "screen.h"
-
+#include "inner_flash.h"
+#ifdef CONFIG_WIFI
+#include "esp8266.h"
+#endif
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define BLE_DEV	"UART_0"
-#define BLE_PORT "GPIO_0"
+//#define UART_DEBUG
 
-#define UART_CTRL_PIN 	1	//拉高切换到WIFI，拉低切换到BLE
-#define UART_EINT		27	//BLE中断信号
-#define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉高此脚
+#define BLE_DEV			"UART_0"
+#define BLE_PORT		"GPIO_0"
+#define BLE_INT_PIN		27
 
 #define BUF_MAXSIZE	1024
 
@@ -74,6 +76,7 @@ LOG_MODULE_REGISTER(uart0_test, CONFIG_LOG_DEFAULT_LEVEL);
 #define GET_BLE_STATUS_ID		0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
 #define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 
+bool blue_is_on = true;
 static bool uart_low_power_flag = false;
 static bool ble_trige_flag = false;
 
@@ -1086,7 +1089,7 @@ void get_ble_status_response(u8_t *buf, u32_t len)
 }
 
 /**********************************************************************************
-*Name: ble_receive_date_handle
+*Name: ble_receive_data_handle
 *Function:  处理蓝牙接收到的数据
 *Parameter: 
 *			Input:
@@ -1113,7 +1116,7 @@ void get_ble_status_response(u8_t *buf, u32_t len)
 *	8+n		CRC8		1		0x00-0xFF			数据校验,从包头开始到CRC前一位
 *	9+n		EndFrame	1		0x88				结束帧
 **********************************************************************************/
-void ble_receive_date_handle(u8_t *buf, u32_t len)
+void ble_receive_data_handle(u8_t *buf, u32_t len)
 {
 	u8_t CRC_data=0,data_status;
 	u16_t data_len,data_ID;
@@ -1235,33 +1238,81 @@ void ble_receive_date_handle(u8_t *buf, u32_t len)
 
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
-	LOG_INF("ble_send_date_handle\n");
+#ifdef UART_DEBUG
+	LOG_INF("[%s]\n", __func__);
+#endif
+
+
+#ifdef CONFIG_WIFI
+	switch_to_ble();
+#endif
 
 	uart_fifo_fill(uart_ble, buf, len);
 	uart_irq_tx_enable(uart_ble); 
 }
 
+#ifdef CONFIG_WIFI
+void wifi_send_data_handle(u8_t *buf, u32_t len)
+{
+#ifdef UART_DEBUG
+	LOG_INF("[%s] cmd:%s\n", __func__, buf);
+#endif
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
+
+	switch_to_wifi();
+
+	uart_fifo_fill(uart_ble, buf, len);
+	uart_irq_tx_enable(uart_ble);
+}
+#endif
+
 static void uart_receive_data(u8_t data, u32_t datalen)
 {
-	LOG_INF("uart_rece:%02X\n", data);
+	static u32_t data_len = 0;
 	
-	if(data == 0xAB)
-	{
-		memset(rx_buf, 0, sizeof(rx_buf));
-		rece_len = 0;
-	}
-	
-	rx_buf[rece_len++] = data;
-	if(rece_len == (256*rx_buf[1]+rx_buf[2]+3))	//receivive complete
-	{
-		ble_receive_date_handle(rx_buf, rece_len);
+    if(blue_is_on)
+    {
+        rx_buf[rece_len++] = data;
+		if(rece_len == 3)
+			data_len = (256*rx_buf[1]+rx_buf[2]+3);
+		
+        if(rece_len == data_len)	
+        {
+            ble_receive_data_handle(rx_buf, rece_len);
+            
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+			data_len = 0;
+        }
+		else if((rece_len >= data_len)&&(data == 0x88))
+        {
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+			data_len = 0;
+        }
+    }
+#ifdef CONFIG_WIFI	
+    else if(wifi_is_on)
+    {
+        rx_buf[rece_len++] = data;
 
-		memset(rx_buf, 0, sizeof(rx_buf));
-		rece_len = 0;
-	}
-	else				//continue receive
-	{
-	}
+        if((rx_buf[rece_len-2] == 0x4F) && (rx_buf[rece_len-1] == 0x4B))	//"OK"
+        {
+        	wifi_receive_data_handle(rx_buf, rece_len);
+			
+            memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+        }
+		else if(rece_len == BUF_MAXSIZE)
+		{
+			memset(rx_buf, 0, sizeof(rx_buf));
+            rece_len = 0;
+		}
+   }
+#endif	
 }
 
 void uart_send_data(void)
@@ -1343,14 +1394,65 @@ static void uart_cb(struct device *x)
 	}
 }
 
-void BLEInterruptHandle(void)
+void uart_sleep_out(void)
 {
-	ble_trige_flag = true;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(uart_is_waked)
+		return;
+	
+	device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	uart_irq_rx_enable(uart_ble);
+	uart_irq_tx_enable(uart_ble);
+
+	uart_is_waked = true;
+	k_timer_start(&uart_sleep_in_timer, K_MSEC(30*1000), NULL);
+
+#ifdef UART_DEBUG
+	LOG_INF("uart set active success!\n");
+#endif
+#endif
 }
+
+void uart_sleep_in(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(!uart_is_waked)
+		return;
+	
+	uart_irq_rx_disable(uart_ble);
+	uart_irq_tx_disable(uart_ble);
+	device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
+
+	uart_is_waked = false;
+#ifdef UART_DEBUG
+	LOG_INF("uart set low power success!\n");
+#endif
+#endif
+}
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
+{
+#ifdef UART_DEBUG
+	LOG_INF("ble_interrupt_event\n");
+#endif
+
+	uart_wake_flag = true;
+}
+
+void UartSleepInCallBack(struct k_timer *timer_id)
+{
+#ifdef UART_DEBUG
+	LOG_INF("UartSleepInCallBack\n");
+#endif
+
+	uart_sleep_flag = true;
+}
+#endif
 
 void ble_init(void)
 {
-	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
+	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
 
 	LOG_INF("ble_init\n");
 	
@@ -1361,44 +1463,78 @@ void ble_init(void)
 		return;
 	}
 	
-  	//端口初始化
-  	gpio_ble = device_get_binding(BLE_PORT);
-	if(!gpio_ble)
-	{
-		LOG_INF("Cannot bind gpio device\n");
-		return;
-	}
-	//uart interrupt
-	gpio_pin_configure(gpio_ble, UART_EINT, flag);
-	gpio_pin_disable_callback(gpio_ble, UART_EINT);
-	gpio_init_callback(&gpio_cb, BLEInterruptHandle, BIT(UART_EINT));
-	gpio_add_callback(gpio_ble, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ble, UART_EINT);
-
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
 
-	//uart_suspend();
+#ifdef CONFIG_WIFI
+	wifi_disable();
+	switch_to_ble();
+#endif
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	gpio_ble = device_get_binding(BLE_PORT);
+	if(!gpio_ble)
+	{
+	#ifdef UART_DEBUG
+		LOG_INF("Could not get %s port\n", BLE_PORT);
+	#endif
+		return;
+	}	
+	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
+	gpio_pin_disable_callback(gpio_ble, BLE_INT_PIN);
+	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
+	gpio_add_callback(gpio_ble, &gpio_cb);
+	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
+
+	k_timer_start(&uart_sleep_in_timer, K_MSEC(3*60*1000), NULL);
+#endif
+}
+
+void UartMsgProc(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if(uart_wake_flag)
+	{
+	#ifdef UART_DEBUG
+		LOG_INF("uart_wake!\n");
+	#endif	
+		uart_wake_flag = false;
+		uart_sleep_out();
+	}
+
+	if(uart_sleep_flag)
+	{
+	#ifdef UART_DEBUG
+		LOG_INF("uart_sleep!\n");
+	#endif
+		uart_sleep_flag = false;
+		
+		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting()
+			#ifdef CONFIG_FOTA_DOWNLOAD
+			 && !fota_is_running()
+			#endif
+			)
+		{
+			uart_sleep_in();
+		}
+		else
+		{
+			k_timer_start(&uart_sleep_in_timer, K_MSEC(30*1000), NULL);
+		}
+	}
+#endif	
 }
 
 void test_uart_ble(void)
 {
+#ifdef UART_DEBUG
 	LOG_INF("test_uart_ble\n");
-	
+#endif	
 	//ble_init();
 
 	while(1)
 	{
-		ble_send_date_handle("Hello World!", strlen("Hello World!"));
+		ble_send_date_handle("Hello World!\n", strlen("Hello World!\n"));
 		k_sleep(K_MSEC(1000));
-	}
-}
-
-void BLEMsgProc(void)
-{
-	if(ble_trige_flag)
-	{
-		//uart_resume();
-		ble_trige_flag = false;
 	}
 }

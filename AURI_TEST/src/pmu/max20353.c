@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
-//#define PMU_DEBUG
+#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
@@ -342,13 +342,17 @@ void PmuInterruptHandle(void)
 //An alert can indicate many different conditions. The
 //STATUS register identifies which alert condition was met.
 //Clear the corresponding bit after servicing the alert
-void pmu_alert_proc(void)
+bool pmu_alert_proc(void)
 {
 	u8_t buff[128] = {0};
+	int ret;
 	u8_t MSB,LSB;
 
 #ifdef BATTERY_SOC_GAUGE
-	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+	ret = MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+	if(ret == MAX20353_ERROR)
+		return false;
+	
 #ifdef PMU_DEBUG
 	LOG_INF("[%s] status:%02X\n", __func__, MSB);
 #endif
@@ -458,6 +462,8 @@ void pmu_alert_proc(void)
 
 	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+
+	return true;
 #endif	
 }
 
@@ -777,9 +783,19 @@ void PMUMsgProcess(void)
 		LOG_INF("[%s] alert", __func__);
 	#endif
 		if(pmu_check_ok)
-			pmu_alert_proc();
-		
-		pmu_alert_flag = false;
+		{
+			bool ret;
+			
+			ret = pmu_alert_proc();
+			if(ret)
+			{
+				pmu_alert_flag = false;
+			}
+		}
+		else
+		{
+			pmu_alert_flag = false;
+		}
 	}
 
 	if(lowbat_pwr_off_flag)

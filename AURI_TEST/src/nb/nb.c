@@ -203,7 +203,7 @@ static int subscribe(void)
 	const struct mqtt_subscription_list subscription_list = {
 		.list = &subscribe_topic,
 		.list_count = 1,
-		.message_id = 1234
+		.message_id = 0000
 	};
 
 	LOG_INF("Subscribing to:%s, len:%d\n", subscribe_topic.topic.utf8,

@@ -29,6 +29,9 @@ extern "C" {
 
 #define TIMER_FOR_LONG_PRESSED 3*1000
 
+typedef void (*FuncPtr) (void);
+typedef FuncPtr (* get_func_ptr)(u8_t key_code, u8_t key_type);
+
 typedef enum
 {
 	ACTIVE_LOW,
@@ -49,6 +52,12 @@ typedef enum
 	KEY_EVENT_MAX
 }KEY_EVENT_TYPE;
 
+typedef enum 
+{
+	STATE_WAITING,
+	STATE_SCANNING,
+}KEY_STATUS;
+
 #define KEY_SOFT_LEFT	KEY_SOS
 #define KEY_SOFT_RIGHT	KEY_SOS
 
@@ -59,11 +68,11 @@ typedef struct
 	const u8_t active_flag;
 }key_cfg;
 
-typedef enum 
+typedef struct
 {
-	STATE_WAITING,
-	STATE_SCANNING,
-}KEY_STATUS;
+	bool flag[KEY_MAX][KEY_EVENT_MAX];
+	FuncPtr func[KEY_MAX][KEY_EVENT_MAX];
+}key_event_msg;
 
 /**
  * @typedef button_handler_t
@@ -110,18 +119,15 @@ u32_t dk_get_buttons(void);
  *                      Otherwise, a (negative) error code is returned.
  */
 
-
-typedef void (*FuncPtr) (void);
-typedef FuncPtr (* get_func_ptr)(u8_t key_code, u8_t key_type);
-
 extern void ClearAllKeyHandler(void);
 extern void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype);
 extern void SetLeftKeyUpHandler(FuncPtr funcPtr);
-extern void SetLeftKeyUpHandler(FuncPtr funcPtr);
+extern void SetLeftKeyDownHandler(FuncPtr funcPtr);
 extern void SetLeftKeyLongPressHandler(FuncPtr funcPtr);
 extern void SetRightKeyUpHandler(FuncPtr funcPtr);
 extern void SetRightKeyDownHandler(FuncPtr funcPtr);
 extern void SetRightKeyLongPressHandler(FuncPtr funcPtr);
+extern void KeyMsgProcess(void);
 
 #ifdef __cplusplus
 }

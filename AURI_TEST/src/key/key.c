@@ -76,7 +76,7 @@ extern bool uart_wake_flag;
 extern bool uart_sleep_flag;
 #endif
 
-static FuncPtr currKeyFuncPtrs[KEY_MAX][KEY_EVENT_MAX] = {0};
+static key_event_msg key_msg = {0};
 
 void ClearAllKeyHandler(void)
 {
@@ -86,44 +86,45 @@ void ClearAllKeyHandler(void)
 	{
 		for(j=0;j<KEY_EVENT_MAX;j++)
 		{
-			currKeyFuncPtrs[i][j] = NULL;
+			key_msg.flag[i][j] = false;
+			key_msg.func[i][j] = NULL;
 		}
 	}
 }
 
 void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype)
 {
-	currKeyFuncPtrs[keycode][keytype] = funcPtr;
+	key_msg.func[keycode][keytype] = funcPtr;
 }
 
 void SetLeftKeyUpHandler(FuncPtr funcPtr)
 {
-	currKeyFuncPtrs[KEY_SOFT_LEFT][KEY_EVENT_UP] = funcPtr;
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_UP] = funcPtr;
 }
 
 void SetLeftKeyDownHandler(FuncPtr funcPtr)
 {
-	currKeyFuncPtrs[KEY_SOFT_LEFT][KEY_EVENT_DOWN] = funcPtr;
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_DOWN] = funcPtr;
 }
 
 void SetLeftKeyLongPressHandler(FuncPtr funcPtr)
 {
-	currKeyFuncPtrs[KEY_SOFT_LEFT][KEY_EVENT_LONG_PRESS] = funcPtr;
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_LONG_PRESS] = funcPtr;
 }
 
 void SetRightKeyUpHandler(FuncPtr funcPtr)
 {
-	currKeyFuncPtrs[KEY_SOFT_RIGHT][KEY_EVENT_UP] = funcPtr;
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_UP] = funcPtr;
 }
 
 void SetRightKeyDownHandler(FuncPtr funcPtr)
 {
-	currKeyFuncPtrs[KEY_SOFT_RIGHT][KEY_EVENT_DOWN] = funcPtr;
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_DOWN] = funcPtr;
 }
 
 void SetRightKeyLongPressHandler(FuncPtr funcPtr)
 {
-	currKeyFuncPtrs[KEY_SOFT_RIGHT][KEY_EVENT_LONG_PRESS] = funcPtr;
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_LONG_PRESS] = funcPtr;
 }
 
 FuncPtr GetKeyHandler(u8_t keycode, u8_t keytype)
@@ -138,7 +139,7 @@ FuncPtr GetKeyHandler(u8_t keycode, u8_t keytype)
     {
         if (keytype < KEY_EVENT_MAX)
         {
-            ptr = (currKeyFuncPtrs[keycode][keytype]);
+            ptr = (key_msg.func[keycode][keytype]);
         }
         else
         {
@@ -166,7 +167,7 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 	curr_func_ptr = GetKeyHandler(i, keytype);
 	if(curr_func_ptr)
 	{  
-		(*curr_func_ptr)();    
+		key_msg.flag[i][keytype] = true;
 	}
 }
 
@@ -607,6 +608,24 @@ void wear_init(void)
 	WearInterruptHandle();
 }
 #endif
+
+void KeyMsgProcess(void)
+{
+	u8_t i,j;
+
+	for(i=0;i<KEY_MAX;i++)
+	{
+		for(j=0;j<KEY_EVENT_MAX;j++)
+		{
+			if(key_msg.flag[i][j] == true && key_msg.func[i][j] != NULL)
+			{
+				key_msg.func[i][j]();
+				key_msg.flag[i][j] = false;
+				break;
+			}
+		}
+	}
+}
 
 void key_init(void)
 {

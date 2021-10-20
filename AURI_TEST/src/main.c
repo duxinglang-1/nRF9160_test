@@ -55,7 +55,7 @@ static struct k_work_q nb_work_q;
 
 #ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              1024);
+              4096);
 static struct k_work_q imu_work_q;
 #endif
 
@@ -749,6 +749,7 @@ int main(void)
 
 	while(1)
 	{
+		KeyMsgProcess();
 		TimeMsgProcess();
 		NBMsgProcess();
 	#ifdef CONFIG_WIFI	

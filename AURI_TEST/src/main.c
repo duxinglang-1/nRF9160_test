@@ -36,6 +36,9 @@
 #ifdef CONFIG_AUDIO_SUPPORT
 #include "audio.h"
 #endif
+#ifdef CONFIG_WATCHDOG
+#include "watchdog.h"
+#endif
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
@@ -688,8 +691,6 @@ void system_init(void)
 #endif
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
-
-	//EnterIdleScreen();
 }
 
 void work_init(void)
@@ -705,6 +706,11 @@ void work_init(void)
 	k_work_q_start(&gps_work_q, gps_stack_area,
 					K_THREAD_STACK_SIZEOF(gps_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
+	
+	if(IS_ENABLED(CONFIG_WATCHDOG))
+	{
+		watchdog_init_and_start(&k_sys_work_q);
+	}
 }
 
 bool system_is_completed(void)

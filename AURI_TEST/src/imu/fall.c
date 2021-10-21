@@ -50,7 +50,9 @@ K_TIMER_DEFINE(fall_gps_timer, FallStartGPSCallBack, NULL);
 static void FallEnd(void)
 {
 	AnimaStopShow();
+#ifdef CONFIG_AUDIO_SUPPORT	
 	FallStopAlarm();
+#endif
 	k_timer_stop(&fall_timer);
 
 	fall_state = FALL_STATUS_IDLE;
@@ -225,12 +227,14 @@ void FallAlarmStart(void)
 	fall_state = FALL_STATUS_NOTIFY;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	EnterFallScreen();
-	
+
+#ifdef CONFIG_AUDIO_SUPPORT	
 	if(global_settings.language == LANGUAGE_CHN)
 		FallPlayAlarmCn();
 	else
 		FallPlayAlarmEn();
-	
+#endif
+
 	GetSystemTimeSecString(fall_trigger_time);
 
 	SetLeftKeyUpHandler(FallAlarmCancel);

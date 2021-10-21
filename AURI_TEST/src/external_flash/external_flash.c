@@ -15,7 +15,9 @@
 #include <string.h>
 #include "img.h"
 #include "font.h"
+#ifdef CONFIG_AUDIO_SUPPORT
 #include "audio_wav.h"
+#endif
 #include "external_flash.h"
 
 #include <logging/log_ctrl.h>

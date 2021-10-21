@@ -218,8 +218,10 @@ void SOSStart(void)
 		return;
 	}
 
+#ifdef CONFIG_AUDIO_SUPPORT
 	SOSPlayAlarm();
-	
+#endif
+
 	GetSystemTimeSecString(sos_trigger_time);
 
 #ifdef CONFIG_WIFI

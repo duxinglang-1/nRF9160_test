@@ -133,14 +133,14 @@ void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_BoostConfig();
+	ret = MAX20353_BuckBoostConfig();
 }
 
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_BoostDisable();
+	ret = MAX20353_BuckBoostDisable();
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)

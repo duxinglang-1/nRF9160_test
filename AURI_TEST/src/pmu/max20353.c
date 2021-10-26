@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define SHOW_LOG_IN_SCREEN
-#define PMU_DEBUG
+//#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];

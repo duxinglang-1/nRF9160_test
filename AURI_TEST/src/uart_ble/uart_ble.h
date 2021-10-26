@@ -31,6 +31,12 @@ typedef enum
 	BLE_MODE_MAX
 }ENUM_BLE_MODE;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+extern bool uart_sleep_flag;
+extern bool uart_wake_flag;
+extern bool uart_is_waked;
+#endif
+
 extern bool blue_is_on;
 extern bool g_ble_connected;
 extern ENUM_BLE_STATUS g_ble_status;

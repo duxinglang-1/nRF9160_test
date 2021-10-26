@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(ble, CONFIG_LOG_DEFAULT_LEVEL);
 #define BLE_DEV			"UART_0"
 #define BLE_PORT		"GPIO_0"
 #define BLE_INT_PIN		27
+#define BLE_WAKE_PIN	25
 
 #define BUF_MAXSIZE	1024
 
@@ -92,8 +93,8 @@ static u32_t rece_len=0;
 static u8_t rx_buf[BUF_MAXSIZE]={0};
 static u8_t tx_buf[BUF_MAXSIZE]={0};
 
-static struct device *uart_ble;
-static struct device *gpio_ble;
+static struct device *uart_ble = NULL;
+static struct device *gpio_ble = NULL;
 static struct gpio_callback gpio_cb;
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
@@ -1487,11 +1488,34 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 	}
 }
 
+void ble_wakeup_nrf52810(void)
+{
+	if(!gpio_ble)
+	{
+		gpio_ble = device_get_binding(BLE_PORT);
+		if(!gpio_ble)
+		{
+		#ifdef UART_DEBUG
+			LOG_INF("Cannot bind gpio device\n");
+		#endif
+			return;
+		}
+
+		gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_DIR_OUT);
+	}
+
+	gpio_pin_write(gpio_ble, BLE_WAKE_PIN, 1);
+	k_sleep(K_MSEC(10));
+	gpio_pin_write(gpio_ble, BLE_WAKE_PIN, 0);
+}
+
 void ble_send_date_handle(u8_t *buf, u32_t len)
 {
 #ifdef UART_DEBUG
 	LOG_INF("[%s]\n", __func__);
 #endif
+
+	ble_wakeup_nrf52810();
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uart_sleep_out();
@@ -1637,7 +1661,7 @@ void uart_sleep_out(void)
 	uart_irq_tx_enable(uart_ble);
 
 	uart_is_waked = true;
-	k_timer_start(&uart_sleep_in_timer, K_MSEC(30*1000), NULL);
+	k_timer_start(&uart_sleep_in_timer, K_MSEC(60*1000), NULL);
 
 #ifdef UART_DEBUG
 	LOG_INF("uart set active success!\n");
@@ -1707,7 +1731,6 @@ void ble_init(void)
 	switch_to_ble();
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	gpio_ble = device_get_binding(BLE_PORT);
 	if(!gpio_ble)
 	{
@@ -1716,13 +1739,17 @@ void ble_init(void)
 	#endif
 		return;
 	}	
+	//gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_DIR_OUT);
+	//gpio_pin_write(gpio_ble, BLE_WAKE_PIN, 0);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
 	gpio_pin_disable_callback(gpio_ble, BLE_INT_PIN);
 	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
 	gpio_add_callback(gpio_ble, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
 
-	k_timer_start(&uart_sleep_in_timer, K_MSEC(3*60*1000), NULL);
+	k_timer_start(&uart_sleep_in_timer, K_MSEC(5*60*1000), NULL);
 #endif
 }
 

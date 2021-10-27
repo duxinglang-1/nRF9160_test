@@ -151,7 +151,7 @@ extern "C" {
 #define DIS_NUM_2_X		19
 #define DIS_NUM_2_Y		32
 #define DIS_DOT_X		34
-#define DIS_DOT_Y		31
+#define DIS_DOT_Y		32
 #define DIS_NUM_3_X		39
 #define DIS_NUM_3_Y		32
 #define DIS_NUM_4_X		54

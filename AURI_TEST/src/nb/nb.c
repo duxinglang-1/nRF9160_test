@@ -894,8 +894,6 @@ void GetModemDateTime(void)
 	u8_t tz_dir[3] = {0};
 	u8_t tz_count,daylight;
 
-	return;
-	
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
 		LOGD("Get CCLK fail!");

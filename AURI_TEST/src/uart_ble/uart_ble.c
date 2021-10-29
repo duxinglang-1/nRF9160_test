@@ -1782,7 +1782,7 @@ void UartMsgProc(void)
 		}
 		else
 		{
-			k_timer_start(&uart_sleep_in_timer, K_MSEC(30*1000), NULL);
+			k_timer_start(&uart_sleep_in_timer, K_MSEC(2*60*1000), NULL);
 		}
 	}
 #endif	

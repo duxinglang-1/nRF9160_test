@@ -235,6 +235,26 @@ void switch_to_wifi(void)
 }
 
 /*============================================================================
+* Function Name  : wifi_is_working
+* Description    : wifi功能正在运行
+* Input          : None
+* Output         : None
+* Return         : None
+* CALL           : 可被外部调用
+==============================================================================*/
+bool wifi_is_working(void)
+{
+	if(wifi_is_on)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*============================================================================
 * Function Name  : wifi_enable
 * Description    : Esp8285_EN使能，低电平有效
 * Input          : None

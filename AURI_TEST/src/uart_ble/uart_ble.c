@@ -30,7 +30,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ble, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define UART_DEBUG
+#define UART_DEBUG
 
 #define BLE_DEV			"UART_0"
 #define BLE_PORT		"GPIO_0"
@@ -1739,8 +1739,8 @@ void ble_init(void)
 	#endif
 		return;
 	}	
-	//gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_DIR_OUT);
-	//gpio_pin_write(gpio_ble, BLE_WAKE_PIN, 0);
+	gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ble, BLE_WAKE_PIN, 0);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
@@ -1775,6 +1775,9 @@ void UartMsgProc(void)
 		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting()
 			#ifdef CONFIG_FOTA_DOWNLOAD
 			 && !fota_is_running()
+			#endif
+			#ifdef CONFIG_WIFI
+			 && !wifi_is_working()
 			#endif
 			)
 		{

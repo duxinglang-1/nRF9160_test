@@ -37,6 +37,7 @@ extern bool location_wait_wifi;
 
 extern u8_t wifi_test_info[256];
 
+extern bool wifi_is_working(void);
 extern void ble_turn_on(void);
 extern void wifi_receive_data_handle(u8_t *buf, u32_t len);
 #endif/*__ESP8266_H__*/

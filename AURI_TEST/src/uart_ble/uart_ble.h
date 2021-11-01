@@ -31,6 +31,20 @@ typedef enum
 	BLE_MODE_MAX
 }ENUM_BLE_MODE;
 
+typedef enum
+{
+	BLE_WORK_NORMAL,
+	BLE_WORK_DFU,
+	BLE_WORK_MAX
+}ENUM_BLE_WORK_MODE;
+
+typedef enum
+{
+	DATA_TYPE_BLE,
+	DATA_TYPE_WIFI,
+	DATA_TYPE_MAX
+}ENUM_DATA_TYPE;
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern bool uart_sleep_flag;
 extern bool uart_wake_flag;

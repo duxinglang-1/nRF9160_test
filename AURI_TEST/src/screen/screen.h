@@ -43,7 +43,7 @@ extern "C" {
 //AM/PM
 #define IDLE_AM_PM_X	55
 #define IDLE_AM_PM_Y	0
-#define IDLE_AM_PM_W	14
+#define IDLE_AM_PM_W	17
 #define IDLE_AM_PM_H	16
 
 //ble

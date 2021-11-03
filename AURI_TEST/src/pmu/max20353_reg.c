@@ -14,10 +14,7 @@
 #include "max20353.h"
 #include "NTC_table.h"
 #include "lcd.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(max20353_reg, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #ifdef BATTERY_SOC_GAUGE
 #define VERIFY_AND_FIX 1
@@ -993,7 +990,7 @@ u8_t MAX20353_ReadTHM(void)
 
 	appcmdoutvalue_ = 0x53;
 	ret |= MAX20353_AppRead(5);
-	//LOG_INF("%02X, %02X, %02X, %02X, %02X\n", i2cbuffer_[0], i2cbuffer_[1], i2cbuffer_[2], i2cbuffer_[3], i2cbuffer_[4]);
+	//LOGD("%02X, %02X, %02X, %02X, %02X", i2cbuffer_[0], i2cbuffer_[1], i2cbuffer_[2], i2cbuffer_[3], i2cbuffer_[4]);
 
 	return i2cbuffer_[4];
 }
@@ -1060,7 +1057,7 @@ void MAX20353_UpdateTemper(void)
 	resistance = (float)10/(255.00/thm-1);
 
 	sprintf(tmpbuf, "resistance:%.4f", resistance);
-	//LOG_INF("%s\n", tmpbuf);
+	//LOGD("%s", tmpbuf);
 
 	begin = 0;
 	end = TEMPER_NUM_MAX-1;
@@ -1083,7 +1080,7 @@ void MAX20353_UpdateTemper(void)
 
 	if(begin <= end)	//find success!
 	{
-		//LOG_INF("find success!\n");
+		//LOGD("find success!");
 		
 		temper = ntc_table[tmp].temperature;
 	}
@@ -1091,14 +1088,14 @@ void MAX20353_UpdateTemper(void)
 	{
 		float com1,com2;
 
-		//LOG_INF("select closeet!\n");
+		//LOGD("select closeet!");
 		
 		if(begin == tmp+1)
 		{
 			com1 = fabs(ntc_table[tmp].impedance-resistance);
 			com2 = fabs(ntc_table[tmp+1].impedance-resistance);
 			sprintf(tmpbuf, "001 com1:%.4f, com2:%04f", com1, com2);
-			//LOG_INF("%s\n", tmpbuf);
+			//LOGD("%s", tmpbuf);
 			if(com1 > com2)
 			{
 				temper = ntc_table[tmp+1].temperature;
@@ -1113,7 +1110,7 @@ void MAX20353_UpdateTemper(void)
 			com1 = fabs(ntc_table[tmp].impedance-resistance);
 			com2 = fabs(ntc_table[tmp-1].impedance-resistance);
 			sprintf(tmpbuf, "002 com1:%.4f, com2:%04f", com1, com2);
-			//LOG_INF("%s\n", tmpbuf);
+			//LOGD("%s", tmpbuf);
 			if(com1 > com2)
 			{
 				temper = ntc_table[tmp-1].temperature;
@@ -1125,7 +1122,7 @@ void MAX20353_UpdateTemper(void)
 		}
 	}
 
-	//LOG_INF("temper:%d\n", temper);
+	//LOGD("temper:%d", temper);
 
 	if(temper != pre_temper)
 	{

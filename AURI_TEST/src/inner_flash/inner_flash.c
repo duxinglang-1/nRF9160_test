@@ -13,10 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "inner_flash.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(inner_flash, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 //#define INNER_FLASH_DEBUG
 
@@ -56,7 +53,7 @@ static int nvs_setup(void)
 	if(err)
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("Unable to get page info");	
+		LOGD("Unable to get page info");	
 	#endif
 	}	
 
@@ -66,7 +63,7 @@ static int nvs_setup(void)
 	if(err)
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("Flash Init failed\n");
+		LOGD("Flash Init failed");
 	#endif
 	}
 
@@ -84,7 +81,7 @@ void ReadSettingsFromInnerFlash(global_settings_t *settings)
 		if(err)
 		{
 		#ifdef INNER_FLASH_DEBUG
-			LOG_INF("Flash Init failed, return!\n");
+			LOGD("Flash Init failed, return!");
 		#endif
 			return;
 		}
@@ -94,7 +91,7 @@ void ReadSettingsFromInnerFlash(global_settings_t *settings)
 	if(err < 0)
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("get settins err:%d\n", err);
+		LOGD("get settins err:%d", err);
 	#endif
 	}
 }
@@ -114,7 +111,7 @@ void ReadDateTimeFromInnerFlash(sys_date_timer_t *time)
 		if(err)
 		{
 		#ifdef INNER_FLASH_DEBUG
-			LOG_INF("Flash Init failed, return!\n");
+			LOGD("Flash Init failed, return!");
 		#endif
 			return;
 		}
@@ -124,7 +121,7 @@ void ReadDateTimeFromInnerFlash(sys_date_timer_t *time)
 	if(err < 0)
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("get datetime err:%d\n", err);
+		LOGD("get datetime err:%d", err);
 	#endif
 	}
 }
@@ -144,32 +141,32 @@ void test_nvs(void)
 	if(err)
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("nvs_setup failed\n");
+		LOGD("nvs_setup failed");
 	#endif
 	}
 
 	freespace = nvs_calc_free_space(&fs);
 
 #ifdef INNER_FLASH_DEBUG	
-	LOG_INF("Remaining free space in nvs sector is %d Bytes\n", freespace);
+	LOGD("Remaining free space in nvs sector is %d Bytes", freespace);
 #endif
 
 	for(int i=0; i<ARRAY_SIZE(results); i++)
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("Writing %s to NVS\n", results[i]);
+		LOGD("Writing %s to NVS", results[i]);
 	#endif
 	
 		bytes_written = nvs_write(&fs, i, results[i], strlen(results[i]));
 
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("Bytes written to nvs: %d at ID %d\n", bytes_written, i);
+		LOGD("Bytes written to nvs: %d at ID %d", bytes_written, i);
 	#endif
 
 		freespace = nvs_calc_free_space(&fs);
 
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("Remaining free space in nvs sector is %d Bytes\n", freespace);
+		LOGD("Remaining free space in nvs sector is %d Bytes", freespace);
 	#endif
 	}
 
@@ -179,8 +176,8 @@ void test_nvs(void)
 	{
 		bytes_read = nvs_read(&fs, i, nvs_rx_buff, sizeof(nvs_rx_buff));
 	#ifdef INNER_FLASH_DEBUG
-		LOG_INF("Bytes read from nvs: %d at ID %d\n", bytes_read, i);
-		LOG_INF("Data read from nvs: %s at ID %d\n", nvs_rx_buff, i);
+		LOGD("Bytes read from nvs: %d at ID %d", bytes_read, i);
+		LOGD("Data read from nvs: %s at ID %d", nvs_rx_buff, i);
 	#endif
 	}
 }

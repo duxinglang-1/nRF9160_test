@@ -15,10 +15,7 @@
 #include "settings.h"
 #include "screen.h"
 #include "animation.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(animation, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 //#define ANIMA_DEBUG		//打开LOG
 
@@ -131,7 +128,7 @@ void add_anima_info_link(u32_t *anima_img, u8_t anima_count)
 void AnimaStopShow(void)
 {
 #ifdef ANIMA_DEBUG
-	LOG_INF("[%s] 001\n", __func__);
+	LOGD("001");
 #endif
 	k_timer_stop(&anima_redraw_timer);
 	delete_anima_info_link();
@@ -150,7 +147,7 @@ void AnimaStopShow(void)
 void AnimaPaushShow(void)
 {
 #ifdef ANIMA_DEBUG
-	LOG_INF("[%s] 001\n", __func__);
+	LOGD("001");
 #endif
 	k_timer_stop(&anima_redraw_timer);
 }
@@ -170,14 +167,14 @@ void AnimaResumeShow(void)
 	if(anima_show.count > 1)
 	{
 	#ifdef ANIMA_DEBUG
-		LOG_INF("[%s] 001\n", __func__);
+		LOGD("001");
 	#endif
 		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 	}
 	else
 	{
 	#ifdef ANIMA_DEBUG
-		LOG_INF("[%s] 002\n", __func__);
+		LOGD("002");
 	#endif
 		k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_ONE_DELAY), NULL);
 	}
@@ -197,7 +194,7 @@ void AnimaResumeShow(void)
 bool AnimaIsShowing(void)
 {
 #ifdef ANIMA_DEBUG
-	LOG_INF("[%s] 001\n", __func__);
+	LOGD("001");
 #endif
 	if(anima_head)
 		return true;
@@ -218,7 +215,7 @@ bool AnimaIsShowing(void)
 void AnimaStop(void)
 {
 #ifdef ANIMA_DEBUG
-	LOG_INF("[%s] 001\n", __func__);
+	LOGD("001");
 #endif
 	anima_stop_flag = true;
 }
@@ -259,14 +256,14 @@ void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, u32_t inter
 	if(anima_show.count > 1)
 	{
 	#ifdef ANIMA_DEBUG
-		LOG_INF("[%s] 001\n", __func__);
+		LOGD("001");
 	#endif
 		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 	}
 	else
 	{
 	#ifdef ANIMA_DEBUG
-		LOG_INF("[%s] 002\n", __func__);
+		LOGD("002");
 	#endif
 		k_timer_start(&anima_redraw_timer, K_MSEC(ANIMA_SHOW_ONE_DELAY), NULL);
 	}
@@ -290,7 +287,7 @@ static void AnimaShowNextImg(void)
 		if(anima_show.loop)	//循环播放
 		{
 		#ifdef ANIMA_DEBUG
-			LOG_INF("[%s] 001\n", __func__);
+			LOGD("001");
 		#endif
 			anima_head = anima_show.cache;
 			LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
@@ -299,7 +296,7 @@ static void AnimaShowNextImg(void)
 		else				//播放结束
 		{
 		#ifdef ANIMA_DEBUG
-			LOG_INF("[%s] 002\n", __func__);
+			LOGD("002");
 		#endif
 			if(anima_show.callback != NULL)
 				anima_show.callback();
@@ -309,7 +306,7 @@ static void AnimaShowNextImg(void)
 	else
 	{
 	#ifdef ANIMA_DEBUG
-		LOG_INF("[%s] 003\n", __func__);
+		LOGD("003");
 	#endif
 		LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
 		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);

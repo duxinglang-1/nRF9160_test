@@ -7,9 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/watchdog.h>
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(watchdog, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 //#define WATCHDOG_DEBUG
 
@@ -35,12 +33,12 @@ static void secondary_feed_worker(struct k_work *work_desc)
 {
 	int err = wdt_feed(wdt_data.wdt_drv, wdt_data.wdt_channel_id);
 #ifdef WATCHDOG_DEBUG
-	LOG_INF("Feeding watchdog");
+	LOGD("Feeding watchdog");
 #endif
 	if(err)
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Cannot feed watchdog. Error code: %d", err);
+		LOGD("Cannot feed watchdog. Error code: %d", err);
 	#endif
 	}
 	else
@@ -68,13 +66,13 @@ static int watchdog_timeout_install(struct wdt_data_storage *data)
 	if(data->wdt_channel_id < 0)
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Cannot install watchdog timer! Error code: %d", data->wdt_channel_id);
+		LOGD("Cannot install watchdog timer! Error code: %d", data->wdt_channel_id);
 	#endif
 		return -EFAULT;
 	}
 
 #ifdef WATCHDOG_DEBUG
-	LOG_INF("Watchdog timeout installed. Timeout: %d", CONFIG_WATCHDOG_TIMEOUT_MSEC);
+	LOGD("Watchdog timeout installed. Timeout: %d", CONFIG_WATCHDOG_TIMEOUT_MSEC);
 #endif
 	return 0;
 }
@@ -87,13 +85,13 @@ static int watchdog_start(struct wdt_data_storage *data)
 	if(err)
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Cannot start watchdog! Error code: %d", err);
+		LOGD("Cannot start watchdog! Error code: %d", err);
 	#endif
 	}
 	else
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Watchdog started");
+		LOGD("Watchdog started");
 	#endif
 	}
 	
@@ -111,7 +109,7 @@ static int watchdog_feed_enable(struct wdt_data_storage *data)
 	if(err)
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Cannot feed watchdog. Error code: %d", err);
+		LOGD("Cannot feed watchdog. Error code: %d", err);
 	#endif
 		return err;
 	}
@@ -120,13 +118,13 @@ static int watchdog_feed_enable(struct wdt_data_storage *data)
 	if(err)
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Cannot start watchdog feed worker!" " Error code: %d", err);
+		LOGD("Cannot start watchdog feed worker!" " Error code: %d", err);
 	#endif
 	}
 	else
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Watchdog feed enabled. Timeout: %d", WDT_FEED_WORKER_DELAY_MS);
+		LOGD("Watchdog feed enabled. Timeout: %d", WDT_FEED_WORKER_DELAY_MS);
 	#endif
 	}
 	
@@ -143,7 +141,7 @@ static int watchdog_enable(struct wdt_data_storage *data)
 	if(data->wdt_drv == NULL)
 	{
 	#ifdef WATCHDOG_DEBUG
-		LOG_INF("Cannot bind watchdog driver");
+		LOGD("Cannot bind watchdog driver");
 	#endif
 		return err;
 	}

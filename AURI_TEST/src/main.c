@@ -39,10 +39,7 @@
 #ifdef CONFIG_WATCHDOG
 #include "watchdog.h"
 #endif
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -384,7 +381,7 @@ void test_show_image(void)
 	u8_t i=LCD_WIDTH;
 	u16_t x,y,w=0,h=0;
 
-	LOG_INF("test_show_image\n");
+	LOGD("test_show_image");
 	
 	LCD_Clear(BLACK);
 	LCD_ShowImg(0, 0, logo_5);
@@ -475,7 +472,7 @@ void test_show_color(void)
 {
 	u8_t i=0;
 
-	LOG_INF("test_show_image\n");
+	LOGD("test_show_image\n");
 	
 	while(1)
 	{

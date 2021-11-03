@@ -17,12 +17,9 @@
 #include "uart_ble.h"
 #include "screen.h"
 #include "lcd.h"
+#include "logger.h"
 
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(wifi, CONFIG_LOG_DEFAULT_LEVEL);
-
-//#define WIFI_DEBUG
+#define WIFI_DEBUG
 
 #define UART_CTRL_PIN 	1	//拉低切换到WIFI，拉高切换到BLE
 #define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉低此脚
@@ -142,7 +139,7 @@ void wifi_get_scanned_data(void)
 void APP_Ask_wifi_data(void)
 {
 #ifdef WIFI_DEBUG
-	LOG_INF("[%s]\n", __func__);
+	LOGD("begin");
 #endif
 	if(!app_wifi_on)
 	{
@@ -189,7 +186,7 @@ void switch_to_ble(void)
 		if(!ctrl_switch)
 		{
 		#ifdef WIFI_DEBUG
-			LOG_INF("Could not get %s device\n", CTRL_GPIO);
+			LOGD("Could not get %s device", CTRL_GPIO);
 		#endif
 			return;
 		}
@@ -221,7 +218,7 @@ void switch_to_wifi(void)
 		if(!ctrl_switch)
 		{
 		#ifdef WIFI_DEBUG
-			LOG_INF("Could not get %s device\n", CTRL_GPIO);
+			LOGD("Could not get %s device", CTRL_GPIO);
 		#endif
 			return;
 		}
@@ -244,6 +241,10 @@ void switch_to_wifi(void)
 ==============================================================================*/
 bool wifi_is_working(void)
 {
+#ifdef WIFI_DEBUG
+	LOGD("wifi_is_on:%d", wifi_is_on);
+#endif
+
 	if(wifi_is_on)
 	{
 		return true;
@@ -270,7 +271,7 @@ void wifi_enable(void)
 		if(!ctrl_switch)
 		{
 		#ifdef WIFI_DEBUG
-			LOG_INF("Could not get %s device\n", CTRL_GPIO);
+			LOGD("Could not get %s device", CTRL_GPIO);
 		#endif
 			return;
 		}
@@ -331,7 +332,7 @@ void wifi_turn_on_and_scanning(void)
 void wifi_turn_off_success(void)
 {
 #ifdef WIFI_DEBUG	
-	LOG_INF("[%s]\n", __func__);
+	LOGD("begin");
 #endif
 
 	wifi_off_retry_flag = false;
@@ -343,7 +344,7 @@ void wifi_turn_off_success(void)
 void wifi_turn_off(void)
 {
 #ifdef WIFI_DEBUG	
-	LOG_INF("[%s]\n", __func__);
+	LOGD("begin");
 #endif
 	wifi_disable();
 	k_timer_start(&wifi_off_retry_timer, K_MSEC(1000), NULL);
@@ -377,7 +378,7 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 	bool flag = false;
 
 #ifdef WIFI_DEBUG	
-	LOG_INF("[%s] receive:%s\n", __func__, buf);
+	LOGD("receive:%s", buf);
 #endif
 
 	if(strstr(ptr, WIFI_SLEEP_REPLY))

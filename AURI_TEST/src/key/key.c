@@ -22,10 +22,7 @@
 #endif
 #include "Alarm.h"
 #include "lcd.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(key, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 //#define KEY_DEBUG
 #define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
@@ -179,7 +176,7 @@ bool is_wearing(void)
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
 #ifdef KEY_DEBUG
-	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d\n", key_code, key_type, KEY_SOS);
+	LOGD("key_code:%d, key_type:%d, KEY_SOS:%d", key_code, key_type, KEY_SOS);
 #endif
 
 	if(!system_is_completed())
@@ -218,7 +215,7 @@ static void button_handler(u32_t button_state, u32_t has_changed)
 	u32_t buttons = (button_state & has_changed);
 
 #ifdef KEY_DEBUG
-	LOG_INF("button_state:%d, has_changed:%d\n", button_state, has_changed);
+	LOGD("button_state:%d, has_changed:%d", button_state, has_changed);
 #endif
 
 	keycode = has_changed;
@@ -279,9 +276,6 @@ static u32_t get_buttons(void)
 
 		if(gpio_pin_read(button_devs[i], button_pins[i].number, &val))
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot read gpio pin");
-		#endif
 			return 0;
 		}
 
@@ -354,9 +348,6 @@ static void buttons_scan_fn(struct k_work *work)
 		int err = k_delayed_work_submit(&buttons_scan, CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL);
 		if(err)
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot add work to workqueue");
-		#endif
 		}
 	}
 	else
@@ -382,9 +373,6 @@ static void buttons_scan_fn(struct k_work *work)
 
 		if(err)
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot enable callbacks");
-		#endif
 		}
 	}
 }
@@ -441,9 +429,6 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, u3
 
 	if(err)
 	{
-	#ifdef KEY_DEBUG
-		LOG_INF("Cannot disable callbacks");
-	#endif
 	}
 
 	switch (state)
@@ -479,9 +464,6 @@ static int buttons_init(button_handler_t button_handler)
 		button_devs[i] = device_get_binding(button_pins[i].port);
 		if (!button_devs[i])
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot bind gpio device");
-		#endif
 			return -ENODEV;
 		}
 
@@ -497,9 +479,6 @@ static int buttons_init(button_handler_t button_handler)
 
 		if(err)
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot configure button gpio");
-		#endif
 			return err;
 		}
 	}
@@ -507,9 +486,6 @@ static int buttons_init(button_handler_t button_handler)
 	err = set_trig_mode(GPIO_INT_LEVEL);
 	if(err)
 	{
-	#ifdef KEY_DEBUG
-		LOG_INF("Cannot set interrupt mode");
-	#endif
 		return err;
 	}
 
@@ -523,9 +499,6 @@ static int buttons_init(button_handler_t button_handler)
 		err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
 		if(err)
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot disable callbacks()");
-		#endif
 			return err;
 		}
 
@@ -539,9 +512,6 @@ static int buttons_init(button_handler_t button_handler)
 		err = gpio_add_callback(button_devs[i], &gpio_cb);
 		if(err)
 		{
-		#ifdef KEY_DEBUG
-			LOG_INF("Cannot add callback");
-		#endif
 			return err;
 		}
 	}
@@ -553,9 +523,6 @@ static int buttons_init(button_handler_t button_handler)
 	err = k_delayed_work_submit(&buttons_scan, 0);
 	if(err)
 	{
-	#ifdef KEY_DEBUG
-		LOG_INF("Cannot add work to workqueue");
-	#endif
 		return err;
 	}
 
@@ -575,14 +542,14 @@ void WearInterruptHandle(void)
 	if(!val)
 	{
 	#ifdef KEY_DEBUG
-		LOG_INF("[%s] wear on!\n", __func__);
+		LOGD("wear on!");
 	#endif
 		touch_flag = true;
 	}
 	else
 	{
 	#ifdef KEY_DEBUG
-		LOG_INF("[%s] wear off!\n", __func__);
+		LOGD("wear off!");
 	#endif
 		touch_flag = false;
 	}
@@ -632,14 +599,9 @@ void key_init(void)
 	int err;
 	u32_t ret = 0;
 
-	LOG_INF("key_init\n");
-	
 	err = buttons_init(button_handler);
 	if (err)
 	{
-	#ifdef KEY_DEBUG
-		LOG_INF("Could not initialize buttons, err code: %d\n", err);
-	#endif
 		return;
 	}
 

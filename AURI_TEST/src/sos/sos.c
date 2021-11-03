@@ -25,9 +25,7 @@
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 SOS_STATUS sos_state = SOS_STATUS_IDLE;
 
@@ -190,12 +188,12 @@ bool SOSIsRunning(void)
 {
 	if(sos_state > SOS_STATUS_IDLE)
 	{
-		LOG_INF("[%s] true\n", __func__);
+		LOGD("true");
 		return true;
 	}
 	else
 	{
-		LOG_INF("[%s] false\n", __func__);
+		LOGD("false");
 		return false;
 	}
 }
@@ -210,11 +208,11 @@ void SOSStart(void)
 {
 	u8_t delay;
 	
-	LOG_INF("[%s]\n", __func__);
+	LOGD("begin");
 
 	if(sos_state != SOS_STATUS_IDLE)
 	{
-		LOG_INF("[%s] sos is running!\n", __func__);
+		LOGD("sos is running!");
 		return;
 	}
 

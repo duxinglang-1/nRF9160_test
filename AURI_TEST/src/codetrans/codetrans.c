@@ -17,10 +17,7 @@
 #include <nrfx.h>
 #include "codetrans.h"
 #include "CharsetTable.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(codetrans, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 /* Handling UCS2 string not aligned with 2 bytes. (Obigo adopts UTF8 by default) */
 #define MMI_CHSET_DBG_ASSERT(_expr)

@@ -19,10 +19,7 @@
 //#include "audio_wav.h"
 //#include "external_flash.h"
 #include "audio.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(audio, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #if 0
 #define I2S_MCK		25
@@ -184,7 +181,7 @@ void FallPlayAlarmEn(void)
 
 void AudioInterruptHandle(void)
 {
-	LOG_INF("[%s]", __func__);
+	LOGD("begin");
 	audio_trige_flag = true;
 }
 
@@ -232,7 +229,7 @@ void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk
 	SpiFlash_Read((u8_t*)&riff_data, index, (u32_t)sizeof(wav_riff_chunk));
 	if(memcmp(riff_data.riff_mark, WAV_RIFF_ID, 4) != 0)
 	{
-		LOG_INF("get wav riff fail!\n");
+		LOGD("get wav riff fail!");
 		return;
 	}
 
@@ -264,7 +261,7 @@ void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk
 		memcpy(info_data, (void*)&pcm_data, (u32_t)sizeof(wav_data_chunk));
 	}
 
-	LOG_INF("get audio wav success\n");
+	LOGD("get audio wav success");
 }
 
 void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
@@ -278,7 +275,7 @@ void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
 	SpiFlash_Read((u8_t*)&riff_data, index, (u32_t)sizeof(wav_riff_chunk));
 	if(memcmp(riff_data.riff_mark, WAV_RIFF_ID, 4) != 0)
 	{
-		LOG_INF("get wav riff fail!\n");
+		LOGD("get wav riff fail");
 		*pcmaddr = 0;
 		return;
 	}
@@ -358,7 +355,7 @@ void test_audio_wav(void)
 	audio_get_wav_size(AUDIO_FALL_ALARM_ADDR, &filelen);
 	audio_get_wav_time(AUDIO_FALL_ALARM_ADDR, &time);
 	
-	LOG_INF("get audio wav\n");
+	LOGD("get audio wav");
 }
 
 ISR_DIRECT_DECLARE(i2s_isr_handler)
@@ -429,14 +426,14 @@ static bool check_samples(uint32_t const * p_block)
             if (actual_sample_l != expected_sample_l ||
                 actual_sample_r != expected_sample_r)
             {
-                LOG_INF("%3u: %04x/%04x, expected: %04x/%04x (i: %u)",
+                LOGD("%3u: %04x/%04x, expected: %04x/%04x (i: %u)",
                     m_blocks_transferred, actual_sample_l, actual_sample_r,
                     expected_sample_l, expected_sample_r, i);
                 return false;
             }
         }
     }
-    LOG_INF("%3u: OK", m_blocks_transferred);
+    LOGD("%3u: OK", m_blocks_transferred);
     return true;
 }
 

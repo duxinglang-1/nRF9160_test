@@ -28,10 +28,7 @@
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(fall, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 FALL_STATUS fall_state = FALL_STATUS_IDLE;
 
@@ -263,12 +260,12 @@ bool FallIsRunning(void)
 {
 	if(fall_state > FALL_STATUS_IDLE)
 	{
-		LOG_INF("[%s] true\n", __func__);
+		LOGD("true");
 		return true;
 	}
 	else
 	{
-		LOG_INF("[%s] false\n", __func__);
+		LOGD("false");
 		return false;
 	}
 }

@@ -19,10 +19,7 @@
 #include "audio_wav.h"
 #endif
 #include "external_flash.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(external_flash, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 struct device *spi_flash;
 struct device *gpio_flash;
@@ -73,11 +70,11 @@ void Spi_WriteOneByte(uint8_t Dat)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 	else
 	{
-		LOG_INF("ok\n");
+		LOGD("ok");
 	}
 }
 /*****************************************************************************
@@ -125,11 +122,11 @@ uint16_t SpiFlash_ReadID(void)
 	
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 	else
 	{
-		LOG_INF("TX sent: %x,%x,%x,%x,%x,%x\n", 
+		LOGD("TX sent: %x,%x,%x,%x,%x,%x", 
 			spi_tx_buf[0],
 			spi_tx_buf[1],
 			spi_tx_buf[2],
@@ -138,7 +135,7 @@ uint16_t SpiFlash_ReadID(void)
 			spi_tx_buf[5]
 			);
 		
-		LOG_INF("RX recv: %x,%x,%x,%x,%x,%x\n", 
+		LOGD("RX recv: %x,%x,%x,%x,%x,%x", 
 			spi_rx_buf[0],
 			spi_rx_buf[1],
 			spi_rx_buf[2],
@@ -151,7 +148,7 @@ uint16_t SpiFlash_ReadID(void)
 		dat|=spi_rx_buf[4]<<8;  
 		dat|=spi_rx_buf[5];
 		
-		LOG_INF("flash ID: %x\n", dat);
+		LOGD("flash ID: %x", dat);
 	}
 
 
@@ -186,11 +183,11 @@ static uint8_t SpiFlash_ReadSR(void)
 	
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 	else
 	{
-		LOG_INF("StatusReg: %x\n", spi_rx_buf[1]);
+		LOGD("StatusReg: %x", spi_rx_buf[1]);
 	}
 	
 	return spi_rx_buf[1];
@@ -230,7 +227,7 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 	
 	//等待W25Q64FW完成操作
@@ -261,7 +258,7 @@ void SPIFlash_Erase_Chip(void)
 	
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 
 	//等待W25Q64FW完成操作
@@ -307,7 +304,7 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 
 	tx_buff.buf = pBuffer;
@@ -318,7 +315,7 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 
 	SpiFlash_CS_HIGH();
@@ -406,7 +403,7 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
-		LOG_INF("SPI error: %d\n", err);
+		LOGD("SPI error: %d", err);
 	}
 
 	//开始读取数据
@@ -431,7 +428,7 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 		err = spi_transceive(spi_flash, &spi_cfg, NULL, &rx_bufs);
 		if(err)
 		{
-			LOG_INF("SPI error: %d\n", err);
+			LOGD("SPI error: %d", err);
 		}
 		
 		pBuffer += read_size;
@@ -453,7 +450,7 @@ void SPI_Flash_Init(void)
 	spi_flash = device_get_binding(FLASH_DEVICE);
 	if (!spi_flash) 
 	{
-		LOG_INF("Could not get %s device\n", FLASH_DEVICE);
+		LOGD("Could not get %s device", FLASH_DEVICE);
 		return;
 	}
 
@@ -464,12 +461,12 @@ void SPI_Flash_Init(void)
 
 void flash_init(void)
 {
-	LOG_INF("flash_init\n");
+	LOGD("flash_init");
 		
 	gpio_flash = device_get_binding(FLASH_PORT);
 	if(!gpio_flash)
 	{
-		LOG_INF("Cannot bind gpio device\n");
+		LOGD("Cannot bind gpio device");
 		return;
 	}
 

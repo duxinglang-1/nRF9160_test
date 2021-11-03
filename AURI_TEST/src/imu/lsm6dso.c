@@ -25,9 +25,7 @@ Take 26Hz data rate
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #define IMU_DEV "I2C_1"
 #define IMU_PORT "GPIO_0"
@@ -67,7 +65,7 @@ static uint8_t init_i2c(void)
 	i2c_imu = device_get_binding(IMU_DEV);
 	if(!i2c_imu)
 	{
-		LOG_INF("ERROR SETTING UP I2C\r\n");
+		LOGD("ERROR SETTING UP I2C");
 		return -1;
 	}
 	else
@@ -305,7 +303,7 @@ void historic_buffer(void)
 					acc_z_hist_buffer[i] = acceleration_g[2];   
 
 					histBuff_counter++;
-					//LOG_INF("%d, Axyz, %4.2f, %4.2f, %4.2f\r\n",
+					//LOGD("%d, Axyz, %4.2f, %4.2f, %4.2f",
 					//			i, acc_x_hist_buffer[i], acc_y_hist_buffer[i], acc_z_hist_buffer[i]);
 					break;
 
@@ -326,7 +324,7 @@ void historic_buffer(void)
 
 					histBuff_counter++;
 					i++;
-					//LOG_INF("%d, Gxyz, %4.2f, %4.2f, %4.2f\r\n",
+					//LOGD("%d, Gxyz, %4.2f, %4.2f, %4.2f",
 					//				i, angular_rate_dps[0], angular_rate_dps[1], angular_rate_dps[2]);
 					break;
 
@@ -342,7 +340,7 @@ void historic_buffer(void)
 
 			if(histBuff_counter == PATTERN_LEN)
 			{
-				//LOG_INF("\nHIST BUFFER FLAG ON\n");
+				//LOGD("HIST BUFFER FLAG ON");
 				hist_buff_flag = true;
 				break;
 			}
@@ -414,7 +412,7 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						i_rev--;
 
-						//LOG_INF("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f\r\n",
+						//LOGD("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f",
 						//			i, acc_x_cur_buffer[i], acc_y_cur_buffer[i], acc_z_cur_buffer[i]);
 					}
 				}
@@ -432,7 +430,7 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						j_rev--;
 
-						//LOG_INF("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f\r\n",
+						//LOGD("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f",
 						//			j, acc_x_vrif_buffer[j], acc_y_vrif_buffer[j], acc_z_vrif_buffer[j]);
 					}
 				}
@@ -450,7 +448,7 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						k_rev--;
 
-						//LOG_INF("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f\r\n",
+						//LOGD("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f",
 						//			k, acc_x_vrif_buffer_1[k], acc_y_vrif_buffer_1[k], acc_z_vrif_buffer_1[k]);
 					}
 				}
@@ -696,13 +694,13 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 void fall_detection(void)
 {
 	historic_buffer();
-	LOG_INF("fall detecting 1");
+	LOGD("fall detecting 1");
 
 	if(hist_buff_flag)
 	{
 		curr_vrif_buffers();
 		hist_buff_flag = false;
-		LOG_INF("fall detecting 2");
+		LOGD("fall detecting 2");
 	}
 
 	if(curr_vrif_buff_flag)
@@ -745,7 +743,7 @@ void fall_detection(void)
 		
 		curr_vrif_buff_flag = false;
 		sensor_init(); //resets the algorithm, will work continuosly on every tap
-		LOG_INF("fall detecting 3");
+		LOGD("fall detecting 3");
 	} 
 }
 
@@ -766,7 +764,7 @@ void UpdateIMUData(void)
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
-	LOG_INF("g_steps:%d,g_distance:%d,g_calorie:%d\n", g_steps, g_distance, g_calorie);
+	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
 
 	StepCheckSendLocationData(g_steps);
 }
@@ -799,7 +797,7 @@ static void mt_fall_detection(struct k_work *work)
 {
 	if(int1_event)	//steps or tilt
 	{
-		LOG_INF("[%s] int1 evt!\n", __func__);
+		LOGD("int1 evt!");
 		int1_event = false;
 
 		if(!imu_check_ok)
@@ -816,7 +814,7 @@ static void mt_fall_detection(struct k_work *work)
 		is_tilt();
 		if(wrist_tilt)
 		{
-			LOG_INF("tilt trigger!\n");
+			LOGD("tilt trigger!");
 			
 			wrist_tilt = false;
 
@@ -828,7 +826,7 @@ static void mt_fall_detection(struct k_work *work)
 		}
 		else
 		{
-			LOG_INF("steps trigger!\n");
+			LOGD("steps trigger!");
 			
 			UpdateIMUData();
 			imu_redraw_steps_flag = true;	
@@ -837,7 +835,7 @@ static void mt_fall_detection(struct k_work *work)
 
 	if(int2_event) //fall
 	{
-		LOG_INF("[%s] int2 evt!\n", __func__);
+		LOGD("int2 evt!");
 		
 		int2_event = false;
 
@@ -855,7 +853,7 @@ static void mt_fall_detection(struct k_work *work)
 		fall_detection();
 		if(fall_result)
 		{
-			LOG_INF("Fall trigger!\n");
+			LOGD("Fall trigger!");
 			
 			fall_result = false;
 			lcd_sleep_out = true;
@@ -864,7 +862,7 @@ static void mt_fall_detection(struct k_work *work)
 		}
         else
         {
-			LOG_INF("Not Fall.\n");
+			LOGD("Not Fall.");
         }
 	}
 	
@@ -907,7 +905,7 @@ static void mt_fall_detection(struct k_work *work)
 
 void IMU_init(struct k_work_q *work_q)
 {
-	LOG_INF("IMU_init\n");
+	LOGD("IMU_init");
 	
 	imu_work_q = work_q;
 	k_work_init(&imu_work, mt_fall_detection);
@@ -929,7 +927,7 @@ void IMU_init(struct k_work_q *work_q)
 	lsm6dso_sensitivity();
 	StartSleepTimeMonitor();
 
-	LOG_INF("IMU_init done!\n");
+	LOGD("IMU_init done!");
 }
 
 /*@brief Check if a wrist tilt happend
@@ -981,23 +979,23 @@ void test_i2c(void)
 	gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
 	gpio_pin_write(dev0, 0, 1);
 
-	LOG_INF("Starting i2c scanner...\n");
+	LOGD("Starting i2c scanner...");
 
 	i2c_dev = device_get_binding(IMU_DEV);
 	if(!i2c_dev)
 	{
-		LOG_INF("I2C: Device driver not found.\n");
+		LOGD("I2C: Device driver not found.");
 		return;
 	}
 	i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	uint8_t error = 0u;
 
-	LOG_INF("Value of NRF_TWIM1_NS->PSEL.SCL: %ld \n",NRF_TWIM1_NS->PSEL.SCL);
-	LOG_INF("Value of NRF_TWIM1_NS->PSEL.SDA: %ld \n",NRF_TWIM1_NS->PSEL.SDA);
-	LOG_INF("Value of NRF_TWIM1_NS->FREQUENCY: %ld \n",NRF_TWIM1_NS->FREQUENCY);
-	LOG_INF("26738688 -> 100k\n");
-	LOG_INF("67108864 -> 250k\n");
-	LOG_INF("104857600 -> 400k\n");
+	LOGD("Value of NRF_TWIM1_NS->PSEL.SCL: %ld",NRF_TWIM1_NS->PSEL.SCL);
+	LOGD("Value of NRF_TWIM1_NS->PSEL.SDA: %ld",NRF_TWIM1_NS->PSEL.SDA);
+	LOGD("Value of NRF_TWIM1_NS->FREQUENCY: %ld",NRF_TWIM1_NS->FREQUENCY);
+	LOGD("26738688 -> 100k");
+	LOGD("67108864 -> 250k");
+	LOGD("104857600 -> 400k");
 
 	for (u8_t i = 0; i < 0x7f; i++)
 	{
@@ -1012,11 +1010,11 @@ void test_i2c(void)
 		error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
 		if(error == 0)
 		{
-			LOG_INF("0x%2x device address found on I2C Bus\n", i);
+			LOGD("0x%2x device address found on I2C Bus", i);
 		}
 		else
 		{
-			//LOG_INF("error %d \n", error);
+			//LOGD("error %d", error);
 		}
 	}
 }

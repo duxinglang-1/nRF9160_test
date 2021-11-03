@@ -21,10 +21,7 @@
 #include <dfu/mcuboot.h>
 #include "fota_mqtt.h"
 #include "screen.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(fota_mqtt, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #define TLS_SEC_TAG 42
 
@@ -45,7 +42,7 @@ static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_DOWNLOADING;
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
 {
-	LOG_INF("bsdlib recoverable error: %u\n", err);
+	LOGD("bsdlib recoverable error: %u\n", err);
 }
 
 #if 0	//xb test 2021-08-12
@@ -84,13 +81,13 @@ static int modem_configure(void)
 	err = lte_lc_psm_req(false);
 	if(err)
 	{
-		LOG_INF("[%s] lte_lc_psm_req, error: %d\n", __func__, err);
+		LOGD("lte_lc_psm_req, error: %d", err);
 	}
 
 	err = lte_lc_edrx_req(false);
 	if(err)
 	{
-		LOG_INF("[%s] lte_lc_edrx_req, error: %d\n", __func__, err);
+		LOGD("lte_lc_edrx_req, error: %d", err);
 	}
 
 	return err;
@@ -111,7 +108,7 @@ int cert_provision(void)
 				    MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
 				    &exists, &unused);
 	if (err) {
-		LOG_INF("Failed to check for certificates err %d\n", err);
+		LOGD("Failed to check for certificates err %d", err);
 		return err;
 	}
 
@@ -122,12 +119,12 @@ int cert_provision(void)
 		err = modem_key_mgmt_delete(TLS_SEC_TAG,
 					    MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN);
 		if (err) {
-			LOG_INF("Failed to delete existing certificate, err %d\n",
+			LOGD("Failed to delete existing certificate, err %d",
 			       err);
 		}
 	}
 
-	LOG_INF("Provisioning certificate\n");
+	LOGD("Provisioning certificate");
 
 	/*  Provision certificate to the modem */
 	err = modem_key_mgmt_write(TLS_SEC_TAG,
@@ -135,7 +132,7 @@ int cert_provision(void)
 				   cert, sizeof(cert) - 1);
 	if (err)
 	{
-		LOG_INF("Failed to provision certificate, err %d\n", err);
+		LOGD("Failed to provision certificate, err %d", err);
 		return err;
 	}
 
@@ -148,7 +145,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	int retval;
 	int sec_tag;
 
-	LOG_INF("[%s]\n", __func__);
+	LOGD("begin");
 
 #ifndef CONFIG_USE_HTTPS
 	sec_tag = -1;
@@ -161,7 +158,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 				     sec_tag);
 	if (retval != 0)
 	{
-		LOG_INF("fota_download_start() failed, err %d\n", retval);
+		LOGD("fota_download_start() failed, err %d", retval);
 		fota_run_flag = false;
 		fota_cur_status = FOTA_STATUS_ERROR;
 		fota_redraw_pro_flag = true;
@@ -258,18 +255,18 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 	switch(evt->id)
 	{
 	case FOTA_DOWNLOAD_EVT_ERROR:
-		LOG_INF("[%s] Received error\n", __func__);
+		LOGD("Received error");
 		fota_cur_status = FOTA_STATUS_ERROR;
 		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:
-		LOG_INF("[%s] Received progress:%d\n", __func__, evt->progress);
+		LOGD("Received progress:%d", evt->progress);
 		g_fota_progress = evt->progress;
 		fota_cur_status = FOTA_STATUS_DOWNLOADING;
 		break;
 		
 	case FOTA_DOWNLOAD_EVT_FINISHED:
-		LOG_INF("[%s] Received finished!\n", __func__);
+		LOGD("Received finished!");
 		fota_cur_status = FOTA_STATUS_FINISHED;
 		break;
 
@@ -297,7 +294,7 @@ void fota_init(void)
 {
 	int err;
 
-	LOG_INF("[%s] begin\n", __func__);
+	LOGD("begin");
 
 #if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
 	err = bsdlib_init();
@@ -310,32 +307,32 @@ void fota_init(void)
 	switch(err)
 	{
 	case MODEM_DFU_RESULT_OK:
-		LOG_INF("Modem firmware update successful!\n");
-		LOG_INF("Modem will run the new firmware after reboot\n");
+		LOGD("Modem firmware update successful!");
+		LOGD("Modem will run the new firmware after reboot");
 		k_thread_suspend(k_current_get());
 		break;
 		
 	case MODEM_DFU_RESULT_UUID_ERROR:
 	case MODEM_DFU_RESULT_AUTH_ERROR:
-		LOG_INF("Modem firmware update failed\n");
-		LOG_INF("Modem will run non-updated firmware on reboot.\n");
+		LOGD("Modem firmware update failed");
+		LOGD("Modem will run non-updated firmware on reboot.");
 		break;
 		
 	case MODEM_DFU_RESULT_HARDWARE_ERROR:
 	case MODEM_DFU_RESULT_INTERNAL_ERROR:
-		LOG_INF("Modem firmware update failed\n");
-		LOG_INF("Fatal error.\n");
+		LOGD("Modem firmware update failed");
+		LOGD("Fatal error.");
 		break;
 		
 	case -1:
-		LOG_INF("Could not initialize bsdlib.\n");
-		LOG_INF("Fatal error.\n");
+		LOGD("Could not initialize bsdlib.");
+		LOGD("Fatal error.");
 		return;
 		
 	default:
 		break;
 	}
-	LOG_INF("Initialized bsdlib\n");
+	LOGD("Initialized bsdlib");
 
 #if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
 	/* Initialize AT only if bsdlib_init() is manually
@@ -355,7 +352,7 @@ void fota_init(void)
 		return;
 	}
 
-	LOG_INF("[%s] done\n", __func__);
+	LOGD("done");
 }
 
 void FOTARedrawProgress(void)
@@ -394,7 +391,7 @@ void FotaMsgProc(void)
 	
 	if(fota_reboot_flag)
 	{
-		LOG_INF("[%s] fota_reboot!\n", __func__);
+		LOGD("fota_reboot!");
 		
 		fota_reboot_flag = false;
 		sys_reboot(0);

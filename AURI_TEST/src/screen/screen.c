@@ -43,10 +43,7 @@
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(screen, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 static u8_t scr_index=0;
 
@@ -1849,7 +1846,6 @@ void EnterFindDeviceScreen(void)
 
 void poweroff_leftkeyfunc(void)
 {
-	LOG_INF("[%s]\n", __func__);
 	key_pwroff_flag = true;
 	
 	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_UPDATE;
@@ -1859,7 +1855,6 @@ void poweroff_leftkeyfunc(void)
 
 void poweroff_rightkeyfunc(void)
 {
-	LOG_INF("[%s]\n", __func__);
 	EnterIdleScreen();
 }
 

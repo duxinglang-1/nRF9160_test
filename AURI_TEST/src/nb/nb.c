@@ -36,6 +36,7 @@
 #include "transfer_cache.h"
 #include "logger.h"
 
+#define LTE_TAU_WAKEUP_EARLY_TIME	(10)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
@@ -70,6 +71,7 @@ static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 static bool power_on_data_flag = true;
 static bool nb_connecting_flag = false;
+static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -466,12 +468,19 @@ static int fds_init(struct mqtt_client *c)
 	return 0;
 }
 
+void mqtt_is_connecting(void)
+{
+	return mqtt_connecting_flag;
+}
+
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err,i=0;
 
 	LOGD("begin");
 
+	mqtt_connecting_flag = true;
+	
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uart_sleep_out();
 #endif
@@ -537,6 +546,8 @@ static void mqtt_link(struct k_work_q *work_q)
 	{
 		LOGD("[%s]: Could not disconnect MQTT client. Error: %d", __func__, err);
 	}
+
+	mqtt_connecting_flag = false;
 }
 
 static void SendDataCallBack(struct k_timer *timer)
@@ -575,6 +586,7 @@ static void NbSendData(void)
 
 bool MqttIsConnected(void)
 {
+	LOGD("mqtt_connected:%d", mqtt_connected);
 	return mqtt_connected;
 }
 
@@ -814,8 +826,10 @@ void NBRedrawSignal(void)
 				}
 
 			#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-				if(g_tau_time > 30)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-30), K_SECONDS(g_tau_time));
+				if(g_tau_time > LTE_TAU_WAKEUP_EARLY_TIME)
+					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), K_SECONDS(g_tau_time));
+				else
+					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), K_SECONDS(g_tau_time));
 			#endif
 			}
 		}
@@ -999,7 +1013,15 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 		if(nb_connected)
 		{
 			LOGD("begin 003");
-			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+			if(!mqtt_connecting_flag)
+			{
+				LOGD("begin 003.1");
+				k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+			}
+			else
+			{
+				LOGD("begin 003.2");
+			}
 		}
 		else
 		{
@@ -1799,6 +1821,7 @@ void GetNBSignal(void)
 
 bool nb_is_connecting(void)
 {
+	LOGD("nb_connecting_flag:%d", nb_connecting_flag);
 	return nb_connecting_flag;
 }
 

@@ -20,10 +20,7 @@
 #endif
 #include "datetime.h"
 #include "communicate.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #ifdef CONFIG_WIFI
 /*****************************************************************************
@@ -166,7 +163,7 @@ void TimeCheckSendHealthData(void)
 	health_hour_count++;
 	if(health_hour_count == global_settings.health_interval)
 	{
-		LOG_INF("[%s]\n", __func__);
+		LOGD("001");
 		
 		health_hour_count = 0;
 

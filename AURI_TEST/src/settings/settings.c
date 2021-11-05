@@ -12,10 +12,7 @@
 #include "lcd.h"
 #include "codetrans.h"
 #include "inner_flash.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(settings, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 bool need_save_settings = false;
 bool need_save_time = false;

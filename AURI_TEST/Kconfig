@@ -195,6 +195,13 @@ config GPS_START_ON_MOTION
 
 endmenu # GPS
 
+menu "ANIMATION"
+
+config ANIMATION_SUPPORT
+	bool "animation support"
+	default n
+
+endmenu #ANIMATION
 
 menu "TOUCH"
 

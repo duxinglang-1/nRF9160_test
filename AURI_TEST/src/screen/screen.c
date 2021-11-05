@@ -77,7 +77,13 @@ void ShowBootUpLogo(void)
 	u8_t i,count=0;
 	u16_t x,y,w,h;
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 200, false, EnterIdleScreen);
+#else
+	LCD_ShowImg(PWRON_LOGO_X, PWRON_LOGO_Y, logo_5);
+	k_sleep(K_MSEC(1000));
+	EnterIdleScreen();
+#endif
 }
 
 void ExitNotifyScreen(void)
@@ -516,7 +522,11 @@ void FindShowStatus(void)
 	
 	LCD_Clear(BLACK);
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(FIND_ICON_X, FIND_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(FIND_ICON_X, FIND_ICON_Y, IMG_FIND_ICON_3);
+#endif
 
 	if(global_settings.language == LANGUAGE_CHN)
 		LCD_ShowImg(FIND_TEXT_X, FIND_TEXT_Y, img[0]);
@@ -797,7 +807,9 @@ void SOSUpdateStatus(void)
 		break;
 	
 	case SOS_STATUS_SENT:
+	#ifdef CONFIG_ANIMATION_SUPPORT	
 		AnimaStopShow();
+	#endif
 		LCD_Clear(BLACK);
 		LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
 		LCD_ShowImg(MSG_SEND_OK_X, MSG_SEND_OK_Y, IMG_SENDING_OK);
@@ -821,7 +833,12 @@ void SOSShowStatus(void)
 	
 	LCD_Clear(BLACK);
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(MSG_SENDING_X, MSG_SENDING_Y, img_anima, ARRAY_SIZE(img_anima), 500, false, SOSSChangrStatus);
+#else
+	LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
+#endif
+
 	LCD_ShowImg(SOS_ICON_X, SOS_ICON_Y, img_icon[0]);
 }
 
@@ -879,7 +896,11 @@ void SleepShowStatus(void)
 	
 	LCD_Clear(BLACK);
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(SLEEP_ICON_X, SLEEP_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(SLEEP_ICON_X, SLEEP_ICON_Y, IMG_SLEEP_ICON_4);
+#endif
 
 	LCD_ShowImg(SLEEP_NUM_1_X, SLEEP_NUM_1_Y, img_num[(total_sleep/60)/10]);
 	LCD_ShowImg(SLEEP_NUM_2_X, SLEEP_NUM_2_Y, img_num[(total_sleep/60)%10]);
@@ -951,7 +972,11 @@ void StepsShowStatus(void)
 
 	LCD_Clear(BLACK);
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(STEPS_ICON_X, STEPS_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(STEPS_ICON_X, STEPS_ICON_Y, IMG_STEP_ICON_1);
+#endif
 
 	if(global_settings.language == LANGUAGE_CHN)
 		offset_x = STEPS_CN_OFFSET;
@@ -1017,8 +1042,12 @@ void DistanceShowStatus(void)
 	GetSportData(NULL,NULL,&distance);
 
 	LCD_Clear(BLACK);
-	
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaShow(DIS_ICON_X, DIS_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(DIS_ICON_X, DIS_ICON_Y, IMG_DISTANCE_ICON_1);
+#endif
 
 	LCD_ShowImg(DIS_NUM_1_X, DIS_NUM_1_Y, img_num[distance/10000]);
 	LCD_ShowImg(DIS_NUM_2_X, DIS_NUM_2_Y, img_num[(distance%10000)/1000]);
@@ -1079,8 +1108,12 @@ void CalorieShowStatus(void)
 	GetSportData(NULL,&calorie,NULL);
 
 	LCD_Clear(BLACK);
-	
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaShow(CAL_ICON_X, CAL_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(CAL_ICON_X, CAL_ICON_Y, IMG_CAL_ICON_1);
+#endif
 
 	LCD_ShowImg(CAL_NUM_1_X, CAL_NUM_1_Y, img_num[calorie/1000]);
 	LCD_ShowImg(CAL_NUM_2_X, CAL_NUM_2_Y, img_num[(calorie%1000)/100]);
@@ -1131,8 +1164,12 @@ void FallUpdateStatus(void)
 		break;
 	
 	case FALL_STATUS_SENDING:
+	#ifdef CONFIG_ANIMATION_SUPPORT	
 		AnimaShow(MSG_SENDING_X, MSG_SENDING_Y, img_anima_send, ARRAY_SIZE(img_anima_send), 500, true, NULL);
-
+	#else
+		LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
+	#endif
+	
 		if(global_settings.language == LANGUAGE_CHN)
 			LCD_ShowImg(FALL_TEXT_X, FALL_TEXT_Y, img_fall[0]);
 		else
@@ -1140,14 +1177,18 @@ void FallUpdateStatus(void)
 		break;
 		
 	case FALL_STATUS_SENT:
+	#ifdef CONFIG_ANIMATION_SUPPORT	
 		AnimaStopShow();
+	#endif
 		LCD_Clear(BLACK);
 		LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
 		LCD_ShowImg(MSG_SEND_OK_X, MSG_SEND_OK_Y, IMG_SENDING_OK);
 		break;
 		
 	case FALL_STATUS_CANCEL:
+	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaStopShow();
+	#endif
 		LCD_Clear(BLACK);
 		if(global_settings.language == LANGUAGE_CHN)
 			LCD_ShowImg(FALL_CANCEL_CN_X, FALL_CANCEL_CN_Y, img_cancel[0]);
@@ -1167,7 +1208,11 @@ void FallShowStatus(void)
 
 	LCD_Clear(BLACK);
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(FALL_ICON_X, FALL_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON_3);
+#endif
 
 	if(global_settings.language == LANGUAGE_CHN)
 		LCD_ShowImg(FALL_TEXT_X, FALL_TEXT_Y, img_fall[0]);
@@ -1462,8 +1507,10 @@ void EnterFOTAScreen(void)
 	scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATING;
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
-	
+#endif
+
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 
@@ -1677,8 +1724,9 @@ void EnterSleepScreen(void)
 	k_timer_stop(&mainmenu_timer);
 
 	MenuStopGPS();
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
-
+#endif
 #ifdef CONFIG_FOTA_DOWNLOAD
 	SetLeftKeyUpHandler(fota_start);
 #else
@@ -1707,8 +1755,9 @@ void EnterCalorieScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	
 	MenuStopGPS();
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
-
+#endif
 	SetLeftKeyUpHandler(EnterSleepScreen);
 }
 
@@ -1733,8 +1782,9 @@ void EnterDistanceScreen(void)
 	k_timer_stop(&mainmenu_timer);
 
 	MenuStopGPS();
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
-
+#endif
 	SetLeftKeyUpHandler(EnterCalorieScreen);
 }
 
@@ -1782,7 +1832,10 @@ void EnterIdleScreen(void)
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
+#endif
+
 	k_timer_stop(&notify_timer);
 	k_timer_stop(&mainmenu_timer);
 
@@ -1878,7 +1931,10 @@ void EnterPoweroffScreen(void)
 	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;
 
 	k_timer_stop(&mainmenu_timer);
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
+#endif
 
 	SetLeftKeyUpHandler(ExitPoweroffScreen);
 	SetLeftKeyLongPressHandler(poweroff_leftkeyfunc);
@@ -2071,7 +2127,10 @@ void EnterSOSScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 	MenuStopGPS();
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
+#endif
 
 	ClearAllKeyHandler();
 }

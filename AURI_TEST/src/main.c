@@ -782,7 +782,9 @@ int main(void)
 	#ifdef CONFIG_AUDIO_SUPPORT
 		AudioMsgProcess();
 	#endif
+	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaMsgProcess();
+	#endif
 		system_init_completed();
 		k_cpu_idle();
 	}

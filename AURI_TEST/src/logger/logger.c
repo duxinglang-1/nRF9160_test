@@ -16,6 +16,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(auri, CONFIG_LOG_DEFAULT_LEVEL);
 
+//#define TEST_DEBUG
+
 static char buf[LOG_BUFF_SIZE] = {0};
 
 void LOGDD(const char *fun_name, const char *fmt, ...)
@@ -25,10 +27,11 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 	u32_t timemap=0;
 	va_list args;
 
+#ifdef TEST_DEBUG
 	memset(buf, 0, sizeof(buf));
 	timemap = (k_uptime_get()%1000);
 	va_start(args, fmt);
-	sprintf(buf, "[%02d:%02d:%02d:%d]..%s>>", 
+	sprintf(buf, "[%02d:%02d:%02d:%03d]..%s>>", 
 						date_time.hour, 
 						date_time.minute, 
 						date_time.second, 
@@ -58,5 +61,6 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 		
 		LOG_INF("%s", buf);
 	}
+#endif	
 }
 

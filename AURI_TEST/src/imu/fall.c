@@ -46,7 +46,10 @@ K_TIMER_DEFINE(fall_gps_timer, FallStartGPSCallBack, NULL);
 
 static void FallEnd(void)
 {
+#ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
+#endif
+
 #ifdef CONFIG_AUDIO_SUPPORT	
 	FallStopAlarm();
 #endif
@@ -202,7 +205,9 @@ void FallAlarmCancel(void)
 {
 	if(fall_state == FALL_STATUS_NOTIFY)
 	{
+	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaStopShow();
+	#endif
 		FallStopAlarm();
 		fall_state = FALL_STATUS_CANCEL;
 		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), NULL);

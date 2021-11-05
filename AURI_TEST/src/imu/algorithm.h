@@ -61,6 +61,9 @@ lsm6dso_all_sources_t all_source;
 lsm6dso_emb_fsm_enable_t fsm_enable;
 uint16_t fsm_addr;
 
+volatile int16_t peak_number = 0;
+volatile float peak_analysis_array[ACC_GYRO_FIFO_BUF_LEN*4] = {0};
+
 volatile bool hist_buff_flag      = false;
 volatile bool curr_vrif_buff_flag = false;
 volatile bool int1_event          = false;
@@ -100,6 +103,12 @@ float gyro_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer[ACC_GY
 float acc_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]   = {0};
 float gyro_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0};
 
+float acc_x_vrif_buffer_2[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer_2[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer_2[ACC_GYRO_FIFO_BUF_LEN]   = {0};
+float gyro_x_vrif_buffer_2[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_2[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_2[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+
+float acc_x_vrif_buffer_3[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer_3[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer_3[ACC_GYRO_FIFO_BUF_LEN]   = {0};
+float gyro_x_vrif_buffer_3[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_3[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_3[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+
 volatile uint8_t suspicion_rules[9][3] =
 {
   LOW_MS     , LOW_MS     , LOW_MS    ,
@@ -116,7 +125,7 @@ volatile uint8_t suspicion_rules[9][3] =
 /*wrist tilt detection FSM*/
 const uint8_t lsm6so_prg_wrist_tilt[] = {
       0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x00, 0x00,
-      0x10, 0x00, 0x00, 0x0D, 0x06, 0x23, 0x00, 0x53,
+      0x20, 0x00, 0x00, 0x0D, 0x06, 0x23, 0x00, 0x53,
       0x33, 0x74, 0x44, 0x22,
      };
 

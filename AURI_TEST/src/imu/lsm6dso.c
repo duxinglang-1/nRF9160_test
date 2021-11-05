@@ -228,10 +228,12 @@ void sensor_reset(void)
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
 
 	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
-/*
+
+	/*
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.int1_ctrl.int1_fifo_th = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);*/
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	*/
 
 	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
@@ -365,6 +367,8 @@ void curr_vrif_buffers(void)
 		uint8_t i_rev = ACC_GYRO_FIFO_BUF_LEN-1;
 		uint8_t j_rev = ACC_GYRO_FIFO_BUF_LEN-1;
 		uint8_t k_rev = ACC_GYRO_FIFO_BUF_LEN-1;
+		uint8_t l_rev = ACC_GYRO_FIFO_BUF_LEN-1;
+		uint8_t m_rev = ACC_GYRO_FIFO_BUF_LEN-1;
 
 		lsm6dso_fifo_wtm_flag_get(&imu_dev_ctx, &waterm);
 		if(waterm>0)
@@ -452,9 +456,45 @@ void curr_vrif_buffers(void)
 						//			k, acc_x_vrif_buffer_1[k], acc_y_vrif_buffer_1[k], acc_z_vrif_buffer_1[k]);
 					}
 				}
+
+                if(buff_counter >= 7*ACC_GYRO_FIFO_BUF_LEN && buff_counter < 8*ACC_GYRO_FIFO_BUF_LEN)
+                {
+                    for (uint8_t l = 0; l < ACC_GYRO_FIFO_BUF_LEN; l++)
+                    {
+                        acc_x_vrif_buffer_2[l]  = accel_tempX[l_rev];
+                        acc_y_vrif_buffer_2[l]  = accel_tempY[l_rev];
+                        acc_z_vrif_buffer_2[l]  = accel_tempZ[l_rev];
+                        gyro_x_vrif_buffer_2[l] = gyro_tempX[l_rev];
+                        gyro_y_vrif_buffer_2[l] = gyro_tempY[l_rev];
+                        gyro_z_vrif_buffer_2[l] = gyro_tempZ[l_rev];
+                        buff_counter++;
+                        l_rev--;
+
+                        //LOGD("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f",
+                        //          l, acc_x_vrif_buffer_1[l], acc_y_vrif_buffer_1[l], acc_z_vrif_buffer_1[l]);
+                    }
+                }
+
+                if(buff_counter >= 9*ACC_GYRO_FIFO_BUF_LEN && buff_counter < 10*ACC_GYRO_FIFO_BUF_LEN)
+                {
+                    for (uint8_t m = 0; m < ACC_GYRO_FIFO_BUF_LEN; m++)
+                    {
+                        acc_x_vrif_buffer_3[m]  = accel_tempX[m_rev];
+                        acc_y_vrif_buffer_3[m]  = accel_tempY[m_rev];
+                        acc_z_vrif_buffer_3[m]  = accel_tempZ[m_rev];
+                        gyro_x_vrif_buffer_3[m] = gyro_tempX[m_rev];
+                        gyro_y_vrif_buffer_3[m] = gyro_tempY[m_rev];
+                        gyro_z_vrif_buffer_3[m] = gyro_tempZ[m_rev];
+                        buff_counter++;
+                        m_rev--;
+
+                        //LOGD("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f",
+                        //          m, acc_x_vrif_buffer_1[m], acc_y_vrif_buffer_1[m], acc_z_vrif_buffer_1[m]);
+                    }
+                }
 			}
 
-			if(buff_counter == 6*ACC_GYRO_FIFO_BUF_LEN)
+			if(buff_counter == 10*ACC_GYRO_FIFO_BUF_LEN)
 			{
 				curr_vrif_buff_flag = true;
 				return;
@@ -509,32 +549,23 @@ static float angle_analyse_fifo(void)
 	angle_degree=angle *(180.0f/3.14159265f);						//get angle in degree
 
 	return angle_degree;
-
 }
 
-static float acceleration_analyse_fifo(void)
+static float acceleration_his_analyse_fifo(void)
 {
-	volatile uint16_t i;
-	volatile float acc_magn_square = 0, max_acc_magn_square = 0;
-	/*
-	* Compute Accelerometer's Magnitude
-	*/
-	for(i=0;i<ACC_GYRO_FIFO_BUF_LEN*2;i++)
-	{
-		//acc magnitude square to avoid sqrt() call to save time.
-		if(i<ACC_GYRO_FIFO_BUF_LEN)
-		{
-			acc_magn_square = pow(get_acc_magn(acc_x_hist_buffer[i]),2)+pow(get_acc_magn(acc_y_hist_buffer[i]),2)+pow(get_acc_magn(acc_z_hist_buffer[i]),2);
-		}
-		else
-		{
-			acc_magn_square = pow(get_acc_magn(acc_x_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2)+pow(get_acc_magn(acc_y_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2)+pow(get_acc_magn(acc_z_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2);
-		}
-		
-		if(acc_magn_square > max_acc_magn_square) max_acc_magn_square = acc_magn_square;	//get the maximum acc magnitude square
+    volatile uint16_t i;
+    volatile float acc_magn_square = 0, max_acc_magn_square = 0;
+    /*
+    * Compute Accelerometer's Magnitude
+    */
+    for(i=0;i<ACC_GYRO_FIFO_BUF_LEN;i++)
+    {
+        //acc magnitude square to avoid sqrt() call to save time.
 
-	}
-	return max_acc_magn_square;		//do once sqrt() to get acc magnitude
+        acc_magn_square = pow(acc_x_hist_buffer[i],2)+pow(acc_y_hist_buffer[i],2)+pow(acc_z_hist_buffer[i],2);
+        if(acc_magn_square > max_acc_magn_square) max_acc_magn_square = acc_magn_square;
+    }
+    return max_acc_magn_square;     //do once sqrt() to get acc magnitude
 }
 
 
@@ -687,6 +718,46 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 	return output_value;
 }
 
+static float peak_analysis(void){
+
+  volatile uint16_t i;
+  peak_number = 0;
+
+  for(i=0; i<(ACC_GYRO_FIFO_BUF_LEN * 4); i++){
+    if(i < ACC_GYRO_FIFO_BUF_LEN){
+      peak_analysis_array[i] = pow(get_acc_magn(acc_x_vrif_buffer[i]),2)
+                             + pow(get_acc_magn(acc_y_vrif_buffer[i]),2)
+                             + pow(get_acc_magn(acc_z_vrif_buffer[i]),2);
+    }
+    else if(i >= ACC_GYRO_FIFO_BUF_LEN && i < (ACC_GYRO_FIFO_BUF_LEN *2))
+    {
+      peak_analysis_array[i] = pow(get_acc_magn(acc_x_vrif_buffer_1[i-ACC_GYRO_FIFO_BUF_LEN]),2)
+                             + pow(get_acc_magn(acc_y_vrif_buffer_1[i-ACC_GYRO_FIFO_BUF_LEN]),2)
+                             + pow(get_acc_magn(acc_z_vrif_buffer_1[i-ACC_GYRO_FIFO_BUF_LEN]),2);
+    }
+    else if(i >= ACC_GYRO_FIFO_BUF_LEN*2 && i < (ACC_GYRO_FIFO_BUF_LEN *3))
+    {
+      peak_analysis_array[i] = pow(get_acc_magn(acc_x_vrif_buffer_2[i-ACC_GYRO_FIFO_BUF_LEN*2]),2)
+                             + pow(get_acc_magn(acc_y_vrif_buffer_2[i-ACC_GYRO_FIFO_BUF_LEN*2]),2)
+                             + pow(get_acc_magn(acc_z_vrif_buffer_2[i-ACC_GYRO_FIFO_BUF_LEN*2]),2);
+    }
+    else if(i >= ACC_GYRO_FIFO_BUF_LEN*3 && i < (ACC_GYRO_FIFO_BUF_LEN *4))
+    {
+      peak_analysis_array[i] = pow(get_acc_magn(acc_x_vrif_buffer_3[i-ACC_GYRO_FIFO_BUF_LEN*3]),2)
+                             + pow(get_acc_magn(acc_y_vrif_buffer_3[i-ACC_GYRO_FIFO_BUF_LEN*3]),2)
+                             + pow(get_acc_magn(acc_z_vrif_buffer_3[i-ACC_GYRO_FIFO_BUF_LEN*3]),2);
+    }
+  }
+
+  for(i=3; i<(ACC_GYRO_FIFO_BUF_LEN * 4-3); i++){
+      if(peak_analysis_array[i]>PEAK_THRES && peak_analysis_array[i]>peak_analysis_array[i+3] && peak_analysis_array[i] > peak_analysis_array[i-3]){
+          peak_number++;
+      }
+  }
+  
+  return peak_number;
+}
+
 /*@brief Fall detection analyse
 *
 * @return If fall return 1, otherwise return 0
@@ -698,48 +769,61 @@ void fall_detection(void)
 
 	if(hist_buff_flag)
 	{
-		curr_vrif_buffers();
+        acc_magn_square = acceleration_his_analyse_fifo();
+        cur_angle = 0;
+        cur_max_gyro_magn = 0;
+        peak_number = 0;
+        cur_fuzzy_output = 0;
+        std_devi = 0;
+    
+        if(acc_magn_square > ACC_MAGN_TRIGGER_THRES_DEF)
+        {
+            curr_vrif_buffers();
+        }
 		hist_buff_flag = false;
 		LOGD("fall detecting 2");
 	}
 
 	if(curr_vrif_buff_flag)
 	{       
-		acc_magn_square = acceleration_analyse_fifo();
-		cur_angle = angle_analyse_fifo();
-		cur_max_gyro_magn = gyroscope_analyse_fifo();
-		cur_fuzzy_output = fuzzy_analyse(cur_angle, cur_max_gyro_magn);
-		std_devi = fall_verification_fifo_skip();
-
-		/*uncomment to display info on screen: 
-		*  
-		LCD_Clear(0);
-		sprintf(tmpbuf, "cur_angle is: %f", cur_angle);
-		LCD_ShowString(20,80,tmpbuf); 
-		sprintf(tmpbuf, "cur_max_gyro_magn: %f", cur_max_gyro_magn);
-		LCD_ShowString(20,100,tmpbuf);
-		sprintf(tmpbuf, "STD is: %f", std_devi);
-		LCD_ShowString(20,120,tmpbuf);
-		sprintf(tmpbuf, "Fuzzy Output is: %f", cur_fuzzy_output);
-		LCD_ShowString(20,140,tmpbuf);
-		*/
-
-		if(cur_fuzzy_output > FUZZY_OUT_THRES_DEF)
+	    peak_number = peak_analysis();
+	    if(peak_number < PEAKS_NO_THRES)
 		{
-			if(std_devi < STD_VARIANCE_THRES_DEF)
-			{
-				fall_result = true;
-				//break;
-			}
-			else
-			{
-				fall_result = false; //std not satisfied
-			}
+            cur_angle = angle_analyse_fifo();
+            cur_max_gyro_magn = gyroscope_analyse_fifo();
+            cur_fuzzy_output = fuzzy_analyse(cur_angle, cur_max_gyro_magn);
+            std_devi = fall_verification_fifo_skip();
 		}
-		else
-		{
+
+        /*uncomment to display info on screen: 
+        *  
+        LCD_Clear(0);
+        sprintf(tmpbuf, "cur_angle is: %f", cur_angle);
+        LCD_ShowString(20,80,tmpbuf); 
+        sprintf(tmpbuf, "cur_max_gyro_magn: %f", cur_max_gyro_magn);
+        LCD_ShowString(20,100,tmpbuf);
+        sprintf(tmpbuf, "STD is: %f", std_devi);
+        LCD_ShowString(20,120,tmpbuf);
+        sprintf(tmpbuf, "Fuzzy Output is: %f", cur_fuzzy_output);
+        LCD_ShowString(20,140,tmpbuf);
+        */
+
+        if(cur_fuzzy_output > FUZZY_OUT_THRES_DEF)
+        {
+            if(std_devi < STD_VARIANCE_THRES_DEF)
+            {
+                    fall_result = true;
+                    //break;
+            }
+            else
+            {
+                    fall_result = false; //std not satisfied
+            }
+        }
+        else
+        {
 			fall_result = false; //fuzzy output not satisfied
-		}
+        }
 		
 		curr_vrif_buff_flag = false;
 		sensor_init(); //resets the algorithm, will work continuosly on every tap

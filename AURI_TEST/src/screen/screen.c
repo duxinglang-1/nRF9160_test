@@ -837,6 +837,7 @@ void SOSShowStatus(void)
 	AnimaShow(MSG_SENDING_X, MSG_SENDING_Y, img_anima, ARRAY_SIZE(img_anima), 500, false, SOSSChangrStatus);
 #else
 	LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
+	SOSSChangrStatus();
 #endif
 
 	LCD_ShowImg(SOS_ICON_X, SOS_ICON_Y, img_icon[0]);

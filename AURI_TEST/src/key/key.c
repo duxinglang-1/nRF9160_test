@@ -24,7 +24,7 @@
 #include "lcd.h"
 #include "logger.h"
 
-//#define KEY_DEBUG
+#define KEY_DEBUG
 #define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
 static u8_t flag;

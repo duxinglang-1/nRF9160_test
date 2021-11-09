@@ -472,7 +472,7 @@ void test_show_color(void)
 {
 	u8_t i=0;
 
-	LOGD("test_show_image\n");
+	LOGD("test_show_image");
 	
 	while(1)
 	{

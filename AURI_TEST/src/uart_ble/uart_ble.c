@@ -86,6 +86,8 @@ bool uart_send_flag = false;
 bool uart_sleep_flag = false;
 bool uart_wake_flag = false;
 bool uart_is_waked = true;
+#define UART_WAKE_HOLD_TIME_SEC		(5*60)
+#define UART_SLEEP_DELAY_TIME_SEC	(2*60)
 #endif
 
 static bool redraw_blt_status_flag = false;
@@ -1725,7 +1727,9 @@ static void uart_cb(struct device *x)
 void uart_sleep_out(void)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	k_timer_start(&uart_sleep_in_timer, K_MSEC(60*1000), NULL);
+	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
+		k_timer_stop(&uart_sleep_in_timer);
+	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 
 	if(uart_is_waked)
 		return;
@@ -1733,6 +1737,8 @@ void uart_sleep_out(void)
 	device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
 	uart_irq_rx_enable(uart_ble);
 	uart_irq_tx_enable(uart_ble);
+	
+	k_sleep(K_MSEC(10));
 	
 	uart_is_waked = true;
 
@@ -1752,6 +1758,8 @@ void uart_sleep_in(void)
 	uart_irq_tx_disable(uart_ble);
 	device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
 
+	k_sleep(K_MSEC(10));
+	
 	uart_is_waked = false;
 
 #ifdef UART_DEBUG
@@ -1819,7 +1827,9 @@ void ble_init(void)
 	gpio_add_callback(gpio_ble, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
 
-	k_timer_start(&uart_sleep_in_timer, K_MSEC(5*60*1000), NULL);
+	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
+		k_timer_stop(&uart_sleep_in_timer);
+	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 }
 
@@ -1842,7 +1852,7 @@ void UartMsgProc(void)
 	#endif
 		uart_sleep_flag = false;
 		
-		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting()
+		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting() && !mqtt_is_connecting()
 			#ifdef CONFIG_FOTA_DOWNLOAD
 			 && !fota_is_running()
 			#endif
@@ -1855,7 +1865,7 @@ void UartMsgProc(void)
 		}
 		else
 		{
-			k_timer_start(&uart_sleep_in_timer, K_MSEC(2*60*1000), NULL);
+			k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_SLEEP_DELAY_TIME_SEC), NULL);
 		}
 	}
 #endif	

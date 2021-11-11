@@ -36,7 +36,7 @@
 #include "transfer_cache.h"
 #include "logger.h"
 
-#define LTE_TAU_WAKEUP_EARLY_TIME	(10)
+#define LTE_TAU_WAKEUP_EARLY_TIME	(60)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
@@ -776,9 +776,9 @@ void MenuStopNB(void)
 void NBRedrawSignal(void)
 {
 	u8_t *ptr;
+	bool flag=false;
 	u8_t strbuf[128] = {0};
-	u8_t tmpbuf[8] = {0};
-	u8_t mode,flag=1;
+	u8_t tmpbuf[128] = {0};
 
 	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
 	{
@@ -799,6 +799,7 @@ void NBRedrawSignal(void)
 		ptr = strstr(strbuf, "+CSCON: ");
 		if(ptr)
 		{
+			u8_t mode;
 			u16_t len;
 
 			len = strlen(strbuf);
@@ -811,33 +812,36 @@ void NBRedrawSignal(void)
 			LOGD("mode:%d", mode);
 			if(mode == 1)//connected
 			{
-				flag = 1;	
+				flag = true;	
 			}
 			else if(mode == 0)//idle
 			{
 				LOGD("reg stat:%d", g_nw_registered);
 				if(g_nw_registered) 			//registered
 				{
-					flag = 0;					//don't show no signal when ue is psm idle mode in registered, 
+					flag = false;				//don't show no signal when ue is psm idle mode in registered, 
 				}
 				else							//not registered
 				{
-					flag = 1;	
+					flag = true;	
 				}
 
-			#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+				if(k_timer_remaining_get(&tau_wakeup_uart_timer) > 0)
+					k_timer_stop(&tau_wakeup_uart_timer);
+				
 				if(g_tau_time > LTE_TAU_WAKEUP_EARLY_TIME)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), K_SECONDS(g_tau_time));
-				else
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), K_SECONDS(g_tau_time));
-			#endif
+					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), NULL);
+				else if(g_tau_time > 0)
+					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), NULL);
+		#endif
 			}
 		}
 	}
-	
+
 	if(g_rsrp > 97)
 	{
-		if(flag == 1)
+		if(flag)
 			g_nb_sig = NB_SIG_LEVEL_NO;
 	}
 	else if(g_rsrp >= 80)
@@ -1451,6 +1455,7 @@ void GetModemSignal(void)
 void TauWakeUpUartCallBack(struct k_timer *timer_id)
 {
 	uart_wake_flag = true;
+	get_modem_signal_flag = true;
 }
 #endif
 
@@ -1461,7 +1466,7 @@ void GetNetWorkSignalCallBack(struct k_timer *timer_id)
 
 void DecodeModemMonitor(u8_t *buf, u32_t len)
 {
-	u8_t flag,reg_status = 0;
+	u8_t reg_status = 0;
 	u8_t *ptr;
 	u8_t tmpbuf[128] = {0};
 	u8_t strbuf[128] = {0};
@@ -1495,7 +1500,8 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 		{
 			u8_t tau = 0;
 			u8_t act = 0;
-
+			u16_t flag;
+			
 			g_nw_registered = true;
 
 		#if 0
@@ -1610,11 +1616,8 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 
 void GetModemInfor(void)
 {
-	char *ptr;
-	int i=0,len,err;
 	u8_t tmpbuf[256] = {0};
-	u8_t strbuf[64] = {0};
-
+	
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 		LOGD("imei:%s", tmpbuf);
@@ -1627,6 +1630,19 @@ void GetModemInfor(void)
 		LOGD("imsi:%s", tmpbuf);
 
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+		
+		if(strstr(g_imsi, "90128"))
+		{
+			if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+			{
+				LOGD("set apn fail!");
+			}
+		}
+
+		if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+		{
+			LOGD("apn:%s", tmpbuf);	
+		}
 	}
 
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
@@ -1642,6 +1658,14 @@ void GetModemInfor(void)
 
 		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
 	}
+}
+
+void GetModemStatus(void)
+{
+	char *ptr;
+	int i=0,len,err;
+	u8_t strbuf[64] = {0};
+	u8_t tmpbuf[256] = {0};
 
 	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
@@ -1650,7 +1674,7 @@ void GetModemInfor(void)
 		DecodeModemMonitor(tmpbuf, strlen(tmpbuf));
 	}
 
-#if 0
+#if 1
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 		LOGD("rsrp:%s", tmpbuf);
@@ -1668,17 +1692,32 @@ void GetModemInfor(void)
 #endif	
 }
 
+void SetModemTurnOn(void)
+{
+	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
+		LOGD("turn on modem success!");
+	else
+		LOGD("Can't turn on modem!");
+}
+
 void SetModemTurnOff(void)
 {
-	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) != 0)
-	{
+	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
+		LOGD("turn off modem success!");
+	else
 		LOGD("Can't turn off modem!");
 
-		return;
-	}	
-	LOGD("turn off modem success!");
-
 	nb_connected = false;
+}
+
+void GetModemAPN(void)
+{
+	u8_t tmpbuf[128] = {0};
+	
+	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("apn:%s", tmpbuf);	
+	}
 }
 
 void SetModemAPN(void)
@@ -1709,7 +1748,19 @@ static void nb_link(struct k_work *work)
 	int err=0;
 	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
-	
+	static bool frist_flag = false;
+
+	if(!frist_flag)
+	{
+		frist_flag = true;
+		
+		SetModemTurnOn();
+		GetModemInfor();
+		SetModemTurnOff();
+		err = lte_lc_init();
+		LOGD("lte_lc_init err:%d", err);
+	}
+
 	if(gps_is_working())
 	{
 		LOGD("gps is working, continue waiting!");
@@ -1733,11 +1784,11 @@ static void nb_link(struct k_work *work)
 		uart_sleep_out();
 	#endif
 		configure_low_power();
-		
-		err = lte_lc_init_and_connect();
+
+		err = lte_lc_connect();
 		if(err)
 		{
-			LOGD("Can't connected to LTE network");
+			LOGD("Can't connected to LTE network. err:%d", err);
 			nb_connected = false;
 
 			retry_count++;
@@ -1758,12 +1809,14 @@ static void nb_link(struct k_work *work)
 
 			nb_connected = true;
 			retry_count = 0;
-			
+
 			GetModemDateTime();
+		#ifndef CONFIG_DEVICE_POWER_MANAGEMENT	
 			modem_data_init();
+		#endif
 		}
-		
-		GetModemInfor();
+
+		GetModemStatus();
 
 		if(!nb_connected)
 			SetModemTurnOff();

@@ -842,7 +842,6 @@ void MenuStopNB(void)
 
 void NBRedrawSignal(void)
 {
-<<<<<<< HEAD
 	u8_t *ptr;
 	bool flag=false;
 	u8_t strbuf[128] = {0};
@@ -911,11 +910,6 @@ void NBRedrawSignal(void)
 	{
 		if(flag)
 			g_nb_sig = NB_SIG_LEVEL_NO;
-=======
-	if(g_rsrp > 97)
-	{
-		g_nb_sig = NB_SIG_LEVEL_NO;
->>>>>>> 8bce4a84668dbda5bcff9d2c617fb194336eafb1
 	}
 	else if(g_rsrp >= 80)
 	{
@@ -1779,20 +1773,8 @@ void SetModemTurnOff(void)
 		LOGD("turn off modem success!");
 	else
 		LOGD("Can't turn off modem!");
-}
 
-<<<<<<< HEAD
 	nb_connected = false;
-=======
-void GetModemAPN(void)
-{
-	u8_t tmpbuf[128] = {0};
-	
-	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-		LOGD("apn:%s", tmpbuf);	
-	}
->>>>>>> 8bce4a84668dbda5bcff9d2c617fb194336eafb1
 }
 
 void GetModemAPN(void)

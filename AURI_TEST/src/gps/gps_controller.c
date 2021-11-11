@@ -162,7 +162,7 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 	gps_dev = device_get_binding(CONFIG_GPS_DEV_NAME);
 	if (gps_dev == NULL)
 	{
-		LOGD("Could not get %s device", log_strdup(CONFIG_GPS_DEV_NAME));
+		LOGD("Could not get %s device", CONFIG_GPS_DEV_NAME);
 		return -ENODEV;
 	}
 

@@ -220,7 +220,7 @@ extern "C" {
 #define PWR_OFF_ICON_W	28
 #define PWR_OFF_ICON_H	32
 #define PWR_OFF_ICON_X	((LCD_WIDTH-PWR_OFF_ICON_W)/2)
-#define PWR_OFF_ICON_Y	0
+#define PWR_OFF_ICON_Y	((LCD_HEIGHT-PWR_OFF_ICON_H)/2)
 
 #define PWR_OFF_KEY_CN_W	96
 #define PWR_OFF_KEY_CN_H	32

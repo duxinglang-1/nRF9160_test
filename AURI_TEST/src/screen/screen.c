@@ -837,6 +837,7 @@ void SOSShowStatus(void)
 	AnimaShow(MSG_SENDING_X, MSG_SENDING_Y, img_anima, ARRAY_SIZE(img_anima), 500, false, SOSSChangrStatus);
 #else
 	LCD_ShowImg(MSG_SENDING_X, MSG_SENDING_Y, IMG_SENDING_3);
+	SOSSChangrStatus();
 #endif
 
 	LCD_ShowImg(SOS_ICON_X, SOS_ICON_Y, img_icon[0]);
@@ -1959,10 +1960,11 @@ void PowerOffShowStatus(void)
 	LCD_Clear(BLACK);
 
 	LCD_ShowImg(PWR_OFF_ICON_X, PWR_OFF_ICON_Y, IMG_PWROFF_ICON);
-	if(global_settings.language == LANGUAGE_CHN)
-		LCD_ShowImg(PWR_OFF_KEY_CN_X, PWR_OFF_KEY_CN_Y, img_pwroff_key[0]);
-	else
-		LCD_ShowImg(PWR_OFF_KEY_EN_X, PWR_OFF_KEY_EN_Y, img_pwroff_key[1]);
+
+	//if(global_settings.language == LANGUAGE_CHN)
+	//	LCD_ShowImg(PWR_OFF_KEY_CN_X, PWR_OFF_KEY_CN_Y, img_pwroff_key[0]);
+	//else
+	//	LCD_ShowImg(PWR_OFF_KEY_EN_X, PWR_OFF_KEY_EN_Y, img_pwroff_key[1]);
 }
 
 void PowerOffScreenProcess(void)

@@ -16,7 +16,11 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_ANIMATION_SUPPORT
 #define SOS_SENDING_TIMEOUT 2
+#else
+#define SOS_SENDING_TIMEOUT 4
+#endif
 
 #define SOS_NOTIFY_RECT_W	180
 #define SOS_NOTIFY_RECT_H	120

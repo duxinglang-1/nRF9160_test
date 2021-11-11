@@ -655,11 +655,6 @@ static void MqttDicConnectStop(void)
 /**@brief Callback handler for LTE RSRP data. */
 static void modem_rsrp_handler(char rsrp_value)
 {
-	u8_t *ptr;
-	bool flag=false;
-	u8_t strbuf[128] = {0};
-	u8_t tmpbuf[128] = {0};
-
 	/* RSRP raw values that represent actual signal strength are
 	 * 0 through 97 (per "nRF91 AT Commands" v1.1). If the received value
 	 * falls outside this range, we should not send the value.
@@ -672,70 +667,8 @@ static void modem_rsrp_handler(char rsrp_value)
 		nb_test_update_flag = true;
 	}
 
-	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
-	{
-		//+CSCON: <n>,<mode>[,<state>[,<access]]
-		//<n>
-		//0 每 Unsolicited indications disabled
-		//1 每 Enabled: <mode>
-		//2 每 Enabled: <mode>[,<state>]
-		//3 每 Enabled: <mode>[,<state>[,<access>]]
-		//<mode>
-		//0 每 Idle
-		//1 每 Connected
-		//<state>
-		//7 每 E-UTRAN connected
-		//<access>
-		//4 每 Radio access of type E-UTRAN FDD
-		LOGD("%s", strbuf);
-		ptr = strstr(strbuf, "+CSCON: ");
-		if(ptr)
-		{
-			u8_t mode;
-			u16_t len;
-
-			len = strlen(strbuf);
-			strbuf[len-2] = ',';
-			strbuf[len-1] = 0x00;
-			
-			ptr += strlen("+CSCON: ");
-			GetStringInforBySepa(ptr,",",2,tmpbuf);
-			mode = atoi(tmpbuf);
-			LOGD("mode:%d", mode);
-			if(mode == 1)//connected
-			{
-				flag = true;	
-			}
-			else if(mode == 0)//idle
-			{
-				LOGD("reg stat:%d", g_nw_registered);
-				if(g_nw_registered) 			//registered
-				{
-					flag = false;				//don't show no signal when ue is psm idle mode in registered, 
-				}
-				else							//not registered
-				{
-					flag = true;	
-				}
-
-			#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-				if(k_timer_remaining_get(&tau_wakeup_uart_timer) > 0)
-					k_timer_stop(&tau_wakeup_uart_timer);
-				
-				if(g_tau_time > LTE_TAU_WAKEUP_EARLY_TIME)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), NULL);
-				else if(g_tau_time > 0)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), NULL);
-			#endif
-			}
-		}
-	}
-
-	if(flag)
-	{
-		g_rsrp = rsrp_value;
-		nb_redraw_sig_flag = true;
-	}
+	g_rsrp = rsrp_value;
+	nb_redraw_sig_flag = true;
 }
 
 /**brief Initialize LTE status containers. */

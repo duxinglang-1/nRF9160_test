@@ -217,8 +217,8 @@ extern "C" {
 
 
 //power off confirm
-#define PWR_OFF_ICON_W	28
-#define PWR_OFF_ICON_H	32
+#define PWR_OFF_ICON_W	48
+#define PWR_OFF_ICON_H	48
 #define PWR_OFF_ICON_X	((LCD_WIDTH-PWR_OFF_ICON_W)/2)
 #define PWR_OFF_ICON_Y	((LCD_HEIGHT-PWR_OFF_ICON_H)/2)
 

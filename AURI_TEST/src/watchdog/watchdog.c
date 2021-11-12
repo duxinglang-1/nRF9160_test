@@ -9,7 +9,7 @@
 #include <drivers/watchdog.h>
 #include "logger.h"
 
-//#define WATCHDOG_DEBUG
+#define WATCHDOG_DEBUG
 
 #define WDT_FEED_WORKER_DELAY_MS ((CONFIG_WATCHDOG_TIMEOUT_MSEC)/2)
 

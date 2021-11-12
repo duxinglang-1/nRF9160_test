@@ -24,7 +24,7 @@
 #include "ucs2.h"
 #include "logger.h"
 
-//#define DATETIME_DEBUG
+#define DATETIME_DEBUG
 
 #define SEC_START_YEAR		1970
 #define SEC_START_MONTH		1
@@ -452,8 +452,8 @@ void UpdateSystemTime(void)
 	#endif		
 		{
 			AlarmRemindCheck(date_time);
-			//TimeCheckSendHealthData();
-			//TimeCheckSendLocationData();
+			TimeCheckSendHealthData();
+			TimeCheckSendLocationData();
 		}
 	}
 

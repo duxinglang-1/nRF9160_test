@@ -205,7 +205,7 @@ bool sensor_init(void)
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 

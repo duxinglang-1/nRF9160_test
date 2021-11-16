@@ -185,7 +185,7 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 	gps_reporting_interval_seconds = CONFIG_GPS_CONTROL_FIX_CHECK_INTERVAL;
 #endif
 
-	LOGD("GPS initialized");
+	//LOGD("GPS initialized");
 
 	is_init = true;
 

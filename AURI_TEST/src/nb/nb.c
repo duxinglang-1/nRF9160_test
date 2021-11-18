@@ -36,7 +36,7 @@
 #include "transfer_cache.h"
 #include "logger.h"
 
-#define LTE_TAU_WAKEUP_EARLY_TIME	(60)
+#define LTE_TAU_WAKEUP_EARLY_TIME	(120)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
@@ -1455,7 +1455,7 @@ void GetModemSignal(void)
 void TauWakeUpUartCallBack(struct k_timer *timer_id)
 {
 	uart_wake_flag = true;
-	get_modem_signal_flag = true;
+	k_timer_start(&get_nw_rsrp_timer, K_MSEC(LTE_TAU_WAKEUP_EARLY_TIME), NULL);
 }
 #endif
 
@@ -1674,7 +1674,7 @@ void GetModemStatus(void)
 		DecodeModemMonitor(tmpbuf, strlen(tmpbuf));
 	}
 
-#if 1
+#if 0
 	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 		LOGD("rsrp:%s", tmpbuf);

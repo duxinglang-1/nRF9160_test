@@ -208,7 +208,9 @@ void FallAlarmCancel(void)
 	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaStopShow();
 	#endif
+	#ifdef CONFIG_AUDIO_SUPPORT
 		FallStopAlarm();
+	#endif
 		fall_state = FALL_STATUS_CANCEL;
 		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), NULL);
 

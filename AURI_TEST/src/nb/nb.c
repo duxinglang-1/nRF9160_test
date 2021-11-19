@@ -194,7 +194,7 @@ static int subscribe(void)
 	const struct mqtt_subscription_list subscription_list = {
 		.list = &subscribe_topic,
 		.list_count = 1,
-		.message_id = 0000
+		.message_id = 0001
 	};
 
 	LOGD("Subscribing to:%s, len:%d", subscribe_topic.topic.utf8,
@@ -539,12 +539,12 @@ static void mqtt_link(struct k_work_q *work_q)
 			break;
 		}
 	}
-	LOGD("[%s]: Disconnecting MQTT client...", __func__);
+	LOGD("Disconnecting MQTT client...");
 
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		LOGD("[%s]: Could not disconnect MQTT client. Error: %d", __func__, err);
+		LOGD("Could not disconnect MQTT client. Error: %d", err);
 	}
 
 	mqtt_connecting_flag = false;
@@ -1455,7 +1455,6 @@ void GetModemSignal(void)
 void TauWakeUpUartCallBack(struct k_timer *timer_id)
 {
 	uart_wake_flag = true;
-	k_timer_start(&get_nw_rsrp_timer, K_MSEC(LTE_TAU_WAKEUP_EARLY_TIME), NULL);
 }
 #endif
 
@@ -1811,9 +1810,7 @@ static void nb_link(struct k_work *work)
 			retry_count = 0;
 
 			GetModemDateTime();
-		#ifndef CONFIG_DEVICE_POWER_MANAGEMENT	
 			modem_data_init();
-		#endif
 		}
 
 		GetModemStatus();

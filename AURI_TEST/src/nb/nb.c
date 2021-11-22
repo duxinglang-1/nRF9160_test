@@ -49,6 +49,8 @@ static void GetNetWorkTimeCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_time_timer, GetNetWorkTimeCallBack, NULL);
 static void GetNetWorkSignalCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_rsrp_timer, GetNetWorkSignalCallBack, NULL);
+static void GetModemInforCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_modem_infor_timer, GetModemInforCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -65,7 +67,6 @@ NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
 static struct modem_param_info modem_param;
 static bool nb_redraw_sig_flag = false;
-static bool get_modem_infor = false;
 static bool send_data_flag = false;
 static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
@@ -1000,6 +1001,11 @@ void GetNetWorkTimeCallBack(struct k_timer *timer_id)
 	get_modem_time_flag = true;
 }
 
+void GetModemInforCallBack(struct k_timer *timer_id)
+{
+	get_modem_info_flag = true;
+}
+
 static void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
@@ -1616,6 +1622,13 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 void GetModemInfor(void)
 {
 	u8_t tmpbuf[256] = {0};
+
+	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("MODEM version:%s", &tmpbuf);
+
+		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
+	}
 	
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
@@ -1651,12 +1664,8 @@ void GetModemInfor(void)
 		strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
 	}
 
-	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-		LOGD("MODEM version:%s", &tmpbuf);
-
-		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
-	}
+	if(strlen(g_imsi) == 0)
+		k_timer_start(&get_modem_infor_timer, K_SECONDS(1), NULL);
 }
 
 void GetModemStatus(void)

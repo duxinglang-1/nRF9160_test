@@ -234,14 +234,14 @@ static void set_gps_enable(const bool enable)
 	#ifdef GPS_DEBUG	
 		LOGD("Starting GPS");
 	#endif
-	
-		gps_control_start(K_NO_WAIT);
 
+		gps_is_on = true;
 		gps_fix_time = 0;
 		gps_local_time = 0;
 		gps_start_time = k_uptime_get();
-
-		gps_is_on = true;
+		memset(&gps_pvt_data, 0, sizeof(gps_pvt_data));
+		
+		gps_control_start(K_NO_WAIT);
 	}
 	else
 	{

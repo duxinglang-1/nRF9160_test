@@ -88,6 +88,8 @@ static u8_t payload_buf[CONFIG_MQTT_PAYLOAD_BUFFER_SIZE];
 static struct mqtt_client client;
 
 /* MQTT Broker details. */
+static u8_t broker_hostname[128] = CONFIG_MQTT_DOMESTIC_BROKER_HOSTNAME;
+static u32_t broker_port = CONFIG_MQTT_DOMESTIC_BROKER_PORT;
 static struct sockaddr_storage broker;
 
 /* Connected flag */
@@ -348,7 +350,7 @@ static void broker_init(void)
 		.ai_socktype = SOCK_STREAM
 	};
 
-	err = getaddrinfo(CONFIG_MQTT_BROKER_HOSTNAME, NULL, &hints, &result);
+	err = getaddrinfo(broker_hostname, NULL, &hints, &result);
 	if(err)
 	{
 		LOGD("ERROR: getaddrinfo failed %d", err);
@@ -372,7 +374,7 @@ static void broker_init(void)
 				((struct sockaddr_in *)addr->ai_addr)
 				->sin_addr.s_addr;
 			broker4->sin_family = AF_INET;
-			broker4->sin_port = htons(CONFIG_MQTT_BROKER_PORT);
+			broker4->sin_port = htons(broker_port);
 
 			inet_ntop(AF_INET, &broker4->sin_addr.s_addr,
 				  ipv4_addr, sizeof(ipv4_addr));
@@ -441,7 +443,7 @@ static void client_init(struct mqtt_client *client)
     tls_config->cipher_list = NULL;
     tls_config->sec_tag_count = ARRAY_SIZE(sec_tag_list);
     tls_config->sec_tag_list = sec_tag_list;
-    tls_config->hostname = CONFIG_MQTT_BROKER_HOSTNAME;
+    tls_config->hostname = broker_hostname;
 #else
     client->transport.type = MQTT_TRANSPORT_NON_SECURE;
 #endif/* defined(CONFIG_MQTT_LIB_TLS) */
@@ -1619,6 +1621,44 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 	}
 }
 
+void SetNetWorkApn(u8_t *imsi_buf)
+{
+	u8_t tmpbuf[256] = {0};
+
+	if(strncmp(imsi_buf, "90128", strlen("90128")) == 0)
+	{
+		if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+		{
+			LOGD("set apn fail!");
+		}
+	}
+
+	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("apn:%s", tmpbuf); 
+	}
+}
+
+void SetNwtWorkMqttBroker(u8_t *imsi_buf)
+{
+	if(strncmp(imsi_buf, "460", strlen("460")) == 0)
+	{
+		strcpy(broker_hostname, CONFIG_MQTT_DOMESTIC_BROKER_HOSTNAME);
+		broker_port = CONFIG_MQTT_DOMESTIC_BROKER_PORT;
+	}
+	else
+	{
+		strcpy(broker_hostname, CONFIG_MQTT_FOREIGN_BROKER_HOSTNAME);
+		broker_port = CONFIG_MQTT_FOREIGN_BROKER_PORT;
+	}
+}
+
+void SetNetWorkParaByPlmn(u8_t *imsi)
+{
+	SetNetWorkApn(imsi);
+	SetNwtWorkMqttBroker(imsi);
+}
+
 void GetModemInfor(void)
 {
 	u8_t tmpbuf[256] = {0};
@@ -1643,18 +1683,7 @@ void GetModemInfor(void)
 
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
 		
-		if(strstr(g_imsi, "90128"))
-		{
-			if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
-			{
-				LOGD("set apn fail!");
-			}
-		}
-
-		if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-		{
-			LOGD("apn:%s", tmpbuf);	
-		}
+		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)

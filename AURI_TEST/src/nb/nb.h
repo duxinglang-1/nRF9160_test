@@ -28,6 +28,9 @@
 #define ICCID_MAX_LEN	(20)
 #define MODEM_MAX_LEN   (20)
 
+#define APN_MAX_LEN			(100)
+#define	PLMN_MAX_LEN        (6)
+
 typedef enum
 {
 	NB_SIG_LEVEL_NO,
@@ -38,6 +41,12 @@ typedef enum
 	NB_SIG_LEVEL_4,
 	NB_SIG_LEVEL_MAX
 }NB_SIGNL_LEVEL;
+
+typedef struct
+{
+	u8_t plmn[PLMN_MAX_LEN];
+	u8_t apn[APN_MAX_LEN];
+}NB_APN_PARAMENT;
 
 extern NB_SIGNL_LEVEL g_nb_sig;
 

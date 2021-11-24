@@ -118,6 +118,21 @@ u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
 u16_t g_act_time = 0;
 
+static NB_APN_PARAMENT nb_apn_table[] = 
+{
+	//china mobile
+	{	
+		"46004",
+		"cmnbiot2"
+	},
+	//arkessa
+	{
+		"90128", 
+		"arkessalp.com",
+	},
+};
+
+
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);
 static void MqttReceData(u8_t *data, u32_t datalen);
@@ -1623,13 +1638,23 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 
 void SetNetWorkApn(u8_t *imsi_buf)
 {
+	u32_t i;
 	u8_t tmpbuf[256] = {0};
 
-	if(strncmp(imsi_buf, "90128", strlen("90128")) == 0)
+	for(i=0;i<ARRAY_SIZE(nb_apn_table);i++)
 	{
-		if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+		if(strncmp(imsi_buf, nb_apn_table[i].plmn, strlen(nb_apn_table[i].plmn)) == 0)
 		{
-			LOGD("set apn fail!");
+			u8_t cmdbuf[128] = {0};
+			
+			sprintf(cmdbuf, "AT+CGDCONT=0,\"IP\",\"%s\"", nb_apn_table[i].apn);
+			LOGD("cmdbuf:%s", cmdbuf); 
+			if(at_cmd_write(cmdbuf, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+			{
+				LOGD("set apn fail!");
+			}
+
+			break;
 		}
 	}
 

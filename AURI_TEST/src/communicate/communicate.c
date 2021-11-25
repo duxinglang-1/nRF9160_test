@@ -238,7 +238,14 @@ void TimeCheckSendLocationData(void)
 	bool flag = false;
 	
 	loc_hour_count++;
-	if(loc_hour_count == global_settings.dot_interval.time)
+	if(date_time.hour >= 21 || date_time.hour < 9)
+	{
+		if(loc_hour_count == 360)
+		{
+			flag = true;
+		}
+	}
+	else if(loc_hour_count == global_settings.dot_interval.time)
 	{
 		flag = true;
 	}

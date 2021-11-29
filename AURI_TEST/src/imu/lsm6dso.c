@@ -205,7 +205,7 @@ bool sensor_init(void)
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
@@ -833,6 +833,7 @@ static void mt_fall_detection(struct k_work *work)
 		}
 	}
 
+#if 0	//xb add 2021-11-29 ∆¡±Œ¡ÀÀ§µπºÏ≤‚π¶ƒ‹
 	if(int2_event) //fall
 	{
 		LOGD("int2 evt!");
@@ -865,7 +866,8 @@ static void mt_fall_detection(struct k_work *work)
 			LOGD("Not Fall.");
         }
 	}
-	
+#endif
+
 	if(reset_steps)
 	{
 		reset_steps = false;

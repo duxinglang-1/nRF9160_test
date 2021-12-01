@@ -32,13 +32,6 @@
 
 static const char results[][60] = { value1,value2,value3,value4,value5,value6,value7,value8,value9,value10,value11,value12};
 
-#define SPORT_RECORD_ID 		10
-#define SPORT_LENGTH_ID    		11	
-
-int count;
-u16_t heart_rate = 1000, blood_oxygen = 2000;	
-u16_t sport_record = 0, sport_last = 0;
-
 static bool nvs_init_flag = false;
 
 static struct nvs_fs fs;
@@ -182,254 +175,568 @@ void test_nvs(void)
 	}
 }
 
+bool save_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
+{
+	u16_t nvs_rx=0;
+	ssize_t bytes_written,bytes_read;
+	u16_t index_addr_id,count_addr_id;
+	u16_t index_begin,index_max,count_max;
+	u16_t tmp_index,tmp_count;
+	u32_t data_len;
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		index_addr_id = LOCAL_INDEX_ADDR_ID;
+		count_addr_id = LOCAL_COUNT_ADDR_ID;
+		index_begin = LOCAL_INDEX_BEGIN;
+		index_max = LOCAL_INDEX_MAX;
+		count_max = (LOCAL_INDEX_MAX-LOCAL_INDEX_BEGIN);
+		data_len = sizeof(local_record_t);
+		break;
+
+	case RECORD_TYPE_HEALTH:
+		index_addr_id = HEALTH_INDEX_ADDR_ID;
+		count_addr_id = HEALTH_COUNT_ADDR_ID;
+		index_begin = HEALTH_INDEX_BEGIN;
+		index_max = HEALTH_INDEX_MAX;
+		count_max = (HEALTH_INDEX_MAX-HEALTH_INDEX_BEGIN);
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		index_addr_id = SPORT_INDEX_ADDR_ID;
+		count_addr_id = SPORT_COUNT_ADDR_ID;
+		index_begin = SPORT_INDEX_BEGIN;
+		index_max = SPORT_INDEX_MAX;
+		count_max = (SPORT_INDEX_MAX-SPORT_INDEX_BEGIN);
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_read = nvs_read(&fs, index_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+	{
+		tmp_index = index_begin;
+		tmp_count = 0;
+	}
+	else
+	{
+		//最后一条记录的ID
+		tmp_index = nvs_rx;
+		
+		bytes_read = nvs_read(&fs, count_addr_id, &nvs_rx, sizeof(nvs_rx));
+		if(bytes_read <= 0)
+			return false;
+		//存储的总条数
+		tmp_count = nvs_rx;
+	}
+
+	if(tmp_count == count_max)
+	{
+		//已经存满，从第一条位置覆盖存储，注意存储序号是起始编号加1
+		if(tmp_index == index_max)
+			tmp_index = index_begin;
+		tmp_index += 1;
+			
+		bytes_written = nvs_write(&fs, tmp_index, data, data_len);
+		if(bytes_written <= 0)
+			return false;
+
+		bytes_written = nvs_write(&fs, index_addr_id, &tmp_index, sizeof(tmp_index));
+		if(bytes_written <= 0)
+			return false;
+	}
+	else
+	{
+		//未存满，在当前最后一条记录的下一个位置存储数据
+		tmp_index += 1;
+		tmp_count += 1;
+		bytes_written = nvs_write(&fs, tmp_index, data, data_len);
+		if(bytes_written <= 0)
+			return false;
+
+		bytes_written = nvs_write(&fs, index_addr_id, &tmp_index, sizeof(tmp_index));
+		if(bytes_written <= 0)
+			return false;
+		
+		bytes_written = nvs_write(&fs, count_addr_id, &tmp_count, sizeof(tmp_count));
+		if(bytes_written <= 0)
+			return false;
+	}
+
+	return true;	
+}
+
 bool save_local_to_record(local_record_t *local_data)
 {
-	return true;
+	return save_data_to_record(local_data, RECORD_TYPE_LOCATION);
 }
 
 bool save_health_to_record(health_record_t *health_data)
 {
-	return true;
+	return save_data_to_record(health_data, RECORD_TYPE_HEALTH);
 }
 
 bool save_sport_to_record(sport_record_t *sport_data)
 {
+	return save_data_to_record(sport_data, RECORD_TYPE_SPORT);
+}
+
+bool get_date_from_record(void *databuf, u32_t index, ENUM_RECORD_TYPE record_type)
+{
+	u16_t nvs_rx=0;
+	ssize_t bytes_read;
+	u16_t index_addr_id,count_addr_id;
+	u16_t index_begin,index_max,count_max;
+	u16_t tmp_index,tmp_count;
+	u32_t data_len;
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		index_addr_id = LOCAL_INDEX_ADDR_ID;
+		count_addr_id = LOCAL_COUNT_ADDR_ID;
+		index_begin = LOCAL_INDEX_BEGIN;
+		index_max = LOCAL_INDEX_MAX;
+		count_max = (LOCAL_INDEX_MAX-LOCAL_INDEX_BEGIN);
+		data_len = sizeof(local_record_t);
+		break;
+		
+	case RECORD_TYPE_HEALTH:
+		index_addr_id = HEALTH_INDEX_ADDR_ID;
+		count_addr_id = HEALTH_COUNT_ADDR_ID;
+		index_begin = HEALTH_INDEX_BEGIN;
+		index_max = HEALTH_INDEX_MAX;
+		count_max = (HEALTH_INDEX_MAX-HEALTH_INDEX_BEGIN);
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		index_addr_id = SPORT_INDEX_ADDR_ID;
+		count_addr_id = SPORT_COUNT_ADDR_ID;
+		index_begin = SPORT_INDEX_BEGIN;
+		index_max = SPORT_INDEX_MAX;
+		count_max = (SPORT_INDEX_MAX-SPORT_INDEX_BEGIN);
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_read = nvs_read(&fs, count_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+		return false;
+
+	//存储的总条数
+	tmp_count = nvs_rx;
+	if(tmp_count <= 0)
+		return false;
+	
+	bytes_read = nvs_read(&fs, index_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+		return false;
+	//最后一条记录的ID	
+	tmp_index = nvs_rx;
+
+	if(tmp_count == count_max)
+	{
+		u16_t tmp_id;
+
+		if(index == 0 || index > count_max)
+			return false;
+
+		//从最后一条记录开始，读取第几条记录就在此基础上加index序号
+		tmp_id = tmp_index + index;
+		if(tmp_id > index_max)
+			tmp_id -= count_max;
+
+		bytes_read = nvs_read(&fs, tmp_index, databuf, data_len);
+		if(bytes_read<=0)
+			return false;
+	}
+	else
+	{
+		//未存满，读取第几条就是存储ID(定义的起始ID加1)
+		if(index > tmp_count)
+			return false;
+			
+		bytes_read = nvs_read(&fs, (index + index_begin), databuf, data_len);
+		if(bytes_read <= 0)
+			return false;
+	}
+
 	return true;
 }
 
-bool get_local_record(local_record_t *local_data, u32_t index)
+bool get_local_from_record(local_record_t *local_data, u32_t index)
 {
-	return true;
+	return get_date_from_record(local_data, index, RECORD_TYPE_LOCATION);
+}
+
+bool get_health_from_record(health_record_t *health_data, u32_t index)
+{
+	return get_date_from_record(health_data, index, RECORD_TYPE_HEALTH);
+}
+
+bool get_sport_from_record(sport_record_t *sport_data, u32_t index)
+{
+	return get_date_from_record(sport_data, index, RECORD_TYPE_SPORT);
+}
+
+bool get_last_data_from_record(void *databuf, ENUM_RECORD_TYPE record_type)
+{
+	u16_t nvs_rx=0;
+	ssize_t bytes_read;
+	u16_t index_addr_id,count_addr_id;
+	u16_t index_begin,index_max,count_max;
+	u16_t tmp_index,tmp_count;
+	u32_t data_len;
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		index_addr_id = LOCAL_INDEX_ADDR_ID;
+		count_addr_id = LOCAL_COUNT_ADDR_ID;
+		index_begin = LOCAL_INDEX_BEGIN;
+		index_max = LOCAL_INDEX_MAX;
+		count_max = (LOCAL_INDEX_MAX-LOCAL_INDEX_BEGIN);
+		data_len = sizeof(local_record_t);
+		break;
+		
+	case RECORD_TYPE_HEALTH:
+		index_addr_id = HEALTH_INDEX_ADDR_ID;
+		count_addr_id = HEALTH_COUNT_ADDR_ID;
+		index_begin = HEALTH_INDEX_BEGIN;
+		index_max = HEALTH_INDEX_MAX;
+		count_max = (HEALTH_INDEX_MAX-HEALTH_INDEX_BEGIN);
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		index_addr_id = SPORT_INDEX_ADDR_ID;
+		count_addr_id = SPORT_COUNT_ADDR_ID;
+		index_begin = SPORT_INDEX_BEGIN;
+		index_max = SPORT_INDEX_MAX;
+		count_max = (SPORT_INDEX_MAX-SPORT_INDEX_BEGIN);
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_read = nvs_read(&fs, count_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+		return false;
+
+	tmp_count = nvs_rx;
+	if(tmp_count <= 0)
+		return false;
+	
+	bytes_read = nvs_read(&fs, index_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+		return false;
+	
+	tmp_index = nvs_rx;
+
+	bytes_read = nvs_read(&fs, tmp_index, databuf, data_len);
+	if(bytes_read <= 0)
+		return false;
+	
+	return true;	
+}
+
+bool get_last_local_record(local_record_t *local_data)  
+{
+	return get_last_data_from_record(local_data, RECORD_TYPE_LOCATION);
+}
+
+bool get_last_health_record(health_record_t *health_data)
+{
+	return get_last_data_from_record(health_data, RECORD_TYPE_HEALTH);
+}
+
+bool get_last_sport_record(sport_record_t *sport_data)
+{
+	return get_last_data_from_record(sport_data, RECORD_TYPE_SPORT);
+}
+
+bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time, u32_t index, ENUM_RECORD_TYPE record_type)
+{
+	u16_t nvs_rx=0;
+	ssize_t bytes_read;
+	u16_t index_addr_id,count_addr_id;
+	u16_t index_begin,index_max,count_max;
+	u16_t tmp_index,tmp_count;
+	u32_t i,data_len;
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		index_addr_id = LOCAL_INDEX_ADDR_ID;
+		count_addr_id = LOCAL_COUNT_ADDR_ID;
+		index_begin = LOCAL_INDEX_BEGIN;
+		index_max = LOCAL_INDEX_MAX;
+		count_max = (LOCAL_INDEX_MAX-LOCAL_INDEX_BEGIN);
+		data_len = sizeof(local_record_t);
+		break;
+		
+	case RECORD_TYPE_HEALTH:
+		index_addr_id = HEALTH_INDEX_ADDR_ID;
+		count_addr_id = HEALTH_COUNT_ADDR_ID;
+		index_begin = HEALTH_INDEX_BEGIN;
+		index_max = HEALTH_INDEX_MAX;
+		count_max = (HEALTH_INDEX_MAX-HEALTH_INDEX_BEGIN);
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		index_addr_id = SPORT_INDEX_ADDR_ID;
+		count_addr_id = SPORT_COUNT_ADDR_ID;
+		index_begin = SPORT_INDEX_BEGIN;
+		index_max = SPORT_INDEX_MAX;
+		count_max = (SPORT_INDEX_MAX-SPORT_INDEX_BEGIN);
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_read = nvs_read(&fs, count_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+		return false;
+	
+	tmp_count = nvs_rx;
+
+	if(tmp_count <= 0)
+		return false;
+	
+	bytes_read = nvs_read(&fs, index_addr_id, &nvs_rx, sizeof(nvs_rx));
+	if(bytes_read <= 0)
+		return false;
+
+	tmp_index = nvs_rx;
+	
+	if(tmp_count == count_max)
+	{
+		u16_t tmp_id;
+		u32_t left_count;
+		sys_date_timer_t *p_time;
+		
+		tmp_id = tmp_index;
+		for(i=0;i<count_max;i++)
+		{				
+			tmp_id++;
+			if(tmp_id > index_max)
+				tmp_id -= count_max;
+				
+			bytes_read = nvs_read(&fs, tmp_id, databuf, data_len);   
+			if(bytes_read <= 0)
+				return false;
+
+			switch(record_type)
+			{
+			case RECORD_TYPE_LOCATION:
+				{
+					local_record_t* local_data;
+
+					local_data = (local_record_t*)databuf;
+					p_time = (sys_date_timer_t*)&(local_data->timestamp);
+				}
+				break;
+				
+			case RECORD_TYPE_HEALTH:
+				{
+					health_record_t* health_data;
+
+					health_data = (health_record_t*)databuf;
+					p_time = (sys_date_timer_t*)&(health_data->timestamp);
+				}
+				break;
+
+			case RECORD_TYPE_SPORT:
+				{
+					sport_record_t* sport_data;
+
+					sport_data = (sport_record_t*)databuf;
+					p_time = (sys_date_timer_t*)&(sport_data->timestamp);
+				}
+				break;
+			}
+			
+			if(p_time->year > time.year)
+			{
+				break;
+			}
+			else if(p_time->year == time.year)
+			{
+				if(p_time->month > time.month)
+				{
+					break;	
+				}
+				else if(p_time->month == time.month)
+				{
+					if(p_time->day > time.day)
+					{
+						break;
+					}
+					else if(p_time->day == time.day)
+					{
+						if(p_time->hour > time.hour)
+						{
+							break;
+						}
+						else if(p_time->hour == time.hour)
+						{
+							if(p_time->minute > time.minute)
+							{
+								break;
+							}
+							else if(p_time->second == time.minute)
+							{
+								if(p_time->second >= time.second)
+								{
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if(i == count_max)
+			return false;
+
+		//计算剩余符合条件的记录条数
+		left_count = (index_max-i)+1;
+		if(tmp_index > index_max)
+			left_count += (tmp_index-index_begin);
+
+		if((index > 1) && (index <= left_count))	//xb add 2021-12-01 比较的时候已经取得了第一个数据，因此后面的第一个数据实际上是第二个数据
+		{
+			index--;
+			index += tmp_id;
+			if(index > index_max)
+				index -= count_max;
+
+			if(index > index_max)
+				return false;
+			
+			bytes_read = nvs_read(&fs, index, databuf, data_len); 
+			if(bytes_read <= 0)
+				return false;
+		}
+	}
+	else
+	{
+		sys_date_timer_t *p_time;
+		
+		if((index + index_begin) > tmp_index)
+			return false;
+
+		for(i=(index_begin+1);i<=tmp_index;i++)	
+		{
+			bytes_read = nvs_read(&fs, i, databuf, data_len);     
+			if(bytes_read <= 0)
+				return false;
+
+			switch(record_type)
+			{
+			case RECORD_TYPE_LOCATION:
+				{
+					local_record_t* local_data;
+
+					local_data = (local_record_t*)databuf;
+					p_time = (sys_date_timer_t*)&(local_data->timestamp);
+				}
+				break;
+				
+			case RECORD_TYPE_HEALTH:
+				{
+					health_record_t* health_data;
+
+					health_data = (health_record_t*)databuf;
+					p_time = (sys_date_timer_t*)&(health_data->timestamp);
+				}
+				break;
+
+			case RECORD_TYPE_SPORT:
+				{
+					sport_record_t* sport_data;
+
+					sport_data = (sport_record_t*)databuf;
+					p_time = (sys_date_timer_t*)&(sport_data->timestamp);
+				}
+				break;
+			}
+
+			if(p_time->year > time.year)
+			{
+				break;
+			}
+			else if(p_time->year == time.year)
+			{
+				if(p_time->month > time.month)
+				{
+					break;	
+				}
+				else if(p_time->month == time.month)
+				{
+					if(p_time->day > time.day)
+					{
+						break;
+					}
+					else if(p_time->day == time.day)
+					{
+						if(p_time->hour > time.hour)
+						{
+							break;
+						}
+						else if(p_time->hour == time.hour)
+						{
+							if(p_time->minute > time.minute)
+							{
+								break;
+							}
+							else if(p_time->second == time.minute)
+							{
+								if(p_time->second >= time.second)
+								{
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if(i > tmp_index)
+			return false;
+
+		if(index > 1)	//xb add 2021-12-01 比较的时候已经取得了第一个数据，因此后面的第一个数据实际上是第二个数据
+		{
+			index--;
+			index += i;
+			if(index > tmp_index)
+				return false;
+
+			bytes_read = nvs_read(&fs, index, databuf, data_len);  
+			if(bytes_read <= 0)
+				return false;
+		}
+	}
+
+	return true;	
 }
 
 bool get_local_record_from_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index)
 {
-	return true;
-}
-
-bool get_health_record(health_record_t *health_data, u32_t index)
-{
-	return true;
+	return get_data_from_record_by_time_and_index(local_data, begin_time, index, RECORD_TYPE_LOCATION);
 }
 
 bool get_health_record_from_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index)
 {
-	return true;
-}
-
-bool get_sport_record(sport_record_t *sport_data, u32_t index)
-{
-	return true;
+	return get_data_from_record_by_time_and_index(health_data, begin_time, index, RECORD_TYPE_HEALTH);
 }
 
 bool get_sport_record_from_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index)
-{
-	return true;
-}
-
-bool Nvs_Write_SportData(struct nvs_fs *fs, const void *data,size_t len)
-{
-	u16_t nvs_rx = 0;
-	ssize_t bytes_written,bytes_read,err;
-
-	bytes_read = nvs_read(fs, SPORT_RECORD_ID, &nvs_rx, sizeof(nvs_rx));
-	if(bytes_read <= 0)
-	{
-		sport_record = 1000;
-		sport_last = 0;
-	}
-	else
-	{
-		sport_record = nvs_rx;
-		bytes_read = nvs_read(fs, SPORT_LENGTH_ID, &nvs_rx, sizeof(nvs_rx));
-		if(bytes_read <= 0)
-		{
-			return false;
-		}
-		sport_last = nvs_rx;
-	}
-
-	if(sport_last == 100)
-	{
-		if((sport_last == 100)&&(sport_record == 1100))
-		{
-			sport_record = 1000;
-		}
-		sport_record +=1;
-			
-		bytes_written = nvs_write(fs,sport_record, data, len);
-		if(bytes_written<=0)
-		{
-			return false;
-		}
-		bytes_written = nvs_write(fs,SPORT_RECORD_ID, &sport_record, sizeof(sport_record));
-		if(bytes_written<=0)
-		{
-			return false;
-		}
-	}
-	else
-	{
-		sport_record +=1;
-		sport_last +=1;
-		bytes_written = nvs_write(fs,sport_record, data, len);
-		
-		if(bytes_written<=0)
-		{
-			return false;
-		}
-		bytes_written = nvs_write(fs,SPORT_RECORD_ID, &sport_record, sizeof(sport_record));
-		if(bytes_written<=0)
-		{
-			return false;
-		}
-		
-		bytes_written = nvs_write(fs,SPORT_LENGTH_ID, &sport_last, sizeof(sport_last));
-		if(bytes_written<=0)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool Get_SportData(void *data, u16_t index)
-{
-	u16_t node,nvs_rx;
-	ssize_t bytes_written, bytes_read,err;
-
-	bytes_read = nvs_read(&fs, SPORT_LENGTH_ID, &nvs_rx, sizeof(nvs_rx));
-	if(bytes_read<=0)
-	{
-		return false;
-	}
-	sport_last = nvs_rx;
-	bytes_read = nvs_read(&fs, SPORT_RECORD_ID, &nvs_rx, sizeof(nvs_rx));
-	if(bytes_read<=0)
-	{
-		return false;
-	}
-	sport_record = nvs_rx;
-	if(sport_last==100)
-	{
-		node = sport_record+index;
-		if(node>1100)
-			node = node-100;
-		bytes_read = nvs_read(&fs, node, data, 20);
-		if(bytes_read<=0)
-		{
-		return false;
-		}
-	}
-	else
-	{
-		if(index > sport_last)
-			return false;
-			
-		bytes_read = nvs_read(&fs, (index + 1000), data, 20);
-		if(bytes_read<=0)
-		{
-			return false;
-		}
-	}
-		
-    return true;
-}
-
-
-bool Get_SportData_from_time(void *data, sys_date_timer_t begin_time,u16_t index)
 {	
-	u16_t record,node,nvs_rx,i;
-	ssize_t bytes_written, bytes_read,err;
-	sport_record_t test;
-	
-	bytes_read = nvs_read(&fs, SPORT_LENGTH_ID, &nvs_rx, sizeof(nvs_rx));
-	if(bytes_read<=0)
-	{
-		return false;
-	}
-	
-	sport_last = nvs_rx;
-	bytes_read = nvs_read(&fs, SPORT_RECORD_ID, &nvs_rx, sizeof(nvs_rx));
-	if(bytes_read<=0)
-	{
-		return false;
-	}
-	sport_record = nvs_rx;
-	
-	if(sport_last==100)
-	{
-		record = sport_record;
-		for(i=0;i<=100;i++)
-		{		
-
-			if(i==100)
-				return false;	
-				
-			record +=1;			
-			if(record > 1100)
-				record = record - 100;
-				
-			bytes_read = nvs_read(&fs, record, &test, 20);
-			if(bytes_read<=0)
-			{
-				return false;
-			}	
-			
-			if((test.timestamp.year == begin_time.year)&&(test.timestamp.month == begin_time.month)&&(test.timestamp.day == begin_time.day)
-				&&(test.timestamp.hour == begin_time.hour)&&(test.timestamp.minute == begin_time.minute)&&(test.timestamp.second == begin_time.second)
-				&&(test.timestamp.week == begin_time.week))
-			{
-				break;
-			}			
-		}
-
-		node = record+index;
-		if((node-100)>sport_record)
-			return false;
-
-		if(node>1100)
-			node= node-100;
-		bytes_read = nvs_read(&fs, node, data, 20);
-		if(bytes_read<=0)
-		{
-			return false;
-		}		
-	}
-	else
-	{
-		if((index + 1000) > sport_record)
-			return false;
-
-		for(i=1001;i<=1100;i++)	
-		{
-			if(i==1100)
-			{
-				return false;
-			}
-			bytes_read = nvs_read(&fs, i, &test, 20);
-			if(bytes_read<=0)
-			{
-				return false;
-			}
-			if((test.timestamp.year == begin_time.year)&&(test.timestamp.month == begin_time.month)&&(test.timestamp.day == begin_time.day)
-				&&(test.timestamp.hour == begin_time.hour)&&(test.timestamp.minute == begin_time.minute)&&(test.timestamp.second == begin_time.second)
-				&&(test.timestamp.week == begin_time.week))
-			{
-				break;
-			}
-		}
-		
-		if((i+index) > sport_record)
-			return false;
-
-		bytes_read = nvs_read(&fs, (i+index), data, 20);
-		if(bytes_read<=0)
-		{
-				return false;
-		}
-	}
-
-	return true;
+	return get_data_from_record_by_time_and_index(sport_data, begin_time, index, RECORD_TYPE_SPORT);
 }
+

@@ -16,10 +16,32 @@
 #include "datetime.h"
 #include "Settings.h"
 
-#define DATETIME_ID 			1
-#define SETTINGS_ID 			2
-#define SPORT_RECORD_ID 		10
-#define SPORT_LENGTH_ID    		11	
+//存储时间和设置项的地址ID
+#define DATETIME_ID 				1
+#define SETTINGS_ID 				2
+//存储索引的地址ID
+#define SPORT_INDEX_ADDR_ID 		10
+#define HEALTH_INDEX_ADDR_ID        12
+#define LOCAL_INDEX_ADDR_ID			14
+//储存总条数的地址ID
+#define SPORT_COUNT_ADDR_ID    		11	
+#define HEALTH_COUNT_ADDR_ID        13
+#define LOCAL_COUNT_ADDR_ID         15
+//存储索引的起止编号
+#define SPORT_INDEX_BEGIN			1000
+#define SPORT_INDEX_MAX				1100
+#define HEALTH_INDEX_BEGIN			2000
+#define HEALTH_INDEX_MAX			2100
+#define LOCAL_INDEX_BEGIN			3000
+#define LOCAL_INDEX_MAX				3100
+
+typedef enum
+{
+	RECORD_TYPE_LOCATION,
+	RECORD_TYPE_HEALTH,
+	RECORD_TYPE_SPORT,
+	RECORD_TYPE_MAX
+}ENUM_RECORD_TYPE;
 
 typedef struct
 {
@@ -59,11 +81,14 @@ extern void SaveDateTimeToInnerFlash(sys_date_timer_t time);
 extern bool save_local_to_record(local_record_t *local_data);
 extern bool save_health_to_record(health_record_t *health_data);
 extern bool save_sport_to_record(sport_record_t *sport_data);
-extern bool get_local_record(local_record_t *local_data, u32_t index);
+extern bool get_local_from_record(local_record_t *local_data, u32_t index);
+extern bool get_health_from_record(health_record_t *health_data, u32_t index);
+extern bool get_sport_from_record(sport_record_t *sport_data, u32_t index);
+extern bool get_last_sport_record(sport_record_t *sport_data);
+extern bool get_last_health_record(health_record_t *health_data);
+extern bool get_last_local_record(local_record_t *local_data);
 extern bool get_local_record_from_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index);
-extern bool get_health_record(health_record_t *health_data, u32_t index);
 extern bool get_health_record_from_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index);
-extern bool get_sport_record(sport_record_t *sport_data, u32_t index);
 extern bool get_sport_record_from_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index);
 
 #endif/*__INNER_FLASH_H__*/

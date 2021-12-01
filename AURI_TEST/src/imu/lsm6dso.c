@@ -16,6 +16,7 @@ Take 26Hz data rate
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "lsm6dso.h"
 #include "lsm6dso_reg.h"
 #include "algorithm.h"
 #include "lcd.h"
@@ -44,8 +45,7 @@ static struct k_work_q *imu_work_q;
 static struct k_work imu_work;
 
 static bool imu_check_ok = false;
-static uint8_t whoamI, rst;
-static uint16_t steps; //step counter
+static u8_t whoamI, rst;
 
 static struct device *i2c_imu;
 static struct device *gpio_imu;
@@ -57,6 +57,8 @@ bool imu_redraw_steps_flag = true;
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
+
+sport_record_t last_sport = {0};
 
 extern bool update_sleep_parameter;
 
@@ -205,7 +207,7 @@ bool sensor_init(void)
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	// int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
@@ -759,13 +761,28 @@ void GetImuSteps(u16_t *steps)
 
 void UpdateIMUData(void)
 {
-	GetImuSteps(&g_steps);
+	u16_t steps;
+	
+	GetImuSteps(&steps);
 
+	g_steps += steps;
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
 	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
 
+	last_sport.timestamp.year = date_time.year;
+	last_sport.timestamp.month = date_time.month; 
+	last_sport.timestamp.day = date_time.day;
+	last_sport.timestamp.hour = date_time.hour;
+	last_sport.timestamp.minute = date_time.minute;
+	last_sport.timestamp.second = date_time.second;
+	last_sport.timestamp.week = date_time.week;
+	last_sport.steps = g_steps;
+	last_sport.distance = g_distance;
+	last_sport.calorie = g_calorie;
+	save_cur_sport_to_record(&last_sport);
+	
 	StepCheckSendLocationData(g_steps);
 }
 
@@ -909,6 +926,14 @@ void IMU_init(struct k_work_q *work_q)
 {
 	LOGD("IMU_init");
 	
+	get_cur_sport_from_record(&last_sport);
+	if(last_sport.timestamp.day == date_time.day)
+	{
+		g_steps = last_sport.steps;
+		g_distance = last_sport.distance;
+		g_calorie = last_sport.calorie;
+	}
+
 	imu_work_q = work_q;
 	k_work_init(&imu_work, mt_fall_detection);
 	

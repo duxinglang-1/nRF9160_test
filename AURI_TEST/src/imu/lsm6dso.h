@@ -3,6 +3,7 @@
 #include <nrf9160.h>
 #include <zephyr.h>
 #include <device.h>
+#include "inner_flash.h"
 
 extern bool reset_steps;
 extern bool fall_wait_gps;
@@ -10,6 +11,8 @@ extern bool fall_wait_gps;
 extern u16_t g_steps;
 extern u16_t g_calorie;
 extern u16_t g_distance;
+
+extern sport_record_t last_sport;
 
 extern void IMU_init(struct k_work_q *work_q);
 extern void IMUMsgProcess(void);

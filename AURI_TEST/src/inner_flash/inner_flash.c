@@ -175,6 +175,98 @@ void test_nvs(void)
 	}
 }
 
+bool save_current_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
+{
+	ssize_t bytes_written;
+	u16_t addr_id;
+	u32_t data_len;
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		addr_id = CUR_LOCAL_ID;
+		data_len = sizeof(local_record_t);
+		break;
+
+	case RECORD_TYPE_HEALTH:
+		addr_id = CUR_HEALTH_ID;
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		addr_id = CUR_SPORT_ID;
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_written = nvs_write(&fs, addr_id, data, data_len);
+	if(bytes_written <= 0)
+		return false;
+
+	return true;	
+}
+
+bool save_cur_local_to_record(local_record_t *local_data)
+{
+	return save_current_data_to_record(local_data, RECORD_TYPE_LOCATION);
+}
+
+bool save_cur_health_to_record(health_record_t *health_data)
+{
+	return save_current_data_to_record(health_data, RECORD_TYPE_HEALTH);
+}
+
+bool save_cur_sport_to_record(sport_record_t *sport_data)
+{
+	return save_current_data_to_record(sport_data, RECORD_TYPE_SPORT);
+}
+
+bool get_current_data_from_record(void *data, ENUM_RECORD_TYPE record_type)
+{
+	ssize_t bytes_read;
+	u16_t addr_id;
+	u32_t data_len;
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		addr_id = LOCAL_INDEX_ADDR_ID;
+		data_len = sizeof(local_record_t);
+		break;
+		
+	case RECORD_TYPE_HEALTH:
+		addr_id = HEALTH_INDEX_ADDR_ID;
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		addr_id = SPORT_INDEX_ADDR_ID;
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_read = nvs_read(&fs, addr_id, data, data_len);
+	if(bytes_read <= 0)
+		return false;
+	
+	return true;	
+}
+
+bool get_cur_local_from_record(local_record_t *local_data)
+{
+	return get_current_data_from_record(local_data, RECORD_TYPE_LOCATION);
+}
+
+bool get_cur_health_from_record(health_record_t *health_data)
+{
+	return get_current_data_from_record(health_data, RECORD_TYPE_HEALTH);
+}
+
+bool get_cur_sport_from_record(sport_record_t *sport_data)
+{
+	return get_current_data_from_record(sport_data, RECORD_TYPE_SPORT);
+}
+
 bool save_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 {
 	u16_t nvs_rx=0;
@@ -442,17 +534,17 @@ bool get_last_data_from_record(void *databuf, ENUM_RECORD_TYPE record_type)
 	return true;	
 }
 
-bool get_last_local_record(local_record_t *local_data)  
+bool get_last_local_from_record(local_record_t *local_data)  
 {
 	return get_last_data_from_record(local_data, RECORD_TYPE_LOCATION);
 }
 
-bool get_last_health_record(health_record_t *health_data)
+bool get_last_health_from_record(health_record_t *health_data)
 {
 	return get_last_data_from_record(health_data, RECORD_TYPE_HEALTH);
 }
 
-bool get_last_sport_record(sport_record_t *sport_data)
+bool get_last_sport_from_record(sport_record_t *sport_data)
 {
 	return get_last_data_from_record(sport_data, RECORD_TYPE_SPORT);
 }
@@ -725,17 +817,17 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 	return true;	
 }
 
-bool get_local_record_from_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index)
+bool get_local_from_record_by_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index)
 {
 	return get_data_from_record_by_time_and_index(local_data, begin_time, index, RECORD_TYPE_LOCATION);
 }
 
-bool get_health_record_from_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index)
+bool get_health_from_record_by_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index)
 {
 	return get_data_from_record_by_time_and_index(health_data, begin_time, index, RECORD_TYPE_HEALTH);
 }
 
-bool get_sport_record_from_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index)
+bool get_sport_from_record_by_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index)
 {	
 	return get_data_from_record_by_time_and_index(sport_data, begin_time, index, RECORD_TYPE_SPORT);
 }

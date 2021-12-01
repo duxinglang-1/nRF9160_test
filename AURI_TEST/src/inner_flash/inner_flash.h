@@ -20,6 +20,11 @@
 #define DATETIME_ID 				1
 #define SETTINGS_ID 				2
 //存储索引的地址ID
+//实时数据ID
+#define CUR_SPORT_ID				7
+#define CUR_HEALTH_ID				8
+#define CUR_LOCAL_ID				9
+//定时数据的地址ID
 #define SPORT_INDEX_ADDR_ID 		10
 #define HEALTH_INDEX_ADDR_ID        12
 #define LOCAL_INDEX_ADDR_ID			14
@@ -74,21 +79,34 @@ typedef struct
 }local_record_t;
 
 extern void test_nvs(void);
+
 extern void ReadSettingsFromInnerFlash(global_settings_t *settings);
 extern void SaveSettingsToInnerFlash(global_settings_t settings);
 extern void ReadDateTimeFromInnerFlash(sys_date_timer_t *time);
 extern void SaveDateTimeToInnerFlash(sys_date_timer_t time);
+
+extern bool save_cur_local_to_record(local_record_t *local_data);
+extern bool save_cur_health_to_record(health_record_t *health_data);
+extern bool save_cur_sport_to_record(sport_record_t *sport_data);
+
+extern bool get_cur_local_from_record(local_record_t *local_data);
+extern bool get_cur_health_from_record(health_record_t *health_data);
+extern bool get_cur_sport_from_record(sport_record_t *sport_data);
+
 extern bool save_local_to_record(local_record_t *local_data);
 extern bool save_health_to_record(health_record_t *health_data);
 extern bool save_sport_to_record(sport_record_t *sport_data);
+
 extern bool get_local_from_record(local_record_t *local_data, u32_t index);
 extern bool get_health_from_record(health_record_t *health_data, u32_t index);
 extern bool get_sport_from_record(sport_record_t *sport_data, u32_t index);
-extern bool get_last_sport_record(sport_record_t *sport_data);
-extern bool get_last_health_record(health_record_t *health_data);
-extern bool get_last_local_record(local_record_t *local_data);
-extern bool get_local_record_from_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index);
-extern bool get_health_record_from_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index);
-extern bool get_sport_record_from_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index);
+
+extern bool get_last_sport_from_record(sport_record_t *sport_data);
+extern bool get_last_health_from_record(health_record_t *health_data);
+extern bool get_last_local_from_record(local_record_t *local_data);
+
+extern bool get_local_from_record_by_time(local_record_t *local_data, sys_date_timer_t begin_time, u32_t index);
+extern bool get_health_from_record_by_time(health_record_t *health_data, sys_date_timer_t begin_time, u32_t index);
+extern bool get_sport_from_record_by_time(sport_record_t *sport_data, sys_date_timer_t begin_time, u32_t index);
 
 #endif/*__INNER_FLASH_H__*/

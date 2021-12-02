@@ -1717,9 +1717,6 @@ void GetModemInfor(void)
 
 		strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
 	}
-
-	if(strlen(g_imsi) == 0)
-		k_timer_start(&get_modem_infor_timer, K_SECONDS(1), NULL);
 }
 
 void GetModemStatus(void)
@@ -1819,8 +1816,15 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOn();
 		GetModemInfor();
 		SetModemTurnOff();
-		err = lte_lc_init();
-		LOGD("lte_lc_init err:%d", err);
+		if(strlen(g_imsi) > 0)
+		{
+			err = lte_lc_init();
+			LOGD("lte_lc_init err:%d", err);
+		}
+		else
+		{
+			LOGD("Get imsi fail, will not link network!");
+		}
 	}
 
 	if(gps_is_working())

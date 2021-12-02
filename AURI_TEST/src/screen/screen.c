@@ -942,28 +942,21 @@ void SleepScreenProcess(void)
 void StepsUpdateStatus(void)
 {
 	u16_t steps;
-	u16_t offset_x;
 	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
 							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
 	
 	GetSportData(&steps,NULL,NULL);
 
-	if(global_settings.language == LANGUAGE_CHN)
-		offset_x = STEPS_CN_OFFSET;
-	else
-		offset_x = 0;
-
-	LCD_ShowImg(STEPS_NUM_1_X+offset_x, STEPS_NUM_1_Y, img_num[steps/10000]);
-	LCD_ShowImg(STEPS_NUM_2_X+offset_x, STEPS_NUM_2_Y, img_num[(steps%10000)/1000]);
-	LCD_ShowImg(STEPS_NUM_3_X+offset_x, STEPS_NUM_3_Y, img_num[(steps%1000)/100]);
-	LCD_ShowImg(STEPS_NUM_4_X+offset_x, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
-	LCD_ShowImg(STEPS_NUM_5_X+offset_x, STEPS_NUM_5_Y, img_num[steps%10]);	
+	LCD_ShowImg(STEPS_NUM_1_X, STEPS_NUM_1_Y, img_num[steps/10000]);
+	LCD_ShowImg(STEPS_NUM_2_X, STEPS_NUM_2_Y, img_num[(steps%10000)/1000]);
+	LCD_ShowImg(STEPS_NUM_3_X, STEPS_NUM_3_Y, img_num[(steps%1000)/100]);
+	LCD_ShowImg(STEPS_NUM_4_X, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
+	LCD_ShowImg(STEPS_NUM_5_X, STEPS_NUM_5_Y, img_num[steps%10]);	
 }
 
 void StepsShowStatus(void)
 {
 	u16_t steps;
-	u16_t offset_x;
 	unsigned char *img_anima[2] = {IMG_STEP_ICON_1, IMG_STEP_ICON_2};
 	unsigned char *img_num[10] = {IMG_MID_NUM_0,IMG_MID_NUM_1,IMG_MID_NUM_2,IMG_MID_NUM_3,IMG_MID_NUM_4,
 							  IMG_MID_NUM_5,IMG_MID_NUM_6,IMG_MID_NUM_7,IMG_MID_NUM_8,IMG_MID_NUM_9};
@@ -979,16 +972,11 @@ void StepsShowStatus(void)
 	LCD_ShowImg(STEPS_ICON_X, STEPS_ICON_Y, IMG_STEP_ICON_1);
 #endif
 
-	if(global_settings.language == LANGUAGE_CHN)
-		offset_x = STEPS_CN_OFFSET;
-	else
-		offset_x = 0;
-
-	LCD_ShowImg(STEPS_NUM_1_X+offset_x, STEPS_NUM_1_Y, img_num[steps/10000]);
-	LCD_ShowImg(STEPS_NUM_2_X+offset_x, STEPS_NUM_2_Y, img_num[(steps%10000)/1000]);
-	LCD_ShowImg(STEPS_NUM_3_X+offset_x, STEPS_NUM_3_Y, img_num[(steps%1000)/100]);
-	LCD_ShowImg(STEPS_NUM_4_X+offset_x, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
-	LCD_ShowImg(STEPS_NUM_5_X+offset_x, STEPS_NUM_5_Y, img_num[steps%10]);
+	LCD_ShowImg(STEPS_NUM_1_X, STEPS_NUM_1_Y, img_num[steps/10000]);
+	LCD_ShowImg(STEPS_NUM_2_X, STEPS_NUM_2_Y, img_num[(steps%10000)/1000]);
+	LCD_ShowImg(STEPS_NUM_3_X, STEPS_NUM_3_Y, img_num[(steps%1000)/100]);
+	LCD_ShowImg(STEPS_NUM_4_X, STEPS_NUM_4_Y, img_num[(steps%100)/10]);
+	LCD_ShowImg(STEPS_NUM_5_X, STEPS_NUM_5_Y, img_num[steps%10]);
 
 	//if(global_settings.language == LANGUAGE_CHN)
 	//	LCD_ShowImg(STEPS_UNIT_X+offset_x, STEPS_UNIT_Y, img_uint[0]);

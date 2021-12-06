@@ -142,6 +142,17 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 			sedentary_time_temp = 0;			
 			memset(waggle_level,0,sizeof(waggle_level)); /* »Î¶¯µÈ¼¶ */
 		}
+
+		last_sport.timestamp.year = date_time.year;
+		last_sport.timestamp.month = date_time.month; 
+		last_sport.timestamp.day = date_time.day;
+		last_sport.timestamp.hour = date_time.hour;
+		last_sport.timestamp.minute = date_time.minute;
+		last_sport.timestamp.second = date_time.second;
+		last_sport.timestamp.week = date_time.week;
+		last_sport.deep_sleep = g_deep_sleep;
+		last_sport.light_sleep = g_light_sleep;
+		save_cur_sport_to_record(&last_sport);		
 	}
 
 	rtc_sec++;
@@ -201,15 +212,4 @@ void UpdateSleepPara(void)
 	get_sensor_reading(&sensor_x, &sensor_y, &sensor_z);
 	GetImuSteps(&steps);
 	Set_Gsensor_data((signed short)sensor_x, (signed short)sensor_x, (signed short)sensor_x, steps, 80, date_time.hour, chg);
-
-	last_sport.timestamp.year = date_time.year;
-	last_sport.timestamp.month = date_time.month; 
-	last_sport.timestamp.day = date_time.day;
-	last_sport.timestamp.hour = date_time.hour;
-	last_sport.timestamp.minute = date_time.minute;
-	last_sport.timestamp.second = date_time.second;
-	last_sport.timestamp.week = date_time.week;
-	last_sport.deep_sleep = g_deep_sleep;
-	last_sport.light_sleep = g_light_sleep;
-	save_cur_sport_to_record(&last_sport);
 }

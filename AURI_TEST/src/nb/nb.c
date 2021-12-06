@@ -1812,8 +1812,6 @@ static void nb_link(struct k_work *work)
 	if(!frist_flag)
 	{
 		frist_flag = true;
-		
-		SetModemTurnOn();
 		GetModemInfor();
 		SetModemTurnOff();
 		if(strlen(g_imsi) > 0)
@@ -2071,5 +2069,6 @@ void NB_init(struct k_work_q *work_q)
 	fota_work_init(work_q);
 #endif
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	SetModemTurnOn();
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
 }

@@ -21,17 +21,17 @@
 #define SETTINGS_ID 				2
 //存储索引的地址ID
 //实时数据ID
-#define CUR_SPORT_ID				7
-#define CUR_HEALTH_ID				8
-#define CUR_LOCAL_ID				9
+#define CUR_SPORT_ID				3
+#define CUR_HEALTH_ID				4
+#define CUR_LOCAL_ID				5
 //定时数据的地址ID
-#define SPORT_INDEX_ADDR_ID 		10
-#define HEALTH_INDEX_ADDR_ID        12
-#define LOCAL_INDEX_ADDR_ID			14
+#define SPORT_INDEX_ADDR_ID 		6
+#define HEALTH_INDEX_ADDR_ID        8
+#define LOCAL_INDEX_ADDR_ID			10
 //储存总条数的地址ID
-#define SPORT_COUNT_ADDR_ID    		11	
-#define HEALTH_COUNT_ADDR_ID        13
-#define LOCAL_COUNT_ADDR_ID         15
+#define SPORT_COUNT_ADDR_ID    		7	
+#define HEALTH_COUNT_ADDR_ID        9
+#define LOCAL_COUNT_ADDR_ID         11
 //存储索引的起止编号
 #define SPORT_INDEX_BEGIN			1000
 #define SPORT_INDEX_MAX				1100

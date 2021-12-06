@@ -15,7 +15,7 @@
 #include "inner_flash.h"
 #include "logger.h"
 
-//#define INNER_FLASH_DEBUG
+#define INNER_FLASH_DEBUG
 
 #define value1  "53.760241,-5.147095,1.023,11:20:22"
 #define value2  "53.760241,-5.147095,1.023,11:20:23"
@@ -180,7 +180,20 @@ bool save_current_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 	ssize_t bytes_written;
 	u16_t addr_id;
 	u32_t data_len;
+	int err;
 	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
+
 	switch(record_type)
 	{
 	case RECORD_TYPE_LOCATION:
@@ -201,8 +214,16 @@ bool save_current_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 
 	bytes_written = nvs_write(&fs, addr_id, data, data_len);
 	if(bytes_written <= 0)
+	{
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("save current %d_data fail!", record_type);
+	#endif
 		return false;
+	}
 
+#ifdef INNER_FLASH_DEBUG
+	LOGD("save current %d_data success!", record_type);
+#endif
 	return true;	
 }
 
@@ -226,29 +247,50 @@ bool get_current_data_from_record(void *data, ENUM_RECORD_TYPE record_type)
 	ssize_t bytes_read;
 	u16_t addr_id;
 	u32_t data_len;
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
 	
 	switch(record_type)
 	{
 	case RECORD_TYPE_LOCATION:
-		addr_id = LOCAL_INDEX_ADDR_ID;
+		addr_id = CUR_LOCAL_ID;
 		data_len = sizeof(local_record_t);
 		break;
-		
+
 	case RECORD_TYPE_HEALTH:
-		addr_id = HEALTH_INDEX_ADDR_ID;
+		addr_id = CUR_HEALTH_ID;
 		data_len = sizeof(health_record_t);
 		break;
 
 	case RECORD_TYPE_SPORT:
-		addr_id = SPORT_INDEX_ADDR_ID;
+		addr_id = CUR_SPORT_ID;
 		data_len = sizeof(sport_record_t);
 		break;
 	}
 
 	bytes_read = nvs_read(&fs, addr_id, data, data_len);
 	if(bytes_read <= 0)
+	{
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("get current %d_data fail!", record_type);
+	#endif
 		return false;
-	
+	}
+
+#ifdef INNER_FLASH_DEBUG
+	LOGD("get current %d_data success!", record_type);
+#endif
 	return true;	
 }
 
@@ -275,6 +317,19 @@ bool save_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 	u16_t index_begin,index_max,count_max;
 	u16_t tmp_index,tmp_count;
 	u32_t data_len;
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
 	
 	switch(record_type)
 	{
@@ -383,6 +438,19 @@ bool get_date_from_record(void *databuf, u32_t index, ENUM_RECORD_TYPE record_ty
 	u16_t index_begin,index_max,count_max;
 	u16_t tmp_index,tmp_count;
 	u32_t data_len;
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
 	
 	switch(record_type)
 	{
@@ -482,6 +550,19 @@ bool get_last_data_from_record(void *databuf, ENUM_RECORD_TYPE record_type)
 	u16_t index_begin,index_max,count_max;
 	u16_t tmp_index,tmp_count;
 	u32_t data_len;
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
 	
 	switch(record_type)
 	{
@@ -557,6 +638,19 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 	u16_t index_begin,index_max,count_max;
 	u16_t tmp_index,tmp_count;
 	u32_t i,data_len;
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
 	
 	switch(record_type)
 	{

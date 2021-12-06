@@ -46,7 +46,7 @@ static struct k_work imu_work;
 
 static bool imu_check_ok = false;
 static u8_t whoamI, rst;
-
+static u16_t last_steps = 0;
 static struct device *i2c_imu;
 static struct device *gpio_imu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
@@ -201,14 +201,14 @@ bool sensor_init(void)
 
 	/* route single tap, wrist tilt to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
-	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+	//int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	// int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	//int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
@@ -765,7 +765,7 @@ void UpdateIMUData(void)
 	
 	GetImuSteps(&steps);
 
-	g_steps += steps;
+	g_steps = steps+last_steps;
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
@@ -927,8 +927,10 @@ void IMU_init(struct k_work_q *work_q)
 	LOGD("IMU_init");
 	
 	get_cur_sport_from_record(&last_sport);
+	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 	if(last_sport.timestamp.day == date_time.day)
 	{
+		last_steps = last_sport.steps;
 		g_steps = last_sport.steps;
 		g_distance = last_sport.distance;
 		g_calorie = last_sport.calorie;
@@ -1064,6 +1066,94 @@ void IMUMsgProcess(void)
 		return;
 #endif
 
-	k_work_submit_to_queue(imu_work_q, &imu_work);
+	if(int1_event)	//steps
+	{
+		LOGD("int1 evt!");
+		int1_event = false;
+
+		if(!imu_check_ok)
+			return;
+		
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		if(!is_wearing())
+			return;
+		
+		LOGD("steps trigger!");
+		
+		UpdateIMUData();
+		imu_redraw_steps_flag = true;	
+	}
+		
+	if(int2_event) //tilt
+	{
+		LOGD("int2 evt!");
+		
+		int2_event = false;
+
+		if(!imu_check_ok)
+			return;
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		if(!is_wearing())
+			return;
+
+		is_tilt();
+		if(wrist_tilt)
+		{
+			LOGD("tilt trigger!");
+			
+			wrist_tilt = false;
+
+			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
+				lcd_sleep_out = true;
+			}
+		}
+	}
+	
+	if(reset_steps)
+	{
+		reset_steps = false;
+
+		if(!imu_check_ok)
+			return;
+		
+		ReSetImuSteps();
+		imu_redraw_steps_flag = true;
+	}
+
+	if(imu_redraw_steps_flag)
+	{
+		imu_redraw_steps_flag = false;
+
+		if(!imu_check_ok)
+			return;
+		
+		IMURedrawSteps();
+	}
+
+	if(update_sleep_parameter)
+	{
+		update_sleep_parameter = false;
+
+		if(!imu_check_ok)
+			return;
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		UpdateSleepPara();
+	}
 }
 #endif/*CONFIG_IMU_SUPPORT*/

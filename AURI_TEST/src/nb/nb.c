@@ -58,8 +58,8 @@ static void TauWakeUpUartCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(tau_wakeup_uart_timer, TauWakeUpUartCallBack, NULL);
 #endif
 
-
 static struct k_work_q *app_work_q;
+static struct k_delayed_work modem_init_work;
 static struct k_delayed_work nb_link_work;
 static struct k_delayed_work mqtt_link_work;
 
@@ -1802,6 +1802,14 @@ static void NBReconnectCallBack(struct k_timer *timer_id)
 	nb_reconnect_flag = true;
 }
 
+static void modem_init(struct k_work *work)
+{
+	SetModemTurnOn();
+
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+}
+
+
 static void nb_link(struct k_work *work)
 {
 	int err=0;
@@ -2063,12 +2071,12 @@ void NB_init(struct k_work_q *work_q)
 
 	app_work_q = work_q;
 
+	k_delayed_work_init(&modem_init_work, modem_init);
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);
 #endif
 
-	SetModemTurnOn();
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
+	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
 }

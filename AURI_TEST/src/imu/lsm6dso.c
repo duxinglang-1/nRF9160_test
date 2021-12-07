@@ -752,6 +752,23 @@ void fall_detection(void)
 void ReSetImuSteps(void)
 {
 	lsm6dso_steps_reset(&imu_dev_ctx);
+
+	last_steps = 0;
+	g_steps = 0;
+	g_distance = 0;
+	g_calorie = 0;
+	
+	last_sport.timestamp.year = date_time.year;
+	last_sport.timestamp.month = date_time.month; 
+	last_sport.timestamp.day = date_time.day;
+	last_sport.timestamp.hour = date_time.hour;
+	last_sport.timestamp.minute = date_time.minute;
+	last_sport.timestamp.second = date_time.second;
+	last_sport.timestamp.week = date_time.week;
+	last_sport.steps = g_steps;
+	last_sport.distance = g_distance;
+	last_sport.calorie = g_calorie;
+	save_cur_sport_to_record(&last_sport);	
 }
 
 void GetImuSteps(u16_t *steps)

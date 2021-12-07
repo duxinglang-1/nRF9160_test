@@ -9,8 +9,8 @@
 #define SLEEP_TIME_START	20
 #define SLEEP_TIME_END		8
 
-u16_t light_sleep_offset = 0;
-u16_t deep_sleep_offset = 0;
+u16_t last_light_sleep = 0;
+u16_t last_deep_sleep = 0;
 u16_t light_sleep_time = 0;
 u16_t deep_sleep_time = 0;
 u16_t g_light_sleep = 0;
@@ -31,8 +31,9 @@ void set_sleep_parameter(int light_sleep, int deep_sleep,int *waggle) /* »Ø´«Ë¯Ã
 	strncpy(waggle_level, waggle,10);
 }
 
-void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, int hr, int hour, int charging)
+void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, int hr, int hour, int minute, int charging)
 {	
+	bool save_flag = false;
 	int test=0,i=0;
 	static int move = 0;
 	static int rtc_sec = 0;
@@ -107,8 +108,8 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 				light_sleep_time = 0;				 
 				deep_sleep_time = 0;
 
-				light_sleep_offset = 0;
-				deep_sleep_offset = 0;
+				last_light_sleep = 0;
+				last_deep_sleep = 0;
 				g_light_sleep = 0;
 				g_deep_sleep = 0;
 			}
@@ -122,11 +123,13 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 						light_sleep_time++;
 				}
 
-				g_light_sleep = light_sleep_time + light_sleep_offset;
-				g_deep_sleep = deep_sleep_time + deep_sleep_offset;
+				g_light_sleep = light_sleep_time + last_light_sleep;
+				g_deep_sleep = deep_sleep_time + last_deep_sleep;
 			}
+
+			save_flag = true;
 		}
-		else
+		else if((hour==SLEEP_TIME_START)&&(minute==0))
 		{
 			move = 0;	 
 			gsensor = 0;
@@ -135,24 +138,31 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 			watch_state = 0;
 			waggle_flag = 0;
 			waggle_flag = 0;
-			light_sleep_offset = 0;
-			deep_sleep_offset = 0;
+			
+			last_light_sleep = 0;
+			last_deep_sleep = 0;
 			light_sleep_time = 0;
-			deep_sleep_time = 0; 
+			deep_sleep_time = 0;
+			
 			sedentary_time_temp = 0;			
 			memset(waggle_level,0,sizeof(waggle_level)); /* »Î¶¯µÈ¼¶ */
+
+			save_flag = true;
 		}
 
-		last_sport.timestamp.year = date_time.year;
-		last_sport.timestamp.month = date_time.month; 
-		last_sport.timestamp.day = date_time.day;
-		last_sport.timestamp.hour = date_time.hour;
-		last_sport.timestamp.minute = date_time.minute;
-		last_sport.timestamp.second = date_time.second;
-		last_sport.timestamp.week = date_time.week;
-		last_sport.deep_sleep = g_deep_sleep;
-		last_sport.light_sleep = g_light_sleep;
-		save_cur_sport_to_record(&last_sport);		
+		if(save_flag)
+		{
+			last_sport.timestamp.year = date_time.year;
+			last_sport.timestamp.month = date_time.month; 
+			last_sport.timestamp.day = date_time.day;
+			last_sport.timestamp.hour = date_time.hour;
+			last_sport.timestamp.minute = date_time.minute;
+			last_sport.timestamp.second = date_time.second;
+			last_sport.timestamp.week = date_time.week;
+			last_sport.deep_sleep = g_deep_sleep;
+			last_sport.light_sleep = g_light_sleep;
+			save_cur_sport_to_record(&last_sport);			
+		}	
 	}
 
 	rtc_sec++;
@@ -179,10 +189,10 @@ void StartSleepTimeMonitor(void)
 	k_timer_init(&sleep_timer, sleep_timer_handler, NULL);
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));
 
-	light_sleep_offset = last_sport.light_sleep;
-	deep_sleep_offset = last_sport.deep_sleep;
-	g_light_sleep = light_sleep_offset;
-	g_deep_sleep = deep_sleep_offset;
+	last_light_sleep = last_sport.light_sleep;
+	last_deep_sleep = last_sport.deep_sleep;
+	g_light_sleep = last_light_sleep;
+	g_deep_sleep = last_deep_sleep;
 }
 
 void GetSleepTimeData(u16_t *deep_sleep, u16_t *light_sleep)
@@ -211,5 +221,5 @@ void UpdateSleepPara(void)
 	
 	get_sensor_reading(&sensor_x, &sensor_y, &sensor_z);
 	GetImuSteps(&steps);
-	Set_Gsensor_data((signed short)sensor_x, (signed short)sensor_x, (signed short)sensor_x, steps, 80, date_time.hour, chg);
+	Set_Gsensor_data((signed short)sensor_x, (signed short)sensor_x, (signed short)sensor_x, steps, 80, date_time.hour, date_time.minute, chg);
 }

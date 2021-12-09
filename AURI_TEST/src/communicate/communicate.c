@@ -22,6 +22,8 @@
 #include "communicate.h"
 #include "logger.h"
 
+extern u16_t g_last_steps;
+
 #ifdef CONFIG_WIFI
 /*****************************************************************************
  * FUNCTION
@@ -275,13 +277,22 @@ void TimeCheckSendLocationData(void)
  *****************************************************************************/
 void StepCheckSendLocationData(u16_t steps)
 {
-	static u32_t step_count = 0;
+	static u16_t step_count = 0;
+
+	if(step_count == 0)
+		step_count = g_last_steps;
 	
 	if((steps - step_count) >= global_settings.dot_interval.steps)
 	{
 		step_count = steps;
+
+	#ifdef CONFIG_WIFI
+		location_wait_wifi = true;
+		APP_Ask_wifi_data();
+	#else
 		location_wait_gps = true;
-		APP_Ask_GPS_Data();		
+		APP_Ask_GPS_Data();
+	#endif		
 	}
 }
 

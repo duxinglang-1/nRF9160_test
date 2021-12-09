@@ -46,7 +46,6 @@ static struct k_work imu_work;
 
 static bool imu_check_ok = false;
 static u8_t whoamI, rst;
-static u16_t last_steps = 0;
 static struct device *i2c_imu;
 static struct device *gpio_imu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
@@ -54,6 +53,7 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
 
+u16_t g_last_steps = 0;
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
@@ -753,7 +753,7 @@ void ReSetImuSteps(void)
 {
 	lsm6dso_steps_reset(&imu_dev_ctx);
 
-	last_steps = 0;
+	g_last_steps = 0;
 	g_steps = 0;
 	g_distance = 0;
 	g_calorie = 0;
@@ -782,7 +782,7 @@ void UpdateIMUData(void)
 	
 	GetImuSteps(&steps);
 
-	g_steps = steps+last_steps;
+	g_steps = steps+g_last_steps;
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
@@ -947,7 +947,7 @@ void IMU_init(struct k_work_q *work_q)
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 	if(last_sport.timestamp.day == date_time.day)
 	{
-		last_steps = last_sport.steps;
+		g_last_steps = last_sport.steps;
 		g_steps = last_sport.steps;
 		g_distance = last_sport.distance;
 		g_calorie = last_sport.calorie;

@@ -130,6 +130,16 @@ static NB_APN_PARAMENT nb_apn_table[] =
 		"90128", 
 		"arkessalp.com",
 	},
+	//1NCE
+	{
+		"90140",
+		"iot.1nce.net",	
+	},
+	//Rakuten
+	{
+		"44011",
+		"iot.biz.rakuten.jp",
+	},
 };
 
 

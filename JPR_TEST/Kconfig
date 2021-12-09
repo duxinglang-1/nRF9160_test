@@ -33,11 +33,19 @@ config MQTT_PASSWORD
 	string "MQTT password"
 	default "admin123"
 
-config MQTT_BROKER_HOSTNAME
+config MQTT_DOMESTIC_BROKER_HOSTNAME
 	string "MQTT broker hostname"
 	default "mqtt.eclipse.org"
 
-config MQTT_BROKER_PORT
+config MQTT_DOMESTIC_BROKER_PORT
+	int "MQTT broker port"
+	default 1883
+	
+config MQTT_FOREIGN_BROKER_HOSTNAME
+	string "MQTT broker hostname"
+	default "mqtt.eclipse.org"
+
+config MQTT_FOREIGN_BROKER_PORT
 	int "MQTT broker port"
 	default 1883
 
@@ -72,6 +80,11 @@ config LTE_RAI_ENABLE
 	
 endmenu
 
+menu "WATCH DOG"
+config WATCHDOG_TIMEOUT_MSEC
+	int "Watchdog timeout in milliseconds"
+	default 10000
+endmenu
 
 menu "GPS"
 
@@ -190,6 +203,13 @@ config GPS_START_ON_MOTION
 
 endmenu # GPS
 
+menu "ANIMATION"
+
+config ANIMATION_SUPPORT
+	bool "animation support"
+	default n
+
+endmenu #ANIMATION
 
 menu "TOUCH"
 

@@ -123,6 +123,16 @@ static NB_APN_PARAMENT nb_apn_table[] =
 		"46004",
 		"cmnbiot2"
 	},
+	//china unicom
+	{
+		"46006",
+		"unim2m.njm2mapn"
+	},
+	//china telcom
+	{
+		"46011",
+		"ctnb"
+	},	
 	//arkessa
 	{
 		"90128", 
@@ -137,9 +147,8 @@ static NB_APN_PARAMENT nb_apn_table[] =
 	{
 		"44011",
 		"iot.biz.rakuten.jp",
-	},	
+	},
 };
-
 
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);

@@ -1704,7 +1704,24 @@ void GetModemInfor(void)
 
 		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
 	}
-	
+
+#if 0
+	if(at_cmd_write(CMD_GET_SUPPORT_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("support band:%s", tmpbuf);
+	}
+
+	if(at_cmd_write(CMD_GET_CUR_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("current band:%s", tmpbuf);
+	}
+
+	if(at_cmd_write(CMD_GET_LOCKED_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("locked band:%s", tmpbuf);
+	}
+#endif
+
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 		LOGD("imei:%s", tmpbuf);

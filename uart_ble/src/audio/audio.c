@@ -19,10 +19,7 @@
 //#include "audio_wav.h"
 //#include "external_flash.h"
 #include "audio.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(audio, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #if 0
 #define I2S_MCK		25
@@ -53,9 +50,12 @@ static u32_t const * volatile mp_block_to_check = NULL;
 
 #define AUDIO_PORT	"GPIO_0"
 #define WTN_DATA	13      //接 13脚
-#define LDO_EN      0
+#define WTN_BUSY	14		//busy脚,音频播放之后由低变高
+
+static bool audio_trige_flag = false;
 
 static struct device *gpio_audio;
+static struct gpio_callback gpio_cb;
 
 //延时函数
 void Delay_ms(unsigned int dly)
@@ -149,20 +149,72 @@ void audio_stop(void)
 	Voice_Stop();
 }
 
+//SOS停止播放报警
+void SOSStopAlarm(void)
+{
+	Voice_Stop();
+}
+
+//SOS播放报警
+void SOSPlayAlarm(void)
+{
+	Voice_Start(3);
+}
+
+//摔倒停止播放报警
+void FallStopAlarm(void)
+{
+	Voice_Stop();
+}
+
+//摔倒播放中文报警
+void FallPlayAlarmCn(void)
+{
+	Voice_Start(1);
+}
+
+//摔倒播放英文报警
+void FallPlayAlarmEn(void)
+{
+	Voice_Start(2);
+}
+
+void AudioInterruptHandle(void)
+{
+	LOGD("begin");
+	audio_trige_flag = true;
+}
+
 //io口初始化 
 void audio_init(void)
 {
+	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
+	
+	Set_Audio_Power_On();
+	
 	gpio_audio = device_get_binding(AUDIO_PORT);
 	
-	/* Set LED pin as output */
 	gpio_pin_configure(gpio_audio, WTN_DATA, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_audio, LDO_EN, GPIO_DIR_OUT);
-	
-	/* Set pin to HIGH/LOW */
 	gpio_pin_write(gpio_audio, WTN_DATA, 1);
-	gpio_pin_write(gpio_audio, LDO_EN, 1);
+
+	//busy interrupt
+	gpio_pin_configure(gpio_audio, WTN_BUSY, flag);
+	gpio_pin_disable_callback(gpio_audio, WTN_BUSY);
+	gpio_init_callback(&gpio_cb, AudioInterruptHandle, BIT(WTN_BUSY));
+	gpio_add_callback(gpio_audio, &gpio_cb);
+	gpio_pin_enable_callback(gpio_audio, WTN_BUSY);
 
 	Delay_ms(100);
+
+	//Set_Audio_Power_Off();
+}
+
+void AudioMsgProcess(void)
+{
+	if(audio_trige_flag)
+	{
+		audio_trige_flag = false;
+	}
 }
 
 #if 0
@@ -177,7 +229,7 @@ void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk
 	SpiFlash_Read((u8_t*)&riff_data, index, (u32_t)sizeof(wav_riff_chunk));
 	if(memcmp(riff_data.riff_mark, WAV_RIFF_ID, 4) != 0)
 	{
-		LOG_INF("get wav riff fail!\n");
+		LOGD("get wav riff fail!");
 		return;
 	}
 
@@ -209,7 +261,7 @@ void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk
 		memcpy(info_data, (void*)&pcm_data, (u32_t)sizeof(wav_data_chunk));
 	}
 
-	LOG_INF("get audio wav success\n");
+	LOGD("get audio wav success");
 }
 
 void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
@@ -223,7 +275,7 @@ void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
 	SpiFlash_Read((u8_t*)&riff_data, index, (u32_t)sizeof(wav_riff_chunk));
 	if(memcmp(riff_data.riff_mark, WAV_RIFF_ID, 4) != 0)
 	{
-		LOG_INF("get wav riff fail!\n");
+		LOGD("get wav riff fail");
 		*pcmaddr = 0;
 		return;
 	}
@@ -303,7 +355,7 @@ void test_audio_wav(void)
 	audio_get_wav_size(AUDIO_FALL_ALARM_ADDR, &filelen);
 	audio_get_wav_time(AUDIO_FALL_ALARM_ADDR, &time);
 	
-	LOG_INF("get audio wav\n");
+	LOGD("get audio wav");
 }
 
 ISR_DIRECT_DECLARE(i2s_isr_handler)
@@ -374,14 +426,14 @@ static bool check_samples(uint32_t const * p_block)
             if (actual_sample_l != expected_sample_l ||
                 actual_sample_r != expected_sample_r)
             {
-                LOG_INF("%3u: %04x/%04x, expected: %04x/%04x (i: %u)",
+                LOGD("%3u: %04x/%04x, expected: %04x/%04x (i: %u)",
                     m_blocks_transferred, actual_sample_l, actual_sample_r,
                     expected_sample_l, expected_sample_r, i);
                 return false;
             }
         }
     }
-    LOG_INF("%3u: OK", m_blocks_transferred);
+    LOGD("%3u: OK", m_blocks_transferred);
     return true;
 }
 

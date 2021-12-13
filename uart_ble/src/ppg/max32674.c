@@ -21,10 +21,9 @@
 #include "screen.h"
 #include "max_sh_interface.h"
 #include "max_sh_api.h"
+#include "logger.h"
 
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(ppg, CONFIG_LOG_DEFAULT_LEVEL);
+#define PPG_DEBUG
 
 bool ppg_int_event = false;
 bool ppg_fw_upgrade_flag = false;
@@ -112,29 +111,37 @@ void PPGGetSensorHubData(void)
 	max86176_data max86176 = {0};
 
 	ret = sh_get_sensorhub_status(&hubStatus);
-	LOG_INF("sh_get_sensorhub_status ret = %d, hubStatus =  %d \n", ret, hubStatus);
-
+#ifdef PPG_DEBUG	
+	LOGD("ret:%d, hubStatus:%d", ret, hubStatus);
+#endif
 	if(hubStatus & SS_MASK_STATUS_FIFO_OUT_OVR)
 	{
-		LOG_INF("SS_MASK_STATUS_FIFO_OUT_OVR\n");
+	#ifdef PPG_DEBUG
+		LOGD("SS_MASK_STATUS_FIFO_OUT_OVR");
+	#endif
 	}
 
 	if((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
 	{
-		LOG_INF("FIFO ready \n");
-
 		int u32_sampleCnt = 0;
 
+	#ifdef PPG_DEBUG
+		LOGD("FIFO ready");
+	#endif
 		num_bytes_to_read = SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE;
 
 		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
 		if(ret == SS_SUCCESS)
 		{
-			LOG_INF("sample count is %d \n", u32_sampleCnt);
+		#ifdef PPG_DEBUG
+			LOGD("sample count is:%d", u32_sampleCnt);
+		#endif
 		}
 		else
 		{
-			LOG_INF("read sample count fail %d \n", ret);
+		#ifdef PPG_DEBUG
+			LOGD("read sample count fail:%d", ret);
+		#endif
 		}
 
 		WAIT_MS(5);
@@ -155,10 +162,10 @@ void PPGGetSensorHubData(void)
 				accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
 				max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
 				whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE] );
-
-				LOG_INF("skin:%d, hr:%d, spo2:%d\n", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
-				
-				if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+			#ifdef PPG_DEBUG
+				LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
+			#endif
+				//if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
 				{
 					heart_rate += sensorhub_out.hr;
 					spo2 += sensorhub_out.spo2;
@@ -174,18 +181,23 @@ void PPGGetSensorHubData(void)
 			
 			g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
 			g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
-
-			LOG_INF("avra hr:%d, spo2:%d\n", heart_rate, spo2);
-			LOG_INF("g_hr:%d, g_spo2:%d\n", g_hr, g_spo2);
+		#ifdef PPG_DEBUG
+			LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
+			LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
+		#endif	
 		}
 		else
 		{
-			LOG_INF("read FIFO result fail %d \n", ret);
+		#ifdef PPG_DEBUG
+			LOGD("read FIFO result fail:%d", ret);
+		#endif
 		}
 	}
 	else
 	{
-		LOG_INF(" FIFO status is not ready  %d, %d \n", ret, hubStatus);
+	#ifdef PPG_DEBUG
+		LOGD("FIFO status is not ready:%d,%d", ret, hubStatus);
+	#endif
 	}	
 }
 
@@ -199,50 +211,67 @@ bool demoSensorhub(void)
 	status = sh_get_sensorhub_operating_mode(&hubMode);
 	if((hubMode != 0x00) && (status != SS_SUCCESS))
 	{
-		LOG_INF("work mode is not app mode %d \n", hubMode);
+	#ifdef PPG_DEBUG
+		LOGD("work mode is not app mode:%d", hubMode);
+	#endif
 		return false;
 	}
 	else
 	{
-		LOG_INF("work mode is app mode %d \n", hubMode);
+	#ifdef PPG_DEBUG
+		LOGD("work mode is app mode:%d", hubMode);
+	#endif
 	}
 
 	status = sh_set_data_type(SS_DATATYPE_BOTH, true);
 	if(status != SS_SUCCESS)
 	{
-		LOG_INF("sh_set_data_type error %d \n", status);
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_data_type error:%d", status);
+	#endif
 		return false;
 	}
 
 	status = sh_set_fifo_thresh(1);
 	if(status != SS_SUCCESS)
 	{
-		LOG_INF("sh_set_fifo_thresh error %d \n", status);
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_fifo_thresh error:%d", status);
+	#endif
 		return false;
 	}
 
 	status = sh_set_report_period(25);  //1Hz or 25Hz
 	if(status != SS_SUCCESS)
 	{
-		LOG_INF("sh_set_fifo_thresh error %d \n", status);
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_fifo_thresh error:%d", status);
+	#endif
 		return false;
 	}
 
 	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, SH_INPUT_DATA_DIRECT_SENSOR);
 	if (status != SS_SUCCESS)
 	{
-		LOG_INF("sh_sensor_enable_ACC eorr %d \n", status);
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_ACC eorr:%d", status);
+	#endif
 		return false;
 	}
 
 	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
 	if(status != SS_SUCCESS)
 	{
-		LOG_INF("sh_sensor_enable_MAX86176 error %d \n", status);
-
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_MAX86176 error:%d", status);
+	#endif
 		status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
 		if(status != SS_SUCCESS)
-			LOG_INF("sh_sensor_disable_ACC error %d \n", status);
+		{
+		#ifdef PPG_DEBUG
+			LOGD("sh_sensor_disable_ACC error:%d", status);
+		#endif
+		}
 		
 		return false;
 	}
@@ -253,15 +282,24 @@ bool demoSensorhub(void)
 	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X , (int) SENSORHUB_MODE_BASIC);
 	if(status != SS_SUCCESS)
 	{
-		LOG_INF("sh_sensor_enable_algo error %d \n", status);
-
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_algo error:%d", status);
+	#endif
 		status = sh_sensor_disable(SH_SENSORIDX_MAX86176);
 		if(status != SS_SUCCESS)
-			LOG_INF("sh_sensor_disble_MAX86176 error %d \n", status);
+		{
+		#ifdef PPG_DEBUG
+			LOGD("sh_sensor_disble_MAX86176 error:%d", status);
+		#endif
+		}
 
 		status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
 		if(status != SS_SUCCESS)
-			LOG_INF("sh_sensor_disable_ACC error %d \n", status);
+		{
+		#ifdef PPG_DEBUG
+			LOGD("sh_sensor_disable_ACC error:%d", status);
+		#endif
+		}
 		
 		return false;
 	}
@@ -293,7 +331,9 @@ void PPGStartCheck(void)
 {
 	bool ret = false;
 
-	LOG_INF("[%s] ppg_power_flag:%d\n", __func__, ppg_power_flag);
+#ifdef PPG_DEBUG
+	LOGD("ppg_power_flag:%d", ppg_power_flag);
+#endif
 	if(ppg_power_flag > 0)
 		return;
 
@@ -307,12 +347,15 @@ void PPGStartCheck(void)
 	{
 		if(ppg_power_flag == 0)
 		{
-			LOG_INF("[%s] ppg has been stop!\n", __func__);
+		#ifdef PPG_DEBUG
+			LOGD("ppg has been stop!");
+		#endif
 			k_timer_stop(&ppg_get_hr_timer);
 			return;
 		}
-		
-		LOG_INF("[%s] ppg start success!\n", __func__);
+	#ifdef PPG_DEBUG	
+		LOGD("ppg start success!");
+	#endif
 		ppg_power_flag = 2;
 		
 		if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) == 0)
@@ -320,7 +363,9 @@ void PPGStartCheck(void)
 	}
 	else
 	{
-		LOG_INF("[%s] ppg start false!\n", __func__);
+	#ifdef PPG_DEBUG
+		LOGD("ppg start false!");
+	#endif
 		ppg_power_flag = 0;
 	}
 }
@@ -328,8 +373,9 @@ void PPGStartCheck(void)
 void PPGStopCheck(void)
 {
 	int status = -1;
-
-	LOG_INF("[%s] ppg_power_flag:%d\n", __func__, ppg_power_flag);
+#ifdef PPG_DEBUG
+	LOGD("ppg_power_flag:%d", ppg_power_flag);
+#endif
 	if(ppg_power_flag == 0)
 		return;
 
@@ -337,15 +383,27 @@ void PPGStopCheck(void)
 		
 	status = sh_sensor_disable(SH_SENSORIDX_MAX86176);
 	if(status != SS_SUCCESS)
-		LOG_INF("[%s] sh_sensor_disble_MAX86176 error %d\n", __func__, status);
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_disble_MAX86176 error %d", status);
+	#endif
+	}
 
 	status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
 	if(status != SS_SUCCESS)
-		LOG_INF("[%s] sh_sensor_disable_ACC error %d\n", __func__, status);
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_disable_ACC error %d", status);
+	#endif
+	}
 
 	status = sh_disable_algo(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X);
 	if(status != SS_SUCCESS)
-		LOG_INF("[%s] sh_sensor_disble_algo error %d\n", __func__, status);
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_disble_algo error %d", status);
+	#endif
+	}
 
 	SH_Power_Off();
 	//Set_PPG_Power_Off();
@@ -381,12 +439,16 @@ void ppg_auto_stop_timerout(struct k_timer *timer_id)
 
 void PPG_init(void)
 {
-	LOG_INF("PPG_init\n");
+#ifdef PPG_DEBUG
+	LOGD("PPG_init");
+#endif
 
 	if(!sh_init_interface())
 		return;
-	
-	LOG_INF("PPG_init done!\n");
+
+#ifdef PPG_DEBUG	
+	LOGD("PPG_init done!");
+#endif
 }
 
 void PPGMsgProcess(void)
@@ -402,13 +464,17 @@ void PPGMsgProcess(void)
 	}
 	if(ppg_start_flag)
 	{
-		LOG_INF("PPG start!\n");
+	#ifdef PPG_DEBUG
+		LOGD("PPG start!");
+	#endif
 		PPGStartCheck();
 		ppg_start_flag = false;
 	}
 	if(ppg_stop_flag)
 	{
-		LOG_INF("PPG stop!\n");
+	#ifdef PPG_DEBUG
+		LOGD("PPG stop!");
+	#endif
 		PPGStopCheck();
 		ppg_stop_flag = false;
 	}

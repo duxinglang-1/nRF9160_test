@@ -9,12 +9,10 @@
 #include "datetime.h"
 #include "settings.h"
 #include "screen.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(max20353, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 //#define SHOW_LOG_IN_SCREEN
+#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
@@ -76,7 +74,9 @@ static bool init_i2c(void)
 	i2c_pmu = device_get_binding(PMU_DEV);
 	if(!i2c_pmu)
 	{
-		LOG_INF("ERROR SETTING UP I2C\r\n");
+	#ifdef PMU_DEBUG
+		LOGD("ERROR SETTING UP I2C");
+	#endif
 		return false;
 	} 
 	else
@@ -151,18 +151,17 @@ void system_power_off(u8_t flag)
 		if(nb_is_connected())
 		{
 			SendPowerOffData(flag);
-			k_timer_start(&sys_pwroff, K_MSEC(2*1000), NULL);
 		}
-		else
-		{
-			sys_pwr_off_flag = true;
-		}
+
+		k_timer_start(&sys_pwroff, K_MSEC(3*1000), NULL);
 	}
 }
 
 void SystemShutDown(void)
 {	
-	LOG_INF("[%s]\n", __func__);
+#ifdef PMU_DEBUG
+	LOGD("begin");
+#endif
 	MAX20353_PowerOffConfig();
 }
 
@@ -182,114 +181,113 @@ void pmu_battery_low_shutdown(void)
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
-void pmu_interrupt_proc(void)
+void pmu_reg_proc(void)
 {
-	u8_t int0,int1,int2,status0,status1;
-	u8_t val;
-	
-	do
+	u8_t int0,int1,int2;
+	u8_t status0,status1,status2,status3;
+
+	MAX20353_ReadReg(REG_INT0, &int0);
+#ifdef PMU_DEBUG	
+	MAX20353_ReadReg(REG_INT1, &int1);
+	MAX20353_ReadReg(REG_INT2, &int2);
+	LOGD("INT:%02X, %02X, %02X", int0,int1,int2);
+#endif	
+
+#ifdef PMU_DEBUG
+	MAX20353_ReadReg(REG_STATUS0, &status0);
+	MAX20353_ReadReg(REG_STATUS1, &status1);
+	MAX20353_ReadReg(REG_STATUS2, &status2);
+	MAX20353_ReadReg(REG_STATUS3, &status3);
+	LOGD("status:%02X, %02X, %02X, %02X", status0,status1,status2,status3);
+#endif
+	if((int0&0x40) == 0x40) //Charger status change INT  
 	{
-		int0 = 0;
-		MAX20353_ReadReg(REG_INT0, &int0);
-	#if 1	
-		MAX20353_ReadReg(REG_INT1, &int1);
-		MAX20353_ReadReg(REG_INT2, &int2);
-		LOG_INF("[%s] REG_INT0:%02X,REG_INT1:%02X,REG_INT2:%02X\n", __func__, int0,int1,int2);
-	#else
-		LOG_INF("[%s] REG_INT0:%02X\n", __func__, int0);
+		MAX20353_ReadReg(REG_STATUS0, &status0);
+	#ifdef PMU_DEBUG	
+		LOGD("REG_STATUS0:%02X", status0);
 	#endif
-	
-		if((int0&0x40) == 0x40) //Charger status change INT  
-		{
-			MAX20353_ReadReg(REG_STATUS0, &status0);
-			//LOG_INF("REG_STATUS0:%02X\n", status0);
-			switch((status0&0x07))
-			{
-			case 0x00://Charger off
-			case 0x01://Charging suspended due to temperature (see battery charger state diagram)
-			case 0x07://Charger fault condition (see battery charger state diagram)
-				g_chg_status = BAT_CHARGING_NO;
-				break;
-				
-			case 0x02://Pre-charge in progress
-			case 0x03://Fast-charge constant current mode in progress
-			case 0x04://Fast-charge constant voltage mode in progress
-			case 0x05://Maintain charge in progress
-				g_chg_status = BAT_CHARGING_PROGRESS;
-				break;
-				
-			case 0x06://Maintain charger timer done
-				g_chg_status = BAT_CHARGING_FINISHED;
-				lcd_sleep_out = true;
-				break;
-			}
-
-			pmu_redraw_bat_flag = true;
-		}
 		
-		if((int0&0x08) == 0x08) //USB OK Int
+		switch((status0&0x07))
 		{
-			MAX20353_ReadReg(REG_STATUS1, &status1);
-			if((status1&0x08) == 0x08) //USB OK   
+		case 0x00://Charger off
+		case 0x01://Charging suspended due to temperature (see battery charger state diagram)
+		case 0x07://Charger fault condition (see battery charger state diagram)
+			g_chg_status = BAT_CHARGING_NO;
+			break;
+			
+		case 0x02://Pre-charge in progress
+		case 0x03://Fast-charge constant current mode in progress
+		case 0x04://Fast-charge constant voltage mode in progress
+		case 0x05://Maintain charge in progress
+			g_chg_status = BAT_CHARGING_PROGRESS;
+			break;
+			
+		case 0x06://Maintain charger timer done
+			g_chg_status = BAT_CHARGING_FINISHED;
+			lcd_sleep_out = true;
+			break;
+		}
+
+		pmu_redraw_bat_flag = true;
+	}
+	
+	if((int0&0x08) == 0x08) //USB OK Int
+	{
+		MAX20353_ReadReg(REG_STATUS1, &status1);
+		if((status1&0x08) == 0x08) //USB OK   
+		{
+			pmu_battery_stop_shutdown();
+			
+			InitCharger();
+
+			charger_is_connected = true;
+			
+			g_chg_status = BAT_CHARGING_PROGRESS;
+			g_bat_level = BAT_LEVEL_NORMAL;
+
+			lcd_sleep_out = true;
+		}
+		else
+		{	
+			charger_is_connected = false;
+			
+			g_chg_status = BAT_CHARGING_NO;
+		#ifdef BATTERY_SOC_GAUGE	
+			g_bat_soc = MAX20353_CalculateSOC();
+			if(g_bat_soc>100)
+				g_bat_soc = 100;
+			
+			if(g_bat_soc < 5)
 			{
-				pmu_battery_stop_shutdown();
-				
-				InitCharger();
-
-				charger_is_connected = true;
-				
-				g_chg_status = BAT_CHARGING_PROGRESS;
+				g_bat_level = BAT_LEVEL_VERY_LOW;
+				pmu_battery_low_shutdown();
+			}
+			else if(g_bat_soc < 20)
+			{
+				g_bat_level = BAT_LEVEL_LOW;
+			}
+			else if(g_bat_soc < 80)
+			{
 				g_bat_level = BAT_LEVEL_NORMAL;
-
-				lcd_sleep_out = true;
 			}
 			else
-			{			
-				charger_is_connected = false;
-				
-				g_chg_status = BAT_CHARGING_NO;
-			#ifdef BATTERY_SOC_GAUGE	
-				g_bat_soc = MAX20353_CalculateSOC();
-				if(g_bat_soc>100)
-					g_bat_soc = 100;
-				
-				if(g_bat_soc < 5)
-				{
-					g_bat_level = BAT_LEVEL_VERY_LOW;
-					pmu_battery_low_shutdown();
-				}
-				else if(g_bat_soc < 20)
-				{
-					g_bat_level = BAT_LEVEL_LOW;
-				}
-				else if(g_bat_soc < 80)
-				{
-					g_bat_level = BAT_LEVEL_NORMAL;
-				}
-				else
-				{
-					g_bat_level = BAT_LEVEL_GOOD;
-				}
-			#endif
-				
-				lcd_sleep_out = true;
+			{
+				g_bat_level = BAT_LEVEL_GOOD;
 			}
-
-			pmu_redraw_bat_flag = true;
+		#endif
+		
+			lcd_sleep_out = true;
 		}
 
-		if(gpio_pin_read(gpio_pmu, PMU_EINT, &val))	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
-		{
-			LOG_INF("[%s] read pmu int false", __func__);
-			break;
-		}
+		pmu_redraw_bat_flag = true;
+	}	
+}
 
-		if((int0&0x48) == 0x00)
-		{
-			LOG_INF("[%s] int0 register is empty", __func__);
-			break;
-		}
-	}while(!val);
+void pmu_interrupt_proc(void)
+{
+	u8_t val;
+	
+	pmu_reg_proc();
 }
 
 void PmuInterruptHandle(void)
@@ -300,20 +298,27 @@ void PmuInterruptHandle(void)
 //An alert can indicate many different conditions. The
 //STATUS register identifies which alert condition was met.
 //Clear the corresponding bit after servicing the alert
-void pmu_alert_proc(void)
+bool pmu_alert_proc(void)
 {
 	u8_t buff[128] = {0};
+	int ret;
 	u8_t MSB,LSB;
 
 #ifdef BATTERY_SOC_GAUGE
-	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
-	//LOG_INF("pmu_alert_proc status:%02X\n", MSB);
+	ret = MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
+	if(ret == MAX20353_ERROR)
+		return false;
+	
+#ifdef PMU_DEBUG
+	LOGD("status:%02X", MSB);
+#endif
 	if(MSB&0x40)
 	{
 		//EnVr (enable voltage reset alert)
 		MSB = MSB&0xBF;
-
-		LOG_INF("voltage reset alert!\n");
+	#ifdef PMU_DEBUG
+		LOGD("voltage reset alert!");
+	#endif
 	}
 	if(MSB&0x20)
 	{
@@ -323,8 +328,9 @@ void pmu_alert_proc(void)
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
-
-		LOG_INF("SOC:%d\n", g_bat_soc);
+	#ifdef PMU_DEBUG
+		LOGD("SOC:%d", g_bat_soc);
+	#endif
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
@@ -363,29 +369,33 @@ void pmu_alert_proc(void)
 	{
 		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
 		MSB = MSB&0xEF;
-
-		LOG_INF("SOC low alert!\n");
+	#ifdef PMU_DEBUG
+		LOGD("SOC low alert!");
+	#endif
 	}
 	if(MSB&0x08)
 	{
 		//VR (voltage reset) is set after the device has been reset if EnVr is set.
 		MSB = MSB&0xF7;
-
-		LOG_INF("voltage reset alert!\n");
+	#ifdef PMU_DEBUG
+		LOGD("voltage reset alert!");
+	#endif
 	}
 	if(MSB&0x04)
 	{
 		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
 		MSB = MSB&0xFB;
-
-		LOG_INF("voltage low alert!\n");
+	#ifdef PMU_DEBUG
+		LOGD("voltage low alert!");
+	#endif
 	}
 	if(MSB&0x02)
 	{
 		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
 		MSB = MSB&0xFD;
-
-		LOG_INF("voltage high alert!\n");
+	#ifdef PMU_DEBUG
+		LOGD("voltage high alert!");
+	#endif
 	}
 	if(MSB&0x01)
 	{
@@ -393,14 +403,17 @@ void pmu_alert_proc(void)
 		//Any time this bit is set, the IC is not configured, so the
 		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
-
-		LOG_INF("reset indicator alert!\n");
+	#ifdef PMU_DEBUG
+		LOGD("reset indicator alert!");
+	#endif
 
 		MAX20353_QuickStart();
 	}
 
 	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+
+	return true;
 #endif	
 }
 
@@ -486,13 +499,16 @@ void pmu_init(void)
 	bool rst;
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
 
-	LOG_INF("pmu_init\n");
-
+#ifdef PMU_DEBUG
+	LOGD("pmu_init");
+#endif
   	//端口初始化
   	gpio_pmu = device_get_binding(PMU_PORT);
 	if(!gpio_pmu)
 	{
-		LOG_INF("Cannot bind gpio device\n");
+	#ifdef PMU_DEBUG
+		LOGD("Cannot bind gpio device");
+	#endif
 		return;
 	}
 
@@ -523,8 +539,9 @@ void pmu_init(void)
 		return;
 	
 	MAX20353_InitData();
-
-	LOG_INF("pmu_init done!\n");
+#ifdef PMU_DEBUG
+	LOGD("pmu_init done!");
+#endif
 }
 
 void test_pmu(void)
@@ -596,7 +613,8 @@ void test_soc_status(void)
 
 	MAX20353_ReadReg(REG_STATUS0, &Status0);
 	Status0 = Status0&0x07;
-	
+
+#ifdef PMU_DEBUG	
 	sprintf(strbuf, "%02d/%02d/%04d-%02d:%02d:%02d %2.3f,%3.8f,0x%02X,%1.5f,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,%d\n", 
 				date_time.day,date_time.month,date_time.year,date_time.hour,date_time.minute,date_time.second,
 				(float)VCell/1000, (float)SOC/256.0,
@@ -604,7 +622,8 @@ void test_soc_status(void)
 				(float)CRate/1000/100,
 				MODE, Version, HIBRT, Config, Status, VALRT, VReset, CMD, OCV, Status0);
 
-	LOG_INF("%s", strbuf);
+	LOGD("%s", strbuf);
+#endif
 }
 
 void test_soc_timerout(struct k_timer *timer_id)
@@ -644,20 +663,59 @@ void GetBatterySocString(u8_t *str_utc)
 
 void PMUMsgProcess(void)
 {
+	u8_t val;
+#ifdef PMU_DEBUG	
+	static u32_t i=0;
+#endif
+
 	if(pmu_trige_flag)
 	{
+	#ifdef PMU_DEBUG
+		LOGD("int");
+	#endif	
 		if(pmu_check_ok)
 			pmu_interrupt_proc();
 		
 		pmu_trige_flag = false;
 	}
+
+	if(gpio_pin_read(gpio_pmu, PMU_EINT, &val) == 0)	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
+	{
+		if(val == 0)
+		{
+		#ifdef PMU_DEBUG
+			i++;
+			LOGD("count:%d", i);
+		#endif	
+			pmu_reg_proc();
+		}
+	#ifdef PMU_DEBUG
+		else
+		{
+			i = 0;
+		}
+	#endif	
+	}
 	
 	if(pmu_alert_flag)
 	{
+	#ifdef PMU_DEBUG
+		LOGD("alert");
+	#endif
 		if(pmu_check_ok)
-			pmu_alert_proc();
-		
-		pmu_alert_flag = false;
+		{
+			bool ret;
+			
+			ret = pmu_alert_proc();
+			if(ret)
+			{
+				pmu_alert_flag = false;
+			}
+		}
+		else
+		{
+			pmu_alert_flag = false;
+		}
 	}
 
 	if(lowbat_pwr_off_flag)
@@ -733,8 +791,9 @@ void MAX20353_ReadStatus(void)
 	MAX20353_ReadReg(REG_STATUS1, &Status1);
 	MAX20353_ReadReg(REG_STATUS2, &Status2);
 	MAX20353_ReadReg(REG_STATUS3, &Status3);
-	
-	LOG_INF("Status0=0x%02X,Status1=0x%02X,Status2=0x%02X,Status3=0x%02X\n", Status0, Status1, Status2, Status3); 
+#ifdef PMU_DEBUG
+	LOGD("Status0=0x%02X,Status1=0x%02X,Status2=0x%02X,Status3=0x%02X", Status0, Status1, Status2, Status3); 
+#endif
 }
 
 void test_bat_soc(void)

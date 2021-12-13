@@ -14,10 +14,7 @@
 #include "external_flash.h"
 #include "lcd.h"
 #include "font.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(max_sh_interface, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #define MAX630FTHR       1
 #define ME15_DEV_MRD103  0
@@ -102,7 +99,7 @@ static void sh_init_i2c(void)
 	i2c_ppg = device_get_binding(PPG_DEV);
 	if(!i2c_ppg)
 	{
-		LOG_INF("ERROR SETTING UP I2C\r\n");
+		LOGD("ERROR SETTING UP I2C");
 	}
 	else
 	{
@@ -167,14 +164,14 @@ void SH_rst_to_BL_mode(void)
 	int s32_status = sh_put_in_bootloader();
 	if(s32_status != SS_SUCCESS)
 	{
-		LOG_INF("set bl mode fail, %x \n", s32_status);
+		LOGD("set bl mode fail, %x", s32_status);
 		return;
 	}
 
 	k_sleep(K_MSEC(50));
 	gpio_pin_write(gpio_ppg, PPG_MFIO_PIN, 1);
 
-	LOG_INF("set bl mode success!\n");
+	LOGD("set bl mode success!");
 }
 
 void SH_rst_to_APP_mode(void)
@@ -191,7 +188,7 @@ void SH_rst_to_APP_mode(void)
 	//enter application mode end delay for initialization finishes
 	wait_ms(2000);
 	
-	LOG_INF("set app mode success!\n");
+	LOGD("set app mode success!");
 }
 
 void SH_to_APP_from_BL_timing_out(void)
@@ -586,7 +583,7 @@ int sh_get_reg(int idx, u8_t addr, u32_t *val)
     }
     else
     {
-    	LOG_INF("read register wideth fail \n");
+    	LOGD("read register wideth fail");
     }
 
     return status;
@@ -884,12 +881,12 @@ s32_t sh_set_bootloader_flashpages(u32_t FwData_addr, u8_t u8_pageSize)
 
 			if(status != SS_SUCCESS)
 			{
-				LOG_INF("Write page %d part %d data FW fail: %x \n", i, j, status);
+				LOGD("Write page %d part %d data FW fail: %x", i, j, status);
 				return status;
 			}
 		}
 
-		LOG_INF("write page %d data done!\n", i);
+		LOGD("write page %d data done!", i);
 	}
 	return status;
 }
@@ -914,10 +911,10 @@ s32_t sh_set_bootloader_flashpages(u8_t *u8p_FwData , u8_t u8_pageSize)
 
 		if (status != SS_SUCCESS)
 		{
-			LOG_INF("Write page %d data FW fail: %x \n", i,  status);
+			LOGD("Write page %d data FW fail: %x", i,  status);
 			return status;
 		}
-		LOG_INF("write  page %d data done \n", i);
+		LOGD("write  page %d data done", i);
 	}
 	return status;
 }
@@ -1023,19 +1020,19 @@ bool sh_init_interface(void)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOG_INF("Read MCU type fail, %x \n", s32_status);
+		LOGD("Read MCU type fail, %x", s32_status);
 
 		SH_Power_Off();
 		//Set_PPG_Power_Off();
 		return false;
 	}
-	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
+	LOGD("MCU type = %d", u8_rxbuf[0]);
 	mcu_type = u8_rxbuf[0];
 	
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read FW version fail %x \n", s32_status);
+		LOGD("read FW version fail %x", s32_status);
 
 		SH_Power_Off();
 		//Set_PPG_Power_Off();
@@ -1043,10 +1040,10 @@ bool sh_init_interface(void)
 	}
 	else
 	{
-		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
-	if(mcu_type != 1)
+	if((mcu_type != 1) || (u8_rxbuf[2] == 1))
 	{
 		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, FONT_SIZE_16, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
@@ -1071,40 +1068,40 @@ void sh_get_BL_version(void)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOG_INF("Read MCU type fail, %x \n", s32_status);
+		LOGD("Read MCU type fail, %x", s32_status);
 	}
-	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
+	LOGD("MCU type = %d", u8_rxbuf[0]);
 
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read FW version fail %x \n", s32_status);
+		LOGD("read FW version fail %x", s32_status);
 	}
 	else
 	{
-		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
 	u32_t u32_sensorID = 0;
 	s32_status = sh_get_reg(0x0, 0xFF, &u32_sensorID);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read MAX86141 ID fail, %x \n", s32_status);
+		LOGD("read MAX86141 ID fail, %x", s32_status);
 	}
 	else
 	{
-		LOG_INF("sensor MAX86141 ID = %x \n", u32_sensorID);
+		LOGD("sensor MAX86141 ID = %x", u32_sensorID);
 	}
 
 	u32_t u32_accSensorId = 0;
 	s32_status = sh_get_reg(SH_SENSORIDX_ACCEL, 0xF, &u32_accSensorId);
 	if (s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read acc sensor ID	fail %x \n", s32_status);
+		LOGD("read acc sensor ID fail %x", s32_status);
 	}
 	else
 	{
-		LOG_INF("acc sensor ID is %x \n", u32_accSensorId);
+		LOGD("acc sensor ID is %x", u32_accSensorId);
 	}
 }
 
@@ -1119,40 +1116,40 @@ void sh_get_APP_version(void)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOG_INF("Read MCU type fail, %x \n", s32_status);
+		LOGD("Read MCU type fail, %x", s32_status);
 	}
-	LOG_INF("MCU type = %d \n", u8_rxbuf[0]);
+	LOGD("MCU type = %d", u8_rxbuf[0]);
 
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read FW version fail %x \n", s32_status);
+		LOGD("read FW version fail %x", s32_status);
 	}
 	else
 	{
-		LOG_INF("FW version is %d.%d.%d \n", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
 	}
 
 	u32_t u32_sensorID = 0;
 	s32_status = sh_get_reg(0x0, 0xFF, &u32_sensorID);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read MAX86141 ID fail, %x \n", s32_status);
+		LOGD("read MAX86141 ID fail, %x", s32_status);
 	}
 	else
 	{
-		LOG_INF("sensor MAX86141 ID = %x \n", u32_sensorID);
+		LOGD("sensor MAX86141 ID = %x", u32_sensorID);
 	}
 
 	u32_t u32_accSensorId = 0;
 	s32_status = sh_get_reg(SH_SENSORIDX_ACCEL, 0xF, &u32_accSensorId);
 	if (s32_status != SS_SUCCESS)
 	{
-		LOG_INF("read acc sensor ID	fail %x \n", s32_status);
+		LOGD("read acc sensor ID fail %x", s32_status);
 	}
 	else
 	{
-		LOG_INF("acc sensor ID is %x \n", u32_accSensorId);
+		LOGD("acc sensor ID is %x", u32_accSensorId);
 	}
 }
 

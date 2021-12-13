@@ -14,10 +14,17 @@
 #include <zephyr/types.h>
 #include <sys/slist.h>
 #include "font.h"
+#include "lcd.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//logo
+#define PWRON_LOGO_W	240
+#define PWRON_LOGO_H	210
+#define PWRON_LOGO_X	0
+#define PWRON_LOGO_Y	0
 
 //big num
 #define BIG_NUM_W		16
@@ -40,6 +47,12 @@ extern "C" {
 #define IDLE_DATE_SHOW_Y	(IDLE_TIME_SHOW_Y+system_font)
 #define IDLE_WEEK_SHOW_X	0
 #define IDLE_WEEK_SHOW_Y	(IDLE_DATE_SHOW_Y+system_font)
+
+//ble
+#define IDLE_BLE_X		45
+#define IDLE_BLE_Y		0
+#define IDLE_BLE_W		7
+#define IDLE_BLE_H		16
 
 //battery soc
 #define BAT_PS_OFFSET_H		5
@@ -170,11 +183,15 @@ typedef enum
 	SCREEN_ID_SOS,
 	SCREEN_ID_SLEEP,
 	SCREEN_ID_STEPS,
+	SCREEN_ID_DISTANCE,
+	SCREEN_ID_CALORIE,
 	SCREEN_ID_FALL,
 	SCREEN_ID_WRIST,
 	SCREEN_ID_SETTINGS,
 	SCREEN_ID_GPS_TEST,
 	SCREEN_ID_NB_TEST,
+	SCREEN_ID_WIFI_TEST,
+	SCREEN_ID_BLE_TEST,
 	SCREEN_ID_NOTIFY,
 	SCREEN_ID_POWEROFF,
 	SCREEN_ID_FOTA,

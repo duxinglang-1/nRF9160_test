@@ -22,10 +22,9 @@
 #include "max20353.h"
 #include "screen.h"
 #include "ucs2.h"
+#include "logger.h"
 
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(datetime, CONFIG_LOG_DEFAULT_LEVEL);
+#define DATETIME_DEBUG
 
 #define SEC_START_YEAR		1970
 #define SEC_START_MONTH		1
@@ -256,7 +255,9 @@ void TimeIncrease(sys_date_timer_t *date, u32_t minutes)
 	h_add = minutes/60;
 	day_add = h_add/24;
 
-	LOG_INF("m_add:%d, h_add:%d\n", m_add, h_add);
+#ifdef DATETIME_DEBUG
+	LOGD("m_add:%d, h_add:%d\n", m_add, h_add);
+#endif
 
 	(*date).minute += m_add;
 	if((*date).minute > 59)
@@ -443,7 +444,7 @@ void UpdateSystemTime(void)
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
 	{
-		//SaveSystemDateTime();
+		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
 	#ifdef CONFIG_FOTA_DOWNLOAD	
@@ -452,7 +453,7 @@ void UpdateSystemTime(void)
 		{
 			AlarmRemindCheck(date_time);
 			TimeCheckSendHealthData();
-			TimeCheckSendLocationData();
+			//TimeCheckSendLocationData();
 		}
 	}
 

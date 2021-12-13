@@ -20,10 +20,7 @@
 #endif
 #include "datetime.h"
 #include "communicate.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #ifdef CONFIG_WIFI
 /*****************************************************************************
@@ -41,7 +38,12 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 	u8_t reply[256] = {0};
 	u32_t i;
 
-	if(wifi_data.count > 0)
+	if(wifi_data.count < 3)
+	{
+		location_wait_gps = true;
+		APP_Ask_GPS_Data();
+	}
+	else
 	{
 		strcat(reply, "3,");
 		for(i=0;i<wifi_data.count;i++)
@@ -79,10 +81,6 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 
 	if(!flag)
 	{
-	#ifdef CONFIG_WIFI
-		location_wait_wifi = true;
-		APP_Ask_wifi_data();
-	#endif
 		return;
 	}
 	
@@ -165,6 +163,8 @@ void TimeCheckSendHealthData(void)
 	health_hour_count++;
 	if(health_hour_count == global_settings.health_interval)
 	{
+		LOGD("001");
+		
 		health_hour_count = 0;
 
 	#ifdef CONFIG_IMU_SUPPORT
@@ -258,8 +258,13 @@ void TimeCheckSendLocationData(void)
 	if(flag)
 	{
 		loc_hour_count = 0;
+	#ifdef CONFIG_WIFI
+		location_wait_wifi = true;
+		APP_Ask_wifi_data();
+	#else
 		location_wait_gps = true;
 		APP_Ask_GPS_Data();
+	#endif
 	}
 }
 

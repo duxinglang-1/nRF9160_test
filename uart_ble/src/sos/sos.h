@@ -16,7 +16,11 @@
 extern "C" {
 #endif
 
-#define SOS_SENDING_TIMEOUT 5
+#ifdef CONFIG_ANIMATION_SUPPORT
+#define SOS_SENDING_TIMEOUT 2
+#else
+#define SOS_SENDING_TIMEOUT 4
+#endif
 
 #define SOS_NOTIFY_RECT_W	180
 #define SOS_NOTIFY_RECT_H	120
@@ -36,10 +40,10 @@ typedef enum
 extern SOS_STATUS sos_state;
 extern u8_t sos_trigger_time[16];
 
+extern void SOSTrigger(void);
 extern void SOSStart(void);
 extern void SOSCancel(void);
-
-
+extern void SOSSChangrStatus(void);
 #ifdef __cplusplus
 }
 #endif

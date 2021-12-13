@@ -72,6 +72,11 @@ config LTE_RAI_ENABLE
 	
 endmenu
 
+menu "WATCH DOG"
+config WATCHDOG_TIMEOUT_MSEC
+	int "Watchdog timeout in milliseconds"
+	default 10000
+endmenu
 
 menu "GPS"
 
@@ -190,6 +195,13 @@ config GPS_START_ON_MOTION
 
 endmenu # GPS
 
+menu "ANIMATION"
+
+config ANIMATION_SUPPORT
+	bool "animation support"
+	default n
+
+endmenu #ANIMATION
 
 menu "TOUCH"
 

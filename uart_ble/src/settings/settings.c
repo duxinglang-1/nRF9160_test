@@ -11,18 +11,8 @@
 #include "alarm.h"
 #include "lcd.h"
 #include "codetrans.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(settings, CONFIG_LOG_DEFAULT_LEVEL);
-
-#define DATETIME_ID 1
-#define SETTINGS_ID 2
-
-static bool nvs_init_flag = false;
-
-static struct nvs_fs fs;
-static struct flash_pages_info info;
+#include "inner_flash.h"
+#include "logger.h"
 
 bool need_save_settings = false;
 bool need_save_time = false;
@@ -74,34 +64,9 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	}
 };
 
-static int nvs_setup(void)
-{	
-	int err;	
-
-	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;	
-	err = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME), fs.offset, &info);	
-	if(err)
-	{		
-		//LOG_INF("Unable to get page info");
-		return err;
-	}	
-
-	fs.sector_size = info.size;
-	fs.sector_count = 6U;
-	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	if(err)
-	{
-		//LOG_INF("Flash Init failed\n");
-		return err;
-	}
-
-	nvs_init_flag = true;
-	return err;
-}
-
 void SaveSystemDateTime(void)
 {
-	nvs_write(&fs, DATETIME_ID, &date_time, sizeof(sys_date_timer_t));
+	SaveDateTimeToInnerFlash(date_time);
 }
 
 void ResetSystemTime(void)
@@ -112,14 +77,9 @@ void ResetSystemTime(void)
 
 void InitSystemDateTime(void)
 {
-	int err = 0;
 	sys_date_timer_t mytime = {0};
 
-	err = nvs_read(&fs, DATETIME_ID, &date_time, sizeof(sys_date_timer_t));
-	if(err < 0)
-	{
-		LOG_INF("get datetime err:%d\n", err);
-	}
+	ReadDateTimeFromInnerFlash(&mytime);
 	
 	if(!CheckSystemDateTimeIsValid(mytime))
 	{
@@ -133,7 +93,7 @@ void InitSystemDateTime(void)
 
 void SaveSystemSettings(void)
 {
-	nvs_write(&fs, SETTINGS_ID, &global_settings, sizeof(global_settings_t));
+	SaveSettingsToInnerFlash(global_settings);
 }
 
 void ResetSystemSettings(void)
@@ -146,21 +106,7 @@ void InitSystemSettings(void)
 {
 	int err;
 
-	if(!nvs_init_flag)
-	{
-		err = nvs_setup();
-		if(err)
-		{
-			LOG_INF("Flash Init failed, return!\n");
-			return;
-		}
-	}
-	
-	err = nvs_read(&fs, SETTINGS_ID, &global_settings, sizeof(global_settings_t));
-	if(err < 0)
-	{
-		LOG_INF("get settins err:%d\n", err);
-	}
+	ReadSettingsFromInnerFlash(&global_settings);
 
 	if(!global_settings.init)
 	{

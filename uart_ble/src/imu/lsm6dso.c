@@ -25,9 +25,7 @@ Take 26Hz data rate
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(lsm6dso, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 #define IMU_DEV "I2C_1"
 #define IMU_PORT "GPIO_0"
@@ -56,7 +54,6 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
 
-u8_t fall_trigger_time[16] = {0};
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
@@ -68,7 +65,7 @@ static uint8_t init_i2c(void)
 	i2c_imu = device_get_binding(IMU_DEV);
 	if(!i2c_imu)
 	{
-		LOG_INF("ERROR SETTING UP I2C\r\n");
+		LOGD("ERROR SETTING UP I2C");
 		return -1;
 	}
 	else
@@ -202,14 +199,14 @@ bool sensor_init(void)
 
 	/* route single tap, wrist tilt to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	//int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
-	int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-	//int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
@@ -306,7 +303,7 @@ void historic_buffer(void)
 					acc_z_hist_buffer[i] = acceleration_g[2];   
 
 					histBuff_counter++;
-					//LOG_INF("%d, Axyz, %4.2f, %4.2f, %4.2f\r\n",
+					//LOGD("%d, Axyz, %4.2f, %4.2f, %4.2f",
 					//			i, acc_x_hist_buffer[i], acc_y_hist_buffer[i], acc_z_hist_buffer[i]);
 					break;
 
@@ -327,7 +324,7 @@ void historic_buffer(void)
 
 					histBuff_counter++;
 					i++;
-					//LOG_INF("%d, Gxyz, %4.2f, %4.2f, %4.2f\r\n",
+					//LOGD("%d, Gxyz, %4.2f, %4.2f, %4.2f",
 					//				i, angular_rate_dps[0], angular_rate_dps[1], angular_rate_dps[2]);
 					break;
 
@@ -343,7 +340,7 @@ void historic_buffer(void)
 
 			if(histBuff_counter == PATTERN_LEN)
 			{
-				//LOG_INF("\nHIST BUFFER FLAG ON\n");
+				//LOGD("HIST BUFFER FLAG ON");
 				hist_buff_flag = true;
 				break;
 			}
@@ -415,7 +412,7 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						i_rev--;
 
-						//LOG_INF("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f\r\n",
+						//LOGD("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f",
 						//			i, acc_x_cur_buffer[i], acc_y_cur_buffer[i], acc_z_cur_buffer[i]);
 					}
 				}
@@ -433,7 +430,7 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						j_rev--;
 
-						//LOG_INF("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f\r\n",
+						//LOGD("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f",
 						//			j, acc_x_vrif_buffer[j], acc_y_vrif_buffer[j], acc_z_vrif_buffer[j]);
 					}
 				}
@@ -451,7 +448,7 @@ void curr_vrif_buffers(void)
 						buff_counter++;
 						k_rev--;
 
-						//LOG_INF("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f\r\n",
+						//LOGD("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f",
 						//			k, acc_x_vrif_buffer_1[k], acc_y_vrif_buffer_1[k], acc_z_vrif_buffer_1[k]);
 					}
 				}
@@ -697,13 +694,13 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 void fall_detection(void)
 {
 	historic_buffer();
-	LOG_INF("fall detecting 1");
+	LOGD("fall detecting 1");
 
 	if(hist_buff_flag)
 	{
 		curr_vrif_buffers();
 		hist_buff_flag = false;
-		LOG_INF("fall detecting 2");
+		LOGD("fall detecting 2");
 	}
 
 	if(curr_vrif_buff_flag)
@@ -746,7 +743,7 @@ void fall_detection(void)
 		
 		curr_vrif_buff_flag = false;
 		sensor_init(); //resets the algorithm, will work continuosly on every tap
-		LOG_INF("fall detecting 3");
+		LOGD("fall detecting 3");
 	} 
 }
 
@@ -767,16 +764,19 @@ void UpdateIMUData(void)
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
-	LOG_INF("g_steps:%d,g_distance:%d,g_calorie:%d\n", g_steps, g_distance, g_calorie);
+	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
 
 	StepCheckSendLocationData(g_steps);
 }
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
 {
-	*steps = g_steps;
-	*calorie = g_calorie;
-	*distance = g_distance;
+	if(steps != NULL)
+		*steps = g_steps;
+	if(calorie != NULL)
+		*calorie = g_calorie;
+	if(distance != NULL)
+		*distance = g_distance;
 }
 
 /*@Set Sensor sensitivity
@@ -793,141 +793,122 @@ void lsm6dso_sensitivity(void)
 	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
 }
 
-#ifdef CONFIG_WIFI
-void fall_get_wifi_data_reply(wifi_infor wifi_data)
+static void mt_fall_detection(struct k_work *work)
 {
-	u8_t reply[256] = {0};
-	u32_t i;
-
-	if(wifi_data.count > 0)
+	if(int1_event)	//steps or tilt
 	{
-		strcat(reply, "3,");
-		for(i=0;i<wifi_data.count;i++)
+		LOGD("int1 evt!");
+		int1_event = false;
+
+		if(!imu_check_ok)
+			return;
+		
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		if(!is_wearing())
+			return;
+		
+		is_tilt();
+		if(wrist_tilt)
 		{
-			strcat(reply, wifi_data.node[i].mac);
-			strcat(reply, "&");
-			strcat(reply, wifi_data.node[i].rssi);
-			strcat(reply, "&");
-			if(i < (wifi_data.count-1))
-				strcat(reply, "|");
+			LOGD("tilt trigger!");
+			
+			wrist_tilt = false;
+
+			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
+			{
+				sleep_out_by_wrist = true;
+				lcd_sleep_out = true;
+			}
+		}
+		else
+		{
+			LOGD("steps trigger!");
+			
+			UpdateIMUData();
+			imu_redraw_steps_flag = true;	
 		}
 	}
 
-	NBSendFallWifiData(reply, strlen(reply));
-}
-#endif
-
-void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
-{
-	u8_t reply[128] = {0};
-	u8_t tmpbuf[8] = {0};
-	u32_t tmp1;
-	double tmp2;
-
-	if(!flag)
-		return;
-	
-	//latitude
-	if(gps_data.latitude < 0)
+	if(int2_event) //fall
 	{
-		strcat(reply, "-");
-		gps_data.latitude = -gps_data.latitude;
-	}
-
-	tmp1 = (u32_t)(gps_data.latitude);	//经度整数部分
-	tmp2 = gps_data.latitude - tmp1;		//经度小数部分
-	//integer
-	sprintf(tmpbuf, "%d", tmp1);
-	strcat(reply, tmpbuf);
-	//dot
-	strcat(reply, ".");
-	//decimal
-	tmp1 = (u32_t)(tmp2*1000000);
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/10000));
-	strcat(reply, tmpbuf);
-	tmp1 = tmp1%10000;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/100));
-	strcat(reply, tmpbuf);	
-	tmp1 = tmp1%100;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
-	strcat(reply, tmpbuf);
-
-	//semicolon
-	strcat(reply, ";");
-	
-	//longitude
-	if(gps_data.longitude < 0)
-	{
-		strcat(reply, "-");
-		gps_data.longitude = -gps_data.longitude;
-	}
-
-	tmp1 = (u32_t)(gps_data.longitude);	//经度整数部分
-	tmp2 = gps_data.longitude - tmp1;	//经度小数部分
-	//integer
-	sprintf(tmpbuf, "%d", tmp1);
-	strcat(reply, tmpbuf);
-	//dot
-	strcat(reply, ".");
-	//decimal
-	tmp1 = (u32_t)(tmp2*1000000);
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/10000));
-	strcat(reply, tmpbuf);	
-	tmp1 = tmp1%10000;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/100));
-	strcat(reply, tmpbuf);	
-	tmp1 = tmp1%100;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
-	strcat(reply, tmpbuf);
-
-	//semicolon
-	strcat(reply, ";");
-
-	//sos trigger time
-	strcat(reply, fall_trigger_time);
-
-	//semicolon
-	strcat(reply, ";");
-	
-	NBSendFallGpsData(reply, strlen(reply));
-}
-
-void FallAlarmStart(void)
-{
-	GetSystemTimeSecString(fall_trigger_time);
-
-#ifdef CONFIG_WIFI
-	fall_wait_wifi = true;
-	APP_Ask_wifi_data();
-#endif
-	fall_wait_gps = true;
-	APP_Ask_GPS_Data();
-}
-
-static void mt_fall_detection(struct k_work *work)
-{
-	fall_detection();
-
-	if(fall_result)
-	{
-		LOG_INF("[%s] Fall trigger!\n", __func__);
+		LOGD("int2 evt!");
 		
-		fall_result = false;
-		lcd_sleep_out = true;
-		FallAlarmStart();
+		int2_event = false;
+
+		if(!imu_check_ok)
+			return;
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		if(!is_wearing())
+			return;
+
+		fall_detection();
+		if(fall_result)
+		{
+			LOGD("Fall trigger!");
+			
+			fall_result = false;
+			lcd_sleep_out = true;
+			
+			FallAlarmStart();
+		}
+        else
+        {
+			LOGD("Not Fall.");
+        }
 	}
-	else
+	
+	if(reset_steps)
 	{
-		LOG_INF("[%s] Not Fall.\n", __func__);
+		reset_steps = false;
+
+		if(!imu_check_ok)
+			return;
+		
+		ReSetImuSteps();
+		imu_redraw_steps_flag = true;
+	}
+
+	if(imu_redraw_steps_flag)
+	{
+		imu_redraw_steps_flag = false;
+
+		if(!imu_check_ok)
+			return;
+		
+		IMURedrawSteps();
+	}
+
+	if(update_sleep_parameter)
+	{
+		update_sleep_parameter = false;
+
+		if(!imu_check_ok)
+			return;
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+			return;
+	#endif
+
+		UpdateSleepPara();
 	}
 }
 
 void IMU_init(struct k_work_q *work_q)
 {
-	LOG_INF("IMU_init\n");
+	LOGD("IMU_init");
 	
 	imu_work_q = work_q;
-	//k_work_init(&imu_work, mt_fall_detection);
+	k_work_init(&imu_work, mt_fall_detection);
 	
 	if(init_i2c() != 0)
 		return;
@@ -946,7 +927,7 @@ void IMU_init(struct k_work_q *work_q)
 	lsm6dso_sensitivity();
 	StartSleepTimeMonitor();
 
-	LOG_INF("IMU_init done!\n");
+	LOGD("IMU_init done!");
 }
 
 /*@brief Check if a wrist tilt happend
@@ -994,23 +975,27 @@ void test_i2c(void)
 	struct device *i2c_dev;
 	struct device *dev0;
 
-	LOG_INF("Starting i2c scanner...\n");
+	dev0 = device_get_binding("GPIO_0");
+	gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
+	gpio_pin_write(dev0, 0, 1);
+
+	LOGD("Starting i2c scanner...");
 
 	i2c_dev = device_get_binding(IMU_DEV);
 	if(!i2c_dev)
 	{
-		LOG_INF("I2C: Device driver not found.\n");
+		LOGD("I2C: Device driver not found.");
 		return;
 	}
 	i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	uint8_t error = 0u;
 
-	LOG_INF("Value of NRF_TWIM1_NS->PSEL.SCL: %ld \n",NRF_TWIM1_NS->PSEL.SCL);
-	LOG_INF("Value of NRF_TWIM1_NS->PSEL.SDA: %ld \n",NRF_TWIM1_NS->PSEL.SDA);
-	LOG_INF("Value of NRF_TWIM1_NS->FREQUENCY: %ld \n",NRF_TWIM1_NS->FREQUENCY);
-	LOG_INF("26738688 -> 100k\n");
-	LOG_INF("67108864 -> 250k\n");
-	LOG_INF("104857600 -> 400k\n");
+	LOGD("Value of NRF_TWIM1_NS->PSEL.SCL: %ld",NRF_TWIM1_NS->PSEL.SCL);
+	LOGD("Value of NRF_TWIM1_NS->PSEL.SDA: %ld",NRF_TWIM1_NS->PSEL.SDA);
+	LOGD("Value of NRF_TWIM1_NS->FREQUENCY: %ld",NRF_TWIM1_NS->FREQUENCY);
+	LOGD("26738688 -> 100k");
+	LOGD("67108864 -> 250k");
+	LOGD("104857600 -> 400k");
 
 	for (u8_t i = 0; i < 0x7f; i++)
 	{
@@ -1025,11 +1010,11 @@ void test_i2c(void)
 		error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
 		if(error == 0)
 		{
-			LOG_INF("0x%2x device address found on I2C Bus\n", i);
+			LOGD("0x%2x device address found on I2C Bus", i);
 		}
 		else
 		{
-			//LOG_INF("error %d \n", error);
+			//LOGD("error %d", error);
 		}
 	}
 }
@@ -1054,94 +1039,6 @@ void IMUMsgProcess(void)
 		return;
 #endif
 
-	if(int1_event)	//steps
-	{
-		LOG_INF("[%s] int1 evt!\n", __func__);
-		int1_event = false;
-
-		if(!imu_check_ok)
-			return;
-		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		//if(!is_wearing())
-		//	return;
-		
-		LOG_INF("[%s] steps trigger!\n", __func__);
-		
-		UpdateIMUData();
-		imu_redraw_steps_flag = true;	
-	}
-		
-	if(int2_event) //tilt
-	{
-		LOG_INF("[%s] int2 evt!\n", __func__);
-		
-		int2_event = false;
-
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		//if(!is_wearing())
-		//	return;
-
-		is_tilt();
-		if(wrist_tilt)
-		{
-			LOG_INF("[%s] tilt trigger!\n", __func__);
-			
-			wrist_tilt = false;
-
-			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
-			{
-				sleep_out_by_wrist = true;
-				lcd_sleep_out = true;
-			}
-		}
-	}
-	
-	if(reset_steps)
-	{
-		reset_steps = false;
-
-		if(!imu_check_ok)
-			return;
-		
-		ReSetImuSteps();
-		imu_redraw_steps_flag = true;
-	}
-
-	if(imu_redraw_steps_flag)
-	{
-		imu_redraw_steps_flag = false;
-
-		if(!imu_check_ok)
-			return;
-		
-		IMURedrawSteps();
-	}
-
-	if(update_sleep_parameter)
-	{
-		update_sleep_parameter = false;
-
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		UpdateSleepPara();
-	}
+	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
 #endif/*CONFIG_IMU_SUPPORT*/

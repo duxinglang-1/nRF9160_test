@@ -3,8 +3,8 @@
 ** Descriptions:			Key message process head file
 ** Created By:				xie biao
 ** Created Date:			2020-07-13
-** Modified Date:      		2020-10-10 
-** Version:			    	V1.1
+** Modified Date:      		2021-09-29 
+** Version:			    	V1.2
 ******************************************************************************************************/
 #ifndef __KEY_H__
 #define __KEY_H__
@@ -29,22 +29,51 @@ extern "C" {
 
 #define TIMER_FOR_LONG_PRESSED 3*1000
 
-typedef enum{
+typedef void (*FuncPtr) (void);
+typedef FuncPtr (* get_func_ptr)(u8_t key_code, u8_t key_type);
+
+typedef enum
+{
 	ACTIVE_LOW,
 	ACTIVE_HIGH
 }KEY_ACTIVE;
 
-typedef struct{
-	const char * const port;
-	const u8_t number;
-	const u8_t active_flag;
-}key_cfg;
+typedef enum
+{
+	KEY_SOS,
+	KEY_PWR,
+	KEY_MAX
+}KEY_CODE;
+
+typedef enum
+{
+	KEY_EVENT_UP,
+	KEY_EVENT_DOWN,
+	KEY_EVENT_LONG_PRESS,
+	KEY_EVENT_MAX
+}KEY_EVENT_TYPE;
 
 typedef enum 
 {
 	STATE_WAITING,
 	STATE_SCANNING,
 }KEY_STATUS;
+
+#define KEY_SOFT_LEFT	KEY_SOS
+#define KEY_SOFT_RIGHT	KEY_PWR
+
+typedef struct
+{
+	const char * const port;
+	const u8_t number;
+	const u8_t active_flag;
+}key_cfg;
+
+typedef struct
+{
+	bool flag[KEY_MAX][KEY_EVENT_MAX];
+	FuncPtr func[KEY_MAX][KEY_EVENT_MAX];
+}key_event_msg;
 
 /**
  * @typedef button_handler_t
@@ -91,6 +120,15 @@ u32_t dk_get_buttons(void);
  *                      Otherwise, a (negative) error code is returned.
  */
 
+extern void ClearAllKeyHandler(void);
+extern void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype);
+extern void SetLeftKeyUpHandler(FuncPtr funcPtr);
+extern void SetLeftKeyDownHandler(FuncPtr funcPtr);
+extern void SetLeftKeyLongPressHandler(FuncPtr funcPtr);
+extern void SetRightKeyUpHandler(FuncPtr funcPtr);
+extern void SetRightKeyDownHandler(FuncPtr funcPtr);
+extern void SetRightKeyLongPressHandler(FuncPtr funcPtr);
+extern void KeyMsgProcess(void);
 
 #ifdef __cplusplus
 }

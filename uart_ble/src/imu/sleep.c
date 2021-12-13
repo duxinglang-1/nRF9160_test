@@ -1,14 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-
 #include "lsm6dso.h"
 #include "datetime.h"
 #include "max20353.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(sleep, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 u16_t light_sleep_time = 0;
 u16_t deep_sleep_time = 0;
@@ -176,7 +172,7 @@ void GetSleepInfor(void)
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 
-	LOG_INF("deep_sleep:%d, light_sleep:%d\n", deep_sleep, light_sleep);
+	LOGD("deep_sleep:%d, light_sleep:%d", deep_sleep, light_sleep);
 }
 
 void UpdateSleepPara(void)

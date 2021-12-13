@@ -15,7 +15,7 @@
 #include "inner_flash.h"
 #include "logger.h"
 
-#define INNER_FLASH_DEBUG
+//#define INNER_FLASH_DEBUG
 
 #define value1  "53.760241,-5.147095,1.023,11:20:22"
 #define value2  "53.760241,-5.147095,1.023,11:20:23"

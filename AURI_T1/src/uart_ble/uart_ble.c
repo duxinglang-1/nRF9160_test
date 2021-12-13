@@ -13,9 +13,14 @@
 #include "datetime.h"
 #include "Settings.h"
 #include "Uart_ble.h"
+#ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
+#endif
 #include "gps.h"
 #include "max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif
 #include "screen.h"
 #include "inner_flash.h"
 #ifdef CONFIG_WIFI
@@ -123,6 +128,7 @@ void ble_connect_or_disconnect_handle(u8_t *buf, u32_t len)
 		BLE_is_connected = false;
 }
 
+#ifdef CONFIG_TOUCH_SUPPORT
 void CTP_notify_handle(u8_t *buf, u32_t len)
 {
 	u8_t tmpbuf[128] = {0};
@@ -172,16 +178,7 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
 }
-
-void wifi_sacn_notify_handle(u8_t *buf, u32_t len)
-{
-	u8_t tmpbuf[128] = {0};
-	u8_t tp_type = TP_EVENT_MAX;
-	u16_t tp_x,tp_y;
-	
-	LOG_INF("%x,%x,%x,%x,%x,%x\n",buf[5],buf[6],buf[7],buf[8],buf[9],buf[10]);
-	
-}
+#endif
 
 void APP_set_find_device(u8_t *buf, u32_t len)
 {
@@ -584,8 +581,11 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	u16_t steps,calorie,distance,light_sleep,deep_sleep;	
 	u32_t i,reply_len = 0;
 
+#ifdef CONFIG_IMU_SUPPORT	
 	GetSportData(&steps, &calorie, &distance);
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
+	
 	wake = 8;
 	
 	//packet head
@@ -628,7 +628,9 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 
 	//上传心率数据
+#ifdef CONFIG_PPG_SUPPORT	
 	MCU_send_heart_rate();
+#endif
 }
 
 void APP_get_location_data(u8_t *buf, u32_t len)
@@ -799,6 +801,7 @@ void APP_get_firmware_version(u8_t *buf, u32_t len)
 	ble_send_date_handle(reply, reply_len);
 }
 
+#ifdef CONFIG_PPG_SUPPORT
 void APP_get_heart_rate(u8_t *buf, u32_t len)
 {
 	u8_t heart_rate,reply[128] = {0};
@@ -846,6 +849,7 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 }
+#endif
 
 //APP回复手环查找手机
 void APP_reply_find_phone(u8_t *buf, u32_t len)
@@ -1143,7 +1147,9 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 	switch(data_ID)
 	{
 	case HEART_RATE_ID:			//心率
+	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_heart_rate(buf, len);
+	#endif
 		break;
 	case BLOOD_OXYGEN_ID:		//血氧
 		break;
@@ -1214,10 +1220,9 @@ void ble_receive_data_handle(u8_t *buf, u32_t len)
 		ble_connect_or_disconnect_handle(buf, len);
 		break;
 	case CTP_NOTIFY_ID:
+	#ifdef CONFIG_TOUCH_SUPPORT
 		CTP_notify_handle(buf, len);
-		break;
-	case WIFI_SCAN_DATA_ID:
-		wifi_sacn_notify_handle(buf, len);
+	#endif
 		break;
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);

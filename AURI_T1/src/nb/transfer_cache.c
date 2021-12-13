@@ -11,10 +11,9 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include "transfer_cache.h"
+#include "logger.h"
 
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(transfer_cache, CONFIG_LOG_DEFAULT_LEVEL);
+//#define TRANSFER_LOG
 
 static CacheInfo g_nb_send_cache = {0};
 static CacheInfo g_nb_rece_cache = {0};
@@ -31,8 +30,10 @@ bool add_data_into_send_cache(u8_t *data, u32_t len)
 
 	if(g_nb_send_cache.cache == NULL)
 	{
-		LOG_INF("%s: begin 001\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("001");
+	#endif
+	
 		g_nb_send_cache.count = 0;
 		g_nb_send_cache.cache = NULL;
 
@@ -59,8 +60,10 @@ bool add_data_into_send_cache(u8_t *data, u32_t len)
 	}
 	else
 	{
-		LOG_INF("%s: begin 002\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("002");
+	#endif
+	
 		if(send_tail == NULL)
 		{
 			send_tail = g_nb_send_cache.cache;
@@ -103,8 +106,10 @@ bool get_data_from_send_cache(u8_t **buf, u32_t *len)
 {
 	if(g_nb_send_cache.cache == NULL || g_nb_send_cache.count == 0)
 	{
-		LOG_INF("%s: begin 001\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("001");
+	#endif
+	
 		buf = NULL;
 		*len = 0;
 		
@@ -112,8 +117,10 @@ bool get_data_from_send_cache(u8_t **buf, u32_t *len)
 	}
 	else
 	{
-		LOG_INF("%s: begin 002\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("002");
+	#endif
+
 		if(send_head == NULL)
 			send_head = g_nb_send_cache.cache;
 
@@ -161,8 +168,10 @@ bool add_data_into_rece_cache(u8_t *data, u32_t len)
 
 	if(g_nb_rece_cache.cache == NULL)
 	{
-		LOG_INF("%s: begin 001\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("001");
+	#endif
+
 		g_nb_rece_cache.count = 0;
 		g_nb_rece_cache.cache = NULL;
 
@@ -189,8 +198,10 @@ bool add_data_into_rece_cache(u8_t *data, u32_t len)
 	}
 	else
 	{
-		LOG_INF("%s: begin 002\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("002");
+	#endif
+
 		if(rece_tail == NULL)
 		{
 			rece_tail = g_nb_rece_cache.cache;
@@ -233,8 +244,10 @@ bool get_data_from_rece_cache(u8_t **buf, u32_t *len)
 {
 	if(g_nb_rece_cache.cache == NULL || g_nb_rece_cache.count == 0)
 	{
-		LOG_INF("%s: begin 001\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("001");
+	#endif
+
 		buf = NULL;
 		*len = 0;
 		
@@ -242,8 +255,10 @@ bool get_data_from_rece_cache(u8_t **buf, u32_t *len)
 	}
 	else
 	{
-		LOG_INF("%s: begin 002\n", __func__);
-		
+	#ifdef TRANSFER_LOG
+		LOGD("002");
+	#endif
+
 		if(rece_head == NULL)
 			rece_head = g_nb_rece_cache.cache;
 

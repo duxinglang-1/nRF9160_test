@@ -8,11 +8,8 @@
 #include <sys/util.h>
 #include <drivers/gps.h>
 #include <modem/lte_lc.h>
-
 #include "gps_controller.h"
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(gps_control, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 /* Structure to hold GPS work information */
 static struct device *gps_dev;
@@ -23,12 +20,14 @@ static struct k_delayed_work start_work;
 static struct k_delayed_work stop_work;
 static int gps_reporting_interval_seconds;
 
+extern bool test_gps_flag;
+
 static void start(struct k_work *work)
 {
 	ARG_UNUSED(work);
 	int err;
 	struct gps_config gps_cfg = {
-		.nav_mode = GPS_POWER_MODE_DISABLED,
+		.nav_mode = GPS_NAV_MODE_SINGLE_FIX,
 		.power_mode = GPS_POWER_MODE_PERFORMANCE,
 		.timeout = CONFIG_GPS_CONTROL_FIX_TRY_TIME,
 		.interval = CONFIG_GPS_CONTROL_FIX_TRY_TIME +
@@ -36,39 +35,44 @@ static void start(struct k_work *work)
 	};
 
 	if (gps_dev == NULL) {
-		LOG_ERR("GPS controller is not initialized properly");
+		LOGD("GPS controller is not initialized properly");
 		return;
 	}
 
 #ifdef CONFIG_GPS_CONTROL_PSM_ENABLE_ON_START
-	LOG_INF("Enabling PSM");
+	LOGD("Enabling PSM");
 
 	err = lte_lc_psm_req(true);
-	if (err) {
-		LOG_ERR("PSM request failed, error: %d", err);
-	} else {
-		LOG_INF("PSM enabled");
+	if(err)
+	{
+		LOGD("PSM request failed, error: %d", err);
+	}
+	else
+	{
+		LOGD("PSM enabled");
 	}
 #endif /* CONFIG_GPS_CONTROL_PSM_ENABLE_ON_START */
 
+	if(test_gps_flag)
+	{
+		gps_cfg.nav_mode = GPS_NAV_MODE_CONTINUOUS;
+		gps_cfg.power_mode = GPS_POWER_MODE_DISABLED;
+	}
+	
 	err = gps_start(gps_dev, &gps_cfg);
-	if (err) {
-		LOG_ERR("Failed to enable GPS, error: %d", err);
+	if(err)
+	{
+		LOGD("Failed to enable GPS, error: %d", err);
 		return;
 	}
 
 	atomic_set(&gps_is_enabled, 1);
 	gps_control_set_active(true);
 
-	LOG_INF("GPS started successfully. Searching for satellites ");
-	LOG_INF("to get position fix. This may take several minutes.");
-	LOG_INF("The device will attempt to get a fix for %d seconds, ",
-		CONFIG_GPS_CONTROL_FIX_TRY_TIME);
-	LOG_INF("before the GPS is stopped. It's restarted every %d seconds",
-		gps_reporting_interval_seconds);
+	LOGD("GPS started successfully. Searching for satellites ");
 #if !defined(CONFIG_GPS_SIM)
 #if IS_ENABLED(CONFIG_GPS_START_ON_MOTION)
-	LOG_INF("or as soon as %d seconds later when movement occurs.",
+	LOGD("or as soon as %d seconds later when movement occurs.",
 		CONFIG_GPS_CONTROL_FIX_CHECK_INTERVAL);
 #endif
 #endif
@@ -79,30 +83,32 @@ static void stop(struct k_work *work)
 	ARG_UNUSED(work);
 	int err;
 
-	if (gps_dev == NULL) {
-		LOG_ERR("GPS controller is not initialized");
+	if(gps_dev == NULL)
+	{
+		LOGD("GPS controller is not initialized");
 		return;
 	}
 
 #ifdef CONFIG_GPS_CONTROL_PSM_DISABLE_ON_STOP
-	LOG_INF("Disabling PSM");
+	LOGD("Disabling PSM");
 
 	err = lte_lc_psm_req(false);
-	if (err) {
-		LOG_ERR("PSM mode could not be disabled, error: %d",
-			err);
+	if(err)
+	{
+		LOGD("PSM mode could not be disabled, error: %d", err);
 	}
 #endif /* CONFIG_GPS_CONTROL_PSM_DISABLE_ON_STOP */
 
 	err = gps_stop(gps_dev);
-	if (err) {
-		LOG_ERR("Failed to disable GPS, error: %d", err);
+	if(err)
+	{
+		LOGD("Failed to disable GPS, error: %d", err);
 		return;
 	}
 
 	atomic_set(&gps_is_enabled, 0);
 	gps_control_set_active(false);
-	LOG_INF("GPS operation was stopped");
+	LOGD("GPS operation was stopped");
 }
 
 bool gps_control_is_enabled(void)
@@ -141,26 +147,29 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 	int err;
 	static bool is_init;
 
-	if (is_init) {
+	if (is_init)
+	{
 		return -EALREADY;
 	}
 
-	if ((work_q == NULL) || (handler == NULL)) {
+	if((work_q == NULL) || (handler == NULL))
+	{
 		return -EINVAL;
 	}
 
 	app_work_q = work_q;
 
 	gps_dev = device_get_binding(CONFIG_GPS_DEV_NAME);
-	if (gps_dev == NULL) {
-		LOG_ERR("Could not get %s device",
-			log_strdup(CONFIG_GPS_DEV_NAME));
+	if (gps_dev == NULL)
+	{
+		LOGD("Could not get %s device", CONFIG_GPS_DEV_NAME);
 		return -ENODEV;
 	}
 
 	err = gps_init(gps_dev, handler);
-	if (err) {
-		LOG_ERR("Could not initialize GPS, error: %d", err);
+	if(err)
+	{
+		LOGD("Could not initialize GPS, error: %d", err);
 		return err;
 	}
 
@@ -176,7 +185,7 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 	gps_reporting_interval_seconds = CONFIG_GPS_CONTROL_FIX_CHECK_INTERVAL;
 #endif
 
-	LOG_INF("GPS initialized");
+	//LOGD("GPS initialized");
 
 	is_init = true;
 

@@ -998,7 +998,35 @@ void GPSTestScreenProcess(void)
 	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_NO;
 }
 
-void NBTestScreenProcess(void)
+void TestNBUpdateINfor(void)
+{
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+	LCD_Clear(BLACK);
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, nb_test_info);
+#else
+	LCD_Fill(30, 50, 190, 160, BLACK);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+#endif
+}
+
+void TestNBShowInfor(void)
+{
+	u16_t x,y,w,h;
+	u8_t strbuf[128] = {0};
+	
+	LCD_Clear(BLACK);
+
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+	LCD_ShowStrInRect(0, 0, LCD_WIDTH, LCD_HEIGHT, "NB-IoT TESTING");
+#else	
+	strcpy(strbuf, "NB-IoT TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+#endif
+}
+
+void TestNBScreenProcess(void)
 {
 	switch(scr_msg[SCREEN_ID_NB_TEST].act)
 	{
@@ -1006,13 +1034,15 @@ void NBTestScreenProcess(void)
 		scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATED;
 
+		TestNBShowInfor();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		TestNBUpdateINfor();
 		break;
 	}
 	
-	scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;	
+	scr_msg[SCREEN_ID_NB_TEST].act = SCREEN_ACTION_NO;
 }
 
 void EnterIdleScreen(void)
@@ -1262,7 +1292,7 @@ void ScreenMsgProcess(void)
 			GPSTestScreenProcess();
 			break;
 		case SCREEN_ID_NB_TEST:
-			NBTestScreenProcess();
+			TestNBScreenProcess();
 			break;
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();

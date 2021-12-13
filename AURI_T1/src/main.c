@@ -22,14 +22,23 @@
 #include "external_flash.h"
 #include "uart_ble.h"
 #include "settings.h"
+#ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
+#endif
 #include "Max20353.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "Alarm.h"
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
-
+#ifdef CONFIG_AUDIO_SUPPORT
+#include "audio.h"
+#endif
+#ifdef CONFIG_WATCHDOG
+#include "watchdog.h"
+#endif
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
@@ -42,16 +51,18 @@ static u8_t show_pic_count = 0;//Õº∆¨œ‘ æÀ≥–Ú
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
-		      CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+		      2048);
 static struct k_work_q nb_work_q;
+
+#ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
+              4096);
 static struct k_work_q imu_work_q;
-//K_THREAD_STACK_DEFINE(gps_stack_area,
-//              CONFIG_APPLICATION_WORKQUEUE_STACK_SIZE);
-//static struct k_work_q gps_work_q;
+#endif
 
-
+K_THREAD_STACK_DEFINE(gps_stack_area,
+              1024);
+static struct k_work_q gps_work_q;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);

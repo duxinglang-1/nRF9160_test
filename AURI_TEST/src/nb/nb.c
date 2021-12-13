@@ -125,6 +125,16 @@ static NB_APN_PARAMENT nb_apn_table[] =
 		"46004",
 		"cmnbiot2"
 	},
+	//china unicom
+	{
+		"46006",
+		"unim2m.njm2mapn"
+	},
+	//china telcom
+	{
+		"46011",
+		"ctnb"
+	},	
 	//arkessa
 	{
 		"90128", 
@@ -808,6 +818,11 @@ void NBRedrawSignal(void)
 	u8_t strbuf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 
+	if(at_cmd_write(CMD_GET_CESQ, strbuf, sizeof(strbuf), NULL) == 0)
+	{
+		LOGD("%s", strbuf);
+	}
+
 	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
 	{
 		//+CSCON: <n>,<mode>[,<state>[,<access]]
@@ -1451,13 +1466,13 @@ void GetModemSignal(void)
 	s32_t rsrp;
 	static s32_t rsrpbk = 0;
 	
-	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
-		LOGD("Get rsrp fail!");
+		LOGD("Get cesq fail!");
 		return;
 	}
 
-	LOGD("rsrp:%s", tmpbuf);
+	LOGD("cesq:%s", tmpbuf);
 	len = strlen(tmpbuf);
 	ptr = tmpbuf;
 	while(i<5)
@@ -1761,9 +1776,9 @@ void GetModemStatus(void)
 	}
 
 #if 0
-	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
-		LOGD("rsrp:%s", tmpbuf);
+		LOGD("cesq:%s", tmpbuf);
 		
 		len = strlen(tmpbuf);
 		tmpbuf[len-2] = ',';
@@ -1849,15 +1864,12 @@ static void nb_link(struct k_work *work)
 		frist_flag = true;
 		GetModemInfor();
 		SetModemTurnOff();
-		if(strlen(g_imsi) > 0)
-		{
-			err = lte_lc_init();
-			LOGD("lte_lc_init err:%d", err);
-		}
-		else
-		{
-			LOGD("Get imsi fail, will not link network!");
-		}
+	}
+	else if(strlen(g_imsi) == 0)
+	{
+		SetModemTurnOn();
+		GetModemInfor();
+		SetModemTurnOff();
 	}
 
 	if(gps_is_working())
@@ -1884,7 +1896,7 @@ static void nb_link(struct k_work *work)
 	#endif
 		configure_low_power();
 
-		err = lte_lc_connect();
+		err = lte_lc_init_and_connect();
 		if(err)
 		{
 			LOGD("Can't connected to LTE network. err:%d", err);
@@ -1945,12 +1957,12 @@ void GetNBSignal(void)
 	}
 	LOGD("cpsms:%s", str_rsrp);
 
-	if(at_cmd_write(CMD_GET_RSRP, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) != 0)
 	{
-		LOGD("Get rsrp fail!");
+		LOGD("Get cesq fail!");
 		return;
 	}
-	LOGD("rsrp:%s", str_rsrp);
+	LOGD("cesq:%s", str_rsrp);
 
 	if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) != 0)
 	{

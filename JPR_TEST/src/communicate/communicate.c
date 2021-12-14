@@ -20,10 +20,9 @@
 #endif
 #include "datetime.h"
 #include "communicate.h"
+#include "logger.h"
 
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
+extern u16_t g_last_steps;
 
 #ifdef CONFIG_WIFI
 /*****************************************************************************
@@ -39,23 +38,23 @@ LOG_MODULE_REGISTER(communicate, CONFIG_LOG_DEFAULT_LEVEL);
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u32_t i;
+	u32_t i,count=3;
 
 	if(wifi_data.count > 0)
+		count = wifi_data.count;
+		
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
 	{
-		strcat(reply, "3,");
-		for(i=0;i<wifi_data.count;i++)
-		{
-			strcat(reply, wifi_data.node[i].mac);
-			strcat(reply, "&");
-			strcat(reply, wifi_data.node[i].rssi);
-			strcat(reply, "&");
-			if(i < (wifi_data.count-1))
-				strcat(reply, "|");
-		}
-
-		NBSendLocationData(reply, strlen(reply));
+		strcat(reply, wifi_data.node[i].mac);
+		strcat(reply, "&");
+		strcat(reply, wifi_data.node[i].rssi);
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
 	}
+
+	NBSendLocationData(reply, strlen(reply));
 }
 #endif
 
@@ -165,7 +164,7 @@ void TimeCheckSendHealthData(void)
 	health_hour_count++;
 	if(health_hour_count == global_settings.health_interval)
 	{
-		LOG_INF("[%s]\n", __func__);
+		LOGD("001");
 		
 		health_hour_count = 0;
 
@@ -242,14 +241,31 @@ void TimeCheckSendHealthData(void)
 void TimeCheckSendLocationData(void)
 {
 	static u32_t loc_hour_count = 0;
+	bool flag = false;
 	
 	loc_hour_count++;
-	if(loc_hour_count == global_settings.dot_interval.time)
+	if(date_time.hour >= 21 || date_time.hour < 9)
 	{
-		LOG_INF("[%s]\n", __func__);
+		if(loc_hour_count == 360)
+		{
+			flag = true;
+		}
+	}
+	else if(loc_hour_count == global_settings.dot_interval.time)
+	{
+		flag = true;
+	}
+
+	if(flag)
+	{
 		loc_hour_count = 0;
+	#ifdef CONFIG_WIFI
+		location_wait_wifi = true;
+		APP_Ask_wifi_data();
+	#else
 		location_wait_gps = true;
 		APP_Ask_GPS_Data();
+	#endif
 	}
 }
 
@@ -265,13 +281,22 @@ void TimeCheckSendLocationData(void)
  *****************************************************************************/
 void StepCheckSendLocationData(u16_t steps)
 {
-	static u32_t step_count = 0;
+	static u16_t step_count = 0;
+
+	if(step_count == 0)
+		step_count = g_last_steps;
 	
 	if((steps - step_count) >= global_settings.dot_interval.steps)
 	{
 		step_count = steps;
+
+	#ifdef CONFIG_WIFI
+		location_wait_wifi = true;
+		APP_Ask_wifi_data();
+	#else
 		location_wait_gps = true;
-		APP_Ask_GPS_Data();		
+		APP_Ask_GPS_Data();
+	#endif		
 	}
 }
 

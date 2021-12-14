@@ -187,8 +187,9 @@ void FindDeviceStop(void)
 
 	k_timer_stop(&find_timer);
 
-	//GoBackHistoryScreen();
 	EnterIdleScreen();
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 }
 
 void FindDeviceTimeout(struct k_timer *timer)
@@ -237,6 +238,8 @@ void FindDeviceEntryScreen(void)
 {
 	EnterFindDeviceScreen();
 	FindDeviceStart();
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 }
 
 void AlarmRemindInit(void)

@@ -9,7 +9,14 @@
 #ifndef __ESP8266_H__
 #define __ESP8266_H__
 
-#define MAX_SCANNED_WIFI_NODE	5
+#define WIFI_NODE_MAX	5
+#define WIFI_DATA_HEAD			"+CWLAP:"
+#define WIFI_DATA_RSSI_BEGIN	"("
+#define WIFI_DATA_RSSI_END		","
+#define WIFI_DATA_MAC_BEGIN		"\""
+#define WIFI_DATA_MAC_END		"\")"
+#define WIFI_SLEEP_CMD			"AT+GSLP=0\r\n"
+#define WIFI_SLEEP_REPLY		"AT+GSLP=0\r\n\r\nOK"
 
 typedef struct
 {
@@ -20,7 +27,7 @@ typedef struct
 typedef struct
 {
 	u8_t count;
-	wifi_node_infor node[MAX_SCANNED_WIFI_NODE];
+	wifi_node_infor node[WIFI_NODE_MAX];
 }wifi_infor;
 
 extern bool wifi_is_on;
@@ -28,6 +35,9 @@ extern bool sos_wait_wifi;
 extern bool fall_wait_wifi;
 extern bool location_wait_wifi;
 
+extern u8_t wifi_test_info[256];
+
+extern bool wifi_is_working(void);
 extern void ble_turn_on(void);
 extern void wifi_receive_data_handle(u8_t *buf, u32_t len);
 #endif/*__ESP8266_H__*/

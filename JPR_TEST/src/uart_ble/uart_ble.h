@@ -31,8 +31,28 @@ typedef enum
 	BLE_MODE_MAX
 }ENUM_BLE_MODE;
 
-extern bool blue_is_on;
+typedef enum
+{
+	BLE_WORK_NORMAL,
+	BLE_WORK_DFU,
+	BLE_WORK_MAX
+}ENUM_BLE_WORK_MODE;
 
+typedef enum
+{
+	DATA_TYPE_BLE,
+	DATA_TYPE_WIFI,
+	DATA_TYPE_MAX
+}ENUM_DATA_TYPE;
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+extern bool uart_sleep_flag;
+extern bool uart_wake_flag;
+extern bool uart_is_waked;
+#endif
+
+extern bool blue_is_on;
+extern bool g_ble_connected;
 extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 
@@ -43,5 +63,9 @@ extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);
 extern void MCU_set_ble_work_mode(u8_t work_mode);
 extern void MCU_send_find_phone(void);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+extern void uart_sleep_out(void);
+extern void uart_sleep_in(void);
+#endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
 
 #endif/*__UART_BLE_H__*/

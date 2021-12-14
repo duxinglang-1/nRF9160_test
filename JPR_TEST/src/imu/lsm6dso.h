@@ -3,14 +3,17 @@
 #include <nrf9160.h>
 #include <zephyr.h>
 #include <device.h>
+#include "inner_flash.h"
 
 extern bool reset_steps;
 extern bool fall_wait_gps;
 
-extern u8_t fall_trigger_time[16];
+extern u16_t g_last_steps;
 extern u16_t g_steps;
 extern u16_t g_calorie;
 extern u16_t g_distance;
+
+extern sport_record_t last_sport;
 
 extern void IMU_init(struct k_work_q *work_q);
 extern void IMUMsgProcess(void);
@@ -35,7 +38,7 @@ extern void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance);
 extern void lsm6dso_sensitivity(void);
 
 /*sleep monitor*/
-extern void Set_Gsensor_data(signed short x, signed short y, signed short z, int setp,int hr,int hour,int charging);
+extern void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, int hr, int hour, int minute, int charging);
 extern int get_light_sleep_time(void); //return light sleep time in minutes
 extern int get_deep_sleep_time(void); //return deep sleep time in minutes
 

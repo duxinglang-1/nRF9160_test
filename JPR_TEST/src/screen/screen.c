@@ -16,6 +16,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "img.h"
+#include "key.h"
 #include "datetime.h"
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
@@ -23,12 +24,14 @@
 #endif
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#include "fall.h"
 #endif
 #include "external_flash.h"
 #include "screen.h"
 #include "ucs2.h"
 #include "nb.h"
 #include "sos.h"
+#include "alarm.h"
 #include "gps.h"
 #include "uart_ble.h"
 #ifdef CONFIG_TOUCH_SUPPORT
@@ -37,10 +40,10 @@
 #ifdef CONFIG_FOTA_DOWNLOAD
 #include "fota_mqtt.h"
 #endif/*CONFIG_FOTA_DOWNLOAD*/
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(screen, CONFIG_LOG_DEFAULT_LEVEL);
+#ifdef CONFIG_WIFI
+#include "esp8266.h"
+#endif
+#include "logger.h"
 
 static u8_t scr_index=0;
 
@@ -49,26 +52,41 @@ K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
 static void MainMenuTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mainmenu_timer, MainMenuTimerOutCallBack, NULL);
 
-
 SCREEN_ID_ENUM screen_id = SCREEN_ID_BOOTUP;
 SCREEN_ID_ENUM history_screen_id = SCREEN_ID_BOOTUP;
 screen_msg scr_msg[SCREEN_ID_MAX] = {0};
 notify_infor notify_msg = {0};
 
 extern bool key_pwroff_flag;
+extern u8_t g_rsrp;
 
 static void EnterHRScreen(void);
 
+static char *logo_img[] = 
+{
+	IMG_PEPPA_240X240_ADDR,
+	IMG_PEPPA_240X240_ADDR,
+	IMG_PEPPA_240X240_ADDR,
+	IMG_PEPPA_240X240_ADDR,
+	IMG_PEPPA_240X240_ADDR
+};
+
 void ShowBootUpLogo(void)
 {
+	u8_t i,count=0;
 	u16_t x,y,w,h;
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
-	x = (w > LCD_WIDTH ? 0 : (LCD_WIDTH-w)/2);
-	y = (h > LCD_HEIGHT ? 0 : (LCD_HEIGHT-h)/2);
-	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
-#endif	
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 200, false, EnterIdleScreen);
+#else
+  #ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_PEPPA_240X240_ADDR);
+  #else
+	LCD_ShowImg(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_PEPPA_240X240_ADDR);
+  #endif
+	k_sleep(K_MSEC(1000));
+	EnterIdleScreen();
+#endif
 }
 
 void ExitNotifyScreen(void)
@@ -174,6 +192,20 @@ void IdleShowSystemDate(void)
 	LCD_Fill(0, y, LCD_WIDTH, h, BACK_COLOR);	
 	LCD_ShowString(x,y,str_date);
 #endif
+}
+
+void IdleShowBleStatus(bool flag)
+{
+	if(flag)
+	{
+		//LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_LINK);
+		LCD_ShowString(IDLE_BLE_X,IDLE_BLE_Y,"BLE");
+	}
+	else
+	{
+		//LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_UNLINK);
+		LCD_ShowString(IDLE_BLE_X,IDLE_BLE_Y,"   ");
+	}
 }
 
 void IdleShowSystemTime(void)
@@ -1067,7 +1099,8 @@ void FOTAShowStatus(void)
 	y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
 	LCD_ShowString(x,y,"PWR(N)");
 
-	Key_Event_register_Handler(fota_start_confirm, fota_exit);
+	SetLeftKeyUpHandler(fota_start_confirm);
+	SetRightKeyUpHandler(fota_exit);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_X+FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_Y+FOTA_NOTIFY_NO_H, fota_exit);
@@ -1160,7 +1193,8 @@ void FOTAUpdateStatus(void)
 		y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
 		LCD_ShowString(x,y,"PWR(N)");
 
-		Key_Event_register_Handler(fota_reboot_confirm, fota_exit);	
+		SetLeftKeyUpHandler(fota_reboot_confirm);
+		SetRightKeyUpHandler(fota_exit);
 		break;
 		
 	case FOTA_STATUS_ERROR:
@@ -1180,7 +1214,8 @@ void FOTAUpdateStatus(void)
 		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
 		LCD_ShowString(x,y,"SOS(Y)");
 
-		Key_Event_register_Handler(fota_exit, fota_exit);			
+		SetLeftKeyUpHandler(fota_exit);
+		SetRightKeyUpHandler(fota_exit);
 		break;
 		
 	case FOTA_STATUS_MAX:
@@ -1603,9 +1638,11 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
 #if defined(CONFIG_PPG_SUPPORT)
-	Key_Event_register_Handler(EnterHRScreen, EnterIdleScreen);
+	SetLeftKeyUpHandler(EnterHRScreen);
+	SetRightKeyUpHandler(EnterIdleScreen);
 #else
-	Key_Event_register_Handler(EnterGPSTestScreen, EnterIdleScreen);
+	SetLeftKeyUpHandler(EnterGPSTestScreen);
+	SetRightKeyUpHandler(EnterIdleScreen);
 #endif
 }
 
@@ -1657,9 +1694,11 @@ void EnterStepsScreen(void)
 	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
 
 #ifdef CONFIG_FOTA_DOWNLOAD
-	Key_Event_register_Handler(fota_start, fota_exit);
+	SetLeftKeyUpHandler(fota_start);
+	SetRightKeyUpHandler(fota_exit);
 #else
-	Key_Event_register_Handler(ExitStepsScreen, ExitStepsScreen);
+	SetLeftKeyUpHandler(ExitStepsScreen);
+	SetRightKeyUpHandler(ExitStepsScreen);
 #endif
 }
 
@@ -1685,7 +1724,8 @@ void EnterSleepScreen(void)
 
 	MenuStopGPS();
 
-	Key_Event_register_Handler(EnterStepsScreen, ExitSleepScreen);
+	SetLeftKeyUpHandler(EnterStepsScreen);
+	SetRightKeyUpHandler(ExitSleepScreen);
 }
 #endif
 
@@ -1720,11 +1760,14 @@ void EnterGPSTestScreen(void)
 #endif
 
 #ifdef CONFIG_IMU_SUPPORT
-	Key_Event_register_Handler(EnterSleepScreen, ExitGPSTestScreen);
+	SetLeftKeyUpHandler(EnterSleepScreen);
+	SetRightKeyUpHandler(ExitGPSTestScreen);
 #elif defined(CONFIG_FOTA_DOWNLOAD)
-	Key_Event_register_Handler(fota_start, fota_exit);
+	SetLeftKeyUpHandler(fota_start);
+	SetRightKeyUpHandler(fota_exit);
 #else
-	Key_Event_register_Handler(ExitGPSTestScreen, ExitGPSTestScreen);
+	SetLeftKeyUpHandler(ExitGPSTestScreen);
+	SetRightKeyUpHandler(ExitGPSTestScreen);
 #endif
 }
 
@@ -1783,7 +1826,8 @@ void EnterHRScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	Key_Event_register_Handler(EnterGPSTestScreen, ExitHRScreen);
+	SetLeftKeyUpHandler(EnterGPSTestScreen);
+	SetRightKeyUpHandler(ExitHRScreen);
 }
 #endif/*CONFIG_PPG_SUPPORT*/
 
@@ -1829,19 +1873,16 @@ void EnterWristScreen(void)
 
 void poweroff_leftkeyfunc(void)
 {
-	LOG_INF("[%s]\n", __func__);
 	key_pwroff_flag = true;
 }
 
 void poweroff_rightkeyfunc(void)
 {
-	LOG_INF("[%s]\n", __func__);
 	EnterIdleScreen();
 }
 
 void EnterPoweroffScreen(void)
 {
-	LOG_INF("[%s] screen_id:%d,SCREEN_ID_POWEROFF:%d\n", __func__,screen_id,SCREEN_ID_POWEROFF);
 	if(screen_id == SCREEN_ID_POWEROFF)
 		return;
 
@@ -1888,7 +1929,8 @@ void PowerOffShowStatus(void)
 	y = PWR_OFF_NOTIFY_NO_Y+(PWR_OFF_NOTIFY_NO_H-h)/2;	
 	LCD_ShowString(x,y,"PWR(N)");
 
-	Key_Event_register_Handler(poweroff_leftkeyfunc, poweroff_rightkeyfunc);
+	SetLeftKeyUpHandler(poweroff_leftkeyfunc);
+	SetRightKeyUpHandler(poweroff_rightkeyfunc);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_leftkeyfunc);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_rightkeyfunc);

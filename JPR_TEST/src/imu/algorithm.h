@@ -63,10 +63,11 @@ uint16_t fsm_addr;
 
 volatile bool hist_buff_flag      = false;
 volatile bool curr_vrif_buff_flag = false;
-volatile bool int1_event          = false;
-volatile bool int2_event          = false;
-volatile bool fall_result         = false;
-volatile bool wrist_tilt          = false;
+
+bool int1_event = false;
+bool int2_event = false;
+bool fall_result = false;
+bool wrist_tilt = false;
 
 static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;

@@ -25,18 +25,19 @@
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(sos, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 SOS_STATUS sos_state = SOS_STATUS_IDLE;
 
-bool sos_trigger_flag = false;
+static bool sos_trigger_flag = false;
+static bool sos_start_gps_flag = false;
 
 u8_t sos_trigger_time[16] = {0};
 
 static void SOSTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_timer, SOSTimerOutCallBack, NULL);
+static void SOSStartGPSCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(sos_gps_timer, SOSStartGPSCallBack, NULL);
 
 void SOSTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -74,24 +75,29 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 	}
 }
 
+void SOSStartGPSCallBack(struct k_timer *timer_id)
+{
+	sos_start_gps_flag = true;
+}
+
 #ifdef CONFIG_WIFI
 void sos_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u32_t i;
+	u32_t count=3,i;
 
 	if(wifi_data.count > 0)
+		count = wifi_data.count;
+	
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
 	{
-		strcat(reply, "3,");
-		for(i=0;i<wifi_data.count;i++)
-		{
-			strcat(reply, wifi_data.node[i].mac);
-			strcat(reply, "&");
-			strcat(reply, wifi_data.node[i].rssi);
-			strcat(reply, "&");
-			if(i < (wifi_data.count-1))
-				strcat(reply, "|");
-		}
+		strcat(reply, wifi_data.node[i].mac);
+		strcat(reply, "&");
+		strcat(reply, wifi_data.node[i].rssi);
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
 	}
 
 	NBSendSosWifiData(reply, strlen(reply));
@@ -100,7 +106,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 
 void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
-	u8_t reply[128] = {0};
+	u8_t reply[256] = {0};
 	u8_t tmpbuf[8] = {0};
 	u32_t tmp1;
 	double tmp2;
@@ -182,30 +188,40 @@ bool SOSIsRunning(void)
 {
 	if(sos_state > SOS_STATUS_IDLE)
 	{
-		LOG_INF("[%s] true\n", __func__);
+		LOGD("true");
 		return true;
 	}
 	else
 	{
-		LOG_INF("[%s] false\n", __func__);
+		LOGD("false");
 		return false;
 	}
 }
 
+void SOSSChangrStatus(void)
+{
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStopShow();
+#endif
+
+	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
+}
+
 void SOSStart(void)
 {
-	LOG_INF("[%s]\n", __func__);
+	u8_t delay;
+	
+	LOGD("begin");
 
 	if(sos_state != SOS_STATUS_IDLE)
 	{
-		LOG_INF("[%s] sos is running!\n", __func__);
+		LOGD("sos is running!");
 		return;
 	}
-	
-	lcd_sleep_out = true;
-	sos_state = SOS_STATUS_SENDING;
 
-	EnterSOSScreen();
+#ifdef CONFIG_AUDIO_SUPPORT
+	SOSPlayAlarm();
+#endif
 
 	GetSystemTimeSecString(sos_trigger_time);
 
@@ -213,10 +229,19 @@ void SOSStart(void)
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
 #endif
-	sos_wait_gps = true;
-	APP_Ask_GPS_Data();
 
-	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
+	lcd_sleep_out = true;
+	sos_state = SOS_STATUS_SENDING;
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
+	EnterSOSScreen();
+	
+	if(nb_is_connected())
+		delay = 30;
+	else
+		delay = 90;
+
+	k_timer_start(&sos_gps_timer, K_SECONDS(delay), NULL);
 }
 
 void SOSMsgProc(void)
@@ -225,6 +250,13 @@ void SOSMsgProc(void)
 	{
 		SOSStart();
 		sos_trigger_flag = false;
+	}
+
+	if(sos_start_gps_flag)
+	{
+		sos_wait_gps = true;
+		APP_Ask_GPS_Data();
+		sos_start_gps_flag = false;
 	}
 }
 

@@ -35,11 +35,7 @@
 #include <string.h>
 #include "max_sh_api.h"
 #include "max_sh_interface.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(max_sh_api, CONFIG_LOG_DEFAULT_LEVEL);
-
+#include "logger.h"
 
 typedef void (*parser) (void * , uint8_t *);
 
@@ -110,13 +106,13 @@ int sensorhub_enable_sensors()
 
 	ret = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, SH_INPUT_DATA_DIRECT_SENSOR);
 	g_algo_sensor_stat.accel_enabled = 1;
-	LOG_INF("SENSOR_ENABLED_ACCEL Ret %d \n", ret);
+	LOGD("SENSOR_ENABLED_ACCEL Ret:%d", ret);
 
 	if(0 == ret){
 		/* Enabling OS6X with host supplies data */
 		ret = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
 		g_algo_sensor_stat.max86176_enabled =1;
-		LOG_INF("SENSOR_ENABLED_OS64 Ret %d \n", ret);
+		LOGD("SENSOR_ENABLED_OS64 Ret:%d", ret);
 	}
 
 	return ret;
@@ -128,14 +124,14 @@ int sensorhub_disable_sensor()
 
 	ret = sh_sensor_disable(SH_SENSORIDX_ACCEL);
 	g_algo_sensor_stat.accel_enabled = 0;
-	LOG_INF("SENSOR_DISABLED_ACCEL Ret %d \n", ret);
+	LOGD("SENSOR_DISABLED_ACCEL Ret:%d", ret);
 
 	if(0 == ret)
 	{
 		/* Enabling OS6X with host supplies data */
 		ret = sh_sensor_disable(SH_SENSORIDX_MAX86176);
 		g_algo_sensor_stat.max86176_enabled = 0;
-		LOG_INF("SENSOR_DISABLED_OS64 Ret %d \n", ret);
+		LOGD("SENSOR_DISABLED_OS64 Ret:%d", ret);
 	}
 
 	return ret;
@@ -205,14 +201,14 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 	if(E_NO_ERROR == ret)
 	{
 		ret = sh_get_sensorhub_status(&hubStatus);
-		LOG_INF("sh_get_sensorhub_status ret:%d \n", ret);
+		LOGD("sh_get_sensorhub_status ret:%d", ret);
 	}
 
-	LOG_INF("sensorhub status:%d\n", hubStatus);
+	LOGD("sensorhub status:%d", hubStatus);
 
 	if(hubStatus & SS_MASK_STATUS_DATA_RDY)
 	{
-		LOG_INF("SS_MASK_STATUS_DATA_RDY\n");
+		LOGD("SS_MASK_STATUS_DATA_RDY");
 	}
 	else
 	{
@@ -221,7 +217,7 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 
 	if(hubStatus & SS_MASK_STATUS_FIFO_OUT_OVR)
 	{
-		LOG_INF("SS_MASK_STATUS_FIFO_OUT_OVR\n");
+		LOGD("SS_MASK_STATUS_FIFO_OUT_OVR");
 	}
 
 	if(0 == ret)
@@ -322,7 +318,7 @@ void accel_data_rx(void * p_accel_data, uint8_t* data_ptr)
 	sample->y = (data_ptr[2] << 8) | data_ptr[3];
 	sample->z = (data_ptr[4] << 8) | data_ptr[5];
 
-	LOG_INF("x:%d, y:%d, z:%d\n", sample->x, sample->y, sample->z);
+	LOGD("x:%d, y:%d, z:%d", sample->x, sample->y, sample->z);
 }
 
 void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr)
@@ -336,7 +332,7 @@ void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr)
 	sample->led5 = ((data_ptr[12] << 16) | (data_ptr[13] << 8) | data_ptr[14]) & 0xFFFFF;	//red, PD1
 	sample->led6 = ((data_ptr[15] << 16) | (data_ptr[16] << 8) | data_ptr[17]) & 0xFFFFF; 	//red, PD2
 
-	LOG_INF("led1:%d, led2:%d, led3:%d, led4:%d, led5:%d, led6:%d\n", sample->led1, sample->led2, sample->led3, sample->led4, sample->led5, sample->led6);	
+	LOGD("led1:%d, led2:%d, led3:%d, led4:%d, led5:%d, led6:%d", sample->led1, sample->led2, sample->led3, sample->led4, sample->led5, sample->led6);	
 }
 
 void whrm_wspo2_suite_data_rx_mode1(void * p_algo_data_mode1, uint8_t* data_ptr)
@@ -364,7 +360,7 @@ void whrm_wspo2_suite_data_rx_mode1(void * p_algo_data_mode1, uint8_t* data_ptr)
 	sample->spo2State = data_ptr[18];
 	sample->scd_contact_state = data_ptr[19];
 
-	LOG_INF("HR:%d, SPO2:%d\n", sample->hr, sample->spo2);
+	LOGD("HR:%d, SPO2:%d", sample->hr, sample->spo2);
 }
 
 void whrm_wspo2_suite_data_rx_mode2(void * p_algo_data_mode2, uint8_t* data_ptr)

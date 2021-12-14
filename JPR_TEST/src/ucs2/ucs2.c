@@ -12,10 +12,7 @@
 #include <zephyr.h>
 #include <logging/log.h>
 #include <nrfx.h>
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(ucs2, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 /*****************************************************************************
  * FUNCTION

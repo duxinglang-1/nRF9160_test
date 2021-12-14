@@ -1,3 +1,6 @@
+#ifndef __SETTINGS_H__
+#define __SETTINGS_H__
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -116,3 +119,5 @@ extern global_settings_t global_settings;
 extern void InitSystemSettings(void);
 extern void SaveSystemSettings(void);
 
+
+#endif/*__SETTINGS_H__*/

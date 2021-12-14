@@ -36,10 +36,10 @@
 #ifdef CONFIG_AUDIO_SUPPORT
 #include "audio.h"
 #endif
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+#ifdef CONFIG_WATCHDOG
+#include "watchdog.h"
+#endif
+#include "logger.h"
 
 //#define ANALOG_CLOCK
 #define DIGITAL_CLOCK
@@ -55,7 +55,7 @@ static struct k_work_q nb_work_q;
 
 #ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              1024);
+              4096);
 static struct k_work_q imu_work_q;
 #endif
 
@@ -462,7 +462,7 @@ void test_show_color(void)
 {
 	u8_t i=0;
 
-	LOG_INF("test_show_image\n");
+	LOGD("test_show_image");
 	
 	while(1)
 	{
@@ -644,7 +644,7 @@ void system_init(void)
 #endif
 
 	InitSystemSettings();
-
+	
 	pmu_init();
 	flash_init();
 	LCD_Init();
@@ -652,6 +652,9 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
+#ifdef CONFIG_AUDIO_SUPPORT	
+	audio_init();
+#endif
 	ble_init();
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
@@ -661,8 +664,6 @@ void system_init(void)
 #endif
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
-
-	EnterIdleScreen();
 }
 
 void work_init(void)
@@ -678,6 +679,11 @@ void work_init(void)
 	k_work_q_start(&gps_work_q, gps_stack_area,
 					K_THREAD_STACK_SIZEOF(gps_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
+	
+	if(IS_ENABLED(CONFIG_WATCHDOG))
+	{
+		watchdog_init_and_start(&k_sys_work_q);
+	}
 }
 
 bool system_is_completed(void)
@@ -722,12 +728,17 @@ int main(void)
 
 	while(1)
 	{
+		KeyMsgProcess();
 		TimeMsgProcess();
 		NBMsgProcess();
+	#ifdef CONFIG_WIFI	
+		WifiProcess();
+	#endif
 		GPSMsgProcess();
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
+		FallMsgProcess();
 	#endif
 	#ifdef CONFIG_PPG_SUPPORT	
 		PPGMsgProcess();
@@ -743,6 +754,12 @@ int main(void)
 		ScreenMsgProcess();
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		FotaMsgProc();
+	#endif
+	#ifdef CONFIG_AUDIO_SUPPORT
+		AudioMsgProcess();
+	#endif
+	#ifdef CONFIG_ANIMATION_SUPPORT
+		AnimaMsgProcess();
 	#endif
 		system_init_completed();
 		k_cpu_idle();

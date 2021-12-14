@@ -3,8 +3,8 @@
 ** Descriptions:			Key message process source file
 ** Created By:				xie biao
 ** Created Date:			2020-07-13
-** Modified Date:      		2020-10-10 
-** Version:			    	V1.1
+** Modified Date:      		2021-09-29 
+** Version:			    	V1.2
 ******************************************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,10 +22,10 @@
 #endif
 #include "Alarm.h"
 #include "lcd.h"
+#include "logger.h"
 
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(key, CONFIG_LOG_DEFAULT_LEVEL);
+#define KEY_DEBUG
+#define WEAR_CHECK_SUPPORT	//脱腕检测功能
 
 static u8_t flag;
 static u32_t keycode;
@@ -36,15 +36,20 @@ static button_handler_t button_handler_cb;
 static atomic_t my_buttons;
 static sys_slist_t button_handlers;
 
-#define KEY_SOS			BIT(0)
-#define KEY_PWR			BIT(1)
-#define KEY_TOUCH		BIT(2)
+#ifdef WEAR_CHECK_SUPPORT
+#define WEAR_PORT 	"GPIO_0"
+#define WEAR_PIN	06
+static struct device *gpio_wear;
+static struct gpio_callback gpio_wear_cb;
+#endif
+
+#define SOS			BIT(0)
+#define POW			BIT(1)
 
 static const key_cfg button_pins[] = 
 {
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 26, ACTIVE_LOW},
 	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 15, ACTIVE_LOW},
-	{DT_ALIAS_SW0_GPIOS_CONTROLLER, 06, ACTIVE_LOW},
 };
 
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
@@ -70,53 +75,112 @@ extern bool uart_wake_flag;
 extern bool uart_sleep_flag;
 #endif
 
+static key_event_msg key_msg = {0};
 
-typedef void (*VoidFunc)(void);
-
-VoidFunc leftkey_handler_cb = NULL,rightkey_handler_cb = NULL;
-
-void Key_Event_register_Handler(VoidFunc leftkeyfunc,VoidFunc rightkeyfunc)
+void ClearAllKeyHandler(void)
 {
-	leftkey_handler_cb = leftkeyfunc;
-	rightkey_handler_cb = rightkeyfunc;
+	u8_t i,j;
+
+	for(i=0;i<KEY_MAX;i++)
+	{
+		for(j=0;j<KEY_EVENT_MAX;j++)
+		{
+			key_msg.flag[i][j] = false;
+			key_msg.func[i][j] = NULL;
+		}
+	}
 }
 
-void Key_Event_Unregister_Handler(void)
+void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype)
 {
-	leftkey_handler_cb = NULL;
-	rightkey_handler_cb = NULL;
+	key_msg.func[keycode][keytype] = funcPtr;
+}
+
+void SetLeftKeyUpHandler(FuncPtr funcPtr)
+{
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_UP] = funcPtr;
+}
+
+void SetLeftKeyDownHandler(FuncPtr funcPtr)
+{
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_DOWN] = funcPtr;
+}
+
+void SetLeftKeyLongPressHandler(FuncPtr funcPtr)
+{
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_LONG_PRESS] = funcPtr;
+}
+
+void SetRightKeyUpHandler(FuncPtr funcPtr)
+{
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_UP] = funcPtr;
+}
+
+void SetRightKeyDownHandler(FuncPtr funcPtr)
+{
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_DOWN] = funcPtr;
+}
+
+void SetRightKeyLongPressHandler(FuncPtr funcPtr)
+{
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_LONG_PRESS] = funcPtr;
+}
+
+FuncPtr GetKeyHandler(u8_t keycode, u8_t keytype)
+{
+    FuncPtr ptr;
+    
+    if(keycode >= KEY_MAX)
+    {
+        ptr = NULL;
+    }
+    else
+    {
+        if (keytype < KEY_EVENT_MAX)
+        {
+            ptr = (key_msg.func[keycode][keytype]);
+        }
+        else
+        {
+            ptr = NULL;
+        }
+    }
+
+    return ptr;
+}
+
+void ExecKeyHandler(u8_t keycode, u8_t keytype)
+{
+	u8_t i;
+	FuncPtr curr_func_ptr;
+
+	for(i=0;i<KEY_MAX;i++)
+	{
+		if(BIT(i) == keycode)
+			break;
+	}
+
+	if(i >= KEY_MAX)
+		return;
+
+	curr_func_ptr = GetKeyHandler(i, keytype);
+	if(curr_func_ptr)
+	{  
+		key_msg.flag[i][keytype] = true;
+	}
 }
 
 bool is_wearing(void)
 {
-	return touch_flag;
+	return true;//touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
 {
-	LOG_INF("key_code:%d, key_type:%d, KEY_SOS:%d,KEY_PWR:%d\n", key_code, key_type, KEY_SOS, KEY_PWR);
-	
-	if(key_code == KEY_TOUCH)
-	{
-		switch(key_type)
-		{
-		case KEY_DOWN://戴上
-			if(!touch_flag)
-			{
-				touch_flag = true;
-			}			
-			break;
-		case KEY_UP://脱下
-			if(touch_flag)
-			{
-				touch_flag = false;
-			}
-			break;
-		case KEY_LONG_PRESS:
-			break;
-		}		
-	}
-	
+#ifdef KEY_DEBUG
+	LOGD("key_code:%d, key_type:%d, KEY_SOS:%d", key_code, key_type, KEY_SOS);
+#endif
+
 	if(!system_is_completed())
 		return;
 
@@ -133,51 +197,16 @@ static void key_event_handler(u8_t key_code, u8_t key_type)
 
 	LCD_ResetBL_Timer();
 
-	switch(key_code)
+	ExecKeyHandler(key_code, key_type);
+
+	if(alarm_is_running)
 	{
-	case KEY_SOS:
-		switch(key_type)
-		{
-		case KEY_DOWN:
-			if(leftkey_handler_cb != NULL)
-				leftkey_handler_cb();
-			break;
-		case KEY_UP:
-			break;
-		case KEY_LONG_PRESS:
-			SOSStart();
-			break;
-		}
-		break;
-	case KEY_PWR:
-		switch(key_type)
-		{
-		case KEY_DOWN:
-			if(rightkey_handler_cb != NULL)
-				rightkey_handler_cb();
-			break;
-		case KEY_UP:
-			break;
-		case KEY_LONG_PRESS:
-			EnterPoweroffScreen();
-			break;
-		}
-		break;
+		AlarmRemindStop();
 	}
 
-	if(key_code != KEY_TOUCH)
+	if(find_is_running)
 	{
-		if(alarm_is_running)
-		{
-			AlarmRemindStop();
-		}
-
-		if(find_is_running)
-		{
-			FindDeviceStop();
-		}
-
-		//ExitNotifyScreen();	
+		FindDeviceStop();
 	}
 }
 
@@ -187,7 +216,9 @@ static void button_handler(u32_t button_state, u32_t has_changed)
 
 	u32_t buttons = (button_state & has_changed);
 
-	LOG_INF("button_state:%d, has_changed:%d\n", button_state, has_changed);
+#ifdef KEY_DEBUG
+	LOGD("button_state:%d, has_changed:%d", button_state, has_changed);
+#endif
 
 	keycode = has_changed;
 	keytype = (buttons>0 ? KEY_DOWN:KEY_UP);
@@ -247,7 +278,6 @@ static u32_t get_buttons(void)
 
 		if(gpio_pin_read(button_devs[i], button_pins[i].number, &val))
 		{
-			LOG_INF("Cannot read gpio pin");
 			return 0;
 		}
 
@@ -320,7 +350,6 @@ static void buttons_scan_fn(struct k_work *work)
 		int err = k_delayed_work_submit(&buttons_scan, CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL);
 		if(err)
 		{
-			LOG_INF("Cannot add work to workqueue");
 		}
 	}
 	else
@@ -346,7 +375,6 @@ static void buttons_scan_fn(struct k_work *work)
 
 		if(err)
 		{
-			LOG_INF("Cannot enable callbacks");
 		}
 	}
 }
@@ -403,7 +431,6 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, u3
 
 	if(err)
 	{
-		LOG_INF("Cannot disable callbacks");
 	}
 
 	switch (state)
@@ -439,7 +466,6 @@ static int buttons_init(button_handler_t button_handler)
 		button_devs[i] = device_get_binding(button_pins[i].port);
 		if (!button_devs[i])
 		{
-			LOG_INF("Cannot bind gpio device");
 			return -ENODEV;
 		}
 
@@ -455,7 +481,6 @@ static int buttons_init(button_handler_t button_handler)
 
 		if(err)
 		{
-			LOG_INF("Cannot configure button gpio");
 			return err;
 		}
 	}
@@ -463,7 +488,6 @@ static int buttons_init(button_handler_t button_handler)
 	err = set_trig_mode(GPIO_INT_LEVEL);
 	if(err)
 	{
-		LOG_INF("Cannot set interrupt mode");
 		return err;
 	}
 
@@ -477,7 +501,6 @@ static int buttons_init(button_handler_t button_handler)
 		err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
 		if(err)
 		{
-			LOG_INF("Cannot disable callbacks()");
 			return err;
 		}
 
@@ -491,7 +514,6 @@ static int buttons_init(button_handler_t button_handler)
 		err = gpio_add_callback(button_devs[i], &gpio_cb);
 		if(err)
 		{
-			LOG_INF("Cannot add callback");
 			return err;
 		}
 	}
@@ -503,7 +525,6 @@ static int buttons_init(button_handler_t button_handler)
 	err = k_delayed_work_submit(&buttons_scan, 0);
 	if(err)
 	{
-		LOG_INF("Cannot add work to workqueue");
 		return err;
 	}
 
@@ -512,30 +533,83 @@ static int buttons_init(button_handler_t button_handler)
 	return 0;
 }
 
+#ifdef WEAR_CHECK_SUPPORT
+void WearInterruptHandle(void)
+{
+	u32_t val;
+
+	if(gpio_pin_read(gpio_wear, WEAR_PIN, &val))
+		return;
+
+	if(!val)
+	{
+	#ifdef KEY_DEBUG
+		LOGD("wear on!");
+	#endif
+		touch_flag = true;
+	}
+	else
+	{
+	#ifdef KEY_DEBUG
+		LOGD("wear off!");
+	#endif
+		touch_flag = false;
+	}
+}
+
+void wear_init(void)
+{
+	bool rst;
+	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_INT_DOUBLE_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
+
+  	//端口初始化
+  	gpio_wear = device_get_binding(WEAR_PORT);
+	if(!gpio_wear)
+		return;
+
+	//wear interrupt
+	gpio_pin_configure(gpio_wear, WEAR_PIN, flag);
+	gpio_pin_disable_callback(gpio_wear, WEAR_PIN);
+	gpio_init_callback(&gpio_wear_cb, WearInterruptHandle, BIT(WEAR_PIN));
+	gpio_add_callback(gpio_wear, &gpio_wear_cb);
+	gpio_pin_enable_callback(gpio_wear, WEAR_PIN);
+
+	WearInterruptHandle();
+}
+#endif
+
+void KeyMsgProcess(void)
+{
+	u8_t i,j;
+
+	for(i=0;i<KEY_MAX;i++)
+	{
+		for(j=0;j<KEY_EVENT_MAX;j++)
+		{
+			if(key_msg.flag[i][j] == true && key_msg.func[i][j] != NULL)
+			{
+				key_msg.func[i][j]();
+				key_msg.flag[i][j] = false;
+				break;
+			}
+		}
+	}
+}
+
 void key_init(void)
 {
 	int err;
 	u32_t ret = 0;
 
-	LOG_INF("key_init\n");
-	
 	err = buttons_init(button_handler);
 	if (err)
 	{
-		LOG_INF("Could not initialize buttons, err code: %d\n", err);
 		return;
 	}
 
 	k_timer_init(&g_long_press_timer_id, long_press_timer_handler, NULL);
 
-	if(gpio_pin_read(button_devs[2], button_pins[2].number, &ret))
-	{
-		LOG_INF("Cannot read gpio pin");
-		return;
-	}
-
-	if(button_pins[2].active_flag == ret)
-	{
-		touch_flag = true;
-	}
+#ifdef WEAR_CHECK_SUPPORT
+	wear_init();
+#endif	
 }

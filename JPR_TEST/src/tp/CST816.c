@@ -17,10 +17,7 @@
 #include "lcd.h"
 #include "CST816.h"
 #include "CST816_update.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(CTP, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -40,13 +37,13 @@ static u8_t init_i2c(void)
 	i2c_ctp = device_get_binding(CTP_DEV);
 	if(!i2c_ctp)
 	{
-		LOG_INF("ERROR SETTING UP I2C\r\n");
+		LOGD("ERROR SETTING UP I2C");
 		return -1;
 	} 
 	else
 	{
 		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_FAST));
-		LOG_INF("I2C CONFIGURED\r\n");
+		LOGD("I2C CONFIGURED");
 		return 0;
 	}
 }
@@ -278,7 +275,7 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-		LOG_INF("[%s]: 001\n", __func__);
+		LOGD("001");
 		return;
 	}
 	else
@@ -294,14 +291,14 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 			{
 				if(pnext == tp_event_info.cache)
 				{
-					LOG_INF("[%s]: 002\n", __func__);
+					LOGD("002");
 					tp_event_info.cache = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
 				}
 				else if(pnext == tp_event_tail)
 				{
-					LOG_INF("[%s]: 003\n", __func__);
+					LOGD("003");
 					tp_event_tail = ppre;
 					tp_event_tail->next = NULL;
 					tp_event_info.count--;
@@ -309,7 +306,7 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 				}
 				else
 				{
-					LOG_INF("[%s]: 004\n", __func__);
+					LOGD("004");
 					ppre = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
@@ -325,7 +322,7 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 				
 		}while(pnext != NULL);
 
-		LOG_INF("[%s]: 005\n", __func__);
+		LOGD("005");
 	}
 }
 
@@ -336,7 +333,7 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 	if(tp_event_info.cache == NULL)
 	{
 	#ifdef TRANSFER_LOG
-		LOG_INF("[%s]: begin 001\n", __func__);
+		LOGD("001");
 	#endif
 	
 		tp_event_info.count = 0;
@@ -363,7 +360,7 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 	else
 	{
 	#ifdef TRANSFER_LOG
-		LOG_INF("[%s]: begin 002\n", __func__);
+		LOGD("002");
 	#endif
 	
 		if(tp_event_tail == NULL)
@@ -406,7 +403,7 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-		LOG_INF("[%s]: 001\n", __func__);
+		LOGD("001");
 		return false;
 	}
 	else
@@ -421,7 +418,7 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 				if(pnew->func != NULL)
 					pnew->func();
 
-				LOG_INF("[%s]: 002\n", __func__);
+				LOGD("002");
 				return true;
 			}
 			else
@@ -431,7 +428,7 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 				
 		}while(pnew != NULL);
 
-		LOG_INF("[%s]: 003\n", __func__);
+		LOGD("003");
 		return false;
 	}
 }
@@ -445,35 +442,35 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	switch(tp_type)
 	{
 	case TP_EVENT_NONE:
-		LOG_INF("tp none!\n");
+		LOGD("tp none!");
 		sprintf(strbuf, "GESTURE_NONE");
 		break;
 	case TP_EVENT_MOVING_UP:
-		LOG_INF("tp moving up!\n");
+		LOGD("tp moving up!");
 		sprintf(strbuf, "MOVING_UP   ");
 		break;
 	case TP_EVENT_MOVING_DOWN:
-		LOG_INF("tp moving down!\n");
+		LOGD("tp moving down!");
 		sprintf(strbuf, "MOVING_DOWN ");
 		break;
 	case TP_EVENT_MOVING_LEFT:
-		LOG_INF("tp moving left!\n");
+		LOGD("tp moving left!");
 		sprintf(strbuf, "MOVING_LEFT ");
 		break;
 	case TP_EVENT_MOVING_RIGHT:
-		LOG_INF("tp moving right!\n");
+		LOGD("tp moving right!");
 		sprintf(strbuf, "MOVING_RIGHT");
 		break;
 	case TP_EVENT_SINGLE_CLICK:
-		LOG_INF("tp single click! x:%d, y:%d\n", x_pos,y_pos);
+		LOGD("tp single click! x:%d, y:%d", x_pos,y_pos);
 		sprintf(strbuf, "SINGLE_CLICK");
 		break;
 	case TP_EVENT_DOUBLE_CLICK:
-		LOG_INF("tp double click! x:%d, y:%d\n", x_pos,y_pos);
+		LOGD("tp double click! x:%d, y:%d", x_pos,y_pos);
 		sprintf(strbuf, "DOUBLE_CLICK");
 		break;
 	case TP_EVENT_LONG_PRESS:
-		LOG_INF("tp long press! x:%d, y:%d\n", x_pos,y_pos);
+		LOGD("tp long press! x:%d, y:%d", x_pos,y_pos);
 		sprintf(strbuf, "LONG_PRESS  ");
 		break;
 	case TP_EVENT_MAX:
@@ -524,7 +521,7 @@ void tp_interrupt_proc(void)
 	platform_read(CST816_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
 	platform_read(CST816_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
-	LOG_INF("tp_temp=%x,%x,%x,%x,%x,%x\n",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3],tp_temp[4],tp_temp[5]);
+	LOGD("tp_temp=%x,%x,%x,%x,%x,%x",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3],tp_temp[4],tp_temp[5]);
 	switch(tp_temp[0])
 	{
 	case GESTURE_NONE:
@@ -572,7 +569,7 @@ void CST816_init(void)
   	gpio_ctp = device_get_binding(CTP_PORT);
 	if(!gpio_ctp)
 	{
-		LOG_INF("Cannot bind gpio device\n");
+		LOGD("Cannot bind gpio device");
 		return;
 	}
 
@@ -593,7 +590,7 @@ void CST816_init(void)
 	platform_read(CST816_REG_CHIPID, &tp_temp_id, 1);
 	if(tp_temp_id == CST816_CHIP_ID)
 	{
-		LOG_INF("It's CST816!\n");
+		LOGD("It's CST816!");
 	}
 
 	sprintf(tmpbuf, "CTP ID:%x", tp_temp_id);

@@ -14,10 +14,17 @@
 #include <zephyr/types.h>
 #include <sys/slist.h>
 #include "font.h"
+#include "lcd.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//logo
+#define PWRON_LOGO_W	COL
+#define PWRON_LOGO_H	ROW
+#define PWRON_LOGO_X	0
+#define PWRON_LOGO_Y	0
 
 //date&time
 #define IDLE_TIME_SHOW_X	0
@@ -32,6 +39,12 @@ extern "C" {
 #define IDLE_DATE_SHOW_Y	(IDLE_TIME_SHOW_Y+system_font)
 #define IDLE_WEEK_SHOW_X	0
 #define IDLE_WEEK_SHOW_Y	(IDLE_DATE_SHOW_Y+system_font)
+
+//ble
+#define IDLE_BLE_X		45
+#define IDLE_BLE_Y		0
+#define IDLE_BLE_W		7
+#define IDLE_BLE_H		16
 
 //battery soc
 #define BAT_PS_OFFSET_H		5

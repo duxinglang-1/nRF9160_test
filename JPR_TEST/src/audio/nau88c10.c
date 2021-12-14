@@ -12,16 +12,12 @@
 #include <zephyr.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
-
 #include "nau88c10.h"
 #include "Lcd.h"
 #include "datetime.h"
 #include "settings.h"
 #include "screen.h"
-	
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(nau88c10, CONFIG_LOG_DEFAULT_LEVEL);
+#include "logger.h"
 
 static u8_t whoamI, rst;
 static u8_t HardwareID;
@@ -63,7 +59,7 @@ static bool init_i2c(void)
 	i2c_audio = device_get_binding(AUDIO_DEV);
 	if(!i2c_audio)
 	{
-		LOG_INF("ERROR SETTING UP I2C\r\n");
+		LOGD("ERROR SETTING UP I2C");
 		return false;
 	} 
 	else
@@ -136,11 +132,11 @@ void NAU88C10_GetDeviceID(u16_t *Device_ID)
 	ret = NAU88C10_ReadReg(REG_DEVICE_REVISION, Device_ID);
 	if(ret == 0)
 	{
-		LOG_INF("get id success! %03x\n", *Device_ID);
+		LOGD("get id success! %03x", *Device_ID);
 	}
 	else
 	{
-		LOG_INF("get id fail!\n");
+		LOGD("get id fail!");
 	}
 }
 
@@ -300,7 +296,7 @@ void NAU88C10_Init(void)
 
 void Audio_device_init(void)
 {
-	LOG_INF("Audio_init\n");
+	LOGD("Audio_init");
 
 	init_gpio();
 	
@@ -313,7 +309,7 @@ void Audio_device_init(void)
 
 	NAU88C10_Init();
 	
-	LOG_INF("Audio_init done!\n");
+	LOGD("Audio_init done!");
 }
 
 void AudioMsgProcess(void)

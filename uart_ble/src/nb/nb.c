@@ -36,7 +36,7 @@
 #include "transfer_cache.h"
 #include "logger.h"
 
-#define LTE_TAU_WAKEUP_EARLY_TIME	(60)
+#define LTE_TAU_WAKEUP_EARLY_TIME	(120)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
@@ -49,6 +49,8 @@ static void GetNetWorkTimeCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_time_timer, GetNetWorkTimeCallBack, NULL);
 static void GetNetWorkSignalCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_rsrp_timer, GetNetWorkSignalCallBack, NULL);
+static void GetModemInforCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_modem_infor_timer, GetModemInforCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -56,8 +58,8 @@ static void TauWakeUpUartCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(tau_wakeup_uart_timer, TauWakeUpUartCallBack, NULL);
 #endif
 
-
 static struct k_work_q *app_work_q;
+static struct k_delayed_work modem_init_work;
 static struct k_delayed_work nb_link_work;
 static struct k_delayed_work mqtt_link_work;
 
@@ -65,7 +67,6 @@ NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
 static struct modem_param_info modem_param;
 static bool nb_redraw_sig_flag = false;
-static bool get_modem_infor = false;
 static bool send_data_flag = false;
 static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
@@ -87,6 +88,8 @@ static u8_t payload_buf[CONFIG_MQTT_PAYLOAD_BUFFER_SIZE];
 static struct mqtt_client client;
 
 /* MQTT Broker details. */
+static u8_t broker_hostname[128] = CONFIG_MQTT_DOMESTIC_BROKER_HOSTNAME;
+static u32_t broker_port = CONFIG_MQTT_DOMESTIC_BROKER_PORT;
 static struct sockaddr_storage broker;
 
 /* Connected flag */
@@ -114,6 +117,40 @@ u8_t g_timezone[5] = {0};
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
 u16_t g_act_time = 0;
+
+static NB_APN_PARAMENT nb_apn_table[] = 
+{
+	//china mobile
+	{	
+		"46004",
+		"cmnbiot2"
+	},
+	//china unicom
+	{
+		"46006",
+		"unim2m.njm2mapn"
+	},
+	//china telcom
+	{
+		"46011",
+		"ctnb"
+	},	
+	//arkessa
+	{
+		"90128", 
+		"arkessalp.com",
+	},
+	//1NCE
+	{
+		"90140",
+		"iot.1nce.net",	
+	},
+	//Rakuten
+	{
+		"44011",
+		"iot.biz.rakuten.jp",
+	},
+};
 
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);
@@ -198,7 +235,7 @@ static int subscribe(void)
 	const struct mqtt_subscription_list subscription_list = {
 		.list = &subscribe_topic,
 		.list_count = 1,
-		.message_id = 0000
+		.message_id = 0001
 	};
 
 	LOGD("Subscribing to:%s, len:%d", subscribe_topic.topic.utf8,
@@ -351,7 +388,7 @@ static void broker_init(void)
 		.ai_socktype = SOCK_STREAM
 	};
 
-	err = getaddrinfo(CONFIG_MQTT_BROKER_HOSTNAME, NULL, &hints, &result);
+	err = getaddrinfo(broker_hostname, NULL, &hints, &result);
 	if(err)
 	{
 		LOGD("ERROR: getaddrinfo failed %d", err);
@@ -375,7 +412,7 @@ static void broker_init(void)
 				((struct sockaddr_in *)addr->ai_addr)
 				->sin_addr.s_addr;
 			broker4->sin_family = AF_INET;
-			broker4->sin_port = htons(CONFIG_MQTT_BROKER_PORT);
+			broker4->sin_port = htons(broker_port);
 
 			inet_ntop(AF_INET, &broker4->sin_addr.s_addr,
 				  ipv4_addr, sizeof(ipv4_addr));
@@ -449,7 +486,7 @@ static void client_init(struct mqtt_client *client)
     tls_config->cipher_list = NULL;
     tls_config->sec_tag_count = ARRAY_SIZE(sec_tag_list);
     tls_config->sec_tag_list = sec_tag_list;
-    tls_config->hostname = CONFIG_MQTT_BROKER_HOSTNAME;
+    tls_config->hostname = broker_hostname;
 #else
     client->transport.type = MQTT_TRANSPORT_NON_SECURE;
 #endif/* defined(CONFIG_MQTT_LIB_TLS) */
@@ -548,12 +585,12 @@ static void mqtt_link(struct k_work_q *work_q)
 			break;
 		}
 	}
-	LOGD("[%s]: Disconnecting MQTT client...", __func__);
+	LOGD("Disconnecting MQTT client...");
 
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
-		LOGD("[%s]: Could not disconnect MQTT client. Error: %d", __func__, err);
+		LOGD("Could not disconnect MQTT client. Error: %d", err);
 	}
 
 	mqtt_connecting_flag = false;
@@ -789,6 +826,11 @@ void NBRedrawSignal(void)
 	u8_t strbuf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 
+	if(at_cmd_write(CMD_GET_CESQ, strbuf, sizeof(strbuf), NULL) == 0)
+	{
+		LOGD("%s", strbuf);
+	}
+
 	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
 	{
 		//+CSCON: <n>,<mode>[,<state>[,<access]]
@@ -1007,6 +1049,11 @@ void GetModemDateTime(void)
 void GetNetWorkTimeCallBack(struct k_timer *timer_id)
 {
 	get_modem_time_flag = true;
+}
+
+void GetModemInforCallBack(struct k_timer *timer_id)
+{
+	get_modem_info_flag = true;
 }
 
 static void MqttSendData(u8_t *data, u32_t datalen)
@@ -1427,13 +1474,13 @@ void GetModemSignal(void)
 	s32_t rsrp;
 	static s32_t rsrpbk = 0;
 	
-	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
-		LOGD("Get rsrp fail!");
+		LOGD("Get cesq fail!");
 		return;
 	}
 
-	LOGD("rsrp:%s", tmpbuf);
+	LOGD("cesq:%s", tmpbuf);
 	len = strlen(tmpbuf);
 	ptr = tmpbuf;
 	while(i<5)
@@ -1464,7 +1511,6 @@ void GetModemSignal(void)
 void TauWakeUpUartCallBack(struct k_timer *timer_id)
 {
 	uart_wake_flag = true;
-	//k_timer_start(&get_nw_rsrp_timer, K_MSEC(LTE_TAU_WAKEUP_EARLY_TIME), K_MSEC(1000));
 }
 #endif
 
@@ -1623,10 +1669,82 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 	}
 }
 
+void SetNetWorkApn(u8_t *imsi_buf)
+{
+	u32_t i;
+	u8_t tmpbuf[256] = {0};
+
+	for(i=0;i<ARRAY_SIZE(nb_apn_table);i++)
+	{
+		if(strncmp(imsi_buf, nb_apn_table[i].plmn, strlen(nb_apn_table[i].plmn)) == 0)
+		{
+			u8_t cmdbuf[128] = {0};
+			
+			sprintf(cmdbuf, "AT+CGDCONT=0,\"IP\",\"%s\"", nb_apn_table[i].apn);
+			LOGD("cmdbuf:%s", cmdbuf); 
+			if(at_cmd_write(cmdbuf, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+			{
+				LOGD("set apn fail!");
+			}
+
+			break;
+		}
+	}
+
+	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("apn:%s", tmpbuf); 
+	}
+}
+
+void SetNwtWorkMqttBroker(u8_t *imsi_buf)
+{
+	if(strncmp(imsi_buf, "460", strlen("460")) == 0)
+	{
+		strcpy(broker_hostname, CONFIG_MQTT_DOMESTIC_BROKER_HOSTNAME);
+		broker_port = CONFIG_MQTT_DOMESTIC_BROKER_PORT;
+	}
+	else
+	{
+		strcpy(broker_hostname, CONFIG_MQTT_FOREIGN_BROKER_HOSTNAME);
+		broker_port = CONFIG_MQTT_FOREIGN_BROKER_PORT;
+	}
+}
+
+void SetNetWorkParaByPlmn(u8_t *imsi)
+{
+	SetNetWorkApn(imsi);
+	SetNwtWorkMqttBroker(imsi);
+}
+
 void GetModemInfor(void)
 {
 	u8_t tmpbuf[256] = {0};
-	
+
+	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("MODEM version:%s", &tmpbuf);
+
+		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
+	}
+
+#if 0
+	if(at_cmd_write(CMD_GET_SUPPORT_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("support band:%s", tmpbuf);
+	}
+
+	if(at_cmd_write(CMD_GET_CUR_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("current band:%s", tmpbuf);
+	}
+
+	if(at_cmd_write(CMD_GET_LOCKED_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+		LOGD("locked band:%s", tmpbuf);
+	}
+#endif
+
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 		LOGD("imei:%s", tmpbuf);
@@ -1640,18 +1758,7 @@ void GetModemInfor(void)
 
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
 		
-		if(strstr(g_imsi, "90128"))
-		{
-			if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
-			{
-				LOGD("set apn fail!");
-			}
-		}
-
-		if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-		{
-			LOGD("apn:%s", tmpbuf);	
-		}
+		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
@@ -1659,13 +1766,6 @@ void GetModemInfor(void)
 		LOGD("iccid:%s", &tmpbuf[9]);
 
 		strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
-	}
-
-	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-		LOGD("MODEM version:%s", &tmpbuf);
-
-		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
 	}
 }
 
@@ -1684,9 +1784,9 @@ void GetModemStatus(void)
 	}
 
 #if 0
-	if(at_cmd_write(CMD_GET_RSRP, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
-		LOGD("rsrp:%s", tmpbuf);
+		LOGD("cesq:%s", tmpbuf);
 		
 		len = strlen(tmpbuf);
 		tmpbuf[len-2] = ',';
@@ -1752,6 +1852,14 @@ static void NBReconnectCallBack(struct k_timer *timer_id)
 	nb_reconnect_flag = true;
 }
 
+static void modem_init(struct k_work *work)
+{
+	SetModemTurnOn();
+
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+}
+
+
 static void nb_link(struct k_work *work)
 {
 	int err=0;
@@ -1762,12 +1870,14 @@ static void nb_link(struct k_work *work)
 	if(!frist_flag)
 	{
 		frist_flag = true;
-		
+		GetModemInfor();
+		SetModemTurnOff();
+	}
+	else if(strlen(g_imsi) == 0)
+	{
 		SetModemTurnOn();
 		GetModemInfor();
 		SetModemTurnOff();
-		err = lte_lc_init();
-		LOGD("lte_lc_init err:%d", err);
 	}
 
 	if(gps_is_working())
@@ -1794,7 +1904,7 @@ static void nb_link(struct k_work *work)
 	#endif
 		configure_low_power();
 
-		err = lte_lc_connect();
+		err = lte_lc_init_and_connect();
 		if(err)
 		{
 			LOGD("Can't connected to LTE network. err:%d", err);
@@ -1820,12 +1930,9 @@ static void nb_link(struct k_work *work)
 			retry_count = 0;
 
 			GetModemDateTime();
-		//#ifndef CONFIG_DEVICE_POWER_MANAGEMENT	
 			modem_data_init();
-		//#endif
 		}
 
-		GetModemInfor();
 		GetModemStatus();
 
 		if(!nb_connected)
@@ -1858,12 +1965,12 @@ void GetNBSignal(void)
 	}
 	LOGD("cpsms:%s", str_rsrp);
 
-	if(at_cmd_write(CMD_GET_RSRP, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) != 0)
 	{
-		LOGD("Get rsrp fail!");
+		LOGD("Get cesq fail!");
 		return;
 	}
-	LOGD("rsrp:%s", str_rsrp);
+	LOGD("cesq:%s", str_rsrp);
 
 	if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) != 0)
 	{
@@ -2011,11 +2118,12 @@ void NB_init(struct k_work_q *work_q)
 
 	app_work_q = work_q;
 
+	k_delayed_work_init(&modem_init_work, modem_init);
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);
 #endif
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
 }

@@ -41,7 +41,7 @@ typedef enum
 typedef enum
 {
 	KEY_SOS,
-	KEY_PWR,
+	KEY_POWER,
 	KEY_MAX
 }KEY_CODE;
 
@@ -60,7 +60,7 @@ typedef enum
 }KEY_STATUS;
 
 #define KEY_SOFT_LEFT	KEY_SOS
-#define KEY_SOFT_RIGHT	KEY_PWR
+#define KEY_SOFT_RIGHT	KEY_POWER
 
 typedef struct
 {

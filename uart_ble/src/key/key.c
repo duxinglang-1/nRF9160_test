@@ -43,8 +43,8 @@ static struct device *gpio_wear;
 static struct gpio_callback gpio_wear_cb;
 #endif
 
-#define KEY_SOS			BIT(0)
-#define KEY_PWR			BIT(1)
+#define SOS			BIT(0)
+#define POW			BIT(1)
 
 static const key_cfg button_pins[] = 
 {
@@ -172,7 +172,7 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 
 bool is_wearing(void)
 {
-	return touch_flag;
+	return true;//touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)

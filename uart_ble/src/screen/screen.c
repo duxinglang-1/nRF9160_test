@@ -139,12 +139,6 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 		MenuStartWifi();
 	}
 #endif	
-#ifdef CONFIG_FOTA_DOWNLOAD	
-	else if(screen_id == SCREEN_ID_FOTA)
-	{
-		MenuStartFOTA();
-	}
-#endif
 }
 
 void EnterNotifyScreen(void)
@@ -1283,79 +1277,6 @@ void EnterFOTAScreen(void)
 #endif/*CONFIG_FOTA_DOWNLOAD*/
 
 #ifdef CONFIG_IMU_SUPPORT
-void SleepScreenProcess(void)
-{
-	u16_t x,y,w,h;
-	u16_t deep_sleep,light_sleep;
-	u8_t notify[64] = "Sleep";
-	u8_t tmpbuf[64] = {0};
-	
-	switch(scr_msg[SCREEN_ID_SLEEP].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATED;
-				
-		LCD_Clear(BLACK);
-		LCD_SetFontSize(FONT_SIZE_24);
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 50;
-		LCD_ShowString(x,y,notify);
-
-		GetSleepTimeData(&deep_sleep, &light_sleep);
-		LCD_SetFontSize(FONT_SIZE_16);
-		LCD_MeasureString("TOTAL_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 100;
-		LCD_ShowString(x,y,"TOTAL_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep+light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("DEEP_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,"DEEP_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep);
-		LCD_ShowString(x+12*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("LIGHT_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 140;
-		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		GetSleepTimeData(&deep_sleep, &light_sleep);
-		LCD_SetFontSize(FONT_SIZE_16);
-		LCD_MeasureString("TOTAL_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 100;
-		LCD_ShowString(x,y,"TOTAL_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep+light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("DEEP_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,"DEEP_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep);
-		LCD_ShowString(x+12*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("LIGHT_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 140;
-		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
-}
-
 void StepsScreenProcess(void)
 {
 	u16_t x,y,w,h;
@@ -1429,6 +1350,132 @@ void StepsScreenProcess(void)
 	}
 	
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
+}
+
+void ExitStepsScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterStepsScreen(void)
+{
+	if(screen_id == SCREEN_ID_STEPS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_STEPS;	
+	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
+
+#ifdef CONFIG_FOTA_DOWNLOAD
+	SetLeftKeyUpHandler(fota_start);
+	SetRightKeyUpHandler(fota_exit);
+#else
+	SetLeftKeyUpHandler(ExitStepsScreen);
+	SetRightKeyUpHandler(ExitStepsScreen);
+#endif
+}
+
+void SleepScreenProcess(void)
+{
+	u16_t x,y,w,h;
+	u16_t deep_sleep,light_sleep;
+	u8_t notify[64] = "Sleep";
+	u8_t tmpbuf[64] = {0};
+	
+	switch(scr_msg[SCREEN_ID_SLEEP].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATED;
+				
+		LCD_Clear(BLACK);
+		LCD_SetFontSize(FONT_SIZE_24);
+		LCD_MeasureString(notify,&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 50;
+		LCD_ShowString(x,y,notify);
+
+		GetSleepTimeData(&deep_sleep, &light_sleep);
+		LCD_SetFontSize(FONT_SIZE_16);
+		LCD_MeasureString("TOTAL_SLEEP:        ",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 100;
+		LCD_ShowString(x,y,"TOTAL_SLEEP:        ");
+		sprintf(tmpbuf, "%d (min)", deep_sleep+light_sleep);
+		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
+
+		LCD_MeasureString("DEEP_SLEEP:        ",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 120;
+		LCD_ShowString(x,y,"DEEP_SLEEP:        ");
+		sprintf(tmpbuf, "%d (min)", deep_sleep);
+		LCD_ShowString(x+12*FONT_SIZE_16/2, y, tmpbuf);
+
+		LCD_MeasureString("LIGHT_SLEEP:        ",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 140;
+		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
+		sprintf(tmpbuf, "%d (min)", light_sleep);
+		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		GetSleepTimeData(&deep_sleep, &light_sleep);
+		LCD_SetFontSize(FONT_SIZE_16);
+		LCD_MeasureString("TOTAL_SLEEP:        ",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 100;
+		LCD_ShowString(x,y,"TOTAL_SLEEP:        ");
+		sprintf(tmpbuf, "%d (min)", deep_sleep+light_sleep);
+		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
+
+		LCD_MeasureString("DEEP_SLEEP:        ",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 120;
+		LCD_ShowString(x,y,"DEEP_SLEEP:        ");
+		sprintf(tmpbuf, "%d (min)", deep_sleep);
+		LCD_ShowString(x+12*FONT_SIZE_16/2, y, tmpbuf);
+
+		LCD_MeasureString("LIGHT_SLEEP:        ",&w,&h);
+		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		y = 140;
+		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
+		sprintf(tmpbuf, "%d (min)", light_sleep);
+		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
+}
+
+void ExitSleepScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterSleepScreen(void)
+{
+	if(screen_id == SCREEN_ID_SLEEP)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SLEEP;	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+
+	MenuStopGPS();
+
+	SetLeftKeyUpHandler(EnterStepsScreen);
+	SetRightKeyUpHandler(ExitSleepScreen);
 }
 
 void FallShowStatus(void)
@@ -1687,60 +1734,6 @@ void EnterFindDeviceScreen(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
 }
 
-#ifdef CONFIG_IMU_SUPPORT
-void ExitStepsScreen(void)
-{
-	EnterIdleScreen();
-}
-
-void EnterStepsScreen(void)
-{
-	if(screen_id == SCREEN_ID_STEPS)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_STEPS;	
-	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
-
-#ifdef CONFIG_FOTA_DOWNLOAD
-	SetLeftKeyUpHandler(fota_start);
-	SetRightKeyUpHandler(fota_exit);
-#else
-	SetLeftKeyUpHandler(ExitStepsScreen);
-	SetRightKeyUpHandler(ExitStepsScreen);
-#endif
-}
-
-void ExitSleepScreen(void)
-{
-	EnterIdleScreen();
-}
-
-void EnterSleepScreen(void)
-{
-	if(screen_id == SCREEN_ID_SLEEP)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_SLEEP;	
-	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
-
-	k_timer_stop(&mainmenu_timer);
-
-	MenuStopGPS();
-
-	SetLeftKeyUpHandler(EnterStepsScreen);
-	SetRightKeyUpHandler(ExitSleepScreen);
-}
-#endif
 
 void ExitGPSTestScreen(void)
 {
@@ -1777,7 +1770,7 @@ void EnterGPSTestScreen(void)
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #elif defined(CONFIG_FOTA_DOWNLOAD)
 	SetLeftKeyUpHandler(fota_start);
-	SetRightKeyUpHandler(fota_exit);
+	SetRightKeyUpHandler(ExitGPSTestScreen);
 #else
 	SetLeftKeyUpHandler(ExitGPSTestScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);

@@ -168,7 +168,7 @@ void fota_exit(void)
 {
 	fota_run_flag = false;
 	fota_cur_status = FOTA_STATUS_MAX;
-	
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	ExitFOTAScreen();
 }
 
@@ -242,7 +242,7 @@ void fota_start_confirm(void)
 
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
-	
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	DisConnectMqttLink();
 	
 	k_delayed_work_submit_to_queue(app_work_q, &fota_work, K_SECONDS(2));

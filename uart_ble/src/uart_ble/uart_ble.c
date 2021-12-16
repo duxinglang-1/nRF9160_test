@@ -1297,21 +1297,22 @@ void MCU_send_heart_rate(void)
 void nrf52810_report_work_mode(u8_t *buf, u32_t len)
 {
 #ifdef UART_DEBUG
-	LOGD("mode:%d", buf[6]);
+	LOGD("mode:%d", buf[5]);
 #endif
 
-#if 0
-	if(buf[6] == 1)
+	if(buf[5] == 1)
 	{
 		ble_work_mode = BLE_WORK_NORMAL;
 	}
 	else
 	{
 		ble_work_mode = BLE_WORK_DFU;
-		g_ble_connected = false;
-		redraw_blt_status_flag = true;
+		if(g_ble_connected)
+		{
+			g_ble_connected = false;
+			redraw_blt_status_flag = true;
+		}
 	}
-#endif	
 }
 
 void get_nrf52810_ver_response(u8_t *buf, u32_t len)

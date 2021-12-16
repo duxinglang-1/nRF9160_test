@@ -453,7 +453,7 @@ void UpdateSystemTime(void)
 		{
 			AlarmRemindCheck(date_time);
 			TimeCheckSendHealthData();
-			//TimeCheckSendLocationData();
+			TimeCheckSendLocationData();
 		}
 	}
 

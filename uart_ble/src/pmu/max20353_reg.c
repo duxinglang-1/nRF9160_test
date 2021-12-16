@@ -350,22 +350,6 @@ int MAX20353_BuckBoostConfig(void)
     return ret;
 }
 
-/// @brief MPC0~MPC4 output rail **/
-//******************************************************************************
-int MAX20353_MPCConfig(void)
-{
-	int32_t ret = 0;
-	appcmdoutvalue_ = 0x06;
-	appdatainoutbuffer_[0] = 0x00;		//MPC0
-	appdatainoutbuffer_[1] = 0x00;		//MPC1
-	appdatainoutbuffer_[2] = 0x00;		//MPC2
-	appdatainoutbuffer_[3] = 0x40;		//MPC3
-	appdatainoutbuffer_[4] = 0x00;		//MPC4 SFOUTMPCEn
-	ret = MAX20353_AppWrite(5);
-
-	return ret; 
-}
-
 //[B2] SFOUT Output Voltage Setting 
 //	0 = 5V 1 = 3.3V  
 //[B1 B0] SFOUT LDO Enable Configuration

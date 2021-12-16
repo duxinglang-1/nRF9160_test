@@ -22,6 +22,8 @@
 #include "communicate.h"
 #include "logger.h"
 
+extern u16_t g_last_steps;
+
 #ifdef CONFIG_WIFI
 /*****************************************************************************
  * FUNCTION
@@ -36,28 +38,23 @@
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	u8_t reply[256] = {0};
-	u32_t i;
+	u32_t i,count=3;
 
-	if(wifi_data.count < 3)
+	if(wifi_data.count > 0)
+		count = wifi_data.count;
+		
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
 	{
-		location_wait_gps = true;
-		APP_Ask_GPS_Data();
+		strcat(reply, wifi_data.node[i].mac);
+		strcat(reply, "&");
+		strcat(reply, wifi_data.node[i].rssi);
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
 	}
-	else
-	{
-		strcat(reply, "3,");
-		for(i=0;i<wifi_data.count;i++)
-		{
-			strcat(reply, wifi_data.node[i].mac);
-			strcat(reply, "&");
-			strcat(reply, wifi_data.node[i].rssi);
-			strcat(reply, "&");
-			if(i < (wifi_data.count-1))
-				strcat(reply, "|");
-		}
 
-		NBSendLocationData(reply, strlen(reply));
-	}
+	NBSendLocationData(reply, strlen(reply));
 }
 #endif
 
@@ -81,6 +78,10 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 
 	if(!flag)
 	{
+	#ifdef CONFIG_WIFI
+		location_wait_wifi = true;
+		APP_Ask_wifi_data();
+	#endif
 		return;
 	}
 	
@@ -280,13 +281,22 @@ void TimeCheckSendLocationData(void)
  *****************************************************************************/
 void StepCheckSendLocationData(u16_t steps)
 {
-	static u32_t step_count = 0;
+	static u16_t step_count = 0;
+
+	if(step_count == 0)
+		step_count = g_last_steps;
 	
 	if((steps - step_count) >= global_settings.dot_interval.steps)
 	{
 		step_count = steps;
+
+	#ifdef CONFIG_WIFI
+		location_wait_wifi = true;
+		APP_Ask_wifi_data();
+	#else
 		location_wait_gps = true;
-		APP_Ask_GPS_Data();		
+		APP_Ask_GPS_Data();
+	#endif		
 	}
 }
 
@@ -342,7 +352,7 @@ void SendPowerOffData(u8_t pwroff_mode)
 {
 	u8_t tmpbuf[10] = {0};
 	u8_t databuf[128] = {0};
-	
+
 	//pwr off mode
 	sprintf(databuf, "%d,", pwroff_mode);
 	

@@ -14,7 +14,7 @@
 
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(auri, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(dk, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define TEST_DEBUG
 

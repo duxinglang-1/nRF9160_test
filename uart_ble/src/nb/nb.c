@@ -152,6 +152,7 @@ static NB_APN_PARAMENT nb_apn_table[] =
 	},
 };
 
+
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);
 static void MqttReceData(u8_t *data, u32_t datalen);

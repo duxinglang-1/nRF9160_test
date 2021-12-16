@@ -12,7 +12,7 @@
 #include "logger.h"
 
 //#define SHOW_LOG_IN_SCREEN
-#define PMU_DEBUG
+//#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
@@ -234,6 +234,7 @@ void pmu_reg_proc(void)
 	if((int0&0x08) == 0x08) //USB OK Int
 	{
 		MAX20353_ReadReg(REG_STATUS1, &status1);
+		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
 			pmu_battery_stop_shutdown();
@@ -248,10 +249,11 @@ void pmu_reg_proc(void)
 			lcd_sleep_out = true;
 		}
 		else
-		{	
+		{			
 			charger_is_connected = false;
 			
 			g_chg_status = BAT_CHARGING_NO;
+
 		#ifdef BATTERY_SOC_GAUGE	
 			g_bat_soc = MAX20353_CalculateSOC();
 			if(g_bat_soc>100)
@@ -447,7 +449,6 @@ void MAX20353_InitData(void)
 		break;
 	}
 	
-
 	MAX20353_ReadReg(REG_STATUS1, &status1);
 	if((status1&0x08) == 0x08) //USB OK   
 	{
@@ -456,12 +457,30 @@ void MAX20353_InitData(void)
 
 		charger_is_connected = true;
 		g_chg_status = BAT_CHARGING_PROGRESS;
+	
 	#ifdef BATTERY_SOC_GAUGE	
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
+		
+		if(g_bat_soc < 5)
+		{
+			g_bat_level = BAT_LEVEL_VERY_LOW;
+			pmu_battery_low_shutdown();
+		}
+		else if(g_bat_soc < 20)
+		{
+			g_bat_level = BAT_LEVEL_LOW;
+		}
+		else if(g_bat_soc < 80)
+		{
+			g_bat_level = BAT_LEVEL_NORMAL;
+		}
+		else
+		{
+			g_bat_level = BAT_LEVEL_GOOD;
+		}
 	#endif
-		g_bat_level = BAT_LEVEL_NORMAL;
 	}
 	else
 	{			

@@ -24,13 +24,6 @@
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
-#if defined(CONFIG_NRF_CLOUD_AGPS)
-#include <net/cloud.h>
-#include <net/nrf_cloud.h>
-#include <net/nrf_cloud_agps.h>
-#include "cloud_codec.h"
-#endif
-
 #include "logger.h"
 
 #define GPS_DEBUG
@@ -68,8 +61,6 @@ static s64_t gps_start_time=0,gps_fix_time=0,gps_local_time=0;
 static struct k_work_q *app_work_q;
 static struct k_work send_agps_request_work;
 
-static struct cloud_backend *cloud_backend;
-
 static struct gps_pvt gps_pvt_data = {0};
 
 bool gps_on_flag = false;
@@ -84,14 +75,6 @@ bool gps_test_update_flag = false;
 bool gps_send_data_flag = false;
 
 u8_t gps_test_info[256] = {0};
-
-enum error_type
-{
-	ERROR_CLOUD,
-	ERROR_BSD_RECOVERABLE,
-	ERROR_LTE_LC,
-	ERROR_SYSTEM_FAULT
-};
 
 static void set_gps_enable(const bool enable);
 
@@ -251,14 +234,14 @@ static void set_gps_enable(const bool enable)
 	#ifdef GPS_DEBUG	
 		LOGD("Starting GPS");
 	#endif
-	
-		gps_control_start(K_NO_WAIT);
 
+		gps_is_on = true;
 		gps_fix_time = 0;
 		gps_local_time = 0;
 		gps_start_time = k_uptime_get();
-
-		gps_is_on = true;
+		memset(&gps_pvt_data, 0, sizeof(gps_pvt_data));
+		
+		gps_control_start(K_NO_WAIT);
 	}
 	else
 	{
@@ -278,281 +261,6 @@ static void set_gps_enable(const bool enable)
 		gps_is_on = false;
 	}
 }
-
-#ifdef CONFIG_NRF_CLOUD_AGPS
-void error_handler(enum error_type err_type, int err_code)
-{
-	if(err_type == ERROR_CLOUD)
-	{
-	#if defined(CONFIG_LTE_LINK_CONTROL)
-		/* Turn off and shutdown modem */
-		LOG_ERR("LTE link disconnect");
-
-		int err = lte_lc_power_off();
-
-		if(err)
-		{
-			LOG_ERR("lte_lc_power_off failed: %d", err);
-		}
-	#endif /* CONFIG_LTE_LINK_CONTROL */
-	}
-
-	switch(err_type)
-	{
-	case ERROR_CLOUD:
-		/* Blinking all LEDs ON/OFF in pairs (1 and 4, 2 and 3)
-		 * if there is an application error.
-		 */
-		LOG_ERR("Error of type ERROR_CLOUD: %d", err_code);
-		break;
-		
-	case ERROR_BSD_RECOVERABLE:
-		/* Blinking all LEDs ON/OFF in pairs (1 and 3, 2 and 4)
-		 * if there is a recoverable error.
-		 */
-		LOG_ERR("Error of type ERROR_BSD_RECOVERABLE: %d", err_code);
-		break;
-		
-	default:
-		/* Blinking all LEDs ON/OFF in pairs (1 and 2, 3 and 4)
-		 * undefined error.
-		 */
-		LOG_ERR("Unknown error type: %d, code: %d",	err_type, err_code);
-		break;
-	}
-}
-
-void cloud_error_handler(int err)
-{
-	error_handler(ERROR_CLOUD, err);
-}
-
-void cloud_connect_error_handler(enum cloud_connect_result err)
-{
-	char *backend_name = "invalid";
-
-	if(err == CLOUD_CONNECT_RES_SUCCESS)
-	{
-		return;
-	}
-
-	LOG_INF("Failed to connect to cloud, error %d", err);
-	
-	switch(err)
-	{
-	case CLOUD_CONNECT_RES_ERR_NOT_INITD:
-		LOG_INF("Cloud back-end has not been initialized");
-		break;
-		
-	case CLOUD_CONNECT_RES_ERR_NETWORK:
-		LOG_INF("Network error, check cloud configuration");
-		break;
-
-	case CLOUD_CONNECT_RES_ERR_BACKEND:
-		if(cloud_backend && cloud_backend->config &&
-		    cloud_backend->config->name)
-		{
-			backend_name = cloud_backend->config->name;
-		}
-		
-		LOG_INF("An error occurred specific to the cloud back-end: %s", backend_name);
-		break;
-
-	case CLOUD_CONNECT_RES_ERR_PRV_KEY:
-		LOG_INF("Ensure device has a valid private key");
-		break;
-
-	case CLOUD_CONNECT_RES_ERR_CERT:
-		LOG_INF("Ensure device has a valid CA and client certificate");
-		break;
-
-	case CLOUD_CONNECT_RES_ERR_CERT_MISC:
-		LOG_INF("A certificate/authorization error has occurred");
-		break;
-
-	case CLOUD_CONNECT_RES_ERR_TIMEOUT_NO_DATA:
-		LOG_INF("Connect timeout. SIM card may be out of data");
-		break;
-
-	case CLOUD_CONNECT_RES_ERR_MISC:
-		break;
-
-	default:
-		LOG_INF("Unhandled connect error");
-		break;
-	}
-
-	k_thread_suspend(k_current_get());
-}
-
-static void cloud_cmd_handler(struct cloud_command *cmd)
-{
-	if((cmd->channel == CLOUD_CHANNEL_GPS) &&
-	    (cmd->group == CLOUD_CMD_GROUP_CFG_SET) &&
-	    (cmd->type == CLOUD_CMD_ENABLE))
-	{
-		set_gps_enable(cmd->data.sv.state == CLOUD_CMD_STATE_TRUE);
-	}
-}
-
-void cloud_event_handler(const struct cloud_backend *const backend,
-			 const struct cloud_event *const evt,
-			 void *user_data)
-{
-	ARG_UNUSED(user_data);
-
-	switch(evt->type)
-	{
-	case CLOUD_EVT_CONNECTED:
-		LOG_INF("CLOUD_EVT_CONNECTED");
-		break;
-
-	case CLOUD_EVT_READY:
-		LOG_INF("CLOUD_EVT_READY");
-		break;
-
-	case CLOUD_EVT_DISCONNECTED:
-		LOG_INF("CLOUD_EVT_DISCONNECTED");
-		break;
-
-	case CLOUD_EVT_ERROR:
-		LOG_INF("CLOUD_EVT_ERROR");
-		break;
-
-	case CLOUD_EVT_DATA_SENT:
-		LOG_INF("CLOUD_EVT_DATA_SENT");
-		break;
-		
-	case CLOUD_EVT_DATA_RECEIVED:
-	{
-		int err;
-
-		LOG_INF("CLOUD_EVT_DATA_RECEIVED");
-		err = cloud_decode_command(evt->data.msg.buf);
-		if (err == 0) {
-			/* Cloud decoder has handled the data */
-			return;
-		}
-
-	#if defined(CONFIG_NRF_CLOUD_AGPS)
-		/* The decoder didn't handle the data, check if it's A-GPS data
-		 */
-		err = nrf_cloud_agps_process(evt->data.msg.buf,
-					     evt->data.msg.len,
-					     NULL);
-		if (err)
-		{
-			LOG_INF("Data was not valid A-GPS data, err: %d", err);
-			break;
-		}
-
-		LOG_INF("A-GPS data processed");
-	#endif /* defined(CONFIG_GPS_USE_AGPS) */
-		break;
-	}
-	
-	case CLOUD_EVT_PAIR_REQUEST:
-		LOG_INF("CLOUD_EVT_PAIR_REQUEST");
-		break;
-		
-	case CLOUD_EVT_PAIR_DONE:
-		LOG_INF("CLOUD_EVT_PAIR_DONE");
-		break;
-		
-	case CLOUD_EVT_FOTA_DONE:
-		LOG_INF("CLOUD_EVT_FOTA_DONE");
-		break;
-		
-	default:
-		LOG_INF("Unknown cloud event type: %d", evt->type);
-		break;
-	}
-}
-
-static void nrf_cloud_start(void)
-{
-	int ret;
-
-	cloud_backend = cloud_get_binding("NRF_CLOUD");
-	__ASSERT(cloud_backend != NULL, "nRF Cloud backend not found");
-
-	ret = cloud_init(cloud_backend, cloud_event_handler);
-	if(ret)
-	{
-		LOG_ERR("Cloud backend could not be initialized, error: %d", ret);
-		cloud_error_handler(ret);
-	}
-
-	ret = cloud_decode_init(cloud_cmd_handler);
-	if(ret)
-	{
-		LOG_ERR("Cloud command decoder could not be initialized, error: %d", ret);
-		cloud_error_handler(ret);
-	}
-
-	ret = cloud_connect(cloud_backend);
-	if(ret != CLOUD_CONNECT_RES_SUCCESS)
-	{
-		cloud_connect_error_handler(ret);
-	}
-
-	struct pollfd fds[] = {
-		{
-		.fd = cloud_backend->config->socket,
-		.events = POLLIN
-		}
-	};
-
-	while(true)
-	{
-		ret = poll(fds, ARRAY_SIZE(fds),
-		cloud_keepalive_time_left(cloud_backend));
-		if(ret < 0)
-		{
-			LOG_INF("poll() returned an error: %d", ret);
-			error_handler(ERROR_CLOUD, ret);
-			continue;
-		}
-
-		if(ret == 0)
-		{
-			cloud_ping(cloud_backend);
-			continue;
-		}
-
-		if((fds[0].revents & POLLIN) == POLLIN)
-		{
-			cloud_input(cloud_backend);
-		}
-
-		if((fds[0].revents & POLLNVAL) == POLLNVAL)
-		{
-			LOG_INF("Socket error: POLLNVAL");
-			LOG_INF("The cloud socket was unexpectedly closed.");
-			error_handler(ERROR_CLOUD, -EIO);
-			return;
-		}
-
-		if((fds[0].revents & POLLHUP) == POLLHUP)
-		{
-			LOG_INF("Socket error: POLLHUP");
-			LOG_INF("Connection was closed by the cloud.");
-			error_handler(ERROR_CLOUD, -EIO);
-			return;
-		}
-
-		if((fds[0].revents & POLLERR) == POLLERR)
-		{
-			LOG_INF("Socket error: POLLERR");
-			LOG_INF("Cloud connection was unexpectedly closed.");
-			error_handler(ERROR_CLOUD, -EIO);
-			return;
-		}
-	}
-
-	cloud_disconnect(cloud_backend);
-}
-#endif
 
 static void send_agps_request(struct k_work *work)
 {

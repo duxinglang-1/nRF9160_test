@@ -1749,8 +1749,6 @@ void GetModemInfor(void)
 		LOGD("imsi:%s", tmpbuf);
 
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
-		
-		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
@@ -1864,12 +1862,14 @@ static void nb_link(struct k_work *work)
 		frist_flag = true;
 		GetModemInfor();
 		SetModemTurnOff();
+		SetNetWorkParaByPlmn(g_imsi);
 	}
 	else if(strlen(g_imsi) == 0)
 	{
 		SetModemTurnOn();
 		GetModemInfor();
 		SetModemTurnOff();
+		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(gps_is_working())

@@ -94,6 +94,11 @@ void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype)
 	key_msg.func[keycode][keytype] = funcPtr;
 }
 
+void ClearKeyHandler(u8_t keycode, u8_t keytype)
+{
+	key_msg.func[keycode][keytype] = NULL;
+}
+
 void SetLeftKeyUpHandler(FuncPtr funcPtr)
 {
 	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_UP] = funcPtr;
@@ -109,6 +114,21 @@ void SetLeftKeyLongPressHandler(FuncPtr funcPtr)
 	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_LONG_PRESS] = funcPtr;
 }
 
+void ClearLeftKeyUpHandler(void)
+{
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_UP] = NULL;
+}
+
+void ClearLeftKeyDownHandler(void)
+{
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_DOWN] = NULL;
+}
+
+void ClearLeftKeyLongPressHandler(void)
+{
+	key_msg.func[KEY_SOFT_LEFT][KEY_EVENT_LONG_PRESS] = NULL;
+}
+
 void SetRightKeyUpHandler(FuncPtr funcPtr)
 {
 	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_UP] = funcPtr;
@@ -122,6 +142,21 @@ void SetRightKeyDownHandler(FuncPtr funcPtr)
 void SetRightKeyLongPressHandler(FuncPtr funcPtr)
 {
 	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_LONG_PRESS] = funcPtr;
+}
+
+void ClearRightKeyUpHandler(void)
+{
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_UP] = NULL;
+}
+
+void ClearRightKeyDownHandler(void)
+{
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_DOWN] = NULL;
+}
+
+void ClearRightKeyLongPressHandler(void)
+{
+	key_msg.func[KEY_SOFT_RIGHT][KEY_EVENT_LONG_PRESS] = NULL;
 }
 
 FuncPtr GetKeyHandler(u8_t keycode, u8_t keytype)
@@ -170,7 +205,7 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 
 bool is_wearing(void)
 {
-	return touch_flag;
+	return true;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)

@@ -120,6 +120,13 @@ u32_t dk_get_buttons(void);
  */
 
 extern void ClearAllKeyHandler(void);
+extern void ClearKeyHandler(u8_t keycode, u8_t keytype);
+extern void ClearLeftKeyUpHandler(void);
+extern void ClearLeftKeyDownHandler(void);
+extern void ClearLeftKeyLongPressHandler(void);
+extern void ClearRightKeyUpHandler(void);
+extern void ClearRightKeyDownHandler(void);
+extern void ClearRightKeyLongPressHandler(void);
 extern void SetKeyHandler(FuncPtr funcPtr, u8_t keycode, u8_t keytype);
 extern void SetLeftKeyUpHandler(FuncPtr funcPtr);
 extern void SetLeftKeyDownHandler(FuncPtr funcPtr);

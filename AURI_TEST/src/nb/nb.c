@@ -34,6 +34,9 @@
 #include "fall.h"
 #endif
 #include "transfer_cache.h"
+#ifdef CONFIG_SYNC_SUPPORT
+#include "sync.h"
+#endif
 #include "logger.h"
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(120)
@@ -355,6 +358,10 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 		LOGD("PUBACK packet id: %u", evt->param.puback.message_id);
+
+	#ifdef CONFIG_SYNC_SUPPORT
+		SyncStatusChange(SYNC_STATUS_SENT);
+	#endif	
 		break;
 
 	case MQTT_EVT_SUBACK:
@@ -1900,6 +1907,11 @@ static void nb_link(struct k_work *work)
 		if(err)
 		{
 			LOGD("Can't connected to LTE network. err:%d", err);
+
+		#ifdef CONFIG_SYNC_SUPPORT
+			SyncStatusChange(SYNC_STATUS_FAIL);
+		#endif
+
 			nb_connected = false;
 
 			retry_count++;

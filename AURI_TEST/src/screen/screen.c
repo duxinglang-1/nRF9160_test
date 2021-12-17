@@ -43,6 +43,9 @@
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
+#ifdef CONFIG_SYNC_SUPPORT
+#include "sync.h"
+#endif
 #include "logger.h"
 
 static u8_t scr_index=0;
@@ -866,6 +869,119 @@ void SOSScreenProcess(void)
 		break;
 	}
 }
+
+#ifdef CONFIG_SYNC_SUPPORT
+void ExitSyncDataScreen(void)
+{		
+	SyncDataStop();
+	
+#ifdef CONFIG_FOTA_DOWNLOAD
+	fota_start();
+#else
+	EnterPoweroffScreen();
+#endif
+}
+
+void EnterSyncDataScreen(void)
+{
+	if(screen_id == SCREEN_ID_SYNC)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SYNC;
+	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+
+	MenuStopGPS();
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+
+	SetLeftKeyUpHandler(ExitSyncDataScreen);
+	SetLeftKeyLongPressHandler(SyncDataStart);
+}
+
+void SyncUpdateStatus(void)
+{
+	switch(sync_state)
+	{
+	case SYNC_STATUS_IDLE:
+		break;
+		
+	case SYNC_STATUS_SENDING:
+		if(global_settings.language == LANGUAGE_CHN)
+			LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNCING_CN);
+		else
+			LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNCING_EN);
+		
+		SetLeftKeyUpHandler(ExitSyncDataScreen);
+		break;
+		
+	case SYNC_STATUS_SENT:
+		if(global_settings.language == LANGUAGE_CHN)
+			LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_FINISH_CN);
+		else
+			LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_FINISH_EN);
+
+		SetLeftKeyUpHandler(ExitSyncDataScreen);
+		break;
+		
+	case SYNC_STATUS_FAIL:
+		if(global_settings.language == LANGUAGE_CHN)
+			LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_FAIL_CN);
+		else
+			LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_FAIL_EN);
+
+		SetLeftKeyUpHandler(ExitSyncDataScreen);
+		break;
+	}
+}
+
+void SyncShowStatus(void)
+{
+	u16_t steps;
+	unsigned char *img_anima[2] = {IMG_SYNC_ICON, IMG_SYNC_ICON};
+
+	LCD_Clear(BLACK);
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaShow(SYNC_ICON_X, SYNC_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+#else
+	LCD_ShowImg(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_ICON);
+#endif
+
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_CN);
+	else
+		LCD_ShowImg(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_EN);	
+}
+
+void SyncScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_SYNC].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATED;
+
+		SyncShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_SYNC].para&SCREEN_EVENT_UPDATE_SYNC)
+			scr_msg[SCREEN_ID_SYNC].para &= (~SCREEN_EVENT_UPDATE_SYNC);
+
+		SyncUpdateStatus();
+		break;
+	}
+
+	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_NO;
+}
+#endif/*CONFIG_SYNC_SUPPORT*/
 
 #ifdef CONFIG_IMU_SUPPORT
 void SleepUpdateStatus(void)
@@ -1716,10 +1832,15 @@ void EnterSleepScreen(void)
 #ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
 #endif
-#ifdef CONFIG_FOTA_DOWNLOAD
-	SetLeftKeyUpHandler(fota_start);
+
+#ifdef CONFIG_SYNC_SUPPORT
+	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
+  #ifdef CONFIG_FOTA_DOWNLOAD
+	SetLeftKeyUpHandler(fota_start);
+  #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
+  #endif
 #endif
 }
 
@@ -2271,6 +2392,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();
 			break;
+	#ifdef CONFIG_SYNC_SUPPORT	
+		case SCREEN_ID_SYNC:
+			SyncScreenProcess();
+			break;
+	#endif		
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		case SCREEN_ID_FOTA:
 			FOTAScreenProcess();

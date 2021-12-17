@@ -238,7 +238,36 @@ extern unsigned char IMG_PWROFF_KEY_CN[390];
 extern unsigned char IMG_PWROFF_KEY_EN[390];
 extern unsigned char IMG_PWROFF_CN[170];
 extern unsigned char IMG_PWROFF_EN[390];
-
+//data synchronism
+#ifdef CONFIG_SYNC_SUPPORT
+extern unsigned char IMG_SYNC_ICON[142];
+extern unsigned char IMG_SYNC_CN[390];
+extern unsigned char IMG_SYNC_EN[390];
+extern unsigned char IMG_SYNCING_CN[390];
+extern unsigned char IMG_SYNCING_EN[390];
+extern unsigned char IMG_SYNC_FAIL_CN[390];
+extern unsigned char IMG_SYNC_FAIL_EN[390];
+extern unsigned char IMG_SYNC_FINISH_CN[390];
+extern unsigned char IMG_SYNC_FINISH_EN[390];
+#endif
+//fota
+#ifdef CONFIG_FOTA_DOWNLOAD
+extern unsigned char IMG_FOTA_ICON[142];
+extern unsigned char IMG_FOTA_CN[390];
+extern unsigned char IMG_FOTA_EN[390];
+extern unsigned char IMG_FOTA_LINK_ICON[142];
+extern unsigned char IMG_FOTA_LINKING_CN[390];
+extern unsigned char IMG_FOTA_LINKING_EN[390];
+extern unsigned char IMG_FOTA_LINK_FAIL_CN[390];
+extern unsigned char IMG_FOTA_LINK_FAIL_EN[390];
+extern unsigned char IMG_FOTA_DOWNLOADING_CN[390];
+extern unsigned char IMG_FOTA_DOWNLOADING_EN[390];
+extern unsigned char IMG_FOTA_PERCENT[45];
+extern unsigned char IMG_FOTA_SUCCESS_CN[390];
+extern unsigned char IMG_FOTA_SUCCESS_EN[390];
+extern unsigned char IMG_FOTA_FAIL_CN[390];
+extern unsigned char IMG_FOTA_FAIL_EN[390];
+#endif/*CONFIG_FOTA_DOWNLOAD*/
 #endif/*LCD_VGM068A4W01_SH1106G*/
 
 #endif/*__IMG_H__*/

@@ -298,6 +298,108 @@ void StepCheckSendLocationData(u16_t steps)
 
 /*****************************************************************************
  * FUNCTION
+ *  SyncSendHealthData
+ * DESCRIPTION
+ *  数据同步上传健康数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SyncSendHealthData(void)
+{
+	u16_t steps=0,calorie=0,distance=0;
+	u16_t light_sleep=0,deep_sleep=0;
+	u8_t tmpbuf[20] = {0};
+	u8_t databuf[128] = {0};
+
+	LOGD("001");
+	
+#ifdef CONFIG_IMU_SUPPORT
+	GetSportData(&steps, &calorie, &distance);
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
+
+	//steps
+	sprintf(tmpbuf, "%d,", steps);
+	strcpy(databuf, tmpbuf);
+	
+	//wrist
+	if(is_wearing())
+		strcat(databuf, "1,");
+	else
+		strcat(databuf, "0,");
+	
+	//sitdown time
+	strcat(databuf, "0,");
+	
+	//activity time
+	strcat(databuf, "0,");
+	
+	//light sleep time
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", light_sleep);
+	strcat(databuf, tmpbuf);
+	
+	//deep sleep time
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", deep_sleep);
+	strcat(databuf, tmpbuf);
+	
+	//move body
+	strcat(databuf, "0,");
+	
+	//calorie
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", calorie);
+	strcat(databuf, tmpbuf);
+	
+	//distance
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", distance);
+	strcat(databuf, tmpbuf);
+	
+	//systolic
+	strcat(databuf, "0,");
+	
+	//diastolic
+	strcat(databuf, "0,");
+	
+	//heart rate
+	strcat(databuf, "0,");
+	
+	//SPO2
+	strcat(databuf, "0");
+	
+	NBSendHealthData(databuf, strlen(databuf));
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  SyncSendLocalData
+ * DESCRIPTION
+ *  数据同步上传定位数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SyncSendLocalData(void)
+{
+	LOGD("001");
+	
+#ifdef CONFIG_WIFI
+	location_wait_wifi = true;
+	APP_Ask_wifi_data();
+#else
+	location_wait_gps = true;
+	APP_Ask_GPS_Data();
+#endif
+
+}
+
+/*****************************************************************************
+ * FUNCTION
  *  SendPowerOnData
  * DESCRIPTION
  *  发送开机数据包

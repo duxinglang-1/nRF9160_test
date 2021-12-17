@@ -247,6 +247,15 @@ config AUDIO_SUPPORT
 endmenu #AUDIO
 
 
+menu "SYNC"
+
+config SYNC_SUPPORT
+	bool "sync support"
+	default n
+	
+endmenu #SYNC
+
+
 menu "FOTA_MQTT"
 
 config FOTA_DOWNLOAD_HOST

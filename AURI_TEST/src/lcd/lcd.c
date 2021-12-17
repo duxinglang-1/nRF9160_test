@@ -203,9 +203,62 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	}  
 }    
 
-//画矩形	  
+//画矩形
 //(x1,y1),(x2,y2):矩形的对角坐标
-void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+void LCD_DrawRectExtra(u16_t x, u16_t y, u16_t w, u16_t h, u8_t color)
+{
+	u32_t i;
+	u8_t c=color;
+
+	if((x+w)>LCD_WIDTH)
+		w = LCD_WIDTH - x;
+	if((y+h)>LCD_HEIGHT)
+		h = LCD_HEIGHT - y;
+
+	y = y/PAGE_MAX;
+	h = h/8;
+	
+	if(c != 0x00)
+		c = 0xff;
+	
+#ifdef LCD_TYPE_SPI
+	for(i=0;i<h;i++)
+	{
+		//左边线
+		BlockWrite(x,y+i,1,h);
+		DispColor(1, c);
+	
+		//中间线，注意上下边线
+		BlockWrite(x+1,y+i,w-2,h);
+		if(h > 1)
+		{
+			if(i == 0)			//上边线
+				c = color&0x80;
+			else if(i == h-1)	//下边线
+				c = color&0x01;
+			else				//中间区域
+				c = color&0x00;
+		}
+		else
+		{
+			c = color&0x81;
+		}
+		DispColor(w-2, c);
+		
+		//右边线
+		BlockWrite(x+w-2,y+i,1,h);
+		DispColor(1, color);
+	}
+#else
+	for(i=0;i<(w*h);i++)
+		WriteOneDot(color); //显示颜色 
+#endif
+
+}
+#endif
+
+void LCD_DrawRectColor(u16_t x, u16_t y, u16_t w, u16_t h, u16_t color)
 {
 #ifdef LCD_TYPE_SPI
 	BlockWrite(x,y,w,1);
@@ -221,6 +274,15 @@ void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 	LCD_DrawLine(x,y,x,y+h);
 	LCD_DrawLine(x,y+h,x+w,y+h);
 	LCD_DrawLine(x+w,y,x+w,y+h);
+#endif
+}
+
+void LCD_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090) 
+	LCD_DrawRectExtra(x, y, w, h, (u8_t)(POINT_COLOR&0x00ff));
+#else
+	LCD_DrawRectColor(x, y, w, h, POINT_COLOR);
 #endif
 }
 

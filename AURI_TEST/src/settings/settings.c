@@ -44,7 +44,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	0,						//target steps
 	60,						//health interval
 	TIME_FORMAT_24,			//24 format
-	LANGUAGE_CHN,			//language
+	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_15_SEC,		//backlight time

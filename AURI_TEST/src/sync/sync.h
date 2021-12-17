@@ -11,10 +11,21 @@
 
 #include <zephyr/types.h>
 #include <sys/slist.h>
+#include "lcd.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//synchronism data
+#define SYNC_ICON_W	34
+#define SYNC_ICON_H	32
+#define SYNC_ICON_X	((LCD_WIDTH-SYNC_ICON_W)/2)
+#define SYNC_ICON_Y	0
+#define SYNC_TEXT_W	96
+#define SYNC_TEXT_H	32
+#define SYNC_TEXT_X	((LCD_WIDTH-SYNC_TEXT_W)/2)
+#define SYNC_TEXT_Y	32
 
 typedef enum
 {

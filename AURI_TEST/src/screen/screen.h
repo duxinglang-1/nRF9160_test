@@ -215,20 +215,6 @@ extern "C" {
 #define NOTIFY_TEXT_MAX_LEN		80
 #define NOTIFY_TIMER_INTERVAL	5
 
-//synchronism data
-#define SYNC_ICON_W	34
-#define SYNC_ICON_H	32
-#define SYNC_ICON_X	((LCD_WIDTH-SYNC_ICON_W)/2)
-#define SYNC_ICON_Y	0
-#define SYNC_TEXT_W	96
-#define SYNC_TEXT_H	32
-#define SYNC_TEXT_X	((LCD_WIDTH-SYNC_TEXT_W)/2)
-#define SYNC_TEXT_Y	32
-
-
-
-
-
 //power off confirm
 #define PWR_OFF_ICON_W	48
 #define PWR_OFF_ICON_H	48

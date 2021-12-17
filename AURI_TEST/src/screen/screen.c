@@ -876,7 +876,7 @@ void ExitSyncDataScreen(void)
 	SyncDataStop();
 	
 #ifdef CONFIG_FOTA_DOWNLOAD
-	fota_start();
+	EnterFOTAScreen();
 #else
 	EnterPoweroffScreen();
 #endif
@@ -944,7 +944,6 @@ void SyncUpdateStatus(void)
 
 void SyncShowStatus(void)
 {
-	u16_t steps;
 	unsigned char *img_anima[2] = {IMG_SYNC_ICON, IMG_SYNC_ICON};
 
 	LCD_Clear(BLACK);
@@ -1376,53 +1375,13 @@ void WristScreenProcess(void)
 #ifdef CONFIG_FOTA_DOWNLOAD
 void FOTAShowStatus(void)
 {
-	u16_t x,y,w,h;
-	u8_t str_title[] = "FOTA RUNNING";
-
 	LCD_Clear(BLACK);
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-	LCD_ShowStrInRect(FOTA_NOTIFY_STRING_X, 
-					  FOTA_NOTIFY_STRING_Y, 
-					  FOTA_NOTIFY_STRING_W, 
-					  FOTA_NOTIFY_STRING_H, 
-					  "FOTA will be started after 5 seconds!");
-#else
-	//LCD_DrawRectangle(FOTA_NOTIFY_RECT_X, FOTA_NOTIFY_RECT_Y, FOTA_NOTIFY_RECT_W, FOTA_NOTIFY_RECT_H);
-	//LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_RECT_Y+1, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-1, BLACK);
-	
-	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_MeasureString(str_title, &w, &h);
-	x = (w > (FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W))? 0 : ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
-	x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
-	y = 20;
-	LCD_ShowString(x,y,str_title);
+	LCD_ShowImg(FOTA_ICON_X, FOTA_ICON_Y, IMG_FOTA_ICON);
 
-	ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
-					  FOTA_NOTIFY_STRING_Y, 
-					  FOTA_NOTIFY_STRING_W, 
-					  FOTA_NOTIFY_STRING_H, 
-					  FONT_SIZE_16, 
-					  "Make sure the battery is at least 20% full and don't do anything during the upgrade!");
-
-	LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
-	LCD_MeasureString("SOS(Y)", &w, &h);
-	x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
-	y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
-	LCD_ShowString(x,y,"SOS(Y)");
-
-	LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
-	LCD_MeasureString("PWR(N)", &w, &h);
-	x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
-	y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
-	LCD_ShowString(x,y,"PWR(N)");
-
-	SetLeftKeyUpHandler(fota_start_confirm);
-#endif
-#ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_X+FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_Y+FOTA_NOTIFY_YES_H, fota_start_confirm);
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_X+FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_Y+FOTA_NOTIFY_NO_H, fota_exit);
-#endif
-	
+	if(global_settings.language == LANGUAGE_CHN)
+		LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_CN);
+	else
+		LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_EN); 
 }
 
 void FOTAUpdateStatus(void)
@@ -1432,6 +1391,8 @@ void FOTAUpdateStatus(void)
 	u8_t pro_buf[16] = {0};
 	static bool flag = false;
 	static u16_t pro_str_x,pro_str_y;
+	unsigned char *img_num[10] = {IMG_DATE_NUM_0,IMG_DATE_NUM_1,IMG_DATE_NUM_2,IMG_DATE_NUM_3,IMG_DATE_NUM_4,
+									IMG_DATE_NUM_5,IMG_DATE_NUM_6,IMG_DATE_NUM_7,IMG_DATE_NUM_8,IMG_DATE_NUM_9};
 	
 	switch(get_fota_status())
 	{
@@ -1440,22 +1401,14 @@ void FOTAUpdateStatus(void)
 		break;
 		
 	case FOTA_STATUS_LINKING:
-	#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 		LCD_Clear(BLACK);
-		LCD_ShowStrInRect(FOTA_NOTIFY_STRING_X, 
-						  FOTA_NOTIFY_STRING_Y, 
-						  FOTA_NOTIFY_STRING_W, 
-						  FOTA_NOTIFY_STRING_H, 
-						  "Linking to server...");
-	#else
-		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
-		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
-						  FOTA_NOTIFY_STRING_Y,
-						  FOTA_NOTIFY_STRING_W,
-						  FOTA_NOTIFY_STRING_H,
-						  FONT_SIZE_16,
-						  "Linking to server...");
-	#endif
+		LCD_ShowImg(FOTA_ICON_X, FOTA_ICON_Y, IMG_FOTA_LINK_ICON);
+		
+		if(global_settings.language == LANGUAGE_CHN)
+			LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_LINKING_CN);
+		else
+			LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_LINKING_EN); 
+
 		ClearAllKeyHandler();
 		break;
 		
@@ -1463,41 +1416,29 @@ void FOTAUpdateStatus(void)
 		if(!flag)
 		{
 			flag = true;
-		#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-			LCD_Clear(BLACK);
-			LCD_ShowStrInRect(FOTA_NOTIFY_STRING_X, 
-							  FOTA_NOTIFY_STRING_Y, 
-							  FOTA_NOTIFY_STRING_W, 
-							  FOTA_NOTIFY_STRING_H, 
-							  "Downloading data...");
-		#else
-			LCD_Fill(FOTA_NOTIFY_STRING_X, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_STRING_W, FOTA_NOTIFY_STRING_H, BLACK);
-			ShowStringsInRect(FOTA_NOTIFY_STRING_X, 
-							  FOTA_NOTIFY_STRING_Y,
-							  FOTA_NOTIFY_STRING_W,
-							  40,
-							  FONT_SIZE_16,
-							  "Downloading data...");
-			LCD_DrawRectangle(FOTA_NOTIFY_PRO_X, FOTA_NOTIFY_PRO_Y, FOTA_NOTIFY_PRO_W, FOTA_NOTIFY_PRO_H);
-			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, FOTA_NOTIFY_PRO_W-1, FOTA_NOTIFY_PRO_H-1, BLACK);
-		#endif	
-			
 
-			sprintf(pro_buf, "%3d%%", g_fota_progress);
-			LCD_MeasureString(pro_buf, &w, &h);
-			pro_str_x = ((FOTA_NOTIFY_RECT_W-2*FOTA_NOTIFY_OFFSET_W)-w)/2;
-			pro_str_x += (FOTA_NOTIFY_RECT_X+FOTA_NOTIFY_OFFSET_W);
-			pro_str_y = FOTA_NOTIFY_PRO_Y + FOTA_NOTIFY_PRO_H + 8;
+			LCD_Clear(BLACK);
 			
-			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+			if(global_settings.language == LANGUAGE_CHN)
+				LCD_ShowImg(FOTA_DOWNLOADING_TEXT_X, FOTA_DOWNLOADING_TEXT_Y, IMG_FOTA_DOWNLOADING_CN);
+			else
+				LCD_ShowImg(FOTA_DOWNLOADING_TEXT_X, FOTA_DOWNLOADING_TEXT_Y, IMG_FOTA_DOWNLOADING_EN); 
+
+			LCD_DrawRectangle(FOTA_DOWNLOADING_PRO_X, FOTA_DOWNLOADING_PRO_Y, FOTA_DOWNLOADING_PRO_W, FOTA_DOWNLOADING_PRO_H);
+
+			x = (LCD_WIDTH - FOTA_DOWNLOADING_NUM_W - FOTA_DOWNLOADING_PERCENT_W)/2;
+			LCD_ShowImg(x, FOTA_DOWNLOADING_PERCENT_Y, IMG_DATE_NUM_0); 
+			LCD_ShowImg(x+FOTA_DOWNLOADING_NUM_W, FOTA_DOWNLOADING_PERCENT_Y, IMG_FOTA_PERCENT); 
 		}
 		else
 		{
-			pro_len = (g_fota_progress*FOTA_NOTIFY_PRO_W)/100;
-			LCD_Fill(FOTA_NOTIFY_PRO_X+1, FOTA_NOTIFY_PRO_Y+1, pro_len, FOTA_NOTIFY_PRO_H-1, WHITE);
+			pro_len = (g_fota_progress*FOTA_DOWNLOADING_PRO_W)/100;
+			LCD_Fill(FOTA_DOWNLOADING_PRO_X, FOTA_DOWNLOADING_PRO_Y, pro_len, FOTA_DOWNLOADING_PRO_H, WHITE);
 
-			sprintf(pro_buf, "%3d%%", g_fota_progress);
-			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+			x = (LCD_WIDTH - 2*FOTA_DOWNLOADING_NUM_W - FOTA_DOWNLOADING_PERCENT_W)/2;
+			LCD_ShowImg(x, FOTA_DOWNLOADING_PERCENT_Y, img_num[g_fota_progress/10]);
+			LCD_ShowImg(x+FOTA_DOWNLOADING_NUM_W, FOTA_DOWNLOADING_PERCENT_Y, img_num[g_fota_progress%10]);
+			LCD_ShowImg(x+2*FOTA_DOWNLOADING_NUM_W, FOTA_DOWNLOADING_PERCENT_Y, IMG_FOTA_PERCENT); 
 		}
 
 		ClearAllKeyHandler();
@@ -1505,61 +1446,29 @@ void FOTAUpdateStatus(void)
 		
 	case FOTA_STATUS_FINISHED:
 		flag = false;
-	#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+
 		LCD_Clear(BLACK);
-		LCD_ShowStrInRect(FOTA_NOTIFY_STRING_X, 
-						  FOTA_NOTIFY_STRING_Y, 
-						  FOTA_NOTIFY_STRING_W, 
-						  FOTA_NOTIFY_STRING_H, 
-						  "Upgraded finished! pls reboot!");
-	#else
-		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
-		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
-						  FOTA_NOTIFY_STRING_Y,
-						  FOTA_NOTIFY_STRING_W,
-						  FOTA_NOTIFY_STRING_H,
-						  FONT_SIZE_16,
-						  "It upgraded successfully! Do you want to reboot the device immediately?");
+		LCD_ShowImg(FOTA_ICON_X, FOTA_ICON_Y, IMG_FOTA_ICON);
+		
+		if(global_settings.language == LANGUAGE_CHN)
+			LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_SUCCESS_CN);
+		else
+			LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_SUCCESS_EN); 
 
-		LCD_DrawRectangle(FOTA_NOTIFY_YES_X, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
-		LCD_MeasureString("SOS(Y)", &w, &h);
-		x = FOTA_NOTIFY_YES_X+(FOTA_NOTIFY_YES_W-w)/2;
-		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
-		LCD_ShowString(x,y,"SOS(Y)");
-
-		LCD_DrawRectangle(FOTA_NOTIFY_NO_X, FOTA_NOTIFY_NO_Y, FOTA_NOTIFY_NO_W, FOTA_NOTIFY_NO_H);
-		LCD_MeasureString("PWR(N)", &w, &h);
-		x = FOTA_NOTIFY_NO_X+(FOTA_NOTIFY_NO_W-w)/2;
-		y = FOTA_NOTIFY_NO_Y+(FOTA_NOTIFY_NO_H-h)/2;	
-		LCD_ShowString(x,y,"PWR(N)");
-	#endif
-
-		SetLeftKeyUpHandler(fota_reboot_confirm);
+		ClearAllKeyHandler();
 		break;
 		
 	case FOTA_STATUS_ERROR:
 		flag = false;
 
-	#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-		LCD_ShowStrInRect(FOTA_NOTIFY_STRING_X, 
-						  FOTA_NOTIFY_STRING_Y, 
-						  FOTA_NOTIFY_STRING_W, 
-						  FOTA_NOTIFY_STRING_H, 
-						  "Upgrade failed! pls check the network or server.");
-	#else
-		LCD_Fill(FOTA_NOTIFY_RECT_X+1, FOTA_NOTIFY_STRING_Y, FOTA_NOTIFY_RECT_W-1, FOTA_NOTIFY_RECT_H-(FOTA_NOTIFY_STRING_Y-FOTA_NOTIFY_RECT_Y)-1, BLACK);
-		ShowStringsInRect(FOTA_NOTIFY_STRING_X,
-						  FOTA_NOTIFY_STRING_Y,
-						  FOTA_NOTIFY_STRING_W,
-						  FOTA_NOTIFY_STRING_H,
-						  FONT_SIZE_16,
-						  "It failed to upgrade! Please check the network or server.");
-		LCD_DrawRectangle((LCD_WIDTH-FOTA_NOTIFY_YES_W)/2, FOTA_NOTIFY_YES_Y, FOTA_NOTIFY_YES_W, FOTA_NOTIFY_YES_H);
-		LCD_MeasureString("SOS(Y)", &w, &h);
-		x = (LCD_WIDTH-FOTA_NOTIFY_YES_W)/2+(FOTA_NOTIFY_YES_W-w)/2;
-		y = FOTA_NOTIFY_YES_Y+(FOTA_NOTIFY_YES_H-h)/2;	
-		LCD_ShowString(x,y,"SOS(Y)");
-	#endif
+		LCD_Clear(BLACK);
+		
+		LCD_ShowImg(FOTA_ICON_X, FOTA_ICON_Y, IMG_FOTA_ICON);
+				
+		if(global_settings.language == LANGUAGE_CHN)
+			LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_FAIL_CN);
+		else
+			LCD_ShowImg(FOTA_TEXT_X, FOTA_TEXT_Y, IMG_FOTA_FAIL_EN); 
 
 		SetLeftKeyUpHandler(fota_exit);
 		break;
@@ -1616,9 +1525,9 @@ void EnterFOTAScreen(void)
 	AnimaStopShow();
 #endif
 
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+	fota_start();
 
+	SetLeftKeyLongPressHandler(fota_start_confirm);
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 }
 #endif/*CONFIG_FOTA_DOWNLOAD*/
@@ -1837,7 +1746,7 @@ void EnterSleepScreen(void)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
   #ifdef CONFIG_FOTA_DOWNLOAD
-	SetLeftKeyUpHandler(fota_start);
+	SetLeftKeyUpHandler(EnterFOTAScreen);
   #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
   #endif

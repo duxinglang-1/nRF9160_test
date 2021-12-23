@@ -108,7 +108,7 @@ void SyncDataStart(void)
 	sync_state = SYNC_STATUS_LINKING;
 	SyncUpdateStatus();
 	SyncSendHealthData();
-	k_timer_start(&sync_timer, K_SECONDS(10), NULL);
+	k_timer_start(&sync_timer, K_SECONDS(60), NULL);
 }
 
 void SyncNetWorkCallBack(SYNC_STATUS status)

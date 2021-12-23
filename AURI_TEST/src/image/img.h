@@ -154,8 +154,8 @@ extern unsigned char IMG_STEP_NOTE_ICON_2[150];
 extern unsigned char IMG_STEP_NOTE_CN[66];
 extern unsigned char IMG_STEP_NOTE_EN[122];
 //DISTANCE
-extern unsigned char IMG_DISTANCE_ICON_1[106];
-extern unsigned char IMG_DISTANCE_ICON_2[106];
+extern unsigned char IMG_DISTANCE_ICON_1[138];
+extern unsigned char IMG_DISTANCE_ICON_2[138];
 extern unsigned char IMG_KM_CN[102];
 extern unsigned char IMG_KM_EN[102];
 extern unsigned char IMG_MILE_CN[102];
@@ -240,16 +240,22 @@ extern unsigned char IMG_PWROFF_CN[170];
 extern unsigned char IMG_PWROFF_EN[390];
 //data synchronism
 #ifdef CONFIG_SYNC_SUPPORT
-extern unsigned char IMG_SYNC_ICON[142];
-extern unsigned char IMG_SYNC_CN[390];
+extern unsigned char IMG_SYNC_ICON[242];
+extern unsigned char IMG_SYNC_FINISH_ICON[242];
+extern unsigned char IMG_SYNC_FAIL_ICON[242];
+extern unsigned char IMG_SYNC_LINKING_ICON_1[27];
+extern unsigned char IMG_SYNC_LINKING_ICON_2[27];
+extern unsigned char IMG_SYNC_LINKING_ICON_3[27];
+extern unsigned char IMG_SYNC_LINKING_ICON_4[27];
+extern unsigned char IMG_SYNC_CN[294];
 extern unsigned char IMG_SYNC_EN[390];
-extern unsigned char IMG_SYNCING_CN[390];
-extern unsigned char IMG_SYNCING_EN[390];
-extern unsigned char IMG_SYNC_FAIL_CN[390];
-extern unsigned char IMG_SYNC_FAIL_EN[390];
-extern unsigned char IMG_SYNC_FINISH_CN[390];
+extern unsigned char IMG_SYNC_LINKING_CN[294];
+extern unsigned char IMG_SYNC_LINKING_EN[294];
+extern unsigned char IMG_SYNC_FINISH_CN[294];
 extern unsigned char IMG_SYNC_FINISH_EN[390];
-#endif
+extern unsigned char IMG_SYNC_FAIL_CN[294];
+extern unsigned char IMG_SYNC_FAIL_EN[390];
+#endif/*CONFIG_SYNC_SUPPORT*/
 //fota
 #ifdef CONFIG_FOTA_DOWNLOAD
 extern unsigned char IMG_FOTA_ICON[142];

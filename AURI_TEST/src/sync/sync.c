@@ -22,21 +22,33 @@
 #include "esp8266.h"
 #endif
 #include "screen.h"
+#ifdef CONFIG_ANIMATION_SUPPORT
+#include "animation.h"
+#endif
 #include "logger.h"
 
 SYNC_STATUS sync_state = SYNC_STATUS_IDLE;
+
+static bool sync_start_flag = false;
+static bool sync_status_change_flag = false;
 
 static void SyncTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sync_timer, SyncTimerOutCallBack, NULL);
 
 void SyncTimerOutCallBack(struct k_timer *timer_id)
 {
+	sync_status_change_flag = true;
+}
+
+void SyncStatusUpdate(void)
+{
 	switch(sync_state)
 	{
 	case SYNC_STATUS_IDLE:
 		break;
 
-	case SYNC_STATUS_SENDING:
+	case SYNC_STATUS_LINKING:
+		SyncNetWorkCallBack(SYNC_STATUS_FAIL);
 		break;
 
 	case SYNC_STATUS_SENT:
@@ -66,9 +78,18 @@ bool SyncIsRunning(void)
 
 void SyncDataStop(void)
 {
-	sync_state = SYNC_STATUS_IDLE;
+	LOGD("begin");
 
 	k_timer_stop(&sync_timer);
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+	sync_state = SYNC_STATUS_IDLE;
+}
+
+void MenuStartSync(void)
+{
+	sync_start_flag = true;
 }
 
 void SyncDataStart(void)
@@ -83,14 +104,14 @@ void SyncDataStart(void)
 		return;
 	}
 
-	sync_state = SYNC_STATUS_SENDING;
+	ClearLeftKeyUpHandler();
+	sync_state = SYNC_STATUS_LINKING;
 	SyncUpdateStatus();
 	SyncSendHealthData();
-
-	ClearLeftKeyUpHandler();
+	k_timer_start(&sync_timer, K_SECONDS(10), NULL);
 }
 
-void SyncStatusChange(SYNC_STATUS status)
+void SyncNetWorkCallBack(SYNC_STATUS status)
 {
 	LOGD("status:%d", status);
 	
@@ -103,14 +124,36 @@ void SyncStatusChange(SYNC_STATUS status)
 		case SYNC_STATUS_IDLE:
 			break;
 			
-		case SYNC_STATUS_SENDING:
+		case SYNC_STATUS_LINKING:
+			SyncUpdateStatus();
+			SyncSendHealthData();
 			break;
 			
 		case SYNC_STATUS_SENT:
 		case SYNC_STATUS_FAIL:
+			k_timer_stop(&sync_timer);
+		#ifdef CONFIG_ANIMATION_SUPPORT 
+			AnimaStopShow();
+		#endif
 			SyncUpdateStatus();
-			k_timer_start(&sync_timer, K_SECONDS(2), NULL);
+			k_timer_start(&sync_timer, K_SECONDS(3), NULL);
 			break;
 		}
 	}
 }
+
+void SyncMsgProcess(void)
+{
+	if(sync_start_flag)
+	{
+		SyncDataStart();
+		sync_start_flag = false;
+	}
+	
+	if(sync_status_change_flag)
+	{
+		SyncStatusUpdate();
+		sync_status_change_flag = false;
+	}
+}
+

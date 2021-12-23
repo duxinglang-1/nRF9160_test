@@ -785,6 +785,9 @@ int main(void)
 	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaMsgProcess();
 	#endif
+	#ifdef CONFIG_SYNC_SUPPORT
+		SyncMsgProcess();
+	#endif
 		system_init_completed();
 		k_cpu_idle();
 	}

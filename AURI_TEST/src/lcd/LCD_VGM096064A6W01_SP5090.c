@@ -431,7 +431,7 @@ void LCD_Init(void)
 
 	WriteComm(0xAE); //Set Display Off
 	WriteComm(0xD5); //Display divide ratio/osc. freq. mode
-	WriteComm(0x51);
+	WriteComm(0x7F);
 	WriteComm(0xA8); //Multiplex ration mode:63
 	WriteComm(0x3F);
 	WriteComm(0xD3); //Set Display Offset

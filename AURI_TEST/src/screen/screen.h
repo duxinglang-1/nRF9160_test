@@ -140,7 +140,7 @@ extern "C" {
 #define SLEEP_NUM_4_Y	32
 
 //distance
-#define DIS_ICON_W		25
+#define DIS_ICON_W		33
 #define DIS_ICON_H		32
 #define DIS_ICON_X		((LCD_WIDTH-DIS_ICON_W)/2)
 #define DIS_ICON_Y		0

@@ -46,7 +46,7 @@ K_TIMER_DEFINE(fall_gps_timer, FallStartGPSCallBack, NULL);
 
 static void FallEnd(void)
 {
-#ifdef CONFIG_ANIMATION_SUPPORT
+#if 0 //xb add 2021-12-23 不用动画显示 def CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
 #endif
 
@@ -205,7 +205,7 @@ void FallAlarmCancel(void)
 {
 	if(fall_state == FALL_STATUS_NOTIFY)
 	{
-	#ifdef CONFIG_ANIMATION_SUPPORT
+	#if 0 //xb add 2021-12-23 不用动画显示 def CONFIG_ANIMATION_SUPPORT
 		AnimaStopShow();
 	#endif
 	#ifdef CONFIG_AUDIO_SUPPORT

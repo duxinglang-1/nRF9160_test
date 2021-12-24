@@ -381,7 +381,7 @@ void test_show_image(void)
 	u8_t i=0;
 	u16_t x,y,w=0,h=0;
 
-	LOG_INF("test_show_image\n");
+	LOGD("test_show_image");
 	
 	LCD_Clear(BLACK);
 	

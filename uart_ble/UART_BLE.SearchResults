@@ -1,4 +1,0 @@
----- CONFIG_LTE_PSM_REQ_RAT Matches (3 in 3 files) ----
-Autoconf.h (build_nrf9160_pca10090ns\zephyr\include\generated):#define CONFIG_LTE_PSM_REQ_RAT "00000000"
-Configs.c (build_nrf9160_pca10090ns\zephyr\misc\generated):GEN_ABSOLUTE_SYM(CONFIG_LTE_PSM_REQ_RAT, 1);
-Prj.conf:CONFIG_LTE_PSM_REQ_RAT="00000000"

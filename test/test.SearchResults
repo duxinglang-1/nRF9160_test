@@ -1,5 +1,0 @@
----- pkt_length Matches (4 in 1 files) ----
-Elp_connect.c (src):	if (pos == (PROT_LEN_POS + pkt_length + 1)) {
-Elp_connect.c (src):	if (pos == (PROT_LEN_POS + pkt_length + 1)) {
-Elp_connect.c (src):	if (pos == (PROT_LEN_POS + pkt_length + 1)) {
-Elp_connect.c (src):	if (pos == (PROT_LEN_POS + pkt_length + 1)) {

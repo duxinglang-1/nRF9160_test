@@ -1,5 +1,0 @@
----- asc2_3216 Matches (4 in 4 files) ----
-Font.c (src\font):const unsigned char asc2_3216[95][64]=
-Font.h (src\font):extern const unsigned char asc2_3216[96][64];
-Lcd.c (src\lcd):				temp=asc2_3216[num][t];			//调用3216字体
-Lcd.c (src\lcd):				temp=asc2_3216[num][t];			//调用3216字体

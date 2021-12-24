@@ -1,4 +1,0 @@
----- cloud_decode_command Matches (3 in 3 files) ----
-Cloud_codec.c (src\cloud_codec):int cloud_decode_command(char const *input)
-Cloud_codec.h (src\cloud_codec):int cloud_decode_command(char const *input);
-Main.c (src):		err = cloud_decode_command(evt->data.msg.buf);

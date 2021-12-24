@@ -1,2 +1,0 @@
-"BOARD_ROOT":"D:/software/nrf9160/ncs1.4.0/nrf"
-"DTS_ROOT":"D:/software/nrf9160/ncs1.4.0/nrf"

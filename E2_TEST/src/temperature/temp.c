@@ -26,6 +26,8 @@
 static bool temp_check_ok = false;
 static bool temp_get_data_flag = false;
 
+float g_temp = 0.0;
+
 static void temp_get_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_check_timer, temp_get_timerout, NULL);
 
@@ -54,12 +56,19 @@ void TempMsgProcess(void)
 {
 	if(temp_get_data_flag)
 	{
+		bool ret;
+		float temperature;
+		
 		temp_get_data_flag = false;
 
 		if(!temp_check_ok)
 			return;
 		
-		GetTemperature();
+		ret = GetTemperature(&temperature);
+		if(ret)
+		{
+			g_temp = temperature;
+		}
 	}
 }
 

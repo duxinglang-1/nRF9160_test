@@ -23,5 +23,7 @@
 #define TEMP_IF_I2C
 #define TEMP_IF_SINGLE_LINE
 
+extern float g_temp;
+
 #endif/*__TEMP_H__*/
 

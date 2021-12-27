@@ -29,6 +29,6 @@
 #define CMD_READ_ID				0xEFC8
 
 extern bool gxts04_init(void);
-extern float GetTemperature(void);
+extern bool GetTemperature(float *temp);
 
 #endif/*__GXTS04_H__*/

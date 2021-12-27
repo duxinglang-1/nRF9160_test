@@ -39,6 +39,9 @@
 #ifdef CONFIG_WATCHDOG
 #include "watchdog.h"
 #endif
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif
 #include "logger.h"
 
 //#define ANALOG_CLOCK
@@ -662,6 +665,9 @@ void system_init(void)
 #ifdef CONFIG_IMU_SUPPORT
 	IMU_init(&imu_work_q);
 #endif
+#ifdef CONFIG_TEMP_SUPPORT
+	temp_init();
+#endif
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 }
@@ -763,6 +769,9 @@ int main(void)
 	#endif
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncMsgProcess();
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
+		TempMsgProcess();
 	#endif
 		system_init_completed();
 		k_cpu_idle();

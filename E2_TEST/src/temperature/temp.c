@@ -45,11 +45,6 @@ void temp_init(void)
 #elif defined()
 	temp_check_ok = ct1711_init();
 #endif
-
-	if(temp_check_ok)
-	{
-		k_timer_start(&temp_check_timer, K_MSEC(10*1000), K_MSEC(10*1000));
-	}
 }
 
 void TempMsgProcess(void)

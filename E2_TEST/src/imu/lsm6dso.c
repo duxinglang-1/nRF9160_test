@@ -134,7 +134,7 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-bool sensor_init(void)
+static bool sensor_init(void)
 {
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
 	if(whoamI != LSM6DSO_ID)

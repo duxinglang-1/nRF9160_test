@@ -241,6 +241,12 @@ config TEMP_SUPPORT
 	default n
 endmenu #TEMPERATURE
 
+menu "CRC"
+config CRC_SUPPORT
+	bool "crc check support"
+	default n
+endmenu #CRC
+
 menu "FOTA_MQTT"
 config FOTA_DOWNLOAD_HOST
 	string "Download host name"

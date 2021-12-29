@@ -1,10 +1,10 @@
 zephyr/CMakeFiles/zephyr.dir/lib/os/hex.c.obj: \
- D:/software/nrf9160/ncs/zephyr/lib/os/hex.c \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/os/hex.c \
  D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/zephyr/include/generated/autoconf.h \
- D:/software/nrf9160/ncs/zephyr/include/toolchain/zephyr_stdint.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/toolchain/zephyr_stdint.h \
  c:\gnuarmemb\lib\gcc\arm-none-eabi\8.3.1\include\stddef.h \
- D:/software/nrf9160/ncs/zephyr/include/zephyr/types.h \
- D:/software/nrf9160/ncs/zephyr/lib/libc/newlib/include/stdint.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/zephyr/types.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/lib/libc/newlib/include/stdint.h \
  c:\gnuarmemb\arm-none-eabi\include\newlib-nano\newlib.h \
  c:\gnuarmemb\arm-none-eabi\include\_newlib_version.h \
  c:\gnuarmemb\arm-none-eabi\include\sys\_stdint.h \
@@ -21,5 +21,5 @@ zephyr/CMakeFiles/zephyr.dir/lib/os/hex.c.obj: \
  c:\gnuarmemb\arm-none-eabi\include\sys\_types.h \
  c:\gnuarmemb\arm-none-eabi\include\machine\_types.h \
  c:\gnuarmemb\arm-none-eabi\include\sys\lock.h \
- D:/software/nrf9160/ncs/zephyr/include/sys/util.h \
+ D:/software/nrf9160/ncs1.2.0/zephyr/include/sys/util.h \
  c:\gnuarmemb\lib\gcc\arm-none-eabi\8.3.1\include\stdbool.h

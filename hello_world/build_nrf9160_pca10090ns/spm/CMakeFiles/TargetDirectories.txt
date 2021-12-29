@@ -120,9 +120,6 @@ D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm
 D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/interrupt_controller/CMakeFiles/rebuild_cache.dir
 D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/clock_control/CMakeFiles/edit_cache.dir
 D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/clock_control/CMakeFiles/rebuild_cache.dir
-D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/serial/CMakeFiles/drivers__serial.dir
-D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/serial/CMakeFiles/edit_cache.dir
-D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/serial/CMakeFiles/rebuild_cache.dir
 D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/timer/CMakeFiles/edit_cache.dir
 D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/timer/CMakeFiles/rebuild_cache.dir
 D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/modules/nrf/CMakeFiles/edit_cache.dir

@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/zephyr/ext/hal/cmsis
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/zephyr/ext/hal/cmsis
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

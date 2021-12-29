@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/zephyr/drivers/interrupt_controller
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/zephyr/drivers/interrupt_controller
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

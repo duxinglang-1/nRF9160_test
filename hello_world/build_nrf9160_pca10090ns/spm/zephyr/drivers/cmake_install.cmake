@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/zephyr/drivers
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/zephyr/drivers
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -37,7 +37,6 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/console/cmake_install.cmake")
   include("D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/interrupt_controller/cmake_install.cmake")
   include("D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/clock_control/cmake_install.cmake")
-  include("D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/serial/cmake_install.cmake")
   include("D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/spm/zephyr/drivers/timer/cmake_install.cmake")
 
 endif()

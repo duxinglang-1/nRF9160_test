@@ -18,13 +18,13 @@
 APPLICATION_BINARY_DIR:PATH=D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/mcuboot
 
 //Application Source Directory
-APPLICATION_SOURCE_DIR:PATH=D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr
+APPLICATION_SOURCE_DIR:PATH=D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr
 
 //No help, variable specified on the command line.
 BOARD:UNINITIALIZED=nrf9160_pca10090
 
 //Path to a file.
-BOARD_DIR:PATH=D:/software/nrf9160/ncs/zephyr/boards/arm/nrf9160_pca10090
+BOARD_DIR:PATH=D:/software/nrf9160/ncs1.2.0/zephyr/boards/arm/nrf9160_pca10090
 
 //Path to a program.
 BOSSAC:FILEPATH=BOSSAC-NOTFOUND
@@ -282,18 +282,18 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 // These settings will override the settings in the application’s
 // .config file or its default .conf file.Multiple files may be
 // listed, e.g. CONF_FILE="prj1.conf prj2.conf"
-CONF_FILE:STRING=D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr/prj.conf
+CONF_FILE:STRING=D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr/prj.conf
 
 //Path to a program.
 DTC:FILEPATH=C:/ProgramData/chocolatey/bin/dtc.exe
 
-DTC_OVERLAY_FILE:STRING=D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr/dts.overlay D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr/dts.overlay
+DTC_OVERLAY_FILE:STRING=D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr/dts.overlay D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr/dts.overlay
 
 //No help, variable specified on the command line.
 EXTRA_KCONFIG_TARGETS:UNINITIALIZED=menuconfig_ses
 
 //No help, variable specified on the command line.
-EXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig_ses:UNINITIALIZED=C:/arm_segger_embedded_studio_v420a_win_x64_nordic/html/configure_nordic_project_menuconfig.py
+EXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig_ses:UNINITIALIZED=C:/arm_segger_embedded_studio_v452_win_x64_nordic/html/configure_nordic_project_menuconfig.py
 
 //Git command line client
 GIT_EXECUTABLE:FILEPATH=C:/Program Files/Git/cmd/git.exe
@@ -317,13 +317,13 @@ KERNEL_HEX_NAME:UNINITIALIZED=zephyr.hex
 NONE_BINARY_DIR:STATIC=D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/mcuboot
 
 //Value Computed by CMake
-NONE_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr
+NONE_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr
 
 //NRFXLIB root directory
-NRFXLIB_DIR:PATH=D:/software/nrf9160/ncs/nrfxlib
+NRFXLIB_DIR:PATH=D:/software/nrf9160/ncs1.2.0/nrfxlib
 
 //NCS root directory
-NRF_DIR:PATH=D:/software/nrf9160/ncs/nrf
+NRF_DIR:PATH=D:/software/nrf9160/ncs1.2.0/nrf
 
 //Path to a program.
 OPENOCD:FILEPATH=OPENOCD-NOTFOUND
@@ -335,7 +335,7 @@ PYTHON_EXECUTABLE:FILEPATH=C:/Python38/python.exe
 TOOLCHAIN_HAS_NEWLIB:BOOL=ON
 
 //Zephyr toolchain root
-TOOLCHAIN_ROOT:STRING=D:/software/nrf9160/ncs/zephyr
+TOOLCHAIN_ROOT:STRING=D:/software/nrf9160/ncs1.2.0/zephyr
 
 //Path to a program.
 WEST:FILEPATH=C:/Python38/Scripts/west.exe
@@ -353,7 +353,7 @@ ZEPHYR_RUNNER_ARGS_jlink:STRING=--dt-flash=y;--device=cortex-m33;--speed=4000
 ZEPHYR_RUNNER_ARGS_nrfjprog:STRING=--nrf-family=NRF91;--erase
 
 //Board definition directory
-ZEPHYR_RUNNER_CONFIG_BOARD_DIR:STRING=D:/software/nrf9160/ncs/zephyr/boards/arm/nrf9160_pca10090
+ZEPHYR_RUNNER_CONFIG_BOARD_DIR:STRING=D:/software/nrf9160/ncs1.2.0/zephyr/boards/arm/nrf9160_pca10090
 
 //Path to GDB binary, if applicable
 ZEPHYR_RUNNER_CONFIG_GDB:STRING=C:/gnuarmemb/bin/arm-none-eabi-gdb.exe
@@ -380,13 +380,13 @@ ZEPHYR_TOOLCHAIN_VARIANT:STRING=gnuarmemb
 Zephyr-Kernel_BINARY_DIR:STATIC=D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/mcuboot
 
 //Value Computed by CMake
-Zephyr-Kernel_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr
+Zephyr-Kernel_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr
 
 //Value Computed by CMake
 civetweb_BINARY_DIR:STATIC=D:/software/nrf9160/my_projects/my_test/hello_world/build_nrf9160_pca10090ns/mcuboot/modules/civetweb
 
 //Value Computed by CMake
-civetweb_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs/modules/lib/civetweb
+civetweb_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs1.2.0/modules/lib/civetweb
 
 
 ########################
@@ -394,7 +394,7 @@ civetweb_SOURCE_DIR:STATIC=D:/software/nrf9160/ncs/modules/lib/civetweb
 ########################
 
 //DT bindings root directories
-CACHED_DTS_ROOT_BINDINGS:INTERNAL=D:/software/nrf9160/ncs/nrf/cmake/../dts/bindings;D:/software/nrf9160/ncs/zephyr/dts/bindings
+CACHED_DTS_ROOT_BINDINGS:INTERNAL=D:/software/nrf9160/ncs1.2.0/nrf/cmake/../dts/bindings;D:/software/nrf9160/ncs1.2.0/zephyr/dts/bindings
 //ADVANCED property for variable: CMAKE_ADDR2LINE
 CMAKE_ADDR2LINE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
@@ -488,7 +488,7 @@ CMAKE_GENERATOR_PLATFORM:INTERNAL=
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
 //Source directory with the top level CMakeLists.txt file for this
 // project
-CMAKE_HOME_DIRECTORY:INTERNAL=D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr
+CMAKE_HOME_DIRECTORY:INTERNAL=D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MAKE_PROGRAM

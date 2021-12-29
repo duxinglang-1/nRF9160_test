@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/zephyr/subsys/net/l2
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/zephyr/subsys/net/l2
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

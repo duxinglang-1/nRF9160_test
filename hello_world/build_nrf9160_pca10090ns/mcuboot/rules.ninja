@@ -414,7 +414,7 @@ rule C_STATIC_LIBRARY_LINKER__kernel_
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SD:\software\nrf9160\ncs\bootloader\mcuboot\boot\zephyr -BD:\software\nrf9160\my_projects\my_test\hello_world\build_nrf9160_pca10090ns\mcuboot
+  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SD:\software\nrf9160\ncs1.2.0\bootloader\mcuboot\boot\zephyr -BD:\software\nrf9160\my_projects\my_test\hello_world\build_nrf9160_pca10090ns\mcuboot
   description = Re-running CMake...
   generator = 1
 

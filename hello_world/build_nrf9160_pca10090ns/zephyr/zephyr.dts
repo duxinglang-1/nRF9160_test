@@ -223,8 +223,8 @@
 				current-speed = < 0x1c200 >;
 				tx-pin = < 0x1d >;
 				rx-pin = < 0x1c >;
-				rts-pin = < 0x1b >;
-				cts-pin = < 0x1a >;
+				#rts-pin = < 0x1b >;
+				#cts-pin = < 0x1a >;
 			};
 			uart1: uart@9000 {
 				compatible = "nordic,nrf-uarte";
@@ -322,12 +322,8 @@
 				#size-cells = < 0x0 >;
 				reg = < 0xb000 0x1000 >;
 				interrupts = < 0xb 0x1 >;
-				status = "okay";
+				status = "disabled";
 				label = "SPI_3";
-				compatible = "nordic,nrf-spim";
-				sck-pin = < 0x13 >;
-				mosi-pin = < 0x12 >;
-				miso-pin = < 0x11 >;
 			};
 			pwm0: pwm@21000 {
 				compatible = "nordic,nrf-pwm";

@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/bootloader/mcuboot/boot/zephyr
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/bootloader/mcuboot/boot/zephyr
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/modules/lib/openthread/zephyr
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/modules/lib/openthread/zephyr
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

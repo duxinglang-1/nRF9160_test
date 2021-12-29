@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/zephyr/soc/arm/nordic_nrf
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/zephyr/soc/arm/nordic_nrf
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

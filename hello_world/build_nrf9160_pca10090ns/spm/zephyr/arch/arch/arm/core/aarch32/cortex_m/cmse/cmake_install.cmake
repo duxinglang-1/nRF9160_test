@@ -1,4 +1,4 @@
-# Install script for directory: D:/software/nrf9160/ncs/zephyr/arch/arm/core/aarch32/cortex_m/cmse
+# Install script for directory: D:/software/nrf9160/ncs1.2.0/zephyr/arch/arm/core/aarch32/cortex_m/cmse
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

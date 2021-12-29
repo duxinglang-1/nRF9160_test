@@ -514,8 +514,8 @@ timer2: timer@11000 {
  current-speed = <115200>;
  tx-pin = <29>;
  rx-pin = <28>;
- rts-pin = <27>;
- cts-pin = <26>;
+ #rts-pin = <27>;
+ #cts-pin = <26>;
 };
 &uart1 {
  status = "okay";
@@ -538,13 +538,6 @@ timer2: timer@11000 {
 &pwm0 {
  status = "okay";
  ch0-pin = <2>;
-};
-&spi3 {
- compatible = "nordic,nrf-spim";
- status = "okay";
- sck-pin = <19>;
- mosi-pin = <18>;
- miso-pin = <17>;
 };
 &timer0 {
  status = "okay";

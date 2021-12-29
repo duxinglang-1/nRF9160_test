@@ -2333,7 +2333,10 @@ void NBMsgProcess(void)
 		nb_reconnect_flag = false;
 		if(test_gps_flag)
 			return;
-		
+
+	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		uart_sleep_out();
+	#endif	
 		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}
 	

@@ -10,6 +10,7 @@
 #include <zephyr.h>
 #include <drivers/flash.h>
 #include <pm_config.h>
+#include "external_flash.h"
 #include "dl_target.h"
 #include "logger.h"
 
@@ -22,7 +23,8 @@ bool dl_target_ui_identify(const void *const buf)
 {
 	LOGD("begin");
 
-	return *((const u32_t *)buf) == UI_HEADER_MAGIC;
+	//return *((const u32_t *)buf) == UI_HEADER_MAGIC;
+	return true;
 }
 
 int dl_target_ui_init(size_t file_size, dl_target_callback_t cb)
@@ -30,7 +32,6 @@ int dl_target_ui_init(size_t file_size, dl_target_callback_t cb)
 	LOGD("begin");
 
 	rece_count = 0;
-	
 	return 0;
 }
 
@@ -44,7 +45,35 @@ int dl_target_ui_offset_get(size_t *out)
 
 int dl_target_ui_write(const void *const buf, size_t len)
 {
-	LOGD("begin");
+	static s32_t last_index = -1;
+	s32_t cur_index;
+	u32_t PageByteRemain,addr=0;
+	
+	LOGD("rece_count:%d, len:%d", rece_count, len);
+
+	addr = IMG_START_ADDR+rece_count;
+	
+	cur_index = addr/SPIFlash_SECTOR_SIZE;
+	if(cur_index > last_index)
+	{
+		last_index = cur_index;
+		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
+		PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
+		if(PageByteRemain < len)
+		{
+			len -= PageByteRemain;
+			while(1)
+			{
+				SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
+				if(len >= SPIFlash_SECTOR_SIZE)
+					len -= SPIFlash_SECTOR_SIZE;
+				else
+					break;
+			}
+		}
+	}
+	
+	SpiFlash_Write_Buf(buf, (IMG_START_ADDR+rece_count), len);
 
 	rece_count += len;
 	return 0;

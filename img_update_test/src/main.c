@@ -391,8 +391,8 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
+	LCD_get_pic_size_from_flash(IMG_PEPPA_320X320_ADDR, &w, &h);
+	LCD_dis_pic_from_flash(0, 0, IMG_PEPPA_320X320_ADDR);
 	while(0)
 	{
 		switch(i)

@@ -129,6 +129,7 @@ static int download_client_callback(const struct download_client_evt *event)
 			if((err < 0) && (err != -EBUSY))
 			{
 				LOGD("dfu_target_init error %d", err);
+				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
 			}
 
@@ -178,7 +179,7 @@ static int download_client_callback(const struct download_client_evt *event)
 			}
 
 			send_progress((offset * 100) / file_size);
-			LOGD("Progress: %d/%d%%", offset, file_size);
+			LOGD("Progress: %d/%d", offset, file_size);
 		}
 		break;
 

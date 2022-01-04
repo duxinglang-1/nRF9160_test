@@ -40,6 +40,9 @@
 #ifdef CONFIG_FOTA_DOWNLOAD
 #include "fota_mqtt.h"
 #endif/*CONFIG_FOTA_DOWNLOAD*/
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+#include "data_download.h"
+#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
@@ -62,6 +65,21 @@ extern u8_t g_rsrp;
 
 static void EnterHRScreen(void);
 
+#ifdef IMG_FONT_FROM_FLASH
+static u32_t logo_img[] = 
+{
+	IMG_DNL_SMILE_1_200X200_ADDR,
+	IMG_DNL_SMILE_2_200X200_ADDR,
+	IMG_DNL_SMILE_3_200X200_ADDR,
+	IMG_DNL_SMILE_4_200X200_ADDR,
+	IMG_DNL_SMILE_5_200X200_ADDR,
+	IMG_DNL_SMILE_6_200X200_ADDR,
+	IMG_DNL_SMILE_7_200X200_ADDR,
+	IMG_DNL_SMILE_8_200X200_ADDR,
+	IMG_DNL_SMILE_9_200X200_ADDR,
+	IMG_DNL_SMILE_10_200X200_ADDR
+};
+#else
 static char *logo_img[] = 
 {
 	IMG_PEPPA_240X240_ADDR,
@@ -70,6 +88,7 @@ static char *logo_img[] =
 	IMG_PEPPA_240X240_ADDR,
 	IMG_PEPPA_240X240_ADDR
 };
+#endif
 
 void ShowBootUpLogo(void)
 {
@@ -77,7 +96,7 @@ void ShowBootUpLogo(void)
 	u16_t x,y,w,h;
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 200, false, EnterIdleScreen);
+	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 20, false, EnterIdleScreen);
 #else
   #ifdef IMG_FONT_FROM_FLASH
 	LCD_ShowImg_From_Flash(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_PEPPA_240X240_ADDR);
@@ -1063,6 +1082,248 @@ void SOSScreenProcess(void)
 	}
 }
 
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+void DlShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t str_title[128] = {0};
+
+	LCD_Clear(BLACK);
+	//LCD_DrawRectangle(DL_NOTIFY_RECT_X, DL_NOTIFY_RECT_Y, DL_NOTIFY_RECT_W, DL_NOTIFY_RECT_H);
+	//LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_RECT_Y+1, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-1, BLACK);
+
+	switch(g_dl_data_type)
+	{
+	case DL_DATA_IMG:
+		strcpy(str_title, "UI UPGRADING");
+		break;
+	case DL_DATA_FONT:
+		strcpy(str_title, "FONT UPGRADING");
+		break;
+	case DL_DATA_PPG:
+		strcpy(str_title, "PPG_AG UPGRADING");
+		break;
+	}
+	
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_MeasureString(str_title, &w, &h);
+	x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? 0 : ((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2;
+	x += (DL_NOTIFY_RECT_X+DL_NOTIFY_OFFSET_W);
+	y = 20;
+	LCD_ShowString(x,y,str_title);
+
+	ShowStringsInRect(DL_NOTIFY_STRING_X, 
+					  DL_NOTIFY_STRING_Y, 
+					  DL_NOTIFY_STRING_W, 
+					  DL_NOTIFY_STRING_H, 
+					  FONT_SIZE_16, 
+					  "Make sure the battery is at least 20% full and don't do anything during the upgrade!");
+
+	LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
+	LCD_MeasureString("SOS(Y)", &w, &h);
+	x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
+	y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
+	LCD_ShowString(x,y,"SOS(Y)");
+
+	LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
+	LCD_MeasureString("PWR(N)", &w, &h);
+	x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
+	y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
+	LCD_ShowString(x,y,"PWR(N)");
+
+	SetLeftKeyUpHandler(dl_start_confirm);
+	SetRightKeyUpHandler(dl_exit);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H, dl_start_confirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_NO_X, DL_NOTIFY_NO_X+DL_NOTIFY_NO_W, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_Y+DL_NOTIFY_NO_H, dl_exit);
+#endif
+	
+}
+
+void DlUpdateStatus(void)
+{
+	u16_t pro_len;
+	u16_t x,y,w,h;
+	u8_t pro_buf[16] = {0};
+	static bool flag = false;
+	static u16_t pro_str_x,pro_str_y;
+	
+	switch(get_dl_status())
+	{
+	case DL_STATUS_PREPARE:
+		flag = false;
+		break;
+		
+	case DL_STATUS_LINKING:
+		LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(DL_NOTIFY_STRING_X,
+						  DL_NOTIFY_STRING_Y,
+						  DL_NOTIFY_STRING_W,
+						  DL_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "Linking to server...");
+
+		ClearAllKeyHandler();
+		break;
+		
+	case DL_STATUS_DOWNLOADING:
+		if(!flag)
+		{
+			flag = true;
+			
+			LCD_Fill(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, BLACK);
+			ShowStringsInRect(DL_NOTIFY_STRING_X, 
+							  DL_NOTIFY_STRING_Y,
+							  DL_NOTIFY_STRING_W,
+							  40,
+							  FONT_SIZE_16,
+							  "Downloading data...");
+			
+			LCD_DrawRectangle(DL_NOTIFY_PRO_X, DL_NOTIFY_PRO_Y, DL_NOTIFY_PRO_W, DL_NOTIFY_PRO_H);
+			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, DL_NOTIFY_PRO_W-1, DL_NOTIFY_PRO_H-1, BLACK);
+
+			sprintf(pro_buf, "%3d%%", g_dl_progress);
+			LCD_MeasureString(pro_buf, &w, &h);
+			pro_str_x = ((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2;
+			pro_str_x += (DL_NOTIFY_RECT_X+DL_NOTIFY_OFFSET_W);
+			pro_str_y = DL_NOTIFY_PRO_Y + DL_NOTIFY_PRO_H + 5;
+			
+			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+		}
+		else
+		{
+			pro_len = (g_dl_progress*DL_NOTIFY_PRO_W)/100;
+			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, pro_len, DL_NOTIFY_PRO_H-1, WHITE);
+
+			sprintf(pro_buf, "%3d%%", g_dl_progress);
+			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+		}
+
+		ClearAllKeyHandler();
+		break;
+		
+	case DL_STATUS_FINISHED:
+		flag = false;
+		
+		LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(DL_NOTIFY_STRING_X,
+						  DL_NOTIFY_STRING_Y,
+						  DL_NOTIFY_STRING_W,
+						  DL_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "Img upgraded successfully! Do you want to reboot the device immediately?");
+
+		LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
+		LCD_MeasureString("SOS(Y)", &w, &h);
+		x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
+		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
+		LCD_ShowString(x,y,"SOS(Y)");
+
+		LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
+		LCD_MeasureString("PWR(N)", &w, &h);
+		x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
+		y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
+		LCD_ShowString(x,y,"PWR(N)");
+
+		SetLeftKeyUpHandler(dl_reboot_confirm);
+		SetRightKeyUpHandler(dl_exit);
+		break;
+		
+	case DL_STATUS_ERROR:
+		flag = false;
+
+		LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
+		ShowStringsInRect(DL_NOTIFY_STRING_X,
+						  DL_NOTIFY_STRING_Y,
+						  DL_NOTIFY_STRING_W,
+						  DL_NOTIFY_STRING_H,
+						  FONT_SIZE_16,
+						  "Img failed to upgrade! Please check the network or server.");
+
+		LCD_DrawRectangle((LCD_WIDTH-DL_NOTIFY_YES_W)/2, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
+		LCD_MeasureString("SOS(Y)", &w, &h);
+		x = (LCD_WIDTH-DL_NOTIFY_YES_W)/2+(DL_NOTIFY_YES_W-w)/2;
+		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
+		LCD_ShowString(x,y,"SOS(Y)");
+
+		SetLeftKeyUpHandler(dl_exit);
+		SetRightKeyUpHandler(dl_exit);
+		break;
+		
+	case DL_STATUS_MAX:
+		flag = false;
+		break;
+	}
+}
+
+void DlScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_DL].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_DL].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_DL].status = SCREEN_STATUS_CREATED;
+
+		DlShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_DL].para&SCREEN_EVENT_UPDATE_DL)
+		{
+			scr_msg[SCREEN_ID_DL].para &= (~SCREEN_EVENT_UPDATE_DL);
+			DlUpdateStatus();
+		}
+
+		if(scr_msg[SCREEN_ID_DL].para == SCREEN_EVENT_UPDATE_NO)
+			scr_msg[SCREEN_ID_DL].act = SCREEN_ACTION_NO;
+		break;
+	}
+}
+
+#ifdef CONFIG_IMG_DATA_UPDATE
+void ExitDlImgScreen(void)
+{
+#ifdef CONFIG_FONT_DATA_UPDATE
+	dl_font_start();
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	dl_ppg_start();
+#else
+	EnterIdleScreen();
+#endif
+}
+#endif
+
+#ifdef CONFIG_FONT_DATA_UPDATE
+void ExitDlFontScreen(void)
+{
+#ifdef CONFIG_PPG_DATA_UPDATE
+	dl_ppg_start();
+#else
+	EnterIdleScreen();
+#endif
+}
+#endif
+
+#ifdef CONFIG_PPG_DATA_UPDATE
+void ExitDlPpgScreen(void)
+{
+	EnterIdleScreen();
+}
+#endif
+
+
+void EnterDlScreen(void)
+{
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_DL;	
+	scr_msg[SCREEN_ID_DL].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_DL].status = SCREEN_STATUS_CREATING;
+}
+#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+
 #ifdef CONFIG_FOTA_DOWNLOAD
 void FOTAShowStatus(void)
 {
@@ -1131,7 +1392,7 @@ void FOTAUpdateStatus(void)
 						  FONT_SIZE_16,
 						  "Linking to server...");
 
-		Key_Event_Unregister_Handler();
+		ClearAllKeyHandler();
 		break;
 		
 	case FOTA_STATUS_DOWNLOADING:
@@ -1167,7 +1428,7 @@ void FOTAUpdateStatus(void)
 			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
 		}
 
-		Key_Event_Unregister_Handler();
+		ClearAllKeyHandler();
 		break;
 		
 	case FOTA_STATUS_FINISHED:
@@ -1250,7 +1511,17 @@ void FOTAScreenProcess(void)
 
 void ExitFOTAScreen(void)
 {
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+#ifdef CONFIG_IMG_DATA_UPDATE
+	dl_img_start();
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	dl_font_start();
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	dl_ppg_start();
+#endif
+#else
 	EnterIdleScreen();
+#endif
 }
 
 void EnterFOTAScreen(void)
@@ -1696,6 +1967,17 @@ void EnterStepsScreen(void)
 #ifdef CONFIG_FOTA_DOWNLOAD
 	SetLeftKeyUpHandler(fota_start);
 	SetRightKeyUpHandler(fota_exit);
+#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
 #else
 	SetLeftKeyUpHandler(ExitStepsScreen);
 	SetRightKeyUpHandler(ExitStepsScreen);
@@ -2035,6 +2317,11 @@ void ScreenMsgProcess(void)
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		case SCREEN_ID_FOTA:
 			FOTAScreenProcess();
+			break;
+	#endif
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+		case SCREEN_ID_DL:
+			DlScreenProcess();
 			break;
 	#endif
 		}

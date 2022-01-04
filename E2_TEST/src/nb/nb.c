@@ -2358,6 +2358,9 @@ void NB_init(struct k_work_q *work_q)
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);
 #endif
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+	dl_work_init(work_q);
+#endif
 
 	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
 }

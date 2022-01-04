@@ -236,6 +236,10 @@ void fota_start(void)
 
 void fota_start_confirm(void)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_sleep_out();
+#endif
+
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 	

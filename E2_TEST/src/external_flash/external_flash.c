@@ -21,6 +21,8 @@
 #endif
 #include "logger.h"
 
+//#define FLASH_DEBUG
+
 struct device *spi_flash;
 struct device *gpio_flash;
 
@@ -70,11 +72,15 @@ void Spi_WriteOneByte(uint8_t Dat)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	else
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("ok");
+	#endif
 	}
 }
 /*****************************************************************************
@@ -122,10 +128,13 @@ uint16_t SpiFlash_ReadID(void)
 	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	else
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("TX sent: %x,%x,%x,%x,%x,%x", 
 			spi_tx_buf[0],
 			spi_tx_buf[1],
@@ -143,12 +152,14 @@ uint16_t SpiFlash_ReadID(void)
 			spi_rx_buf[4],
 			spi_rx_buf[5]
 			);
-		
+	#endif	
 		//接收数组最后两个字节才是读取的ID
 		dat|=spi_rx_buf[4]<<8;  
 		dat|=spi_rx_buf[5];
-		
+
+	#ifdef FLASH_DEBUG	
 		LOGD("flash ID: %x", dat);
+	#endif
 	}
 
 
@@ -183,11 +194,15 @@ static uint8_t SpiFlash_ReadSR(void)
 	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	else
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("StatusReg: %x", spi_rx_buf[1]);
+	#endif
 	}
 	
 	return spi_rx_buf[1];
@@ -227,7 +242,9 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	
 	//等待W25Q64FW完成操作
@@ -258,7 +275,9 @@ void SPIFlash_Erase_Chip(void)
 	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	//等待W25Q64FW完成操作
@@ -304,7 +323,9 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	tx_buff.buf = pBuffer;
@@ -315,7 +336,9 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	SpiFlash_CS_HIGH();
@@ -403,7 +426,9 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	//开始读取数据
@@ -428,7 +453,9 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 		err = spi_transceive(spi_flash, &spi_cfg, NULL, &rx_bufs);
 		if(err)
 		{
+		#ifdef FLASH_DEBUG
 			LOGD("SPI error: %d", err);
+		#endif
 		}
 		
 		pBuffer += read_size;
@@ -450,7 +477,9 @@ void SPI_Flash_Init(void)
 	spi_flash = device_get_binding(FLASH_DEVICE);
 	if (!spi_flash) 
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("Could not get %s device", FLASH_DEVICE);
+	#endif
 		return;
 	}
 
@@ -461,12 +490,16 @@ void SPI_Flash_Init(void)
 
 void flash_init(void)
 {
+#ifdef FLASH_DEBUG
 	LOGD("flash_init");
-		
+#endif
+
 	gpio_flash = device_get_binding(FLASH_PORT);
 	if(!gpio_flash)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("Cannot bind gpio device");
+	#endif
 		return;
 	}
 
@@ -474,6 +507,45 @@ void flash_init(void)
 	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 1);
 
 	SPI_Flash_Init();
+}
+
+u8_t strbuf[4096] = {0};
+
+void test_flash_write_and_read(u8_t *buf, u32_t len)
+{
+	static s32_t last_index = -1;
+	s32_t cur_index;
+	u32_t PageByteRemain,addr=0;
+	u32_t date_len = len;
+		
+	LOGD("len:%d", len);
+	
+	addr = IMG_START_ADDR;
+#if 1
+	cur_index = addr/SPIFlash_SECTOR_SIZE;
+	if(cur_index > last_index)
+	{
+		last_index = cur_index;
+		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
+		PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
+		if(PageByteRemain < len)
+		{
+			len -= PageByteRemain;
+			while(1)
+			{
+				SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
+				if(len >= SPIFlash_SECTOR_SIZE)
+					len -= SPIFlash_SECTOR_SIZE;
+				else
+					break;
+			}
+		}
+	}
+#endif
+
+	SpiFlash_Write_Buf(buf, IMG_PEPPA_80X160_ADDR, date_len);
+	SpiFlash_Read(strbuf, IMG_PEPPA_80X160_ADDR, 4096);	
+	LCD_ShowImg_From_Flash(0, 0, addr);
 }
 
 void test_flash(void)
@@ -490,7 +562,7 @@ void test_flash(void)
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
 	LCD_ShowString(0,20,tmpbuf);
 
-#if 0
+#if 1
 	//写之前需要先执行擦除操作
 	LCD_ShowString(0,40,"FLASH开始擦除...");
 	SPIFlash_Erase_Chip();
@@ -648,4 +720,8 @@ void test_flash(void)
 	//SpiFlash_Read(my_rx_buf,0,len);
 	//LCD_ShowString(0,140,"FLASH读出数据:");
 	//LCD_ShowString(0,160,my_rx_buf);
+
+#if 0
+	test_flash_write_and_read(peppa_pig_80X160, 25608);
+#endif
 }

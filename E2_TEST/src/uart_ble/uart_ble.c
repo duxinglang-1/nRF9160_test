@@ -1857,6 +1857,9 @@ void UartMsgProc(void)
 			#ifdef CONFIG_FOTA_DOWNLOAD
 			 && !fota_is_running()
 			#endif
+			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			 && !dl_is_running()
+			#endif
 			#ifdef CONFIG_WIFI
 			 && !wifi_is_working()
 			#endif

@@ -1288,7 +1288,7 @@ void ExitDlImgScreen(void)
 #elif defined(CONFIG_PPG_DATA_UPDATE)
 	dl_ppg_start();
 #else
-	EnterIdleScreen();
+	EnterPoweroffScreen();
 #endif
 }
 #endif
@@ -1299,7 +1299,7 @@ void ExitDlFontScreen(void)
 #ifdef CONFIG_PPG_DATA_UPDATE
 	dl_ppg_start();
 #else
-	EnterIdleScreen();
+	EnterPoweroffScreen();
 #endif
 }
 #endif
@@ -1307,7 +1307,7 @@ void ExitDlFontScreen(void)
 #ifdef CONFIG_PPG_DATA_UPDATE
 void ExitDlPpgScreen(void)
 {
-	EnterIdleScreen();
+	EnterPoweroffScreen();
 }
 #endif
 
@@ -1520,7 +1520,7 @@ void ExitFOTAScreen(void)
 	dl_ppg_start();
 #endif
 #else
-	EnterIdleScreen();
+	EnterPoweroffScreen();
 #endif
 }
 
@@ -1979,7 +1979,7 @@ void EnterStepsScreen(void)
 	SetRightKeyUpHandler(dl_ppg_exit);
 #endif
 #else
-	SetLeftKeyUpHandler(ExitStepsScreen);
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitStepsScreen);
 #endif
 }
@@ -2181,7 +2181,8 @@ void PowerOffShowStatus(void)
 {
 	u16_t x,y,w,h;
 	u8_t str_title[] = "POWER OFF";
-	
+
+	LCD_Clear(BLACK);
 	LCD_DrawRectangle(PWR_OFF_NOTIFY_RECT_X, PWR_OFF_NOTIFY_RECT_Y, PWR_OFF_NOTIFY_RECT_W, PWR_OFF_NOTIFY_RECT_H);
 	LCD_Fill(PWR_OFF_NOTIFY_RECT_X+1, PWR_OFF_NOTIFY_RECT_Y+1, PWR_OFF_NOTIFY_RECT_W-1, PWR_OFF_NOTIFY_RECT_H-1, BLACK);
 	

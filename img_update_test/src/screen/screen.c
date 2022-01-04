@@ -65,6 +65,21 @@ extern u8_t g_rsrp;
 
 static void EnterHRScreen(void);
 
+#ifdef IMG_FONT_FROM_FLASH
+static u32_t logo_img[] = 
+{
+	IMG_DNL_SMILE_1_200X200_ADDR,
+	IMG_DNL_SMILE_2_200X200_ADDR,
+	IMG_DNL_SMILE_3_200X200_ADDR,
+	IMG_DNL_SMILE_4_200X200_ADDR,
+	IMG_DNL_SMILE_5_200X200_ADDR,
+	IMG_DNL_SMILE_6_200X200_ADDR,
+	IMG_DNL_SMILE_7_200X200_ADDR,
+	IMG_DNL_SMILE_8_200X200_ADDR,
+	IMG_DNL_SMILE_9_200X200_ADDR,
+	IMG_DNL_SMILE_10_200X200_ADDR
+};
+#else
 static char *logo_img[] = 
 {
 	IMG_PEPPA_240X240_ADDR,
@@ -73,6 +88,7 @@ static char *logo_img[] =
 	IMG_PEPPA_240X240_ADDR,
 	IMG_PEPPA_240X240_ADDR
 };
+#endif
 
 void ShowBootUpLogo(void)
 {
@@ -80,7 +96,7 @@ void ShowBootUpLogo(void)
 	u16_t x,y,w,h;
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 200, false, EnterIdleScreen);
+	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 20, false, EnterIdleScreen);
 #else
   #ifdef IMG_FONT_FROM_FLASH
 	LCD_ShowImg_From_Flash(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_PEPPA_240X240_ADDR);
@@ -1070,11 +1086,24 @@ void SOSScreenProcess(void)
 void DlShowStatus(void)
 {
 	u16_t x,y,w,h;
-	u8_t str_title[] = "DATA DOWNLOADING";
+	u8_t str_title[128] = {0};
 
 	LCD_Clear(BLACK);
 	//LCD_DrawRectangle(DL_NOTIFY_RECT_X, DL_NOTIFY_RECT_Y, DL_NOTIFY_RECT_W, DL_NOTIFY_RECT_H);
 	//LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_RECT_Y+1, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-1, BLACK);
+
+	switch(g_dl_data_type)
+	{
+	case DL_DATA_IMG:
+		strcpy(str_title, "UI UPGRADING");
+		break;
+	case DL_DATA_FONT:
+		strcpy(str_title, "FONT UPGRADING");
+		break;
+	case DL_DATA_PPG:
+		strcpy(str_title, "PPG_AG UPGRADING");
+		break;
+	}
 	
 	LCD_SetFontSize(FONT_SIZE_16);
 	LCD_MeasureString(str_title, &w, &h);
@@ -1251,16 +1280,40 @@ void DlScreenProcess(void)
 	}
 }
 
-void ExitDlScreen(void)
+#ifdef CONFIG_IMG_DATA_UPDATE
+void ExitDlImgScreen(void)
+{
+#ifdef CONFIG_FONT_DATA_UPDATE
+	dl_font_start();
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	dl_ppg_start();
+#else
+	EnterIdleScreen();
+#endif
+}
+#endif
+
+#ifdef CONFIG_FONT_DATA_UPDATE
+void ExitDlFontScreen(void)
+{
+#ifdef CONFIG_PPG_DATA_UPDATE
+	dl_ppg_start();
+#else
+	EnterIdleScreen();
+#endif
+}
+#endif
+
+#ifdef CONFIG_PPG_DATA_UPDATE
+void ExitDlPpgScreen(void)
 {
 	EnterIdleScreen();
 }
+#endif
+
 
 void EnterDlScreen(void)
 {
-	if(screen_id == SCREEN_ID_DL)
-		return;
-
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -1459,7 +1512,13 @@ void FOTAScreenProcess(void)
 void ExitFOTAScreen(void)
 {
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-	dl_start();
+#ifdef CONFIG_IMG_DATA_UPDATE
+	dl_img_start();
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	dl_font_start();
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	dl_ppg_start();
+#endif
 #else
 	EnterIdleScreen();
 #endif
@@ -1909,8 +1968,16 @@ void EnterStepsScreen(void)
 	SetLeftKeyUpHandler(fota_start);
 	SetRightKeyUpHandler(fota_exit);
 #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
-	SetLeftKeyUpHandler(dl_start);
-	SetRightKeyUpHandler(dl_exit);
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
 #else
 	SetLeftKeyUpHandler(ExitStepsScreen);
 	SetRightKeyUpHandler(ExitStepsScreen);

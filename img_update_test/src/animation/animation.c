@@ -250,9 +250,13 @@ void AnimaShow(u16_t x, u16_t y, u32_t *anima_img, u8_t anima_count, u32_t inter
 	anima_show.callback = callback;
 	
 	anima_head = anima_show.cache;
-	
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(anima_show.x, anima_show.y, anima_show.cache->img_addr);
+#else	
 	LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_show.cache->img_addr);
-	
+#endif
+
 	if(anima_show.count > 1)
 	{
 	#ifdef ANIMA_DEBUG
@@ -290,7 +294,11 @@ static void AnimaShowNextImg(void)
 			LOGD("001");
 		#endif
 			anima_head = anima_show.cache;
+		#ifdef IMG_FONT_FROM_FLASH
+			LCD_ShowImg_From_Flash(anima_show.x, anima_show.y, anima_head->img_addr);
+		#else
 			LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
+		#endif
 			k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 		}
 		else				//²¥·Å½áÊø
@@ -308,7 +316,11 @@ static void AnimaShowNextImg(void)
 	#ifdef ANIMA_DEBUG
 		LOGD("003");
 	#endif
+	#ifdef IMG_FONT_FROM_FLASH
+		LCD_ShowImg_From_Flash(anima_show.x, anima_show.y, anima_head->img_addr);
+	#else
 		LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
+	#endif
 		k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), NULL);
 	}
 }

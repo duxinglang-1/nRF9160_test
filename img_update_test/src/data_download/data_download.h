@@ -41,6 +41,14 @@
 
 typedef enum
 {
+	DL_DATA_IMG,
+	DL_DATA_FONT,
+	DL_DATA_PPG,
+	DL_DATA_MAX
+}DL_DATA_TYPE;
+
+typedef enum
+{
 	DL_STATUS_PREPARE,
 	DL_STATUS_LINKING,
 	DL_STATUS_DOWNLOADING,
@@ -73,13 +81,25 @@ struct download_evt
 typedef void (*dl_callback_t)(const struct download_evt *evt);
 
 extern u8_t g_dl_progress;
+extern DL_DATA_TYPE g_dl_data_type;
 
 extern void dl_work_init(struct k_work_q *work_q);
 extern void dl_init(void);
-extern void dl_start(void);
+#ifdef CONFIG_IMG_DATA_UPDATE
+extern void dl_img_exit(void);
+extern void dl_img_start(void);
+#endif
+#ifdef CONFIG_FONT_DATA_UPDATE
+extern void dl_font_exit(void);
+extern void dl_font_start(void);
+#endif
+#ifdef CONFIG_PPG_DATA_UPDATE
+extern void dl_ppg_exit(void);
+extern void dl_ppg_start(void);
+#endif
+extern void dl_exit(void);
 extern void dl_start_confirm(void);
 extern void dl_reboot_confirm(void);
-extern void dl_exit(void);
 extern bool dl_is_running(void);
 
 extern DL_STATUS_ENUM get_dl_status(void);

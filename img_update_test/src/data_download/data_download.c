@@ -23,13 +23,9 @@
 #define TLS_SEC_TAG 42
 #define DL_SOCKET_RETRIES 2
 
-static bool dl_start_flag = false;
 static bool dl_run_flag = false;
-
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
-
-u8_t g_dl_progress = 0;
 
 static dl_callback_t callback;
 static struct download_client   dlc;
@@ -41,6 +37,9 @@ static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
 static struct k_work dl_work;
 static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
+
+u8_t g_dl_progress = 0;
+DL_DATA_TYPE g_dl_data_type = DL_DATA_IMG;
 
 
 static int modem_configure(void)
@@ -123,9 +122,7 @@ static int download_client_callback(const struct download_client_evt *event)
 			}
 			
 			first_fragment = false;
-	
-			int img_type = dl_target_img_type(event->fragment.buf,	event->fragment.len);
-			err = dl_target_init(img_type, file_size, dl_target_callback_handler);
+			err = dl_target_init(g_dl_data_type, file_size, dl_target_callback_handler);
 			if((err < 0) && (err != -EBUSY))
 			{
 				LOGD("dfu_target_init error %d", err);
@@ -262,42 +259,6 @@ int dl_download_start(const char *host, const char *file, int sec_tag)
 
 	socket_retries_left = DL_SOCKET_RETRIES;
 
-#ifdef PM_S1_ADDRESS
-	/* B1 upgrade is supported, check what B1 slot is active,
-	 * (s0 or s1), and update file to point to correct candidate if
-	 * space separated file is given.
-	 */
-	const char *update;
-	struct fw_info s0;
-	struct fw_info s1;
-
-	err = spm_firmware_info(PM_S0_ADDRESS, &s0);
-	if(err != 0)
-	{
-		return err;
-	}
-
-	err = spm_firmware_info(PM_S1_ADDRESS, &s1);
-	if(err != 0)
-	{
-		return err;
-	}
-
-	bool s0_active = s0.version >= s1.version;
-
-	err = dfu_ctx_mcuboot_set_b1_file(file, s0_active, &update);
-	if(err != 0)
-	{
-		return err;
-	}
-
-	if(update != NULL)
-	{
-		LOGD("B1 update, selected file:\n%s", update);
-		file = update;
-	}
-#endif /* PM_S1_ADDRESS */
-
 	err = download_client_connect(&dlc, host, &config);
 	if(err != 0)
 	{
@@ -317,6 +278,8 @@ int dl_download_start(const char *host, const char *file, int sec_tag)
 /**@brief Start transfer of the file. */
 static void dl_transfer_start(struct k_work *unused)
 {
+	u8_t dl_host[256] = {0};
+	u8_t dl_file[256] = {0};
 	int retval;
 	int sec_tag;
 
@@ -328,24 +291,38 @@ static void dl_transfer_start(struct k_work *unused)
 	sec_tag = TLS_SEC_TAG;
 #endif
 
-	retval = dl_download_start(CONFIG_DATA_DOWNLOAD_HOST,
-				     CONFIG_DATA_DOWNLOAD_FILE,
-				     sec_tag);
-	if (retval != 0)
+	switch(g_dl_data_type)
+	{
+	#ifdef CONFIG_IMG_DATA_UPDATE	
+	case DL_DATA_IMG:
+		strcpy(dl_host, CONFIG_IMG_DATA_DOWNLOAD_HOST);
+		strcpy(dl_file, CONFIG_IMG_DATA_DOWNLOAD_FILE);
+		break;
+	#endif
+
+	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
+		strcpy(dl_host, CONFIG_FONT_DATA_DOWNLOAD_HOST);
+		strcpy(dl_file, CONFIG_FONT_DATA_DOWNLOAD_FILE);		
+		break;
+	#endif
+
+	#ifdef CONFIG_PPG_DATA_UPDATE
+	case DL_DATA_PPG:
+		strcpy(dl_host, CONFIG_PPG_DATA_DOWNLOAD_HOST);
+		strcpy(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
+		break;
+	#endif		
+	}
+	
+	retval = dl_download_start(dl_host, dl_file, sec_tag);
+	if(retval != 0)
 	{
 		LOGD("download_start() failed, err %d", retval);
 		dl_run_flag = false;
 		dl_cur_status = DL_STATUS_ERROR;
 		dl_redraw_pro_flag = true;
 	}
-}
-
-void dl_exit(void)
-{
-	dl_run_flag = false;
-	dl_cur_status = DL_STATUS_MAX;
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
-	ExitDlScreen();
 }
 
 static void dl_timer_handler(struct k_timer *timer)
@@ -394,19 +371,91 @@ bool dl_is_running(void)
 	return dl_run_flag;
 }
 
-void dl_begin(void)
+#ifdef CONFIG_IMG_DATA_UPDATE
+void dl_img_exit(void)
 {
-	dl_start_flag = true;
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	ExitDlImgScreen();
 }
 
-void dl_start(void)
+void dl_img_start(void)
 {
 	if(!dl_run_flag)
 	{
 		dl_run_flag = true;
+		g_dl_data_type = DL_DATA_IMG;
 		dl_cur_status = DL_STATUS_PREPARE;
 		
-		EnterDlScreen();		
+		EnterDlScreen();
+	}
+}
+#endif
+#ifdef CONFIG_FONT_DATA_UPDATE
+void dl_font_exit(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	ExitDlFontScreen();
+}
+
+void dl_font_start(void)
+{
+	if(!dl_run_flag)
+	{
+		dl_run_flag = true;
+		g_dl_data_type = DL_DATA_FONT;
+		dl_cur_status = DL_STATUS_PREPARE;
+		
+		EnterDlScreen();
+	}
+}
+#endif
+#ifdef CONFIG_PPG_DATA_UPDATE
+void dl_ppg_exit(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	ExitDlPpgScreen();
+}
+
+void dl_ppg_start(void)
+{
+	if(!dl_run_flag)
+	{
+		dl_run_flag = true;
+		g_dl_data_type = DL_DATA_PPG;
+		dl_cur_status = DL_STATUS_PREPARE;
+		
+		EnterDlScreen();
+	}
+}
+#endif
+
+void dl_exit(void)
+{
+	switch(g_dl_data_type)
+	{
+	case DL_DATA_IMG:
+	#ifdef CONFIG_IMG_DATA_UPDATE
+		dl_img_exit();
+	#endif
+		break;
+
+	case DL_DATA_FONT:
+	#ifdef CONFIG_FONT_DATA_UPDATE
+		dl_font_exit();
+	#endif
+		break;
+		
+	case DL_DATA_PPG:
+	#ifdef CONFIG_PPG_DATA_UPDATE
+		dl_ppg_exit();
+	#endif 
+		break;
 	}
 }
 
@@ -493,12 +542,6 @@ void DlRedrawProgress(void)
 
 void DlMsgProc(void)
 {
-	if(dl_start_flag)
-	{
-		dl_start_flag = false;
-		dl_start();
-	}
-
 	if(dl_redraw_pro_flag)
 	{
 		dl_redraw_pro_flag = false;

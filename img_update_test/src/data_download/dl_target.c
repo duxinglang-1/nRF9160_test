@@ -18,75 +18,53 @@ static const struct dl_target dl_target_ ## name  = { \
 	.done = dl_target_ ## name ## _done, \
 }
 
-#ifdef CONFIG_DL_TARGET_UI
+#ifdef CONFIG_IMG_DATA_UPDATE
 #include "dl_target_ui.h"
 DEF_DL_TARGET(ui);
 #endif
-#ifdef CONFIG_DFU_TARGET_FONT
+#ifdef CONFIG_FONT_DATA_UPDATE
 #include "dl_target_font.h"
 DEF_DL_TARGET(font);
+#endif
+#ifdef CONFIG_PPG_DATA_UPDATE
+#include "dl_target_ppg.h"
+DEF_DL_TARGET(ppg);
 #endif
 
 #define MIN_SIZE_IDENTIFY_BUF 32
 
 static const struct dl_target *cur_target;
 
-int dl_target_img_type(const void *const buf, size_t len)
-{
-#ifdef CONFIG_DL_TARGET_UI
-	if(dl_target_ui_identify(buf))
-	{
-		return DL_TARGET_IMAGE_TYPE_UI;
-	}
-#endif
-#ifdef CONFIG_DL_TARGET_FONT
-	if(dl_target_font_identify(buf))
-	{
-		return DL_TARGET_IMAGE_TYPE_FONT;
-	}
-#endif
 
-	if(len < MIN_SIZE_IDENTIFY_BUF)
-	{
-		return -EAGAIN;
-	}
-
-	LOGD("No supported image type found");
-	return -ENOTSUP;
-}
-
-int dl_target_init(int img_type, size_t file_size, dl_target_callback_t cb)
+int dl_target_init(DL_DATA_TYPE data_type, size_t file_size, dl_target_callback_t cb)
 {
 	const struct dl_target *new_target = NULL;
 
-#ifdef CONFIG_DL_TARGET_UI
-	if(img_type == DL_TARGET_IMAGE_TYPE_UI)
+	switch(data_type)
 	{
+	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		new_target = &dl_target_ui;
-	}
-#endif
-#ifdef CONFIG_DL_TARGET_FONT
-	if(img_type == DL_TARGET_IMAGE_TYPE_FONT)
-	{
+		break;
+	#endif
+
+	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		new_target = &dl_target_font;
+		break;
+	#endif
+
+	#ifdef CONFIG_PPG_DATA_UPDATE
+	case DL_DATA_PPG:
+		new_target = &dl_target_ppg;
+		break;
+	#endif
 	}
-#endif
 
 	if(new_target == NULL)
 	{
 		LOGD("Unknown image type");
 		return -ENOTSUP;
-	}
-
-	/* The user is re-initializing with an previously aborted target.
-	 * Avoid re-initializing generally to ensure that the download can
-	 * continue where it left off. Re-initializing is required for modem
-	 * upgrades to re-open the DFU socket that is closed on abort.
-	 */
-	if(new_target == cur_target
-	   && img_type != DL_TARGET_IMAGE_TYPE_FONT)
-	{
-		return 0;
 	}
 
 	cur_target = new_target;

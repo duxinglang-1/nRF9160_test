@@ -251,13 +251,33 @@ menu "DATA_DOWNLOAD"
 config DATA_DOWNLOAD_SUPPORT
 	bool "data download support"
 	default n
-config DATA_DOWNLOAD_HOST
+# IMG	
+config IMG_DATA_UPDATE
+	bool "img update support"
+	default n
+config IMG_DATA_DOWNLOAD_HOST
 	string "Download host name"
-config DATA_DOWNLOAD_FILE
+config IMG_DATA_DOWNLOAD_FILE
 	string "The file to download"
-config DATA_VERSION
-	int "Data version"
-	default 1
+
+# FONT
+config FONT_DATA_UPDATE
+	bool "font update support"
+	default n
+config FONT_DATA_DOWNLOAD_HOST
+	string "Download host name"
+config FONT_DATA_DOWNLOAD_FILE
+	string "The file to download"
+
+# PPG
+config PPG_DATA_UPDATE
+	bool "ppg update support"
+	default n
+config PPG_DATA_DOWNLOAD_HOST
+	string "Download host name"
+config PPG_DATA_DOWNLOAD_FILE
+	string "The file to download"
+
 config USE_HTTPS
 	bool
 	prompt "Use HTTPS for download"

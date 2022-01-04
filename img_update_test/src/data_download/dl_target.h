@@ -10,13 +10,11 @@
 #define __DL_TARGET_H__
 
 #include <zephyr/types.h>
+#include "data_download.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define DL_TARGET_IMAGE_TYPE_UI 1
-#define DL_TARGET_IMAGE_TYPE_FONT 2
 
 enum dl_target_evt_id
 {
@@ -36,19 +34,6 @@ struct dl_target {
 };
 
 /**
- * @brief Find the image type for the buffer of bytes recived. Used to determine
- *	  what dl target to initialize.
- *
- * @param[in] buf A buffer of bytes which are the start of an binary firmware
- *		  image.
- * @param[in] len The length of the provided buffer.
- *
- * @return Positive identifier for a supported image type or a negative error
- *	   code identicating reason of failure.
- **/
-int dl_target_img_type(const void *const buf, size_t len);
-
-/**
  * @brief Initialize the resources needed for the specific image type DL
  *	  target.
  *
@@ -59,7 +44,7 @@ int dl_target_img_type(const void *const buf, size_t len);
  *	  To allow continuation of an aborted DL procedure, call the
  *	  'dfu_target_offset_get' function after invoking this function.
  *
- * @param[in] img_type Image type identifier.
+ * @param[in] data_type Image type identifier.
  * @param[in] file_size Size of the current file being downloaded.
  * @param[in] cb Callback function in case the DL operation requires additional
  *		 proceedures to be called.
@@ -68,7 +53,7 @@ int dl_target_img_type(const void *const buf, size_t len);
  *	   code identicating reason of failure.
  *
  **/
-int dl_target_init(int img_type, size_t file_size, dl_target_callback_t cb);
+int dl_target_init(DL_DATA_TYPE data_type, size_t file_size, dl_target_callback_t cb);
 
 /**
  * @brief Get offset of the firmware upgrade

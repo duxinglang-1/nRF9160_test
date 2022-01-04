@@ -1,6 +1,6 @@
 /****************************************Copyright (c)************************************************
-** File Name:			    dl_target_ui.c
-** Descriptions:			data download for ui process source file
+** File Name:			    dl_target_ppg.c
+** Descriptions:			data download for ppg process source file
 ** Created By:				xie biao
 ** Created Date:			2021-12-28
 ** Modified Date:      		2021-12-28 
@@ -15,11 +15,11 @@
 #include "logger.h"
 
 #define MAX_FILE_SEARCH_LEN 500
-#define UI_HEADER_MAGIC 0x96f3b83d
+#define PPG_HEADER_MAGIC 0x96f3b83d
 
 static u32_t rece_count = 0;
 
-bool dl_target_ui_identify(const void *const buf)
+bool dl_target_ppg_identify(const void *const buf)
 {
 	LOGD("begin");
 
@@ -27,7 +27,7 @@ bool dl_target_ui_identify(const void *const buf)
 	return true;
 }
 
-int dl_target_ui_init(size_t file_size, dl_target_callback_t cb)
+int dl_target_ppg_init(size_t file_size, dl_target_callback_t cb)
 {
 	LOGD("begin");
 
@@ -35,7 +35,7 @@ int dl_target_ui_init(size_t file_size, dl_target_callback_t cb)
 	return 0;
 }
 
-int dl_target_ui_offset_get(size_t *out)
+int dl_target_ppg_offset_get(size_t *out)
 {
 	LOGD("begin");
 		
@@ -43,7 +43,7 @@ int dl_target_ui_offset_get(size_t *out)
 	return 0;
 }
 
-int dl_target_ui_write(const void *const buf, size_t len)
+int dl_target_ppg_write(const void *const buf, size_t len)
 {
 	static s32_t last_index = -1;
 	s32_t cur_index;
@@ -51,7 +51,7 @@ int dl_target_ui_write(const void *const buf, size_t len)
 	
 	LOGD("rece_count:%d, len:%d", rece_count, len);
 
-	addr = IMG_START_ADDR+rece_count;
+	addr = PPG_ALGO_FW_ADDR+rece_count;
 	
 	cur_index = addr/SPIFlash_SECTOR_SIZE;
 	if(cur_index > last_index)
@@ -73,23 +73,23 @@ int dl_target_ui_write(const void *const buf, size_t len)
 		}
 	}
 	
-	SpiFlash_Write_Buf(buf, (IMG_START_ADDR+rece_count), len);
+	SpiFlash_Write_Buf(buf, (PPG_ALGO_FW_ADDR+rece_count), len);
 
 	rece_count += len;
 	return 0;
 }
 
-int dl_target_ui_done(bool successful)
+int dl_target_ppg_done(bool successful)
 {
 	int err = 0;
 
 	if(successful)
 	{
-		LOGD("ui data upgrade scheduled. Reset the device to apply");
+		LOGD("ppg data upgrade scheduled. Reset the device to apply");
 	}
 	else
 	{
-		LOGD("ui data upgrade aborted.");
+		LOGD("ppg date upgrade aborted.");
 	}
 
 	return err;

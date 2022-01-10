@@ -50,6 +50,10 @@ SYSTEM_FONT_SIZE system_font = FONT_SIZE_16;
 SYSTEM_FONT_SIZE system_font = FONT_SIZE_24;
 #elif defined(FONT_32)
 SYSTEM_FONT_SIZE system_font = FONT_SIZE_32;
+#elif defined(FONT_48)
+SYSTEM_FONT_SIZE system_font = FONT_SIZE_48;
+#elif defined(FONT_64)
+SYSTEM_FONT_SIZE system_font = FONT_SIZE_64;
 #else
 SYSTEM_FONT_SIZE system_font = FONT_SIZE_16;
 #endif
@@ -266,7 +270,7 @@ void LCD_Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r)
 void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 {
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//列行扫描，每个字符每一列占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=cbyte*(system_font/2);					//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=cbyte*(system_font/2);					//得到字体一个字符对应点阵集所占的字节数	
 	u8_t fontbuf[1024] = {0};
  	u8_t databuf[128] = {0};
 	u32_t i=0;
@@ -318,6 +322,30 @@ void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 			}
 			break;
 	#endif
+
+	#ifdef FONT_48
+		case FONT_SIZE_48:
+			SpiFlash_Read(fontbuf, FONT_ASC_4824_ADDR+csize*num, csize);
+			for(i=0;i<cbyte;i++)
+			{
+				BlockWrite(x,y+i,(system_font/2),1);
+				memcpy(databuf, &fontbuf[(system_font/2)*i],(system_font/2));
+				DispData((system_font/2), databuf);
+			}
+			break;
+	#endif
+
+	#ifdef FONT_64
+		case FONT_SIZE_64:
+			SpiFlash_Read(fontbuf, FONT_ASC_6432_ADDR+csize*num, csize);
+			for(i=0;i<cbyte;i++)
+			{
+				BlockWrite(x,y+i,(system_font/2),1);
+				memcpy(databuf, &fontbuf[(system_font/2)*i],(system_font/2));
+				DispData((system_font/2), databuf);
+			}
+			break;
+	#endif
 	}
 }   
 
@@ -328,7 +356,7 @@ void LCD_ShowEn_from_flash(u16_t x,u16_t y,u8_t num)
 void LCD_ShowCn_from_flash(u16_t x, u16_t y, u16_t num)
 {  							  
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//列行扫描，每个字符每一列占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=cbyte*system_font;						//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=cbyte*system_font;						//得到字体一个字符对应点阵集所占的字节数	
 	u8_t fontbuf[2*1024] = {0};
  	u8_t databuf[256] = {0};
 	u16_t index=0;	
@@ -393,7 +421,7 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 {
 	u8_t temp,t1,t;
 	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*1024] = {0};
 	u8_t fontbuf[256] = {0};
 	u16_t y0=y,x0=x,w=(system_font/2),h=system_font;
@@ -415,6 +443,16 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	#ifdef FONT_32
 		case FONT_SIZE_32:
 			SpiFlash_Read(fontbuf, FONT_ASC_3216_ADDR+csize*num, csize);
+			break;
+	#endif
+	#ifdef FONT_48
+		case FONT_SIZE_48:
+			SpiFlash_Read(fontbuf, FONT_ASC_4824_ADDR+csize*num, csize);
+			break;
+	#endif
+	#ifdef FONT_64
+		case FONT_SIZE_64:
+			SpiFlash_Read(fontbuf, FONT_ASC_6432_ADDR+csize*num, csize);
 			break;
 	#endif
 		default:
@@ -506,7 +544,7 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 	u16_t x0=x,y0=y,w=system_font,h=system_font;
 	u16_t index=0;
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);		//行扫描，每个字符每一行占用的字节数
-	u8_t csize=cbyte*(system_font);						//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=cbyte*(system_font);						//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*1024] = {0};
 	u8_t fontbuf[256] = {0};
 	u32_t i=0;
@@ -628,7 +666,7 @@ u8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mod
 	u8_t temp,t1,t;
 	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*1024] = {0};
 	u8_t fontbuf[256] = {0};
 	u32_t i=0,index_addr,font_addr,data_addr=0;
@@ -758,7 +796,7 @@ u8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uin
 	u8_t temp,t1,t;
 	u16_t x0=x,y0=y,w,h;
 	u8_t cbyte=0;					//行扫描，每个字符每一行占用的字节数
-	u8_t csize=0;					//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=0;					//得到字体一个字符对应点阵集所占的字节数	
 	u8_t databuf[2*1024] = {0};
 	u8_t fontbuf[256] = {0};
 	u32_t i=0,index,font_addr,data_addr=0;
@@ -905,7 +943,7 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 	u8_t temp,t1,t;
 	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
 	u8_t sect=0;
 	u8_t databuf[2*1024] = {0};
 	u8_t fontbuf[256] = {0};
@@ -1323,7 +1361,7 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
     u8_t temp,t1,t,i=0;
 	u16_t y0=y,x0=x,w=(system_font/2),h=system_font;
 	u8_t cbyte=(system_font/2)/8+(((system_font/2)%8)?1:0);		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=cbyte*system_font;		//得到字体一个字符对应点阵集所占的字节数	
 	u8_t fontbuf[256] = {0};	
  	u8_t databuf[2*COL] = {0};
 
@@ -1337,12 +1375,22 @@ void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	#endif
 	#ifdef FONT_24
 		case FONT_SIZE_24:
-			memcpy(fontbuf, asc2_2412[num], csize);	//调用1608字体
+			memcpy(fontbuf, asc2_2412[num], csize);	//调用2412字体
 			break;
 	#endif
 	#ifdef FONT_32
 		case FONT_SIZE_32:
-			memcpy(fontbuf, asc2_3216[num], csize);	//调用1608字体
+			memcpy(fontbuf, asc2_3216[num], csize);	//调用3216字体
+			break;
+	#endif
+	#ifdef FONT_48
+		case FONT_SIZE_48:
+			memcpy(fontbuf, asc2_4824[num], csize);	//调用4824字体
+			break;
+	#endif
+	#ifdef FONT_64
+		case FONT_SIZE_64:
+			memcpy(fontbuf, asc2_6432[num], csize); //调用6432字体
 			break;
 	#endif
 		default:
@@ -1434,7 +1482,7 @@ void LCD_ShowChineseChar(uint16_t x,uint16_t y,uint16_t num,uint8_t mode)
 	u16_t x0=x,y0=y,w=system_font,h=system_font;
 	u16_t index=0;
 	u8_t cbyte=system_font/8+((system_font%8)?1:0);				//行扫描，每个字符每一行占用的字节数
-	u8_t csize=cbyte*(system_font);								//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=cbyte*(system_font);								//得到字体一个字符对应点阵集所占的字节数	
 	u8_t fontbuf[256] = {0};
 	u8_t databuf[2*COL] = {0};
 
@@ -1555,7 +1603,7 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	u8_t temp,t1,t,i=0,*ptr_font;
 	u16_t y0=y,x0=x,w,h;
 	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
-	u8_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
+	u16_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
  	u8_t databuf[2*COL] = {0};
 	u32_t index_addr,data_addr=0;
 
@@ -2466,9 +2514,8 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 //*p:字符串起始地址	
 void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 {
-	uint8_t x0=x;
-	uint8_t width;
-	uint16_t phz=0;
+	u8_t x0=x;
+	u16_t width,phz=0;
 
 	while(*p)
 	{       

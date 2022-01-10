@@ -447,13 +447,20 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#ifdef CONFIG_FOTA_DOWNLOAD	
-		if(!fota_is_running())
+	#if defined(CONFIG_FOTA_DOWNLOAD)||defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+		if(1
+		  #ifdef CONFIG_FOTA_DOWNLOAD
+			&& (!fota_is_running())
+		  #endif/*CONFIG_FOTA_DOWNLOAD*/
+		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			&& (!dl_is_running())
+		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+		)
 	#endif		
 		{
 			AlarmRemindCheck(date_time);
-			TimeCheckSendHealthData();
-			TimeCheckSendLocationData();
+			//TimeCheckSendHealthData();
+			//TimeCheckSendLocationData();
 		}
 	}
 
@@ -618,61 +625,16 @@ void GetSystemTimeStrings(u8_t *str_time)
 
 void GetSystemWeekStrings(u8_t *str_week)
 {
-	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-	u8_t *week_chn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
-	u8_t *week_jpn[15] = {"にちようび", "げつようび", "かようび", "すいようび", "もくようび", "きんようび", "どようび"};
-#ifdef FONTMAKER_UNICODE_FONT
-	u16_t week_uni_en[7][10] = {
-								{0x0053,0x0075,0x006E,0x0064,0x0061,0x0079,0x0000},
-								{0x004D,0x006F,0x006E,0x0064,0x0061,0x0079,0x0000},
-								{0x0054,0x0075,0x0065,0x0073,0x0064,0x0061,0x0079,0x0000},
-								{0x0057,0x0065,0x0064,0x006E,0x0065,0x0073,0x0064,0x0061,0x0079,0x0000},
-								{0x0054,0x0068,0x0075,0x0072,0x0073,0x0064,0x0061,0x0079,0x0000},
-								{0x0046,0x0072,0x0049,0x0064,0x0061,0x0079,0x0000},
-								{0x0053,0x0061,0x0074,0x0075,0x0072,0x0064,0x0061,0x0079,0x0000}
-							};
-	u16_t week_uni_chn[7][4] = {
-								{0x661F,0x671F,0x65E5,0x0000}, 
-								{0x661F,0x671F,0x4E00,0x0000}, 
-								{0x661F,0x671F,0x4E8C,0x0000}, 
-								{0x661F,0x671F,0x4E09,0x0000}, 
-								{0x661F,0x671F,0x56DB,0x0000}, 
-								{0x661F,0x671F,0x4E94,0x0000}, 
-								{0x661F,0x671F,0x516D,0x0000}
-							};
-	u16_t week_uni_jpn[15][6] = {
-								{0x306B,0x3061,0x3088,0x3046,0x3073,0x0000},
-								{0x3052,0x3064,0x3088,0x3046,0x3073,0x0000},
-								{0x304B,0x3088,0x3046,0x3073,0x0000},
-								{0x3059,0x3044,0x3088,0x3046,0x3073,0x0000},
-								{0x3082,0x304F,0x3088,0x3046,0x3073,0x0000},
-								{0x304D,0x3093,0x3088,0x3046,0x3073,0x0000},
-								{0x3069,0x3088,0x3046,0x3073,0x0000}
-							};
-#endif
+	u8_t *week_en[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+	u8_t *week_chn[7] = {"日", "一", "二", "三", "四", "五", "六"};
 
 	switch(global_settings.language)
 	{
 	case LANGUAGE_CHN:
-	#ifdef FONTMAKER_UNICODE_FONT
-		mmi_ucs2cpy(str_week, week_uni_chn[date_time.week]);
-	#else
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
-	#endif
 		break;
 	case LANGUAGE_EN:
-	#ifdef FONTMAKER_UNICODE_FONT
-		mmi_ucs2cpy(str_week, week_uni_en[date_time.week]);
-	#else
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
-	#endif
-		break;
-	case LANGUAGE_JPN:
-	#ifdef FONTMAKER_UNICODE_FONT
-		mmi_ucs2cpy(str_week, week_uni_jpn[date_time.week]);
-	#else
-		strcpy((char*)str_week, (const char*)week_jpn[date_time.week]);
-	#endif
 		break;
 	}
 }

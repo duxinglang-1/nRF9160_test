@@ -9,6 +9,8 @@
 #define FONT_16
 #define FONT_24
 #define FONT_32
+#define FONT_48
+#define FONT_64
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
 //#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
@@ -42,6 +44,12 @@ typedef enum
 #endif
 #ifdef FONT_32
 	FONT_SIZE_32 = 32,
+#endif
+#ifdef FONT_48
+	FONT_SIZE_48 = 48,
+#endif
+#ifdef FONT_64
+	FONT_SIZE_64 = 64,
 #endif
 	FONT_SIZE_MAX
 }SYSTEM_FONT_SIZE;
@@ -92,6 +100,13 @@ extern unsigned char asc2_2412[96][48];
 #ifdef FONT_32
 extern unsigned char asc2_3216[96][64];
 #endif
+#ifdef FONT_48
+extern unsigned char asc2_4824[96][144];
+#endif
+#ifdef FONT_64
+extern unsigned char asc2_6432[96][256];
+#endif
+
 //中文字库
 #ifdef FONT_16
 //extern unsigned char chinese_1616_1[2726][32];

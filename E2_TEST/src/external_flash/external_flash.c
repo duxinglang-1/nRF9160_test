@@ -542,10 +542,6 @@ void test_flash_write_and_read(u8_t *buf, u32_t len)
 		}
 	}
 #endif
-
-	SpiFlash_Write_Buf(buf, IMG_PEPPA_80X160_ADDR, date_len);
-	SpiFlash_Read(strbuf, IMG_PEPPA_80X160_ADDR, 4096);	
-	LCD_ShowImg_From_Flash(0, 0, addr);
 }
 
 void test_flash(void)

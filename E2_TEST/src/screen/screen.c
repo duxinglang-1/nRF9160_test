@@ -1028,12 +1028,20 @@ void SyncScreenProcess(void)
 }
 #endif/*CONFIG_SYNC_SUPPORT*/
 
-void poweroff_leftkeyfunc(void)
+void poweroff_confirm(void)
 {
+	ClearAllKeyHandler();
+
+	if(screen_id == SCREEN_ID_POWEROFF)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_FOTA;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+
 	key_pwroff_flag = true;
 }
 
-void poweroff_rightkeyfunc(void)
+void poweroff_cancel(void)
 {
 	EnterIdleScreen();
 }
@@ -1052,46 +1060,36 @@ void EnterPoweroffScreen(void)
 	scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATING;		
 }
 
+void PowerOffUpdateStatus(void)
+{
+	u32_t *img_anima[8] = {IMG_PWROFF_ANI_1_ADDR,IMG_PWROFF_ANI_2_ADDR,IMG_PWROFF_ANI_3_ADDR,IMG_PWROFF_ANI_4_ADDR,
+							IMG_PWROFF_ANI_5_ADDR,IMG_PWROFF_ANI_6_ADDR,IMG_PWROFF_ANI_7_ADDR,IMG_PWROFF_ANI_8_ADDR};
+
+	LCD_Clear(BLACK);	
+	
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaShow(POW_OFF_RUNNING_ANI_X, POW_OFF_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 500, false, NULL);
+#endif
+
+	LCD_ShowImg_From_Flash(POW_OFF_RUNNING_STR_X, POW_OFF_RUNNING_STR_Y, IMG_PWROFF_RUNNING_STR_ADDR);
+}
+
 void PowerOffShowStatus(void)
 {
 	u16_t x,y,w,h;
-	u8_t str_title[] = "POWER OFF";
 
 	LCD_Clear(BLACK);
-	LCD_DrawRectangle(PWR_OFF_NOTIFY_RECT_X, PWR_OFF_NOTIFY_RECT_Y, PWR_OFF_NOTIFY_RECT_W, PWR_OFF_NOTIFY_RECT_H);
-	LCD_Fill(PWR_OFF_NOTIFY_RECT_X+1, PWR_OFF_NOTIFY_RECT_Y+1, PWR_OFF_NOTIFY_RECT_W-1, PWR_OFF_NOTIFY_RECT_H-1, BLACK);
+
+	LCD_ShowImg_From_Flash(PWR_OFF_ICON_X, PWR_OFF_ICON_Y, IMG_PWROFF_BUTTON_ADDR);
+	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_STR_X, PWR_OFF_NOTIFY_STR_Y, IMG_PWROFF_STR_ADDR);	
+	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_Y, IMG_PWROFF_NO_ADDR);
+	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_Y, IMG_PWROFF_YES_ADDR);
 	
-	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_MeasureString(str_title, &w, &h);
-	x = (w > (PWR_OFF_NOTIFY_RECT_W-2*PWR_OFF_NOTIFY_OFFSET_W))? 0 : ((PWR_OFF_NOTIFY_RECT_W-2*PWR_OFF_NOTIFY_OFFSET_W)-w)/2;
-	x += (PWR_OFF_NOTIFY_RECT_X+PWR_OFF_NOTIFY_OFFSET_W);
-	y = PWR_OFF_NOTIFY_RECT_Y+2;
-	LCD_ShowString(x,y,str_title);
-
-	ShowStringsInRect(PWR_OFF_NOTIFY_STRING_X, 
-					  PWR_OFF_NOTIFY_STRING_Y, 
-					  PWR_OFF_NOTIFY_STRING_W, 
-					  PWR_OFF_NOTIFY_STRING_H, 
-					  FONT_SIZE_16, 
-					  "Are you sure you want to turn it off?");
-
-	LCD_DrawRectangle(PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_H);
-	LCD_MeasureString("SOS(Y)", &w, &h);
-	x = PWR_OFF_NOTIFY_YES_X+(PWR_OFF_NOTIFY_YES_W-w)/2;
-	y = PWR_OFF_NOTIFY_YES_Y+(PWR_OFF_NOTIFY_YES_H-h)/2;	
-	LCD_ShowString(x,y,"SOS(Y)");
-
-	LCD_DrawRectangle(PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_H);
-	LCD_MeasureString("PWR(N)", &w, &h);
-	x = PWR_OFF_NOTIFY_NO_X+(PWR_OFF_NOTIFY_NO_W-w)/2;
-	y = PWR_OFF_NOTIFY_NO_Y+(PWR_OFF_NOTIFY_NO_H-h)/2;	
-	LCD_ShowString(x,y,"PWR(N)");
-
-	SetLeftKeyUpHandler(poweroff_leftkeyfunc);
-	SetRightKeyUpHandler(poweroff_rightkeyfunc);
+	SetLeftKeyUpHandler(poweroff_confirm);
+	SetRightKeyUpHandler(poweroff_cancel);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_leftkeyfunc);
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_rightkeyfunc);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_confirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_cancel);
 #endif
 }
 
@@ -1100,13 +1098,13 @@ void PowerOffScreenProcess(void)
 	switch(scr_msg[SCREEN_ID_POWEROFF].act)
 	{
 	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_POWEROFF].status = SCREEN_STATUS_CREATED;
 
 		PowerOffShowStatus();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		PowerOffUpdateStatus();
 		break;
 	}
 	

@@ -51,7 +51,8 @@
 #endif
 #include "logger.h"
 
-static u8_t scr_index=0;
+static u8_t scr_index = 0;
+static u8_t bat_charging_index = 0;
 
 static void NotifyTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
@@ -317,10 +318,9 @@ void IdleShowDateTime(void)
 	IdleShowSystemWeek();
 }
 
-void IdleShowBatSoc(void)
+void IdleUpdateBatSoc(void)
 {
 	static bool flag = true;
-	static u8_t index = 0;
 	u16_t w,h;
 	u8_t strbuf[128] = {0};
 
@@ -339,20 +339,52 @@ void IdleShowBatSoc(void)
 			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
 		}
 		
-		index++;
-		if(index > 10)
-		 index = 0;
+		bat_charging_index++;
+		if(bat_charging_index > 10)
+		 bat_charging_index = 0;
 
-		if(index == 0)
+		if(bat_charging_index == 0)
 			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, IDLE_BAT_INNER_RECT_W, IDLE_BAT_INNER_RECT_H, BLACK);
 		else
-			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (index*IDLE_BAT_INNER_RECT_W)/10, IDLE_BAT_INNER_RECT_H, GREEN);
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (bat_charging_index*IDLE_BAT_INNER_RECT_W)/10, IDLE_BAT_INNER_RECT_H, GREEN);
 	}
 	else
 	{
 		flag = true;
-		index = g_bat_soc/10;
+		bat_charging_index = g_bat_soc/10;
 		
+		if(g_bat_soc >= 20)
+		{
+			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, GREEN);
+		}
+		else
+		{
+			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_RED_ADDR);
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, RED);
+		}
+	}
+}
+
+void IdleShowBatSoc(void)
+{
+	u16_t w,h;
+	u8_t strbuf[128] = {0};
+
+	LCD_SetFontSize(FONT_SIZE_16);
+	sprintf(strbuf, "%02d%%", g_bat_soc);
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((IDLE_BAT_X-w)-2, IDLE_BAT_PERCENT_Y, strbuf);
+
+	bat_charging_index = g_bat_soc/10;
+	
+	if(charger_is_connected && (g_chg_status == BAT_CHARGING_PROGRESS))
+	{
+		LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
+		LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, GREEN);
+	}
+	else
+	{
 		if(g_bat_soc >= 20)
 		{
 			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
@@ -494,7 +526,7 @@ void IdleScreenProcess(void)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BAT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BAT);
-			IdleShowBatSoc();
+			IdleUpdateBatSoc();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_TIME)
 		{

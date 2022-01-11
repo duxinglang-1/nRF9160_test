@@ -57,7 +57,6 @@ config MQTT_PAYLOAD_BUFFER_SIZE
 	int "MQTT payload buffer size"
 	default 128
 
-#add by liming
 config SEC_TAG
 	int "Security tag to use for the connection"
 	default 16842753
@@ -77,7 +76,6 @@ config LTE_EDRX_ENABLE
 
 config LTE_RAI_ENABLE
 	bool "Enable LTE Release Assistance Indication"
-	
 endmenu
 
 menu "WATCH DOG"
@@ -87,7 +85,6 @@ config WATCHDOG_TIMEOUT_MSEC
 endmenu
 
 menu "GPS"
-
 choice
 	prompt "GPS device"
 	default GPS_USE_SIM
@@ -106,7 +103,6 @@ config GPS_USE_EXTERNAL
 	help
 	  Provide a GPS device that location data will be fetched from and
 	  sent to nRF Cloud
-
 endchoice
 
 config GPS_DEV_NAME
@@ -200,55 +196,47 @@ config GPS_START_ON_MOTION
 	  When accelerometer detects movement, and GPS is enabled, update GPS
 	  position, but if no movement, wait a longer delay between updates
 	  to conserve power.
-
 endmenu # GPS
 
 menu "ANIMATION"
-
 config ANIMATION_SUPPORT
 	bool "animation support"
 	default n
-
 endmenu #ANIMATION
 
 menu "TOUCH"
-
 config TOUCH_SUPPORT
 	bool "touch support"
 	default n
-	
 endmenu #TOUCH
 
-
 menu "PPG"
-
 config PPG_SUPPORT
 	bool "ppg support"
 	default n
-	
 endmenu #PPG
 
 
 menu "IMU"
-
 config IMU_SUPPORT
 	bool "imu support"
 	default n
-	
 endmenu #IMU
 
-
 menu "AUDIO"
-
 config AUDIO_SUPPORT
 	bool "ppg support"
 	default n
-	
 endmenu #AUDIO
 
 
-menu "FOTA_MQTT"
+menu "TEMPERATURE"
+config TEMP_SUPPORT
+	bool "temperature support"
+	default n
+endmenu #TEMPERATURE
 
+menu "FOTA_MQTT"
 config FOTA_DOWNLOAD_HOST
 	string "Download host name"
 
@@ -263,8 +251,8 @@ config USE_HTTPS
 	bool
 	prompt "Use HTTPS for download"
 	depends on DOWNLOAD_CLIENT_TLS
-
 endmenu #FOTA_MQTT
+
 
 menu "Zephyr Kernel"
 source "$ZEPHYR_BASE/Kconfig.zephyr"

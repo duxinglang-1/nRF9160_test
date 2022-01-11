@@ -145,6 +145,32 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		MenuStartGPS();
 	}
+	else if(screen_id == SCREEN_ID_NB_TEST)
+	{
+		MenuStartNB();
+	}
+	else if(screen_id == SCREEN_ID_BLE_TEST)
+	{
+		
+	}
+#ifdef CONFIG_WIFI	
+	else if(screen_id == SCREEN_ID_WIFI_TEST)
+	{
+		MenuStartWifi();
+	}
+#endif	
+#ifdef CONFIG_FOTA_DOWNLOAD	
+	else if(screen_id == SCREEN_ID_FOTA)
+	{
+		MenuStartFOTA();
+	}
+#endif
+#ifdef CONFIG_SYNC_SUPPORT
+	else if(screen_id == SCREEN_ID_SYNC)
+	{
+		MenuStartSync();
+	}
+#endif
 }
 
 void EnterNotifyScreen(void)
@@ -633,7 +659,37 @@ void HeartRateScreenProcess(void)
 	
 	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_NO;
 }
-#endif
+
+void ExitHRScreen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+	
+	if(PPGIsWorking())
+		MenuStopPPG();
+		
+	EnterIdleScreen();
+}
+
+void EnterHRScreen(void)
+{
+	if(screen_id == SCREEN_ID_HR)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_HR;	
+	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+	SetLeftKeyUpHandler(EnterGPSTestScreen);
+	SetRightKeyUpHandler(ExitHRScreen);
+}
+#endif/*CONFIG_PPG_SUPPORT*/
 
 void ShowStringsInRect(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, SYSTEM_FONT_SIZE font_size, u8_t *strbuf)
 {
@@ -963,13 +1019,8 @@ void SyncUpdateStatus(void)
 		break;
 
 	case SYNC_STATUS_LINKING:
-		LCD_Fill(SYNC_TEXT_X, SYNC_TEXT_Y, SYNC_TEXT_W, SYNC_TEXT_W, BLACK);
-
-		LCD_ShowImg_From_Flash(IDLE_SIGNAL_X, IDLE_SIGNAL_Y, IMG_SYNC_LOGO_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_STR_ADDR);
-		
 	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaShow(SYNC_ANIMA_X, SYNC_ANIMA_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+		AnimaShow(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
 	#endif
 		break;
 		
@@ -977,10 +1028,10 @@ void SyncUpdateStatus(void)
 	#ifdef CONFIG_ANIMATION_SUPPORT 
 		AnimaStopShow();
 	#endif
-		LCD_Fill(SYNC_ANIMA_X, SYNC_ANIMA_Y, SYNC_ANIMA_W, SYNC_ANIMA_H, BLACK);
 	
-		LCD_ShowImg_From_Flash(IDLE_SIGNAL_X, IDLE_SIGNAL_Y, IMG_SYNC_FINISH_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_STR_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_FINISH_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
 
 		SetLeftKeyUpHandler(ExitSyncDataScreen);
 		break;
@@ -989,9 +1040,10 @@ void SyncUpdateStatus(void)
 	#ifdef CONFIG_ANIMATION_SUPPORT 
 		AnimaStopShow();
 	#endif
-		LCD_Fill(SYNC_ANIMA_X, SYNC_ANIMA_Y, SYNC_ANIMA_W, SYNC_ANIMA_H, BLACK);
-		LCD_ShowImg_From_Flash(IDLE_SIGNAL_X, IDLE_SIGNAL_Y, IMG_SYNC_ERR_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_STR_ADDR);
+	
+		LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_ERR_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
 
 		SetLeftKeyUpHandler(ExitSyncDataScreen);
 		break;
@@ -1002,8 +1054,9 @@ void SyncShowStatus(void)
 {
 	LCD_Clear(BLACK);
 
-	LCD_ShowImg_From_Flash(IDLE_SIGNAL_X, IDLE_SIGNAL_Y, IMG_SYNC_LOGO_ADDR);
-	LCD_ShowImg_From_Flash(SYNC_TEXT_X, SYNC_TEXT_Y, IMG_SYNC_STR_ADDR);
+	LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_LOGO_ADDR);
+	LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
+	LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
 }
 
 void SyncScreenProcess(void)
@@ -1569,154 +1622,6 @@ void EnterFOTAScreen(void)
 #endif/*CONFIG_FOTA_DOWNLOAD*/
 
 #ifdef CONFIG_IMU_SUPPORT
-void SleepScreenProcess(void)
-{
-	u16_t x,y,w,h;
-	u16_t deep_sleep,light_sleep;
-	u8_t notify[64] = "Sleep";
-	u8_t tmpbuf[64] = {0};
-	
-	switch(scr_msg[SCREEN_ID_SLEEP].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATED;
-				
-		LCD_Clear(BLACK);
-		LCD_SetFontSize(FONT_SIZE_24);
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 50;
-		LCD_ShowString(x,y,notify);
-
-		GetSleepTimeData(&deep_sleep, &light_sleep);
-		LCD_SetFontSize(FONT_SIZE_16);
-		LCD_MeasureString("TOTAL_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 100;
-		LCD_ShowString(x,y,"TOTAL_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep+light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("DEEP_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,"DEEP_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep);
-		LCD_ShowString(x+12*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("LIGHT_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 140;
-		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		GetSleepTimeData(&deep_sleep, &light_sleep);
-		LCD_SetFontSize(FONT_SIZE_16);
-		LCD_MeasureString("TOTAL_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 100;
-		LCD_ShowString(x,y,"TOTAL_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep+light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("DEEP_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,"DEEP_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", deep_sleep);
-		LCD_ShowString(x+12*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("LIGHT_SLEEP:        ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 140;
-		LCD_ShowString(x,y,"LIGHT_SLEEP:        ");
-		sprintf(tmpbuf, "%d (min)", light_sleep);
-		LCD_ShowString(x+13*FONT_SIZE_16/2, y, tmpbuf);
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
-}
-
-void StepsScreenProcess(void)
-{
-	u16_t x,y,w,h;
-	u16_t steps,calorie,distance;
-	u8_t notify[64] = "Sport";
-	u8_t tmpbuf[64] = {0};
-	
-	switch(scr_msg[SCREEN_ID_STEPS].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATED;
-				
-		LCD_Clear(BLACK);
-		LCD_SetFontSize(FONT_SIZE_24);
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 50;
-		LCD_ShowString(x,y,notify);
-
-		GetSportData(&steps, &calorie, &distance);
-		LCD_SetFontSize(FONT_SIZE_16);
-		
-		LCD_MeasureString("Steps:     ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 100;
-		LCD_ShowString(x, y, "Steps:     ");
-		sprintf(tmpbuf, "%d", steps);
-		LCD_ShowString(x+7*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("Distance:     ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,"Distance:     ");
-		sprintf(tmpbuf, "%d", distance);
-		LCD_ShowString(x+10*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("Calorie:     ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 140;
-		LCD_ShowString(x,y,"Calorie:     ");
-		sprintf(tmpbuf, "%d", calorie);
-		LCD_ShowString(x+9*FONT_SIZE_16/2, y, tmpbuf);		
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		GetSportData(&steps, &calorie, &distance);
-		LCD_SetFontSize(FONT_SIZE_16);
-		
-		LCD_MeasureString("Steps:     ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 100;
-		LCD_ShowString(x, y, "Steps:     ");
-		sprintf(tmpbuf, "%d", steps);
-		LCD_ShowString(x+7*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("Distance:     ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,"Distance:     ");
-		sprintf(tmpbuf, "%d", distance);
-		LCD_ShowString(x+10*FONT_SIZE_16/2, y, tmpbuf);
-
-		LCD_MeasureString("Calorie:     ",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 140;
-		LCD_ShowString(x,y,"Calorie:     ");
-		sprintf(tmpbuf, "%d", calorie);
-		LCD_ShowString(x+9*FONT_SIZE_16/2, y, tmpbuf);
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
-}
-
 void FallShowStatus(void)
 {
 #if 0
@@ -1775,6 +1680,206 @@ void FallScreenProcess(void)
 	}
 	
 	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_NO;
+}
+
+void SleepScreenProcess(void)
+{
+	u16_t x,y,w,h;
+	u16_t deep_sleep,light_sleep;
+	u8_t tmpbuf[64] = {0};
+	
+	switch(scr_msg[SCREEN_ID_SLEEP].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATED;
+				
+		LCD_Clear(BLACK);
+		
+		LCD_ShowImg_From_Flash(SLEEP_TOTAL_ICON_X, SLEEP_TOTAL_ICON_Y, IMG_SLEEP_ANI_3_ADDR);
+		LCD_ShowImg_From_Flash(SLEEP_TOTAL_UNIT_HR_X, SLEEP_TOTAL_UNIT_HR_Y, IMG_SLEEP_HOUR_ADDR);
+		LCD_ShowImg_From_Flash(SLEEP_TOTAL_UNIT_MIN_X, SLEEP_TOTAL_UNIT_MIN_Y, IMG_SLEEP_MIN_ADDR);
+		LCD_ShowImg_From_Flash(SLEEP_SEP_LINE_X, SLEEP_SEP_LINE_Y, IMG_SLEEP_LINE_ADDR);
+		LCD_ShowImg_From_Flash(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, IMG_SLEEP_LIGHT_ICON_ADDR);
+		LCD_ShowImg_From_Flash(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, IMG_SLEEP_DEEP_ICON_ADDR);
+
+		GetSleepTimeData(&deep_sleep, &light_sleep);
+		
+		LCD_SetFontSize(FONT_SIZE_32);
+		sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)/60);
+		LCD_ShowString(SLEEP_TOTAL_STR_HR_X, SLEEP_TOTAL_STR_HR_Y, tmpbuf);
+		sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)%60);
+		LCD_ShowString(SLEEP_TOTAL_STR_MIN_X, SLEEP_TOTAL_STR_MIN_Y, tmpbuf);
+
+		LCD_SetFontSize(FONT_SIZE_24);
+		sprintf(tmpbuf, "%02d:%02d", light_sleep/60, light_sleep%60);
+		LCD_ShowString(SLEEP_LIGHT_STR_X, SLEEP_LIGHT_STR_Y, tmpbuf);
+		sprintf(tmpbuf, "%02d:%02d", deep_sleep/60, deep_sleep%60);
+		LCD_ShowString(SLEEP_DEEP_STR_X, SLEEP_DEEP_STR_Y, tmpbuf);
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		GetSleepTimeData(&deep_sleep, &light_sleep);
+		
+		LCD_SetFontSize(FONT_SIZE_32);
+		sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)/60);
+		LCD_ShowString(SLEEP_TOTAL_STR_HR_X, SLEEP_TOTAL_STR_HR_Y, tmpbuf);
+		sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)%60);
+		LCD_ShowString(SLEEP_TOTAL_STR_MIN_X, SLEEP_TOTAL_STR_MIN_Y, tmpbuf);
+
+		LCD_SetFontSize(FONT_SIZE_24);
+		sprintf(tmpbuf, "%02d:%02d", light_sleep/60, light_sleep%60);
+		LCD_ShowString(SLEEP_LIGHT_STR_X, SLEEP_LIGHT_STR_Y, tmpbuf);
+		sprintf(tmpbuf, "%02d:%02d", deep_sleep/60, deep_sleep%60);
+		LCD_ShowString(SLEEP_DEEP_STR_X, SLEEP_DEEP_STR_Y, tmpbuf);
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_NO;
+}
+
+void ExitSleepScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterSleepScreen(void)
+{
+	if(screen_id == SCREEN_ID_SLEEP)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SLEEP;	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+
+	MenuStopGPS();
+
+#ifdef CONFIG_PPG_SUPPORT
+	SetLeftKeyUpHandler(EnterHRScreen);
+#elif defined(CONFIG_SYNC_SUPPORT)
+	SetLeftKeyUpHandler(EnterSyncDataScreen);
+#else
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#endif
+	SetRightKeyUpHandler(ExitSleepScreen);
+}
+
+void StepsScreenProcess(void)
+{
+	u16_t x,y,w,h;
+	u16_t steps,calorie,distance;
+	u8_t strbuf[64] = {0};
+	u8_t tmpbuf[64] = {0};
+	
+	switch(scr_msg[SCREEN_ID_STEPS].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATED;
+				
+		LCD_Clear(BLACK);
+		
+		LCD_ShowImg_From_Flash(IMU_STEP_ICON_X, IMU_STEP_ICON_Y, IMG_STEP_ANI_1_ADDR);
+		LCD_ShowImg_From_Flash(IMU_STEP_UNIT_X, IMU_STEP_UNIT_Y, IMG_STEP_ICON_ADDR);
+		LCD_ShowImg_From_Flash(IMU_SEP_LINE_X, IMU_SEP_LINE_Y, IMG_STEP_LINE_ADDR);
+		LCD_ShowImg_From_Flash(IMU_CAL_ICON_X, IMU_CAL_ICON_Y, IMG_STEP_CAL_ICON_ADDR);
+		LCD_ShowImg_From_Flash(IMU_CAL_UNIT_X, IMU_CAL_UNIT_Y, IMG_STEP_KCAL_ADDR);
+		LCD_ShowImg_From_Flash(IMU_DIS_ICON_X, IMU_DIS_ICON_Y, IMG_STEP_DIS_ICON_ADDR);
+		LCD_ShowImg_From_Flash(IMU_DIS_UNIT_X, IMU_DIS_UNIT_Y, IMG_STEP_KM_ADDR);
+
+		GetSportData(&steps, &calorie, &distance);
+		
+		LCD_SetFontSize(FONT_SIZE_32);
+		
+		sprintf(strbuf, "%d", steps);
+		LCD_MeasureString(strbuf,&w,&h);
+		LCD_ShowString(IMU_STEP_UNIT_X-w-5, IMU_STEP_STR_Y, strbuf);
+
+		LCD_SetFontSize(FONT_SIZE_32);
+		
+		sprintf(strbuf, "%d", calorie);
+		LCD_MeasureString(strbuf,&w,&h);
+		LCD_ShowString(IMU_CAL_UNIT_X-w-5, IMU_CAL_STR_Y, strbuf);	
+
+		sprintf(strbuf, "%d.%d", (distance/1000), (distance%1000));
+		LCD_MeasureString(strbuf,&w,&h);
+		LCD_ShowString(IMU_DIS_UNIT_X-w-5, IMU_DIS_STR_Y, strbuf);
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		GetSportData(&steps, &calorie, &distance);
+
+		LCD_SetFontSize(FONT_SIZE_32);
+		
+		sprintf(strbuf, "%0d", steps);
+		LCD_MeasureString(strbuf,&w,&h);
+		LCD_Fill(IMU_STEP_STR_X, IMU_STEP_STR_Y, IMU_STEP_STR_W, IMU_STEP_STR_H, BLACK);
+		LCD_ShowString(IMU_STEP_UNIT_X-w-5, IMU_STEP_STR_Y, strbuf);
+
+		LCD_SetFontSize(FONT_SIZE_32);
+		
+		sprintf(strbuf, "%d", calorie);
+		LCD_MeasureString(strbuf,&w,&h);
+		LCD_Fill(IMU_CAL_STR_X, IMU_CAL_STR_Y, IMU_CAL_STR_W, IMU_CAL_STR_H, BLACK);
+		LCD_ShowString(IMU_CAL_UNIT_X-w-5, IMU_CAL_STR_Y, strbuf);	
+
+		sprintf(strbuf, "%d.%d", (distance/1000), (distance%1000));
+		LCD_MeasureString(strbuf,&w,&h);
+		LCD_Fill(IMU_DIS_STR_X, IMU_DIS_STR_Y, IMU_DIS_STR_W, IMU_DIS_STR_H, BLACK);
+		LCD_ShowString(IMU_DIS_UNIT_X-w-5, IMU_DIS_STR_Y, strbuf);
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
+}
+
+void ExitStepsScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterStepsScreen(void)
+{
+	if(screen_id == SCREEN_ID_STEPS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_STEPS;	
+	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
+
+#if 0
+#ifdef CONFIG_FOTA_DOWNLOAD
+	SetLeftKeyUpHandler(fota_start);
+	SetRightKeyUpHandler(fota_exit);
+#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
+#else
+	SetLeftKeyUpHandler(EnterSleepScreen);
+	SetRightKeyUpHandler(ExitStepsScreen);
+#endif
+#else
+	SetLeftKeyUpHandler(EnterSleepScreen);
+	SetRightKeyUpHandler(ExitStepsScreen);
+#endif
 }
 #endif
 
@@ -1941,7 +2046,7 @@ void EnterIdleScreen(void)
 	SetLeftKeyUpHandler(EnterHRScreen);
 	SetRightKeyUpHandler(EnterIdleScreen);
 #else
-	SetLeftKeyUpHandler(EnterGPSTestScreen);
+	SetLeftKeyUpHandler(EnterStepsScreen);
 	SetRightKeyUpHandler(EnterIdleScreen);
 #endif
 }
@@ -1973,72 +2078,6 @@ void EnterFindDeviceScreen(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
 }
-
-#ifdef CONFIG_IMU_SUPPORT
-void ExitStepsScreen(void)
-{
-	EnterIdleScreen();
-}
-
-void EnterStepsScreen(void)
-{
-	if(screen_id == SCREEN_ID_STEPS)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_STEPS;	
-	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
-
-#ifdef CONFIG_FOTA_DOWNLOAD
-	SetLeftKeyUpHandler(fota_start);
-	SetRightKeyUpHandler(fota_exit);
-#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
-#ifdef CONFIG_IMG_DATA_UPDATE
-	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
-#elif defined(CONFIG_FONT_DATA_UPDATE)
-	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
-#elif defined(CONFIG_PPG_DATA_UPDATE)
-	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
-#endif
-#else
-	SetLeftKeyUpHandler(EnterPoweroffScreen);
-	SetRightKeyUpHandler(ExitStepsScreen);
-#endif
-}
-
-void ExitSleepScreen(void)
-{
-	EnterIdleScreen();
-}
-
-void EnterSleepScreen(void)
-{
-	if(screen_id == SCREEN_ID_SLEEP)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_SLEEP;	
-	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
-
-	k_timer_stop(&mainmenu_timer);
-
-	MenuStopGPS();
-
-	SetLeftKeyUpHandler(EnterStepsScreen);
-	SetRightKeyUpHandler(ExitSleepScreen);
-}
-#endif
 
 void ExitGPSTestScreen(void)
 {
@@ -2109,38 +2148,6 @@ void EnterSOSScreen(void)
 	scr_msg[SCREEN_ID_SOS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
 }
-
-#ifdef CONFIG_PPG_SUPPORT
-void ExitHRScreen(void)
-{
-	k_timer_stop(&mainmenu_timer);
-	
-	if(PPGIsWorking())
-		MenuStopPPG();
-		
-	EnterIdleScreen();
-}
-
-void EnterHRScreen(void)
-{
-	if(screen_id == SCREEN_ID_HR)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_HR;	
-	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATING;
-
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
-	SetLeftKeyUpHandler(EnterGPSTestScreen);
-	SetRightKeyUpHandler(ExitHRScreen);
-}
-#endif/*CONFIG_PPG_SUPPORT*/
 
 void EnterFallScreen(void)
 {

@@ -18,18 +18,18 @@ extern "C" {
 #endif
 
 //synchronism data
-#define SYNC_ICON_W	59
-#define SYNC_ICON_H	32
-#define SYNC_ICON_X	23
-#define SYNC_ICON_Y	0
-#define SYNC_TEXT_W	96
-#define SYNC_TEXT_H	32
-#define SYNC_TEXT_X	((LCD_WIDTH-SYNC_TEXT_W)/2)
-#define SYNC_TEXT_Y	32
-#define SYNC_ANIMA_W	21
-#define SYNC_ANIMA_H	8
-#define SYNC_ANIMA_X	((LCD_WIDTH-SYNC_ANIMA_W)/2)
-#define SYNC_ANIMA_Y	56
+#define SYNC_ICON_W					100
+#define SYNC_ICON_H					104
+#define SYNC_ICON_X					((LCD_WIDTH-SYNC_ICON_W)/2)
+#define SYNC_ICON_Y					10
+#define SYNC_STR_W					92
+#define SYNC_STR_H					45
+#define SYNC_STR_X					((LCD_WIDTH-SYNC_STR_W)/2)
+#define SYNC_STR_Y					133
+#define SYNC_RUNNING_ANI_W			81
+#define SYNC_RUNNING_ANI_H			13
+#define SYNC_RUNNING_ANI_X			((LCD_WIDTH-SYNC_RUNNING_ANI_W)/2)
+#define SYNC_RUNNING_ANI_Y			212
 
 typedef enum
 {

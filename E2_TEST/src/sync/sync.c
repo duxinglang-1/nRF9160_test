@@ -31,6 +31,7 @@ SYNC_STATUS sync_state = SYNC_STATUS_IDLE;
 
 static bool sync_start_flag = false;
 static bool sync_status_change_flag = false;
+static bool sync_redraw_flag = false;
 
 static void SyncTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sync_timer, SyncTimerOutCallBack, NULL);
@@ -135,7 +136,7 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 		#ifdef CONFIG_ANIMATION_SUPPORT 
 			AnimaStopShow();
 		#endif
-			SyncUpdateStatus();
+			sync_redraw_flag = true;
 			k_timer_start(&sync_timer, K_SECONDS(3), NULL);
 			break;
 		}
@@ -148,6 +149,12 @@ void SyncMsgProcess(void)
 	{
 		SyncDataStart();
 		sync_start_flag = false;
+	}
+
+	if(sync_redraw_flag)
+	{
+		sync_redraw_flag = false;
+		SyncUpdateStatus();
 	}
 	
 	if(sync_status_change_flag)

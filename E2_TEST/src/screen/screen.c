@@ -317,8 +317,10 @@ void IdleShowDateTime(void)
 	IdleShowSystemWeek();
 }
 
-void IdleUpdateBatSoc(void)
+void IdleShowBatSoc(void)
 {
+	static bool flag = true;
+	static u8_t index = 0;
 	u16_t w,h;
 	u8_t strbuf[128] = {0};
 
@@ -329,37 +331,38 @@ void IdleUpdateBatSoc(void)
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((IDLE_BAT_X-w)-2, IDLE_BAT_PERCENT_Y, strbuf);
 
-	if(g_bat_soc >= 20)
+	if(charger_is_connected && (g_chg_status == BAT_CHARGING_PROGRESS))
 	{
-		LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
-		LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, GREEN);
+		if(flag)
+		{
+			flag = false;
+			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
+		}
+		
+		index++;
+		if(index > 10)
+		 index = 0;
+
+		if(index == 0)
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, IDLE_BAT_INNER_RECT_W, IDLE_BAT_INNER_RECT_H, BLACK);
+		else
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (index*IDLE_BAT_INNER_RECT_W)/10, IDLE_BAT_INNER_RECT_H, GREEN);
 	}
 	else
 	{
-		LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_RED_ADDR);
-		LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, RED);
-	}
-}
-
-void IdleShowBatSoc(void)
-{
-	u16_t w,h;
-	u8_t strbuf[128] = {0};
-
-	LCD_SetFontSize(FONT_SIZE_16);
-	sprintf(strbuf, "%02d%%", g_bat_soc);
-	LCD_MeasureString(strbuf, &w, &h);
-	LCD_ShowString((IDLE_BAT_X-w)-2, IDLE_BAT_PERCENT_Y, strbuf);
-
-	if(g_bat_soc >= 20)
-	{
-		LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
-		LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, GREEN);
-	}
-	else
-	{
-		LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_RED_ADDR);
-		LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, RED);
+		flag = true;
+		index = g_bat_soc/10;
+		
+		if(g_bat_soc >= 20)
+		{
+			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, GREEN);
+		}
+		else
+		{
+			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_RED_ADDR);
+			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, RED);
+		}
 	}
 }
 
@@ -491,7 +494,7 @@ void IdleScreenProcess(void)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BAT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BAT);
-			IdleUpdateBatSoc();
+			IdleShowBatSoc();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_TIME)
 		{
@@ -618,7 +621,6 @@ void FindDeviceScreenProcess(void)
 void HeartRateScreenProcess(void)
 {
 	u16_t x,y,w,h;
-	u8_t notify[64] = "Heart Rate";
 	u8_t tmpbuf[64] = {0};
 	
 	switch(scr_msg[SCREEN_ID_HR].act)

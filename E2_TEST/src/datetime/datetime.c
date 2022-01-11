@@ -650,6 +650,12 @@ void TimeMsgProcess(void)
 			return;
 		
 		if(screen_id == SCREEN_ID_IDLE)
+		{
+			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
+			
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
+		
 	}
 }

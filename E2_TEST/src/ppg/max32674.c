@@ -37,6 +37,8 @@ static u8_t whoamI=0, rst=0;
 
 u8_t g_ppg_trigger = 0;
 u16_t g_hr = 0;
+u16_t g_bp_systolic = 0;	// ’Àı—π
+u16_t g_bp_diastolic = 0;	// Ê’≈—π
 u16_t g_spo2 = 0;
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
@@ -84,12 +86,7 @@ bool PPGIsWorking(void)
 
 void PPGRedrawData(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
-	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HEALTH;
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-	else if(screen_id == SCREEN_ID_HR)
+	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
 	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}

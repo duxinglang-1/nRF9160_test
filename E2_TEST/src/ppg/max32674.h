@@ -21,6 +21,8 @@
 extern u8_t g_ppg_trigger;
 extern u16_t g_hr;
 extern u16_t g_spo2;
+extern u16_t g_bp_systolic;		// ’Àı—π
+extern u16_t g_bp_diastolic;	// Ê’≈—π
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);

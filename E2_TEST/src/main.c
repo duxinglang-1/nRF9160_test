@@ -760,6 +760,9 @@ int main(void)
 		SettingsMsgPorcess();
 		SOSMsgProc();
 		UartMsgProc();
+	#ifdef CONFIG_ANIMATION_SUPPORT
+		AnimaMsgProcess();
+	#endif		
 		ScreenMsgProcess();
 	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 		DlMsgProc();
@@ -769,9 +772,6 @@ int main(void)
 	#endif
 	#ifdef CONFIG_AUDIO_SUPPORT
 		AudioMsgProcess();
-	#endif
-	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaMsgProcess();
 	#endif
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncMsgProcess();

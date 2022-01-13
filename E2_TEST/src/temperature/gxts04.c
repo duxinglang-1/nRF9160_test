@@ -32,17 +32,11 @@ static u8_t init_i2c(void)
 	i2c_temp = device_get_binding(TEMP_DEV);
 	if(!i2c_temp)
 	{
-	#ifdef TEMP_DEBUG
-		LOGD("ERROR SETTING UP I2C");
-	#endif
 		return -1;
 	} 
 	else
 	{
 		i2c_configure(i2c_temp, I2C_SPEED_SET(I2C_SPEED_FAST));
-	#ifdef TEMP_DEBUG	
-		LOGD("I2C CONFIGURED");
-	#endif
 		return 0;
 	}
 }

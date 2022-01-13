@@ -28,7 +28,7 @@ extern "C" {
 #define PWRON_LOGO_W	223
 #define PWRON_LOGO_H	30
 #define PWRON_LOGO_X	((LCD_WIDTH-PWRON_LOGO_W)/2)
-#define PWRON_LOGO_Y	85
+#define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
 #define IDLE_TIME_X	45
@@ -71,10 +71,10 @@ extern "C" {
 #define IDLE_STEPS_BG_H		57
 #define IDLE_STEPS_BG_X		32
 #define IDLE_STEPS_BG_Y		183
-#define IDLE_STEPS_NUM_W	89
+#define IDLE_STEPS_NUM_W	18
 #define IDLE_STEPS_NUM_H	36
 #define IDLE_STEPS_NUM_X	91
-#define IDLE_STEPS_NUM_Y	190
+#define IDLE_STEPS_NUM_Y	192
 
 //health
 #define PPG_DATA_SHOW_X	40
@@ -176,7 +176,110 @@ extern "C" {
 #define SLEEP_DEEP_STR_X			35
 #define SLEEP_DEEP_STR_Y			171
 
+//heart rate
+#define HR_ICON_W					34
+#define HR_ICON_H					31
+#define HR_ICON_X					42
+#define HR_ICON_Y					35
+#define HR_UNIT_W					45
+#define HR_UNIT_H					22
+#define HR_UNIT_X					151
+#define HR_UNIT_Y					46
+#define HR_NUM_W					65
+#define HR_NUM_H					42
+#define HR_NUM_X					84
+#define HR_NUM_Y					30
+#define HR_BG_W						201
+#define HR_BG_H						87
+#define HR_BG_X						((LCD_WIDTH-HR_BG_W)/2)
+#define HR_BG_Y						80
+#define HR_UP_ARRAW_W				14				
+#define HR_UP_ARRAW_H				17
+#define HR_UP_ARRAW_X				50
+#define HR_UP_ARRAW_Y				178
+#define HR_UP_NUM_W					39				
+#define HR_UP_NUM_H					27
+#define HR_UP_NUM_X					67
+#define HR_UP_NUM_Y					173
+#define HR_DOWN_ARRAW_W				14
+#define HR_DOWN_ARRAW_H				17
+#define HR_DOWN_ARRAW_X				144
+#define HR_DOWN_ARRAW_Y				177
+#define HR_DOWN_NUM_W				39				
+#define HR_DOWN_NUM_H				27
+#define HR_DOWN_NUM_X				163
+#define HR_DOWN_NUM_Y				173
+
+//blood pressure
+#define BP_ICON_W					22
+#define BP_ICON_H					40
+#define BP_ICON_X					54
+#define BP_ICON_Y					31
+#define BP_NUM_W					105
+#define BP_NUM_H					31
+#define BP_NUM_X					81
+#define BP_NUM_Y					36
+#define BP_BG_W						208
+#define BP_BG_H						87
+#define BP_BG_X						((LCD_WIDTH-BP_BG_W)/2)
+#define BP_BG_Y						80
+#define BP_UP_ARRAW_W				17
+#define BP_UP_ARRAW_H				17
+#define BP_UP_ARRAW_X				43
+#define BP_UP_ARRAW_Y				183
+#define BP_UP_NUM_W					51
+#define BP_UP_NUM_H					17
+#define BP_UP_NUM_X					63
+#define BP_UP_NUM_Y					183
+#define BP_DOWN_ARRAW_W				12
+#define BP_DOWN_ARRAW_H				16
+#define BP_DOWN_ARRAW_X				133
+#define BP_DOWN_ARRAW_Y				183
+#define BP_DOWN_NUM_W				49
+#define BP_DOWN_NUM_H				17
+#define BP_DOWN_NUM_X				148
+#define BP_DOWN_NUM_Y				183
+
+//temperature
+#define TEMP_ICON_W					130
+#define TEMP_ICON_H					101
+#define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
+#define TEMP_ICON_Y					17
+#define TEMP_SKIN_ICON_W			13
+#define TEMP_SKIN_ICON_H			36
+#define TEMP_SKIN_ICON_X			60
+#define TEMP_SKIN_ICON_Y			120
+#define TEMP_SKIN_UNIT_W			16
+#define TEMP_SKIN_UNIT_H			16
+#define TEMP_SKIN_UNIT_X			86
+#define TEMP_SKIN_UNIT_Y			168
+#define TEMP_SKIN_NUM_W				44
+#define TEMP_SKIN_NUM_H				26
+#define TEMP_SKIN_NUM_X				30
+#define TEMP_SKIN_NUM_Y				165
+#define TEMP_BODY_ICON_W			32
+#define TEMP_BODY_ICON_H			36
+#define TEMP_BODY_ICON_X			157
+#define TEMP_BODY_ICON_Y			120
+#define TEMP_BODY_UNIT_W			16
+#define TEMP_BODY_UNIT_H			16
+#define TEMP_BODY_UNIT_X			194
+#define TEMP_BODY_UNIT_Y			168
+#define TEMP_BODY_NUM_W				44
+#define TEMP_BODY_NUM_H				26
+#define TEMP_BODY_NUM_X				138
+#define TEMP_BODY_NUM_Y				165
+#define TEMP_RUNNING_ANI_W			81
+#define TEMP_RUNNING_ANI_H			13
+#define TEMP_RUNNING_ANI_X			((LCD_WIDTH-TEMP_RUNNING_ANI_W)/2)
+#define TEMP_RUNNING_ANI_Y			212
+
 //power off
+#define PWR_OFF_BG_W				240
+#define PWR_OFF_BG_H				240
+#define PWR_OFF_BG_X				((LCD_WIDTH-PWR_OFF_BG_W)/2)
+#define PWR_OFF_BG_Y				0
+
 #define PWR_OFF_ICON_W				80
 #define PWR_OFF_ICON_H				80
 #define PWR_OFF_ICON_X				((LCD_WIDTH-PWR_OFF_ICON_W)/2)
@@ -217,13 +320,15 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_DATE		0x00000008
 #define SCREEN_EVENT_UPDATE_WEEK		0x00000010
 #define SCREEN_EVENT_UPDATE_SPORT		0x00000020
-#define SCREEN_EVENT_UPDATE_HEALTH		0x00000040
-#define SCREEN_EVENT_UPDATE_SLEEP		0x00000080
-#define SCREEN_EVENT_UPDATE_SOS			0x00000100
-#define SCREEN_EVENT_UPDATE_WRIST		0x00000200
-#define SCREEN_EVENT_UPDATE_SYNC		0x00000400
-#define SCREEN_EVENT_UPDATE_FOTA		0x00000800
-#define SCREEN_EVENT_UPDATE_DL			0x00001000
+#define SCREEN_EVENT_UPDATE_HR			0x00000040
+#define SCREEN_EVENT_UPDATE_SPO2		0x00000080
+#define	SCREEN_EVENT_UPDATE_BP			0x00000100
+#define SCREEN_EVENT_UPDATE_SLEEP		0x00000200
+#define SCREEN_EVENT_UPDATE_SOS			0x00000400
+#define SCREEN_EVENT_UPDATE_WRIST		0x00000800
+#define SCREEN_EVENT_UPDATE_SYNC		0x00001000
+#define SCREEN_EVENT_UPDATE_FOTA		0x00002000
+#define SCREEN_EVENT_UPDATE_DL			0x00004000
 
 
 //screen ID
@@ -234,8 +339,10 @@ typedef enum
 	SCREEN_ID_ALARM,
 	SCREEN_ID_FIND_DEVICE,
 	SCREEN_ID_HR,
+	SCREEN_ID_SPO2,
 	SCREEN_ID_ECG,
 	SCREEN_ID_BP,
+	SCREEN_ID_TEMP,
 	SCREEN_ID_SOS,
 	SCREEN_ID_SLEEP,
 	SCREEN_ID_STEPS,

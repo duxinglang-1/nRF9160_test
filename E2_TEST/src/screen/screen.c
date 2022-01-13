@@ -45,10 +45,13 @@
 #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
-#endif
+#endif/*CONFIG_WIFI*/
 #ifdef CONFIG_SYNC_SUPPORT
 #include "sync.h"
-#endif
+#endif/*CONFIG_SYNC_SUPPORT*/
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif/*CONFIG_TEMP_SUPPORT*/
 #include "logger.h"
 
 static u8_t scr_index = 0;
@@ -96,7 +99,7 @@ void ShowBootUpLogo(void)
 	u16_t x,y,w,h;
 
 #ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(PWRON_STR_X, PWRON_STR_Y, IMG_PWRON_STR_ADDR);
+	//LCD_ShowImg_From_Flash(PWRON_STR_X, PWRON_STR_Y, IMG_PWRON_STR_ADDR);
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT
@@ -170,6 +173,12 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	else if(screen_id == SCREEN_ID_SYNC)
 	{
 		MenuStartSync();
+	}
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	else if(screen_id == SCREEN_ID_TEMP)
+	{
+		MenuStartTemp();
 	}
 #endif
 }
@@ -408,24 +417,48 @@ void IdleShowSignal(void)
 #ifdef CONFIG_IMU_SUPPORT
 void IdleUpdateSportData(void)
 {
-	u8_t strbuf[128] = {0};
+	u32_t img_addr[10] = {
+							IMG_IDLE_STEP_NUM_0_ADDR,
+							IMG_IDLE_STEP_NUM_1_ADDR,
+							IMG_IDLE_STEP_NUM_2_ADDR,
+							IMG_IDLE_STEP_NUM_3_ADDR,
+							IMG_IDLE_STEP_NUM_4_ADDR,
+							IMG_IDLE_STEP_NUM_5_ADDR,
+							IMG_IDLE_STEP_NUM_6_ADDR,
+							IMG_IDLE_STEP_NUM_7_ADDR,
+							IMG_IDLE_STEP_NUM_8_ADDR,
+							IMG_IDLE_STEP_NUM_9_ADDR
+						 };
 
 	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_LOGO_ADDR);
-	
-	LCD_SetFontSize(FONT_SIZE_32);
-	sprintf(strbuf, "%05d", g_steps);
-	LCD_ShowString(IDLE_STEPS_NUM_X, IDLE_STEPS_NUM_Y, strbuf);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+0*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps/10000]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+1*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%10000)/1000]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+2*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%1000)/100]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+3*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%100)/10]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+4*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps%10]);
 }
 
 void IdleShowSportData(void)
 {
-	u8_t strbuf[128] = {0};
+	u32_t img_addr[10] = {
+							IMG_IDLE_STEP_NUM_0_ADDR,
+							IMG_IDLE_STEP_NUM_1_ADDR,
+							IMG_IDLE_STEP_NUM_2_ADDR,
+							IMG_IDLE_STEP_NUM_3_ADDR,
+							IMG_IDLE_STEP_NUM_4_ADDR,
+							IMG_IDLE_STEP_NUM_5_ADDR,
+							IMG_IDLE_STEP_NUM_6_ADDR,
+							IMG_IDLE_STEP_NUM_7_ADDR,
+							IMG_IDLE_STEP_NUM_8_ADDR,
+							IMG_IDLE_STEP_NUM_9_ADDR
+						 };
 
 	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_LOGO_ADDR);
-	
-	LCD_SetFontSize(FONT_SIZE_32);
-	sprintf(strbuf, "%05d", g_steps);
-	LCD_ShowString(IDLE_STEPS_NUM_X, IDLE_STEPS_NUM_Y, strbuf);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+0*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps/10000]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+1*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%10000)/1000]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+2*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%1000)/100]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+3*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%100)/10]);
+	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+4*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps%10]);
 }
 #endif
 
@@ -514,7 +547,6 @@ void IdleScreenProcess(void)
 	#ifdef CONFIG_IMU_SUPPORT	
 		IdleShowSportData();
 	#endif
-		IdleShowHealthData();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
@@ -550,15 +582,6 @@ void IdleScreenProcess(void)
 			IdleUpdateSportData();
 		}
 	#endif
-		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_HEALTH)
-		{
-			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_HEALTH);
-			IdleUpdateHealthData();
-		}
-		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SLEEP)
-		{
-			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SLEEP);
-		}
 
 		if(scr_msg[SCREEN_ID_IDLE].para == SCREEN_EVENT_UPDATE_NO)
 			scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_NO;
@@ -649,45 +672,486 @@ void FindDeviceScreenProcess(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 }
 
-#ifdef CONFIG_PPG_SUPPORT
-void HeartRateScreenProcess(void)
+#ifdef CONFIG_SYNC_SUPPORT
+void ExitSyncDataScreen(void)
+{
+	SyncDataStop();
+	EnterIdleScreen();
+}
+
+void EnterSyncDataScreen(void)
+{
+	if(screen_id == SCREEN_ID_SYNC)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SYNC;
+	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATING;
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
+#else
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#endif
+	SetRightKeyUpHandler(ExitSyncDataScreen);
+}
+
+void SyncUpdateStatus(void)
+{
+	unsigned char *img_anima[4] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR, IMG_RUNNING_ANI_4_ADDR};
+	
+	switch(sync_state)
+	{
+	case SYNC_STATUS_IDLE:
+		break;
+
+	case SYNC_STATUS_LINKING:
+	#ifdef CONFIG_ANIMATION_SUPPORT
+		AnimaShow(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+	#endif
+		break;
+		
+	case SYNC_STATUS_SENT:
+	#ifdef CONFIG_ANIMATION_SUPPORT 
+		AnimaStopShow();
+	#endif
+	
+		LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_FINISH_ADDR);
+		//LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
+
+		SetLeftKeyUpHandler(ExitSyncDataScreen);
+		break;
+		
+	case SYNC_STATUS_FAIL:
+	#ifdef CONFIG_ANIMATION_SUPPORT 
+		AnimaStopShow();
+	#endif
+	
+		LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_ERR_ADDR);
+		//LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
+		LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
+
+		SetLeftKeyUpHandler(ExitSyncDataScreen);
+		break;
+	}
+}
+
+void SyncShowStatus(void)
+{
+	LCD_Clear(BLACK);
+
+	LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_LOGO_ADDR);
+	//LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
+	LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
+}
+
+void SyncScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_SYNC].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATED;
+
+		SyncShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		if(scr_msg[SCREEN_ID_SYNC].para&SCREEN_EVENT_UPDATE_SYNC)
+			scr_msg[SCREEN_ID_SYNC].para &= (~SCREEN_EVENT_UPDATE_SYNC);
+
+		SyncUpdateStatus();
+		break;
+	}
+
+	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_NO;
+}
+#endif/*CONFIG_SYNC_SUPPORT*/
+
+#ifdef CONFIG_TEMP_SUPPORT
+void TempUpdateStatus(void)
+{
+	static u8_t index = 0;
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+	u32_t img_addr[4] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR, IMG_RUNNING_ANI_4_ADDR};
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	if(TempIsWorking())
+	{
+		index++;
+		if(index >= 4)
+			index = 0;
+		LCD_ShowImg_From_Flash(TEMP_RUNNING_ANI_X, TEMP_RUNNING_ANI_Y, img_addr[index]);
+	}
+	else
+	{
+		AnimaStop();
+		index = 0;
+	}
+#endif
+
+	LCD_SetFontSize(FONT_SIZE_24);
+	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_skin*10)/10, (u16_t)(g_temp_skin*10)%10);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	x = TEMP_SKIN_UNIT_X-w-2;
+	y = TEMP_SKIN_NUM_Y+(TEMP_SKIN_NUM_H-h)/2;
+	LCD_Fill(TEMP_SKIN_NUM_X, TEMP_SKIN_NUM_Y, TEMP_SKIN_NUM_W, TEMP_SKIN_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_body*10)/10, (u16_t)(g_temp_body*10)%10);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	x = TEMP_BODY_UNIT_X-w-2;
+	y = TEMP_BODY_NUM_Y+(TEMP_BODY_NUM_H-h)/2;
+	LCD_Fill(TEMP_BODY_NUM_X, TEMP_BODY_NUM_Y, TEMP_BODY_NUM_W, TEMP_BODY_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void TempShowStatus(void)
 {
 	u16_t x,y,w,h;
 	u8_t tmpbuf[64] = {0};
+
+	LCD_Clear(BLACK);
 	
+	LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_C_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_SKIN_ICON_X, TEMP_SKIN_ICON_Y, IMG_TEMP_SKIN_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_SKIN_UNIT_X, TEMP_SKIN_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_BODY_ICON_X, TEMP_BODY_ICON_Y, IMG_TEMP_BODY_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_BODY_UNIT_X, TEMP_BODY_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_RUNNING_ANI_X, TEMP_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
+
+	LCD_SetFontSize(FONT_SIZE_24);
+	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_skin*10)/10, (u16_t)(g_temp_skin*10)%10);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	x = TEMP_SKIN_UNIT_X-w-2;
+	y = TEMP_SKIN_NUM_Y+(TEMP_SKIN_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_body*10)/10, (u16_t)(g_temp_body*10)%10);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	x = TEMP_BODY_UNIT_X-w-2;
+	y = TEMP_BODY_NUM_Y+(TEMP_BODY_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void TempScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_TEMP].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_TEMP].status = SCREEN_STATUS_CREATED;
+		TempShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		TempUpdateStatus();
+		break;
+	}
+
+	scr_msg[SCREEN_ID_TEMP].act = SCREEN_ACTION_NO;
+}
+
+void ExitTempScreen(void)
+{
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStop();
+#endif
+	MenuStopTemp();
+
+	EnterIdleScreen();
+}
+
+void EnterTempScreen(void)
+{
+	if(screen_id == SCREEN_ID_TEMP)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_TEMP;
+	scr_msg[SCREEN_ID_TEMP].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_TEMP].status = SCREEN_STATUS_CREATING;
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+#ifdef CONFIG_SYNC_SUPPORT
+	SetLeftKeyUpHandler(EnterSyncDataScreen);
+#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
+#else
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#endif
+
+	SetRightKeyUpHandler(ExitTempScreen);
+}
+#endif/*CONFIG_TEMP_SUPPORT*/
+
+#ifdef CONFIG_PPG_SUPPORT
+void BPUpdateStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+	unsigned char *img_anima[3] = {IMG_BP_ICON_ANI_1_ADDR,IMG_BP_ICON_ANI_2_ADDR,IMG_BP_ICON_ANI_3_ADDR};
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	if(PPGIsWorking())
+		AnimaShow(BP_ICON_X, BP_ICON_X, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+	else
+		AnimaStop();
+#endif
+
+	LCD_SetFontSize(FONT_SIZE_32);
+	
+	sprintf(tmpbuf, "%d/%d", g_bp_systolic, g_bp_diastolic);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	x = BP_NUM_X+(BP_NUM_W-w)/2;
+	y = BP_NUM_Y+(BP_NUM_H-h)/2;
+	LCD_Fill(BP_NUM_X, BP_NUM_Y, BP_NUM_W, BP_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
+	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
+	LCD_Fill(BP_UP_NUM_X, BP_UP_NUM_Y, BP_UP_NUM_W, BP_UP_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf, &w, &h);
+	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
+	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
+	LCD_Fill(BP_DOWN_NUM_X, BP_DOWN_NUM_Y, BP_DOWN_NUM_W, BP_DOWN_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void BPShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+
+	LCD_Clear(BLACK);
+	
+	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, IMG_BP_ICON_ANI_2_ADDR);
+	LCD_ShowImg_From_Flash(BP_BG_X, BP_BG_Y, IMG_BP_BG_ADDR);
+	LCD_ShowImg_From_Flash(BP_UP_ARRAW_X, BP_UP_ARRAW_Y, IMG_BP_UP_ARRAW_ADDR);
+	LCD_ShowImg_From_Flash(BP_DOWN_ARRAW_X, BP_DOWN_ARRAW_Y, IMG_BP_DOWN_ARRAW_ADDR);
+
+	LCD_SetFontSize(FONT_SIZE_32);
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = BP_NUM_X+(BP_NUM_W-w)/2;
+	y = BP_NUM_Y+(BP_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
+	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
+	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void BPScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_BP].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_BP].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATED;
+				
+		BPShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		BPUpdateStatus();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_BP].act = SCREEN_ACTION_NO;
+}
+
+void ExitBPScreen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStop();
+#endif
+
+	if(PPGIsWorking())
+		MenuStopPPG();
+		
+	EnterIdleScreen();
+}
+
+void EnterBPScreen(void)
+{
+	if(screen_id == SCREEN_ID_BP)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_BP;	
+	scr_msg[SCREEN_ID_BP].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_BP].status = SCREEN_STATUS_CREATING;
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStop();
+#endif
+	
+	if(PPGIsWorking())
+		MenuStopPPG();
+
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+#ifdef CONFIG_TEMP_SUPPORT
+	SetLeftKeyUpHandler(EnterTempScreen);
+#elif defined(CONFIG_SYNC_SUPPORT)
+	SetLeftKeyUpHandler(EnterSyncDataScreen);
+#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
+#else
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#endif
+
+	SetRightKeyUpHandler(ExitBPScreen);
+}
+
+void HRUpdateStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+	unsigned char *img_anima[2] = {IMG_HR_ICON_ANI_1_ADDR, IMG_HR_ICON_ANI_2_ADDR};
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	if(PPGIsWorking())
+		AnimaShow(HR_ICON_X, HR_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+	else
+		AnimaStop();
+#endif
+
+	LCD_SetFontSize(FONT_SIZE_32);
+	
+	sprintf(tmpbuf, "%d", g_hr);
+	LCD_MeasureString("0",&w,&h);
+	x = HR_NUM_X+(HR_NUM_W-w)/2;
+	y = HR_NUM_Y+(HR_NUM_H-h)/2;
+	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
+	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
+	LCD_Fill(HR_UP_NUM_X, HR_UP_NUM_Y, HR_UP_NUM_W, HR_UP_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
+	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
+	LCD_Fill(HR_DOWN_NUM_X, HR_DOWN_NUM_Y, HR_DOWN_NUM_W, HR_DOWN_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void HRShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+
+	LCD_Clear(BLACK);
+	
+	LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_ICON_ANI_2_ADDR);
+	LCD_ShowImg_From_Flash(HR_UNIT_X, HR_UNIT_Y, IMG_HR_BPM_ADDR);
+	LCD_ShowImg_From_Flash(HR_BG_X, HR_BG_Y, IMG_HR_BG_ADDR);
+	LCD_ShowImg_From_Flash(HR_UP_ARRAW_X, HR_UP_ARRAW_Y, IMG_HR_UP_ARRAW_ADDR);
+	LCD_ShowImg_From_Flash(HR_DOWN_ARRAW_X, HR_DOWN_ARRAW_Y, IMG_HR_DOWN_ARRAW_ADDR);
+
+	LCD_SetFontSize(FONT_SIZE_32);
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = HR_NUM_X+(HR_NUM_W-w)/2;
+	y = HR_NUM_Y+(HR_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
+	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString("0",&w,&h);
+	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
+	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void HRScreenProcess(void)
+{
 	switch(scr_msg[SCREEN_ID_HR].act)
 	{
 	case SCREEN_ACTION_ENTER:
 		scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_NO;
 		scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATED;
 				
-		LCD_Clear(BLACK);
-		LCD_SetFontSize(FONT_SIZE_24);
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 50;
-		LCD_ShowString(x,y,notify);
-		
-		LCD_SetFontSize(FONT_SIZE_32);
-		strcpy(tmpbuf, "0");
-		LCD_MeasureString(tmpbuf,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,tmpbuf);
+		HRShowStatus();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
-		LCD_SetFontSize(FONT_SIZE_32);
-		LCD_MeasureString("0000",&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120-2;
-		LCD_Fill(x, y, w, h+4, BLACK);
-		
-		sprintf(tmpbuf, "%d", g_hr);
-		LCD_MeasureString(tmpbuf,&w,&h);
-		x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-		y = 120;
-		LCD_ShowString(x,y,tmpbuf);
+		HRUpdateStatus();
 		break;
 	}
 	
@@ -697,7 +1161,11 @@ void HeartRateScreenProcess(void)
 void ExitHRScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
-	
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStop();
+#endif
+
 	if(PPGIsWorking())
 		MenuStopPPG();
 		
@@ -720,7 +1188,7 @@ void EnterHRScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	SetLeftKeyUpHandler(EnterGPSTestScreen);
+	SetLeftKeyUpHandler(EnterBPScreen);
 	SetRightKeyUpHandler(ExitHRScreen);
 }
 #endif/*CONFIG_PPG_SUPPORT*/
@@ -1009,112 +1477,6 @@ void SOSScreenProcess(void)
 	}
 }
 
-#ifdef CONFIG_SYNC_SUPPORT
-void ExitSyncDataScreen(void)
-{		
-	SyncDataStop();
-	
-#ifdef CONFIG_FOTA_DOWNLOAD
-	EnterFOTAScreen();
-#else
-	EnterPoweroffScreen();
-#endif
-}
-
-void EnterSyncDataScreen(void)
-{
-	if(screen_id == SCREEN_ID_SYNC)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_SYNC;
-	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATING;
-
-#ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
-#endif
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
-	SetLeftKeyUpHandler(ExitSyncDataScreen);
-}
-
-void SyncUpdateStatus(void)
-{
-	unsigned char *img_anima[4] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR, IMG_RUNNING_ANI_4_ADDR};
-	
-	switch(sync_state)
-	{
-	case SYNC_STATUS_IDLE:
-		break;
-
-	case SYNC_STATUS_LINKING:
-	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaShow(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
-	#endif
-		break;
-		
-	case SYNC_STATUS_SENT:
-	#ifdef CONFIG_ANIMATION_SUPPORT 
-		AnimaStopShow();
-	#endif
-	
-		LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_FINISH_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
-
-		SetLeftKeyUpHandler(ExitSyncDataScreen);
-		break;
-		
-	case SYNC_STATUS_FAIL:
-	#ifdef CONFIG_ANIMATION_SUPPORT 
-		AnimaStopShow();
-	#endif
-	
-		LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_ERR_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
-		LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
-
-		SetLeftKeyUpHandler(ExitSyncDataScreen);
-		break;
-	}
-}
-
-void SyncShowStatus(void)
-{
-	LCD_Clear(BLACK);
-
-	LCD_ShowImg_From_Flash(SYNC_ICON_X, SYNC_ICON_Y, IMG_SYNC_LOGO_ADDR);
-	LCD_ShowImg_From_Flash(SYNC_STR_X, SYNC_STR_Y, IMG_SYNC_STR_ADDR);
-	LCD_ShowImg_From_Flash(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
-}
-
-void SyncScreenProcess(void)
-{
-	switch(scr_msg[SCREEN_ID_SYNC].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATED;
-
-		SyncShowStatus();
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		if(scr_msg[SCREEN_ID_SYNC].para&SCREEN_EVENT_UPDATE_SYNC)
-			scr_msg[SCREEN_ID_SYNC].para &= (~SCREEN_EVENT_UPDATE_SYNC);
-
-		SyncUpdateStatus();
-		break;
-	}
-
-	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_NO;
-}
-#endif/*CONFIG_SYNC_SUPPORT*/
-
 void poweroff_confirm(void)
 {
 	ClearAllKeyHandler();
@@ -1138,6 +1500,22 @@ void EnterPoweroffScreen(void)
 	if(screen_id == SCREEN_ID_POWEROFF)
 		return;
 
+#ifdef CONFIG_PPG_SUPPORT
+	if(PPGIsWorking())
+		MenuStopPPG();
+#endif
+
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking())
+		MenuStopTemp();
+#endif
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+
+	k_timer_stop(&mainmenu_timer);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -1153,12 +1531,13 @@ void PowerOffUpdateStatus(void)
 							IMG_PWROFF_ANI_5_ADDR,IMG_PWROFF_ANI_6_ADDR,IMG_PWROFF_ANI_7_ADDR,IMG_PWROFF_ANI_8_ADDR};
 
 	LCD_Clear(BLACK);	
+
+	LCD_ShowImg_From_Flash(PWR_OFF_BG_X, PWR_OFF_BG_Y, IMG_PWROFF_BG_ADDR);
+	LCD_ShowImg_From_Flash(POW_OFF_RUNNING_STR_X, POW_OFF_RUNNING_STR_Y, IMG_PWROFF_RUNNING_STR_ADDR);
 	
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaShow(POW_OFF_RUNNING_ANI_X, POW_OFF_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 500, false, NULL);
-#endif
-
-	LCD_ShowImg_From_Flash(POW_OFF_RUNNING_STR_X, POW_OFF_RUNNING_STR_Y, IMG_PWROFF_RUNNING_STR_ADDR);
+#endif	
 }
 
 void PowerOffShowStatus(void)
@@ -1798,6 +2177,17 @@ void EnterSleepScreen(void)
 	SetLeftKeyUpHandler(EnterHRScreen);
 #elif defined(CONFIG_SYNC_SUPPORT)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
+#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+#ifdef CONFIG_IMG_DATA_UPDATE
+	SetLeftKeyUpHandler(dl_img_start);
+	SetRightKeyUpHandler(dl_img_exit);
+#elif defined(CONFIG_FONT_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_font_start);
+	SetRightKeyUpHandler(dl_font_exit);
+#elif defined(CONFIG_PPG_DATA_UPDATE)
+	SetLeftKeyUpHandler(dl_ppg_start);
+	SetRightKeyUpHandler(dl_ppg_exit);
+#endif
 #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
@@ -1891,29 +2281,8 @@ void EnterStepsScreen(void)
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
 
-#if 0
-#ifdef CONFIG_FOTA_DOWNLOAD
-	SetLeftKeyUpHandler(fota_start);
-	SetRightKeyUpHandler(fota_exit);
-#elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
-#ifdef CONFIG_IMG_DATA_UPDATE
-	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
-#elif defined(CONFIG_FONT_DATA_UPDATE)
-	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
-#elif defined(CONFIG_PPG_DATA_UPDATE)
-	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
-#endif
-#else
 	SetLeftKeyUpHandler(EnterSleepScreen);
 	SetRightKeyUpHandler(ExitStepsScreen);
-#endif
-#else
-	SetLeftKeyUpHandler(EnterSleepScreen);
-	SetRightKeyUpHandler(ExitStepsScreen);
-#endif
 }
 #endif
 
@@ -2076,13 +2445,14 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
-#if defined(CONFIG_PPG_SUPPORT)
-	SetLeftKeyUpHandler(EnterHRScreen);
-	SetRightKeyUpHandler(EnterIdleScreen);
-#else
+#ifdef CONFIG_IMU_SUPPORT
 	SetLeftKeyUpHandler(EnterStepsScreen);
+#elif defined(CONFIG_PPG_SUPPORT)
+	SetLeftKeyUpHandler(EnterHRScreen);
+#else
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#endif	
 	SetRightKeyUpHandler(EnterIdleScreen);
-#endif
 }
 
 void EnterAlarmScreen(void)
@@ -2262,13 +2632,14 @@ void ScreenMsgProcess(void)
 			break;
 	#ifdef CONFIG_PPG_SUPPORT	
 		case SCREEN_ID_HR:
-			HeartRateScreenProcess();
+			HRScreenProcess();
 			break;
-	#endif
 		case SCREEN_ID_ECG:
 			break;
 		case SCREEN_ID_BP:
+			BPScreenProcess();
 			break;
+	#endif		
 		case SCREEN_ID_SOS:
 			SOSScreenProcess();
 			break;
@@ -2313,6 +2684,11 @@ void ScreenMsgProcess(void)
 	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 		case SCREEN_ID_DL:
 			DlScreenProcess();
+			break;
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
+		case SCREEN_ID_TEMP:
+			TempScreenProcess();
 			break;
 	#endif
 		}

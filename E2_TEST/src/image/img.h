@@ -76,29 +76,34 @@ extern unsigned char IMG_BAT_RECT_RED[968];
 extern unsigned char IMG_BAT_RECT_WHITE[968];
 //blood pressure
 extern unsigned char IMG_BP_BG[35368];
-extern unsigned char IMG_BP_UP_ARRAW[586];
 extern unsigned char IMG_BP_DOWN_ARRAW[392];
-extern unsigned char IMG_BP_DOWN_LINE[64];
-extern unsigned char IMG_BP_MEASUREING[6520];
-extern unsigned char IMG_BP_MEASURENING_ANI_1[42596];
-extern unsigned char IMG_BP_MEASURENING_ANI_2[42596];
-extern unsigned char IMG_BP_MEASURENING_ANI_3[42596];
+extern unsigned char IMG_BP_ICON_ANI_1[1768];
+extern unsigned char IMG_BP_ICON_ANI_2[1768];
+extern unsigned char IMG_BP_ICON_ANI_3[1768];
 extern unsigned char IMG_BP_MMHG[1044];
+extern unsigned char IMG_BP_SPE_LINE[504];
 extern unsigned char IMG_BP_TIME_DOT[28];
+extern unsigned char IMG_BP_UP_ARRAW[586];
 //heart rate
 extern unsigned char IMG_HR_BG[35440];
-extern unsigned char IMG_HR_BPM_BIG[1988];
-extern unsigned char IMG_HR_BPM_MID[1232];
-extern unsigned char IMG_HR_BPM_SMALL[764];
+extern unsigned char IMG_HR_BPM[1988];
 extern unsigned char IMG_HR_DOWN_ARRAW[548];
-extern unsigned char IMG_HR_DOWN_LINE[80];
-extern unsigned char IMG_HR_ICON[2116];
-extern unsigned char IMG_HR_MEASURING[2816];
-extern unsigned char IMG_HR_STATIC[2340];
+extern unsigned char IMG_HR_ICON_ANI_1[2116];
+extern unsigned char IMG_HR_ICON_ANI_2[2116];
 extern unsigned char IMG_HR_TIME_DOT[28];
 extern unsigned char IMG_HR_UP_ARRAW[484];
 //idle step
 extern unsigned char IMG_IDLE_STEP_LOGO[20072];
+extern unsigned char IMG_IDLE_STEP_NUM_0[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_1[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_2[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_3[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_4[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_5[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_6[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_7[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_8[1304];
+extern unsigned char IMG_IDLE_STEP_NUM_9[1304];
 //ota
 extern unsigned char IMG_OTA_DOWNLOADING[7460];
 extern unsigned char IMG_OTA_FAILED_ICON[21640];
@@ -120,7 +125,6 @@ extern unsigned char IMG_PWROFF_ANI_7[29776];
 extern unsigned char IMG_PWROFF_ANI_8[29776];
 extern unsigned char IMG_PWROFF_BG[115208];
 extern unsigned char IMG_PWROFF_BUTTON[12808];
-extern unsigned char IMG_PWROFF_LOGO[1508];
 extern unsigned char IMG_PWROFF_NO[3208];
 extern unsigned char IMG_PWROFF_RUNNING_STR[8626];
 extern unsigned char IMG_PWROFF_STR[5732];
@@ -157,6 +161,11 @@ extern unsigned char IMG_SLEEP_HOUR[844];
 extern unsigned char IMG_SLEEP_LIGHT_ICON[2600];
 extern unsigned char IMG_SLEEP_LINE[712];
 extern unsigned char IMG_SLEEP_MIN[1460];
+//sos
+extern unsigned char IMG_SOS_ANI_1[115208];
+extern unsigned char IMG_SOS_ANI_2[115208];
+extern unsigned char IMG_SOS_ANI_3[115208];
+extern unsigned char IMG_SOS_ANI_4[115208];
 //step
 extern unsigned char IMG_STEP_ANI_1[4036];
 extern unsigned char IMG_STEP_ANI_2[4036];
@@ -171,6 +180,13 @@ extern unsigned char IMG_SYNC_ERR[24868];
 extern unsigned char IMG_SYNC_FINISH[24868];
 extern unsigned char IMG_SYNC_LOGO[20808];
 extern unsigned char IMG_SYNC_STR[8288];
+//temperature
+extern unsigned char IMG_TEMP_BODY[2312];
+extern unsigned char IMG_TEMP_ICON_C[26268];
+extern unsigned char IMG_TEMP_ICON_F[26268];
+extern unsigned char IMG_TEMP_SKIN[944];
+extern unsigned char IMG_TEMP_UNIT_C[520];
+extern unsigned char IMG_TEMP_UNIT_F[520];
 //wrist off
 extern unsigned char IMG_WRIST_OFF_ICON[23372];
 #endif

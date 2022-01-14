@@ -56,6 +56,8 @@ static void GetNetWorkSignalCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_nw_rsrp_timer, GetNetWorkSignalCallBack, NULL);
 static void GetModemInforCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_modem_infor_timer, GetModemInforCallBack, NULL);
+static void GetModemStatusCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_modem_status_timer, GetModemStatusCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -79,6 +81,7 @@ static bool power_on_data_flag = true;
 static bool nb_connecting_flag = false;
 static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
+static bool get_modem_status_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -1146,16 +1149,6 @@ void GetModemDateTime(void)
 	SaveSystemDateTime();
 }
 
-void GetNetWorkTimeCallBack(struct k_timer *timer_id)
-{
-	get_modem_time_flag = true;
-}
-
-void GetModemInforCallBack(struct k_timer *timer_id)
-{
-	get_modem_info_flag = true;
-}
-
 static void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
@@ -1646,16 +1639,36 @@ void GetModemSignal(void)
 	}
 }
 
+static void GetNetWorkTimeCallBack(struct k_timer *timer_id)
+{
+	get_modem_time_flag = true;
+}
+
+static void GetModemInforCallBack(struct k_timer *timer_id)
+{
+	get_modem_info_flag = true;
+}
+
+static void NBReconnectCallBack(struct k_timer *timer_id)
+{
+	nb_reconnect_flag = true;
+}
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-void TauWakeUpUartCallBack(struct k_timer *timer_id)
+static void TauWakeUpUartCallBack(struct k_timer *timer_id)
 {
 	uart_wake_flag = true;
 }
 #endif
 
-void GetNetWorkSignalCallBack(struct k_timer *timer_id)
+static void GetNetWorkSignalCallBack(struct k_timer *timer_id)
 {
 	get_modem_signal_flag = true;
+}
+
+static void GetModemStatusCallBack(struct k_timer *timer_id)
+{
+	get_modem_status_flag = true;
 }
 
 void DecodeModemMonitor(u8_t *buf, u32_t len)
@@ -1696,6 +1709,9 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 			u8_t tau = 0;
 			u8_t act = 0;
 			u16_t flag;
+
+			if(g_nw_registered)
+				return;
 			
 			g_nw_registered = true;
 
@@ -1838,6 +1854,16 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 		#ifdef NB_DEBUG
 			LOGD("g_tau_time:%d", g_tau_time);
 		#endif
+		}
+		else
+		{
+			g_nw_registered = false;
+			nb_connected = false;
+			g_rsrp = 255;
+			modem_rsrp_handler(g_rsrp);
+
+			if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(30), NULL);
 		}
 	}
 }
@@ -2060,12 +2086,6 @@ void SetModemAPN(void)
 #endif
 }
 
-
-static void NBReconnectCallBack(struct k_timer *timer_id)
-{
-	nb_reconnect_flag = true;
-}
-
 static void modem_init(struct k_work *work)
 {
 	SetModemTurnOn();
@@ -2155,7 +2175,7 @@ static void nb_link(struct k_work *work)
 		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
 		#endif
-		
+			
 			nb_connected = true;
 			retry_count = 0;
 
@@ -2302,6 +2322,12 @@ void NBMsgProcess(void)
 	#endif
 		GetModemDateTime();
 		get_modem_time_flag = false;
+	}
+
+	if(get_modem_status_flag)
+	{
+		GetModemStatus();
+		get_modem_status_flag = false;
 	}
 	
 	if(send_data_flag)

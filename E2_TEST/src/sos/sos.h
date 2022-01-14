@@ -16,11 +16,14 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_ANIMATION_SUPPORT
-#define SOS_SENDING_TIMEOUT 2
-#else
+#define SOS_IDLE_TIMEOUT	2
 #define SOS_SENDING_TIMEOUT 4
-#endif
+#define SOS_SENT_TIMEOUT	2
+
+#define SOS_ICON_W			240
+#define SOS_ICON_H			240
+#define SOS_ICON_X			((LCD_WIDTH-SOS_ICON_W)/2)
+#define SOS_ICON_Y			((LCD_HEIGHT-SOS_ICON_H)/2)
 
 #define SOS_NOTIFY_RECT_W	180
 #define SOS_NOTIFY_RECT_H	120
@@ -30,6 +33,7 @@ extern "C" {
 typedef enum
 {
 	SOS_STATUS_IDLE,
+	SOS_STATUS_READY,
 	SOS_STATUS_SENDING,
 	SOS_STATUS_SENT,
 	SOS_STATUS_RECEIVED,

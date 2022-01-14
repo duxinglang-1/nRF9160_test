@@ -59,6 +59,9 @@ void SOSStatusUpdate(void)
 			break;
 		
 		case SOS_STATUS_SENT:
+		#ifdef CONFIG_ANIMATION_SUPPORT	
+			AnimaStopShow();
+		#endif	
 			sos_state = SOS_STATUS_RECEIVED;
 			break;
 		
@@ -206,10 +209,6 @@ bool SOSIsRunning(void)
 
 void SOSSChangrStatus(void)
 {
-#ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
-#endif
-
 	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
 }
 

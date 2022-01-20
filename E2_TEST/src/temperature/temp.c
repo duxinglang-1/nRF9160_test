@@ -97,7 +97,7 @@ void TempMsgProcess(void)
 		temp_get_data_flag = false;
 
 		if(!temp_check_ok)
-			//return;
+			return;
 
 		ret = GetTemperature(&temperature);
 		if(ret)

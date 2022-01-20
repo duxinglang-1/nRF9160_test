@@ -91,9 +91,9 @@ bool gxts04_init(void)
 #ifdef TEMP_DEBUG	
 	LOGD("temp id:%x", HardwareID);
 #endif
-	if(HardwareID != GXTS04_ID)
-		return false;
-	else
+	//if(HardwareID != GXTS04_ID)
+	//	return false;
+	//else
 		return true;
 }
 

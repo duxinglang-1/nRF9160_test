@@ -1727,6 +1727,10 @@ void ExitDlPpgScreen(void)
 
 void EnterDlScreen(void)
 {
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -1874,6 +1878,10 @@ void EnterFOTAScreen(void)
 {
 	if(screen_id == SCREEN_ID_FOTA)
 		return;
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
 
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;

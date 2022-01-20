@@ -32,6 +32,7 @@ extern bool pmu_alert_flag;
 extern bool pmu_check_temp_flag;
 extern bool vibrate_start_flag;
 extern bool vibrate_stop_flag;
+extern bool charger_is_connected;
 
 extern u8_t g_bat_soc;
 extern BAT_CHARGER_STATUS g_chg_status;

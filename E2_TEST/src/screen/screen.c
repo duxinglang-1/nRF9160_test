@@ -142,7 +142,13 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	if(screen_id == SCREEN_ID_HR)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartPPG();
+		MenuStartHrSpo2();
+	#endif
+	}
+	else if(screen_id == SCREEN_ID_BP)
+	{
+	#ifdef CONFIG_PPG_SUPPORT
+		MenuStartBpt();
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_GPS_TEST)

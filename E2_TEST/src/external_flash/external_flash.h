@@ -831,7 +831,7 @@
 #define PPG_ALGO_FW_SIZE 					(353024)
 #define PPG_ALGO_FW_END						(PPG_ALGO_FW_ADDR+PPG_ALGO_FW_SIZE)
 #define PPG_BPT_CAL_DATA_ADDR				(PPG_ALGO_FW_END+DATA_OFFSET)
-#define PPG_BPT_CAL_DATA_SIZE				(240)
+#define PPG_BPT_CAL_DATA_SIZE				(5*240)
 #define PPG_BPT_CAL_DATA_END				(PPG_BPT_CAL_DATA_ADDR+PPG_BPT_CAL_DATA_SIZE)
 
 
@@ -847,6 +847,8 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size);
 void SPIFlash_Erase_Sector(uint32_t SecAddr);
 void SPIFlash_Erase_Chip(void);
 uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
+uint8_t SpiFlash_Write_Data(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
+
 extern void test_flash(void);
 
 #endif/*__EXTERNAL_FLASH_H__*/

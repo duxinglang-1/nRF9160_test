@@ -30,6 +30,8 @@ struct device *gpio_flash;
 static uint8_t    spi_tx_buf[6] = {0};  
 //SPI接收缓存数组，使用EasyDMA时一定要定义为static类型
 static uint8_t    spi_rx_buf[6] = {0};  
+//用来暂存一个sector的数据
+static u8_t SecBuf[SPIFlash_SECTOR_SIZE] = {0};
 
 //SPI发送缓存数组，使用EasyDMA时一定要定义为static类型
 //static uint8_t    my_tx_buf[4096] = {0};
@@ -399,6 +401,55 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 }
 
 /*****************************************************************************
+** 描  述：向指定的地址无损写入数据，可写入多个页，除了本身数据之外，保留扇区内其他位置数据
+**         *pBuffer:指向待写入的数据
+**         WriteAddr:写入的起始地址
+**         size:写入的字节数
+** 返回值：RET_SUCCESS
+******************************************************************************/
+uint8_t SpiFlash_Write_Data(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum)
+{
+	s32_t cur_index,writelen=0,datelen=WriteBytesNum;
+	u32_t PageByteRemain;
+	
+	LOGD("WriteAddr:%d, size:%d", WriteAddr, WriteBytesNum);
+	
+	cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
+
+	SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+	SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+	PageByteRemain = SPIFlash_SECTOR_SIZE - WriteAddr%SPIFlash_SECTOR_SIZE;
+	memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], &pBuffer[writelen], PageByteRemain);
+	writelen += PageByteRemain;
+	SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, PageByteRemain);
+	if(PageByteRemain < datelen)
+	{
+		datelen -= PageByteRemain;
+		while(1)
+		{
+			SpiFlash_Read(SecBuf, (++cur_index)*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+			SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+			if(datelen >= SPIFlash_SECTOR_SIZE)
+			{
+				memcpy(SecBuf, &pBuffer[writelen], SPIFlash_SECTOR_SIZE);
+				writelen += SPIFlash_SECTOR_SIZE;
+				SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+				datelen -= SPIFlash_SECTOR_SIZE;
+			}
+			else
+			{
+				memcpy(SecBuf, &pBuffer[writelen], datelen);
+				writelen += datelen;
+				SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, datelen);
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/*****************************************************************************
 ** 描  述：从指定的地址读出指定长度的数据
 ** 参  数：pBuffer：指向存放读出数据的首地址       
 **         ReadAddr：待读出数据的起始地址
@@ -508,8 +559,6 @@ void flash_init(void)
 
 	SPI_Flash_Init();
 }
-
-u8_t strbuf[4096] = {0};
 
 void test_flash_write_and_read(u8_t *buf, u32_t len)
 {

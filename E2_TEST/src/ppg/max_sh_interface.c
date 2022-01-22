@@ -11,7 +11,10 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include "max_sh_interface.h"
+
+#include "max_sh_api.h"
 #include "external_flash.h"
+#include "settings.h"
 #include "lcd.h"
 #include "font.h"
 #include "logger.h"
@@ -59,6 +62,8 @@
 
 #define MFIO_LOW_DURATION        550
 #define SS_DEFAULT_RETRIES       ((int) (5))
+#define SH_BPT_CAL_COUNT_MAX	(5)
+
 //max size is used for bootloader page loading
 #define SS_TX_BUF_SIZE		(BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE+BL_FLASH_CMD_LEN)
 
@@ -67,8 +72,10 @@ static struct device *gpio_ppg;
 static struct gpio_callback gpio_cb;
 
 u8_t sh_write_buf[SS_TX_BUF_SIZE]={0};
+u8_t sh_bpt_cal[SH_BPT_CAL_COUNT_MAX*CAL_RESULT_SIZE]={0};
 
 extern bool ppg_int_event;
+extern u8_t g_ppg_bpt_status;
 
 void wait_us(int us)
 {
@@ -618,6 +625,31 @@ int sh_get_input_fifo_size(int *fifo_size)
 	return status;
 }
 
+int sensorhub_set_algo_operation_mode( const uint8_t algo_op_mode )
+{
+	uint8_t Temp[1] = { algo_op_mode };
+	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_OPERATION_MODE, &Temp[0], 1);
+
+	return status;
+}
+
+int sensorhub_set_algo_submode( const uint8_t algo_op_mode , const uint8_t algo_op_submode )
+{
+	int status;
+	uint8_t Temp[1] = { algo_op_submode };
+
+	if(algo_op_mode == SH_OPERATION_WHRM_MODE)
+	{
+		status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_SUITE_ALGO_MODE, &Temp[0], 1);
+	}
+	else if(algo_op_mode == SH_OPERATION_WHRM_BPT_MODE ||  algo_op_mode == SH_OPERATION_BPT_MODE)
+	{
+		status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, CFG_CFGIDX_BPT_ALGO_SUBMODE, &Temp[0], 1);  // DAVID : check here!
+	}
+
+	return status;
+}
+
 int sh_enable_algo_(int idx, int mode)
 {
     u8_t cmd_bytes[] = { 0x52, (u8_t)idx, (u8_t)mode };
@@ -1153,3 +1185,80 @@ void sh_get_APP_version(void)
 	}
 }
 
+bool sh_check_bpt_cal_data(void)
+{
+	SpiFlash_Read(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+
+	if(sh_bpt_cal[0] = 0xff)
+		return false;
+	else
+		return true;
+}
+
+void sh_get_bpt_cal_data(void)
+{
+	int status;
+	
+	status = sh_get_cfg_bpt_cal_result(&sh_bpt_cal);
+	SpiFlash_Write_Data(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+}
+
+void sh_req_bpt_cal_data(void)
+{
+	int status;
+	
+	//Set the cal_index, reference systolic, reference diastolic
+	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
+	//Enable AEC
+	status = sh_set_cfg_wearablesuite_afeenable(1);
+	//Enable automatic calculation of target PD current
+	status = sh_set_cfg_wearablesuite_autopdcurrentenable(1);
+	//Set minimum PD current to 12.5uA
+	status = sh_set_cfg_wearablesuite_minpdcurrent(125);
+	//Set initial PD current to 31.2uA
+	status = sh_set_cfg_wearablesuite_initialpdcurrent(312);
+	//Set target PD current to 31.2uA
+	status = sh_set_cfg_wearablesuite_targetpdcurrent(312);
+	//Enable SCD
+	status = sh_set_cfg_wearablesuite_scdenable(1);
+	//Set the output format to Sample Counter byte, Sensor Data and Algorithm
+	status = sh_set_data_type(SS_DATATYPE_BOTH, true);
+	//Set the samples report period to 40ms(minimum is 32ms for BPT).
+	status = sh_set_report_period(5);
+	//Enable the accelerometer.
+	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, SH_INPUT_DATA_DIRECT_SENSOR);
+	//Enable MAX86176 AFE.
+	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
+	//Set the biometric operation mode to WAS and BPT
+	status = sensorhub_set_algo_operation_mode(SH_OPERATION_WHRM_BPT_MODE);
+	//Set the BPT run mode to calibration
+	status = sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);
+	//Enable the biometric operation mode for BPT+WAS extended report algorithm
+	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_EXTENDED);
+}
+
+void sh_set_bpt_cal_data(void)
+{
+	int status;
+
+	//Set the the cal_index to 0.
+	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
+	//Set the BPT user calibration vector (using cal_index 0).
+	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[0*CAL_RESULT_SIZE]);
+	//Set the the cal_index to 1.
+	status = sh_set_cfg_bpt_sys_dia(1, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
+	//Set the BPT user calibration vector (using cal_index 0).
+	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[1*CAL_RESULT_SIZE]);
+	//Set the the cal_index to 2.
+	status = sh_set_cfg_bpt_sys_dia(2, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
+	//Set the BPT user calibration vector (using cal_index 0).
+	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[2*CAL_RESULT_SIZE]);
+	//Set the the cal_index to 3.
+	status = sh_set_cfg_bpt_sys_dia(3, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
+	//Set the BPT user calibration vector (using cal_index 0).
+	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[3*CAL_RESULT_SIZE]);
+	//Set the the cal_index to 4.
+	status = sh_set_cfg_bpt_sys_dia(4, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
+	//Set the BPT user calibration vector (using cal_index 0).
+	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[4*CAL_RESULT_SIZE]);
+}

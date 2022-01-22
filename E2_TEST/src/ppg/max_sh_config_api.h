@@ -907,4 +907,76 @@ int sh_set_cfg_wearablesuite_meas_led_driversel(const uint8_t measChan, const ui
  */
 int sh_get_cfg_wearablesuite_meas_led_driversel( uint8_t driverLedSel[9] );
 
+
+int sensorhub_set_bpt_algo_submode( const uint8_t algo_op_mode );
+
+
+/**
+ * @brief	function to set 512 bytes of user calibration
+ *
+ * @param[in]  cal_result[512]			-	user calibration data
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_cfg_bpt_cal_result(uint8_t cal_result[512]);
+/**
+ * @brief	function to get 512 bytes of user calibration
+ *
+ * @param[out]  *cal_result			-	user calibration data
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_cfg_bpt_cal_result( uint8_t *cal_result );
+/**
+ * @brief	function to set date, time
+ *
+ * @param[in]  date			-	date yyyymmdd
+ * @param[in]  time			-	time hhmmss
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_cfg_bpt_date_time(const uint32_t date, const uint32_t time);
+/**
+ * @brief	function to set cal_index, systolic, diastolic
+ *
+ * @param[in]  cal_index	-	cal_index
+ * @param[in]  sys			-	systolic
+ * @param[in]  dia			-	diastolic
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_cfg_bpt_sys_dia(const uint8_t cal_idx, const uint8_t sys, const uint8_t dia);
+/**
+ * @brief	function to set cal_index
+ *
+ * @param[in]  cal_index	-	cal_index
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_cfg_bpt_cal_index(const uint8_t cal_idx);
+/**
+ * @brief	function to get cal_index
+ *
+ * @param[out]  cal_index	-	cal_index
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_cfg_bpt_cal_index( uint8_t *cal_idx );
+/**
+ * @brief	function to set BPT continuous mode
+ *
+ * @param[in]  cont_mode	-	1 is continuous, 0 is one-shot
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_set_cfg_bpt_continuous(const uint8_t cont_mode);
+/**
+ * @brief	function to get BPT continuous mode
+ *
+ * @param[out]  cont_mode	-	1 is continuous, 0 is one-shot
+ *
+ * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
+ */
+int sh_get_cfg_bpt_continuous( uint8_t *cont_mode );
+
 #endif /* ALGOHUB_SENSORHUB_CONFIG_API_H_ */

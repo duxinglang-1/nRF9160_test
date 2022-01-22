@@ -44,7 +44,10 @@ typedef enum{
 	MAX86176_MODE1_DATA,
 	WHRM_SPO2_SUITE_MODE1,
 	WHRM_SPO2_SUTITE_MODE2,
-	ACCEL_MODE1_DATA
+	ACCEL_MODE1_DATA,
+	BPT_ALGO_DATA,
+	RAW_ALGO_DATA,
+	DATA_FORMAT_MAX
 } data_format_t;
 
 typedef union {
@@ -54,8 +57,9 @@ typedef union {
 		uint8_t whrm_wspo2_suite_enabled_mode1 :1;
 		uint8_t whrm_wspo2_suite_enabled_mode2 :1;
 		uint8_t timestamp_enabled:1;
-
-		uint8_t reserved:3;
+		uint8_t bpt_algo_enabled:1;
+		uint8_t algo_raw_enabled:1;
+		uint8_t reserved:1;
 	};
 	uint8_t status_vals;
 } algo_sensor_status_t;
@@ -72,6 +76,8 @@ void accel_data_rx(void * p_accel_data, uint8_t* data_ptr);
 void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr);
 void whrm_wspo2_suite_data_rx_mode1(void * p_algo_data_mode1, uint8_t* data_ptr);
 void whrm_wspo2_suite_data_rx_mode2(void * p_algo_data_mode2, uint8_t* data_ptr);
+void bpt_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr);
+void raw_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr);
 
 static algo_sensor_status_t g_algo_sensor_stat;
 
@@ -81,7 +87,9 @@ static ss_instance_parser_t parsers[SH_NUM_CURRENT_ALGOS] =
 		{MAX86176_MODE1_DATA, 	 SSMAX86176_MODE1_DATASIZE,				max86176_data_rx					},
 		{WHRM_SPO2_SUITE_MODE1,	 SSWHRM_WSPO2_SUITE_MODE1_DATASIZE,		whrm_wspo2_suite_data_rx_mode1		},
 		{WHRM_SPO2_SUTITE_MODE2, SSWHRM_WSPO2_SUITE_MODE2_DATASIZE,		whrm_wspo2_suite_data_rx_mode2		},
-		{ACCEL_MODE1_DATA,		 SSACCEL_MODE1_DATASIZE,				accel_data_rx},
+		{ACCEL_MODE1_DATA,		 SSACCEL_MODE1_DATASIZE,				accel_data_rx                       },
+		{BPT_ALGO_DATA,          SSBPT_ALGO_DATASIZE,		            bpt_algo_data_rx		            },
+		{RAW_ALGO_DATA,          SSRAW_ALGO_DATASIZE,		            raw_algo_data_rx		            },
 };
 
 int sensorhub_interface_init()
@@ -137,26 +145,86 @@ int sensorhub_disable_sensor()
 	return ret;
 }
 
-int sensorhub_enable_algo(sensorhub_report_mode_t mode)
+int sensorhub_enable_algo(sensorhub_report_mode_t mode , int sh_operation_mode , int sh_algo_submode)
 {
 	int ret = 0;
 
-	ret = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X , (int) mode);
+	//MYG: setting algo mode will determine which is enabled
+	g_algo_sensor_stat.bpt_algo_enabled = 0; //MYG: for MWA test
 
-	if(SENSORHUB_MODE_BASIC == mode)
+    //SH_OPERATION_WHRM_MODE here.
+	ret = sensorhub_set_algo_operation_mode(sh_operation_mode);
+	//if(ret < 0)
+	//	return -1;  MYG: not define in regular sensorhub release
+
+	ret = sensorhub_set_algo_submode(sh_operation_mode, sh_algo_submode);
+
+	ret = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, (int)mode);
+	if(ret < 0)
+    	return -1;
+
+/*	if(SENSORHUB_MODE_BASIC == mode)
 	{
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
+		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
 	}
 	else
 	{
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 1;
+		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
 	}
 
+	if(sh_operation_mode == SH_OPERATION_WHRM_BPT_MODE)
+		g_algo_sensor_stat.bpt_algo_enabled = 1;
+
+*/
+
+	if(sh_operation_mode == SH_OPERATION_WHRM_MODE)
+	{
+		if(SENSORHUB_MODE_BASIC == mode)
+		{
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
+		}
+		else
+		{
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 1;
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
+		}
+
+		g_algo_sensor_stat.bpt_algo_enabled = 0;
+		g_algo_sensor_stat.algo_raw_enabled = 0;
+
+	}
+	else if(sh_operation_mode == SH_OPERATION_WHRM_BPT_MODE)
+	{
+		if(SENSORHUB_MODE_BASIC == mode)
+		{
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
+		}
+		else
+		{
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 1;
+			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
+		}
+
+		g_algo_sensor_stat.bpt_algo_enabled = 1;
+		g_algo_sensor_stat.algo_raw_enabled = 0;
+
+	}
+	else if(sh_operation_mode == SH_OPERATION_RAW_MODE)
+	{
+		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
+		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
+		g_algo_sensor_stat.bpt_algo_enabled = 0;
+		g_algo_sensor_stat.algo_raw_enabled = 1;
+	}
 
 	return ret;
 }
 
-int sensorhub_disable_algo()
+int sensorhub_disable_algo(void)
 {
 	int ret = 0;
 
@@ -164,6 +232,8 @@ int sensorhub_disable_algo()
 
 	g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
 	g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
+	g_algo_sensor_stat.algo_raw_enabled = 0;
+	g_algo_sensor_stat.bpt_algo_enabled = 0;
 
 	return ret;
 }
@@ -190,7 +260,7 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 	int ret = 0;
 	int num_bytes_to_read = 0;
 	uint8_t hubStatus = 0;
-	uint8_t databuf[150];
+	uint8_t databuf[256];
 	uint8_t *ptr;
 
 	if(NULL == p_result)
@@ -239,6 +309,17 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 		if(g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2)
 			num_bytes_to_read += SSWHRM_WSPO2_SUITE_MODE2_DATASIZE;
 
+		if(g_algo_sensor_stat.bpt_algo_enabled)
+			num_bytes_to_read += SSBPT_ALGO_DATASIZE;
+
+		if(g_algo_sensor_stat.algo_raw_enabled)
+			num_bytes_to_read += SSRAW_ALGO_DATASIZE;
+
+		int avail_samples;
+		if(hubStatus & SS_MASK_STATUS_DATA_RDY) {
+			sh_num_avail_samples(&avail_samples);
+			//LOGD("ava samp = %d", avail_samples );
+		}
 		ptr  = &databuf[2];
 
 		WAIT_MS(5);
@@ -268,6 +349,20 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 			parsers[WHRM_SPO2_SUTITE_MODE2].fp_parse(&p_result->algo_data, ptr);
 			ptr += parsers[WHRM_SPO2_SUTITE_MODE2].data_size;
 		}
+
+		if(g_algo_sensor_stat.bpt_algo_enabled)
+		{
+           //MYG add to parsers
+			parsers[BPT_ALGO_DATA].fp_parse(&p_result->bpt_data, ptr);
+			ptr += parsers[BPT_ALGO_DATA].data_size;
+		}
+
+		if(g_algo_sensor_stat.algo_raw_enabled)
+		{
+           //MYG add to parsers
+			parsers[RAW_ALGO_DATA].fp_parse(&p_result->bpt_data, ptr);
+			ptr += parsers[RAW_ALGO_DATA].data_size;
+		}		
 	}
 	else
 	{
@@ -422,3 +517,28 @@ void whrm_wspo2_suite_data_rx_mode2(void * p_algo_data_mode2, uint8_t* data_ptr)
 	sample->hrm_afe_state = data_ptr[56];
 	sample->is_high_motion = data_ptr[57];
 }
+
+void bpt_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr)
+{
+	bpt_sensorhub_data *sample = (bpt_sensorhub_data *) p_bpt_algo_data;
+
+	sample->status    =  data_ptr[0];
+	sample->perc_comp =  data_ptr[1];
+	sample->sys_bp    =  data_ptr[2];
+	sample->dia_bp    =  data_ptr[3];
+	sample->flags     =  (data_ptr[4] << 8) | data_ptr[5];
+	sample->reserved  =  (data_ptr[6] << 8) | data_ptr[7];
+
+
+	uint16_t bpt_flags = (data_ptr[4] << 8) | data_ptr[5];
+	uint8_t est_error = bpt_flags & 0b0000000000100000;
+
+	LOGD("bptr = %d %d %d %d %d" ,  data_ptr[0] ,  data_ptr[1] , data_ptr[2] , data_ptr[3], est_error);
+	LOGD("bpt exec cnt = %" , (int)((data_ptr[6] << 8) | data_ptr[7]));
+}
+
+void raw_algo_data_rx( void * p_bpt_algo_data, uint8_t* data_ptr)
+{
+	return;
+}
+

@@ -32,10 +32,16 @@ bool ppg_test_flag = false;
 bool ppg_stop_flag = false;
 bool ppg_get_hr_spo2 = false;
 bool ppg_redraw_data_flag = false;
+bool ppg_get_cal_flag = false;
+bool ppg_bpt_is_calbraed = false;
+
 u8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static u8_t whoamI=0, rst=0;
 
 u8_t g_ppg_trigger = 0;
+u8_t g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+u8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
+
 u16_t g_hr = 0;
 u16_t g_bp_systolic = 0;	//收缩压
 u16_t g_bp_diastolic = 0;	//舒张压
@@ -97,112 +103,49 @@ void ppg_get_hr_timerout(struct k_timer *timer_id)
 	ppg_get_hr_spo2 = true;
 }
 
-void PPGGetSensorHubData(void)
+bool SetSensorhub(void)
 {
-	int ret = 0;
-	int num_bytes_to_read = 0;
-	u8_t hubStatus = 0;
-	u8_t databuf[READ_SAMPLE_COUNT_MAX*(SS_NORMAL_PACKAGE_SIZE+2)] = {0};
-	whrm_wspo2_suite_sensorhub_data sensorhub_out = {0};
-	accel_data accel = {0};
-	max86176_data max86176 = {0};
+	bool ret = false;
 
-	ret = sh_get_sensorhub_status(&hubStatus);
-#ifdef PPG_DEBUG	
-	LOGD("ret:%d, hubStatus:%d", ret, hubStatus);
+#ifdef PPG_DEBUG
+	LOGD("g_ppg_alg_mode:%d, ppg_bpt_is_calbraed:%d", g_ppg_alg_mode, ppg_bpt_is_calbraed);
 #endif
-	if(hubStatus & SS_MASK_STATUS_FIFO_OUT_OVR)
+
+	if(g_ppg_alg_mode == ALG_MODE_BPT)
 	{
-	#ifdef PPG_DEBUG
-		LOGD("SS_MASK_STATUS_FIFO_OUT_OVR");
-	#endif
-	}
-
-	if((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
-	{
-		int u32_sampleCnt = 0;
-
-	#ifdef PPG_DEBUG
-		LOGD("FIFO ready");
-	#endif
-		num_bytes_to_read = SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE;
-
-		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
-		if(ret == SS_SUCCESS)
+		if(!ppg_bpt_is_calbraed)
 		{
-		#ifdef PPG_DEBUG
-			LOGD("sample count is:%d", u32_sampleCnt);
-		#endif
-		}
-		else
-		{
-		#ifdef PPG_DEBUG
-			LOGD("read sample count fail:%d", ret);
-		#endif
-		}
-
-		WAIT_MS(5);
-
-		if(u32_sampleCnt > READ_SAMPLE_COUNT_MAX)
-			u32_sampleCnt = READ_SAMPLE_COUNT_MAX;
-		
-		ret = sh_read_fifo_data(u32_sampleCnt, num_bytes_to_read, databuf, sizeof(databuf));
-		if(ret == SS_SUCCESS)
-		{
-			u16_t heart_rate=0,spo2=0;
-			u32_t i,j,index = 0;
-
-			for(i=0,j=0;i<u32_sampleCnt;i++)
+			ret = sh_check_bpt_cal_data();
+			if(ret)
 			{
-				index = i * SS_NORMAL_PACKAGE_SIZE + 1;
-				
-				accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
-				max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
-				whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE] );
 			#ifdef PPG_DEBUG
-				LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
+				LOGD("check bpt cal success");
 			#endif
-				//if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
-				{
-					heart_rate += sensorhub_out.hr;
-					spo2 += sensorhub_out.spo2;
-					j++;
-				}				
+				sh_set_bpt_cal_data();
+				g_ppg_bpt_status = BPT_STATUS_GET_EST;
 			}
-
-			if(j > 0)
+			else
 			{
-				heart_rate = heart_rate/j;
-				spo2 = spo2/j;
+			#ifdef PPG_DEBUG
+				LOGD("check bpt cal fail");
+			#endif
+				sh_req_bpt_cal_data();
+				g_ppg_bpt_status = BPT_STATUS_GET_CAL;
 			}
-			
-			g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
-			g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
-		#ifdef PPG_DEBUG
-			LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
-			LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
-		#endif	
 		}
 		else
 		{
-		#ifdef PPG_DEBUG
-			LOGD("read FIFO result fail:%d", ret);
-		#endif
+			g_ppg_bpt_status = BPT_STATUS_GET_EST;
 		}
 	}
-	else
-	{
-	#ifdef PPG_DEBUG
-		LOGD("FIFO status is not ready:%d,%d", ret, hubStatus);
-	#endif
-	}	
 }
 
-bool demoSensorhub(void)
+bool StartSensorhub(void)
 {
 	int status = -1;
 	u8_t hubMode = 0x00;
-
+	u8_t period = 0;
+	
 	SH_rst_to_APP_mode();
 	
 	status = sh_get_sensorhub_operating_mode(&hubMode);
@@ -219,6 +162,8 @@ bool demoSensorhub(void)
 		LOGD("work mode is app mode:%d", hubMode);
 	#endif
 	}
+
+	SetSensorhub();
 
 	status = sh_set_data_type(SS_DATATYPE_BOTH, true);
 	if(status != SS_SUCCESS)
@@ -238,7 +183,17 @@ bool demoSensorhub(void)
 		return false;
 	}
 
-	status = sh_set_report_period(25);  //1Hz or 25Hz
+	switch(g_ppg_alg_mode)
+	{
+	case ALG_MODE_HR_SPO2:
+		period = 25;
+		break;
+
+	case ALG_MODE_BPT:
+		period = 4;	//For BPT  setting >=4 is a MUST.
+		break;
+	}
+	status = sh_set_report_period(period);  //1Hz or 25Hz
 	if(status != SS_SUCCESS)
 	{
 	#ifdef PPG_DEBUG
@@ -276,6 +231,11 @@ bool demoSensorhub(void)
 	//set algorithm operation mode
 	sh_set_cfg_wearablesuite_algomode(0x0);
 
+	//if(g_ppg_alg_mode == ALG_MODE_BPT && g_ppg_bpt_status == BPT_STATUS_GET_CAL)
+	//	status = sensorhub_enable_algo(SENSORHUB_MODE_BASIC, SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);
+	//else
+	//	status = sensorhub_enable_algo(SENSORHUB_MODE_BASIC, SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_ESTIMATION);
+
 	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X , (int) SENSORHUB_MODE_BASIC);
 	if(status != SS_SUCCESS)
 	{
@@ -308,6 +268,193 @@ bool demoSensorhub(void)
 	return true;
 }
 
+void PPGGetSensorHubData(void)
+{
+	int ret = 0;
+	int num_bytes_to_read = 0;
+	u8_t hubStatus = 0;
+	u8_t databuf[READ_SAMPLE_COUNT_MAX*(SS_EXTEND_PACKAGE_SIZE+2)] = {0};
+	whrm_wspo2_suite_sensorhub_data sensorhub_out = {0};
+	bpt_sensorhub_data bpt = {0};
+	accel_data accel = {0};
+	max86176_data max86176 = {0};
+
+	ret = sh_get_sensorhub_status(&hubStatus);
+#ifdef PPG_DEBUG	
+	LOGD("ret:%d, hubStatus:%d", ret, hubStatus);
+#endif
+	if(hubStatus & SS_MASK_STATUS_FIFO_OUT_OVR)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("SS_MASK_STATUS_FIFO_OUT_OVR");
+	#endif
+	}
+
+	if((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
+	{
+		int u32_sampleCnt = 0;
+
+	#ifdef PPG_DEBUG
+		LOGD("FIFO ready");
+	#endif
+
+		if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
+			num_bytes_to_read = SS_EXTEND_PACKAGE_SIZE;
+		else
+			num_bytes_to_read = SS_NORMAL_PACKAGE_SIZE;
+
+		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
+		if(ret == SS_SUCCESS)
+		{
+		#ifdef PPG_DEBUG
+			LOGD("sample count is:%d", u32_sampleCnt);
+		#endif
+		}
+		else
+		{
+		#ifdef PPG_DEBUG
+			LOGD("read sample count fail:%d", ret);
+		#endif
+		}
+
+		WAIT_MS(5);
+
+		if(u32_sampleCnt > READ_SAMPLE_COUNT_MAX)
+			u32_sampleCnt = READ_SAMPLE_COUNT_MAX;
+		
+		ret = sh_read_fifo_data(u32_sampleCnt, num_bytes_to_read, databuf, sizeof(databuf));
+		if(ret == SS_SUCCESS)
+		{
+			u16_t heart_rate=0,spo2=0;
+			u32_t i,j,index = 0;
+
+			for(i=0,j=0;i<u32_sampleCnt;i++)
+			{
+				index = i * num_bytes_to_read + 1;
+
+				if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
+				{
+					bpt_algo_data_rx(&bpt, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE ]);					
+				#ifdef PPG_DEBUG
+					LOGD("status:%d, sys_bp:%d, dia_bp:%d, perc_comp:%d", bpt.status, bpt.sys_bp, bpt.dia_bp, bpt.perc_comp);
+				#endif
+				
+					if(bpt.status == 2 && bpt.perc_comp == 100)
+					{
+						//get calbration data success
+						sh_get_bpt_cal_data();
+						PPGStopCheck();
+
+						StartSensorhub();
+					}
+					
+					return;
+				}
+				else
+				{
+					accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
+					max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
+					whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
+					
+				#ifdef PPG_DEBUG
+					LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
+				#endif
+					//if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+					{
+						heart_rate += sensorhub_out.hr;
+						spo2 += sensorhub_out.spo2;
+						j++;
+					}	
+				}
+			}
+
+			if(j > 0)
+			{
+				heart_rate = heart_rate/j;
+				spo2 = spo2/j;
+			}
+			
+			g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
+			g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
+		#ifdef PPG_DEBUG
+			LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
+			LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
+		#endif	
+		}
+		else
+		{
+		#ifdef PPG_DEBUG
+			LOGD("read FIFO result fail:%d", ret);
+		#endif
+		}
+	}
+	else
+	{
+	#ifdef PPG_DEBUG
+		LOGD("FIFO status is not ready:%d,%d", ret, hubStatus);
+	#endif
+	}	
+}
+
+void APPStartHrSpo2(void)
+{
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+	ppg_start_flag = true;
+}
+
+void MenuStartHrSpo2(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_MENU;
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+	ppg_start_flag = true;
+}
+
+void MenuStopHrSpo2(void)
+{
+	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
+	ppg_stop_flag = true;
+}
+
+void APPStartBpt(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_APP;
+	g_ppg_alg_mode = ALG_MODE_BPT;
+	ppg_start_flag = true;
+}
+
+void MenuStartBpt(void)
+{
+	g_ppg_trigger |=TRIGGER_BY_MENU;
+	g_ppg_alg_mode = ALG_MODE_BPT;
+	ppg_start_flag = true;
+}
+
+void MenuStopBpt(void)
+{
+	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
+	ppg_stop_flag = true;
+}
+
+void APPStartEcg(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_APP;
+	g_ppg_alg_mode = ALG_MODE_ECG;
+	ppg_start_flag = true;
+}
+
+void MenuStartEcg(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_MENU;
+	g_ppg_alg_mode = ALG_MODE_ECG;
+	ppg_start_flag = true;
+}
+
+void MenuStopEcg(void)
+{
+	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
+	ppg_stop_flag = true;
+}
+
 void APPStartPPG(void)
 {
 	ppg_start_flag = true;
@@ -315,12 +462,14 @@ void APPStartPPG(void)
 
 void MenuStartPPG(void)
 {
-	g_ppg_trigger |= PPG_TRIGGER_BY_MENU;
+	g_ppg_trigger |= TRIGGER_BY_MENU;
 	ppg_start_flag = true;
 }
 
 void MenuStopPPG(void)
 {
+	g_ppg_trigger = 0;
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	ppg_stop_flag = true;
 }
 
@@ -338,30 +487,30 @@ void PPGStartCheck(void)
 	SH_Power_On();
 
 	ppg_power_flag = 1;
-	
-	ret = demoSensorhub();
+
+	ret = StartSensorhub();
 	if(ret)
 	{
 		if(ppg_power_flag == 0)
 		{
 		#ifdef PPG_DEBUG
-			LOGD("ppg has been stop!");
+			LOGD("ppg hr has been stop!");
 		#endif
 			k_timer_stop(&ppg_get_hr_timer);
 			return;
 		}
 	#ifdef PPG_DEBUG	
-		LOGD("ppg start success!");
+		LOGD("ppg hr start success!");
 	#endif
 		ppg_power_flag = 2;
 		
-		if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) == 0)
+		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 			k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
 	}
 	else
 	{
 	#ifdef PPG_DEBUG
-		LOGD("ppg start false!");
+		LOGD("ppg hr start false!");
 	#endif
 		ppg_power_flag = 0;
 	}
@@ -407,30 +556,30 @@ void PPGStopCheck(void)
 
 	ppg_power_flag = 0;
 
-	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_ONE_KEY) != 0)
+	if((g_ppg_trigger&TRIGGER_BY_APP_ONE_KEY) != 0)
 	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_ONE_KEY);
+		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_APP_ONE_KEY);
 		MCU_send_app_one_key_measure_data();
 	}
-	if((g_ppg_trigger&PPG_TRIGGER_BY_APP_HR) != 0)
+	if((g_ppg_trigger&TRIGGER_BY_APP) != 0)
 	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_APP_HR);
+		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_APP);
 		MCU_send_app_get_hr_data();
 	}	
-	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) != 0)
+	if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
 	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_MENU);
+		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	}
 
-	if((g_ppg_trigger&PPG_TRIGGER_BY_HOURLY) != 0)
+	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
-		g_ppg_trigger = g_ppg_trigger&(~PPG_TRIGGER_BY_HOURLY);
+		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
 	}
 }
 
 void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
-	if((g_ppg_trigger&PPG_TRIGGER_BY_MENU) == 0)
+	if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 		ppg_stop_flag = true;
 }
 
@@ -475,6 +624,12 @@ void PPGMsgProcess(void)
 		PPGStopCheck();
 		ppg_stop_flag = false;
 	}
+	
+	if(ppg_get_cal_flag)
+	{
+		ppg_get_cal_flag = false;
+	}
+	
 	if(ppg_get_hr_spo2)
 	{
 		PPGGetSensorHubData();

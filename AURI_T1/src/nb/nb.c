@@ -36,6 +36,8 @@
 #include "transfer_cache.h"
 #include "logger.h"
 
+#define NB_DEBUG
+
 #define LTE_TAU_WAKEUP_EARLY_TIME	(120)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
@@ -168,23 +170,35 @@ void lwm2m_carrier_event_handler(const lwm2m_carrier_event_t *event)
 {
 	switch (event->type) {
 	case LWM2M_CARRIER_EVENT_BSDLIB_INIT:
+	#ifdef NB_DEBUG	
 		LOGD("LWM2M_CARRIER_EVENT_BSDLIB_INIT");
+	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_CONNECT:
+	#ifdef NB_DEBUG	
 		LOGD("LWM2M_CARRIER_EVENT_CONNECT");
+	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_DISCONNECT:
+	#ifdef NB_DEBUG
 		LOGD("LWM2M_CARRIER_EVENT_DISCONNECT");
+	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_READY:
+	#ifdef NB_DEBUG
 		LOGD("LWM2M_CARRIER_EVENT_READY");
+	#endif
 		k_sem_give(&carrier_registered);
 		break;
 	case LWM2M_CARRIER_EVENT_FOTA_START:
+	#ifdef NB_DEBUG	
 		LOGD("LWM2M_CARRIER_EVENT_FOTA_START");
+	#endif
 		break;
 	case LWM2M_CARRIER_EVENT_REBOOT:
+	#ifdef NB_DEBUG	
 		LOGD("LWM2M_CARRIER_EVENT_REBOOT");
+	#endif
 		break;
 	}
 }
@@ -234,9 +248,10 @@ static int subscribe(void)
 		.list_count = 1,
 		.message_id = 0001
 	};
-
+#ifdef NB_DEBUG
 	LOGD("Subscribing to:%s, len:%d", subscribe_topic.topic.utf8,
 		subscribe_topic.topic.size);
+#endif
 	return mqtt_subscribe(&client, &subscription_list);
 }
 
@@ -264,7 +279,9 @@ static int publish_get_payload(struct mqtt_client *c, size_t length)
 			{
 				return ret;
 			}
+		#ifdef NB_DEBUG	
 			LOGD("mqtt_read_publish_payload: EAGAIN");
+		#endif
 			err = poll(&fds, 1,
 				   CONFIG_MQTT_KEEPALIVE * MSEC_PER_SEC);
 			if(err > 0 && (fds.revents & POLLIN) == POLLIN)
@@ -300,12 +317,16 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_CONNACK:
 		if(evt->result != 0)
 		{
+		#ifdef NB_DEBUG
 			LOGD("MQTT connect failed %d", evt->result);
+		#endif
 			break;
 		}
 
 		mqtt_connected = true;
+	#ifdef NB_DEBUG
 		LOGD("MQTT client connected!");		
+	#endif
 		subscribe();
 
 		if(power_on_data_flag)
@@ -319,7 +340,9 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	case MQTT_EVT_DISCONNECT:
+	#ifdef NB_DEBUG
 		LOGD("MQTT client disconnected %d", evt->result);
+	#endif
 		mqtt_connected = false;
 		
 		NbSendDataStop();
@@ -329,7 +352,9 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_PUBLISH: 
 		{
 			const struct mqtt_publish_param *p = &evt->param.publish;
+		#ifdef NB_DEBUG
 			LOGD("MQTT PUBLISH result=%d len=%d", evt->result, p->message.payload.len);
+		#endif
 			err = publish_get_payload(c, p->message.payload.len);
 			if(err >= 0)
 			{
@@ -337,12 +362,16 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			}
 			else
 			{
+			#ifdef NB_DEBUG
 				LOGD("mqtt_read_publish_payload: Failed! %d", err);
 				LOGD("Disconnecting MQTT client...");
+			#endif	
 				err = mqtt_disconnect(c);
 				if(err)
 				{
+				#ifdef NB_DEBUG
 					LOGD("Could not disconnect: %d", err);
+				#endif
 				}
 			}
 		} 
@@ -351,23 +380,33 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_PUBACK:
 		if(evt->result != 0)
 		{
+		#ifdef NB_DEBUG
 			LOGD("MQTT PUBACK error %d", evt->result);
+		#endif
 			break;
 		}
+	#ifdef NB_DEBUG	
 		LOGD("PUBACK packet id: %u", evt->param.puback.message_id);
+	#endif
 		break;
 
 	case MQTT_EVT_SUBACK:
 		if(evt->result != 0)
 		{
+		#ifdef NB_DEBUG
 			LOGD("MQTT SUBACK error %d", evt->result);
+		#endif
 			break;
 		}
+	#ifdef NB_DEBUG
 		LOGD("SUBACK packet id: %u", evt->param.suback.message_id);
+	#endif
 		break;
 
 	default:
+	#ifdef NB_DEBUG
 		LOGD("default: %d", evt->type);
+	#endif
 		break;
 	}
 }
@@ -388,7 +427,9 @@ static void broker_init(void)
 	err = getaddrinfo(broker_hostname, NULL, &hints, &result);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("ERROR: getaddrinfo failed %d", err);
+	#endif
 		return;
 	}
 
@@ -413,16 +454,19 @@ static void broker_init(void)
 
 			inet_ntop(AF_INET, &broker4->sin_addr.s_addr,
 				  ipv4_addr, sizeof(ipv4_addr));
+		#ifdef NB_DEBUG
 			LOGD("IPv4 Address found %s", ipv4_addr);
+		#endif
 			break;
 		}
 		else
 		{
+		#ifdef NB_DEBUG
 			LOGD("ai_addrlen = %u should be %u or %u",
 				(unsigned int)addr->ai_addrlen,
 				(unsigned int)sizeof(struct sockaddr_in),
 				(unsigned int)sizeof(struct sockaddr_in6));
-
+		#endif
 		}
 
 		addr = addr->ai_next;
@@ -515,8 +559,9 @@ static void mqtt_link(struct k_work_q *work_q)
 {
 	int err,i=0;
 
+#ifdef NB_DEBUG
 	LOGD("begin");
-
+#endif
 	mqtt_connecting_flag = true;
 	
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -528,14 +573,18 @@ static void mqtt_link(struct k_work_q *work_q)
 	err = mqtt_connect(&client);
 	if(err != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("ERROR: mqtt_connect %d", err);
+	#endif
 		return;
 	}
 
 	err = fds_init(&client);
 	if(err != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("ERROR: fds_init %d", err);
+	#endif
 		return;
 	}
 
@@ -544,14 +593,18 @@ static void mqtt_link(struct k_work_q *work_q)
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
 		if(err < 0)
 		{
+		#ifdef NB_DEBUG
 			LOGD("ERROR: poll %d", errno);
+		#endif
 			break;
 		}
 
 		err = mqtt_live(&client);
 		if((err != 0) && (err != -EAGAIN))
 		{
+		#ifdef NB_DEBUG
 			LOGD("ERROR: mqtt_live %d", err);
+		#endif
 			break;
 		}
 
@@ -560,29 +613,39 @@ static void mqtt_link(struct k_work_q *work_q)
 			err = mqtt_input(&client);
 			if(err != 0)
 			{
+			#ifdef NB_DEBUG
 				LOGD("ERROR: mqtt_input %d", err);
+			#endif
 				break;
 			}
 		}
 
 		if((fds.revents & POLLERR) == POLLERR)
 		{
+		#ifdef NB_DEBUG
 			LOGD("POLLERR");
+		#endif
 			break;
 		}
 
 		if((fds.revents & POLLNVAL) == POLLNVAL)
 		{
+		#ifdef NB_DEBUG
 			LOGD("POLLNVAL");
+		#endif
 			break;
 		}
 	}
+#ifdef NB_DEBUG	
 	LOGD("Disconnecting MQTT client...");
+#endif
 
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
+	#endif
 	}
 
 	mqtt_connecting_flag = false;
@@ -624,7 +687,9 @@ static void NbSendData(void)
 
 bool MqttIsConnected(void)
 {
+#ifdef NB_DEBUG
 	LOGD("mqtt_connected:%d", mqtt_connected);
+#endif
 	return mqtt_connected;
 }
 
@@ -640,7 +705,9 @@ void DisConnectMqttLink(void)
 		err = mqtt_disconnect(&client);
 		if(err)
 		{
+		#ifdef NB_DEBUG
 			LOGD("Could not disconnect MQTT client. Error: %d", err);
+		#endif
 		}
 		
 		mqtt_connected = false;
@@ -663,23 +730,31 @@ static void MqttDisConnect(void)
 {
 	int err;
 
+#ifdef NB_DEBUG
 	LOGD("begin");
+#endif
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
+	#endif
 	}
 }
 
 static void MqttDisConnectCallBack(struct k_timer *timer_id)
 {
+#ifdef NB_DEBUG
 	LOGD("begin");
+#endif
 	mqtt_disconnect_flag = true;
 }
 
 static void MqttDicConnectStart(void)
 {
+#ifdef NB_DEBUG
 	LOGD("begin");
+#endif
 	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), NULL);
 }
 
@@ -697,8 +772,9 @@ static void modem_rsrp_handler(char rsrp_value)
 	 * 0 through 97 (per "nRF91 AT Commands" v1.1). If the received value
 	 * falls outside this range, we should not send the value.
 	 */
+#ifdef NB_DEBUG
 	LOGD("rsrp_value:%d", rsrp_value);
-
+#endif
 	if(test_nb_flag)
 	{
 		sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", rsrp_value,(rsrp_value-141));
@@ -717,7 +793,9 @@ void modem_data_init(void)
 	err = modem_info_init();
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("Modem info could not be established: %d", err);
+	#endif
 		return;
 	}
 
@@ -740,7 +818,9 @@ static void modem_configure(void)
 #if 1 //xb test 20200927
 	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("AT_CMD write fail!");
+	#endif
 		return;
 	}
 #endif
@@ -758,14 +838,18 @@ static void modem_configure(void)
 		/* Wait for the LWM2M_CARRIER to configure the modem and
 		 * start the connection.
 		 */
+	#ifdef NB_DEBUG
 		LOGD("Waitng for carrier registration...");
+	#endif
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "Waitng for carrier registration...");
 			TestNBUpdateINfor();
 		}
 		k_sem_take(&carrier_registered, K_FOREVER);
+	#ifdef NB_DEBUG
 		LOGD("Registered!");
+	#endif
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "Registered!");
@@ -773,7 +857,9 @@ static void modem_configure(void)
 		}
 	#else /* defined(CONFIG_LWM2M_CARRIER) */
 		int err;
+	#ifdef NB_DEBUG
 		LOGD("LTE Link Connecting ...");
+	#endif
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connecting ...");
@@ -781,7 +867,9 @@ static void modem_configure(void)
 		}
 		err = lte_lc_init_and_connect();
 		__ASSERT(err == 0, "LTE link could not be established.");
+	#ifdef NB_DEBUG
 		LOGD("LTE Link Connected!");
+	#endif
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
@@ -820,7 +908,9 @@ void NBRedrawSignal(void)
 
 	if(at_cmd_write(CMD_GET_CESQ, strbuf, sizeof(strbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
+	#endif
 	}
 
 	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
@@ -838,7 +928,9 @@ void NBRedrawSignal(void)
 		//7 – E-UTRAN connected
 		//<access>
 		//4 – Radio access of type E-UTRAN FDD
+	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
+	#endif
 		ptr = strstr(strbuf, "+CSCON: ");
 		if(ptr)
 		{
@@ -852,14 +944,18 @@ void NBRedrawSignal(void)
 			ptr += strlen("+CSCON: ");
 			GetStringInforBySepa(ptr,",",2,tmpbuf);
 			mode = atoi(tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("mode:%d", mode);
+		#endif
 			if(mode == 1)//connected
 			{
 				flag = true;	
 			}
 			else if(mode == 0)//idle
 			{
+			#ifdef NB_DEBUG
 				LOGD("reg stat:%d", g_nw_registered);
+			#endif
 				if(g_nw_registered) 			//registered
 				{
 					flag = false;				//don't show no signal when ue is psm idle mode in registered, 
@@ -957,13 +1053,17 @@ void GetModemDateTime(void)
 
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("Get CCLK fail!");
+	#endif
 		if(nb_connected)
 			k_timer_start(&get_nw_time_timer, K_MSEC(1000), NULL);
 		
 		return;
 	}
+#ifdef NB_DEBUG	
 	LOGD("%s", timebuf);
+#endif
 	//%CCLK: "21/02/26,08:31:33+32",0
 	ptr = strstr(timebuf, "\"");
 	if(ptr)
@@ -1029,11 +1129,12 @@ void GetModemDateTime(void)
 		sprintf(tmpbuf, "%d", tz_count/4);
 		strcat(g_timezone, tmpbuf);
 	}
+#ifdef NB_DEBUG	
 	LOGD("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d", 
 					date_time.year,date_time.month,date_time.day,
 					date_time.hour,date_time.minute,date_time.second,
 					date_time.week);
-
+#endif
 	RedrawSystemTime();
 	SaveSystemDateTime();
 }
@@ -1053,31 +1154,45 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 	int ret;
 
 	ret = add_data_into_send_cache(data, datalen);
+#ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
+#endif
 	if(mqtt_connected)
 	{
+	#ifdef NB_DEBUG
 		LOGD("begin 001");
+	#endif
 		NbSendDataStart();
 	}
 	else
 	{
+	#ifdef NB_DEBUG
 		LOGD("begin 002");
+	#endif
 		if(nb_connected)
 		{
+		#ifdef NB_DEBUG
 			LOGD("begin 003");
+		#endif
 			if(!mqtt_connecting_flag)
 			{
+			#ifdef NB_DEBUG
 				LOGD("begin 003.1");
+			#endif
 				k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 			}
 			else
 			{
+			#ifdef NB_DEBUG
 				LOGD("begin 003.2");
+			#endif
 			}
 		}
 		else
 		{
+		#ifdef NB_DEBUG
 			LOGD("begin 004", __func__);
+		#endif
 			if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
 				k_timer_stop(&nb_reconnect_timer);
 
@@ -1099,9 +1214,9 @@ void NBSendSettingReply(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);	
 	strcat(buf, "}");
-
+#ifdef NB_DEBUG
 	LOGD("eply data:%s", buf);
-
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1116,8 +1231,9 @@ void NBSendSosWifiData(u8_t *data, u32_t datalen)
 	strcat(buf, ",");
 	strcat(buf, sos_trigger_time);
 	strcat(buf, "}");
-	
+#ifdef NB_DEBUG	
 	LOGD("sos wifi data:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1133,9 +1249,9 @@ void NBSendSosGpsData(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "]}");
-	
+#ifdef NB_DEBUG	
 	LOGD("sos gps data:%s", buf);
-
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1151,8 +1267,9 @@ void NBSendFallWifiData(u8_t *data, u32_t datalen)
 	strcat(buf, ",");
 	strcat(buf, fall_trigger_time);
 	strcat(buf, "}");
-	
+#ifdef NB_DEBUG	
 	LOGD("fall wifi data:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1168,8 +1285,9 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "]}");
-
+#ifdef NB_DEBUG
 	LOGD("fall gps data:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 #endif
@@ -1191,8 +1309,9 @@ void NBSendHealthData(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
-
+#ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1210,8 +1329,9 @@ void NBSendLocationData(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
-
+#ifdef NB_DEBUG
 	LOGD("location data:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1229,8 +1349,9 @@ void NBSendPowerOnInfor(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
-
+#ifdef NB_DEBUG
 	LOGD("pwr on infor:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1248,8 +1369,9 @@ void NBSendPowerOffInfor(u8_t *data, u32_t datalen)
 	GetSystemTimeSecString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
-
+#ifdef NB_DEBUG
 	LOGD("pwr off infor:%s", buf);
+#endif
 	MqttSendData(buf, strlen(buf));
 }
 
@@ -1311,7 +1433,9 @@ void ParseData(u8_t *data, u32_t datalen)
 		return;
 
 	ret = GetParaFromString(data, datalen, strcmd, strdata);
+#ifdef NB_DEBUG
 	LOGD("ret:%d, cmd:%s, data:%s", ret,strcmd,strdata);
+#endif
 	if(ret)
 	{
 		if(strcmp(strcmd, "S7") == 0)
@@ -1407,7 +1531,9 @@ static void MqttReceData(u8_t *data, u32_t datalen)
 	int ret;
 
 	ret = add_data_into_rece_cache(data, datalen);
+#ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
+#endif
 	ParseReceDataStart();
 }
 
@@ -1420,13 +1546,17 @@ static int configure_low_power(void)
 	err = lte_lc_psm_req(true);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("lte_lc_psm_req, error: %d", err);
+	#endif
 	}
 #else
 	err = lte_lc_psm_req(false);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("lte_lc_psm_req, error: %d", err);
+	#endif
 	}
 #endif
 
@@ -1435,13 +1565,17 @@ static int configure_low_power(void)
 	err = lte_lc_edrx_req(true);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("lte_lc_edrx_req, error: %d", err);
+	#endif
 	}
 #else
 	err = lte_lc_edrx_req(false);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("lte_lc_edrx_req, error: %d", err);
+	#endif
 	}
 #endif
 
@@ -1450,7 +1584,9 @@ static int configure_low_power(void)
 	err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
 	if(err)
 	{
+	#ifdef NB_DEBUG
 		LOGD("lte_lc_rai_req, error: %d", err);
+	#endif
 	}
 #endif
 
@@ -1468,11 +1604,15 @@ void GetModemSignal(void)
 	
 	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("Get cesq fail!");
+	#endif
 		return;
 	}
 
+#ifdef NB_DEBUG
 	LOGD("cesq:%s", tmpbuf);
+#endif
 	len = strlen(tmpbuf);
 	ptr = tmpbuf;
 	while(i<5)
@@ -1520,9 +1660,10 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 
 	if(buf == NULL || len == 0)
 		return;
-	
-	LOGD("%s", buf);
 
+#ifdef NB_DEBUG	
+	LOGD("%s", buf);
+#endif
 	//%XMONITOR: 1,"","","46000","1D29",9,8,"0D1E2D42",11,3684,45,38,"","00000100","11100000","00111110"
 	ptr = strstr(buf, "%XMONITOR: ");
 	if(ptr)
@@ -1555,60 +1696,86 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 			//full name
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("full name:%s", tmpbuf);
+		#endif
 			//short name
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 3, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("short name:%s", tmpbuf);
+		#endif
 			//plmn
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 4, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("plmn:%s", tmpbuf);
+		#endif
 			//tac
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 5, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("tac:%s", tmpbuf);
+		#endif
 			//AcT
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 6, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("AcT:%s", tmpbuf);
+		#endif
 			//band
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 7, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("band:%s",  tmpbuf);
+		#endif
 			//cell_id
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 8, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("cell_id:%s", tmpbuf);
+		#endif
 			//phys_cell_id
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 9, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("phys_cell_id:%s", tmpbuf);
+		#endif
 			//EARFCN
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 10, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("EARFCN:%s", tmpbuf);
+		#endif
 		#endif	
 			//rsrp
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 11, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("rsrp:%s", tmpbuf);
+		#endif
 			g_rsrp = atoi(tmpbuf);
 			modem_rsrp_handler(g_rsrp);
 		#if 0	
 			//snr
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 12, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("snr:%s", tmpbuf);
+		#endif
 			//NW-provided_eDRX_value
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 13, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("NW-provided_eDRX_value:%s", tmpbuf);
+		#endif
 		#endif
 			//Active-Time
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 14, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("Active-Time:%s", tmpbuf);
+		#endif
 			memcpy(strbuf, &tmpbuf[1], 8);
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
@@ -1627,16 +1794,21 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 				break;
 			}
 			g_act_time = flag*((strbuf[3]-0x30)*0x10+(strbuf[4]-0x30)*0x08+(strbuf[5]-0x30)*0x04+(strbuf[6]-0x30)*0x02+(strbuf[7]-0x30)*0x01);
+		#ifdef NB_DEBUG
 			LOGD("g_act_time:%d", g_act_time);
-
+		#endif
 			//Periodic-TAU-ext
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 15, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("Periodic-TAU-ext:%s", tmpbuf);
+		#endif
 			//Periodic-TAU
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 16, tmpbuf);
+		#ifdef NB_DEBUG
 			LOGD("Periodic-TAU:%s", tmpbuf);
+		#endif
 			memset(strbuf,0,sizeof(strbuf));
 			memcpy(strbuf, &tmpbuf[1], 8);
 			tau = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
@@ -1656,7 +1828,9 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 				break;
 			}
 			g_tau_time = flag*((strbuf[3]-0x30)*0x10+(strbuf[4]-0x30)*0x08+(strbuf[5]-0x30)*0x04+(strbuf[6]-0x30)*0x02+(strbuf[7]-0x30)*0x01);
+		#ifdef NB_DEBUG
 			LOGD("g_tau_time:%d", g_tau_time);
+		#endif
 		}
 	}
 }
@@ -1673,10 +1847,14 @@ void SetNetWorkApn(u8_t *imsi_buf)
 			u8_t cmdbuf[128] = {0};
 			
 			sprintf(cmdbuf, "AT+CGDCONT=0,\"IP\",\"%s\"", nb_apn_table[i].apn);
+		#ifdef NB_DEBUG
 			LOGD("cmdbuf:%s", cmdbuf); 
+		#endif
 			if(at_cmd_write(cmdbuf, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 			{
+			#ifdef NB_DEBUG
 				LOGD("set apn fail!");
+			#endif
 			}
 
 			break;
@@ -1685,7 +1863,9 @@ void SetNetWorkApn(u8_t *imsi_buf)
 
 	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("apn:%s", tmpbuf); 
+	#endif
 	}
 }
 
@@ -1715,7 +1895,9 @@ void GetModemInfor(void)
 
 	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("MODEM version:%s", &tmpbuf);
+	#endif
 
 		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
 	}
@@ -1723,40 +1905,47 @@ void GetModemInfor(void)
 #if 0
 	if(at_cmd_write(CMD_GET_SUPPORT_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("support band:%s", tmpbuf);
+	#endif
 	}
 
 	if(at_cmd_write(CMD_GET_CUR_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("current band:%s", tmpbuf);
+	#endif
 	}
 
 	if(at_cmd_write(CMD_GET_LOCKED_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("locked band:%s", tmpbuf);
+	#endif
 	}
 #endif
 
 	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("imei:%s", tmpbuf);
-
+	#endif
 		strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
 	}
 
 	if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("imsi:%s", tmpbuf);
-
+	#endif
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
-		
-		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("iccid:%s", &tmpbuf[9]);
-
+	#endif
 		strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
 	}
 }
@@ -1770,16 +1959,18 @@ void GetModemStatus(void)
 
 	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("MODEM parameter:%s", &tmpbuf);
-
+	#endif
 		DecodeModemMonitor(tmpbuf, strlen(tmpbuf));
 	}
 
 #if 0
 	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("cesq:%s", tmpbuf);
-		
+	#endif
 		len = strlen(tmpbuf);
 		tmpbuf[len-2] = ',';
 		tmpbuf[len-1] = 0x00;
@@ -1796,17 +1987,33 @@ void GetModemStatus(void)
 void SetModemTurnOn(void)
 {
 	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
+	{
+	#ifdef NB_DEBUG
 		LOGD("turn on modem success!");
+	#endif
+	}
 	else
+	{
+	#ifdef NB_DEBUG
 		LOGD("Can't turn on modem!");
+	#endif
+	}
 }
 
 void SetModemTurnOff(void)
 {
 	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
+	{
+	#ifdef NB_DEBUG
 		LOGD("turn off modem success!");
+	#endif
+	}
 	else
+	{
+	#ifdef NB_DEBUG
 		LOGD("Can't turn off modem!");
+	#endif
+	}
 
 	nb_connected = false;
 }
@@ -1817,7 +2024,9 @@ void GetModemAPN(void)
 	
 	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("apn:%s", tmpbuf);	
+	#endif
 	}
 }
 
@@ -1827,15 +2036,21 @@ void SetModemAPN(void)
 	
 	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("set apn fail!");
+	#endif
 	}
 
 	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("Get apn fail!");
+	#endif
 		return;
 	}
+#ifdef NB_DEBUG
 	LOGD("apn:%s", tmpbuf);	
+#endif
 }
 
 
@@ -1864,18 +2079,22 @@ static void nb_link(struct k_work *work)
 		frist_flag = true;
 		GetModemInfor();
 		SetModemTurnOff();
+		SetNetWorkParaByPlmn(g_imsi);
 	}
 	else if(strlen(g_imsi) == 0)
 	{
 		SetModemTurnOn();
 		GetModemInfor();
 		SetModemTurnOff();
+		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(gps_is_working())
 	{
+	#ifdef NB_DEBUG
 		LOGD("gps is working, continue waiting!");
-
+	#endif
+	
 		if(retry_count <= 2)		//2次以内每1分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), NULL);
 		else if(retry_count <= 4)	//3到4次每5分钟重连一次
@@ -1889,7 +2108,10 @@ static void nb_link(struct k_work *work)
 	}
 	else
 	{
+	#ifdef NB_DEBUG
 		LOGD("linking");
+	#endif
+	
 		nb_connecting_flag = true;
 	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 		uart_sleep_out();
@@ -1899,7 +2121,10 @@ static void nb_link(struct k_work *work)
 		err = lte_lc_init_and_connect();
 		if(err)
 		{
+		#ifdef NB_DEBUG
 			LOGD("Can't connected to LTE network. err:%d", err);
+		#endif
+		
 			nb_connected = false;
 
 			retry_count++;
@@ -1916,8 +2141,10 @@ static void nb_link(struct k_work *work)
 		}
 		else
 		{
+		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
-
+		#endif
+		
 			nb_connected = true;
 			retry_count = 0;
 
@@ -1943,47 +2170,47 @@ void GetNBSignal(void)
 {
 	u8_t str_rsrp[128] = {0};
 
-	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	{
-		LOGD("Get cfun fail!");
-		return;
+	#ifdef NB_DEBUG	
+		LOGD("cfun:%s", str_rsrp);
+	#endif
 	}
-	LOGD("cfun:%s", str_rsrp);
 
-	if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) != 0)
-	{
-		LOGD("Get cpsms fail!");
-		return;
-	}
-	LOGD("cpsms:%s", str_rsrp);
-
-	if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) != 0)
-	{
-		LOGD("Get cesq fail!");
-		return;
-	}
-	LOGD("cesq:%s", str_rsrp);
-
-	if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
-		LOGD("Get apn fail!");
+		LOGD("cpsms:%s", str_rsrp);
 	#endif
-		return;
 	}
-	LOGD("apn:%s", str_rsrp);
-
-	if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) != 0)
+	
+	if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	{
-		LOGD("Get csq fail!");
-		return;
+	#ifdef NB_DEBUG	
+		LOGD("cesq:%s", str_rsrp);
+	#endif
 	}
-	LOGD("csq:%s", str_rsrp);
+
+	if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	{
+	#ifdef NB_DEBUG	
+		LOGD("apn:%s", str_rsrp);
+	#endif
+	}
+	
+	if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	{
+	#ifdef NB_DEBUG	
+		LOGD("csq:%s", str_rsrp);
+	#endif
+	}
 }
 
 bool nb_is_connecting(void)
 {
+#ifdef NB_DEBUG
 	LOGD("nb_connecting_flag:%d", nb_connecting_flag);
+#endif
 	return nb_connecting_flag;
 }
 
@@ -2008,8 +2235,9 @@ void NBMsgProcess(void)
 
 		nb_is_running = true;
 		test_nb_flag = true;
-
+	#ifdef NB_DEBUG
 		LOGD("Start NB-IoT test!");
+	#endif
 	
 		if(nb_is_connected())
 		{

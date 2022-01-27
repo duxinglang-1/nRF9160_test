@@ -30,7 +30,7 @@ bool ppg_fw_upgrade_flag = false;
 bool ppg_start_flag = false;
 bool ppg_test_flag = false;
 bool ppg_stop_flag = false;
-bool ppg_get_hr_spo2 = false;
+bool ppg_get_data_flag = false;
 bool ppg_redraw_data_flag = false;
 bool ppg_get_cal_flag = false;
 bool ppg_bpt_is_calbraed = false;
@@ -49,8 +49,8 @@ u16_t g_spo2 = 0;
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
-static void ppg_get_hr_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_hr_timerout, NULL);
+static void ppg_get_data_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 
 void GetHeartRate(u8_t *HR)
 {
@@ -98,46 +98,9 @@ void PPGRedrawData(void)
 	}
 }
 
-void ppg_get_hr_timerout(struct k_timer *timer_id)
+void ppg_get_data_timerout(struct k_timer *timer_id)
 {
-	ppg_get_hr_spo2 = true;
-}
-
-bool SetSensorhub(void)
-{
-	bool ret = false;
-
-#ifdef PPG_DEBUG
-	LOGD("g_ppg_alg_mode:%d, ppg_bpt_is_calbraed:%d", g_ppg_alg_mode, ppg_bpt_is_calbraed);
-#endif
-
-	if(g_ppg_alg_mode == ALG_MODE_BPT)
-	{
-		if(!ppg_bpt_is_calbraed)
-		{
-			ret = sh_check_bpt_cal_data();
-			if(ret)
-			{
-			#ifdef PPG_DEBUG
-				LOGD("check bpt cal success");
-			#endif
-				sh_set_bpt_cal_data();
-				g_ppg_bpt_status = BPT_STATUS_GET_EST;
-			}
-			else
-			{
-			#ifdef PPG_DEBUG
-				LOGD("check bpt cal fail");
-			#endif
-				sh_req_bpt_cal_data();
-				g_ppg_bpt_status = BPT_STATUS_GET_CAL;
-			}
-		}
-		else
-		{
-			g_ppg_bpt_status = BPT_STATUS_GET_EST;
-		}
-	}
+	ppg_get_data_flag = true;
 }
 
 bool StartSensorhub(void)
@@ -156,124 +119,107 @@ bool StartSensorhub(void)
 	#endif
 		return false;
 	}
-	else
-	{
-	#ifdef PPG_DEBUG
-		LOGD("work mode is app mode:%d", hubMode);
-	#endif
-	}
 
-	SetSensorhub();
-
-	status = sh_set_data_type(SS_DATATYPE_BOTH, true);
-	if(status != SS_SUCCESS)
+	if(g_ppg_alg_mode == ALG_MODE_BPT)
 	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_set_data_type error:%d", status);
-	#endif
-		return false;
-	}
-
-	status = sh_set_fifo_thresh(1);
-	if(status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_set_fifo_thresh error:%d", status);
-	#endif
-		return false;
-	}
-
-	switch(g_ppg_alg_mode)
-	{
-	case ALG_MODE_HR_SPO2:
-		period = 25;
-		break;
-
-	case ALG_MODE_BPT:
-		period = 4;	//For BPT  setting >=4 is a MUST.
-		break;
-	}
-	status = sh_set_report_period(period);  //1Hz or 25Hz
-	if(status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_set_fifo_thresh error:%d", status);
-	#endif
-		return false;
-	}
-
-	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-	if (status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_sensor_enable_ACC eorr:%d", status);
-	#endif
-		return false;
-	}
-
-	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-	if(status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_sensor_enable_MAX86176 error:%d", status);
-	#endif
-		status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
-		if(status != SS_SUCCESS)
+		if(!ppg_bpt_is_calbraed)
 		{
-		#ifdef PPG_DEBUG
-			LOGD("sh_sensor_disable_ACC error:%d", status);
-		#endif
+			status = sh_check_bpt_cal_data();
+			if(status)
+			{
+			#ifdef PPG_DEBUG
+				LOGD("check bpt cal success");
+			#endif
+				sh_set_bpt_cal_data();
+				//ppg_bpt_is_calbraed = true;
+				g_ppg_bpt_status = BPT_STATUS_GET_EST;
+			}
+			else
+			{
+			#ifdef PPG_DEBUG
+				LOGD("check bpt cal fail, req cal from algo");
+			#endif
+				sh_req_bpt_cal_data();
+				g_ppg_bpt_status = BPT_STATUS_GET_CAL;
+
+				k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(200));
+				return;
+			}
+		}
+		else
+		{
+			g_ppg_bpt_status = BPT_STATUS_GET_EST;
 		}
 		
-		return false;
+		//Enable AEC
+		sh_set_cfg_wearablesuite_afeenable(1);
+		//Enable automatic calculation of target PD current
+		sh_set_cfg_wearablesuite_autopdcurrentenable(1);
+		//Set minimum PD current to 12.5uA
+		sh_set_cfg_wearablesuite_minpdcurrent(125);
+		//Set initial PD current to 31.2uA
+		sh_set_cfg_wearablesuite_initialpdcurrent(312);
+		//Set target PD current to 31.2uA
+		sh_set_cfg_wearablesuite_targetpdcurrent(312);
+		//Enable SCD
+		sh_set_cfg_wearablesuite_scdenable(1);
+		//Set the output format to Sample Counter byte, Sensor Data and Algorithm
+		sh_set_data_type(SS_DATATYPE_BOTH, true);
+		//set fifo thresh
+		sh_set_fifo_thresh(1);
+		//Set the samples report period to 40ms(minimum is 32ms for BPT).
+		sh_set_report_period(25);
+		//Enable the sensor.
+		sensorhub_enable_sensors();
+		//set algo mode
+		sh_set_cfg_wearablesuite_algomode(0x0);
+		//set algo oper mode
+		sensorhub_set_algo_operation_mode(SH_OPERATION_WHRM_BPT_MODE);
+		g_algo_sensor_stat.bpt_algo_enabled = 1;
+		//set algo submode
+		sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_ESTIMATION);
+		//enable algo
+		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
+		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
+
+		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500));		
 	}
-
-	//set algorithm operation mode
-	sh_set_cfg_wearablesuite_algomode(0x0);
-
-	//if(g_ppg_alg_mode == ALG_MODE_BPT && g_ppg_bpt_status == BPT_STATUS_GET_CAL)
-	//	status = sensorhub_enable_algo(SENSORHUB_MODE_BASIC, SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);
-	//else
-	//	status = sensorhub_enable_algo(SENSORHUB_MODE_BASIC, SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_ESTIMATION);
-
-	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X , (int) SENSORHUB_MODE_BASIC);
-	if(status != SS_SUCCESS)
+	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_sensor_enable_algo error:%d", status);
-	#endif
-		status = sh_sensor_disable(SH_SENSORIDX_MAX86176);
-		if(status != SS_SUCCESS)
-		{
-		#ifdef PPG_DEBUG
-			LOGD("sh_sensor_disble_MAX86176 error:%d", status);
-		#endif
-		}
+		//set fifo thresh
+		sh_set_fifo_thresh(1);
+		//Set the samples report period to 40ms(minimum is 32ms for BPT).
+		sh_set_report_period(25);
+		//Enable AEC
+		sh_set_cfg_wearablesuite_afeenable(1);
+		//Enable automatic calculation of target PD current
+		sh_set_cfg_wearablesuite_autopdcurrentenable(1);
+		//Set the output format to Sample Counter byte, Sensor Data and Algorithm
+		sh_set_data_type(SS_DATATYPE_BOTH, true);
+		//Enable the sensor.
+		sensorhub_enable_sensors();
+		//set algo oper mode
+		sensorhub_set_algo_operation_mode(SH_OPERATION_WHRM_MODE);
+		g_algo_sensor_stat.bpt_algo_enabled = 0;
+		//Set the WAS algorithm operation mode to Continuous HRM + Continuous SpO2
+		sh_set_cfg_wearablesuite_algomode(0x0);
+		//enable algo
+		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
+		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
-		status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
-		if(status != SS_SUCCESS)
-		{
-		#ifdef PPG_DEBUG
-			LOGD("sh_sensor_disable_ACC error:%d", status);
-		#endif
-		}
-		
-		return false;
+		k_timer_start(&ppg_get_hr_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 	}
-
-	//config a timer to poll FIFO
-	//set timer to 5 seconds
-	k_timer_start(&ppg_get_hr_timer, K_MSEC(1*1000), K_MSEC(1*1000));
-
+	
 	return true;
 }
 
 void PPGGetSensorHubData(void)
 {
+	bool get_bpt_flag = false;
 	int ret = 0;
 	int num_bytes_to_read = 0;
 	u8_t hubStatus = 0;
-	u8_t databuf[READ_SAMPLE_COUNT_MAX*(SS_EXTEND_PACKAGE_SIZE+2)] = {0};
+	u8_t databuf[256] = {0};
 	whrm_wspo2_suite_sensorhub_data sensorhub_out = {0};
 	bpt_sensorhub_data bpt = {0};
 	accel_data accel = {0};
@@ -298,10 +244,19 @@ void PPGGetSensorHubData(void)
 		LOGD("FIFO ready");
 	#endif
 
-		if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
-			num_bytes_to_read = SS_EXTEND_PACKAGE_SIZE;
-		else
-			num_bytes_to_read = SS_NORMAL_PACKAGE_SIZE;
+		num_bytes_to_read += SS_PACKET_COUNTERSIZE;
+		if(g_algo_sensor_stat.max86176_enabled)
+			num_bytes_to_read += SSMAX86176_MODE1_DATASIZE;
+		if(g_algo_sensor_stat.accel_enabled)
+			num_bytes_to_read += SSACCEL_MODE1_DATASIZE;
+		if(g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1)
+			num_bytes_to_read += SSWHRM_WSPO2_SUITE_MODE1_DATASIZE;
+		if(g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2)
+			num_bytes_to_read += SSWHRM_WSPO2_SUITE_MODE2_DATASIZE;
+		if(g_algo_sensor_stat.bpt_algo_enabled)
+			num_bytes_to_read += SSBPT_ALGO_DATASIZE;
+		if(g_algo_sensor_stat.algo_raw_enabled)
+			num_bytes_to_read += SSRAW_ALGO_DATASIZE;
 
 		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
 		if(ret == SS_SUCCESS)
@@ -332,54 +287,83 @@ void PPGGetSensorHubData(void)
 			{
 				index = i * num_bytes_to_read + 1;
 
-				if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
+				if(g_ppg_alg_mode == ALG_MODE_BPT)
 				{
-					bpt_algo_data_rx(&bpt, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE ]);					
-				#ifdef PPG_DEBUG
-					LOGD("status:%d, sys_bp:%d, dia_bp:%d, perc_comp:%d", bpt.status, bpt.sys_bp, bpt.dia_bp, bpt.perc_comp);
-				#endif
+					bpt_algo_data_rx(&bpt, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE]);
 				
-					if(bpt.status == 2 && bpt.perc_comp == 100)
-					{
-						//get calbration data success
-						sh_get_bpt_cal_data();
-						PPGStopCheck();
+				#ifdef PPG_DEBUG
+					LOGD("bpt_status:%d, bpt_per:%d, bpt_sys:%d, bpt_dia:%d", bpt.status, bpt.perc_comp, bpt.sys_bp, bpt.dia_bp);
+				#endif
 
-						StartSensorhub();
+					if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
+					{
+						if((bpt.status == 2) && (bpt.perc_comp == 100))
+						{
+							//get calbration data success
+						#ifdef PPG_DEBUG
+							LOGD("get calbration data success!");
+						#endif
+							//ppg_bpt_is_calbraed = true;
+							sh_get_bpt_cal_data();
+						
+							PPGStopCheck();
+							
+							g_ppg_bpt_status = BPT_STATUS_GET_EST;
+							PPGStartCheck();
+						}
+						
+						return;
 					}
-					
-					return;
+					else if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
+					{
+						g_bp_systolic = bpt.sys_bp;
+						g_bp_diastolic = bpt.dia_bp;
+							
+						if((bpt.status == 2) && (bpt.perc_comp == 100))
+						{
+							//get bpt data success
+						#ifdef PPG_DEBUG
+							LOGD("get bpt data success!");
+						#endif
+
+							get_bpt_flag = true;
+							PPGStopCheck();
+						}
+					}
 				}
 				else
 				{
-					accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
-					max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
+					//accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
+					//max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
 					whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
 					
 				#ifdef PPG_DEBUG
 					LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
 				#endif
-					//if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+
+					if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
 					{
 						heart_rate += sensorhub_out.hr;
 						spo2 += sensorhub_out.spo2;
 						j++;
-					}	
+					}
 				}
 			}
 
-			if(j > 0)
+			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
-				heart_rate = heart_rate/j;
-				spo2 = spo2/j;
+				if(j > 0)
+				{
+					heart_rate = heart_rate/j;
+					spo2 = spo2/j;
+				}
+				g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
+				g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
+			#ifdef PPG_DEBUG
+				LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
+				LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
+			#endif	
 			}
-			
-			g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
-			g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
-		#ifdef PPG_DEBUG
-			LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
-			LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
-		#endif	
 		}
 		else
 		{
@@ -393,7 +377,20 @@ void PPGGetSensorHubData(void)
 	#ifdef PPG_DEBUG
 		LOGD("FIFO status is not ready:%d,%d", ret, hubStatus);
 	#endif
-	}	
+	}
+
+	if(g_ppg_alg_mode == ALG_MODE_BPT)
+	{
+		static bool flag = false;
+
+		flag = !flag;
+		if(flag || get_bpt_flag)
+			ppg_redraw_data_flag = true;
+	}
+	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+	{
+		ppg_redraw_data_flag = true;
+	}
 }
 
 void APPStartHrSpo2(void)
@@ -470,6 +467,7 @@ void MenuStopPPG(void)
 {
 	g_ppg_trigger = 0;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+	g_ppg_bpt_status = BPT_STATUS_GET_EST;
 	ppg_stop_flag = true;
 }
 
@@ -527,29 +525,8 @@ void PPGStopCheck(void)
 
 	k_timer_stop(&ppg_get_hr_timer);
 		
-	status = sh_sensor_disable(SH_SENSORIDX_MAX86176);
-	if(status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_sensor_disble_MAX86176 error %d", status);
-	#endif
-	}
-
-	status = sh_sensor_disable(SH_SENSORIDX_ACCEL);
-	if(status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_sensor_disable_ACC error %d", status);
-	#endif
-	}
-
-	status = sh_disable_algo(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X);
-	if(status != SS_SUCCESS)
-	{
-	#ifdef PPG_DEBUG
-		LOGD("sh_sensor_disble_algo error %d", status);
-	#endif
-	}
+	sensorhub_disable_sensor();
+	sensorhub_disable_algo();
 
 	SH_Power_Off();
 	//Set_PPG_Power_Off();
@@ -630,11 +607,10 @@ void PPGMsgProcess(void)
 		ppg_get_cal_flag = false;
 	}
 	
-	if(ppg_get_hr_spo2)
+	if(ppg_get_data_flag)
 	{
 		PPGGetSensorHubData();
-		ppg_get_hr_spo2 = false;
-		ppg_redraw_data_flag = true;
+		ppg_get_data_flag = false;
 	}
 	if(ppg_redraw_data_flag)
 	{

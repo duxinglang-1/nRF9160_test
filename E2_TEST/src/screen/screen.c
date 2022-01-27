@@ -145,6 +145,12 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 		MenuStartHrSpo2();
 	#endif
 	}
+	else if(screen_id == SCREEN_ID_SPO2)
+	{
+	#ifdef CONFIG_PPG_SUPPORT
+		MenuStartHrSpo2();
+	#endif
+	}
 	else if(screen_id == SCREEN_ID_BP)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
@@ -340,6 +346,7 @@ void IdleUpdateBatSoc(void)
 	u8_t strbuf[128] = {0};
 
 	LCD_FillColor(0, LCD_WIDTH, IDLE_BAT_PERCENT_Y, IDLE_BAT_PERCENT_H, BLACK);
+	LCD_FillColor(IDLE_BAT_PERCENT_X, IDLE_BAT_PERCENT_Y, IDLE_BAT_PERCENT_W, IDLE_BAT_PERCENT_H, BLACK);
 
 	LCD_SetFontSize(FONT_SIZE_16);
 	sprintf(strbuf, "%02d%%", g_bat_soc);
@@ -1035,18 +1042,18 @@ void EnterTempScreen(void)
 #endif/*CONFIG_TEMP_SUPPORT*/
 
 #ifdef CONFIG_PPG_SUPPORT
+static u8_t img_index = 0;
+
 void BPUpdateStatus(void)
 {
 	u16_t x,y,w,h;
 	u8_t tmpbuf[64] = {0};
-	unsigned char *img_anima[3] = {IMG_BP_ICON_ANI_1_ADDR,IMG_BP_ICON_ANI_2_ADDR,IMG_BP_ICON_ANI_3_ADDR};
+	u32_t img_anima[3] = {IMG_BP_ICON_ANI_1_ADDR,IMG_BP_ICON_ANI_2_ADDR,IMG_BP_ICON_ANI_3_ADDR};
 
-#ifdef CONFIG_ANIMATION_SUPPORT
-	if(PPGIsWorking())
-		AnimaShow(BP_ICON_X, BP_ICON_X, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
-	else
-		AnimaStop();
-#endif
+	img_index++;
+	if(img_index >= 3)
+		img_index = 0;
+	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, img_anima[img_index]);
 
 	LCD_SetFontSize(FONT_SIZE_32);
 	
@@ -1086,19 +1093,19 @@ void BPShowStatus(void)
 
 	LCD_SetFontSize(FONT_SIZE_32);
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_NUM_X+(BP_NUM_W-w)/2;
 	y = BP_NUM_Y+(BP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
 	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
 	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
@@ -1110,7 +1117,7 @@ void BPScreenProcess(void)
 	{
 	case SCREEN_ACTION_ENTER:
 		scr_msg[SCREEN_ID_BP].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATED;
+		scr_msg[SCREEN_ID_BP].status = SCREEN_STATUS_CREATED;
 				
 		BPShowStatus();
 		break;
@@ -1127,13 +1134,17 @@ void ExitBPScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
 
+	img_index = 0;
+	
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif
 
 	if(PPGIsWorking())
 		MenuStopPPG();
-		
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
 	EnterIdleScreen();
 }
 
@@ -1150,6 +1161,7 @@ void EnterBPScreen(void)
 	scr_msg[SCREEN_ID_BP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_BP].status = SCREEN_STATUS_CREATING;
 
+	img_index = 0;
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif
@@ -1160,6 +1172,8 @@ void EnterBPScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 #ifdef CONFIG_TEMP_SUPPORT
 	SetLeftKeyUpHandler(EnterTempScreen);
 #elif defined(CONFIG_SYNC_SUPPORT)
@@ -1184,37 +1198,169 @@ void EnterBPScreen(void)
 	SetRightKeyUpHandler(ExitBPScreen);
 }
 
+void SPO2UpdateStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+	unsigned char *img_anima[3] = {IMG_SPO2_ANI_1_ADDR, IMG_SPO2_ANI_2_ADDR, IMG_SPO2_ANI_3_ADDR};
+
+	img_index++;
+	if(img_index >= 3)
+		img_index = 0;
+	LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, img_anima[img_index]);
+	
+	LCD_SetFontSize(FONT_SIZE_32);
+	
+	sprintf(tmpbuf, "%d%%", g_spo2);
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = SPO2_NUM_X+(SPO2_NUM_W-w)/2;
+	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
+	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2;
+	y = SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2;
+	LCD_Fill(SPO2_UP_NUM_X, SPO2_UP_NUM_Y, SPO2_UP_NUM_W, SPO2_UP_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2;
+	y = SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2;
+	LCD_Fill(SPO2_DOWN_NUM_X, SPO2_DOWN_NUM_Y, SPO2_DOWN_NUM_W, SPO2_DOWN_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void SPO2ShowStatus(void)
+{
+	u16_t x,y,w,h;
+	u8_t tmpbuf[64] = {0};
+
+	LCD_Clear(BLACK);
+	
+	LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, IMG_SPO2_ANI_2_ADDR);
+	LCD_ShowImg_From_Flash(SPO2_BG_X, SPO2_BG_Y, IMG_SPO2_BG_ADDR);
+	LCD_ShowImg_From_Flash(SPO2_UP_ARRAW_X, SPO2_UP_ARRAW_Y, IMG_SPO2_UP_ARRAW_ADDR);
+	LCD_ShowImg_From_Flash(SPO2_DOWN_ARRAW_X, SPO2_DOWN_ARRAW_Y, IMG_SPO2_DOWN_ARRAW_ADDR);
+
+	LCD_SetFontSize(FONT_SIZE_32);
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = SPO2_NUM_X+(SPO2_NUM_W-w)/2;
+	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2;
+	y = SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	strcpy(tmpbuf, "0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2;
+	y = SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+}
+
+void SPO2ScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_SPO2].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SPO2].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SPO2].status = SCREEN_STATUS_CREATED;
+				
+		SPO2ShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		SPO2UpdateStatus();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_SPO2].act = SCREEN_ACTION_NO;
+}
+
+void ExitSPO2Screen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+
+	img_index = 0;
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStop();
+#endif
+
+	if(PPGIsWorking())
+		MenuStopPPG();
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
+	EnterIdleScreen();
+}
+
+void EnterSPO2Screen(void)
+{
+	if(screen_id == SCREEN_ID_SPO2)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SPO2;	
+	scr_msg[SCREEN_ID_SPO2].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SPO2].status = SCREEN_STATUS_CREATING;
+
+	img_index = 0;
+	
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStop();
+#endif
+		
+	if(PPGIsWorking())
+		MenuStopPPG();
+	
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
+	SetLeftKeyUpHandler(EnterBPScreen);
+	SetRightKeyUpHandler(ExitSPO2Screen);
+}
+
 void HRUpdateStatus(void)
 {
 	u16_t x,y,w,h;
 	u8_t tmpbuf[64] = {0};
 	unsigned char *img_anima[2] = {IMG_HR_ICON_ANI_1_ADDR, IMG_HR_ICON_ANI_2_ADDR};
 
-#ifdef CONFIG_ANIMATION_SUPPORT
-	if(PPGIsWorking())
-		AnimaShow(HR_ICON_X, HR_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
-	else
-		AnimaStop();
-#endif
+	img_index++;
+	if(img_index >= 2)
+		img_index = 0;
+	LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, img_anima[img_index]);
 
 	LCD_SetFontSize(FONT_SIZE_32);
 	
 	sprintf(tmpbuf, "%d", g_hr);
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_NUM_X+(HR_NUM_W-w)/2;
 	y = HR_NUM_Y+(HR_NUM_H-h)/2;
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
 	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
 	LCD_Fill(HR_UP_NUM_X, HR_UP_NUM_Y, HR_UP_NUM_W, HR_UP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
 	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
 	LCD_Fill(HR_DOWN_NUM_X, HR_DOWN_NUM_Y, HR_DOWN_NUM_W, HR_DOWN_NUM_H, BLACK);
@@ -1236,19 +1382,19 @@ void HRShowStatus(void)
 
 	LCD_SetFontSize(FONT_SIZE_32);
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_NUM_X+(HR_NUM_W-w)/2;
 	y = HR_NUM_Y+(HR_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
 	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
 	strcpy(tmpbuf, "0");
-	LCD_MeasureString("0",&w,&h);
+	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
 	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
@@ -1277,13 +1423,17 @@ void ExitHRScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
 
+	img_index = 0;
+	
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif
 
 	if(PPGIsWorking())
 		MenuStopPPG();
-		
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
 	EnterIdleScreen();
 }
 
@@ -1300,10 +1450,14 @@ void EnterHRScreen(void)
 	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATING;
 
+	img_index = 0;
+
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
-	SetLeftKeyUpHandler(EnterBPScreen);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
+	SetLeftKeyUpHandler(EnterSPO2Screen);
 	SetRightKeyUpHandler(ExitHRScreen);
 }
 #endif/*CONFIG_PPG_SUPPORT*/
@@ -2606,6 +2760,9 @@ void ScreenMsgProcess(void)
 	#ifdef CONFIG_PPG_SUPPORT	
 		case SCREEN_ID_HR:
 			HRScreenProcess();
+			break;
+		case SCREEN_ID_SPO2:
+			SPO2ScreenProcess();
 			break;
 		case SCREEN_ID_ECG:
 			break;

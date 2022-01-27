@@ -50,17 +50,15 @@
 /* Sensorhub reporting mode 2 */
 #define SSWHRM_WSPO2_SUITE_MODE2_DATASIZE		58
 
-#define SSBPT_ALGO_DATASIZE                     0  //MYG
+#define SSBPT_ALGO_DATASIZE                     8  //MYG
 
-#define SSRAW_ALGO_DATASIZE                     0  //MYG
+#define SSRAW_ALGO_DATASIZE                     1  //MYG
 
-#define SS_NORMAL_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE + SSBPT_ALGO_DATASIZE + SSRAW_ALGO_DATASIZE)
+#define SS_NORMAL_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE)
 
-#define SS_EXTEND_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE + SSBPT_ALGO_DATASIZE + SSRAW_ALGO_DATASIZE)
+#define SS_EXTEND_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE)
 
 #define READ_SAMPLE_COUNT_MAX                    5
-
-static uint8_t sh_data_buf[READ_SAMPLE_COUNT_MAX * SS_EXTEND_PACKAGE_SIZE + 1];
 
 typedef enum
 {
@@ -172,13 +170,21 @@ typedef struct __attribute__((packed))
 	bpt_sensorhub_data bpt_data;
 }sensorhub_output;
 
+typedef union {
+	struct {
+		uint8_t max86176_enabled:1;
+		uint8_t accel_enabled   :1;
+		uint8_t whrm_wspo2_suite_enabled_mode1 :1;
+		uint8_t whrm_wspo2_suite_enabled_mode2 :1;
+		uint8_t timestamp_enabled:1;
+		uint8_t bpt_algo_enabled:1;
+		uint8_t algo_raw_enabled:1;
+		uint8_t reserved:1;
+	};
+	uint8_t status_vals;
+} algo_sensor_status_t;
 
-/**
- * @brief	function to initialize sensorhub mode
- *
- * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
- */
-int sensorhub_interface_init();
+extern algo_sensor_status_t g_algo_sensor_stat;
 
 /**
  * @brief	function to enable sensors in sensorhub mode

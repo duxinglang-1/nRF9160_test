@@ -51,9 +51,9 @@ extern "C" {
 #define IDLE_BAT_H		16
 #define IDLE_BAT_X		165
 #define IDLE_BAT_Y		29
-#define IDLE_BAT_PERCENT_W		41
+#define IDLE_BAT_PERCENT_W		44
 #define IDLE_BAT_PERCENT_H		18
-#define IDLE_BAT_PERCENT_X		130
+#define IDLE_BAT_PERCENT_X		120
 #define IDLE_BAT_PERCENT_Y		30
 #define IDLE_BAT_INNER_RECT_W	20
 #define IDLE_BAT_INNER_RECT_H	8
@@ -209,6 +209,36 @@ extern "C" {
 #define HR_DOWN_NUM_H				27
 #define HR_DOWN_NUM_X				163
 #define HR_DOWN_NUM_Y				173
+
+//spo2
+#define SPO2_ICON_W					29
+#define SPO2_ICON_H					46
+#define SPO2_ICON_X					63
+#define SPO2_ICON_Y					30
+#define SPO2_NUM_W					76
+#define SPO2_NUM_H					42
+#define SPO2_NUM_X					102
+#define SPO2_NUM_Y					30
+#define SPO2_BG_W					192
+#define SPO2_BG_H					87
+#define SPO2_BG_X					((LCD_WIDTH-SPO2_BG_W)/2)
+#define SPO2_BG_Y					80
+#define SPO2_UP_ARRAW_W				14
+#define SPO2_UP_ARRAW_H				17
+#define SPO2_UP_ARRAW_X				43
+#define SPO2_UP_ARRAW_Y				183
+#define SPO2_UP_NUM_W				49
+#define SPO2_UP_NUM_H				27
+#define SPO2_UP_NUM_X				60
+#define SPO2_UP_NUM_Y				178
+#define SPO2_DOWN_ARRAW_W			14
+#define SPO2_DOWN_ARRAW_H			17
+#define SPO2_DOWN_ARRAW_X			131
+#define SPO2_DOWN_ARRAW_Y			183
+#define SPO2_DOWN_NUM_W				49
+#define SPO2_DOWN_NUM_H				27
+#define SPO2_DOWN_NUM_X				148
+#define SPO2_DOWN_NUM_Y				178
 
 //blood pressure
 #define BP_ICON_W					22

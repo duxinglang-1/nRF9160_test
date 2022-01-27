@@ -50,20 +50,6 @@ typedef enum{
 	DATA_FORMAT_MAX
 } data_format_t;
 
-typedef union {
-	struct {
-		uint8_t max86176_enabled:1;
-		uint8_t accel_enabled   :1;
-		uint8_t whrm_wspo2_suite_enabled_mode1 :1;
-		uint8_t whrm_wspo2_suite_enabled_mode2 :1;
-		uint8_t timestamp_enabled:1;
-		uint8_t bpt_algo_enabled:1;
-		uint8_t algo_raw_enabled:1;
-		uint8_t reserved:1;
-	};
-	uint8_t status_vals;
-} algo_sensor_status_t;
-
 typedef struct{
 	data_format_t data_type;
 	int data_size;
@@ -79,7 +65,7 @@ void whrm_wspo2_suite_data_rx_mode2(void * p_algo_data_mode2, uint8_t* data_ptr)
 void bpt_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr);
 void raw_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr);
 
-static algo_sensor_status_t g_algo_sensor_stat;
+algo_sensor_status_t g_algo_sensor_stat;
 
 static ss_instance_parser_t parsers[SH_NUM_CURRENT_ALGOS] =
 {
@@ -91,152 +77,6 @@ static ss_instance_parser_t parsers[SH_NUM_CURRENT_ALGOS] =
 		{BPT_ALGO_DATA,          SSBPT_ALGO_DATASIZE,		            bpt_algo_data_rx		            },
 		{RAW_ALGO_DATA,          SSRAW_ALGO_DATASIZE,		            raw_algo_data_rx		            },
 };
-
-int sensorhub_interface_init()
-{
-	int ret = 0;
-
-	//sh_init_interface();
-	//k_sleep(K_MSEC(1000));
-
-	ret = sh_set_data_type(SS_DATATYPE_BOTH, true);
-	if(0 == ret)
-	{
-		ret = sh_set_fifo_thresh(1);
-	}
-
-	return ret;
-}
-
-int sensorhub_enable_sensors()
-{
-	int ret = 0;
-
-	ret = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-	g_algo_sensor_stat.accel_enabled = 1;
-	LOGD("SENSOR_ENABLED_ACCEL Ret:%d", ret);
-
-	if(0 == ret){
-		/* Enabling OS6X with host supplies data */
-		ret = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-		g_algo_sensor_stat.max86176_enabled =1;
-		LOGD("SENSOR_ENABLED_OS64 Ret:%d", ret);
-	}
-
-	return ret;
-}
-
-int sensorhub_disable_sensor()
-{
-	int ret = 0;
-
-	ret = sh_sensor_disable(SH_SENSORIDX_ACCEL);
-	g_algo_sensor_stat.accel_enabled = 0;
-	LOGD("SENSOR_DISABLED_ACCEL Ret:%d", ret);
-
-	if(0 == ret)
-	{
-		/* Enabling OS6X with host supplies data */
-		ret = sh_sensor_disable(SH_SENSORIDX_MAX86176);
-		g_algo_sensor_stat.max86176_enabled = 0;
-		LOGD("SENSOR_DISABLED_OS64 Ret:%d", ret);
-	}
-
-	return ret;
-}
-
-int sensorhub_enable_algo(sensorhub_report_mode_t mode , int sh_operation_mode , int sh_algo_submode)
-{
-	int ret = 0;
-
-	//MYG: setting algo mode will determine which is enabled
-	g_algo_sensor_stat.bpt_algo_enabled = 0; //MYG: for MWA test
-
-    //SH_OPERATION_WHRM_MODE here.
-	ret = sensorhub_set_algo_operation_mode(sh_operation_mode);
-	//if(ret < 0)
-	//	return -1;  MYG: not define in regular sensorhub release
-
-	ret = sensorhub_set_algo_submode(sh_operation_mode, sh_algo_submode);
-
-	ret = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, (int)mode);
-	if(ret < 0)
-    	return -1;
-
-/*	if(SENSORHUB_MODE_BASIC == mode)
-	{
-		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
-		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
-	}
-	else
-	{
-		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 1;
-		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
-	}
-
-	if(sh_operation_mode == SH_OPERATION_WHRM_BPT_MODE)
-		g_algo_sensor_stat.bpt_algo_enabled = 1;
-
-*/
-
-	if(sh_operation_mode == SH_OPERATION_WHRM_MODE)
-	{
-		if(SENSORHUB_MODE_BASIC == mode)
-		{
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
-		}
-		else
-		{
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 1;
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
-		}
-
-		g_algo_sensor_stat.bpt_algo_enabled = 0;
-		g_algo_sensor_stat.algo_raw_enabled = 0;
-
-	}
-	else if(sh_operation_mode == SH_OPERATION_WHRM_BPT_MODE)
-	{
-		if(SENSORHUB_MODE_BASIC == mode)
-		{
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
-		}
-		else
-		{
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 1;
-			g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
-		}
-
-		g_algo_sensor_stat.bpt_algo_enabled = 1;
-		g_algo_sensor_stat.algo_raw_enabled = 0;
-
-	}
-	else if(sh_operation_mode == SH_OPERATION_RAW_MODE)
-	{
-		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
-		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
-		g_algo_sensor_stat.bpt_algo_enabled = 0;
-		g_algo_sensor_stat.algo_raw_enabled = 1;
-	}
-
-	return ret;
-}
-
-int sensorhub_disable_algo(void)
-{
-	int ret = 0;
-
-	ret = sh_disable_algo(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X);
-
-	g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 0;
-	g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode2 = 0;
-	g_algo_sensor_stat.algo_raw_enabled = 0;
-	g_algo_sensor_stat.bpt_algo_enabled = 0;
-
-	return ret;
-}
 
 int sensorhub_get_output_sample_number(int * p_number_of_sample)
 {
@@ -271,14 +111,14 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 	if(E_NO_ERROR == ret)
 	{
 		ret = sh_get_sensorhub_status(&hubStatus);
-		LOGD("sh_get_sensorhub_status ret:%d", ret);
+		//LOGD("sh_get_sensorhub_status ret:%d", ret);
 	}
 
-	LOGD("sensorhub status:%d", hubStatus);
+	//LOGD("sensorhub status:%d", hubStatus);
 
 	if(hubStatus & SS_MASK_STATUS_DATA_RDY)
 	{
-		LOGD("SS_MASK_STATUS_DATA_RDY");
+		//LOGD("SS_MASK_STATUS_DATA_RDY");
 	}
 	else
 	{
@@ -287,7 +127,7 @@ int sensorhub_get_result(sensorhub_output *  p_result)
 
 	if(hubStatus & SS_MASK_STATUS_FIFO_OUT_OVR)
 	{
-		LOGD("SS_MASK_STATUS_FIFO_OUT_OVR");
+		//LOGD("SS_MASK_STATUS_FIFO_OUT_OVR");
 	}
 
 	if(0 == ret)
@@ -399,7 +239,6 @@ int sensorhub_reset_sensor_configuration()
 	return ret;
 }
 
-
 static void data_time_stamper(void * p_time_stamp, uint8_t* data_ptr)
 {
 
@@ -413,7 +252,7 @@ void accel_data_rx(void * p_accel_data, uint8_t* data_ptr)
 	sample->y = (data_ptr[2] << 8) | data_ptr[3];
 	sample->z = (data_ptr[4] << 8) | data_ptr[5];
 
-	LOGD("x:%d, y:%d, z:%d", sample->x, sample->y, sample->z);
+	//LOGD("x:%d, y:%d, z:%d", sample->x, sample->y, sample->z);
 }
 
 void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr)
@@ -427,7 +266,7 @@ void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr)
 	sample->led5 = ((data_ptr[12] << 16) | (data_ptr[13] << 8) | data_ptr[14]) & 0xFFFFF;	//red, PD1
 	sample->led6 = ((data_ptr[15] << 16) | (data_ptr[16] << 8) | data_ptr[17]) & 0xFFFFF; 	//red, PD2
 
-	LOGD("led1:%d, led2:%d, led3:%d, led4:%d, led5:%d, led6:%d", sample->led1, sample->led2, sample->led3, sample->led4, sample->led5, sample->led6);	
+	//LOGD("led1:%d, led2:%d, led3:%d, led4:%d, led5:%d, led6:%d", sample->led1, sample->led2, sample->led3, sample->led4, sample->led5, sample->led6);	
 }
 
 void whrm_wspo2_suite_data_rx_mode1(void * p_algo_data_mode1, uint8_t* data_ptr)
@@ -534,7 +373,7 @@ void bpt_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr)
 	uint8_t est_error = bpt_flags & 0b0000000000100000;
 
 	LOGD("bptr = %d %d %d %d %d" ,  data_ptr[0] ,  data_ptr[1] , data_ptr[2] , data_ptr[3], est_error);
-	LOGD("bpt exec cnt = %" , (int)((data_ptr[6] << 8) | data_ptr[7]));
+	//LOGD("bpt exec cnt = %" , (int)((data_ptr[6] << 8) | data_ptr[7]));
 }
 
 void raw_algo_data_rx( void * p_bpt_algo_data, uint8_t* data_ptr)

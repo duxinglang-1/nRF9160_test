@@ -149,7 +149,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if((hour%12)<3)							//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
+			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
 		}
 		else if((hour%12)==3)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -164,7 +164,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if(((hour%12)>=3) && ((hour%12)<6))	//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
+			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
 		}
 		else if((hour%12)==6)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -179,7 +179,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if(((hour%12)>=6) && ((hour%12)<9))	//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
+			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
 		}
 		else if((hour%12)==9)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -194,7 +194,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if((hour%12)>=9)	//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
+			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
 		}
 		else if((hour%12)==0)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -381,7 +381,7 @@ void test_show_digital_clock(void)
 
 void test_show_image(void)
 {
-	u8_t i=0;
+	u8_t i=3;
 	u16_t x,y,w=0,h=0;
 
 	LOGD("test_show_image");
@@ -391,39 +391,44 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_ANALOG_CLOCK_BG_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_ANALOG_CLOCK_BG_ADDR);
-	while(0)
+	//LCD_get_pic_size_from_flash(IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, &w, &h);
+	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_SEC_ADDR);
+	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
+	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
+	while(1)
 	{
+		LCD_Clear(BLACK);
+		LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, i*30);
+	#if 0	
 		switch(i)
 		{
 			case 0:
 				//LCD_dis_pic(w*0,h*0,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
+				//LCD_dis_pic_trans(w*0,h*0,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*0, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
 				//LCD_dis_pic(w*1,h*0,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
+				//LCD_dis_pic_trans(w*1,h*0,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*1, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
 				break;
 			case 2:
 				//LCD_dis_pic(w*1,h*1,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*1,h*1,peppa_pig_80X160,WHITE);
+				//LCD_dis_pic_trans(w*1,h*1,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*1, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
 				//LCD_dis_pic(w*0,h*1,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*0,h*1,peppa_pig_80X160,WHITE);
+				//LCD_dis_pic_trans(w*0,h*1,peppa_pig_80X160,WHITE);
 				LCD_dis_pic_from_flash(w*0, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
 				break;
 			case 4:
 				LCD_Fill(w*0,h*0,w,h,BLACK);
@@ -438,10 +443,12 @@ void test_show_image(void)
 				LCD_Fill(w*0,h*1,w,h,BLACK);
 				break;
 		}
-		
-		i++;
-		if(i>=8)
-			i=0;
+	#endif
+
+		if(i==0)
+			i=11;
+		else
+			i--;
 		
 		k_sleep(K_MSEC(1000));								//软件延时1000ms
 	}

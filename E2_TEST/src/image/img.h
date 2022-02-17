@@ -72,9 +72,9 @@ extern unsigned char IMG_ALARM_STR[4720];
 extern unsigned char IMG_ANALOG_CLOCK_BG[115208];
 extern unsigned char IMG_ANALOG_CLOCK_DOT_WHITE[458];
 extern unsigned char IMG_ANALOG_CLOCK_DOT_RED[250];
-extern unsigned char IMG_ANALOG_CLOCK_HAND_SEC[332];
-extern unsigned char IMG_ANALOG_CLOCK_HAND_MIN[1268];
-extern unsigned char IMG_ANALOG_CLOCK_HAND_HOUR[962];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_SEC[1652];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_MIN[2864];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_HOUR[2080];
 //battery(11)
 extern unsigned char IMG_BAT_CHRING_ANI_1[23708];
 extern unsigned char IMG_BAT_CHRING_ANI_2[23708];

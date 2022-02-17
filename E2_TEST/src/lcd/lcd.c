@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <nrf9160.h>
 #include <zephyr.h>
+#include <math.h>
 
 #include "lcd.h"
 #include "settings.h"
@@ -18,6 +19,7 @@
 #include "nb.h"
 #include "font.h"
 #include "external_flash.h"
+#include "logger.h"
 
 #if defined(LCD_ORCZ010903C_GC9A01)
 #include "LCD_ORCZ010903C_GC9A01.h"
@@ -34,6 +36,8 @@
 #elif defined(LCD_VGM096064A6W01_SP5090)
 #include "LCD_VGM096064A6W01_SP5090.h"
 #endif 
+
+#define PI	(3.1415926)
 
 //LCD屏幕的高度和宽度
 uint16_t LCD_WIDTH = COL;
@@ -62,6 +66,8 @@ bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
 bool lcd_is_sleeping = true;
 bool sleep_out_by_wrist = false;
+
+static u8_t imgbuf[LCD_DATA_LEN] = {0};
 
 #ifdef FONTMAKER_UNICODE_FONT
 font_uni_infor uni_infor = {0};
@@ -1162,6 +1168,385 @@ void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
 	}
 }
 
+//指定位置显示flash中的图片,带颜色过滤
+//x:图片显示X坐标
+//y:图片显示Y坐标
+//pic_addr:图片在flash中的地址
+//trans:需要过滤的颜色
+void LCD_dis_pic_trans_from_flash(u16_t x, u16_t y, u32_t pic_addr, u16_t trans)
+{
+	uint16_t h,w,show_w,show_h;
+	uint16_t i;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t datelen,showlen=0,readlen=LCD_DATA_LEN;
+	
+	SpiFlash_Read(databuf, pic_addr, 8);
+
+	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
+	h=256*databuf[4]+databuf[5];			//获取图片高度
+
+	pic_addr += 8;
+
+	if((x+w)>LCD_WIDTH)
+		show_w = LCD_WIDTH-x;
+	else
+		show_w = w;
+	
+	if((y+h)>LCD_HEIGHT)
+		show_h = LCD_HEIGHT-y;
+	else
+		show_h = h;
+	
+	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+
+	datelen = 2*show_w*show_h;
+	if(show_w < w)
+		readlen = 2*show_w;
+	
+	while(datelen)
+	{
+		if(datelen < readlen)
+		{
+			readlen = datelen;
+			datelen = 0;
+		}
+		else
+		{
+			readlen = readlen;
+			datelen -= readlen;
+		}
+		
+		memset(databuf, 0, LCD_DATA_LEN);
+		SpiFlash_Read(databuf, pic_addr, readlen);
+		for(i=0;i<(readlen/2);i++)
+		{
+			if(trans == (256*databuf[2*i]+databuf[2*i+1]))
+			{
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
+			}
+		}
+		
+		if(show_w < w)
+			pic_addr += 2*w;
+		else
+			pic_addr += readlen;
+
+	#ifdef LCD_TYPE_SPI
+		DispData(readlen, databuf);
+	#else
+		for(i=0;i<(readlen/2);i++)
+			WriteDispData(databuf[2*i],databuf[2*i+1]);	//显示颜色 
+	#endif
+	}
+}
+
+//指定位置旋转特定角度显示图片
+//color:图片数据指针
+//x:图片显示X坐标
+//y:图片显示Y坐标
+//rotate:旋转角度,0,90,180,270,
+void LCD_dis_pic_rotate_from_flash(u16_t x, u16_t y, u32_t pic_addr, unsigned int rotate)
+{
+	uint16_t h,w,show_w,show_h;
+	uint32_t i,j=0,k=0;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t offset,datelen,showlen=0,readlen=LCD_DATA_LEN;
+	
+	SpiFlash_Read(databuf, pic_addr, 8);
+
+	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
+	h=256*databuf[4]+databuf[5];			//获取图片高度
+
+	pic_addr += 8;
+
+	switch(rotate)
+	{
+	case 0:
+		offset = pic_addr;
+		
+		if((x+w)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = w;
+		
+		if((y+h)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = h;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < w)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			SpiFlash_Read(databuf, offset, readlen);
+			
+			if(show_w < w)
+				offset += 2*w;
+			else
+				offset += readlen;
+
+		#ifdef LCD_TYPE_SPI
+			DispData(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
+		#endif
+		}		
+		break;
+		
+	case 90:
+		offset = pic_addr + 2*w*(h-1);
+	
+		if((x+h)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = h;
+		
+		if((y+w)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = w;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < h)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			u32_t len;
+			
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				SpiFlash_Read(&databuf[2*i], (offset+2*((j/h)-w*(j%h))), 2);
+			}
+			
+			if(show_w < h)
+			{
+				offset += 2;
+				j = 0;
+			}
+			
+		#ifdef LCD_TYPE_SPI
+			DispData(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
+		#endif
+		}	
+		break;
+		
+	case 180:
+		offset = pic_addr + 2*(w*h-1);
+		
+		if((x+w)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = w;
+		
+		if((y+h)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = h;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < w)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				SpiFlash_Read(&databuf[2*i], (offset-2*j), 2);
+			}
+
+			if(show_w < w)
+			{
+				offset -= 2*w;
+				j = 0;
+			}
+			
+		#ifdef LCD_TYPE_SPI
+			DispData(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
+		#endif
+		}
+		break;
+		
+	case 270:
+		offset = pic_addr + 2*(w-1);
+			
+		if((x+h)>LCD_WIDTH)
+			show_w = LCD_WIDTH-x;
+		else
+			show_w = h;
+		
+		if((y+w)>LCD_HEIGHT)
+			show_h = LCD_HEIGHT-y;
+		else
+			show_h = w;
+
+		BlockWrite(x,y,show_w,show_h);	//设置刷新位置
+		datelen = 2*show_w*show_h;
+		if(show_w < h)
+			readlen = 2*show_w;
+		
+		while(datelen)
+		{
+			if(datelen < readlen)
+			{
+				readlen = datelen;
+				datelen = 0;
+			}
+			else
+			{
+				readlen = readlen;
+				datelen -= readlen;
+			}
+			
+			memset(databuf, 0, LCD_DATA_LEN);
+			
+			for(i=0;i<(readlen/2);i++,j++)
+			{
+				SpiFlash_Read(&databuf[2*i], (offset-2*(j/h)+2*w*(j%h)), 2);
+			}
+
+			if(show_w < w)
+			{
+				offset -= 2;
+				j = 0;
+			}
+			
+		#ifdef LCD_TYPE_SPI
+			DispData(readlen, databuf);
+		#else
+			for(i=0;i<(readlen/2);i++)
+				WriteDispData(databuf[2*i],databuf[2*i+1]); //显示颜色 
+		#endif
+		}
+		break;
+	}
+}
+
+//指定中心位置任意角度显示图片
+//color:图片数据指针
+//x:图片显示X坐标
+//y:图片显示Y坐标
+//angle:角度,0~360,
+void LCD_dis_pic_angle_from_flash(u16_t x, u16_t y, u32_t pic_addr, unsigned int angle)
+{
+	u16_t c_x,c_y,c_r,h,w,show_w,show_h;
+	s16_t offset_x,offset_y;
+	s32_t i,j=0;
+	u8_t databuf[LCD_DATA_LEN]={0};
+	u32_t datelen,showlen=0,readlen=LCD_DATA_LEN;
+	
+	SpiFlash_Read(databuf, pic_addr, 8);
+
+	w = 256*databuf[2]+databuf[3]; 			//获取图片宽度
+	h = 256*databuf[4]+databuf[5];			//获取图片高度
+	c_x = LCD_WIDTH/2;
+	c_y = LCD_HEIGHT/2;
+	c_r = w;
+	
+	pic_addr += 8;
+
+	if((x+w)>LCD_WIDTH)
+		show_w = LCD_WIDTH-x;
+	else
+		show_w = w;
+	
+	if((y+h)>LCD_HEIGHT)
+		show_h = LCD_HEIGHT-y;
+	else
+		show_h = h;
+
+	datelen = 2*show_w*show_h;
+	if(show_w < w)
+		readlen = 2*show_w;
+
+	//LOGD("c_x:%d, c_y:%d", c_x, c_y);
+	while(datelen)
+	{
+		if(datelen < readlen)
+		{
+			readlen = datelen;
+			datelen = 0;
+		}
+		else
+		{
+			readlen = readlen;
+			datelen -= readlen;
+		}
+		
+		memset(databuf, 0, LCD_DATA_LEN);
+		SpiFlash_Read(databuf, pic_addr, readlen);
+		
+		if(show_w < w)
+			pic_addr += 2*w;
+		else
+			pic_addr += readlen;
+
+		for(i=(readlen/2)-2;i>0;i--)
+		{
+			if(((i%show_h) == 0) && (j <= c_r))
+			{
+				offset_y = j*sin(angle*PI/180);
+				offset_x = j*cos(angle*PI/180);
+				//LOGD("i:%d,angle:%d,c_r:%d,offset_x:%d,offset_y:%d", i,angle,c_r,offset_x,offset_y);
+				BlockWrite(c_x+offset_x, c_y-offset_y, 1, 1);	//设置刷新位置
+				j++;
+			}
+			
+			WriteDispData(databuf[2*i], databuf[2*i+1]); //显示颜色 
+		}
+	}		
+}
+
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //指定位置显示flash中的图片
 //pic_addr:图片在flash中的地址
@@ -1789,10 +2174,11 @@ void LCD_dis_pic(uint16_t x, uint16_t y, unsigned char *color)
 }
 
 //指定位置显示图片,带颜色过滤
-//color:图片数据指针
 //x:图片显示X坐标
 //y:图片显示Y坐标
-void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans)
+//color:图片数据指针
+//trans:需要过滤的颜色
+void LCD_dis_pic_trans(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans)
 {  
 	uint16_t h,w,show_w,show_h;
 	uint16_t i;
@@ -1857,7 +2243,7 @@ void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t tr
 }
 
 
-//指定位置旋转角度显示图片
+//指定位置旋转特定角度显示图片
 //color:图片数据指针
 //x:图片显示X坐标
 //y:图片显示Y坐标
@@ -2086,7 +2472,7 @@ void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned i
 //x:图片显示X坐标
 //y:图片显示Y坐标
 //rotate:旋转角度,0,90,180,270,
-void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate)
+void LCD_dis_pic_trans_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate)
 {
 	uint16_t h,w,show_w,show_h;
 	uint32_t i,j=0;

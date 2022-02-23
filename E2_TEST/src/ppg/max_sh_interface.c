@@ -1343,7 +1343,7 @@ void sh_get_bpt_cal_data(void)
 	int status;
 	
 	status = sh_get_cfg_bpt_cal_result(&sh_bpt_cal);
-	SpiFlash_Write_Data(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
 }
 
 void sh_req_bpt_cal_data(void)

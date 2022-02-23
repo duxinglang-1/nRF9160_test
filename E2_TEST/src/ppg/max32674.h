@@ -37,6 +37,78 @@ typedef enum
 	TRIGGER_BY_HOURLY=0x40
 }PPG_TARGGER_SOUCE;
 
+typedef enum
+{
+	PPG_REC2_HR,
+	PPG_REC2_SPO2,
+	PPG_REC2_BPT
+}PPG_REC2_DATA_TYPE;
+
+typedef struct
+{
+	u8_t systolic;
+	u8_t diastolic;
+}bpt_data;
+
+//单词测量
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hour;
+	u8_t min;
+	u8_t sec;
+	u8_t hr;
+}ppg_hr_rec1_data;
+
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hour;
+	u8_t min;
+	u8_t sec;
+	u8_t spo2;
+}ppg_spo2_rec1_data;
+
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hour;
+	u8_t min;
+	u8_t sec;
+	bpt_data bpt;
+}ppg_bpt_rec1_data;
+
+//整点测量
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hr[24];
+}ppg_hr_rec2_data;
+
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t spo2[24];
+}ppg_spo2_rec2_data;
+
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	bpt_data bpt[24];
+}ppg_bpt_rec2_data;
+
 extern u8_t g_ppg_trigger;
 extern u16_t g_hr;
 extern u16_t g_spo2;
@@ -47,6 +119,7 @@ extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
 /*heart rate*/
+extern void GetCurDayHrRecData(u8_t *databuf);
 extern void GetHeartRate(u8_t *HR);
 extern void APPStartHrSpo2(void);
 extern void APPStartBpt(void);

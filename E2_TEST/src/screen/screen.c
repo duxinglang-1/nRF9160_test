@@ -345,7 +345,6 @@ void IdleUpdateBatSoc(void)
 	u16_t w,h;
 	u8_t strbuf[128] = {0};
 
-	LCD_FillColor(0, LCD_WIDTH, IDLE_BAT_PERCENT_Y, IDLE_BAT_PERCENT_H, BLACK);
 	LCD_FillColor(IDLE_BAT_PERCENT_X, IDLE_BAT_PERCENT_Y, IDLE_BAT_PERCENT_W, IDLE_BAT_PERCENT_H, BLACK);
 
 	LCD_SetFontSize(FONT_SIZE_16);
@@ -1063,26 +1062,13 @@ void BPUpdateStatus(void)
 	y = BP_NUM_Y+(BP_NUM_H-h)/2;
 	LCD_Fill(BP_NUM_X, BP_NUM_Y, BP_NUM_W, BP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
-
-	strcpy(tmpbuf, "0");
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
-	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
-	LCD_Fill(BP_UP_NUM_X, BP_UP_NUM_Y, BP_UP_NUM_W, BP_UP_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
-
-	strcpy(tmpbuf, "0");
-	LCD_MeasureString(tmpbuf, &w, &h);
-	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
-	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
-	LCD_Fill(BP_DOWN_NUM_X, BP_DOWN_NUM_Y, BP_DOWN_NUM_W, BP_DOWN_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
 }
 
 void BPShowStatus(void)
 {
 	u16_t x,y,w,h;
-	u8_t tmpbuf[64] = {0};
+	u8_t i,tmpbuf[64] = {0};
+	bpt_data bpt_max={0},bpt_min={0},bpt[24] = {0};
 
 	LCD_Clear(BLACK);
 	
@@ -1091,6 +1077,31 @@ void BPShowStatus(void)
 	LCD_ShowImg_From_Flash(BP_UP_ARRAW_X, BP_UP_ARRAW_Y, IMG_BP_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(BP_DOWN_ARRAW_X, BP_DOWN_ARRAW_Y, IMG_BP_DOWN_ARRAW_ADDR);
 
+	GetCurDayBptRecData(bpt);
+	for(i=0;i<24;i++)
+	{
+		if(bpt_max.systolic == 0 || bpt_max.diastolic == 0 || bpt_min.systolic == 0 || bpt_min.diastolic == 0)
+		{
+			if(bpt[i].systolic > 0 && bpt[i].diastolic > 0)
+			{
+				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
+				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
+			}
+		}
+		else
+		{	
+			if(bpt[i].systolic > bpt_max.systolic)
+				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
+			if(bpt[i].systolic < bpt_min.systolic)
+				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
+		}
+		
+		if(bpt[i].systolic > 30)
+			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].systolic-30)*15/30, BP_REC_DATA_W, (bpt[i].systolic-30)*15/30, YELLOW);
+		if(bpt[i].diastolic > 30)
+			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].diastolic-30)*15/30, BP_REC_DATA_W, (bpt[i].diastolic-30)*15/30, RED);
+	}
+		
 	LCD_SetFontSize(FONT_SIZE_32);
 	strcpy(tmpbuf, "0");
 	LCD_MeasureString(tmpbuf,&w,&h);
@@ -1098,13 +1109,14 @@ void BPShowStatus(void)
 	y = BP_NUM_Y+(BP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
-	strcpy(tmpbuf, "0");
+	LCD_SetFontSize(FONT_SIZE_16);
+	sprintf(tmpbuf, "%d/%d", bpt_max.systolic, bpt_max.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
 	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
-	strcpy(tmpbuf, "0");
+	sprintf(tmpbuf, "%d/%d", bpt_min.systolic, bpt_min.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
 	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
@@ -1217,26 +1229,13 @@ void SPO2UpdateStatus(void)
 	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
 	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
-
-	strcpy(tmpbuf, "0");
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2;
-	y = SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2;
-	LCD_Fill(SPO2_UP_NUM_X, SPO2_UP_NUM_Y, SPO2_UP_NUM_W, SPO2_UP_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
-
-	strcpy(tmpbuf, "0");
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2;
-	y = SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2;
-	LCD_Fill(SPO2_DOWN_NUM_X, SPO2_DOWN_NUM_Y, SPO2_DOWN_NUM_W, SPO2_DOWN_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
 }
 
 void SPO2ShowStatus(void)
 {
 	u16_t x,y,w,h;
-	u8_t tmpbuf[64] = {0};
+	u8_t i,tmpbuf[64] = {0};
+	u8_t spo2_max=0,spo2_min=0,spo2[24] = {0};
 
 	LCD_Clear(BLACK);
 	
@@ -1245,6 +1244,29 @@ void SPO2ShowStatus(void)
 	LCD_ShowImg_From_Flash(SPO2_UP_ARRAW_X, SPO2_UP_ARRAW_Y, IMG_SPO2_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(SPO2_DOWN_ARRAW_X, SPO2_DOWN_ARRAW_Y, IMG_SPO2_DOWN_ARRAW_ADDR);
 
+	GetCurDaySpo2RecData(spo2);
+	for(i=0;i<24;i++)
+	{
+		if(spo2_max == 0 || spo2_min == 0)
+		{
+			if(spo2[i] > 0)
+			{
+				spo2_max = spo2[i];
+				spo2_min = spo2[i];
+			}
+		}
+		else
+		{
+			if(spo2[i] > spo2_max)
+				spo2_max = spo2[i];
+			if(spo2[i] < spo2_min)
+				spo2_min = spo2[i];
+		}
+		
+		if(spo2[i] >= 80)
+			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(spo2[i]-80)*3, SPO2_REC_DATA_W, (spo2[i]-80)*3, BLUE);
+	}
+
 	LCD_SetFontSize(FONT_SIZE_32);
 	strcpy(tmpbuf, "0");
 	LCD_MeasureString(tmpbuf,&w,&h);
@@ -1252,13 +1274,13 @@ void SPO2ShowStatus(void)
 	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
-	strcpy(tmpbuf, "0");
+	sprintf(tmpbuf, "%d", spo2_max);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2;
 	y = SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
-	strcpy(tmpbuf, "0");
+	sprintf(tmpbuf, "%d", spo2_min);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2;
 	y = SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2;
@@ -1351,27 +1373,14 @@ void HRUpdateStatus(void)
 	y = HR_NUM_Y+(HR_NUM_H-h)/2;
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
-
-	strcpy(tmpbuf, "0");
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
-	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
-	LCD_Fill(HR_UP_NUM_X, HR_UP_NUM_Y, HR_UP_NUM_W, HR_UP_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
-
-	strcpy(tmpbuf, "0");
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
-	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
-	LCD_Fill(HR_DOWN_NUM_X, HR_DOWN_NUM_Y, HR_DOWN_NUM_W, HR_DOWN_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
 }
 
 void HRShowStatus(void)
 {
 	u16_t x,y,w,h;
-	u8_t tmpbuf[64] = {0};
-
+	u8_t i,tmpbuf[64] = {0};
+	u8_t hr_max=0,hr_min=0,hr[24] = {0};
+	
 	LCD_Clear(BLACK);
 	
 	LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_ICON_ANI_2_ADDR);
@@ -1380,6 +1389,29 @@ void HRShowStatus(void)
 	LCD_ShowImg_From_Flash(HR_UP_ARRAW_X, HR_UP_ARRAW_Y, IMG_HR_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(HR_DOWN_ARRAW_X, HR_DOWN_ARRAW_Y, IMG_HR_DOWN_ARRAW_ADDR);
 
+	GetCurDayHrRecData(hr);
+	for(i=0;i<24;i++)
+	{
+		if(hr_max == 0 || hr_min == 0)
+		{
+			if(hr[i] > 0)
+			{	
+				hr_max = hr[i];
+				hr_min = hr[i];
+			}
+		}
+		else
+		{
+			if(hr[i] > hr_max)
+				hr_max = hr[i];
+			if(hr[i] < hr_min)
+				hr_min = hr[i];
+		}
+		
+		if(hr[i] > 30)
+			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-(hr[i]-30)*15/30, HR_REC_DATA_W, (hr[i]-30)*15/30, RED);
+	}
+	
 	LCD_SetFontSize(FONT_SIZE_32);
 	strcpy(tmpbuf, "0");
 	LCD_MeasureString(tmpbuf,&w,&h);
@@ -1387,13 +1419,13 @@ void HRShowStatus(void)
 	y = HR_NUM_Y+(HR_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
-	strcpy(tmpbuf, "0");
+	sprintf(tmpbuf, "%d", hr_max);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
 	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
 
-	strcpy(tmpbuf, "0");
+	sprintf(tmpbuf, "%d", hr_min);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
 	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;

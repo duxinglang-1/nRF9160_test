@@ -209,7 +209,11 @@ extern "C" {
 #define HR_DOWN_NUM_H				27
 #define HR_DOWN_NUM_X				163
 #define HR_DOWN_NUM_Y				173
-
+#define HR_REC_DATA_X				20
+#define HR_REC_DATA_Y				146
+#define HR_REC_DATA_W				4
+#define HR_REC_DATA_H				66
+#define HR_REC_DATA_OFFSET_X		7
 //spo2
 #define SPO2_ICON_W					29
 #define SPO2_ICON_H					46
@@ -239,7 +243,11 @@ extern "C" {
 #define SPO2_DOWN_NUM_H				27
 #define SPO2_DOWN_NUM_X				148
 #define SPO2_DOWN_NUM_Y				178
-
+#define SPO2_REC_DATA_X				25
+#define SPO2_REC_DATA_Y				146
+#define SPO2_REC_DATA_W				4
+#define SPO2_REC_DATA_H				58
+#define SPO2_REC_DATA_OFFSET_X		7
 //blood pressure
 #define BP_ICON_W					22
 #define BP_ICON_H					40
@@ -269,6 +277,11 @@ extern "C" {
 #define BP_DOWN_NUM_H				17
 #define BP_DOWN_NUM_X				148
 #define BP_DOWN_NUM_Y				183
+#define BP_REC_DATA_X				17
+#define BP_REC_DATA_Y				146
+#define BP_REC_DATA_W				4
+#define BP_REC_DATA_H				58
+#define BP_REC_DATA_OFFSET_X		7
 
 //temperature
 #define TEMP_ICON_W					130

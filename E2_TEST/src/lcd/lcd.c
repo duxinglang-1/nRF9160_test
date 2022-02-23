@@ -1094,14 +1094,8 @@ void LCD_get_pic_size_from_flash(u32_t pic_addr, uint16_t *width, uint16_t *heig
 	u8_t databuf[6] = {0};
 
 	SpiFlash_Read(databuf, pic_addr, 6);
-
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-	*width = databuf[2]+256*databuf[3]; 			//获取图片宽度
-	*height = databuf[4]+256*databuf[5];			//获取图片高度
-#else
 	*width = 256*databuf[2]+databuf[3]; 			//获取图片宽度
 	*height = 256*databuf[4]+databuf[5];			//获取图片高度
-#endif
 }
 
 //指定位置显示flash中的图片
@@ -2105,13 +2099,8 @@ u8_t LCD_Show_Mbcs_Char(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 //height:获取到的图片高度输出地址
 void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height)
 {
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 	*width = 256*color[2]+color[3];
 	*height = 256*color[4]+color[5];
-#else
-	*width = color[2]+256*color[3];
-	*height = color[4]+256*color[5];
-#endif
 }
 
 //指定位置显示图片

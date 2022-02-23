@@ -822,21 +822,57 @@
 #define FONT_END_ADDR						0x6FFFFF
 /***************************************************font end*********************************************************/
 
-/***************************************************data start*********************************************************/
-//资料 flash里占用1M的空间(0x700000~0x7FFFFF)
-#define DATA_START_ADDR						0x700000
-#define DATA_OFFSET							0
+/************************************************ppg algo begin******************************************************/
+//PPG算法 flash里占用512K的空间(0x700000~0x780000)
+#define PPG_ALGO_START_ADDR					0x700000
+#define PPG_ALGO_DATA_OFFSET				0
 
-#define PPG_ALGO_FW_ADDR					DATA_START_ADDR
+#define PPG_ALGO_FW_ADDR					PPG_ALGO_START_ADDR
 #define PPG_ALGO_FW_SIZE 					(353024)
 #define PPG_ALGO_FW_END						(PPG_ALGO_FW_ADDR+PPG_ALGO_FW_SIZE)
-#define PPG_BPT_CAL_DATA_ADDR				(PPG_ALGO_FW_END+DATA_OFFSET)
+
+#define PPG_ALGO_END_ADDR					0x77ffff
+/***************************************************ppg algo end*****************************************************/
+
+/***************************************************data begin*******************************************************/
+//记录数据 flash里占用512K的空间(0x780000~0x7fffff)
+#define DATA_START_ADDR						0x780000
+#define DATA_OFFSET							0
+
+#define PPG_BPT_CAL_DATA_ADDR				(DATA_START_ADDR+DATA_OFFSET)
 #define PPG_BPT_CAL_DATA_SIZE				(240)
 #define PPG_BPT_CAL_DATA_END				(PPG_BPT_CAL_DATA_ADDR+PPG_BPT_CAL_DATA_SIZE)
+//单次测量(100组数据)
+#define PPG_HR_REC1_DATA_ADDR				(PPG_BPT_CAL_DATA_END+DATA_OFFSET)
+#define PPG_HR_REC1_DATA_SIZE				(800)
+#define PPG_HR_REC1_DATA_END				(PPG_HR_REC1_DATA_ADDR+PPG_HR_REC1_DATA_SIZE)
+
+#define PPG_SPO2_REC1_DATA_ADDR				(PPG_HR_REC1_DATA_END+DATA_OFFSET)
+#define PPG_SPO2_REC1_DATA_SIZE				(800)
+#define PPG_SPO2_REC1_DATA_END				(PPG_SPO2_REC1_DATA_ADDR+PPG_SPO2_REC1_DATA_SIZE)
+
+#define PPG_BPT_REC1_DATA_ADDR				(PPG_SPO2_REC1_DATA_END+DATA_OFFSET)
+#define PPG_BPT_REC1_DATA_SIZE				(900)
+#define PPG_BPT_REC1_DATA_END				(PPG_BPT_REC1_DATA_ADDR+PPG_BPT_REC1_DATA_SIZE)
+//整点测量(7天数据)
+#define PPG_HR_REC2_DATA_ADDR				(PPG_BPT_REC1_DATA_END+DATA_OFFSET)
+#define PPG_HR_REC2_DATA_SIZE				(196)
+#define PPG_HR_REC2_DATA_END				(PPG_HR_REC2_DATA_ADDR+PPG_HR_REC2_DATA_SIZE)
+
+#define PPG_SPO2_REC2_DATA_ADDR				(PPG_HR_REC2_DATA_END+DATA_OFFSET)
+#define PPG_SPO2_REC2_DATA_SIZE				(196)
+#define PPG_SPO2_REC2_DATA_END				(PPG_SPO2_REC2_DATA_ADDR+PPG_SPO2_REC2_DATA_SIZE)
+
+#define PPG_BPT_REC2_DATA_ADDR				(PPG_SPO2_REC2_DATA_END+DATA_OFFSET)
+#define PPG_BPT_REC2_DATA_SIZE				(364)
+#define PPG_BPT_REC2_DATA_END				(PPG_BPT_REC2_DATA_ADDR+PPG_BPT_REC2_DATA_SIZE)
 
 
-#define DATA_END_ADDR			0x7FFFFF
-/***************************************************data end*********************************************************/
+
+#define DATA_END_ADDR						0x7fffff
+/****************************************************date end********************************************************/
+
+
 
 
 void SPI_Flash_Init(void);
@@ -844,10 +880,10 @@ uint16_t SpiFlash_ReadID(void);
 
 uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size);
 uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size);
+uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
+uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
 void SPIFlash_Erase_Sector(uint32_t SecAddr);
 void SPIFlash_Erase_Chip(void);
-uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
-uint8_t SpiFlash_Write_Data(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
 
 extern void test_flash(void);
 

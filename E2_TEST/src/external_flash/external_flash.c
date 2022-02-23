@@ -407,23 +407,20 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 **         size:写入的字节数
 ** 返回值：RET_SUCCESS
 ******************************************************************************/
-uint8_t SpiFlash_Write_Data(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum)
+uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum)
 {
-	s32_t cur_index,writelen=0,datelen=WriteBytesNum;
+	u32_t cur_index,writelen=0,datelen=WriteBytesNum;
 	u32_t PageByteRemain;
 	
-	LOGD("WriteAddr:%d, size:%d", WriteAddr, WriteBytesNum);
-	
 	cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
-
 	SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
 	SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
 	PageByteRemain = SPIFlash_SECTOR_SIZE - WriteAddr%SPIFlash_SECTOR_SIZE;
-	memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], &pBuffer[writelen], PageByteRemain);
-	writelen += PageByteRemain;
-	SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, PageByteRemain);
 	if(PageByteRemain < datelen)
 	{
+		memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], &pBuffer[writelen], PageByteRemain);
+		writelen += PageByteRemain;
+		SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
 		datelen -= PageByteRemain;
 		while(1)
 		{
@@ -440,13 +437,16 @@ uint8_t SpiFlash_Write_Data(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t Write
 			{
 				memcpy(SecBuf, &pBuffer[writelen], datelen);
 				writelen += datelen;
-				SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, datelen);
+				SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
 				break;
 			}
 		}
 	}
-
-	return 0;
+	else
+	{
+		memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], &pBuffer[writelen], datelen);
+		SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+	}
 }
 
 /*****************************************************************************
@@ -598,6 +598,7 @@ void test_flash(void)
 	uint16_t flash_id;
 	uint16_t len;
 	u8_t tmpbuf[128] = {0};
+	u32_t addr;
 	
 	//flash_init();
 
@@ -607,7 +608,15 @@ void test_flash(void)
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
 	LCD_ShowString(0,20,tmpbuf);
 
-#if 1
+	for(addr=DATA_START_ADDR;addr<0x800000;)
+	{
+		LOGD("addr:%d", addr);
+		SPIFlash_Erase_Sector(addr/SPIFlash_SECTOR_SIZE);
+		addr += SPIFlash_SECTOR_SIZE;
+	}
+
+	LOGD("addr end:%d", addr);
+#if 0
 	//写之前需要先执行擦除操作
 	LCD_ShowString(0,40,"FLASH开始擦除...");
 	SPIFlash_Erase_Chip();

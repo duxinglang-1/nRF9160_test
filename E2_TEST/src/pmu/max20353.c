@@ -228,6 +228,31 @@ void pmu_reg_proc(void)
 			
 		case 0x06://Maintain charger timer done
 			g_chg_status = BAT_CHARGING_FINISHED;
+			
+		#ifdef BATTERY_SOC_GAUGE	
+			g_bat_soc = MAX20353_CalculateSOC();
+			if(g_bat_soc>100)
+				g_bat_soc = 100;
+			
+			if(g_bat_soc < 5)
+			{
+				g_bat_level = BAT_LEVEL_VERY_LOW;
+				pmu_battery_low_shutdown();
+			}
+			else if(g_bat_soc < 20)
+			{
+				g_bat_level = BAT_LEVEL_LOW;
+			}
+			else if(g_bat_soc < 80)
+			{
+				g_bat_level = BAT_LEVEL_NORMAL;
+			}
+			else
+			{
+				g_bat_level = BAT_LEVEL_GOOD;
+			}
+		#endif
+
 			lcd_sleep_out = true;
 			break;
 		}

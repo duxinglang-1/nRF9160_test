@@ -2425,7 +2425,7 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
-#if 0	//xb add 2022-01-14 需要测试NB和GPS天线的时候打开这里
+#ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterNBTestScreen);
 #else
 #ifdef CONFIG_IMU_SUPPORT

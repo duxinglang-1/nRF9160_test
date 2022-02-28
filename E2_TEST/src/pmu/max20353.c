@@ -206,16 +206,12 @@ void pmu_reg_proc(void)
 #endif
 	if((int0&0x40) == 0x40) //Charger status change INT  
 	{
-		MAX20353_ReadReg(REG_STATUS0, &status0);
-	#ifdef PMU_DEBUG	
-		LOGD("REG_STATUS0:%02X", status0);
-	#endif
-		
+		MAX20353_ReadReg(REG_STATUS0, &status0);		
 		switch((status0&0x07))
 		{
 		case 0x00://Charger off
 		case 0x01://Charging suspended due to temperature (see battery charger state diagram)
-		case 0x07://Charger fault condition (see battery charger state diagram)
+		case 0x07://Charger fault condition (see battery charger state diagram)	
 			g_chg_status = BAT_CHARGING_NO;
 			break;
 			
@@ -228,29 +224,17 @@ void pmu_reg_proc(void)
 			
 		case 0x06://Maintain charger timer done
 			g_chg_status = BAT_CHARGING_FINISHED;
+		#ifdef PMU_DEBUG
+			LOGD("charging finished!");
+		#endif
 			
 		#ifdef BATTERY_SOC_GAUGE	
 			g_bat_soc = MAX20353_CalculateSOC();
-			if(g_bat_soc>100)
+		#ifdef PMU_DEBUG
+			LOGD("g_bat_soc:%d", g_bat_soc);
+		#endif
+			if(g_bat_soc >= 95)
 				g_bat_soc = 100;
-			
-			if(g_bat_soc < 5)
-			{
-				g_bat_level = BAT_LEVEL_VERY_LOW;
-				pmu_battery_low_shutdown();
-			}
-			else if(g_bat_soc < 20)
-			{
-				g_bat_level = BAT_LEVEL_LOW;
-			}
-			else if(g_bat_soc < 80)
-			{
-				g_bat_level = BAT_LEVEL_NORMAL;
-			}
-			else
-			{
-				g_bat_level = BAT_LEVEL_GOOD;
-			}
 		#endif
 
 			lcd_sleep_out = true;
@@ -357,11 +341,12 @@ bool pmu_alert_proc(void)
 		MSB = MSB&0xDF;
 
 		g_bat_soc = MAX20353_CalculateSOC();
-		if(g_bat_soc>100)
-			g_bat_soc = 100;
 	#ifdef PMU_DEBUG
 		LOGD("SOC:%d", g_bat_soc);
-	#endif
+	#endif	
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+		
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;

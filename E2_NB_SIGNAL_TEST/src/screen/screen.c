@@ -345,10 +345,12 @@ void IdleUpdateBatSoc(void)
 	u16_t w,h;
 	u8_t strbuf[128] = {0};
 
-	LCD_FillColor(IDLE_BAT_PERCENT_X, IDLE_BAT_PERCENT_Y, IDLE_BAT_PERCENT_W, IDLE_BAT_PERCENT_H, BLACK);
-
+	if(g_bat_soc >= 100)
+		sprintf(strbuf, "%d%%", g_bat_soc);
+	else
+		sprintf(strbuf, " %02d%%", g_bat_soc);
+	
 	LCD_SetFontSize(FONT_SIZE_16);
-	sprintf(strbuf, "%02d%%", g_bat_soc);
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((IDLE_BAT_X-w)-2, IDLE_BAT_PERCENT_Y, strbuf);
 
@@ -687,6 +689,8 @@ void EnterPoweroffScreen(void)
 #endif
 
 	k_timer_stop(&mainmenu_timer);
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -2543,6 +2547,8 @@ void ExitGPSTestScreen(void)
 	
 	if(gps_is_working())
 		MenuStopGPS();
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
 	EnterIdleScreen();
 }
@@ -2566,6 +2572,8 @@ void EnterGPSTestScreen(void)
 #ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
 #endif
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
@@ -2614,6 +2622,8 @@ void ExitNBTestScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
 	
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
 	EnterIdleScreen();
 }
 
@@ -2633,8 +2643,10 @@ void EnterNBTestScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	SetLeftKeyUpHandler(EnterGPSTestScreen);
-	SetRightKeyUpHandler(ExitGPSTestScreen);
+	SetRightKeyUpHandler(ExitNBTestScreen);
 }
 
 void SOSUpdateStatus(void)

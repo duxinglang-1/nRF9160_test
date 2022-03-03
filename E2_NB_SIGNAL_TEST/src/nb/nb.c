@@ -785,12 +785,6 @@ static void modem_rsrp_handler(char rsrp_value)
 #ifdef NB_DEBUG
 	LOGD("rsrp_value:%d", rsrp_value);
 #endif
-	if(test_nb_flag)
-	{
-		sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", rsrp_value,(rsrp_value-141));
-		nb_test_update_flag = true;
-	}
-
 	g_rsrp = rsrp_value;
 	nb_redraw_sig_flag = true;
 }
@@ -1597,45 +1591,58 @@ static int configure_low_power(void)
 
 void GetModemSignal(void)
 {
-	char *ptr;
+	char *ptr1,*ptr2;
 	int i=0,len;
 	u8_t strbuf[64] = {0};
 	u8_t tmpbuf[64] = {0};
-	s32_t rsrp;
+	s32_t rsrq=0,rsrp,snr;
 	static s32_t rsrpbk = 0;
 	
-	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
-		LOGD("Get cesq fail!");
+		LOGD("%s", tmpbuf);
 	#endif
-		return;
-	}
-
-#ifdef NB_DEBUG
-	LOGD("cesq:%s", tmpbuf);
-#endif
-	len = strlen(tmpbuf);
-	ptr = tmpbuf;
-	while(i<5)
-	{
-		ptr = strstr(ptr, ",");
-		ptr++;
-		i++;
-	}
-
-	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
-	rsrp = atoi(strbuf);
-	if(rsrp != rsrpbk)
-	{
-		rsrpbk = rsrp;
-		if(test_nb_flag)
+		len = strlen(tmpbuf);
+		ptr1 = tmpbuf;
+		while(i<4)
 		{
-			sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", rsrp,(rsrp-141));
-			nb_test_update_flag = true;
+			ptr1 = strstr(ptr1, ",");
+			ptr1++;
+			i++;
 		}
-		else
+		//rsrq
+		ptr2 = strstr(ptr1, ",");
+		memcpy((char*)strbuf, ptr1, ptr2-ptr1);
+		rsrq = atoi(strbuf);
+		//rsrp
+		ptr2++;
+		memset(strbuf, 0, sizeof(strbuf));
+		memcpy((char*)strbuf, ptr2, len-(ptr2-(char*)tmpbuf));
+		rsrp = atoi(strbuf);
+	}
+
+	if(at_cmd_write(CMD_GET_SNR, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("%s", tmpbuf);
+	#endif
+		ptr1 = tmpbuf+9;
+		ptr2 = strstr(ptr1, ",");
+		memcpy((char*)strbuf, ptr1, ptr2-ptr1);
+		snr = atoi(strbuf);
+	}
+
+	if(test_nb_flag)
+	{
+		sprintf(nb_test_info, " snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
+		nb_test_update_flag = true;
+	}
+	else
+	{
+		if(rsrp != rsrpbk)
 		{
+			rsrpbk = rsrp;
 			modem_rsrp_handler(rsrp);
 		}
 	}
@@ -2148,9 +2155,7 @@ static void nb_link(struct k_work *work)
 		uart_sleep_out();
 	#endif
 
-	#ifndef NB_SIGNAL_TEST
 		configure_low_power();
-	#endif
 
 		err = lte_lc_init_and_connect();
 		if(err)
@@ -2186,8 +2191,8 @@ static void nb_link(struct k_work *work)
 			nb_connected = true;
 			retry_count = 0;
 
-			GetModemDateTime();
 			modem_data_init();
+			GetModemDateTime();
 		}
 
 		GetModemStatus();
@@ -2281,8 +2286,7 @@ void NBMsgProcess(void)
 	
 		if(nb_is_connected())
 		{
-			sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", g_rsrp,(g_rsrp-141));
-			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
 		}
 		else if(nb_is_connecting())
 		{
@@ -2296,7 +2300,6 @@ void NBMsgProcess(void)
 		#endif
 			SetModemTurnOff();
 			modem_configure();
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
 		}
 	}
 

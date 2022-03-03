@@ -50,14 +50,15 @@
 /* Sensorhub reporting mode 2 */
 #define SSWHRM_WSPO2_SUITE_MODE2_DATASIZE		58
 
+#define SSBPT_ALGO_DATASIZE                     8  //MYG
+
+#define SSRAW_ALGO_DATASIZE                     1  //MYG
+
 #define SS_NORMAL_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE)
 
 #define SS_EXTEND_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE)
 
 #define READ_SAMPLE_COUNT_MAX                    5
-
-static uint8_t sh_data_buf[READ_SAMPLE_COUNT_MAX * SS_EXTEND_PACKAGE_SIZE + 1];
-
 
 typedef enum
 {
@@ -153,17 +154,37 @@ typedef struct __attribute__((packed))
 
 typedef struct __attribute__((packed))
 {
+	uint8_t status;
+	uint8_t perc_comp;
+	uint8_t sys_bp;
+	uint8_t dia_bp;
+	uint16_t flags;
+	uint16_t reserved;
+}bpt_sensorhub_data;
+
+typedef struct __attribute__((packed))
+{
 	max86176_data ppg_data;
 	accel_data acc_data;
 	whrm_wspo2_suite_sensorhub_data algo_data;
+	bpt_sensorhub_data bpt_data;
 }sensorhub_output;
 
-/**
- * @brief	function to initialize sensorhub mode
- *
- * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
- */
-int sensorhub_interface_init();
+typedef union {
+	struct {
+		uint8_t max86176_enabled:1;
+		uint8_t accel_enabled   :1;
+		uint8_t whrm_wspo2_suite_enabled_mode1 :1;
+		uint8_t whrm_wspo2_suite_enabled_mode2 :1;
+		uint8_t timestamp_enabled:1;
+		uint8_t bpt_algo_enabled:1;
+		uint8_t algo_raw_enabled:1;
+		uint8_t reserved:1;
+	};
+	uint8_t status_vals;
+} algo_sensor_status_t;
+
+extern algo_sensor_status_t g_algo_sensor_stat;
 
 /**
  * @brief	function to enable sensors in sensorhub mode
@@ -183,10 +204,14 @@ int sensorhub_disable_sensor();
  * @brief	function to enable algorithm in sensorhub mode
  *
  * @param[in]  mode   - sensorhub reporting mode
+ *             sh_operation_mode : algo instance main operation mode : raw/whrm/bpt/whrm+bpt
+ *             sh_algo_submode   : algo specific runmode
+ *                                 whrm has 7 modes
+ *                                 bpt has 2 mode
  *
  * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
  */
-int sensorhub_enable_algo(sensorhub_report_mode_t mode);
+int sensorhub_enable_algo(sensorhub_report_mode_t mode , int sh_operation_mode , int sh_algo_submode);
 
 /**
  * @brief	function to disable algorithm in sensorhub mode

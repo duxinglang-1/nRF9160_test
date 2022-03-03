@@ -37,7 +37,7 @@ static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
 static struct k_work fota_work;
-static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_DOWNLOADING;
+static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
 static void fota_timer_handler(struct k_timer *timer_id);
 K_TIMER_DEFINE(fota_timer, fota_timer_handler, NULL);
@@ -200,7 +200,7 @@ void fota_start(void)
 void fota_start_confirm(void)
 {
 	fota_run_flag = true;
-	fota_cur_status = FOTA_STATUS_DOWNLOADING;
+	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);

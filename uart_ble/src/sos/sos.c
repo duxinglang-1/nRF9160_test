@@ -31,6 +31,7 @@ SOS_STATUS sos_state = SOS_STATUS_IDLE;
 
 static bool sos_trigger_flag = false;
 static bool sos_start_gps_flag = false;
+static bool sos_status_change_flag = false;
 
 u8_t sos_trigger_time[16] = {0};
 
@@ -40,6 +41,11 @@ static void SOSStartGPSCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_gps_timer, SOSStartGPSCallBack, NULL);
 
 void SOSTimerOutCallBack(struct k_timer *timer_id)
+{
+	sos_status_change_flag = true;
+}
+
+void SOSStatusUpdate(void)
 {
 	if(screen_id == SCREEN_ID_SOS)
 	{
@@ -53,6 +59,9 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 			break;
 		
 		case SOS_STATUS_SENT:
+		#ifdef CONFIG_ANIMATION_SUPPORT	
+			AnimaStopShow();
+		#endif	
 			sos_state = SOS_STATUS_RECEIVED;
 			break;
 		
@@ -200,10 +209,6 @@ bool SOSIsRunning(void)
 
 void SOSSChangrStatus(void)
 {
-#ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
-#endif
-
 	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), NULL);
 }
 
@@ -257,6 +262,12 @@ void SOSMsgProc(void)
 		sos_wait_gps = true;
 		APP_Ask_GPS_Data();
 		sos_start_gps_flag = false;
+	}
+
+	if(sos_status_change_flag)
+	{
+		SOSStatusUpdate();
+		sos_status_change_flag = false;
 	}
 }
 

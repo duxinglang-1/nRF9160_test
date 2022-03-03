@@ -23,7 +23,13 @@
 #define TEMP_IF_I2C
 #define TEMP_IF_SINGLE_LINE
 
-extern float g_temp;
+//sensor trigger type
+#define TEMP_TRIGGER_BY_MENU			0x01		//menu trigger
+#define	TEMP_TRIGGER_BY_APP_ONE_KEY		0x02		//one-key check trigger
+#define	TEMP_TRIGGER_BY_HOURLY			0x04		//auto check hourly
+
+extern float g_temp_skin;
+extern float g_temp_body;
 
 #endif/*__TEMP_H__*/
 

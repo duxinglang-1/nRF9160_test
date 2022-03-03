@@ -14,8 +14,8 @@
 #include "font.h"
 //#include "boards.h"
 
-#define LCD_R108101_GC9307
-//#define LCD_ORCZ010903C_GC9A01
+//#define LCD_R108101_GC9307
+#define LCD_ORCZ010903C_GC9A01
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
 //#define LCD_ORCT012210N_ST7789V2
@@ -26,7 +26,7 @@
 //#define LCD_TYPE_I2C			//I2C
 //#define LCD_TYPE_SPI			//SPI
 
-#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 //#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 

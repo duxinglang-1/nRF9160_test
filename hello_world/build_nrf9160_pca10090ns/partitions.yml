@@ -27,8 +27,8 @@ mcuboot_pad:
 mcuboot_primary:
   address: 0x10000
   orig_span: &id001
-  - mcuboot_pad
   - app
+  - mcuboot_pad
   - spm
   region: flash_primary
   sharers: 0x1

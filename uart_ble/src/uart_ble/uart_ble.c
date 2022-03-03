@@ -641,8 +641,8 @@ void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
 
 	if(buf[6] == 1)//¿ªÆô
 	{
-		g_ppg_trigger |= PPG_TRIGGER_BY_APP_ONE_KEY; 
-		APPStartPPG();
+		g_ppg_trigger |= TRIGGER_BY_APP_ONE_KEY; 
+		APPStartHrSpo2();
 	}
 	else
 	{
@@ -985,8 +985,8 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 	}
 	else
 	{
-		g_ppg_trigger |= PPG_TRIGGER_BY_APP_HR; 
-		APPStartPPG();
+		g_ppg_trigger |= TRIGGER_BY_APP; 
+		APPStartHrSpo2();
 	}
 }
 #endif
@@ -1856,6 +1856,9 @@ void UartMsgProc(void)
 		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting() && !mqtt_is_connecting()
 			#ifdef CONFIG_FOTA_DOWNLOAD
 			 && !fota_is_running()
+			#endif
+			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			 && !dl_is_running()
 			#endif
 			#ifdef CONFIG_WIFI
 			 && !wifi_is_working()

@@ -24,7 +24,9 @@
 #include "logger.h"
 
 #define TLS_SEC_TAG 42
+#define FOTA_RESULT_NOTIFY_TIMEOUT	5
 
+static bool fota_confirm_flag = false;
 static bool fota_start_flag = false;
 static bool fota_run_flag = false;
 static bool fota_reboot_flag = false;
@@ -38,40 +40,14 @@ static struct k_work_q *app_work_q;
 static struct k_work fota_work;
 static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
+static void fota_timer_handler(struct k_timer *timer_id);
+K_TIMER_DEFINE(fota_timer, fota_timer_handler, NULL);
+
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
 {
 	LOGD("bsdlib recoverable error: %u\n", err);
 }
-
-#if 0	//xb test 2021-08-12
-static void modem_configure(void)
-{
-#if defined(CONFIG_LTE_LINK_CONTROL)
-	BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT),
-			"This sample does not support auto init and connect");
-	int err;
-#if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
-	/* Initialize AT only if bsdlib_init() is manually
-	 * called by the main application
-	 */
-	err = at_notif_init();
-	__ASSERT(err == 0, "AT Notify could not be initialized.");
-	err = at_cmd_init();
-	__ASSERT(err == 0, "AT CMD could not be established.");
-#if defined(CONFIG_USE_HTTPS)
-	err = cert_provision();
-	__ASSERT(err == 0, "Could not provision root CA to %d", TLS_SEC_TAG);
-#endif
-#endif
-	printk("LTE Link Connecting ...\n");
-	err = lte_lc_init_and_connect();
-	__ASSERT(err == 0, "LTE link could not be established.");
-	printk("LTE Link Connected!\n");
-#endif
-}
-
-#else
 
 static int modem_configure(void)
 {
@@ -91,7 +67,6 @@ static int modem_configure(void)
 
 	return err;
 }
-#endif
 
 int cert_provision(void)
 {
@@ -271,6 +246,7 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 	case FOTA_DOWNLOAD_EVT_FINISHED:
 		LOGD("Received finished!");
 		fota_cur_status = FOTA_STATUS_FINISHED;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);
 		break;
 
 	default:
@@ -367,8 +343,24 @@ void FOTARedrawProgress(void)
 	}
 }
 
+void MenuStartFOTA(void)
+{
+	fota_confirm_flag = true;
+}
+
+void fota_excu(void)
+{
+	fota_confirm_flag = true;
+}
+
 void FotaMsgProc(void)
 {
+	if(fota_confirm_flag)
+	{
+		fota_confirm_flag = false;
+		fota_start_confirm();
+	}
+	
 	if(fota_start_flag)
 	{
 		fota_start_flag = false;

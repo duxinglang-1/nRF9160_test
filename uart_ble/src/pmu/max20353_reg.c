@@ -912,15 +912,15 @@ bool MAX20353_Init(void)
 		return false;
 	
 	//供电电压及电流配置
-	MAX20353_Buck1Config();		//1.8v  350mA
-	MAX20353_Buck2Config(); 	//3.3V  350mA
-	MAX20353_LDO1Config();	//1.8v 50mA switch mode
-	MAX20353_LDO2Config();	//3.3V 100mA 给CTP供电
-	MAX20353_BoostConfig(); //5V 只有buck2的3.3V关闭，即PPG才会亮
+	MAX20353_Buck1Config();		//1.8V 350mA
+	MAX20353_Buck2Config(); 	//3.3V 350mA
+	MAX20353_LDO1Config();		//1.8V 50mA switch mode
+	MAX20353_LDO2Config();		//3.3V 100mA 给CTP供电
+	MAX20353_BoostConfig();		//5V   只有buck2的3.3V关闭，即PPG才会亮
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();
-	MAX20353_BuckBoostConfig();
+	MAX20353_BuckBoostConfig();	//4.0V 屏背光供电
 
 	//马达驱动
 #ifdef MOTOR_TYPE_ERM

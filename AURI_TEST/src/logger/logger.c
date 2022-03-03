@@ -16,7 +16,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(auri, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define TEST_DEBUG
+#define TEST_DEBUG
 
 static char buf[LOG_BUFF_SIZE] = {0};
 

@@ -1,11 +1,11 @@
 {
     "format-version": 0,
-    "time": 1640334164,
+    "time": 1646115271,
     "files": [
         {
             "size": 127552,
             "file": "app_update.bin",
-            "modtime": 1640334164,
+            "modtime": 1646115270,
             "type": "application",
             "load_address": 115200,
             "version_MCUBOOT": "0.0.0+0",

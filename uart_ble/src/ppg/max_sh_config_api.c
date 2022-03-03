@@ -59,9 +59,9 @@ int sh_get_cfg_wearablesuite_algomode(uint8_t *algoMode)
 	return status;
 }
 
-int sh_set_cfg_wearablesuite_afeenable(const uint8_t isAfeEnable)
+int sh_set_cfg_wearablesuite_afeenable(const uint8_t isAfecEnable)
 {
-	uint8_t Temp[1] = { isAfeEnable };
+	uint8_t Temp[1] = { isAfecEnable };
     int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_SUITE_AEC_ENABLE, &Temp[0], 1);
 
     return status;
@@ -743,3 +743,89 @@ int sh_get_cfg_wearablesuite_meas_led_driversel(uint8_t driverLedSel[9])
 
 	return status;
 }
+
+int sensorhub_set_bpt_algo_submode(const uint8_t algo_op_mode)
+{
+	uint8_t tmp = (algo_op_mode == 0)? BPT_ALGO_MODE_CALIBRATION : BPT_ALGO_MODE_ESTIMATION ;
+
+	uint8_t Temp[1] = {tmp};
+	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, CFG_CFGIDX_BPT_ALGO_SUBMODE, &Temp[0], 1);
+
+	return status;
+}
+
+int sh_set_cfg_bpt_cal_result(uint8_t cal_result[CAL_RESULT_SIZE])
+{
+	int byte_stream_sz = 240;
+    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CAL_RESULT, &cal_result[0], byte_stream_sz);
+    return status;
+}
+
+int sh_get_cfg_bpt_cal_result( uint8_t *cal_result)
+{
+	uint8_t rxBuff[1+ 240 /*CAL_RESULT_SIZE*/]; // first byte is status
+	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CAL_RESULT, &rxBuff[0], sizeof(rxBuff) );
+
+    for(int i = 0 ; i < 240; i++)
+	{
+    }
+
+	memcpy(cal_result, &rxBuff[1], 240 /*CAL_RESULT_SIZE*/);
+
+	return status;
+}
+
+int sh_set_cfg_bpt_date_time(const uint32_t date, const uint32_t time)
+{
+	union date_time_t{
+		uint32_t Temp[2];
+		uint8_t tmp[8];
+	};
+	union date_time_t date_time;
+	date_time.Temp[0] = date;
+	date_time.Temp[1] = time;
+    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_DATE_TIME, &date_time.tmp[0], sizeof(date_time));
+    return status;
+}
+
+int sh_set_cfg_bpt_sys_dia(const uint8_t cal_idx, const uint8_t sys, const uint8_t dia)
+{
+	uint8_t Temp[3] = {cal_idx, sys, dia};
+    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_SYS_DIA, &Temp[0], sizeof(Temp));
+    return status;
+}
+
+int sh_set_cfg_bpt_cal_index(const uint8_t cal_idx)
+{
+	uint8_t Temp[1] = {cal_idx};
+    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CAL_IDX, &Temp[0], sizeof(Temp));
+    return status;
+}
+
+int sh_get_cfg_bpt_cal_index( uint8_t *cal_idx )
+{
+	uint8_t rxBuff[1+1]; // first byte is status
+	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CAL_IDX, &rxBuff[0], sizeof(rxBuff) );
+
+	*cal_idx = rxBuff[1];
+
+	return status;
+}
+
+int sh_set_cfg_bpt_continuous(const uint8_t cont_mode)
+{
+	uint8_t Temp[1] = {cont_mode};
+    int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CONTINUOUS, &Temp[0], sizeof(Temp));
+    return status;
+}
+
+int sh_get_cfg_bpt_continuous(uint8_t *cont_mode)
+{
+	uint8_t rxBuff[1+1]; // first byte is status
+	int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CONTINUOUS, &rxBuff[0], sizeof(rxBuff) );
+
+	*cont_mode = rxBuff[1];
+
+	return status;
+}
+

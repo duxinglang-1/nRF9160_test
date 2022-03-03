@@ -65,11 +65,7 @@ static void EnterHRScreen(void);
 #ifndef IMG_FONT_FROM_FLASH
 static char *logo_img[] = 
 {
-	logo_1,
-	logo_2,
-	logo_3,
-	logo_4,
-	logo_5
+	peppa_pig_80X160,
 };
 #endif
 
@@ -84,7 +80,7 @@ void ShowBootUpLogo(void)
   #ifdef IMG_FONT_FROM_FLASH
 	LCD_ShowImg_From_Flash(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_RM_LOGO_240X240_ADDR);
   #else
-	LCD_ShowImg(PWRON_LOGO_X, PWRON_LOGO_Y, logo_5);
+	LCD_ShowImg(PWRON_LOGO_X, PWRON_LOGO_Y, peppa_pig_80X160);
   #endif
 	k_sleep(K_MSEC(1000));
 	EnterIdleScreen();

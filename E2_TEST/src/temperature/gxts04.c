@@ -28,6 +28,11 @@ static CRC_8 crc_8_CUSTOM = {0x31,0xff,0x00,false,false};
 #endif
 
 static u32_t measure_count = 0;
+static float t_sensor = 0.0;		//传感器温度值
+static float t_body = 0.0; 			//显示的温度值
+static float t_predict = 0.0;		//预测的人体温度值
+static float t_temp80 = 0.0;		//预测的人体温度值
+
 
 static u8_t init_i2c(void)
 {
@@ -102,6 +107,10 @@ bool gxts04_init(void)
 void gxts04_start(void)
 {
 	measure_count = 0;
+	t_sensor = 0.0;
+	t_body = 0.0;
+	t_predict = 0.0;
+	t_temp80 = 0.0;
 }
 
 void gxts04_stop(void)
@@ -114,10 +123,6 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	u8_t crc=0;
 	u8_t databuf[10] = {0};
 	u16_t trans_temp = 0;
-	float t_sensor = 0.0;		//传感器温度值
-	float t_body = 0.0;			//显示的温度值
-	float t_predict = 0.0;		//预测的人体温度值
-	float t_temp80 = 0.0;		//预测的人体温度值
 	
 	gxts04_write_data(CMD_WAKEUP);
 	gxts04_read_data(CMD_MEASURE_LOW_POWER, &databuf, 10);
@@ -147,7 +152,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 
 	if(t_sensor > 32)			//如果上一次测温大于32，那么开始计数
 	{
-		measure_count = measure_count + 1;
+		measure_count = measure_count+1;
 	}
 	else if(measure_count == 2000)
 	{
@@ -180,12 +185,12 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	}
 	else if((measure_count > 20)&&(measure_count <= 25))
 	{
-		t_body = ((measure_count - 80)*0.8*(t_predict - t_temp80))/5 + t_temp80;
+		t_body = ((measure_count-20)*0.8*(t_predict-t_temp80))/5 + t_temp80;
 	}
 
 	else if((measure_count > 25)&&(measure_count <= 30))
 	{
-		t_body = t_predict - ((30 - measure_count)*0.2*(t_predict - t_temp80))/5;
+		t_body = t_predict - ((30-measure_count)*0.2*(t_predict-t_temp80))/5;
 	}
 	else
 	{
@@ -198,6 +203,10 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	}
 
 	*body_temp = t_body;
+
+#ifdef TEMP_DEBUG
+	LOGD("count:%d, t_predict:%d.%d, t_temp80:%d.%d, t_body:%d.%d", measure_count, (s16_t)(t_predict*10)/10, (s16_t)(t_predict*10)%10, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
+#endif
 
 	return true;
 }

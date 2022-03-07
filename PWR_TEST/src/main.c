@@ -11,8 +11,8 @@
 #include <string.h>
 
 #define MY_PORT	"GPIO_0"
-#define GPIO_DERECT	GPIO_DIR_OUT
-#define GPIO_LEVEL	0
+#define GPIO_DERECT	GPIO_DIR_IN
+#define GPIO_LEVEL	1
 
 struct device *gpio_lcd;
 

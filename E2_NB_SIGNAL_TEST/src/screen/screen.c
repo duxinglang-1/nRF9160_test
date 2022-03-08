@@ -727,8 +727,8 @@ void PowerOffShowStatus(void)
 	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_Y, IMG_PWROFF_NO_ADDR);
 	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_Y, IMG_PWROFF_YES_ADDR);
 
-	SetLeftKeyUpHandler(poweroff_confirm);
-	SetRightKeyUpHandler(poweroff_cancel);
+	SetLeftKeyUpHandler(poweroff_cancel);
+	SetRightKeyUpHandler(poweroff_confirm);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_confirm);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_cancel);
@@ -1003,6 +1003,8 @@ void ExitTempScreen(void)
 #endif
 	MenuStopTemp();
 
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
 	EnterIdleScreen();
 }
 

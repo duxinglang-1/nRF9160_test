@@ -1054,6 +1054,7 @@ void GetModemDateTime(void)
 	u8_t tmpbuf[10] = {0};
 	u8_t tz_dir[3] = {0};
 	u8_t tz_count,daylight;
+	static u8_t retry = 5;
 
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
@@ -1062,11 +1063,17 @@ void GetModemDateTime(void)
 	#endif
 
 	#ifndef NB_SIGNAL_TEST
-		if(nb_connected)
+		if(nb_connected && (retry > 0))
+		{
+			retry--;
 			k_timer_start(&get_nw_time_timer, K_MSEC(1000), NULL);
+		}
 	#endif
 		return;
 	}
+
+	retry = 5;
+	
 #ifdef NB_DEBUG	
 	LOGD("%s", timebuf);
 #endif

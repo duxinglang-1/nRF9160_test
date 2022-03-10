@@ -63,7 +63,7 @@ typedef struct _PALETTE
 仅在256色模式下存在调色板数据结构,调色板数据结构紧跟在数据结构HEADGRAY之后。
 */
 
-#if 1
+#if 0
 //alarm(3)
 extern unsigned char IMG_ALARM_ANI_1[15884];
 extern unsigned char IMG_ALARM_ANI_2[15884];
@@ -72,9 +72,9 @@ extern unsigned char IMG_ALARM_STR[4720];
 extern unsigned char IMG_ANALOG_CLOCK_BG[115208];
 extern unsigned char IMG_ANALOG_CLOCK_DOT_WHITE[458];
 extern unsigned char IMG_ANALOG_CLOCK_DOT_RED[250];
-extern unsigned char IMG_ANALOG_CLOCK_HAND_SEC[332];
-extern unsigned char IMG_ANALOG_CLOCK_HAND_MIN[1268];
-extern unsigned char IMG_ANALOG_CLOCK_HAND_HOUR[962];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_SEC[1652];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_MIN[2864];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_HOUR[2080];
 //battery(11)
 extern unsigned char IMG_BAT_CHRING_ANI_1[23708];
 extern unsigned char IMG_BAT_CHRING_ANI_2[23708];
@@ -138,18 +138,16 @@ extern unsigned char IMG_HR_ICON_ANI_1[2116];
 extern unsigned char IMG_HR_ICON_ANI_2[2116];
 extern unsigned char IMG_HR_TIME_DOT[28];
 extern unsigned char IMG_HR_UP_ARRAW[484];
-//idle step(11)
-extern unsigned char IMG_IDLE_STEP_LOGO[20072];
-extern unsigned char IMG_IDLE_STEP_NUM_0[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_1[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_2[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_3[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_4[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_5[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_6[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_7[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_8[1304];
-extern unsigned char IMG_IDLE_STEP_NUM_9[1304];
+//idle hr(2)
+extern unsigned char IMG_IDLE_HR_BG[7208];
+extern unsigned char IMG_IDLE_HR_ICON[1304];
+//idle net mode(2)
+extern unsigned char IMG_IDLE_NET_LTEM[392];
+extern unsigned char IMG_IDLE_NET_NB[360];
+//idle temp(3)
+extern unsigned char IMG_IDLE_TEMP_BG[7208];
+extern unsigned char IMG_IDLE_TEMP_C_ICON[968];
+extern unsigned char IMG_IDLE_TEMP_F_ICON[968];
 //medication reminder(5)
 extern unsigned char IMG_MEDICA_HOUR[424];
 extern unsigned char IMG_MEDICA_LOGO[2320];
@@ -260,11 +258,11 @@ extern unsigned char IMG_SET_TEMP_UNIT_STR[3176];
 extern unsigned char IMG_SET_TIMR_FORMAT_STR[2858];
 extern unsigned char IMG_SET_VIEW_STR[1164];
 //signal(5)
-extern unsigned char IMG_SIG_0[1744];
-extern unsigned char IMG_SIG_1[1744];
-extern unsigned char IMG_SIG_2[1744];
-extern unsigned char IMG_SIG_3[1744];
-extern unsigned char IMG_SIG_4[1744];
+extern unsigned char IMG_SIG_0[1304];
+extern unsigned char IMG_SIG_1[1304];
+extern unsigned char IMG_SIG_2[1304];
+extern unsigned char IMG_SIG_3[1304];
+extern unsigned char IMG_SIG_4[1304];
 //sleep(8)
 extern unsigned char IMG_SLEEP_ANI_1[4608];
 extern unsigned char IMG_SLEEP_ANI_2[4608];
@@ -305,16 +303,13 @@ extern unsigned char IMG_SYNC_ERR[24868];
 extern unsigned char IMG_SYNC_FINISH[24868];
 extern unsigned char IMG_SYNC_LOGO[20808];
 extern unsigned char IMG_SYNC_STR[8288];
-//temperature(6)
-extern unsigned char IMG_TEMP_BODY[2312];
-extern unsigned char IMG_TEMP_ICON_C[26268];
-extern unsigned char IMG_TEMP_ICON_F[26268];
-extern unsigned char IMG_TEMP_SKIN[944];
+//temperature(4)
+extern unsigned char IMG_TEMP_ICON_C[19588];
+extern unsigned char IMG_TEMP_ICON_F[19588];
 extern unsigned char IMG_TEMP_UNIT_C[520];
 extern unsigned char IMG_TEMP_UNIT_F[520];
 //wrist off(2)
 extern unsigned char IMG_WRIST_OFF_ICON[23372];
 extern unsigned char IMG_WRIST_OFF_STR[115208];
 #endif
-
 #endif/*__FONT_H__*/

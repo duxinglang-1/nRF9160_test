@@ -352,7 +352,7 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
+				//DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
 				pmu_battery_low_shutdown();
 			}
 		}
@@ -361,7 +361,7 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
 			{
-				DisplayPopUp("Battery voltage is low, please charge in time!");
+				//DisplayPopUp("Battery voltage is low, please charge in time!");
 			}
 		}
 		else if(g_bat_soc < 80)

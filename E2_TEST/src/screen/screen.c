@@ -99,7 +99,7 @@ void ShowBootUpLogo(void)
 	u16_t x,y,w,h;
 
 #ifdef IMG_FONT_FROM_FLASH
-	//LCD_ShowImg_From_Flash(PWRON_STR_X, PWRON_STR_Y, IMG_PWRON_STR_ADDR);
+	//LCD_ShowImg_From_Flash(PWRON_STR_X, PWRON_STR_Y, IMG_ALARM_ANI_1_ADDR);
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT
@@ -345,10 +345,14 @@ void IdleUpdateBatSoc(void)
 	u16_t w,h;
 	u8_t strbuf[128] = {0};
 
-	LCD_FillColor(IDLE_BAT_PERCENT_X, IDLE_BAT_PERCENT_Y, IDLE_BAT_PERCENT_W, IDLE_BAT_PERCENT_H, BLACK);
-
+	if(g_bat_soc >= 100)
+		sprintf(strbuf, "%d%%", g_bat_soc);
+	else if(g_bat_soc >= 10)
+		sprintf(strbuf, " %d%%", g_bat_soc);
+	else
+		sprintf(strbuf, "  %d%%", g_bat_soc);
+	
 	LCD_SetFontSize(FONT_SIZE_16);
-	sprintf(strbuf, "%02d%%", g_bat_soc);
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((IDLE_BAT_X-w)-2, IDLE_BAT_PERCENT_Y, strbuf);
 
@@ -392,8 +396,14 @@ void IdleShowBatSoc(void)
 	u16_t w,h;
 	u8_t strbuf[128] = {0};
 
+	if(g_bat_soc >= 100)
+		sprintf(strbuf, "%d%%", g_bat_soc);
+	else if(g_bat_soc >= 10)
+		sprintf(strbuf, " %d%%", g_bat_soc);
+	else
+		sprintf(strbuf, "  %d%%", g_bat_soc);
+
 	LCD_SetFontSize(FONT_SIZE_16);
-	sprintf(strbuf, "%02d%%", g_bat_soc);
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((IDLE_BAT_X-w)-2, IDLE_BAT_PERCENT_Y, strbuf);
 
@@ -426,123 +436,106 @@ void IdleShowSignal(void)
 	LCD_ShowImg_From_Flash(IDLE_SIGNAL_X, IDLE_SIGNAL_Y, img_add[g_nb_sig]);
 }
 
+void IdleShowNetMode(void)
+{
+	if(g_net_mode == NET_MODE_NB)
+	{
+		LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_NB_ADDR);	
+	}
+	else
+	{
+		LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_LTEM_ADDR);	
+	}
+}
+
 #ifdef CONFIG_IMU_SUPPORT
 void IdleUpdateSportData(void)
 {
-	u32_t img_addr[10] = {
-							IMG_IDLE_STEP_NUM_0_ADDR,
-							IMG_IDLE_STEP_NUM_1_ADDR,
-							IMG_IDLE_STEP_NUM_2_ADDR,
-							IMG_IDLE_STEP_NUM_3_ADDR,
-							IMG_IDLE_STEP_NUM_4_ADDR,
-							IMG_IDLE_STEP_NUM_5_ADDR,
-							IMG_IDLE_STEP_NUM_6_ADDR,
-							IMG_IDLE_STEP_NUM_7_ADDR,
-							IMG_IDLE_STEP_NUM_8_ADDR,
-							IMG_IDLE_STEP_NUM_9_ADDR
-						 };
-
-	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_LOGO_ADDR);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+0*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps/10000]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+1*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%10000)/1000]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+2*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%1000)/100]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+3*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%100)/10]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+4*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps%10]);
 }
 
 void IdleShowSportData(void)
 {
-	u32_t img_addr[10] = {
-							IMG_IDLE_STEP_NUM_0_ADDR,
-							IMG_IDLE_STEP_NUM_1_ADDR,
-							IMG_IDLE_STEP_NUM_2_ADDR,
-							IMG_IDLE_STEP_NUM_3_ADDR,
-							IMG_IDLE_STEP_NUM_4_ADDR,
-							IMG_IDLE_STEP_NUM_5_ADDR,
-							IMG_IDLE_STEP_NUM_6_ADDR,
-							IMG_IDLE_STEP_NUM_7_ADDR,
-							IMG_IDLE_STEP_NUM_8_ADDR,
-							IMG_IDLE_STEP_NUM_9_ADDR
-						 };
-
-	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_LOGO_ADDR);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+0*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps/10000]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+1*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%10000)/1000]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+2*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%1000)/100]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+3*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[(g_steps%100)/10]);
-	LCD_ShowImg_From_Flash(IDLE_STEPS_NUM_X+4*IDLE_STEPS_NUM_W, IDLE_STEPS_NUM_Y, img_addr[g_steps%10]);
 }
 #endif
 
-void IdleUpdateHealthData(void)
-{
-	u16_t x,y,w,h;
-	u8_t strbuf[128] = {0};
-	u8_t tmpbuf[128] = {0};
-	
-	LCD_SetFontSize(FONT_SIZE_16);
-
-#ifdef FONTMAKER_UNICODE_FONT
-	mmi_asc_to_ucs2(tmpbuf,"HR:");
-	LCD_MeasureUniString(tmpbuf, &w, &h);		
-	LCD_Fill(PPG_DATA_SHOW_X+w, PPG_DATA_SHOW_Y, 50, PPG_DATA_SHOW_H, BLACK);
-	sprintf(strbuf, "%d", g_hr);
-	mmi_asc_to_ucs2(tmpbuf,strbuf);
-	LCD_ShowUniString(PPG_DATA_SHOW_X+w, PPG_DATA_SHOW_Y, tmpbuf);
-
-	mmi_asc_to_ucs2(tmpbuf,"SPO2:");
-	LCD_MeasureUniString(tmpbuf, &w, &h);
-	LCD_Fill(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, 50, PPG_DATA_SHOW_H, BLACK);
-	sprintf(strbuf, "%d", g_spo2);
-	mmi_asc_to_ucs2(tmpbuf,strbuf);
-	LCD_ShowUniString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, tmpbuf);
-
-#else
 #ifdef CONFIG_PPG_SUPPORT
-	LCD_MeasureString("HR:", &w, &h);		
-	LCD_Fill(PPG_DATA_SHOW_X+w, PPG_DATA_SHOW_Y, 50, PPG_DATA_SHOW_H, BLACK);
-	sprintf(strbuf, "%d", g_hr);
-	LCD_ShowString(PPG_DATA_SHOW_X+w, PPG_DATA_SHOW_Y, strbuf);
-
-	LCD_MeasureString("SPO2:", &w, &h);
-	LCD_Fill(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, 50, PPG_DATA_SHOW_H, BLACK);
-	sprintf(strbuf, "%d", g_spo2);
-	LCD_ShowString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2+w, PPG_DATA_SHOW_Y, strbuf);
-#endif	
-#endif
-}
-
-void IdleShowHealthData(void)
+void IdleUpdateHrData(void)
 {
-	u16_t x,y,w,h;
-	u8_t strbuf[128] = {0};
-	u8_t tmpbuf[128] = {0};
-	
+	u16_t w,h;
+	u8_t strbuf[8] = {0};
+	u16_t bg_color = 0x1820;
+
+	LCD_Fill(IDLE_HR_NUM_X, IDLE_HR_NUM_Y, IDLE_HR_NUM_W, IDLE_HR_NUM_H, bg_color);
 	LCD_SetFontSize(FONT_SIZE_16);
-
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_Fill(PPG_DATA_SHOW_X,PPG_DATA_SHOW_Y,PPG_DATA_SHOW_W/3,PPG_DATA_SHOW_H,BLACK);
-	sprintf(strbuf, "HR:%d", g_hr);
-	mmi_asc_to_ucs2(tmpbuf,strbuf);
-	LCD_ShowUniString(PPG_DATA_SHOW_X, PPG_DATA_SHOW_Y, tmpbuf);
-
-	LCD_Fill(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_Y,PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_H,BLACK);
-	sprintf(strbuf, "SPO2:%d", g_spo2);
-	mmi_asc_to_ucs2(tmpbuf,strbuf);
-	LCD_ShowUniString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2, PPG_DATA_SHOW_Y, tmpbuf);
-
-#else
-#ifdef CONFIG_PPG_SUPPORT
-	LCD_Fill(PPG_DATA_SHOW_X,PPG_DATA_SHOW_Y,PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_H,BLACK);
-	sprintf(strbuf, "HR:%d", g_hr);
-	LCD_ShowString(PPG_DATA_SHOW_X, PPG_DATA_SHOW_Y, strbuf);
-
-	LCD_Fill(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_Y,PPG_DATA_SHOW_W/2,PPG_DATA_SHOW_H,BLACK);
-	sprintf(strbuf, "SPO2:%d", g_spo2);
-	LCD_ShowString(PPG_DATA_SHOW_X+PPG_DATA_SHOW_W/2, PPG_DATA_SHOW_Y, strbuf);
-#endif
-#endif
+	sprintf(strbuf, "%d", g_hr);
+	LCD_MeasureString(strbuf, &w, &h);
+	BACK_COLOR=bg_color;
+	LCD_ShowString(IDLE_HR_NUM_X+(IDLE_HR_NUM_W-w)/2, IDLE_HR_NUM_Y+(IDLE_HR_NUM_H-h)/2, strbuf);
+	BACK_COLOR=BLACK;
 }
+
+void IdleShowHrData(void)
+{
+	u16_t w,h;
+	u8_t strbuf[8] = {0};
+	u16_t bg_color = 0x1820;
+
+	LCD_ShowImg_From_Flash(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_IDLE_HR_BG_ADDR);
+	LCD_dis_pic_trans_from_flash(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, IMG_IDLE_HR_ICON_ADDR, bg_color);
+			
+	LCD_Fill(IDLE_HR_NUM_X, IDLE_HR_NUM_Y, IDLE_HR_NUM_W, IDLE_HR_NUM_H, bg_color);
+	LCD_SetFontSize(FONT_SIZE_16);
+	sprintf(strbuf, "%d", g_hr);
+	LCD_MeasureString(strbuf, &w, &h);
+	BACK_COLOR=bg_color;
+	LCD_ShowString(IDLE_HR_NUM_X+(IDLE_HR_NUM_W-w)/2, IDLE_HR_NUM_Y+(IDLE_HR_NUM_H-h)/2, strbuf);
+	BACK_COLOR=BLACK;
+}
+#endif
+
+#ifdef CONFIG_TEMP_SUPPORT
+void IdleUpdateTempData(void)
+{
+	u16_t w,h;
+	u8_t strbuf[8] = {0};
+	u16_t bg_color = 0x00c3;
+
+	LCD_Fill(IDLE_TEMP_NUM_X, IDLE_TEMP_NUM_Y, IDLE_TEMP_NUM_W, IDLE_TEMP_NUM_H, bg_color);
+	LCD_SetFontSize(FONT_SIZE_16);
+	sprintf(strbuf, "%d", g_hr);
+	LCD_MeasureString(strbuf, &w, &h);
+	BACK_COLOR=bg_color;
+	LCD_ShowString(IDLE_TEMP_NUM_X+(IDLE_TEMP_NUM_W-w)/2, IDLE_TEMP_NUM_Y+(IDLE_TEMP_NUM_H-h)/2, strbuf);
+	BACK_COLOR=BLACK;
+}
+
+void IdleShowTempData(void)
+{
+	u16_t w,h;
+	u8_t strbuf[8] = {0};
+	u16_t bg_color = 0x00c3;
+
+	LCD_ShowImg_From_Flash(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_IDLE_TEMP_BG_ADDR);
+	if(global_settings.temp_unit == TEMP_UINT_C)
+	{
+		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
+		sprintf(strbuf, "%0.1f", g_temp_body);
+	}
+	else
+	{
+		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
+		sprintf(strbuf, "%0.1f", 32+1.8*g_temp_body);
+	}
+
+	LCD_Fill(IDLE_TEMP_NUM_X, IDLE_TEMP_NUM_Y, IDLE_TEMP_NUM_W, IDLE_TEMP_NUM_H, bg_color);
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_MeasureString(strbuf, &w, &h);
+	BACK_COLOR=bg_color;
+	LCD_ShowString(IDLE_TEMP_NUM_X+(IDLE_TEMP_NUM_W-w)/2, IDLE_TEMP_NUM_Y+(IDLE_TEMP_NUM_H-h)/2, strbuf);
+	BACK_COLOR=BLACK;
+}
+
+#endif
 
 void IdleScreenProcess(void)
 {
@@ -554,10 +547,14 @@ void IdleScreenProcess(void)
 		
 		LCD_Clear(BLACK);
 		IdleShowSignal();
+		IdleShowNetMode();
 		IdleShowBatSoc();
 		IdleShowDateTime();
-	#ifdef CONFIG_IMU_SUPPORT	
-		IdleShowSportData();
+	#ifdef CONFIG_PPG_SUPPORT
+		IdleShowHrData();
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
+		IdleShowTempData();
 	#endif
 		break;
 		
@@ -566,6 +563,11 @@ void IdleScreenProcess(void)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SIG);
 			IdleShowSignal();
+		}
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_NET_MODE)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_NET_MODE);	
+			IdleShowNetMode();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BAT)
 		{
@@ -594,7 +596,20 @@ void IdleScreenProcess(void)
 			IdleUpdateSportData();
 		}
 	#endif
-
+	#ifdef CONFIG_PPG_SUPPORT
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_HR)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_HR);
+			IdleUpdateHrData();
+		}
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_TEMP)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_TEMP);
+			IdleUpdateTempData();
+		}
+	#endif
 		if(scr_msg[SCREEN_ID_IDLE].para == SCREEN_EVENT_UPDATE_NO)
 			scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_NO;
 	}
@@ -688,6 +703,8 @@ void EnterPoweroffScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -723,8 +740,8 @@ void PowerOffShowStatus(void)
 	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_Y, IMG_PWROFF_NO_ADDR);
 	LCD_ShowImg_From_Flash(PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_Y, IMG_PWROFF_YES_ADDR);
 
-	SetLeftKeyUpHandler(poweroff_confirm);
-	SetRightKeyUpHandler(poweroff_cancel);
+	SetLeftKeyUpHandler(poweroff_cancel);
+	SetRightKeyUpHandler(poweroff_confirm);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_confirm);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_cancel);
@@ -931,20 +948,13 @@ void TempUpdateStatus(void)
 	}
 #endif
 
-	LCD_SetFontSize(FONT_SIZE_24);
-	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_skin*10)/10, (u16_t)(g_temp_skin*10)%10);
+	LCD_SetFontSize(FONT_SIZE_48);
+	if(g_temp_body >= 10.0)
+		sprintf(tmpbuf, "%0.1f", g_temp_body);
+	else
+		sprintf(tmpbuf, " %0.1f", g_temp_body);
 	LCD_MeasureString(tmpbuf, &w, &h);
-	x = TEMP_SKIN_UNIT_X-w-2;
-	y = TEMP_SKIN_NUM_Y+(TEMP_SKIN_NUM_H-h)/2;
-	LCD_Fill(TEMP_SKIN_NUM_X, TEMP_SKIN_NUM_Y, TEMP_SKIN_NUM_W, TEMP_SKIN_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
-
-	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_body*10)/10, (u16_t)(g_temp_body*10)%10);
-	LCD_MeasureString(tmpbuf, &w, &h);
-	x = TEMP_BODY_UNIT_X-w-2;
-	y = TEMP_BODY_NUM_Y+(TEMP_BODY_NUM_H-h)/2;
-	LCD_Fill(TEMP_BODY_NUM_X, TEMP_BODY_NUM_Y, TEMP_BODY_NUM_W, TEMP_BODY_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
 }
 
 void TempShowStatus(void)
@@ -954,25 +964,22 @@ void TempShowStatus(void)
 
 	LCD_Clear(BLACK);
 	
-	LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_C_ADDR);
-	LCD_ShowImg_From_Flash(TEMP_SKIN_ICON_X, TEMP_SKIN_ICON_Y, IMG_TEMP_SKIN_ADDR);
-	LCD_ShowImg_From_Flash(TEMP_SKIN_UNIT_X, TEMP_SKIN_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
-	LCD_ShowImg_From_Flash(TEMP_BODY_ICON_X, TEMP_BODY_ICON_Y, IMG_TEMP_BODY_ADDR);
-	LCD_ShowImg_From_Flash(TEMP_BODY_UNIT_X, TEMP_BODY_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
+	if(global_settings.temp_unit == TEMP_UINT_C)
+	{
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_C_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_UNIT_X, TEMP_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
+	}
+	else
+	{
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_F_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_UNIT_X, TEMP_UNIT_Y, IMG_TEMP_UNIT_F_ADDR);
+	}
 	LCD_ShowImg_From_Flash(TEMP_RUNNING_ANI_X, TEMP_RUNNING_ANI_Y, IMG_RUNNING_ANI_4_ADDR);
 
-	LCD_SetFontSize(FONT_SIZE_24);
-	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_skin*10)/10, (u16_t)(g_temp_skin*10)%10);
+	LCD_SetFontSize(FONT_SIZE_48);
+	sprintf(tmpbuf, "%d", 0);
 	LCD_MeasureString(tmpbuf, &w, &h);
-	x = TEMP_SKIN_UNIT_X-w-2;
-	y = TEMP_SKIN_NUM_Y+(TEMP_SKIN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
-
-	sprintf(tmpbuf, "%d.%d", (u16_t)(g_temp_body*10)/10, (u16_t)(g_temp_body*10)%10);
-	LCD_MeasureString(tmpbuf, &w, &h);
-	x = TEMP_BODY_UNIT_X-w-2;
-	y = TEMP_BODY_NUM_Y+(TEMP_BODY_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
 }
 
 void TempScreenProcess(void)
@@ -999,6 +1006,8 @@ void ExitTempScreen(void)
 #endif
 	MenuStopTemp();
 
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
 	EnterIdleScreen();
 }
 
@@ -1754,6 +1763,7 @@ void DlUpdateStatus(void)
 	u16_t pro_len;
 	u16_t x,y,w,h;
 	u8_t pro_buf[16] = {0};
+	u8_t strbuf[256] = {0};
 	static bool flag = false;
 	static u16_t pro_str_x,pro_str_y;
 	
@@ -1815,12 +1825,24 @@ void DlUpdateStatus(void)
 		flag = false;
 		
 		LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
+		switch(g_dl_data_type)
+		{
+		case DL_DATA_IMG:
+			strcpy(strbuf, "Img upgraded successfully! Do you want to reboot the device immediately?");
+			break;
+		case DL_DATA_FONT:
+			strcpy(strbuf, "Font upgraded successfully! Do you want to reboot the device immediately?");
+			break;
+		case DL_DATA_PPG:
+			strcpy(strbuf, "PPG Algo upgraded successfully! Do you want to reboot the device immediately?");
+			break;
+		}
 		ShowStringsInRect(DL_NOTIFY_STRING_X,
 						  DL_NOTIFY_STRING_Y,
 						  DL_NOTIFY_STRING_W,
 						  DL_NOTIFY_STRING_H,
 						  FONT_SIZE_16,
-						  "Img upgraded successfully! Do you want to reboot the device immediately?");
+						  strbuf);
 
 		LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
 		LCD_MeasureString("SOS(Y)", &w, &h);
@@ -2543,6 +2565,8 @@ void ExitGPSTestScreen(void)
 	
 	if(gps_is_working())
 		MenuStopGPS();
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
 	EnterIdleScreen();
 }
@@ -2566,6 +2590,8 @@ void EnterGPSTestScreen(void)
 #ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
 #endif
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
@@ -2614,6 +2640,8 @@ void ExitNBTestScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
 	
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
 	EnterIdleScreen();
 }
 
@@ -2633,8 +2661,10 @@ void EnterNBTestScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	SetLeftKeyUpHandler(EnterGPSTestScreen);
-	SetRightKeyUpHandler(ExitGPSTestScreen);
+	SetRightKeyUpHandler(ExitNBTestScreen);
 }
 
 void SOSUpdateStatus(void)

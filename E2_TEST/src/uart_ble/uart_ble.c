@@ -28,7 +28,7 @@
 #include "esp8266.h"
 #endif
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 #define BLE_DEV			"UART_0"
 #define BLE_PORT		"GPIO_0"

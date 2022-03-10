@@ -65,6 +65,13 @@ typedef enum
 	BACKLIGHT_LEVEL_MAX=BACKLIGHT_LEVEL_8
 }BACKLIGHT_LEVEL;
 
+typedef enum
+{
+	TEMP_UINT_C,
+	TEMP_UINT_F,
+	TEMP_UINT_MAX
+}TEMP_UNIT;
+
 typedef struct{
 	bool is_on;
 	u8_t hour;
@@ -96,6 +103,7 @@ typedef struct{
 	bool wrist_off_check;
 	u16_t target_steps;
 	u32_t health_interval;
+	TEMP_UNIT temp_unit;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;

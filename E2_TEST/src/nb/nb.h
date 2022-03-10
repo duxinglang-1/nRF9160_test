@@ -12,6 +12,7 @@
 #define CMD_GET_ICCID	"AT%XICCID"
 #define CMD_GET_MODEM_V "AT+CGMR"
 #define CMD_GET_CESQ	"AT+CESQ"
+#define CMD_GET_SNR		"AT%XSNRSQ?"
 #define CMD_GET_APN		"AT+CGDCONT?"
 #define CMD_GET_CSQ		"AT+CSQ"
 #define CMD_GET_MODEM_PARA	"AT%XMONITOR"
@@ -47,13 +48,23 @@ typedef enum
 	NB_SIG_LEVEL_MAX
 }NB_SIGNL_LEVEL;
 
+
+typedef enum
+{
+	NET_MODE_NB,
+	NET_MODE_LTE_M,
+	NET_MODE_MAX
+}NETWORK_MODE;
+
 typedef struct
 {
 	u8_t plmn[PLMN_MAX_LEN];
 	u8_t apn[APN_MAX_LEN];
 }NB_APN_PARAMENT;
 
+
 extern NB_SIGNL_LEVEL g_nb_sig;
+extern NETWORK_MODE g_net_mode;
 
 extern bool get_modem_info_flag;
 extern bool test_nb_flag;

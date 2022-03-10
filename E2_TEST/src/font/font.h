@@ -109,9 +109,7 @@ extern unsigned char asc2_6432[96][256];
 
 //ÖÐÎÄ×Ö¿â
 #ifdef FONT_16
-//extern unsigned char chinese_1616_1[2726][32];
-//extern unsigned char chinese_1616_2[2726][32];
-//extern unsigned char chinese_1616_3[2726][32];
+//extern unsigned char chinese_1616[8178][32];
 #ifdef FONTMAKER_MBCS_FONT
 //extern unsigned char RM_JIS_16_1[72192];
 //extern unsigned char RM_JIS_16_2[72192];
@@ -131,14 +129,7 @@ extern unsigned char asc2_6432[96][256];
 #endif/*FONT_16*/
 
 #ifdef FONT_24
-//extern unsigned char chinese_2424_1[1200][72];
-//extern unsigned char chinese_2424_2[1200][72];
-//extern unsigned char chinese_2424_3[1200][72];
-//extern unsigned char chinese_2424_4[1200][72];
-//extern unsigned char chinese_2424_5[1200][72];
-//extern unsigned char chinese_2424_6[1200][72];
-//extern unsigned char chinese_2424_7[977][72];
-
+//extern unsigned char chinese_2424[8178][72];
 #ifdef FONTMAKER_UNICODE_FONT
 //extern unsigned char RM_UNI_24_1[89600];
 //extern unsigned char RM_UNI_24_2[89600];
@@ -156,18 +147,7 @@ extern unsigned char asc2_6432[96][256];
 #endif/*FONT_24*/
 
 #ifdef FONT_32
-//extern unsigned char chinese_3232_1[700][128];
-//extern unsigned char chinese_3232_2[700][128];
-//extern unsigned char chinese_3232_3[700][128];
-//extern unsigned char chinese_3232_4[700][128];
-//extern unsigned char chinese_3232_5[700][128];
-//extern unsigned char chinese_3232_6[700][128];
-//extern unsigned char chinese_3232_7[700][128];
-//extern unsigned char chinese_3232_8[700][128];
-//extern unsigned char chinese_3232_9[700][128];
-//extern unsigned char chinese_3232_10[700][128];
-//extern unsigned char chinese_3232_11[700][128];
-//extern unsigned char chinese_3232_12[478][128];
+//extern unsigned char chinese_3232[8178][128];
 #endif/*FONT_32*/
 
 #endif/*__FONT_H__*/

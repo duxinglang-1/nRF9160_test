@@ -32,13 +32,13 @@ extern "C" {
 
 //date&time
 #define IDLE_TIME_X	45
-#define IDLE_TIME_Y	65
-#define IDLE_DATE_MON_X	167
-#define IDLE_DATE_MON_Y	139
-#define IDLE_DATE_DAY_X	125
-#define IDLE_DATE_DAY_Y	142
-#define IDLE_WEEK_X	25
-#define IDLE_WEEK_Y	139
+#define IDLE_TIME_Y	52
+#define IDLE_DATE_MON_X	149
+#define IDLE_DATE_MON_Y	120
+#define IDLE_DATE_DAY_X	110
+#define IDLE_DATE_DAY_Y	120
+#define IDLE_WEEK_X	45
+#define IDLE_WEEK_Y	120
 
 //ble
 #define IDLE_BLE_X		45
@@ -46,25 +46,31 @@ extern "C" {
 #define IDLE_BLE_W		7
 #define IDLE_BLE_H		16
 
+//network mode
+#define IDLE_NET_MODE_W		12
+#define IDLE_NET_MODE_H		16
+#define IDLE_NET_MODE_X		((LCD_WIDTH-IDLE_NET_MODE_W)/2)
+#define IDLE_NET_MODE_Y		35
+
 //battery soc
 #define IDLE_BAT_W		30
 #define IDLE_BAT_H		16
-#define IDLE_BAT_X		165
-#define IDLE_BAT_Y		29
+#define IDLE_BAT_X		169
+#define IDLE_BAT_Y		35
 #define IDLE_BAT_PERCENT_W		44
 #define IDLE_BAT_PERCENT_H		18
 #define IDLE_BAT_PERCENT_X		120
-#define IDLE_BAT_PERCENT_Y		30
-#define IDLE_BAT_INNER_RECT_W	20
-#define IDLE_BAT_INNER_RECT_H	8
-#define IDLE_BAT_INNER_RECT_X	169
-#define IDLE_BAT_INNER_RECT_Y	33
+#define IDLE_BAT_PERCENT_Y		35
+#define IDLE_BAT_INNER_RECT_W	22
+#define IDLE_BAT_INNER_RECT_H	10
+#define IDLE_BAT_INNER_RECT_X	172
+#define IDLE_BAT_INNER_RECT_Y	38
 
 //NB signal
-#define IDLE_SIGNAL_W		62
-#define IDLE_SIGNAL_H		14
+#define IDLE_SIGNAL_W		54
+#define IDLE_SIGNAL_H		12
 #define IDLE_SIGNAL_X		45
-#define IDLE_SIGNAL_Y		31
+#define IDLE_SIGNAL_Y		36
 
 //step
 #define IDLE_STEPS_BG_W		176
@@ -76,11 +82,33 @@ extern "C" {
 #define IDLE_STEPS_NUM_X	91
 #define IDLE_STEPS_NUM_Y	192
 
-//health
-#define PPG_DATA_SHOW_X	40
-#define PPG_DATA_SHOW_Y	190
-#define PPG_DATA_SHOW_W	160
-#define PPG_DATA_SHOW_H	20
+//idle hr
+#define IDLE_HR_BG_W		60
+#define IDLE_HR_BG_H		60
+#define IDLE_HR_BG_X		45
+#define IDLE_HR_BG_Y		158
+#define IDLE_HR_ICON_W	27
+#define IDLE_HR_ICON_H	24
+#define IDLE_HR_ICON_X	62
+#define IDLE_HR_ICON_Y	165
+#define IDLE_HR_NUM_W	33
+#define IDLE_HR_NUM_H	20
+#define IDLE_HR_NUM_X	59
+#define IDLE_HR_NUM_Y	188
+
+//idle temp
+#define IDLE_TEMP_BG_W		60
+#define IDLE_TEMP_BG_H		60
+#define IDLE_TEMP_BG_X		135
+#define IDLE_TEMP_BG_Y		158
+#define IDLE_TEMP_ICON_W	20
+#define IDLE_TEMP_ICON_H	24
+#define IDLE_TEMP_ICON_X	155
+#define IDLE_TEMP_ICON_Y	165
+#define IDLE_TEMP_NUM_W		40
+#define IDLE_TEMP_NUM_H		20
+#define IDLE_TEMP_NUM_X		145
+#define IDLE_TEMP_NUM_Y		188
 
 //notify
 #define NOTIFY_TEXT_MAX_LEN		80
@@ -284,34 +312,18 @@ extern "C" {
 #define BP_REC_DATA_OFFSET_X		7
 
 //temperature
-#define TEMP_ICON_W					130
-#define TEMP_ICON_H					101
+#define TEMP_ICON_W					89
+#define TEMP_ICON_H					110
 #define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
-#define TEMP_ICON_Y					17
-#define TEMP_SKIN_ICON_W			13
-#define TEMP_SKIN_ICON_H			36
-#define TEMP_SKIN_ICON_X			60
-#define TEMP_SKIN_ICON_Y			120
-#define TEMP_SKIN_UNIT_W			16
-#define TEMP_SKIN_UNIT_H			16
-#define TEMP_SKIN_UNIT_X			86
-#define TEMP_SKIN_UNIT_Y			168
-#define TEMP_SKIN_NUM_W				44
-#define TEMP_SKIN_NUM_H				26
-#define TEMP_SKIN_NUM_X				30
-#define TEMP_SKIN_NUM_Y				165
-#define TEMP_BODY_ICON_W			32
-#define TEMP_BODY_ICON_H			36
-#define TEMP_BODY_ICON_X			157
-#define TEMP_BODY_ICON_Y			120
-#define TEMP_BODY_UNIT_W			16
-#define TEMP_BODY_UNIT_H			16
-#define TEMP_BODY_UNIT_X			194
-#define TEMP_BODY_UNIT_Y			168
-#define TEMP_BODY_NUM_W				44
-#define TEMP_BODY_NUM_H				26
-#define TEMP_BODY_NUM_X				138
-#define TEMP_BODY_NUM_Y				165
+#define TEMP_ICON_Y					10
+#define TEMP_UNIT_W					16
+#define TEMP_UNIT_H					16
+#define TEMP_UNIT_X					170
+#define TEMP_UNIT_Y					145
+#define TEMP_NUM_W					100
+#define TEMP_NUM_H					26
+#define TEMP_NUM_X					70
+#define TEMP_NUM_Y					145
 #define TEMP_RUNNING_ANI_W			81
 #define TEMP_RUNNING_ANI_H			13
 #define TEMP_RUNNING_ANI_X			((LCD_WIDTH-TEMP_RUNNING_ANI_W)/2)
@@ -372,7 +384,8 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_SYNC		0x00001000
 #define SCREEN_EVENT_UPDATE_FOTA		0x00002000
 #define SCREEN_EVENT_UPDATE_DL			0x00004000
-
+#define SCREEN_EVENT_UPDATE_TEMP		0x00008000
+#define SCREEN_EVENT_UPDATE_NET_MODE	0x00010000
 
 //screen ID
 typedef enum

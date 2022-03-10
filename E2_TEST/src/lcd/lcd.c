@@ -1214,10 +1214,10 @@ void LCD_dis_pic_trans_from_flash(u16_t x, u16_t y, u32_t pic_addr, u16_t trans)
 		SpiFlash_Read(databuf, pic_addr, readlen);
 		for(i=0;i<(readlen/2);i++)
 		{
-			if(trans == (256*databuf[2*i]+databuf[2*i+1]))
+			if(BACK_COLOR == (256*databuf[2*i]+databuf[2*i+1]))
 			{
-				databuf[2*i] = BACK_COLOR>>8;
-				databuf[2*i+1] = BACK_COLOR;
+				databuf[2*i] = trans>>8;
+				databuf[2*i+1] = trans;
 			}
 		}
 		
@@ -1617,9 +1617,7 @@ void LCD_ShowImg_From_Flash(u16_t x, u16_t y, u32_t img_addr)
 	LCD_dis_pic_from_flash(x, y, img_addr);
 #endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 }
-
-
-#else/*IMG_FONT_FROM_FLASH*/
+#endif/*IMG_FONT_FROM_FLASH*/
 
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //在指定位置显示一个字符
@@ -2215,10 +2213,10 @@ void LCD_dis_pic_trans(uint16_t x, uint16_t y, unsigned char *color, uint16_t tr
 
 		for(i=0;i<(readlen/2);i++)
 		{
-			if(trans == (256*databuf[2*i]+databuf[2*i+1]))
+			if(BLACK == (256*databuf[2*i]+databuf[2*i+1]))
 			{
-				databuf[2*i] = BACK_COLOR>>8;
-				databuf[2*i+1] = BACK_COLOR;
+				databuf[2*i] = trans>>8;
+				databuf[2*i+1] = trans;
 			}
 		}
 		
@@ -2792,9 +2790,6 @@ void LCD_ShowImg(u16_t x, u16_t y, unsigned char *color)
 	LCD_dis_pic(x, y, color);
 #endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 }
-
-#endif/*IMG_FONT_FROM_FLASH*/
-
 
 #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 //在指定矩形区域内显示中英文字符串

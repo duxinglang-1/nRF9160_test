@@ -54,7 +54,12 @@ bool TempIsWorking(void)
 
 void TempRedrawData(void)
 {
-	if(screen_id == SCREEN_ID_TEMP)
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	else if(screen_id == SCREEN_ID_TEMP)
 	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}

@@ -43,6 +43,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	true,					//wrist off check
 	0,						//target steps
 	60,						//health interval
+	TEMP_UINT_C,			//Centigrade
 	TIME_FORMAT_24,			//24 format
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format

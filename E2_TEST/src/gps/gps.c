@@ -26,7 +26,7 @@
 #endif
 #include "logger.h"
 
-#define GPS_DEBUG
+//#define GPS_DEBUG
 
 #define AT_XSYSTEMMODE_GPSON      "AT\%XSYSTEMMODE=0,1,1,0"
 #define AT_XSYSTEMMODE_GPSOFF     "AT\%XSYSTEMMODE=0,1,0,0"

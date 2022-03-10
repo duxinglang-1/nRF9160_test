@@ -11,6 +11,10 @@
 #include <net/mqtt.h>
 #include <net/socket.h>
 #include <modem/lte_lc.h>
+#include <modem/at_cmd.h>
+#include <modem/at_cmd_parser.h>
+#include <modem/at_params.h>
+#include <modem/at_notif.h>
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
 #endif
@@ -44,6 +48,11 @@
 #define LTE_TAU_WAKEUP_EARLY_TIME	(120)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
+#define AT_CEREG_REG_STATUS_INDEX		1
+#define AT_RESPONSE_PREFIX_INDEX		0
+#define AT_CEREG_RESPONSE_PREFIX		"+CEREG"
+#define AT_CEREG_PARAMS_COUNT_MAX		10
+
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
 static void ParseDataCallBack(struct k_timer *timer_id);
@@ -64,6 +73,35 @@ K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
 static void TauWakeUpUartCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(tau_wakeup_uart_timer, TauWakeUpUartCallBack, NULL);
 #endif
+
+#if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
+/* Preferred network mode: Narrowband-IoT */
+static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=0,1,0,0";
+/* Fallback network mode: LTE-M */
+static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=1,0,0,0";
+#elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
+/* Preferred network mode: Narrowband-IoT and GPS */
+static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=0,1,1,0";
+/* Fallback network mode: LTE-M and GPS*/
+static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=1,0,1,0";
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)
+/* Preferred network mode: LTE-M */
+static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=1,0,0,0";
+/* Fallback network mode: Narrowband-IoT */
+static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=0,1,0,0";
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
+/* Preferred network mode: LTE-M and GPS*/
+static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=1,0,1,0";
+/* Fallback network mode: Narrowband-IoT and GPS */
+static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=0,1,1,0";
+#endif
+
+/* Set the modem to power off mode */
+static const char power_off[] = "AT+CFUN=0";
+/* Set the modem to Normal mode */
+static const char normal[] = "AT+CFUN=1";
+/* Set the modem to Offline mode */
+static const char offline[] = "AT+CFUN=4";
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
@@ -125,6 +163,14 @@ u8_t g_timezone[5] = {0};
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
 u16_t g_act_time = 0;
+
+static struct k_sem net_link;
+
+#if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)||defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
+NETWORK_MODE g_net_mode = NET_MODE_NB;
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)||defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
+NETWORK_MODE g_net_mode = NET_MODE_LTE_M;
+#endif
 
 static NB_APN_PARAMENT nb_apn_table[] = 
 {
@@ -785,12 +831,6 @@ static void modem_rsrp_handler(char rsrp_value)
 #ifdef NB_DEBUG
 	LOGD("rsrp_value:%d", rsrp_value);
 #endif
-	if(test_nb_flag)
-	{
-		sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", rsrp_value,(rsrp_value-141));
-		nb_test_update_flag = true;
-	}
-
 	g_rsrp = rsrp_value;
 	nb_redraw_sig_flag = true;
 }
@@ -907,6 +947,38 @@ void MenuStopNB(void)
 
 	if(k_timer_remaining_get(&get_nw_rsrp_timer) > 0)
 		k_timer_stop(&get_nw_rsrp_timer);
+}
+
+void NBUpdateNetMode(u8_t *at_mode_set)
+{
+	u8_t *p1,*p2;
+	u8_t tmpbuf[8] = {0};
+	
+	p1 = strstr(at_mode_set, "AT%XSYSTEMMODE");
+	if(p1 != NULL)
+	{
+		p1 += strlen("AT%XSYSTEMMODE");
+		p2 = strstr(p1, ",");
+		if(p2 != NULL)
+		{
+			p1 = p2+1;
+			p2 = strstr(p1, ",");
+			if(p2 != NULL)
+			{
+				memcpy(tmpbuf, p1, p2-p1);
+				if(atoi(tmpbuf) == 1)
+					g_net_mode = NET_MODE_NB;
+				else
+					g_net_mode = NET_MODE_LTE_M;
+
+				if(screen_id == SCREEN_ID_IDLE)
+				{
+					scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_NET_MODE;
+					scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+				}
+			}
+		}
+	}
 }
 
 void NBRedrawSignal(void)
@@ -1588,7 +1660,7 @@ static int configure_low_power(void)
 	}
 #endif
 
-#if 0//defined(CONFIG_LTE_RAI_ENABLE)
+#if defined(CONFIG_LTE_RAI_ENABLE)
 	/** Release Assistance Indication  */
 	err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
 	if(err)
@@ -1604,45 +1676,58 @@ static int configure_low_power(void)
 
 void GetModemSignal(void)
 {
-	char *ptr;
+	char *ptr1,*ptr2;
 	int i=0,len;
 	u8_t strbuf[64] = {0};
 	u8_t tmpbuf[64] = {0};
-	s32_t rsrp;
+	s32_t rsrq=0,rsrp,snr;
 	static s32_t rsrpbk = 0;
 	
-	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
-		LOGD("Get cesq fail!");
+		LOGD("%s", tmpbuf);
 	#endif
-		return;
-	}
-
-#ifdef NB_DEBUG
-	LOGD("cesq:%s", tmpbuf);
-#endif
-	len = strlen(tmpbuf);
-	ptr = tmpbuf;
-	while(i<5)
-	{
-		ptr = strstr(ptr, ",");
-		ptr++;
-		i++;
-	}
-
-	memcpy((char*)strbuf, ptr, len-(ptr-(char*)tmpbuf));
-	rsrp = atoi(strbuf);
-	if(rsrp != rsrpbk)
-	{
-		rsrpbk = rsrp;
-		if(test_nb_flag)
+		len = strlen(tmpbuf);
+		ptr1 = tmpbuf;
+		while(i<4)
 		{
-			sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", rsrp,(rsrp-141));
-			nb_test_update_flag = true;
+			ptr1 = strstr(ptr1, ",");
+			ptr1++;
+			i++;
 		}
-		else
+		//rsrq
+		ptr2 = strstr(ptr1, ",");
+		memcpy((char*)strbuf, ptr1, ptr2-ptr1);
+		rsrq = atoi(strbuf);
+		//rsrp
+		ptr2++;
+		memset(strbuf, 0, sizeof(strbuf));
+		memcpy((char*)strbuf, ptr2, len-(ptr2-(char*)tmpbuf));
+		rsrp = atoi(strbuf);
+	}
+
+	if(at_cmd_write(CMD_GET_SNR, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("%s", tmpbuf);
+	#endif
+		ptr1 = tmpbuf+9;
+		ptr2 = strstr(ptr1, ",");
+		memcpy((char*)strbuf, ptr1, ptr2-ptr1);
+		snr = atoi(strbuf);
+	}
+
+	if(test_nb_flag)
+	{
+		sprintf(nb_test_info, " snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
+		nb_test_update_flag = true;
+	}
+	else
+	{
+		if(rsrp != rsrpbk)
 		{
+			rsrpbk = rsrp;
 			modem_rsrp_handler(rsrp);
 		}
 	}
@@ -2102,6 +2187,181 @@ static void modem_init(struct k_work *work)
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 }
 
+static bool response_is_valid(const char *response, size_t response_len, const char *check)
+{
+	if((response == NULL) || (check == NULL))
+		return false;
+
+	if((response_len < strlen(check))||(memcmp(response, check, response_len) != 0))
+		return false;
+
+	return true;
+}
+
+static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_status *status, size_t reg_status_index)
+{
+	int err, reg_status;
+	struct at_param_list resp_list = {0};
+	char response_prefix[sizeof(AT_CEREG_RESPONSE_PREFIX)] = {0};
+	size_t response_prefix_len = sizeof(response_prefix);
+
+	if((at_response == NULL) || (status == NULL))
+		return -EINVAL;
+
+	err = at_params_list_init(&resp_list, AT_CEREG_PARAMS_COUNT_MAX);
+	if(err)
+		return err;
+
+	/* Parse CEREG response and populate AT parameter list */
+	err = at_parser_max_params_from_str(at_response,
+					    NULL,
+					    &resp_list,
+					    AT_CEREG_PARAMS_COUNT_MAX);
+	if(err)
+		goto clean_exit;
+
+	/* Check if AT command response starts with +CEREG */
+	err = at_params_string_get(&resp_list,
+				   AT_RESPONSE_PREFIX_INDEX,
+				   response_prefix,
+				   &response_prefix_len);
+	if(err)
+		goto clean_exit;
+
+	if(!response_is_valid(response_prefix, response_prefix_len, AT_CEREG_RESPONSE_PREFIX))
+		goto clean_exit;
+
+	/* Get the network registration status parameter from the response */
+	err = at_params_int_get(&resp_list, reg_status_index, &reg_status);
+	if(err)
+		goto clean_exit;
+
+	/* Check if the parsed value maps to a valid registration status */
+	switch(reg_status)
+	{
+	case LTE_LC_NW_REG_NOT_REGISTERED:
+	case LTE_LC_NW_REG_REGISTERED_HOME:
+	case LTE_LC_NW_REG_SEARCHING:
+	case LTE_LC_NW_REG_REGISTRATION_DENIED:
+	case LTE_LC_NW_REG_UNKNOWN:
+	case LTE_LC_NW_REG_REGISTERED_ROAMING:
+	case LTE_LC_NW_REG_REGISTERED_EMERGENCY:
+	case LTE_LC_NW_REG_UICC_FAIL:
+		*status = reg_status;
+		break;
+		
+	default:
+		err = -EIO;
+	}
+
+clean_exit:
+	at_params_list_free(&resp_list);
+	return err;
+}
+
+static void at_handler(void *context, const char *response)
+{
+	ARG_UNUSED(context);
+
+	int err;
+	enum lte_lc_nw_reg_status status;
+
+	if(response == NULL)
+		return;
+
+	err = parse_nw_reg_status(response, &status, AT_CEREG_REG_STATUS_INDEX);
+	if(err)
+		return;
+
+	if((status == LTE_LC_NW_REG_REGISTERED_HOME) ||
+	    (status == LTE_LC_NW_REG_REGISTERED_ROAMING))
+	{
+		k_sem_give(&net_link);
+	}
+}
+
+static int net_connect(void)
+{
+	int err, rc;
+	const char *current_network_mode = nw_mode_preferred;
+	bool retry;
+
+	k_sem_init(&net_link, 0, 1);
+
+	rc = at_notif_register_handler(NULL, at_handler);
+	if(rc != 0)
+		return rc;
+
+	do
+	{
+		retry = false;
+
+		if(at_cmd_write(current_network_mode, NULL, 0, NULL) != 0)
+		{
+			err = -EIO;
+			goto exit;
+		}
+
+		NBUpdateNetMode(current_network_mode);
+
+		if(at_cmd_write(normal, NULL, 0, NULL) != 0)
+		{
+			err = -EIO;
+			goto exit;
+		}
+
+		err = k_sem_take(&net_link, K_SECONDS(CONFIG_LTE_NETWORK_TIMEOUT));
+		if(err == -EAGAIN)
+		{
+		#ifdef NB_DEBUG
+			LOGD("Network connection attempt timed out");
+		#endif
+
+			if(IS_ENABLED(CONFIG_LTE_NETWORK_USE_FALLBACK)&&(current_network_mode == nw_mode_preferred))
+			{
+				current_network_mode = nw_mode_fallback;
+				retry = true;
+
+				if(at_cmd_write(offline, NULL, 0, NULL) != 0)
+				{
+					err = -EIO;
+					goto exit;
+				}
+			#ifdef NB_DEBUG
+				LOGD("Using fallback network mode");
+			#endif
+			}
+			else
+			{
+				err = -ETIMEDOUT;
+			}
+		}
+	}while(retry);
+
+exit:
+	rc = at_notif_deregister_handler(NULL, at_handler);
+	if(rc != 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("Can't de-register handler rc=%d", rc);
+	#endif
+	}
+
+	return err;
+}
+
+static int net_init_and_link(void)
+{
+	int ret;
+
+	ret = lte_lc_init();
+	if(ret)
+	{
+		return ret;
+	}
+
+	return net_connect();
+}
 
 static void nb_link(struct k_work *work)
 {
@@ -2155,11 +2415,9 @@ static void nb_link(struct k_work *work)
 		uart_sleep_out();
 	#endif
 
-	#ifndef NB_SIGNAL_TEST
 		configure_low_power();
-	#endif
 
-		err = lte_lc_init_and_connect();
+		err = net_init_and_link();
 		if(err)
 		{
 		#ifdef NB_DEBUG
@@ -2288,8 +2546,7 @@ void NBMsgProcess(void)
 	
 		if(nb_is_connected())
 		{
-			sprintf(nb_test_info, "signal-rsrp:%d (%ddBm)", g_rsrp,(g_rsrp-141));
-			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
 		}
 		else if(nb_is_connecting())
 		{
@@ -2303,7 +2560,6 @@ void NBMsgProcess(void)
 		#endif
 			SetModemTurnOff();
 			modem_configure();
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
 		}
 	}
 

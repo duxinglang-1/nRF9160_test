@@ -322,7 +322,12 @@ bool PPGIsWorking(void)
 
 void PPGRedrawData(void)
 {
-	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	else if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
 	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}

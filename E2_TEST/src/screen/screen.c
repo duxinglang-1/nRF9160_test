@@ -283,7 +283,9 @@ void IdleShowSystemTime(void)
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
 
+#ifdef FONT_64
 	LCD_SetFontSize(FONT_SIZE_64);
+#endif
 
 	switch(global_settings.time_format)
 	{

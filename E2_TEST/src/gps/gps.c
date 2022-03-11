@@ -67,7 +67,9 @@ bool gps_on_flag = false;
 bool gps_off_flag = false;
 bool ble_wait_gps = false;
 bool sos_wait_gps = false;
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 bool fall_wait_gps = false;
+#endif
 bool location_wait_gps = false;
 bool test_gps_flag = false;
 bool gps_test_start_flag = false;
@@ -96,7 +98,7 @@ bool APP_GPS_data_send(bool fix_flag)
 		ret = true;
 	}
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_FALL_DETECT_SUPPORT)
 	if(fall_wait_gps)
 	{
 		fall_get_gps_data_reply(fix_flag, gps_pvt_data);

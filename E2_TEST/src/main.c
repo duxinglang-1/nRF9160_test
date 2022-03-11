@@ -754,7 +754,9 @@ int main(void)
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
+	#ifdef CONFIG_FALL_DETECT_SUPPORT
 		FallMsgProcess();
+	#endif
 	#endif
 	#ifdef CONFIG_PPG_SUPPORT	
 		PPGMsgProcess();

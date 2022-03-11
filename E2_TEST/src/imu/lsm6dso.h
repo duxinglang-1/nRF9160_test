@@ -6,8 +6,9 @@
 #include "inner_flash.h"
 
 extern bool reset_steps;
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 extern bool fall_wait_gps;
-
+#endif
 extern u16_t g_last_steps;
 extern u16_t g_steps;
 extern u16_t g_calorie;

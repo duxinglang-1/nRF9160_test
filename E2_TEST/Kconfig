@@ -221,6 +221,9 @@ menu "IMU"
 config IMU_SUPPORT
 	bool "imu support"
 	default n
+config FALL_DETECT_SUPPORT
+	bool "fall detect support"
+	default n		
 endmenu #IMU
 
 menu "AUDIO"

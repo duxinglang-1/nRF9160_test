@@ -814,6 +814,7 @@ void FindDeviceScreenProcess(void)
 #ifdef CONFIG_SYNC_SUPPORT
 void ExitSyncDataScreen(void)
 {
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	SyncDataStop();
 	EnterIdleScreen();
 }
@@ -834,6 +835,9 @@ void EnterSyncDataScreen(void)
 #ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
 #endif
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking())
 		MenuStopTemp();
@@ -1051,6 +1055,8 @@ void EnterTempScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
 
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 #ifdef CONFIG_SYNC_SUPPORT
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #elif defined(CONFIG_FOTA_DOWNLOAD)

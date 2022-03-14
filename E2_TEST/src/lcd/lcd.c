@@ -3319,10 +3319,14 @@ void LCDMsgProcess(void)
 
 	if(lcd_sleep_out)
 	{
-		lcd_sleep_out = false;
-		if(IsInIdleScreen())
-			IdleShowDateTime();
-		
+		lcd_sleep_out = false;		
 		LCD_SleepOut();
+		if(IsInIdleScreen())
+		{
+			IdleShowDateTime();
+			IdleShowSignal();
+			IdleShowNetMode();
+			IdleUpdateBatSoc();
+		}
 	}
 }

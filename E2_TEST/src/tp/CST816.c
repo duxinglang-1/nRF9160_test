@@ -19,6 +19,8 @@
 #include "CST816_update.h"
 #include "logger.h"
 
+//#define TP_DEBUG
+
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
 
@@ -37,13 +39,14 @@ static u8_t init_i2c(void)
 	i2c_ctp = device_get_binding(CTP_DEV);
 	if(!i2c_ctp)
 	{
+	#ifdef TP_DEBUG
 		LOGD("ERROR SETTING UP I2C");
+	#endif
 		return -1;
 	} 
 	else
 	{
 		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_FAST));
-		LOGD("I2C CONFIGURED");
 		return 0;
 	}
 }
@@ -275,7 +278,9 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
+	#ifdef TP_DEBUG
 		LOGD("001");
+	#endif
 		return;
 	}
 	else
@@ -291,14 +296,18 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 			{
 				if(pnext == tp_event_info.cache)
 				{
+				#ifdef TP_DEBUG
 					LOGD("002");
+				#endif
 					tp_event_info.cache = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
 				}
 				else if(pnext == tp_event_tail)
 				{
+				#ifdef TP_DEBUG
 					LOGD("003");
+				#endif
 					tp_event_tail = ppre;
 					tp_event_tail->next = NULL;
 					tp_event_info.count--;
@@ -306,7 +315,9 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 				}
 				else
 				{
+				#ifdef TP_DEBUG
 					LOGD("004");
+				#endif
 					ppre = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
@@ -321,8 +332,9 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 			}
 				
 		}while(pnext != NULL);
-
+	#ifdef TP_DEBUG
 		LOGD("005");
+	#endif
 	}
 }
 
@@ -332,7 +344,7 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 
 	if(tp_event_info.cache == NULL)
 	{
-	#ifdef TRANSFER_LOG
+	#ifdef TP_DEBUG
 		LOGD("001");
 	#endif
 	
@@ -355,45 +367,48 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 		
 		tp_event_info.cache = tp_event_tail;
 		tp_event_info.count = 1;
-		return;
 	}
 	else
 	{
-	#ifdef TRANSFER_LOG
+	#ifdef TP_DEBUG
 		LOGD("002");
 	#endif
 	
-		if(tp_event_tail == NULL)
+		tp_event_tail = tp_event_info.cache;
+		while(1)
 		{
-			tp_event_tail = tp_event_info.cache;
-			while(1)
+			if(tp_event_tail->next == NULL)
 			{
-				if(tp_event_tail->next == NULL)
-					break;
-				else
-					tp_event_tail = tp_event_tail->next;
+				pnew = k_malloc(sizeof(TpEventNode));
+				if(pnew == NULL) 
+					return;
+
+				memset(pnew, 0, sizeof(TpEventNode));
+				
+				pnew->x_begin = x_start;
+				pnew->x_end = x_stop;
+				pnew->y_begin = y_start;
+				pnew->y_end = y_stop;
+				pnew->evt_id = tp_type;
+				pnew->func = touch_handler;
+				pnew->next = NULL;
+
+				tp_event_tail->next = pnew;
+				tp_event_tail = pnew;
+				tp_event_info.count++;
+				break;
+			}
+			else if((x_start == tp_event_tail->x_begin)&&(x_stop == tp_event_tail->x_end)&&(y_start == tp_event_tail->y_begin)&&(y_stop == tp_event_tail->y_end)
+				&&(tp_event_tail->evt_id == tp_type))
+			{
+				tp_event_tail->func = touch_handler;
+				break;
+			}
+			else
+			{
+				tp_event_tail = tp_event_tail->next;
 			}
 		}
-
-		pnew = k_malloc(sizeof(TpEventNode));
-		if(pnew == NULL) 
-			return;
-
-		memset(pnew, 0, sizeof(TpEventNode));
-		
-		pnew->x_begin = x_start;
-		pnew->x_end = x_stop;
-		pnew->y_begin = y_start;
-		pnew->y_end = y_stop;
-		pnew->evt_id = tp_type;
-		pnew->func = touch_handler;
-		pnew->next = NULL;
-
-		tp_event_tail->next = pnew;
-		tp_event_tail = pnew;
-		tp_event_info.count++;
-		
-		return;
 	}
 }
 
@@ -403,7 +418,9 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
+	#ifdef TP_DEBUG
 		LOGD("001");
+	#endif
 		return false;
 	}
 	else
@@ -412,23 +429,52 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 		
 		do
 		{
-			if((x_pos >= pnew->x_begin)&&(x_pos <= pnew->x_end)&&(y_pos >= pnew->y_begin)&&(y_pos <= pnew->y_end)
-				&&(pnew->evt_id == tp_type))
+			if(pnew->evt_id == tp_type)
 			{
-				if(pnew->func != NULL)
-					pnew->func();
-
-				LOGD("002");
-				return true;
+				if((pnew->evt_id == TP_EVENT_MOVING_UP)
+					||(pnew->evt_id == TP_EVENT_MOVING_DOWN)
+					||(pnew->evt_id == TP_EVENT_MOVING_LEFT)
+					||(pnew->evt_id == TP_EVENT_MOVING_RIGHT))
+				{
+					if(pnew->func != NULL)
+						pnew->func();
+				#ifdef TP_DEBUG
+					LOGD("002");
+				#endif
+					return true;
+				}
+				else if((x_pos >= pnew->x_begin)
+						&&(x_pos <= pnew->x_end)
+						&&(y_pos >= pnew->y_begin)
+						&&(y_pos <= pnew->y_end))
+				{
+					if(pnew->func != NULL)
+						pnew->func();
+				#ifdef TP_DEBUG
+					LOGD("003");
+				#endif
+					return true;
+				}
+				else
+				{
+				#ifdef TP_DEBUG
+					LOGD("004");
+				#endif
+					pnew = pnew->next;
+				}
 			}
 			else
 			{
+			#ifdef TP_DEBUG
+				LOGD("005");
+			#endif
 				pnew = pnew->next;
 			}
 				
 		}while(pnew != NULL);
-
-		LOGD("003");
+	#ifdef TP_DEBUG
+		LOGD("006");
+	#endif
 		return false;
 	}
 }
@@ -442,35 +488,51 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	switch(tp_type)
 	{
 	case TP_EVENT_NONE:
+	#ifdef TP_DEBUG
 		LOGD("tp none!");
+	#endif
 		sprintf(strbuf, "GESTURE_NONE");
 		break;
 	case TP_EVENT_MOVING_UP:
-		LOGD("tp moving up!");
+	#ifdef TP_DEBUG
+		LOGD("tp moving up! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "MOVING_UP   ");
 		break;
 	case TP_EVENT_MOVING_DOWN:
-		LOGD("tp moving down!");
+	#ifdef TP_DEBUG
+		LOGD("tp moving down! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "MOVING_DOWN ");
 		break;
 	case TP_EVENT_MOVING_LEFT:
-		LOGD("tp moving left!");
+	#ifdef TP_DEBUG
+		LOGD("tp moving left! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "MOVING_LEFT ");
 		break;
 	case TP_EVENT_MOVING_RIGHT:
-		LOGD("tp moving right!");
+	#ifdef TP_DEBUG
+		LOGD("tp moving right! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "MOVING_RIGHT");
 		break;
 	case TP_EVENT_SINGLE_CLICK:
+	#ifdef TP_DEBUG
 		LOGD("tp single click! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "SINGLE_CLICK");
 		break;
 	case TP_EVENT_DOUBLE_CLICK:
+	#ifdef TP_DEBUG
 		LOGD("tp double click! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "DOUBLE_CLICK");
 		break;
 	case TP_EVENT_LONG_PRESS:
+	#ifdef TP_DEBUG
 		LOGD("tp long press! x:%d, y:%d", x_pos,y_pos);
+	#endif
 		sprintf(strbuf, "LONG_PRESS  ");
 		break;
 	case TP_EVENT_MAX:
@@ -500,7 +562,10 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	LCD_ShowString(x, y+h, strbuf);
 #endif
 
-	check_touch_event_handle(tp_type, x_pos, y_pos);
+	if(!lcd_is_sleeping)
+	{
+		check_touch_event_handle(tp_type, x_pos, y_pos);
+	}
 }
 
 void CaptouchInterruptHandle(void)
@@ -521,7 +586,9 @@ void tp_interrupt_proc(void)
 	platform_read(CST816_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
 	platform_read(CST816_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
+#ifdef TP_DEBUG
 	LOGD("tp_temp=%x,%x,%x,%x,%x,%x",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3],tp_temp[4],tp_temp[5]);
+#endif
 	switch(tp_temp[0])
 	{
 	case GESTURE_NONE:
@@ -569,7 +636,9 @@ void CST816_init(void)
   	gpio_ctp = device_get_binding(CTP_PORT);
 	if(!gpio_ctp)
 	{
+	#ifdef TP_DEBUG
 		LOGD("Cannot bind gpio device");
+	#endif
 		return;
 	}
 
@@ -590,7 +659,9 @@ void CST816_init(void)
 	platform_read(CST816_REG_CHIPID, &tp_temp_id, 1);
 	if(tp_temp_id == CST816_CHIP_ID)
 	{
+	#ifdef TP_DEBUG
 		LOGD("It's CST816!");
+	#endif
 	}
 
 	sprintf(tmpbuf, "CTP ID:%x", tp_temp_id);

@@ -747,6 +747,8 @@ void PowerOffShowStatus(void)
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_YES_X, PWR_OFF_NOTIFY_YES_X+PWR_OFF_NOTIFY_YES_W, PWR_OFF_NOTIFY_YES_Y, PWR_OFF_NOTIFY_YES_Y+PWR_OFF_NOTIFY_YES_H, poweroff_confirm);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_NOTIFY_NO_X, PWR_OFF_NOTIFY_NO_X+PWR_OFF_NOTIFY_NO_W, PWR_OFF_NOTIFY_NO_Y, PWR_OFF_NOTIFY_NO_Y+PWR_OFF_NOTIFY_NO_H, poweroff_cancel);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, poweroff_cancel);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, poweroff_cancel);
 #endif
 }
 
@@ -841,18 +843,32 @@ void EnterSyncDataScreen(void)
 #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
   #ifdef CONFIG_IMG_DATA_UPDATE
 	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
   #elif defined(CONFIG_FONT_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
   #elif defined(CONFIG_PPG_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
   #endif
 #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
 	SetRightKeyUpHandler(ExitSyncDataScreen);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+ #ifdef CONFIG_FOTA_DOWNLOAD
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_start);
+ #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+  #ifdef CONFIG_IMG_DATA_UPDATE
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+  #elif defined(CONFIG_FONT_DATA_UPDATE)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+  #elif defined(CONFIG_PPG_DATA_UPDATE)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+  #endif
+ #else
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+ #endif
+  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitSyncDataScreen);
+#endif
 }
 
 void SyncUpdateStatus(void)
@@ -1039,19 +1055,34 @@ void EnterTempScreen(void)
 #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
   #ifdef CONFIG_IMG_DATA_UPDATE
 	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
   #elif defined(CONFIG_FONT_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
   #elif defined(CONFIG_PPG_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
   #endif
 #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
-
 	SetRightKeyUpHandler(ExitTempScreen);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+ #ifdef CONFIG_SYNC_SUPPORT
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+ #elif defined(CONFIG_FOTA_DOWNLOAD)
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_start);
+ #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+  #ifdef CONFIG_IMG_DATA_UPDATE
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+  #elif defined(CONFIG_FONT_DATA_UPDATE)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+  #elif defined(CONFIG_PPG_DATA_UPDATE)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+  #endif
+ #else
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+ #endif
+  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitTempScreen);
+#endif
 }
 #endif/*CONFIG_TEMP_SUPPORT*/
 
@@ -1210,19 +1241,36 @@ void EnterBPScreen(void)
 #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
   #ifdef CONFIG_IMG_DATA_UPDATE
 	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
   #elif defined(CONFIG_FONT_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
   #elif defined(CONFIG_PPG_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
   #endif
 #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
-
 	SetRightKeyUpHandler(ExitBPScreen);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+ #ifdef CONFIG_TEMP_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);  
+ #elif defined(CONFIG_SYNC_SUPPORT)
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+ #elif defined(CONFIG_FOTA_DOWNLOAD)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_start); 
+ #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+  #ifdef CONFIG_IMG_DATA_UPDATE
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);  
+  #elif defined(CONFIG_FONT_DATA_UPDATE)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);  
+  #elif defined(CONFIG_PPG_DATA_UPDATE)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);  
+  #endif
+ #else
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen); 
+ #endif
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitBPScreen);
+#endif
 }
 
 void SPO2UpdateStatus(void)
@@ -1367,6 +1415,10 @@ void EnterSPO2Screen(void)
 	
 	SetLeftKeyUpHandler(EnterBPScreen);
 	SetRightKeyUpHandler(ExitSPO2Screen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen); 
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitSPO2Screen);
+#endif	
 }
 
 void HRUpdateStatus(void)
@@ -1506,6 +1558,10 @@ void EnterHRScreen(void)
 	
 	SetLeftKeyUpHandler(EnterSPO2Screen);
 	SetRightKeyUpHandler(ExitHRScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen); 
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitHRScreen);
+#endif	
 }
 #endif/*CONFIG_PPG_SUPPORT*/
 
@@ -2273,18 +2329,38 @@ void EnterSleepScreen(void)
 #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
   #ifdef CONFIG_IMG_DATA_UPDATE
 	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
   #elif defined(CONFIG_FONT_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
   #elif defined(CONFIG_PPG_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
   #endif
 #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
 	SetRightKeyUpHandler(ExitSleepScreen);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+ #ifdef CONFIG_PPG_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen); 
+ #elif defined(CONFIG_TEMP_SUPPORT)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);  
+ #elif defined(CONFIG_SYNC_SUPPORT)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen); 
+ #elif defined(CONFIG_FOTA_DOWNLOAD)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_start); 
+ #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+  #ifdef CONFIG_IMG_DATA_UPDATE
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);   
+  #elif defined(CONFIG_FONT_DATA_UPDATE)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);   
+  #elif defined(CONFIG_PPG_DATA_UPDATE)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);  
+ #endif
+#else
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+#endif
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitSleepScreen);
+#endif
 }
 
 void StepsScreenProcess(void)
@@ -2376,6 +2452,12 @@ void EnterStepsScreen(void)
 
 	SetLeftKeyUpHandler(EnterSleepScreen);
 	SetRightKeyUpHandler(ExitStepsScreen);
+	
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitStepsScreen);
+#endif	
+
 }
 #endif
 
@@ -2477,21 +2559,46 @@ void EnterIdleScreen(void)
 #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
   #ifdef CONFIG_IMG_DATA_UPDATE
 	SetLeftKeyUpHandler(dl_img_start);
-	SetRightKeyUpHandler(dl_img_exit);
   #elif defined(CONFIG_FONT_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_font_start);
-	SetRightKeyUpHandler(dl_font_exit);
   #elif defined(CONFIG_PPG_DATA_UPDATE)
 	SetLeftKeyUpHandler(dl_ppg_start);
-	SetRightKeyUpHandler(dl_ppg_exit);
   #endif
 #else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #endif
 #endif
-
 	SetLeftKeyLongPressHandler(SOSTrigger);
 	SetRightKeyUpHandler(EnterIdleScreen);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+ #ifdef NB_SIGNAL_TEST
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
+ #else
+  #ifdef CONFIG_IMU_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);  
+  #elif defined(CONFIG_PPG_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+  #elif defined(CONFIG_TEMP_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  #elif defined(CONFIG_SYNC_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+  #elif defined(CONFIG_FOTA_DOWNLOAD)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_start);
+  #elif defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+   #ifdef CONFIG_IMG_DATA_UPDATE
+   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+   #elif defined(CONFIG_FONT_DATA_UPDATE)
+   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+   #elif defined(CONFIG_PPG_DATA_UPDATE)
+   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+   #endif
+  #else
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+  #endif
+ #endif
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+#endif	
 }
 
 void EnterAlarmScreen(void)
@@ -2597,6 +2704,10 @@ void EnterGPSTestScreen(void)
 
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitGPSTestScreen);
+#endif	
 }
 
 void TestNBUpdateINfor(void)
@@ -2662,11 +2773,18 @@ void EnterNBTestScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+	
+	if(gps_is_working())
+		MenuStopGPS();
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	SetLeftKeyUpHandler(EnterGPSTestScreen);
 	SetRightKeyUpHandler(ExitNBTestScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNBTestScreen);
+#endif
 }
 
 void SOSUpdateStatus(void)

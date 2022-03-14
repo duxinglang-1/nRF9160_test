@@ -949,7 +949,7 @@ void MenuStopNB(void)
 		k_timer_stop(&get_nw_rsrp_timer);
 }
 
-void NBUpdateNetMode(u8_t *at_mode_set)
+void NBGetNetMode(u8_t *at_mode_set)
 {
 	u8_t *p1,*p2;
 	u8_t tmpbuf[8] = {0};
@@ -970,14 +970,17 @@ void NBUpdateNetMode(u8_t *at_mode_set)
 					g_net_mode = NET_MODE_NB;
 				else
 					g_net_mode = NET_MODE_LTE_M;
-
-				if(screen_id == SCREEN_ID_IDLE)
-				{
-					scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_NET_MODE;
-					scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-				}
 			}
 		}
+	}
+}
+
+void NBRedrawNetMode(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_NET_MODE;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
 
@@ -2302,7 +2305,7 @@ static int net_connect(void)
 			goto exit;
 		}
 
-		NBUpdateNetMode(current_network_mode);
+		NBGetNetMode(current_network_mode);
 
 		if(at_cmd_write(normal, NULL, 0, NULL) != 0)
 		{
@@ -2453,6 +2456,7 @@ static void nb_link(struct k_work *work)
 
 			modem_data_init();
 			GetModemDateTime();
+			NBRedrawNetMode();
 		}
 
 		GetModemStatus();

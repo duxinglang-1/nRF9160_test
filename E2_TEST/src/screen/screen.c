@@ -440,13 +440,16 @@ void IdleShowSignal(void)
 
 void IdleShowNetMode(void)
 {
-	if(g_net_mode == NET_MODE_NB)
+	if(nb_is_connected())
 	{
-		LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_NB_ADDR);	
-	}
-	else
-	{
-		LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_LTEM_ADDR);	
+		if(g_net_mode == NET_MODE_NB)
+		{
+			LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_NB_ADDR);	
+		}
+		else
+		{
+			LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_LTEM_ADDR);	
+		}
 	}
 }
 

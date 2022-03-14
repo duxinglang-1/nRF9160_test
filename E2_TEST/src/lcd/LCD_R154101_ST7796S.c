@@ -338,21 +338,35 @@ void LCD_Clear(uint16_t color)
 	}
 
 	gpio_pin_write(gpio_lcd, CS, 0);
-} 
+}
 
-//屏幕睡眠
-void LCD_SleepIn(void)
+//背光打开
+void LCD_BL_On(void)
 {
-	if(lcd_is_sleeping)
-		return;
+#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
+	Set_Screen_Backlight_On();
+#else
+	gpio_pin_write(gpio_lcd, LEDK_1, 0);
+	gpio_pin_write(gpio_lcd, LEDK_2, 0);																										 
+#endif
+}
 
-	//关闭背光
+//背光关闭
+void LCD_BL_Off(void)
+{
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_Off();
 #else
 	gpio_pin_write(gpio_lcd, LEDK_1, 1);
 	gpio_pin_write(gpio_lcd, LEDK_2, 1);
 #endif
+}
+
+//屏幕睡眠
+void LCD_SleepIn(void)
+{
+	if(lcd_is_sleeping)
+		return;
 
 	WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
@@ -375,15 +389,7 @@ void LCD_SleepOut(void)
 	
 	WriteComm(0x11);  		//Sleep out	
 	Delay(120);             //延时120ms
-	WriteComm(0x29);
-
-	//点亮背光
-#ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
-	Set_Screen_Backlight_On();
-#else
-	gpio_pin_write(gpio_lcd, LEDK_1, 0);
-	gpio_pin_write(gpio_lcd, LEDK_2, 0);                                                                                                         
-#endif	
+	WriteComm(0x29);	
 	
 	lcd_is_sleeping = false;
 }

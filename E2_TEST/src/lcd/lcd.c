@@ -3313,13 +3313,13 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
+		LCD_BL_Off();
 		LCD_SleepIn();
 		lcd_sleep_in = false;
 	}
 
 	if(lcd_sleep_out)
-	{
-		lcd_sleep_out = false;		
+	{	
 		LCD_SleepOut();
 		if(IsInIdleScreen())
 		{
@@ -3328,5 +3328,7 @@ void LCDMsgProcess(void)
 			IdleShowNetMode();
 			IdleUpdateBatSoc();
 		}
+		LCD_BL_On();
+		lcd_sleep_out = false;
 	}
 }

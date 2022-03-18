@@ -649,6 +649,8 @@ void test_show_string(void)
 
 void system_init(void)
 {
+	k_sleep(K_MSEC(500));//xb test 2022-03-11 启动时候延迟0.5S,等待其他外设完全启动
+	
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_init();
 #endif

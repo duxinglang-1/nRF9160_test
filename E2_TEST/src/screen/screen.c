@@ -2042,10 +2042,10 @@ void FOTAShowStatus(void)
 	LCD_ShowImg_From_Flash(FOTA_YES_X, FOTA_YES_Y, IMG_OTA_YES_ADDR);
 	LCD_ShowImg_From_Flash(FOTA_NO_X, FOTA_NO_Y, IMG_OTA_NO_ADDR);
 
-	SetLeftKeyUpHandler(fota_start_confirm);
+	SetLeftKeyUpHandler(fota_excu);
 	SetRightKeyUpHandler(fota_exit);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_YES_X, FOTA_YES_X+FOTA_YES_W, FOTA_YES_Y, FOTA_YES_Y+FOTA_YES_H, fota_start_confirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_YES_X, FOTA_YES_X+FOTA_YES_W, FOTA_YES_Y, FOTA_YES_Y+FOTA_YES_H, fota_excu);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_NO_X, FOTA_NO_X+FOTA_NO_W, FOTA_NO_Y, FOTA_NO_Y+FOTA_NO_H, fota_exit);
 #endif
 }
@@ -2067,29 +2067,37 @@ void FOTAUpdateStatus(void)
 	case FOTA_STATUS_LINKING:
 		LCD_Fill(0, FOTA_YES_Y, LCD_WIDTH, FOTA_YES_H, BLACK);
 		LCD_Fill(0, FOTA_START_STR_Y, LCD_WIDTH, FOTA_START_STR_H, BLACK);
-
-		flag = true;
 		
-		LCD_ShowImg_From_Flash(FOTA_DOWNLOADING_STR_X, FOTA_DOWNLOADING_STR_Y, IMG_OTA_DOWNLOADING_ADDR);
-		LCD_DrawRectangle(FOTA_PROGRESS_X, FOTA_PROGRESS_Y, FOTA_PROGRESS_W, FOTA_PROGRESS_H);
-		LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, FOTA_PROGRESS_W-1, FOTA_PROGRESS_H-1, BLACK);
-
-		sprintf(pro_buf, "%3d%%", g_fota_progress);
-		LCD_MeasureString(pro_buf, &w, &h);
-		pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
-		pro_str_y = FOTA_PRO_NUM_Y+(FOTA_PRO_NUM_H-h)/2;
-		
-		LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+		LCD_ShowImg_From_Flash(FOTA_RUNNING_STR_X, FOTA_RUNNING_STR_Y, IMG_OTA_RUNNING_STR_ADDR);
 
 		ClearAllKeyHandler();
 		break;
 		
 	case FOTA_STATUS_DOWNLOADING:
-		pro_len = (g_fota_progress*FOTA_PROGRESS_W)/100;
-		LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, pro_len, FOTA_PROGRESS_H-1, WHITE);
+		if(!flag)
+		{
+			flag = true;
+			
+			LCD_DrawRectangle(FOTA_PROGRESS_X, FOTA_PROGRESS_Y, FOTA_PROGRESS_W, FOTA_PROGRESS_H);
+			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, FOTA_PROGRESS_W-1, FOTA_PROGRESS_H-1, BLACK);
+			
+			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			LCD_SetFontSize(FONT_SIZE_16);
+			LCD_MeasureString(pro_buf, &w, &h);
+			pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
+			pro_str_y = FOTA_PRO_NUM_Y+(FOTA_PRO_NUM_H-h)/2;
+			
+			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
 
-		sprintf(pro_buf, "%3d%%", g_fota_progress);
-		LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+		}
+		else
+		{
+			pro_len = (g_fota_progress*FOTA_PROGRESS_W)/100;
+			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, pro_len, FOTA_PROGRESS_H-1, WHITE);
+			
+			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+		}		
 
 		ClearAllKeyHandler();
 		break;
@@ -2099,8 +2107,8 @@ void FOTAUpdateStatus(void)
 		
 		LCD_Clear(BLACK);
 
-		LCD_ShowImg_From_Flash(FOTA_FINISHED_X, FOTA_FINISHED_Y, IMG_OTA_FINISH_ADDR);
-		
+		LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
+		LCD_ShowImg_From_Flash(FOTA_FINISH_STR_X, FOTA_FINISH_STR_Y, IMG_OTA_SUCCESS_STR_ADDR);
 		SetLeftKeyUpHandler(fota_reboot_confirm);
 		SetRightKeyUpHandler(fota_exit);
 		break;
@@ -2111,8 +2119,7 @@ void FOTAUpdateStatus(void)
 		LCD_Clear(BLACK);
 
 		LCD_ShowImg_From_Flash(FOTA_FAIL_ICON_X, FOTA_FAIL_ICON_Y, IMG_OTA_FAILED_ICON_ADDR);
-		//LCD_ShowImg_From_Flash(FOTA_BG_X, FOTA_BG_Y, IMG_OTA_RUNNING_FAIL_ADDR);
-		LCD_ShowImg_From_Flash(FOTA_FAIL_STR_X, FOTA_FAIL_STR_Y, IMG_OTA_RUNNING_FAIL_ADDR);
+		LCD_ShowImg_From_Flash(FOTA_FAIL_STR_X, FOTA_FAIL_STR_Y, IMG_OTA_FAIL_STR_ADDR);
 
 		SetLeftKeyUpHandler(fota_exit);
 		SetRightKeyUpHandler(fota_exit);
@@ -2175,6 +2182,7 @@ void EnterFOTAScreen(void)
 	if(TempIsWorking())
 		MenuStopTemp();
 #endif
+	k_timer_stop(&mainmenu_timer);
 
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -2183,8 +2191,6 @@ void EnterFOTAScreen(void)
 	screen_id = SCREEN_ID_FOTA;	
 	scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATING;
-
-	k_timer_stop(&mainmenu_timer);
 }
 #endif/*CONFIG_FOTA_DOWNLOAD*/
 

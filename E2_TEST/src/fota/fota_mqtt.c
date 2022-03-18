@@ -37,7 +37,7 @@ u8_t g_fota_progress = 0;
 static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
-static struct k_work fota_work;
+static struct k_delayed_work fota_work;
 static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
 static void fota_timer_handler(struct k_timer *timer_id);

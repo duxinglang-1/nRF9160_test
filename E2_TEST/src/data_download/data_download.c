@@ -35,7 +35,7 @@ static int socket_retries_left;
 static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
-static struct k_work dl_work;
+static struct k_delayed_work dl_work;
 static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
 
 u8_t g_dl_progress = 0;

@@ -2078,6 +2078,9 @@ void FOTAUpdateStatus(void)
 		{
 			flag = true;
 			
+			LCD_Fill(0, FOTA_START_STR_Y, LCD_WIDTH, FOTA_START_STR_H, BLACK);
+			LCD_ShowImg_From_Flash(FOTA_DOWNLOADING_STR_X, FOTA_DOWNLOADING_STR_Y, IMG_OTA_DOWNLOADING_ADDR);
+			
 			LCD_DrawRectangle(FOTA_PROGRESS_X, FOTA_PROGRESS_Y, FOTA_PROGRESS_W, FOTA_PROGRESS_H);
 			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, FOTA_PROGRESS_W-1, FOTA_PROGRESS_H-1, BLACK);
 			
@@ -2110,7 +2113,10 @@ void FOTAUpdateStatus(void)
 		LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
 		LCD_ShowImg_From_Flash(FOTA_FINISH_STR_X, FOTA_FINISH_STR_Y, IMG_OTA_SUCCESS_STR_ADDR);
 		SetLeftKeyUpHandler(fota_reboot_confirm);
-		SetRightKeyUpHandler(fota_exit);
+		SetRightKeyUpHandler(fota_reboot_confirm);
+	#ifdef CONFIG_TOUCH_SUPPORT
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_reboot_confirm);
+	#endif
 		break;
 		
 	case FOTA_STATUS_ERROR:
@@ -2123,6 +2129,9 @@ void FOTAUpdateStatus(void)
 
 		SetLeftKeyUpHandler(fota_exit);
 		SetRightKeyUpHandler(fota_exit);
+	#ifdef CONFIG_TOUCH_SUPPORT
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_exit);
+	#endif	
 		break;
 		
 	case FOTA_STATUS_MAX:
@@ -2182,7 +2191,6 @@ void EnterFOTAScreen(void)
 	if(TempIsWorking())
 		MenuStopTemp();
 #endif
-	k_timer_stop(&mainmenu_timer);
 
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -2191,6 +2199,8 @@ void EnterFOTAScreen(void)
 	screen_id = SCREEN_ID_FOTA;	
 	scr_msg[SCREEN_ID_FOTA].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FOTA].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
 }
 #endif/*CONFIG_FOTA_DOWNLOAD*/
 

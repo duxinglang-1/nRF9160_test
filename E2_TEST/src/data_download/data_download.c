@@ -18,6 +18,7 @@
 #include "data_download.h"
 #include "dl_target.h"
 #include "screen.h"
+#include "nb.h"
 #include "logger.h"
 
 #define TLS_SEC_TAG 42
@@ -40,7 +41,6 @@ static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
 
 u8_t g_dl_progress = 0;
 DL_DATA_TYPE g_dl_data_type = DL_DATA_IMG;
-
 
 static int modem_configure(void)
 {
@@ -295,21 +295,30 @@ static void dl_transfer_start(struct k_work *unused)
 	{
 	#ifdef CONFIG_IMG_DATA_UPDATE	
 	case DL_DATA_IMG:
-		strcpy(dl_host, CONFIG_IMG_DATA_DOWNLOAD_HOST);
+		if(strncmp(g_imsi, "460", strlen("460")) == 0)
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
+		else
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
 		strcpy(dl_file, CONFIG_IMG_DATA_DOWNLOAD_FILE);
 		break;
 	#endif
 
 	#ifdef CONFIG_FONT_DATA_UPDATE
 	case DL_DATA_FONT:
-		strcpy(dl_host, CONFIG_FONT_DATA_DOWNLOAD_HOST);
+		if(strncmp(g_imsi, "460", strlen("460")) == 0)
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
+		else
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
 		strcpy(dl_file, CONFIG_FONT_DATA_DOWNLOAD_FILE);		
 		break;
 	#endif
 
 	#ifdef CONFIG_PPG_DATA_UPDATE
 	case DL_DATA_PPG:
-		strcpy(dl_host, CONFIG_PPG_DATA_DOWNLOAD_HOST);
+		if(strncmp(g_imsi, "460", strlen("460")) == 0)
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
+		else
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
 		strcpy(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
 		break;
 	#endif		

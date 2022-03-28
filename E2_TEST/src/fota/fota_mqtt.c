@@ -19,6 +19,7 @@
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
 #include <dfu/mcuboot.h>
+#include "nb.h"
 #include "fota_mqtt.h"
 #include "screen.h"
 #include "logger.h"
@@ -118,6 +119,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 {
 	int retval;
 	int sec_tag;
+	u8_t host[256] = {0};
 
 	LOGD("begin");
 
@@ -127,7 +129,12 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	sec_tag = TLS_SEC_TAG;
 #endif
 
-	retval = fota_download_start(CONFIG_FOTA_DOWNLOAD_HOST,
+	if(strncmp(g_imsi, "460", strlen("460")) == 0)
+		strcpy(host, CONFIG_FOTA_DOWNLOAD_HOST_CN);
+	else
+		strcpy(host, CONFIG_FOTA_DOWNLOAD_HOST_HK);
+
+	retval = fota_download_start(host,
 				     CONFIG_FOTA_DOWNLOAD_FILE,
 				     sec_tag);
 	if (retval != 0)

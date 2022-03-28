@@ -1857,7 +1857,7 @@ void DlShowStatus(void)
 	LCD_MeasureString(str_title, &w, &h);
 	x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? 0 : ((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2;
 	x += (DL_NOTIFY_RECT_X+DL_NOTIFY_OFFSET_W);
-	y = 20;
+	y = 25;
 	LCD_ShowString(x,y,str_title);
 
 	ShowStringsInRect(DL_NOTIFY_STRING_X, 

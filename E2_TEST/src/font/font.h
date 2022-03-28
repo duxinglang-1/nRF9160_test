@@ -7,13 +7,18 @@
 #include <zephyr.h>
 
 #define FONT_16
+#define FONT_20
 #define FONT_24
+#define FONT_28
 #define FONT_32
+#define FONT_36
 #define FONT_48
+#define FONT_52
 #define FONT_64
+#define FONT_68
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
-//#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
+#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
 
 #ifdef FONTMAKER_MBCS_FONT
 #define FONT_MBCS_HEAD_FLAG_0	0x4D
@@ -39,17 +44,32 @@ typedef enum
 #ifdef FONT_16
 	FONT_SIZE_16 = 16,
 #endif
+#ifdef FONT_20
+	FONT_SIZE_20 = 20,
+#endif
 #ifdef FONT_24
 	FONT_SIZE_24 = 24,
+#endif
+#ifdef FONT_28
+	FONT_SIZE_28 = 28,
 #endif
 #ifdef FONT_32
 	FONT_SIZE_32 = 32,
 #endif
+#ifdef FONT_36
+	FONT_SIZE_36 = 36,
+#endif
 #ifdef FONT_48
 	FONT_SIZE_48 = 48,
 #endif
+#ifdef FONT_52
+	FONT_SIZE_52 = 52,
+#endif
 #ifdef FONT_64
 	FONT_SIZE_64 = 64,
+#endif
+#ifdef FONT_68
+	FONT_SIZE_68 = 68,
 #endif
 	FONT_SIZE_MAX
 }SYSTEM_FONT_SIZE;

@@ -1220,7 +1220,12 @@ bool sh_init_interface(void)
 
 	if((mcu_type != 1) || (u8_rxbuf[1] != 4))
 	{
-		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, FONT_SIZE_16, "PPG is upgrading firmware, please wait a few minutes!");
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_20);
+	#else	
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
+		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
 		LCD_SleepOut();
 	}

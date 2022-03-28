@@ -18,8 +18,8 @@ extern "C" {
 #endif
 
 //synchronism data
-#define SYNC_ICON_W					100
-#define SYNC_ICON_H					104
+#define SYNC_ICON_W					135
+#define SYNC_ICON_H					156
 #define SYNC_ICON_X					((LCD_WIDTH-SYNC_ICON_W)/2)
 #define SYNC_ICON_Y					50
 #define SYNC_STR_W					92

@@ -31,7 +31,7 @@ extern "C" {
 #define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
-#define IDLE_TIME_X	45
+#define IDLE_TIME_X	54
 #define IDLE_TIME_Y	52
 #define IDLE_DATE_MON_X	149
 #define IDLE_DATE_MON_Y	120
@@ -49,7 +49,7 @@ extern "C" {
 //network mode
 #define IDLE_NET_MODE_W		12
 #define IDLE_NET_MODE_H		16
-#define IDLE_NET_MODE_X		((LCD_WIDTH-IDLE_NET_MODE_W)/2)
+#define IDLE_NET_MODE_X		110
 #define IDLE_NET_MODE_Y		35
 
 //battery soc
@@ -60,7 +60,7 @@ extern "C" {
 #define IDLE_BAT_PERCENT_W		44
 #define IDLE_BAT_PERCENT_H		18
 #define IDLE_BAT_PERCENT_X		120
-#define IDLE_BAT_PERCENT_Y		35
+#define IDLE_BAT_PERCENT_Y		33
 #define IDLE_BAT_INNER_RECT_W	22
 #define IDLE_BAT_INNER_RECT_H	10
 #define IDLE_BAT_INNER_RECT_X	172
@@ -131,7 +131,7 @@ extern "C" {
 #define IMU_STEP_STR_W				106
 #define IMU_STEP_STR_H				42
 #define IMU_STEP_STR_X				42
-#define IMU_STEP_STR_Y				85
+#define IMU_STEP_STR_Y				82
 //calorie
 #define IMU_CAL_ICON_W				28
 #define IMU_CAL_ICON_H				36
@@ -180,11 +180,11 @@ extern "C" {
 #define SLEEP_TOTAL_STR_HR_W		43
 #define SLEEP_TOTAL_STR_HR_H		42
 #define SLEEP_TOTAL_STR_HR_X		55
-#define SLEEP_TOTAL_STR_HR_Y		85
+#define SLEEP_TOTAL_STR_HR_Y		82
 #define SLEEP_TOTAL_STR_MIN_W		43		
 #define SLEEP_TOTAL_STR_MIN_H		42
 #define SLEEP_TOTAL_STR_MIN_X		125
-#define SLEEP_TOTAL_STR_MIN_Y		85
+#define SLEEP_TOTAL_STR_MIN_Y		82
 //light sleep
 #define SLEEP_LIGHT_ICON_W			36
 #define SLEEP_LIGHT_ICON_H			36
@@ -315,7 +315,7 @@ extern "C" {
 #define TEMP_ICON_W					89
 #define TEMP_ICON_H					110
 #define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
-#define TEMP_ICON_Y					10
+#define TEMP_ICON_Y					30
 #define TEMP_UNIT_W					16
 #define TEMP_UNIT_H					16
 #define TEMP_UNIT_X					170
@@ -323,47 +323,22 @@ extern "C" {
 #define TEMP_NUM_W					100
 #define TEMP_NUM_H					26
 #define TEMP_NUM_X					70
-#define TEMP_NUM_Y					145
+#define TEMP_NUM_Y					150
 #define TEMP_RUNNING_ANI_W			81
 #define TEMP_RUNNING_ANI_H			13
 #define TEMP_RUNNING_ANI_X			((LCD_WIDTH-TEMP_RUNNING_ANI_W)/2)
 #define TEMP_RUNNING_ANI_Y			212
 
 //power off
-#define PWR_OFF_BG_W				240
-#define PWR_OFF_BG_H				240
-#define PWR_OFF_BG_X				((LCD_WIDTH-PWR_OFF_BG_W)/2)
-#define PWR_OFF_BG_Y				0
-
-#define PWR_OFF_ICON_W				80
-#define PWR_OFF_ICON_H				80
+#define PWR_OFF_ICON_W				115
+#define PWR_OFF_ICON_H				127
 #define PWR_OFF_ICON_X				((LCD_WIDTH-PWR_OFF_ICON_W)/2)
-#define PWR_OFF_ICON_Y				25	
-
-#define PWR_OFF_NOTIFY_STR_W		106
-#define	PWR_OFF_NOTIFY_STR_H		27
-#define	PWR_OFF_NOTIFY_STR_X		((LCD_WIDTH-PWR_OFF_NOTIFY_STR_W)/2)
-#define	PWR_OFF_NOTIFY_STR_Y		115
-
-#define PWR_OFF_NOTIFY_YES_W		40
-#define PWR_OFF_NOTIFY_YES_H		40
-#define PWR_OFF_NOTIFY_YES_X		155
-#define PWR_OFF_NOTIFY_YES_Y		157
-
-#define PWR_OFF_NOTIFY_NO_W			40
-#define PWR_OFF_NOTIFY_NO_H			40
-#define PWR_OFF_NOTIFY_NO_X			45
-#define PWR_OFF_NOTIFY_NO_Y			157
-
-#define POW_OFF_RUNNING_ANI_W		122
-#define POW_OFF_RUNNING_ANI_H		122
+#define PWR_OFF_ICON_Y				((LCD_HEIGHT-PWR_OFF_ICON_H)/2)	
+#define POW_OFF_RUNNING_ANI_W		81
+#define POW_OFF_RUNNING_ANI_H		13
 #define POW_OFF_RUNNING_ANI_X		((LCD_WIDTH-POW_OFF_RUNNING_ANI_W)/2)
-#define POW_OFF_RUNNING_ANI_Y		20
+#define POW_OFF_RUNNING_ANI_Y		212
 
-#define POW_OFF_RUNNING_STR_W		139
-#define POW_OFF_RUNNING_STR_H		31
-#define POW_OFF_RUNNING_STR_X		((LCD_WIDTH-POW_OFF_RUNNING_STR_W)/2)
-#define POW_OFF_RUNNING_STR_Y		192
 
 
 

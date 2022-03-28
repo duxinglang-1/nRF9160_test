@@ -634,17 +634,13 @@ void GetSystemTimeStrings(u8_t *str_time)
 		sprintf((char*)str_time, "%02d:%02d:%02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
 		break;
 	}
-
-#ifdef FONTMAKER_UNICODE_FONT
-	strcpy(tmpbuf, str_time);
-	mmi_asc_to_ucs2(str_time, tmpbuf);
-#endif
 }
 
 void GetSystemWeekStrings(u8_t *str_week)
 {
 	u8_t *week_en[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
 	u8_t *week_chn[7] = {"日", "一", "二", "三", "四", "五", "六"};
+	u8_t tmpbuf[128] = {0};
 
 	switch(global_settings.language)
 	{

@@ -63,7 +63,7 @@ typedef struct _PALETTE
 仅在256色模式下存在调色板数据结构,调色板数据结构紧跟在数据结构HEADGRAY之后。
 */
 
-#if 0
+#if 1
 //alarm(3)
 extern unsigned char IMG_ALARM_ANI_1[15884];
 extern unsigned char IMG_ALARM_ANI_2[15884];
@@ -166,20 +166,7 @@ extern unsigned char IMG_OTA_STR[19748];
 extern unsigned char IMG_OTA_SUCCESS_STR[8380];
 extern unsigned char IMG_OTA_YES[3208];
 //power off(14)
-extern unsigned char IMG_PWROFF_ANI_1[29776];
-extern unsigned char IMG_PWROFF_ANI_2[29776];
-extern unsigned char IMG_PWROFF_ANI_3[29776];
-extern unsigned char IMG_PWROFF_ANI_4[29776];
-extern unsigned char IMG_PWROFF_ANI_5[29776];
-extern unsigned char IMG_PWROFF_ANI_6[29776];
-extern unsigned char IMG_PWROFF_ANI_7[29776];
-extern unsigned char IMG_PWROFF_ANI_8[29776];
-extern unsigned char IMG_PWROFF_BG[115208];
-extern unsigned char IMG_PWROFF_BUTTON[12808];
-extern unsigned char IMG_PWROFF_NO[3208];
-extern unsigned char IMG_PWROFF_RUNNING_STR[8626];
-extern unsigned char IMG_PWROFF_STR[5732];
-extern unsigned char IMG_PWROFF_YES[3208];
+extern unsigned char IMG_PWROFF_BUTTON[29218];
 //power on(8)
 extern unsigned char IMG_PWRON_ANI_1[13388];
 extern unsigned char IMG_PWRON_ANI_2[13388];
@@ -211,7 +198,6 @@ extern unsigned char IMG_RESET_YES[3208];
 extern unsigned char IMG_RUNNING_ANI_1[2114];
 extern unsigned char IMG_RUNNING_ANI_2[2114];
 extern unsigned char IMG_RUNNING_ANI_3[2114];
-extern unsigned char IMG_RUNNING_ANI_4[2114];
 //sedentary reminder(2)
 extern unsigned char IMG_SEDENTARY_LOGO[18728];
 extern unsigned char IMG_SEDENTARY_STR[8656];
@@ -299,13 +285,12 @@ extern unsigned char IMG_STEP_KCAL[708];
 extern unsigned char IMG_STEP_KM[484];
 extern unsigned char IMG_STEP_LINE[668];
 //sync(4)
-extern unsigned char IMG_SYNC_ERR[24868];
-extern unsigned char IMG_SYNC_FINISH[24868];
-extern unsigned char IMG_SYNC_LOGO[20808];
-extern unsigned char IMG_SYNC_STR[8288];
+extern unsigned char IMG_SYNC_ERR[42128];
+extern unsigned char IMG_SYNC_FINISH[42128];
+extern unsigned char IMG_SYNC_LOGO[36458];
 //temperature(4)
-extern unsigned char IMG_TEMP_ICON_C[19588];
-extern unsigned char IMG_TEMP_ICON_F[19588];
+extern unsigned char IMG_TEMP_ICON_C[16208];
+extern unsigned char IMG_TEMP_ICON_F[16532];
 extern unsigned char IMG_TEMP_UNIT_C[520];
 extern unsigned char IMG_TEMP_UNIT_F[520];
 //wrist off(2)

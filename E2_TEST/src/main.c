@@ -244,8 +244,12 @@ void idle_show_analog_clock(void)
 
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
-	
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+#else
 	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
 	if(global_settings.language == LANGUAGE_CHN)
@@ -297,8 +301,12 @@ void idle_show_clock_background(void)
 	LCD_Clear(BLACK);
 	BACK_COLOR=BLACK;
 	POINT_COLOR=WHITE;
-	
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+#else	
 	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 #ifdef ANALOG_CLOCK	
 	if(global_settings.idle_colck_mode == CLOCK_MODE_ANALOG)
@@ -540,9 +548,13 @@ void test_show_string(void)
 	BACK_COLOR=BLACK;  								//背景色 
 
 #ifdef FONTMAKER_UNICODE_FONT
-#ifdef FONT_32
+#if 0//def FONT_64
+	LCD_SetFontSize(FONT_SIZE_64);					//设置字体大小
+#elif 0//defined(FONT_48)
+	LCD_SetFontSize(FONT_SIZE_48);					//设置字体大小
+#elif 0//defined(FONT_32)
 	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
-#elif defined(FONT_24)
+#elif 0//defined(FONT_24)
 	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
 #elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
@@ -589,7 +601,7 @@ void test_show_string(void)
 	y = y + h + 2;
 	LCD_ShowUniString(x,y,en_unibuf);
 #endif
-//#else
+#else
 	strcpy(enbuf, "August Shenzhen Digital Ltd");
 	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");

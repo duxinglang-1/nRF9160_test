@@ -26,6 +26,8 @@ static void pmu_battery_low_shutdown_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
 static void sys_pwr_off_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(sys_pwroff, sys_pwr_off_timerout, NULL);
+static void vibrate_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(vib_timer, vibrate_timerout, NULL);
 
 bool vibrate_start_flag = false;
 bool vibrate_stop_flag = false;
@@ -145,6 +147,11 @@ void sys_pwr_off_timerout(struct k_timer *timer_id)
 	sys_pwr_off_flag = true;
 }
 
+void vibrate_timerout(struct k_timer *timer_id)
+{
+	vibrate_stop_flag = true;
+}
+
 void system_power_off(u8_t flag)
 {
 	if(!sys_shutdown_is_running)
@@ -157,6 +164,8 @@ void system_power_off(u8_t flag)
 			SendPowerOffData(flag);
 		}
 
+		VibrateStart();
+		k_timer_start(&vib_timer, K_MSEC(100), NULL);
 		k_timer_start(&sys_pwroff, K_MSEC(5*1000), NULL);
 	}
 }
@@ -356,7 +365,7 @@ bool pmu_alert_proc(void)
 				pmu_battery_low_shutdown();
 			}
 		}
-		else if(g_bat_soc < 20)
+		else if(g_bat_soc < 10)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
@@ -572,6 +581,11 @@ void pmu_init(void)
 		return;
 	
 	MAX20353_InitData();
+
+	VibrateStart();
+	k_sleep(K_MSEC(100));
+	VibrateStop();
+
 #ifdef PMU_DEBUG
 	LOGD("pmu_init done!");
 #endif

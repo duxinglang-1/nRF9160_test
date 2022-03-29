@@ -323,13 +323,17 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 			return; 						//没有的字库
 	}
 
-	if(uni_infor.head.sect_num == 0)
+	//read head data
+	SpiFlash_Read((u8_t*)&uni_infor.head, font_addr, FONT_UNI_HEAD_LEN);
+	if((uni_infor.head.id[0] != FONT_UNI_HEAD_FLAG_0)
+		||(uni_infor.head.id[1] != FONT_UNI_HEAD_FLAG_1)
+		||(uni_infor.head.id[2] != FONT_UNI_HEAD_FLAG_2))
 	{
-		//read head data
-		SpiFlash_Read((u8_t*)&uni_infor.head, font_addr, FONT_UNI_HEAD_LEN);
-		//read sect data
-		SpiFlash_Read((u8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_LEN, uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
+		return;
 	}
+
+	//read sect data
+	SpiFlash_Read((u8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_LEN, uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
 	
 	//read index data
 	for(i=0;i<uni_infor.head.sect_num;i++)
@@ -347,6 +351,8 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 	cbyte = uni_infor.index.width;
 	csize = ((cbyte+7)/8)*system_font;
 	//read font data
+	if(csize > sizeof(fontbuf))
+		csize = sizeof(fontbuf);
 	SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize);
 
 	w = cbyte;
@@ -1144,12 +1150,19 @@ void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, u32_t pic_addr)
 		show_h = LCD_HEIGHT-y;
 	else
 		show_h = h;
+
+	if(show_w > LCD_WIDTH)
+		show_w = LCD_WIDTH;
+	if(show_h > LCD_HEIGHT)
+		show_h = LCD_HEIGHT;
 	
 	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
 
 	datelen = 2*show_w*show_h;
 	if(show_w < w)
 		readlen = 2*show_w;
+	if(readlen > LCD_DATA_LEN)
+		readlen = LCD_DATA_LEN;
 	
 	while(datelen)
 	{
@@ -1588,10 +1601,17 @@ void LCD_dis_img_from_flash(u16_t x, u16_t y, u32_t pic_addr)
 	else
 		show_h = h;
 
+	if(show_w > LCD_WIDTH)
+		show_w = LCD_WIDTH;
+	if(show_h > LCD_HEIGHT)
+		show_h = LCD_HEIGHT;
+
 	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
 	datelen = show_w*(show_h/8+((show_h%8)?1:0));
 	if(show_w < w)
 		readlen = show_w;
+	if(readlen > LCD_DATA_LEN)
+		readlen = LCD_DATA_LEN;
 	
 	while(datelen)
 	{
@@ -3160,13 +3180,17 @@ u8_t LCD_Measure_Uni_Byte(u16_t word)
 			return;
 	}
 
-	if(uni_infor.head.sect_num == 0)
+	//read head data
+	SpiFlash_Read((u8_t*)&uni_infor.head, font_addr, FONT_UNI_HEAD_LEN);
+	if((uni_infor.head.id[0] != FONT_UNI_HEAD_FLAG_0)
+		||(uni_infor.head.id[1] != FONT_UNI_HEAD_FLAG_1)
+		||(uni_infor.head.id[2] != FONT_UNI_HEAD_FLAG_2))
 	{
-		//read head data
-		SpiFlash_Read((u8_t*)&uni_infor.head, font_addr, FONT_UNI_HEAD_LEN);
-		//read sect data
-		SpiFlash_Read((u8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_LEN, uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
+		return;
 	}
+	
+	//read sect data
+	SpiFlash_Read((u8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_LEN, uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
 	
 	//read index data
 	for(i=0;i<uni_infor.head.sect_num;i++)
@@ -3202,13 +3226,17 @@ u8_t LCD_Measure_Uni_Byte(u16_t word)
 			return 0;							//没有的字库
 	}
 
-	if(uni_infor.head.sect_num == 0)
+	//read head data
+	memcpy((u8_t*)&uni_infor.head, ptr_font, FONT_UNI_HEAD_LEN);
+	if((uni_infor.head.id[0] != FONT_UNI_HEAD_FLAG_0)
+		||(uni_infor.head.id[1] != FONT_UNI_HEAD_FLAG_1)
+		||(uni_infor.head.id[2] != FONT_UNI_HEAD_FLAG_2))
 	{
-		//read head data
-		memcpy((u8_t*)&uni_infor.head, ptr_font, FONT_UNI_HEAD_LEN);
-		//read sect data
-		memcpy((u8_t*)&uni_infor.sect, ptr_font[FONT_UNI_HEAD_LEN], uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
+		return;
 	}
+	
+	//read sect data
+	memcpy((u8_t*)&uni_infor.sect, ptr_font[FONT_UNI_HEAD_LEN], uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
 	
 	//read index data
 	for(i=0;i<uni_infor.head.sect_num;i++)

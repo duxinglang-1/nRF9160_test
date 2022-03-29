@@ -311,8 +311,8 @@ void IdleShowSystemTime(void)
 	x = IDLE_TIME_X;
 	y = IDLE_TIME_Y;
 	LCD_ShowString(x,y,str_time_h);
-	LCD_ShowString(x+58,y-4,str_time_dot);
-	LCD_ShowString(x+74,y,str_time_m);
+	LCD_ShowString(x+68,y-4,str_time_dot);
+	LCD_ShowString(x+86,y,str_time_m);
 }
 
 void IdleShowSystemWeek(void)
@@ -352,9 +352,9 @@ void IdleUpdateBatSoc(void)
 	if(g_bat_soc >= 100)
 		sprintf(strbuf, "%d%%", g_bat_soc);
 	else if(g_bat_soc >= 10)
-		sprintf(strbuf, " %d%%", g_bat_soc);
+		sprintf(strbuf, "   %d%%", g_bat_soc);
 	else
-		sprintf(strbuf, "  %d%%", g_bat_soc);
+		sprintf(strbuf, "      %d%%", g_bat_soc);
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -408,9 +408,9 @@ void IdleShowBatSoc(void)
 	if(g_bat_soc >= 100)
 		sprintf(strbuf, "%d%%", g_bat_soc);
 	else if(g_bat_soc >= 10)
-		sprintf(strbuf, " %d%%", g_bat_soc);
+		sprintf(strbuf, "   %d%%", g_bat_soc);
 	else
-		sprintf(strbuf, "  %d%%", g_bat_soc);
+		sprintf(strbuf, "      %d%%", g_bat_soc);
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -2493,7 +2493,7 @@ void StepsScreenProcess(void)
 		scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATED;
 				
 		LCD_Clear(BLACK);
-		
+	
 		LCD_ShowImg_From_Flash(IMU_STEP_ICON_X, IMU_STEP_ICON_Y, IMG_STEP_ANI_1_ADDR);
 		LCD_ShowImg_From_Flash(IMU_STEP_UNIT_X, IMU_STEP_UNIT_Y, IMG_STEP_ICON_ADDR);
 		LCD_ShowImg_From_Flash(IMU_SEP_LINE_X, IMU_SEP_LINE_Y, IMG_STEP_LINE_ADDR);
@@ -2584,10 +2584,60 @@ void EnterStepsScreen(void)
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitStepsScreen);
-#endif	
-
+#endif
 }
 #endif
+
+void SettingsScreenProcess(void)
+{
+	u16_t x,y,w,h;
+	u8_t strbuf[64] = {0};
+	u8_t tmpbuf[64] = {0};
+	
+	switch(scr_msg[SCREEN_ID_SETTINGS].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATED;
+				
+		LCD_Clear(BLACK);
+		
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_NO;
+}
+
+void ExitSettingsScreen(void)
+{
+	EnterIdleScreen();
+}
+
+void EnterSettingsScreen(void)
+{
+	if(screen_id == SCREEN_ID_SETTINGS)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SETTINGS;	
+	scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATING;
+
+	ClearLeftKeyUpHandler();
+	SetRightKeyUpHandler(ExitSettingsScreen);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+	//register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+	//register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitStepsScreen);
+#endif
+}
 
 void WristShowStatus(void)
 {
@@ -2725,7 +2775,6 @@ void EnterIdleScreen(void)
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
   #endif
  #endif
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
 #endif	
 }
 

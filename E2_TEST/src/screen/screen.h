@@ -31,7 +31,7 @@ extern "C" {
 #define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
-#define IDLE_TIME_X	54
+#define IDLE_TIME_X	43
 #define IDLE_TIME_Y	52
 #define IDLE_DATE_MON_X	149
 #define IDLE_DATE_MON_Y	120
@@ -49,7 +49,7 @@ extern "C" {
 //network mode
 #define IDLE_NET_MODE_W		12
 #define IDLE_NET_MODE_H		16
-#define IDLE_NET_MODE_X		110
+#define IDLE_NET_MODE_X		108
 #define IDLE_NET_MODE_Y		35
 
 //battery soc
@@ -129,7 +129,7 @@ extern "C" {
 #define IMU_STEP_UNIT_X				151
 #define IMU_STEP_UNIT_Y				89
 #define IMU_STEP_STR_W				106
-#define IMU_STEP_STR_H				42
+#define IMU_STEP_STR_H				30
 #define IMU_STEP_STR_X				42
 #define IMU_STEP_STR_Y				82
 //calorie

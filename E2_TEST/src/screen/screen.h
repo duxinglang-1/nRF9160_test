@@ -130,7 +130,7 @@ extern "C" {
 #define IMU_STEP_UNIT_Y				89
 #define IMU_STEP_STR_W				106
 #define IMU_STEP_STR_H				30
-#define IMU_STEP_STR_X				42
+#define IMU_STEP_STR_X				((LCD_WIDTH-IMU_STEP_STR_W)/2)
 #define IMU_STEP_STR_Y				82
 //calorie
 #define IMU_CAL_ICON_W				28

@@ -56,6 +56,9 @@ extern bool g_ble_connected;
 extern ENUM_BLE_STATUS g_ble_status;
 extern ENUM_BLE_MODE g_ble_mode;
 
+extern u8_t g_ble_mac_addr[20];
+extern u8_t g_nrf52810_ver[128];
+
 extern void uart_ble_test(void);
 extern void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data);
 extern void MCU_get_nrf52810_ver(void);

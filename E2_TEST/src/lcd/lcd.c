@@ -283,7 +283,7 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 {
 	u16_t temp,t1,t;
 	u16_t y0=y,x0=x,w,h;
-	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数(英文宽度是字宽的一半)
+	u8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数
 	u16_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
 	u8_t sect=0;
 	u8_t databuf[2*1024] = {0};
@@ -294,6 +294,11 @@ u8_t LCD_Show_Uni_Char_from_flash(u16_t x, u16_t y, u16_t num, u8_t mode)
 
 	switch(system_font)
 	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			font_addr = FONT_EN_UNI_16_ADDR;
+			break;
+	#endif		
 	#ifdef FONT_20
 		case FONT_SIZE_20:
 			font_addr = FONT_EN_UNI_20_ADDR;
@@ -3150,6 +3155,11 @@ u8_t LCD_Measure_Uni_Byte(u16_t word)
 #ifdef IMG_FONT_FROM_FLASH
 	switch(system_font)
 	{
+	#ifdef FONT_16
+		case FONT_SIZE_16:
+			font_addr = FONT_EN_UNI_16_ADDR;
+			break;
+	#endif
 	#ifdef FONT_20
 		case FONT_SIZE_20:
 			font_addr = FONT_EN_UNI_20_ADDR;
@@ -3374,6 +3384,30 @@ void LCD_MeasureString(uint8_t *p, uint16_t *width,uint16_t *height)
 			p += 2;
 		}        
 	}  
+}
+
+//恢复字体画笔默认颜色
+void LCD_ReSetFontColor(void)
+{
+	POINT_COLOR = WHITE;
+}
+
+//设置字体画笔颜色
+void LCD_SetFontColor(u16_t color)
+{
+	POINT_COLOR = color;
+}
+
+//恢复字体背景默认颜色
+void LCD_ReSetFontBgColor(void)
+{
+	BACK_COLOR = BLACK;
+}
+
+//设置字体背景颜色
+void LCD_SetFontBgColor(u16_t color)
+{
+	BACK_COLOR = color;
 }
 
 //设置系统字体

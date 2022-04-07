@@ -53,6 +53,7 @@ static void SettingsMenuLang2Proc(void);
 static void SettingsMenuLang3Proc(void);
 static void SettingsMenuReset1Proc(void);
 static void SettingsMenuReset2Proc(void);
+static void SettingsMenuOTAProc(void);
 static void SettingsMenuBrightness1Proc(void);
 static void	SettingsMenuBrightness2Proc(void);
 static void	SettingsMenuBrightness3Proc(void);
@@ -89,7 +90,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	60,						//health interval
 	TEMP_UINT_C,			//Centigrade
 	TIME_FORMAT_24,			//24 format
-	LANGUAGE_CHN,			//language
+	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_15_SEC,		//backlight time
@@ -244,6 +245,42 @@ const settings_menu_t SETTING_MENU_FACTORY_RESET =
 		SettingsMenuDumpProc,
 	},	
 };
+
+const settings_menu_t SETTING_MENU_OTA_UPDATE = 
+{
+	SETTINGS_MENU_OTA,
+	0,
+	1,
+	{
+		{
+			{0x0000},
+		},
+		{
+			{0x0000},
+		},
+		{
+			{0x0000},
+		},		
+	},
+	{
+		SettingsMenuOTAProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+	},
+	{	
+		//page proc func
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+	},	
+};
+
 
 const settings_menu_t SETTING_MENU_BRIGHTNESS = 
 {
@@ -643,7 +680,7 @@ void SettingsMainMenu3Proc(void)
 	else
 	{
 		main_menu_index_bk = settings_menu.index;
-		memcpy(&settings_menu, &SETTING_MENU_BRIGHTNESS, sizeof(settings_menu_t));
+		memcpy(&settings_menu, &SETTING_MENU_OTA_UPDATE, sizeof(settings_menu_t));
 
 		if(screen_id == SCREEN_ID_SETTINGS)
 		{
@@ -775,6 +812,17 @@ void SettingsMenuReset2Proc(void)
 	}
 
 	k_timer_start(&reset_start_timer, K_MSEC(100), NULL);
+}
+
+void SettingsMenuOTAProc(void)
+{
+	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
+	settings_menu.index = main_menu_index_bk;
+	
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void SettingsMenuBrightness1Proc(void)

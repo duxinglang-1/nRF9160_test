@@ -21,7 +21,11 @@ extern "C" {
 #define SYNC_ICON_W					135
 #define SYNC_ICON_H					156
 #define SYNC_ICON_X					((LCD_WIDTH-SYNC_ICON_W)/2)
-#define SYNC_ICON_Y					50
+#define SYNC_ICON_Y					37
+#define SYNC_FINISH_ICON_W			135
+#define SYNC_FINISH_ICON_H			156
+#define SYNC_FINISH_ICON_X			((LCD_WIDTH-SYNC_ICON_W)/2)
+#define SYNC_FINISH_ICON_Y			16
 #define SYNC_STR_W					92
 #define SYNC_STR_H					45
 #define SYNC_STR_X					((LCD_WIDTH-SYNC_STR_W)/2)

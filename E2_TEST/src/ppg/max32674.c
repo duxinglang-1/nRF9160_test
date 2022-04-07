@@ -43,6 +43,7 @@ static u8_t whoamI=0, rst=0;
 u8_t g_ppg_trigger = 0;
 u8_t g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 u8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
+u8_t g_ppg_ver[64] = {0};
 
 u16_t g_hr = 0;
 u16_t g_bp_systolic = 0;	// ’Àı—π

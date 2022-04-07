@@ -124,6 +124,14 @@ void Set_PPG_Power_Off(void)
 	MAX20353_LDO1Disable();
 }
 
+void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
+{
+	int ret = 0;
+
+	ret = MAX20353_LED0(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+}
+
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;

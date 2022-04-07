@@ -73,6 +73,8 @@ extern u8_t nb_test_info[256];
 extern u8_t g_imsi[IMSI_MAX_LEN+1];
 extern u8_t g_imei[IMEI_MAX_LEN+1];
 extern u8_t g_iccid[ICCID_MAX_LEN+1];
+extern u8_t g_modem[MODEM_MAX_LEN+1];
+
 extern u8_t g_timezone[5];
 extern u8_t g_rsrp;
 

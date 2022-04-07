@@ -110,6 +110,8 @@ typedef struct
 }ppg_bpt_rec2_data;
 
 extern u8_t g_ppg_trigger;
+extern u8_t g_ppg_ver[64];
+
 extern u16_t g_hr;
 extern u16_t g_spo2;
 extern u16_t g_bp_systolic;		// ’Àı—π

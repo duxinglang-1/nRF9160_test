@@ -272,6 +272,35 @@ bool ctp_hynitron_update(void)
 	return false;
 }
 
+void clear_all_touch_event_handle(void)
+{
+	TpEventNode *pnext;
+	
+	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
+	{
+	#ifdef TP_DEBUG
+		LOGD("001");
+	#endif
+		return;
+	}
+	else
+	{
+		pnext = tp_event_info.cache;
+
+		do
+		{
+			tp_event_info.cache = pnext->next;
+			tp_event_info.count--;
+			k_free(pnext);
+			pnext = tp_event_info.cache;
+		}while(pnext != NULL);
+
+	#ifdef TP_DEBUG
+		LOGD("002");
+	#endif
+	}
+}
+
 void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, u16_t y_start, u16_t y_stop, tp_handler_t touch_handler)
 {
 	TpEventNode *ppre,*pnext;
@@ -379,6 +408,9 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 		{
 			if(tp_event_tail->next == NULL)
 			{
+			#ifdef TP_DEBUG
+				LOGD("003");
+			#endif
 				pnew = k_malloc(sizeof(TpEventNode));
 				if(pnew == NULL) 
 					return;
@@ -401,11 +433,17 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 			else if((x_start == tp_event_tail->x_begin)&&(x_stop == tp_event_tail->x_end)&&(y_start == tp_event_tail->y_begin)&&(y_stop == tp_event_tail->y_end)
 				&&(tp_event_tail->evt_id == tp_type))
 			{
+			#ifdef TP_DEBUG
+				LOGD("004");
+			#endif
 				tp_event_tail->func = touch_handler;
 				break;
 			}
 			else
 			{
+			#ifdef TP_DEBUG
+				LOGD("005");
+			#endif
 				tp_event_tail = tp_event_tail->next;
 			}
 		}
@@ -539,33 +577,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 		break;
 	}
 
-#if 0
-	LCD_Clear(BLACK);
-
-	sprintf(tmpbuf, "x:%03d, y:%03d", x_pos, y_pos);
-	LCD_MeasureString(tmpbuf, &w, &h);
-
-	LCD_Draw_Circle(x_pos, y_pos, 10);
-
-	x = x_pos - (w/2);
-	y = y_pos + 15;
-
-	if(x_pos < (w/2))
-		x = x_pos + 15;
-	else if(x_pos > (LCD_WIDTH-(w/2)))
-		x = x_pos - w - 15;
-
-	if(y_pos > (LCD_HEIGHT- 2*h - 15))
-		y = y_pos - 2*h - 15;
-
-	LCD_ShowString(x, y, tmpbuf);
-	LCD_ShowString(x, y+h, strbuf);
-#endif
-
-	if(!lcd_is_sleeping)
-	{
-		check_touch_event_handle(tp_type, x_pos, y_pos);
-	}
+	check_touch_event_handle(tp_type, x_pos, y_pos);
 }
 
 void CaptouchInterruptHandle(void)

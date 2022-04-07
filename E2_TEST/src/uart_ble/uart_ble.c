@@ -252,7 +252,7 @@ void APP_set_language(u8_t *buf, u32_t len)
 	else if(buf[7] == 0x01)
 		global_settings.language = LANGUAGE_EN;
 	else if(buf[7] == 0x02)
-		global_settings.language = LANGUAGE_JPN;
+		global_settings.language = LANGUAGE_DE;
 	else
 		global_settings.language = LANGUAGE_EN;
 		
@@ -1845,7 +1845,7 @@ void ble_init(void)
 	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 
-	k_timer_start(&get_ble_info_timer, K_SECONDS(10), NULL);
+	k_timer_start(&get_ble_info_timer, K_SECONDS(2), NULL);
 }
 
 void UartMsgProc(void)

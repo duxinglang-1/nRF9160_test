@@ -60,7 +60,7 @@
 #endif
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
-#define MFIO_LOW_DURATION        550
+#define MFIO_LOW_DURATION        1500
 #define SS_DEFAULT_RETRIES       ((int) (5))
 #define SH_BPT_CAL_COUNT_MAX	(5)
 
@@ -76,6 +76,7 @@ u8_t sh_bpt_cal[CAL_RESULT_SIZE]={0};
 
 extern bool ppg_int_event;
 extern u8_t g_ppg_bpt_status;
+extern u8_t g_ppg_ver[64];
 
 void wait_us(int us)
 {
@@ -1215,7 +1216,8 @@ bool sh_init_interface(void)
 	}
 	else
 	{
-		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOGD("FW version is:%s", g_ppg_ver);
 	}
 
 	if((mcu_type != 1) || (u8_rxbuf[1] != 4))

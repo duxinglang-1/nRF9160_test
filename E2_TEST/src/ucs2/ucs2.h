@@ -9,8 +9,14 @@
 #ifndef __UCS2_H__
 #define __UCS2_H__
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <zephyr.h>
 #include <zephyr/types.h>
 #include <sys/slist.h>
+
+#define L(x) ASCTOUCS2(x)
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +30,7 @@ extern u8_t *mmi_ucs2chr(const u8_t *strSrc, u16_t c);
 extern u8_t *mmi_ucs2str(const u8_t *str1, const u8_t *str2);
 extern u16_t mmi_asc_to_ucs2(u8_t *pOutBuffer, u8_t *pInBuffer);
 extern u16_t mmi_ucs2_to_asc(u8_t *pOutBuffer, u8_t *pInBuffer);
-
+extern u16_t *ASCTOUCS2(u8_t *x);
 #ifdef __cplusplus
 }
 #endif

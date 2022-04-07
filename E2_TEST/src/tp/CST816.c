@@ -373,10 +373,6 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 
 	if(tp_event_info.cache == NULL)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
-	
 		tp_event_info.count = 0;
 		tp_event_info.cache = NULL;
 
@@ -399,52 +395,42 @@ void register_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, 
 	}
 	else
 	{
-	#ifdef TP_DEBUG
-		LOGD("002");
-	#endif
-	
 		tp_event_tail = tp_event_info.cache;
 		while(1)
 		{
-			if(tp_event_tail->next == NULL)
-			{
-			#ifdef TP_DEBUG
-				LOGD("003");
-			#endif
-				pnew = k_malloc(sizeof(TpEventNode));
-				if(pnew == NULL) 
-					return;
-
-				memset(pnew, 0, sizeof(TpEventNode));
-				
-				pnew->x_begin = x_start;
-				pnew->x_end = x_stop;
-				pnew->y_begin = y_start;
-				pnew->y_end = y_stop;
-				pnew->evt_id = tp_type;
-				pnew->func = touch_handler;
-				pnew->next = NULL;
-
-				tp_event_tail->next = pnew;
-				tp_event_tail = pnew;
-				tp_event_info.count++;
-				break;
-			}
-			else if((x_start == tp_event_tail->x_begin)&&(x_stop == tp_event_tail->x_end)&&(y_start == tp_event_tail->y_begin)&&(y_stop == tp_event_tail->y_end)
+			if((x_start == tp_event_tail->x_begin)&&(x_stop == tp_event_tail->x_end)&&(y_start == tp_event_tail->y_begin)&&(y_stop == tp_event_tail->y_end)
 				&&(tp_event_tail->evt_id == tp_type))
 			{
-			#ifdef TP_DEBUG
-				LOGD("004");
-			#endif
 				tp_event_tail->func = touch_handler;
 				break;
 			}
 			else
 			{
-			#ifdef TP_DEBUG
-				LOGD("005");
-			#endif
-				tp_event_tail = tp_event_tail->next;
+				if(tp_event_tail->next == NULL)
+				{
+					pnew = k_malloc(sizeof(TpEventNode));
+					if(pnew == NULL) 
+						return;
+
+					memset(pnew, 0, sizeof(TpEventNode));
+					
+					pnew->x_begin = x_start;
+					pnew->x_end = x_stop;
+					pnew->y_begin = y_start;
+					pnew->y_end = y_stop;
+					pnew->evt_id = tp_type;
+					pnew->func = touch_handler;
+					pnew->next = NULL;
+
+					tp_event_tail->next = pnew;
+					tp_event_tail = pnew;
+					tp_event_info.count++;
+					break;
+				}
+				else
+				{
+					tp_event_tail = tp_event_tail->next;
+				}
 			}
 		}
 	}

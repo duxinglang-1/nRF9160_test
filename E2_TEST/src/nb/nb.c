@@ -204,6 +204,11 @@ static NB_APN_PARAMENT nb_apn_table[] =
 		"44011",
 		"iot.biz.rakuten.jp",
 	},
+	//super
+	{
+		"47475",
+		"super",
+	},
 };
 
 

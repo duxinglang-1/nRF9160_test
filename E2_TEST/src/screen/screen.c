@@ -562,7 +562,16 @@ void IdleUpdateTempData(void)
 #endif
 
 	LCD_Fill(IDLE_TEMP_NUM_X, IDLE_TEMP_NUM_Y, IDLE_TEMP_NUM_W, IDLE_TEMP_NUM_H, bg_color);
-	sprintf(strbuf, "%d", g_hr);
+	if(global_settings.temp_unit == TEMP_UINT_C)
+	{
+		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
+		sprintf(strbuf, "%0.1f", g_temp_body);
+	}
+	else
+	{
+		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
+		sprintf(strbuf, "%0.1f", 32+1.8*g_temp_body);
+	}
 	LCD_MeasureString(strbuf, &w, &h);
 	BACK_COLOR=bg_color;
 	LCD_ShowString(IDLE_TEMP_NUM_X+(IDLE_TEMP_NUM_W-w)/2, IDLE_TEMP_NUM_Y+(IDLE_TEMP_NUM_H-h)/2, strbuf);
@@ -1389,7 +1398,11 @@ void SettingsUpdateStatus(void)
 			mmi_asc_to_ucs2((u8_t*)mcu_str, g_fw_version);
 			mmi_asc_to_ucs2((u8_t*)wifi_str, "NO");
 			mmi_asc_to_ucs2((u8_t*)ble_str, &g_nrf52810_ver[15]);
+		#ifdef CONFIG_PPG_SUPPORT	
 			mmi_asc_to_ucs2((u8_t*)ppg_str, g_ppg_ver);
+		#else
+			mmi_asc_to_ucs2((u8_t*)ppg_str, "NO");
+		#endif
 			mmi_asc_to_ucs2((u8_t*)modem_str, &g_modem[12]);
 			menu_sle_str[0] = mcu_str;
 			menu_sle_str[1] = wifi_str;
@@ -1758,10 +1771,21 @@ void TempUpdateStatus(void)
 	LCD_SetFontSize(FONT_SIZE_48);
 #endif
 
-	if(g_temp_body >= 10.0)
-		sprintf(tmpbuf, "%0.1f", g_temp_body);
+	if(global_settings.temp_unit == TEMP_UINT_C)
+	{
+		if(g_temp_body >= 10.0)
+			sprintf(tmpbuf, "%0.1f", g_temp_body);
+		else
+			sprintf(tmpbuf, " %0.1f", g_temp_body);
+	}
 	else
-		sprintf(tmpbuf, " %0.1f", g_temp_body);
+	{
+		if(g_temp_body >= 10.0)
+			sprintf(tmpbuf, "%0.1f", 32+1.8*g_temp_body);
+		else
+			sprintf(tmpbuf, " %0.1f", 32+1.8*g_temp_body);
+	}
+	
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
 }

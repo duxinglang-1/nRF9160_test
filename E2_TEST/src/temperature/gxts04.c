@@ -146,6 +146,8 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 
 	trans_temp = databuf[0]*0x100 + databuf[1];
 	t_sensor = 175.0*(float)trans_temp/65535.0-45.0;
+	if(t_sensor > 99.9)
+		t_sensor = 0.0;
 	*skin_temp = t_sensor;
 	*body_temp = 0;
 

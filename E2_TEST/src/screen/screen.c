@@ -2670,10 +2670,8 @@ void DlUpdateStatus(void)
 
 			sprintf(pro_buf, "%3d%%", g_dl_progress);
 			LCD_MeasureString(pro_buf, &w, &h);
-			pro_str_x = ((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2;
-			pro_str_x += (DL_NOTIFY_RECT_X+DL_NOTIFY_OFFSET_W);
-			pro_str_y = DL_NOTIFY_PRO_Y + DL_NOTIFY_PRO_H + 5;
-			
+			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
+			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
 			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
 		}
 		else
@@ -2982,9 +2980,7 @@ void FOTAUpdateStatus(void)
 			LCD_MeasureString(pro_buf, &w, &h);
 			pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
 			pro_str_y = FOTA_PRO_NUM_Y+(FOTA_PRO_NUM_H-h)/2;
-			
 			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
-
 		}
 		else
 		{

@@ -458,7 +458,7 @@ void IdleShowBatSoc(void)
 	}
 	else
 	{
-		if(g_bat_soc >= 20)
+		if(g_bat_soc >= 10)
 		{
 			LCD_ShowImg_From_Flash(IDLE_BAT_X, IDLE_BAT_Y, IMG_BAT_RECT_WHITE_ADDR);
 			LCD_Fill(IDLE_BAT_INNER_RECT_X, IDLE_BAT_INNER_RECT_Y, (g_bat_soc*IDLE_BAT_INNER_RECT_W)/100, IDLE_BAT_INNER_RECT_H, GREEN);

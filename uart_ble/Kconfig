@@ -221,6 +221,9 @@ menu "IMU"
 config IMU_SUPPORT
 	bool "imu support"
 	default n
+config FALL_DETECT_SUPPORT
+	bool "fall detect support"
+	default n		
 endmenu #IMU
 
 menu "AUDIO"
@@ -251,12 +254,14 @@ menu "DATA_DOWNLOAD"
 config DATA_DOWNLOAD_SUPPORT
 	bool "data download support"
 	default n
+config DATA_DOWNLOAD_HOST_CN
+	string "Download host name(cn)"	
+config DATA_DOWNLOAD_HOST_HK
+	string "Download host name(hk)"	
 # IMG	
 config IMG_DATA_UPDATE
 	bool "img update support"
 	default n
-config IMG_DATA_DOWNLOAD_HOST
-	string "Download host name"
 config IMG_DATA_DOWNLOAD_FILE
 	string "The file to download"
 
@@ -264,8 +269,6 @@ config IMG_DATA_DOWNLOAD_FILE
 config FONT_DATA_UPDATE
 	bool "font update support"
 	default n
-config FONT_DATA_DOWNLOAD_HOST
-	string "Download host name"
 config FONT_DATA_DOWNLOAD_FILE
 	string "The file to download"
 
@@ -273,8 +276,6 @@ config FONT_DATA_DOWNLOAD_FILE
 config PPG_DATA_UPDATE
 	bool "ppg update support"
 	default n
-config PPG_DATA_DOWNLOAD_HOST
-	string "Download host name"
 config PPG_DATA_DOWNLOAD_FILE
 	string "The file to download"
 
@@ -291,8 +292,10 @@ config DL_TARGET_UI
 endmenu #IMG_UPDATE
 
 menu "FOTA_MQTT"
-config FOTA_DOWNLOAD_HOST
-	string "Download host name"
+config FOTA_DOWNLOAD_HOST_CN
+	string "Download host name(cn)"
+config FOTA_DOWNLOAD_HOST_HK
+	string "Download host name(hk)"
 
 config FOTA_DOWNLOAD_FILE
 	string "The file to download"

@@ -60,7 +60,7 @@
 #endif
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
-#define MFIO_LOW_DURATION        550
+#define MFIO_LOW_DURATION        1500
 #define SS_DEFAULT_RETRIES       ((int) (5))
 #define SH_BPT_CAL_COUNT_MAX	(5)
 
@@ -76,6 +76,7 @@ u8_t sh_bpt_cal[CAL_RESULT_SIZE]={0};
 
 extern bool ppg_int_event;
 extern u8_t g_ppg_bpt_status;
+extern u8_t g_ppg_ver[64];
 
 void wait_us(int us)
 {
@@ -1215,12 +1216,18 @@ bool sh_init_interface(void)
 	}
 	else
 	{
-		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		LOGD("FW version is:%s", g_ppg_ver);
 	}
 
 	if((mcu_type != 1) || (u8_rxbuf[1] != 4))
 	{
-		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, FONT_SIZE_16, "PPG is upgrading firmware, please wait a few minutes!");
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_20);
+	#else	
+		LCD_SetFontSize(FONT_SIZE_16);
+	#endif
+		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
 		LCD_SleepOut();
 	}
@@ -1343,7 +1350,7 @@ void sh_get_bpt_cal_data(void)
 	int status;
 	
 	status = sh_get_cfg_bpt_cal_result(&sh_bpt_cal);
-	SpiFlash_Write_Data(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
 }
 
 void sh_req_bpt_cal_data(void)

@@ -121,7 +121,7 @@ void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	double tmp2;
 
 	if(!flag)
-		return;
+		//return;
 	
 	//latitude
 	if(gps_data.latitude < 0)

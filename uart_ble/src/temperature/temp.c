@@ -54,7 +54,12 @@ bool TempIsWorking(void)
 
 void TempRedrawData(void)
 {
-	if(screen_id == SCREEN_ID_TEMP)
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+	else if(screen_id == SCREEN_ID_TEMP)
 	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
@@ -92,24 +97,27 @@ void TempMsgProcess(void)
 	if(temp_get_data_flag)
 	{
 		bool ret;
-		float temperature;
+		float temp_1,temp_2;
 		
 		temp_get_data_flag = false;
 
 		if(!temp_check_ok)
 			return;
 
-		ret = GetTemperature(&temperature);
+		ret = GetTemperature(&temp_1, &temp_2);
 		if(ret)
 		{
-			g_temp_skin = temperature;
-			g_temp_body = g_temp_skin+4.0;
+			g_temp_skin = temp_1;
+			g_temp_body = temp_2;
 			temp_redraw_data_flag = true;
 		}
 	}
 
 	if(temp_start_flag)
 	{
+	#ifdef TEMP_GXTS04	
+		gxts04_start();
+	#endif
 		temp_power_flag = true;
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 		temp_start_flag = false;
@@ -117,6 +125,9 @@ void TempMsgProcess(void)
 
 	if(temp_stop_flag)
 	{
+	#ifdef TEMP_GXTS04	
+		gxts04_stop();
+	#endif
 		temp_power_flag = false;
 		k_timer_stop(&temp_check_timer);
 		temp_stop_flag = false;

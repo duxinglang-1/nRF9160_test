@@ -26,7 +26,7 @@
 //#define LCD_TYPE_I2C			//I2C
 //#define LCD_TYPE_SPI			//SPI
 
-//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 //#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
@@ -104,9 +104,9 @@ void LCD_ShowImg_From_Flash(u16_t x, u16_t y, u32_t img_addr);
 void LCD_SetFontSize(uint8_t font_size);
 void LCD_MeasureString(uint8_t *p, uint16_t *width, uint16_t *height);
 void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height);
-void LCD_dis_trans_pic(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans);
+void LCD_dis_pic_trans(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans);
 void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned int rotate);
-void LCD_dis_trans_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate);
+void LCD_dis_pic_trans_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate);
 #ifdef FONTMAKER_UNICODE_FONT
 void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height);
 void LCD_ShowUniString(u16_t x, u16_t y, u16_t *p);

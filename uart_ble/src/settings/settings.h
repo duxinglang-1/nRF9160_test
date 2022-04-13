@@ -8,6 +8,10 @@
 #include <sys/printk.h>
 
 #define ALARM_MAX	8
+#define MENU_MAX_COUNT	8
+#define MENU_NAME_MAX	20
+
+typedef void(*menu_handler)(void);
 
 typedef enum{
 	TIME_FORMAT_24,
@@ -24,9 +28,9 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_EN,	//English
 	LANGUAGE_CHN,	//Chinese
-	LANGUAGE_JPN,	//Japanese
+	LANGUAGE_EN,	//English
+	LANGUAGE_DE,	//Deutsch
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 
@@ -58,12 +62,55 @@ typedef enum
 	BACKLIGHT_LEVEL_2,
 	BACKLIGHT_LEVEL_3,
 	BACKLIGHT_LEVEL_4,
-	BACKLIGHT_LEVEL_5,
-	BACKLIGHT_LEVEL_6,
-	BACKLIGHT_LEVEL_7,
-	BACKLIGHT_LEVEL_8,
-	BACKLIGHT_LEVEL_MAX=BACKLIGHT_LEVEL_8
+	BACKLIGHT_LEVEL_MAX=BACKLIGHT_LEVEL_4
 }BACKLIGHT_LEVEL;
+
+typedef enum
+{
+	TEMP_UINT_C,
+	TEMP_UINT_F,
+	TEMP_UINT_MAX
+}TEMP_UNIT;
+
+typedef enum
+{
+	SETTINGS_MENU_MAIN,
+	SETTINGS_MENU_LANGUAGE,
+	SETTINGS_MENU_FACTORY_RESET,
+	SETTINGS_MENU_OTA,
+	SETTINGS_MENU_BRIGHTNESS,
+	SETTINGS_MENU_TEMP,
+	SETTINGS_MENU_DEVICE,
+	SETTINGS_MENU_SIM,
+	SETTINGS_MENU_FW,
+	SETTINGS_MENU_MAX
+}MENU_ID;
+
+typedef enum
+{
+	RESET_STATUS_IDLE,
+	RESET_STATUS_RUNNING,
+	RESET_STATUS_SUCCESS,
+	RESET_STATUS_FAIL,
+	RESET_STATUS_MAX
+}RESET_STATUS;
+
+typedef struct
+{
+	u16_t en[MENU_MAX_COUNT][MENU_NAME_MAX];
+	u16_t chn[MENU_MAX_COUNT][MENU_NAME_MAX];
+	u16_t deu[MENU_MAX_COUNT][MENU_NAME_MAX];
+}menu_name_t;
+
+typedef struct
+{
+	MENU_ID id;
+	u8_t index;
+	u8_t count;
+	u16_t name[LANGUAGE_MAX][MENU_MAX_COUNT][MENU_NAME_MAX];;
+	menu_handler sel_handler[MENU_MAX_COUNT];
+	menu_handler pg_handler[4];
+}settings_menu_t;
 
 typedef struct{
 	bool is_on;
@@ -96,6 +143,7 @@ typedef struct{
 	bool wrist_off_check;
 	u16_t target_steps;
 	u32_t health_interval;
+	TEMP_UNIT temp_unit;
 	TIME_FORMAT time_format;
 	LANGUAGE_SET language;
 	DATE_FORMAT date_format;
@@ -113,11 +161,15 @@ extern bool need_save_settings;
 extern bool need_reset_settings;
 
 extern u8_t screen_id;
+extern u8_t g_fw_version[64];
 
 extern global_settings_t global_settings;
+extern settings_menu_t settings_menu;
+extern RESET_STATUS g_reset_status;
 
 extern void InitSystemSettings(void);
 extern void SaveSystemSettings(void);
-
-
+extern void SettingMenuInit(void);
+extern void EnterSettings(void);
+extern void ResetFactoryDefault(void);
 #endif/*__SETTINGS_H__*/

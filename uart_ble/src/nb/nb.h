@@ -12,6 +12,7 @@
 #define CMD_GET_ICCID	"AT%XICCID"
 #define CMD_GET_MODEM_V "AT+CGMR"
 #define CMD_GET_CESQ	"AT+CESQ"
+#define CMD_GET_SNR		"AT%XSNRSQ?"
 #define CMD_GET_APN		"AT+CGDCONT?"
 #define CMD_GET_CSQ		"AT+CSQ"
 #define CMD_GET_MODEM_PARA	"AT%XMONITOR"
@@ -34,6 +35,8 @@
 #define APN_MAX_LEN			(100)
 #define	PLMN_MAX_LEN        (6)
 
+//#define NB_SIGNAL_TEST		//xb add 2022-01-14 需要测试NB和GPS天线的时候打开这里
+
 typedef enum
 {
 	NB_SIG_LEVEL_NO,
@@ -45,13 +48,23 @@ typedef enum
 	NB_SIG_LEVEL_MAX
 }NB_SIGNL_LEVEL;
 
+
+typedef enum
+{
+	NET_MODE_NB,
+	NET_MODE_LTE_M,
+	NET_MODE_MAX
+}NETWORK_MODE;
+
 typedef struct
 {
 	u8_t plmn[PLMN_MAX_LEN];
 	u8_t apn[APN_MAX_LEN];
 }NB_APN_PARAMENT;
 
+
 extern NB_SIGNL_LEVEL g_nb_sig;
+extern NETWORK_MODE g_net_mode;
 
 extern bool get_modem_info_flag;
 extern bool test_nb_flag;
@@ -60,6 +73,8 @@ extern u8_t nb_test_info[256];
 extern u8_t g_imsi[IMSI_MAX_LEN+1];
 extern u8_t g_imei[IMEI_MAX_LEN+1];
 extern u8_t g_iccid[ICCID_MAX_LEN+1];
+extern u8_t g_modem[MODEM_MAX_LEN+1];
+
 extern u8_t g_timezone[5];
 extern u8_t g_rsrp;
 

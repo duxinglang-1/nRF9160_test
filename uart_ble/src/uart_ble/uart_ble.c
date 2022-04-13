@@ -82,6 +82,7 @@
 
 bool blue_is_on = true;
 bool uart_send_flag = false;
+bool get_ble_info_flag = false;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 bool uart_sleep_flag = false;
 bool uart_wake_flag = false;
@@ -118,8 +119,8 @@ struct uart_data_t
 
 bool g_ble_connected = false;
 
-u8_t ble_mac_addr[6] = {0};
-u8_t str_nrf52810_ver[128] = {0};
+u8_t g_ble_mac_addr[20] = {0};
+u8_t g_nrf52810_ver[128] = {0};
 
 ENUM_BLE_STATUS g_ble_status = BLE_STATUS_BROADCAST;
 ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
@@ -130,6 +131,8 @@ extern bool app_find_device;
 static void UartSleepInCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(uart_sleep_in_timer, UartSleepInCallBack, NULL);
 #endif
+static void GetBLEInfoCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(get_ble_info_timer, GetBLEInfoCallBack, NULL);
 
 static void MCU_send_heart_rate(void);
 
@@ -158,6 +161,11 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
+
+	if(lcd_is_sleeping)
+		return;
+	
+	LCD_ResetBL_Timer();
 
 	switch(buf[5])
 	{
@@ -244,7 +252,7 @@ void APP_set_language(u8_t *buf, u32_t len)
 	else if(buf[7] == 0x01)
 		global_settings.language = LANGUAGE_EN;
 	else if(buf[7] == 0x02)
-		global_settings.language = LANGUAGE_JPN;
+		global_settings.language = LANGUAGE_DE;
 	else
 		global_settings.language = LANGUAGE_EN;
 		
@@ -1321,32 +1329,31 @@ void get_nrf52810_ver_response(u8_t *buf, u32_t len)
 
 	for(i=0;i<len-9;i++)
 	{
-		str_nrf52810_ver[i] = buf[7+i];
+		g_nrf52810_ver[i] = buf[7+i];
 	}
 
 #ifdef UART_DEBUG
-	LOGD("str_nrf52810_ver:%s", str_nrf52810_ver);
+	LOGD("nrf52810_ver:%s", g_nrf52810_ver);
 #endif
 }
 
 void get_ble_mac_address_response(u8_t *buf, u32_t len)
 {
 	u32_t i;
-
+	u8_t mac_addr[6] = {0};
+	
 	for(i=0;i<6;i++)
-	{
-		ble_mac_addr[i] = buf[7+i];
-	}
+		mac_addr[i] = buf[7+i];
 
+	sprintf(g_ble_mac_addr, "%02X:%02X:%02X:%02X:%02X:%02X", 
+							mac_addr[0],
+							mac_addr[1],
+							mac_addr[2],
+							mac_addr[3],
+							mac_addr[4],
+							mac_addr[5]);
 #ifdef UART_DEBUG
-	LOGD("ble_mac_addr %02X:%02X:%02X:%02X:%02X:%02X", 
-							ble_mac_addr[0],
-							ble_mac_addr[1],
-							ble_mac_addr[2],
-							ble_mac_addr[3],
-							ble_mac_addr[4],
-							ble_mac_addr[5]
-							);
+	LOGD("ble_mac_addr:%s", g_ble_mac_addr);
 #endif
 }
 
@@ -1640,7 +1647,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
             rece_len = 0;
 			data_len = 0;
         }
-		else if(rece_len >= 32)
+		else if(rece_len >= BUF_MAXSIZE)
 		{
 			memset(rx_buf, 0, sizeof(rx_buf));
             rece_len = 0;
@@ -1787,6 +1794,11 @@ void UartSleepInCallBack(struct k_timer *timer_id)
 }
 #endif
 
+static void GetBLEInfoCallBack(struct k_timer *timer_id)
+{
+	get_ble_info_flag = true;
+}
+
 void ble_init(void)
 {
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
@@ -1832,6 +1844,8 @@ void ble_init(void)
 		k_timer_stop(&uart_sleep_in_timer);
 	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 #endif
+
+	k_timer_start(&get_ble_info_timer, K_SECONDS(2), NULL);
 }
 
 void UartMsgProc(void)
@@ -1882,6 +1896,23 @@ void UartMsgProc(void)
 	{
 		IdleShowBleStatus(g_ble_connected);
 		redraw_blt_status_flag = false;
+	}
+	if(get_ble_info_flag)
+	{
+		static u8_t index = 0;
+
+		if(index == 0)
+		{
+			index = 1;
+			MCU_get_nrf52810_ver();
+			k_timer_start(&get_ble_info_timer, K_MSEC(100), NULL);
+		}
+		else
+		{
+			MCU_get_ble_mac_address();
+		}
+		
+		get_ble_info_flag = false;
 	}
 }
 

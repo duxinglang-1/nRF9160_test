@@ -149,7 +149,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if((hour%12)<3)							//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
+			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
 		}
 		else if((hour%12)==3)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -164,7 +164,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if(((hour%12)>=3) && ((hour%12)<6))	//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
+			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
 		}
 		else if((hour%12)==6)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -179,7 +179,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if(((hour%12)>=6) && ((hour%12)<9))	//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
+			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
 		}
 		else if((hour%12)==9)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -194,7 +194,7 @@ void DrawAnalogMinPic(int hour, int minute)
 		if((hour%12)>=9)	//分针时针有重叠，透明显示
 		{
 			DrawAnalogHourPic(hour);
-			LCD_dis_trans_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
+			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
 		}
 		else if((hour%12)==0)		//临界点，分针不透明显示，但是不能遮盖时针
 		{
@@ -244,8 +244,12 @@ void idle_show_analog_clock(void)
 
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
-	
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+#else
 	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
 	if(global_settings.language == LANGUAGE_CHN)
@@ -297,8 +301,12 @@ void idle_show_clock_background(void)
 	LCD_Clear(BLACK);
 	BACK_COLOR=BLACK;
 	POINT_COLOR=WHITE;
-	
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+#else	
 	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 
 #ifdef ANALOG_CLOCK	
 	if(global_settings.idle_colck_mode == CLOCK_MODE_ANALOG)
@@ -381,7 +389,7 @@ void test_show_digital_clock(void)
 
 void test_show_image(void)
 {
-	u8_t i=0;
+	u8_t i=3;
 	u16_t x,y,w=0,h=0;
 
 	LOGD("test_show_image");
@@ -391,60 +399,64 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_RM_LOGO_240X240_ADDR, &w, &h);
-	LCD_dis_pic_from_flash(0, 0, IMG_RM_LOGO_240X240_ADDR);
-	while(0)
+	//LCD_get_pic_size_from_flash(IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, &w, &h);
+	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_SEC_ADDR);
+	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
+	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
+	while(1)
 	{
+		LCD_Clear(BLACK);
+		LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, i*30);
+	#if 0	
 		switch(i)
 		{
 			case 0:
 				//LCD_dis_pic(w*0,h*0,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*0,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*0, IMG_PEPPA_80X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,0);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
+				//LCD_dis_pic_trans(w*0,h*0,peppa_pig_80X160,WHITE);
+				LCD_dis_pic_from_flash(w*0, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
 				//LCD_dis_pic(w*1,h*0,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*1,h*0,peppa_pig_80X160,WHITE);
-				//LCD_dis_pic_from_flash(w*1, h*0, IMG_PEPPA_80X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,90);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
-				LCD_Fill((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,w,h,BLACK);
+				//LCD_dis_pic_trans(w*1,h*0,peppa_pig_80X160,WHITE);
+				LCD_dis_pic_from_flash(w*1, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
 				break;
 			case 2:
 				//LCD_dis_pic(w*1,h*1,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*1,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*1, IMG_PEPPA_80X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,90);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,180);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
+				//LCD_dis_pic_trans(w*1,h*1,peppa_pig_80X160,WHITE);
+				LCD_dis_pic_from_flash(w*1, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
 				//LCD_dis_pic(w*0,h*1,peppa_pig_160X160);
-				//LCD_dis_trans_pic(w*0,h*1,peppa_pig_80X160,WHITE);
-				//LCD_dis_pic_from_flash(w*0, h*1, IMG_PEPPA_80X160_ADDR);
-				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_80X160,270);
-				//LCD_dis_trans_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
-				LCD_Fill((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,h,w,BLACK);
+				//LCD_dis_pic_trans(w*0,h*1,peppa_pig_80X160,WHITE);
+				LCD_dis_pic_from_flash(w*0, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
+				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
 				break;
 			case 4:
-				//LCD_Fill(w*0,h*0,w,h,BLACK);
+				LCD_Fill(w*0,h*0,w,h,BLACK);
 				break;
 			case 5:
-				//LCD_Fill(w*1,h*0,w,h,BLACK);
+				LCD_Fill(w*1,h*0,w,h,BLACK);
 				break;
 			case 6:
-				//LCD_Fill(w*1,h*1,w,h,BLACK);
+				LCD_Fill(w*1,h*1,w,h,BLACK);
 				break;
 			case 7:
-				//LCD_Fill(w*0,h*1,w,h,BLACK);
+				LCD_Fill(w*0,h*1,w,h,BLACK);
 				break;
 		}
-		
-		i++;
-		if(i>=8)
-			i=0;
+	#endif
+
+		if(i==0)
+			i=11;
+		else
+			i--;
 		
 		k_sleep(K_MSEC(1000));								//软件延时1000ms
 	}
@@ -536,9 +548,13 @@ void test_show_string(void)
 	BACK_COLOR=BLACK;  								//背景色 
 
 #ifdef FONTMAKER_UNICODE_FONT
-#ifdef FONT_32
+#if 0//def FONT_64
+	LCD_SetFontSize(FONT_SIZE_64);					//设置字体大小
+#elif 0//defined(FONT_48)
+	LCD_SetFontSize(FONT_SIZE_48);					//设置字体大小
+#elif 0//defined(FONT_32)
 	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
-#elif defined(FONT_24)
+#elif 0//defined(FONT_24)
 	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
 #elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
@@ -590,68 +606,71 @@ void test_show_string(void)
 	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
-//#ifdef FONT_32
-//	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
-//#elif defined(FONT_24)
-//	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
-//#elif defined(FONT_16)
+#ifdef FONT_32
+	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小	
+#elif defined(FONT_24)
+	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
+#elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
-//#endif
+#endif
 
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = y + h + 2;	
 	LCD_ShowString(x,y,enbuf);
 	
-//	LCD_MeasureString(cnbuf,&w,&h);
-//	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-//	y = y + h + 2;
-//	LCD_ShowString(x,y,cnbuf);
+	LCD_MeasureString(cnbuf,&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 2;
+	LCD_ShowString(x,y,cnbuf);
 	
-//	LCD_MeasureString(jpbuf,&w,&h);
-//	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-//	y = y + h + 2;
-//	LCD_ShowString(x,y,jpbuf);
+	LCD_MeasureString(jpbuf,&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 2;
+	LCD_ShowString(x,y,jpbuf);
 
-#if 1
+#if 0
 #ifdef FONT_24
 	LCD_SetFontSize(FONT_SIZE_24);					//设置字体大小
 #endif
+	LCD_MeasureString(cnbuf,&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 2;	
+	LCD_ShowString(x,y,cnbuf);
+	
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = y + h + 2;	
 	LCD_ShowString(x,y,enbuf);
-
-	//LCD_MeasureString(cnbuf,&w,&h);
-	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	//y = y + h + 2;	
-	//LCD_ShowString(x,y,cnbuf);
 
 #ifdef FONT_32
 	LCD_SetFontSize(FONT_SIZE_32);					//设置字体大小
 #endif
+	LCD_MeasureString(cnbuf,&w,&h);
+	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+	y = y + h + 2;	
+	LCD_ShowString(x,y,cnbuf);
+	
 	LCD_MeasureString(enbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = y + h + 2;
 	LCD_ShowString(x,y,enbuf);
-
-	//LCD_MeasureString(cnbuf,&w,&h);
-	//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	//y = y + h + 2;	
-	//LCD_ShowString(x,y,cnbuf);
-	
 #endif
 #endif
 }
 
 void system_init(void)
 {
+	k_sleep(K_MSEC(500));//xb test 2022-03-11 启动时候延迟0.5S,等待其他外设完全启动
+	
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_init();
 #endif
 
 	InitSystemSettings();
 
+	//init_imu_int1();//xb test 2022-04-08
+	
 	//pmu_init();
 	flash_init();
 	LCD_Init();
@@ -659,6 +678,9 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
+#ifdef CONFIG_AUDIO_SUPPORT	
+	audio_init();
+#endif
 	ble_init();
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
@@ -668,6 +690,9 @@ void system_init(void)
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	temp_init();
+#endif
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+	dl_init();
 #endif
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
@@ -744,8 +769,10 @@ int main(void)
 		GPSMsgProcess();
 		//PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
-		IMUMsgProcess();
+		//IMUMsgProcess();
+	#ifdef CONFIG_FALL_DETECT_SUPPORT
 		FallMsgProcess();
+	#endif
 	#endif
 	#ifdef CONFIG_PPG_SUPPORT	
 		PPGMsgProcess();
@@ -758,15 +785,21 @@ int main(void)
 		SettingsMsgPorcess();
 		SOSMsgProc();
 		UartMsgProc();
+	#ifdef CONFIG_ANIMATION_SUPPORT
+		AnimaMsgProcess();
+	#endif		
 		ScreenMsgProcess();
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+		DlMsgProc();
+	#endif
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		FotaMsgProc();
 	#endif
 	#ifdef CONFIG_AUDIO_SUPPORT
 		AudioMsgProcess();
 	#endif
-	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaMsgProcess();
+	#ifdef CONFIG_SYNC_SUPPORT
+		SyncMsgProcess();
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
 		TempMsgProcess();

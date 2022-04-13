@@ -20,11 +20,14 @@
 #include "lsm6dso.h"
 #endif
 #include "max20353.h"
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif
 #include "screen.h"
 #include "ucs2.h"
 #include "logger.h"
 
-#define DATETIME_DEBUG
+//#define DATETIME_DEBUG
 
 #define SEC_START_YEAR		1970
 #define SEC_START_MONTH		1
@@ -256,7 +259,7 @@ void TimeIncrease(sys_date_timer_t *date, u32_t minutes)
 	day_add = h_add/24;
 
 #ifdef DATETIME_DEBUG
-	LOGD("m_add:%d, h_add:%d\n", m_add, h_add);
+	LOGD("m_add:%d, h_add:%d", m_add, h_add);
 #endif
 
 	(*date).minute += m_add;
@@ -457,12 +460,27 @@ void UpdateSystemTime(void)
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
 	#endif		
-		{
+		{			
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendHealthData();
 			//TimeCheckSendLocationData();
 		}
 	}
+
+#if 0
+	if((date_time_changed&0x04) != 0)
+	{
+		u8_t hr[24] = {60,70,84,92,102,110,83,70,56,34,72,81,69,90,101,120,64,72,85,90,73,50,90,76};
+		u8_t spo2[24] = {98,100,88,92,96,83,91,86,86,97,90,81,92,94,86,99,100,96,93,84,99,83,89,95};
+		bpt_data bpt_date[24] = {{134,80},{128,75},{156,70},{188,101},{156,95},{174,110},{98,65},{165,103},{167,114},{181,97},{120,62},{188,105},{142,73},{170,71},{132,86},{147,85},{166,92},{150,61},{172,68},{132,59},{153,86},{171,84},{155,78},{133,66}};
+
+		date_time_changed = date_time_changed&0xFB;
+		
+		SetCurDayHrRecData(hr[date_time.hour]);
+		SetCurDaySpo2RecData(spo2[date_time.hour]);
+		SetCurDayBptRecData(bpt_date[date_time.hour]);
+	}
+#endif
 
 	if((date_time_changed&0x08) != 0)
 	{
@@ -616,70 +634,21 @@ void GetSystemTimeStrings(u8_t *str_time)
 		sprintf((char*)str_time, "%02d:%02d:%02d", (date_time.hour>12 ? (date_time.hour-12):date_time.hour), date_time.minute, date_time.second);
 		break;
 	}
-
-#ifdef FONTMAKER_UNICODE_FONT
-	strcpy(tmpbuf, str_time);
-	mmi_asc_to_ucs2(str_time, tmpbuf);
-#endif
 }
 
 void GetSystemWeekStrings(u8_t *str_week)
 {
-	u8_t *week_en[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-	u8_t *week_chn[7] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
-	u8_t *week_jpn[15] = {"にちようび", "げつようび", "かようび", "すいようび", "もくようび", "きんようび", "どようび"};
-#ifdef FONTMAKER_UNICODE_FONT
-	u16_t week_uni_en[7][10] = {
-								{0x0053,0x0075,0x006E,0x0064,0x0061,0x0079,0x0000},
-								{0x004D,0x006F,0x006E,0x0064,0x0061,0x0079,0x0000},
-								{0x0054,0x0075,0x0065,0x0073,0x0064,0x0061,0x0079,0x0000},
-								{0x0057,0x0065,0x0064,0x006E,0x0065,0x0073,0x0064,0x0061,0x0079,0x0000},
-								{0x0054,0x0068,0x0075,0x0072,0x0073,0x0064,0x0061,0x0079,0x0000},
-								{0x0046,0x0072,0x0049,0x0064,0x0061,0x0079,0x0000},
-								{0x0053,0x0061,0x0074,0x0075,0x0072,0x0064,0x0061,0x0079,0x0000}
-							};
-	u16_t week_uni_chn[7][4] = {
-								{0x661F,0x671F,0x65E5,0x0000}, 
-								{0x661F,0x671F,0x4E00,0x0000}, 
-								{0x661F,0x671F,0x4E8C,0x0000}, 
-								{0x661F,0x671F,0x4E09,0x0000}, 
-								{0x661F,0x671F,0x56DB,0x0000}, 
-								{0x661F,0x671F,0x4E94,0x0000}, 
-								{0x661F,0x671F,0x516D,0x0000}
-							};
-	u16_t week_uni_jpn[15][6] = {
-								{0x306B,0x3061,0x3088,0x3046,0x3073,0x0000},
-								{0x3052,0x3064,0x3088,0x3046,0x3073,0x0000},
-								{0x304B,0x3088,0x3046,0x3073,0x0000},
-								{0x3059,0x3044,0x3088,0x3046,0x3073,0x0000},
-								{0x3082,0x304F,0x3088,0x3046,0x3073,0x0000},
-								{0x304D,0x3093,0x3088,0x3046,0x3073,0x0000},
-								{0x3069,0x3088,0x3046,0x3073,0x0000}
-							};
-#endif
+	u8_t *week_en[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+	u8_t *week_chn[7] = {"日", "一", "二", "三", "四", "五", "六"};
+	u8_t tmpbuf[128] = {0};
 
 	switch(global_settings.language)
 	{
 	case LANGUAGE_CHN:
-	#ifdef FONTMAKER_UNICODE_FONT
-		mmi_ucs2cpy(str_week, week_uni_chn[date_time.week]);
-	#else
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
-	#endif
 		break;
 	case LANGUAGE_EN:
-	#ifdef FONTMAKER_UNICODE_FONT
-		mmi_ucs2cpy(str_week, week_uni_en[date_time.week]);
-	#else
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
-	#endif
-		break;
-	case LANGUAGE_JPN:
-	#ifdef FONTMAKER_UNICODE_FONT
-		mmi_ucs2cpy(str_week, week_uni_jpn[date_time.week]);
-	#else
-		strcpy((char*)str_week, (const char*)week_jpn[date_time.week]);
-	#endif
 		break;
 	}
 }
@@ -695,6 +664,12 @@ void TimeMsgProcess(void)
 			return;
 		
 		if(screen_id == SCREEN_ID_IDLE)
+		{
+			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
+			
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
+		
 	}
 }

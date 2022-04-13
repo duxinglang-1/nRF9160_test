@@ -26,6 +26,8 @@ static void pmu_battery_low_shutdown_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
 static void sys_pwr_off_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(sys_pwroff, sys_pwr_off_timerout, NULL);
+static void vibrate_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(vib_timer, vibrate_timerout, NULL);
 
 bool vibrate_start_flag = false;
 bool vibrate_stop_flag = false;
@@ -83,19 +85,18 @@ static bool init_i2c(void)
 	{
 		i2c_configure(i2c_pmu, I2C_SPEED_SET(I2C_SPEED_FAST));
 		return true;
-	}
+	}	
 }
 
 static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t len)
 {
-	u8_t i=0;
+	u32_t i=0;
 	u8_t data[len+1];
 	u32_t rslt = 0;
 
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
 	rslt = i2c_write(handle, data, len+1, MAX20353_I2C_ADDR);
-
 	return rslt;
 }
 
@@ -108,7 +109,6 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 	{
 		rslt = i2c_read(handle, bufp, len, MAX20353_I2C_ADDR);
 	}
-
 	return rslt;
 }
 
@@ -122,23 +122,40 @@ void Set_PPG_Power_Off(void)
 	MAX20353_LDO1Disable();
 }
 
+void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
+{
+	int ret = 0;
+
+	ret = MAX20353_LED0(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+}
+
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
+	ret = MAX20353_LED0(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 	ret = MAX20353_LED1(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	MAX20353_BuckBoostConfig();
 }
 
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
 
+	MAX20353_BuckBoostDisable();
+	ret = MAX20353_LED0(2, 0, false);
 	ret = MAX20353_LED1(2, 0, false);
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)
 {
 	sys_pwr_off_flag = true;
+}
+
+void vibrate_timerout(struct k_timer *timer_id)
+{
+	vibrate_stop_flag = true;
 }
 
 void system_power_off(u8_t flag)
@@ -153,6 +170,8 @@ void system_power_off(u8_t flag)
 			SendPowerOffData(flag);
 		}
 
+		VibrateStart();
+		k_timer_start(&vib_timer, K_MSEC(100), NULL);
 		k_timer_start(&sys_pwroff, K_MSEC(5*1000), NULL);
 	}
 }
@@ -202,16 +221,12 @@ void pmu_reg_proc(void)
 #endif
 	if((int0&0x40) == 0x40) //Charger status change INT  
 	{
-		MAX20353_ReadReg(REG_STATUS0, &status0);
-	#ifdef PMU_DEBUG	
-		LOGD("REG_STATUS0:%02X", status0);
-	#endif
-		
+		MAX20353_ReadReg(REG_STATUS0, &status0);		
 		switch((status0&0x07))
 		{
 		case 0x00://Charger off
 		case 0x01://Charging suspended due to temperature (see battery charger state diagram)
-		case 0x07://Charger fault condition (see battery charger state diagram)
+		case 0x07://Charger fault condition (see battery charger state diagram)	
 			g_chg_status = BAT_CHARGING_NO;
 			break;
 			
@@ -224,6 +239,19 @@ void pmu_reg_proc(void)
 			
 		case 0x06://Maintain charger timer done
 			g_chg_status = BAT_CHARGING_FINISHED;
+		#ifdef PMU_DEBUG
+			LOGD("charging finished!");
+		#endif
+			
+		#ifdef BATTERY_SOC_GAUGE	
+			g_bat_soc = MAX20353_CalculateSOC();
+		#ifdef PMU_DEBUG
+			LOGD("g_bat_soc:%d", g_bat_soc);
+		#endif
+			if(g_bat_soc >= 95)
+				g_bat_soc = 100;
+		#endif
+
 			lcd_sleep_out = true;
 			break;
 		}
@@ -328,26 +356,27 @@ bool pmu_alert_proc(void)
 		MSB = MSB&0xDF;
 
 		g_bat_soc = MAX20353_CalculateSOC();
-		if(g_bat_soc>100)
-			g_bat_soc = 100;
 	#ifdef PMU_DEBUG
 		LOGD("SOC:%d", g_bat_soc);
-	#endif
+	#endif	
+		if(g_bat_soc>100)
+			g_bat_soc = 100;
+		
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
+				//DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
 				pmu_battery_low_shutdown();
 			}
 		}
-		else if(g_bat_soc < 20)
+		else if(g_bat_soc < 10)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
 			{
-				DisplayPopUp("Battery voltage is low, please charge in time!");
+				//DisplayPopUp("Battery voltage is low, please charge in time!");
 			}
 		}
 		else if(g_bat_soc < 80)
@@ -558,6 +587,11 @@ void pmu_init(void)
 		return;
 	
 	MAX20353_InitData();
+
+	VibrateStart();
+	k_sleep(K_MSEC(100));
+	VibrateStop();
+
 #ifdef PMU_DEBUG
 	LOGD("pmu_init done!");
 #endif

@@ -64,16 +64,157 @@ typedef struct _PALETTE
 */
 
 #if 1
-extern unsigned char peppa_pig_80X160[25608];
-//extern unsigned char peppa_pig_160X160[51208];
-//extern unsigned char peppa_pig_240X240_1[57608];
-//extern unsigned char peppa_pig_240X240_2[57600];
-//extern unsigned char peppa_pig_320X320_1[51208];
-//extern unsigned char peppa_pig_320X320_2[51200];
-//extern unsigned char peppa_pig_320X320_3[51200];
-//extern unsigned char peppa_pig_320X320_4[51200];
-//extern unsigned char RM_LOGO_240X240_1[57608];
-//extern unsigned char RM_LOGO_240X240_2[57600];
+//analog clock(6)
+extern unsigned char IMG_ANALOG_CLOCK_BG[115208];
+extern unsigned char IMG_ANALOG_CLOCK_DOT_WHITE[458];
+extern unsigned char IMG_ANALOG_CLOCK_DOT_RED[250];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_SEC[1652];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_MIN[2864];
+extern unsigned char IMG_ANALOG_CLOCK_HAND_HOUR[2080];
+//battery(9)
+extern unsigned char IMG_BAT_CHRING_ANI_1[23708];
+extern unsigned char IMG_BAT_CHRING_ANI_2[23708];
+extern unsigned char IMG_BAT_CHRING_ANI_3[23708];
+extern unsigned char IMG_BAT_CHRING_ANI_4[23708];
+extern unsigned char IMG_BAT_CHRING_ANI_5[23708];
+extern unsigned char IMG_BAT_FULL_ICON[115208];
+extern unsigned char IMG_BAT_LOW_ICON[23708];
+extern unsigned char IMG_BAT_RECT_RED[968];
+extern unsigned char IMG_BAT_RECT_WHITE[968];
+//back light(6)
+extern unsigned char IMG_BKL_DEC_ICON[12878];
+extern unsigned char IMG_BKL_INC_ICON[12878];
+extern unsigned char IMG_BKL_LEVEL_1[35648];
+extern unsigned char IMG_BKL_LEVEL_2[35648];
+extern unsigned char IMG_BKL_LEVEL_3[35648];
+extern unsigned char IMG_BKL_LEVEL_4[35648];
+//blood pressure(7)
+extern unsigned char IMG_BP_BG[35708];
+extern unsigned char IMG_BP_DOWN_ARRAW[392];
+extern unsigned char IMG_BP_ICON_ANI_1[1768];
+extern unsigned char IMG_BP_ICON_ANI_2[1768];
+extern unsigned char IMG_BP_ICON_ANI_3[1768];
+extern unsigned char IMG_BP_SPE_LINE[504];
+extern unsigned char IMG_BP_UP_ARRAW[586];
+//function option(10)
+extern unsigned char IMG_FUN_OPT_BP_ICON[4240];
+extern unsigned char IMG_FUN_OPT_HR_ICON[4240];
+extern unsigned char IMG_FUN_OPT_PGDN_ICON[272];
+extern unsigned char IMG_FUN_OPT_PGUP_ICON[272];
+extern unsigned char IMG_FUN_OPT_SETTING_ICON[4240];
+extern unsigned char IMG_FUN_OPT_SLEEP_ICON[4240];
+extern unsigned char IMG_FUN_OPT_SPO2_ICON[4240];
+extern unsigned char IMG_FUN_OPT_STEP_ICON[4240];
+extern unsigned char IMG_FUN_OPT_SYNC_ICON[4240];
+extern unsigned char IMG_FUN_OPT_TEMP_ICON[4240];
+//heart rate(6)
+extern unsigned char IMG_HR_BG[34008];
+extern unsigned char IMG_HR_BPM[1988];
+extern unsigned char IMG_HR_DOWN_ARRAW[548];
+extern unsigned char IMG_HR_ICON_ANI_1[2116];
+extern unsigned char IMG_HR_ICON_ANI_2[2116];
+extern unsigned char IMG_HR_UP_ARRAW[484];
+//idle hr(2)
+extern unsigned char IMG_IDLE_HR_BG[7208];
+extern unsigned char IMG_IDLE_HR_ICON[1304];
+//idle net mode(2)
+extern unsigned char IMG_IDLE_NET_LTEM[344];
+extern unsigned char IMG_IDLE_NET_NB[316];
+//idle temp(3)
+extern unsigned char IMG_IDLE_TEMP_BG[7208];
+extern unsigned char IMG_IDLE_TEMP_C_ICON[968];
+extern unsigned char IMG_IDLE_TEMP_F_ICON[968];
+//ota(5)
+extern unsigned char IMG_OTA_FAILED_ICON[16208];
+extern unsigned char IMG_OTA_FINISH_ICON[16208];
+extern unsigned char IMG_OTA_LOGO[7208];
+extern unsigned char IMG_OTA_NO[3208];
+extern unsigned char IMG_OTA_YES[3208];
+//power off(1)
+extern unsigned char IMG_PWROFF_BUTTON[32266];
+//power on(6)
+extern unsigned char IMG_PWRON_ANI_1[13388];
+extern unsigned char IMG_PWRON_ANI_2[13388];
+extern unsigned char IMG_PWRON_ANI_3[13388];
+extern unsigned char IMG_PWRON_ANI_4[13388];
+extern unsigned char IMG_PWRON_ANI_5[13388];
+extern unsigned char IMG_PWRON_ANI_6[13388];
+//reset(13)
+extern unsigned char IMG_RESET_ANI_1[16208];
+extern unsigned char IMG_RESET_ANI_2[16208];
+extern unsigned char IMG_RESET_ANI_3[16208];
+extern unsigned char IMG_RESET_ANI_4[16208];
+extern unsigned char IMG_RESET_ANI_5[16208];
+extern unsigned char IMG_RESET_ANI_6[16208];
+extern unsigned char IMG_RESET_ANI_7[16208];
+extern unsigned char IMG_RESET_ANI_8[16208];
+extern unsigned char IMG_RESET_FAIL[16208];
+extern unsigned char IMG_RESET_LOGO[7208];
+extern unsigned char IMG_RESET_NO[3208];
+extern unsigned char IMG_RESET_SUCCESS[16208];
+extern unsigned char IMG_RESET_YES[3208];
+//3 dot gif(4)
+extern unsigned char IMG_RUNNING_ANI_1[2114];
+extern unsigned char IMG_RUNNING_ANI_2[2114];
+extern unsigned char IMG_RUNNING_ANI_3[2114];
+//select icon(2)
+extern unsigned char IMG_SELECT_ICON_NO[808];
+extern unsigned char IMG_SELECT_ICON_YES[808];
+//settings(8)
+extern unsigned char IMG_SET_BG[12852];
+extern unsigned char IMG_SET_INFO_BG[17008];
+extern unsigned char IMG_SET_PG_1[272];
+extern unsigned char IMG_SET_PG_2[272];
+extern unsigned char IMG_SET_SWITCH_OFF_ICON[4152];
+extern unsigned char IMG_SET_SWITCH_ON_ICON[4152];
+extern unsigned char IMG_SET_TEMP_UNIT_C_ICON[2528];
+extern unsigned char IMG_SET_TEMP_UNIT_F_ICON[2528];
+//signal(5)
+extern unsigned char IMG_SIG_0[1304];
+extern unsigned char IMG_SIG_1[1304];
+extern unsigned char IMG_SIG_2[1304];
+extern unsigned char IMG_SIG_3[1304];
+extern unsigned char IMG_SIG_4[1304];
+//sleep(6)
+extern unsigned char IMG_SLEEP_ANI_3[4608];
+extern unsigned char IMG_SLEEP_DEEP_ICON[2600];
+extern unsigned char IMG_SLEEP_HOUR[844];
+extern unsigned char IMG_SLEEP_LIGHT_ICON[2600];
+extern unsigned char IMG_SLEEP_LINE[712];
+extern unsigned char IMG_SLEEP_MIN[1460];
+//sos(4)
+extern unsigned char IMG_SOS_ANI_1[40880];
+extern unsigned char IMG_SOS_ANI_2[40880];
+extern unsigned char IMG_SOS_ANI_3[40880];
+extern unsigned char IMG_SOS_ANI_4[40880];
+//spo2(6)
+extern unsigned char IMG_SPO2_ANI_1[2328];
+extern unsigned char IMG_SPO2_ANI_2[2328];
+extern unsigned char IMG_SPO2_ANI_3[2328];
+extern unsigned char IMG_SPO2_BG[32648];
+extern unsigned char IMG_SPO2_DOWN_ARRAW[484];
+extern unsigned char IMG_SPO2_UP_ARRAW[484];
+//sport achieve(4)
+extern unsigned char IMG_SPORT_ACHIEVE_BG[14888];
+extern unsigned char IMG_SPORT_ACHIEVE_ICON[2120];
+extern unsigned char IMG_SPORT_ACHIEVE_LOGO[38650];
+//step(6)
+extern unsigned char IMG_STEP_ANI_1[4036];
+extern unsigned char IMG_STEP_CAL_ICON[2024];
+extern unsigned char IMG_STEP_DIS_ICON[2096];
+extern unsigned char IMG_STEP_KCAL[708];
+extern unsigned char IMG_STEP_KM[484];
+extern unsigned char IMG_STEP_LINE[668];
+//sync(3)
+extern unsigned char IMG_SYNC_ERR[42128];
+extern unsigned char IMG_SYNC_FINISH[42128];
+extern unsigned char IMG_SYNC_LOGO[36458];
+//temperature(4)
+extern unsigned char IMG_TEMP_ICON_C[16208];
+extern unsigned char IMG_TEMP_ICON_F[16532];
+extern unsigned char IMG_TEMP_UNIT_C[520];
+extern unsigned char IMG_TEMP_UNIT_F[520];
+//wrist off(2)
+extern unsigned char IMG_WRIST_OFF_ICON[23372];
 #endif
-
 #endif/*__FONT_H__*/

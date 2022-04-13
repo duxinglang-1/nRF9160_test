@@ -13,7 +13,9 @@ extern bool gps_off_flag;
 
 extern bool ble_wait_gps;
 extern bool sos_wait_gps;
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 extern bool fall_wait_gps;
+#endif
 extern bool location_wait_gps;
 extern bool test_gps_flag;
 

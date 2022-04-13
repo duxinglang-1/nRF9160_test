@@ -7,5 +7,7 @@
 zephyr_include_directories(.)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lsm6dso.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lsm6dso_reg.c)
-target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/fall.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/sleep.c)
+if (CONFIG_FALL_DETECT_SUPPORT)
+target_sources_ifdef(CONFIG_IMG_DATA_UPDATE app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/fall.c)
+endif()

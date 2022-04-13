@@ -21,6 +21,8 @@
 #endif
 #include "logger.h"
 
+//#define FLASH_DEBUG
+
 struct device *spi_flash;
 struct device *gpio_flash;
 
@@ -28,6 +30,8 @@ struct device *gpio_flash;
 static uint8_t    spi_tx_buf[6] = {0};  
 //SPI接收缓存数组，使用EasyDMA时一定要定义为static类型
 static uint8_t    spi_rx_buf[6] = {0};  
+//用来暂存一个sector的数据
+static u8_t SecBuf[SPIFlash_SECTOR_SIZE] = {0};
 
 //SPI发送缓存数组，使用EasyDMA时一定要定义为static类型
 //static uint8_t    my_tx_buf[4096] = {0};
@@ -70,11 +74,15 @@ void Spi_WriteOneByte(uint8_t Dat)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	else
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("ok");
+	#endif
 	}
 }
 /*****************************************************************************
@@ -122,10 +130,13 @@ uint16_t SpiFlash_ReadID(void)
 	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	else
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("TX sent: %x,%x,%x,%x,%x,%x", 
 			spi_tx_buf[0],
 			spi_tx_buf[1],
@@ -143,12 +154,14 @@ uint16_t SpiFlash_ReadID(void)
 			spi_rx_buf[4],
 			spi_rx_buf[5]
 			);
-		
+	#endif	
 		//接收数组最后两个字节才是读取的ID
 		dat|=spi_rx_buf[4]<<8;  
 		dat|=spi_rx_buf[5];
-		
+
+	#ifdef FLASH_DEBUG	
 		LOGD("flash ID: %x", dat);
+	#endif
 	}
 
 
@@ -183,11 +196,15 @@ static uint8_t SpiFlash_ReadSR(void)
 	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	else
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("StatusReg: %x", spi_rx_buf[1]);
+	#endif
 	}
 	
 	return spi_rx_buf[1];
@@ -227,7 +244,9 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	SpiFlash_CS_HIGH();	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 	
 	//等待W25Q64FW完成操作
@@ -258,7 +277,9 @@ void SPIFlash_Erase_Chip(void)
 	
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	//等待W25Q64FW完成操作
@@ -304,7 +325,9 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	tx_buff.buf = pBuffer;
@@ -315,7 +338,9 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	SpiFlash_CS_HIGH();
@@ -376,6 +401,55 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 }
 
 /*****************************************************************************
+** 描  述：向指定的地址无损写入数据，可写入多个页，除了本身数据之外，保留扇区内其他位置数据
+**         *pBuffer:指向待写入的数据
+**         WriteAddr:写入的起始地址
+**         size:写入的字节数
+** 返回值：RET_SUCCESS
+******************************************************************************/
+uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum)
+{
+	u32_t cur_index,writelen=0,datelen=WriteBytesNum;
+	u32_t PageByteRemain;
+	
+	cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
+	SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+	SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+	PageByteRemain = SPIFlash_SECTOR_SIZE - WriteAddr%SPIFlash_SECTOR_SIZE;
+	if(PageByteRemain < datelen)
+	{
+		memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], &pBuffer[writelen], PageByteRemain);
+		writelen += PageByteRemain;
+		SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+		datelen -= PageByteRemain;
+		while(1)
+		{
+			SpiFlash_Read(SecBuf, (++cur_index)*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+			SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+			if(datelen >= SPIFlash_SECTOR_SIZE)
+			{
+				memcpy(SecBuf, &pBuffer[writelen], SPIFlash_SECTOR_SIZE);
+				writelen += SPIFlash_SECTOR_SIZE;
+				SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+				datelen -= SPIFlash_SECTOR_SIZE;
+			}
+			else
+			{
+				memcpy(SecBuf, &pBuffer[writelen], datelen);
+				writelen += datelen;
+				SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+				break;
+			}
+		}
+	}
+	else
+	{
+		memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], &pBuffer[writelen], datelen);
+		SpiFlash_Write_Buf(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+	}
+}
+
+/*****************************************************************************
 ** 描  述：从指定的地址读出指定长度的数据
 ** 参  数：pBuffer：指向存放读出数据的首地址       
 **         ReadAddr：待读出数据的起始地址
@@ -403,7 +477,9 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
 	if(err)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("SPI error: %d", err);
+	#endif
 	}
 
 	//开始读取数据
@@ -428,7 +504,9 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 		err = spi_transceive(spi_flash, &spi_cfg, NULL, &rx_bufs);
 		if(err)
 		{
+		#ifdef FLASH_DEBUG
 			LOGD("SPI error: %d", err);
+		#endif
 		}
 		
 		pBuffer += read_size;
@@ -450,7 +528,9 @@ void SPI_Flash_Init(void)
 	spi_flash = device_get_binding(FLASH_DEVICE);
 	if (!spi_flash) 
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("Could not get %s device", FLASH_DEVICE);
+	#endif
 		return;
 	}
 
@@ -461,12 +541,16 @@ void SPI_Flash_Init(void)
 
 void flash_init(void)
 {
+#ifdef FLASH_DEBUG
 	LOGD("flash_init");
-		
+#endif
+
 	gpio_flash = device_get_binding(FLASH_PORT);
 	if(!gpio_flash)
 	{
+	#ifdef FLASH_DEBUG
 		LOGD("Cannot bind gpio device");
+	#endif
 		return;
 	}
 
@@ -476,11 +560,45 @@ void flash_init(void)
 	SPI_Flash_Init();
 }
 
+void test_flash_write_and_read(u8_t *buf, u32_t len)
+{
+	static s32_t last_index = -1;
+	s32_t cur_index;
+	u32_t PageByteRemain,addr=0;
+	u32_t date_len = len;
+		
+	LOGD("len:%d", len);
+	
+	addr = IMG_START_ADDR;
+#if 1
+	cur_index = addr/SPIFlash_SECTOR_SIZE;
+	if(cur_index > last_index)
+	{
+		last_index = cur_index;
+		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
+		PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
+		if(PageByteRemain < len)
+		{
+			len -= PageByteRemain;
+			while(1)
+			{
+				SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
+				if(len >= SPIFlash_SECTOR_SIZE)
+					len -= SPIFlash_SECTOR_SIZE;
+				else
+					break;
+			}
+		}
+	}
+#endif
+}
+
 void test_flash(void)
 {
 	uint16_t flash_id;
 	uint16_t len;
 	u8_t tmpbuf[128] = {0};
+	u32_t addr;
 	
 	//flash_init();
 
@@ -490,6 +608,14 @@ void test_flash(void)
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
 	LCD_ShowString(0,20,tmpbuf);
 
+	for(addr=DATA_START_ADDR;addr<0x800000;)
+	{
+		LOGD("addr:%d", addr);
+		SPIFlash_Erase_Sector(addr/SPIFlash_SECTOR_SIZE);
+		addr += SPIFlash_SECTOR_SIZE;
+	}
+
+	LOGD("addr end:%d", addr);
 #if 0
 	//写之前需要先执行擦除操作
 	LCD_ShowString(0,40,"FLASH开始擦除...");
@@ -608,45 +734,48 @@ void test_flash(void)
 #if 0
 	//写入数据
 	LCD_ShowString(0,80,"FLASH写入RM16X16日文字库...");
-	//SpiFlash_Write_Buf(RM_UNI_16_1, FONT_RM_UNI_16_ADDR+85504*0, 85504);
-	//SpiFlash_Write_Buf(RM_UNI_16_2, FONT_RM_UNI_16_ADDR+85504*1, 85504);
-	//SpiFlash_Write_Buf(RM_UNI_16_3, FONT_RM_UNI_16_ADDR+85504*2, 85504);	
-	//SpiFlash_Write_Buf(RM_UNI_16_4, FONT_RM_UNI_16_ADDR+85504*3, 85504);
-	//SpiFlash_Write_Buf(RM_UNI_16_5, FONT_RM_UNI_16_ADDR+85504*4, 85504);
-	//SpiFlash_Write_Buf(RM_UNI_16_6, FONT_RM_UNI_16_ADDR+85504*5, 85504);
-	SpiFlash_Write_Buf(RM_UNI_16_7, FONT_RM_UNI_16_ADDR+85504*6, 85408);
+	//SpiFlash_Write_Buf(RM_UNI_16_1, FONT_RM_UNI_16_ADDR+88288*0, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_2, FONT_RM_UNI_16_ADDR+88288*1, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_3, FONT_RM_UNI_16_ADDR+88288*2, 88288);	
+	//SpiFlash_Write_Buf(RM_UNI_16_4, FONT_RM_UNI_16_ADDR+88288*3, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_5, FONT_RM_UNI_16_ADDR+88288*4, 88288);
+	//SpiFlash_Write_Buf(RM_UNI_16_6, FONT_RM_UNI_16_ADDR+88288*5, 88288);
+	SpiFlash_Write_Buf(RM_UNI_16_7, FONT_RM_UNI_16_ADDR+88288*6, 88224);
 	LCD_ShowString(0,100,"FLASH写入RM16X16日文成功");
 #endif
 
 #if 0
 	//写入数据
-	LCD_ShowString(0,80,"FLASH写入RM24X24日文字库...");
-	//SpiFlash_Write_Buf(RM_UNI_24_1, FONT_RM_UNI_24_ADDR+84960*0, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_2, FONT_RM_UNI_24_ADDR+84960*1, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_3, FONT_RM_UNI_24_ADDR+84960*2, 84960);	
-	//SpiFlash_Write_Buf(RM_UNI_24_4, FONT_RM_UNI_24_ADDR+84960*3, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_5, FONT_RM_UNI_24_ADDR+84960*4, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_6, FONT_RM_UNI_24_ADDR+84960*5, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_7, FONT_RM_UNI_24_ADDR+84960*6, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_8, FONT_RM_UNI_24_ADDR+84960*7, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_9, FONT_RM_UNI_24_ADDR+84960*8, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_10, FONT_RM_UNI_24_ADDR+84960*9, 84960);
-	//SpiFlash_Write_Buf(RM_UNI_24_11, FONT_RM_UNI_24_ADDR+84960*10, 84960);
-	SpiFlash_Write_Buf(RM_UNI_24_12, FONT_RM_UNI_24_ADDR+84960*11, 84672);
-	LCD_ShowString(0,100,"FLASH写入RM24X24日文成功");
+	//LCD_ShowString(0,80,"FLASH写入RM24X24日文字库...");
+	//SpiFlash_Write_Buf(RM_UNI_24_1, FONT_RM_UNI_24_ADDR+89600*0, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_2, FONT_RM_UNI_24_ADDR+89600*1, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_3, FONT_RM_UNI_24_ADDR+89600*2, 89600);	
+	//SpiFlash_Write_Buf(RM_UNI_24_4, FONT_RM_UNI_24_ADDR+89600*3, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_5, FONT_RM_UNI_24_ADDR+89600*4, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_6, FONT_RM_UNI_24_ADDR+89600*5, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_7, FONT_RM_UNI_24_ADDR+89600*6, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_8, FONT_RM_UNI_24_ADDR+89600*7, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_9, FONT_RM_UNI_24_ADDR+89600*8, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_10, FONT_RM_UNI_24_ADDR+89600*9, 89600);
+	//SpiFlash_Write_Buf(RM_UNI_24_11, FONT_RM_UNI_24_ADDR+89600*10, 80388);
+	//LCD_ShowString(0,100,"FLASH写入RM24X24日文成功");
 #endif
 
 #if 0
 	//写入ppg(max32674心率算法)
 	LCD_ShowString(0,80,"FLASH写入PPG算法...");
-	SpiFlash_Write_Buf(Msbl_674_V1_1_0_001, DATA_START_ADDR+72000*0, 72000);
-	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_002, DATA_START_ADDR+72000*1, 72000);
-	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_003, DATA_START_ADDR+72000*2, 72000);
-	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_004, DATA_START_ADDR+72000*3, 63152);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_001, PPG_ALGO_FW_ADDR+72000*0, 72000);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_002, PPG_ALGO_FW_ADDR+72000*1, 72000);
+	//SpiFlash_Write_Buf(Msbl_674_V1_1_0_003, PPG_ALGO_FW_ADDR+72000*2, 72000);
+	SpiFlash_Write_Buf(Msbl_674_V1_1_0_004, PPG_ALGO_FW_ADDR+72000*3, 63152);
 	LCD_ShowString(0,100,"FLASH写入PPG算法成功");
 #endif
 	//读出数据
 	//SpiFlash_Read(my_rx_buf,0,len);
 	//LCD_ShowString(0,140,"FLASH读出数据:");
 	//LCD_ShowString(0,160,my_rx_buf);
+
+#if 0
+	test_flash_write_and_read(peppa_pig_80X160, 25608);
+#endif
 }

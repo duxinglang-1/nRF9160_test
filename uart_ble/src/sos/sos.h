@@ -20,8 +20,8 @@ extern "C" {
 #define SOS_SENDING_TIMEOUT 4
 #define SOS_SENT_TIMEOUT	2
 
-#define SOS_ICON_W			240
-#define SOS_ICON_H			240
+#define SOS_ICON_W			156
+#define SOS_ICON_H			131
 #define SOS_ICON_X			((LCD_WIDTH-SOS_ICON_W)/2)
 #define SOS_ICON_Y			((LCD_HEIGHT-SOS_ICON_H)/2)
 

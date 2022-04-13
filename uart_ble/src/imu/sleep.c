@@ -43,9 +43,9 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 	static int waggle_flag = 0;
 	static int sedentary_time_temp = 0;
 
-	if(charging)
+	if(charging || !is_wearing())
 	{
-		/* 充电中不执行*/
+		//充电中或者没有佩戴的时候不执行
 		return;
 	}
 

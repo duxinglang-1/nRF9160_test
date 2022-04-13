@@ -27,6 +27,13 @@ static struct device *gpio_temp;
 static CRC_8 crc_8_CUSTOM = {0x31,0xff,0x00,false,false};
 #endif
 
+static u32_t measure_count = 0;
+static float t_sensor = 0.0;		//传感器温度值
+static float t_body = 0.0; 			//显示的温度值
+static float t_predict = 0.0;		//预测的人体温度值
+static float t_temp80 = 0.0;		//预测的人体温度值
+
+
 static u8_t init_i2c(void)
 {
 	i2c_temp = device_get_binding(TEMP_DEV);
@@ -97,12 +104,28 @@ bool gxts04_init(void)
 		return true;
 }
 
-bool GetTemperature(float *temp)
+void gxts04_start(void)
+{
+	measure_count = 0;
+	t_sensor = 0.0;
+	t_body = 0.0;
+	t_predict = 0.0;
+	t_temp80 = 0.0;
+}
+
+void gxts04_stop(void)
+{
+	measure_count = 0;
+}
+
+bool GetTemperature(float *skin_temp, float *body_temp)
 {
 	u8_t crc=0;
 	u8_t databuf[10] = {0};
 	u16_t trans_temp = 0;
-	float real_temp = 0.0;
+
+	if(!is_wearing())
+		return;
 	
 	gxts04_write_data(CMD_WAKEUP);
 	gxts04_read_data(CMD_MEASURE_LOW_POWER, &databuf, 10);
@@ -122,10 +145,71 @@ bool GetTemperature(float *temp)
 #endif
 
 	trans_temp = databuf[0]*0x100 + databuf[1];
-	real_temp = 175.0*(float)trans_temp/65535.0-45.0;
-	*temp = real_temp;
+	t_sensor = 175.0*(float)trans_temp/65535.0-45.0;
+	*skin_temp = t_sensor;
+	*body_temp = 0;
+
 #ifdef TEMP_DEBUG
-	LOGD("real temp:%d.%d", (s16_t)(real_temp*10)/10, (s16_t)(real_temp*10)%10);
+	LOGD("count:%d, real temp:%d.%d", measure_count, (s16_t)(t_sensor*10)/10, (s16_t)(t_sensor*10)%10);
 #endif
+
+	if(t_sensor > 32)			//如果上一次测温大于32，那么开始计数
+	{
+		measure_count = measure_count+1;
+	}
+	else if(measure_count == 2000)
+	{
+		measure_count = 2000;
+	}
+	else
+	{
+		measure_count = 0;
+	}
+
+	if(measure_count == 0)
+	{
+		t_body = t_sensor; 
+		t_predict = 0;
+	}
+	else if((measure_count > 0)&&(measure_count <20))
+	{
+		t_body = t_sensor;
+	}
+	else if(measure_count == 20)
+	{
+		t_body = t_sensor;
+		t_temp80 = t_sensor;
+		if((t_sensor > 36)&&(t_sensor <= 41))
+			t_predict = 36.9 + (t_sensor-36)*4.1/5;
+		else if((t_sensor > 32)&&(t_sensor <= 36))
+			t_predict = 36.1 + (t_sensor-32)*0.8/4; 
+		else
+			t_predict = t_sensor;
+	}
+	else if((measure_count > 20)&&(measure_count <= 25))
+	{
+		t_body = ((measure_count-20)*0.8*(t_predict-t_temp80))/5 + t_temp80;
+	}
+
+	else if((measure_count > 25)&&(measure_count <= 30))
+	{
+		t_body = t_predict - ((30-measure_count)*0.2*(t_predict-t_temp80))/5;
+	}
+	else
+	{
+		if((t_sensor > 36)&&(t_sensor <= 41))
+			t_body = 36.9 + (t_sensor-36)*4.1/5;
+		else if((t_sensor > 32)&&(t_sensor <= 36))
+			t_body = 36.1 + (t_sensor-32)*0.8/4;
+		else
+			t_body = t_sensor;
+	}
+
+	*body_temp = t_body;
+
+#ifdef TEMP_DEBUG
+	LOGD("count:%d, t_predict:%d.%d, t_temp80:%d.%d, t_body:%d.%d", measure_count, (s16_t)(t_predict*10)/10, (s16_t)(t_predict*10)%10, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
+#endif
+
 	return true;
 }

@@ -163,7 +163,7 @@ u8_t g_timezone[5] = {0};
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
 u16_t g_act_time = 0;
-
+u32_t g_tau_ext_time = 0;
 static struct k_sem net_link;
 
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)||defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
@@ -870,15 +870,12 @@ static void modem_configure(void)
 		TestNBUpdateINfor();
 	}
 
-#if 1 //xb test 20200927
 	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("AT_CMD write fail!");
 	#endif
-		return;
 	}
-#endif
 
 #if defined(CONFIG_LTE_LINK_CONTROL)
 	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT))
@@ -1055,7 +1052,7 @@ void NBRedrawSignal(void)
 					flag = true;	
 				}
 
-		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+			#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 				if(k_timer_remaining_get(&tau_wakeup_uart_timer) > 0)
 					k_timer_stop(&tau_wakeup_uart_timer);
 				
@@ -1063,7 +1060,10 @@ void NBRedrawSignal(void)
 					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), NULL);
 				else if(g_tau_time > 0)
 					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), NULL);
-		#endif
+			#endif
+
+				if(g_tau_time > 0)
+					k_timer_start(&get_modem_status_timer, K_SECONDS(g_tau_time+g_act_time+5), NULL);
 			}
 		}
 	}
@@ -1812,9 +1812,6 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 			u8_t act = 0;
 			u16_t flag;
 
-			if(g_nw_registered)
-				return;
-			
 			g_nw_registered = true;
 
 		#if 0
@@ -1928,6 +1925,39 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 		#ifdef NB_DEBUG
 			LOGD("Periodic-TAU-ext:%s", tmpbuf);
 		#endif
+			memcpy(strbuf, &tmpbuf[1], 8);
+			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
+			switch(act>>5)
+			{
+			case 0://0 0 0 每 value is incremented in multiples of 10 minutes
+				flag = 10*60;
+				break;
+			case 1://0 0 1 每 value is incremented in multiples of 1 hour
+				flag = 60*60;
+				break;
+			case 2://0 1 0 每 value is incremented in multiples of 10 hours
+				flag = 10*60*60;
+				break;
+			case 3://0 1 1 每 value is incremented in multiples of 2 seconds
+				flag = 2;
+				break;
+			case 4://1 0 0 每 value is incremented in multiples of 30 seconds
+				flag = 30;
+				break;
+			case 5://1 0 1 每 value is incremented in multiples of 1 minute
+				flag = 60;
+				break;
+			case 6://1 1 0 每 value is incremented in multiples of 320 hours
+				flag = 320*60*60;
+				break;
+			case 7://1 1 1 每 value indicates that the timer is deactivated
+				flag = 0;
+				break;
+			}
+			g_tau_ext_time = flag*((strbuf[3]-0x30)*0x10+(strbuf[4]-0x30)*0x08+(strbuf[5]-0x30)*0x04+(strbuf[6]-0x30)*0x02+(strbuf[7]-0x30)*0x01);
+		#ifdef NB_DEBUG
+			LOGD("g_tau_ext_time:%d", g_tau_ext_time);
+		#endif
 			//Periodic-TAU
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 16, tmpbuf);
@@ -1963,9 +1993,6 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 			nb_connected = false;
 			g_rsrp = 255;
 			modem_rsrp_handler(g_rsrp);
-
-			if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(30), NULL);
 		}
 	}
 }
@@ -2092,6 +2119,20 @@ void GetModemStatus(void)
 	u8_t strbuf[64] = {0};
 	u8_t tmpbuf[256] = {0};
 
+	if(at_cmd_write(CMD_GET_CPSMS, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("%s", &tmpbuf);
+	#endif
+	}
+
+	if(at_cmd_write(CMD_GET_CEREG, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("%s", &tmpbuf);
+	#endif
+	}
+
 	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2099,24 +2140,6 @@ void GetModemStatus(void)
 	#endif
 		DecodeModemMonitor(tmpbuf, strlen(tmpbuf));
 	}
-
-#if 0
-	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("cesq:%s", tmpbuf);
-	#endif
-		len = strlen(tmpbuf);
-		tmpbuf[len-2] = ',';
-		tmpbuf[len-1] = 0x00;
-		
-		ptr = strstr(tmpbuf, "+CESQ: ");
-		ptr += strlen("+CESQ: ");
-		GetStringInforBySepa(ptr, ",", 6, strbuf);
-		g_rsrp = atoi(strbuf);
-		modem_rsrp_handler(g_rsrp);
-	}
-#endif	
 }
 
 void SetModemTurnOn(void)
@@ -2133,6 +2156,7 @@ void SetModemTurnOn(void)
 		LOGD("Can't turn on modem!");
 	#endif
 	}
+	
 }
 
 void SetModemTurnOff(void)

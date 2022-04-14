@@ -21,7 +21,7 @@ bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 bool need_fw_update = true;
 
-u8_t g_fw_version[64] = "V1.6.2_20220408";
+u8_t g_fw_version[64] = "V1.6.3_20220414";
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
 static bool reset_redraw_flag = false;

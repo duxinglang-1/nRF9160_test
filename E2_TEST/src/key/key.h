@@ -59,8 +59,8 @@ typedef enum
 	STATE_SCANNING,
 }KEY_STATUS;
 
-#define KEY_SOFT_LEFT	KEY_SOS
-#define KEY_SOFT_RIGHT	KEY_POWER
+#define KEY_SOFT_LEFT	KEY_POWER
+#define KEY_SOFT_RIGHT	KEY_SOS
 
 typedef struct
 {

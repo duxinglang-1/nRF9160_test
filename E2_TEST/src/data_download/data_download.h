@@ -91,17 +91,21 @@ extern DL_DATA_TYPE g_dl_data_type;
 extern void dl_work_init(struct k_work_q *work_q);
 extern void dl_init(void);
 #ifdef CONFIG_IMG_DATA_UPDATE
+extern void dl_img_prev(void);
 extern void dl_img_exit(void);
 extern void dl_img_start(void);
 #endif
 #ifdef CONFIG_FONT_DATA_UPDATE
+extern void dl_font_prev(void);
 extern void dl_font_exit(void);
 extern void dl_font_start(void);
 #endif
 #ifdef CONFIG_PPG_DATA_UPDATE
+extern void dl_ppg_prev(void);
 extern void dl_ppg_exit(void);
 extern void dl_ppg_start(void);
 #endif
+extern void dl_prev(void);
 extern void dl_exit(void);
 extern void dl_start_confirm(void);
 extern void dl_reboot_confirm(void);

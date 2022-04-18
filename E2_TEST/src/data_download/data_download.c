@@ -381,6 +381,14 @@ bool dl_is_running(void)
 }
 
 #ifdef CONFIG_IMG_DATA_UPDATE
+void dl_img_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlImgScreen();
+}
+
 void dl_img_exit(void)
 {
 	dl_run_flag = false;
@@ -402,6 +410,14 @@ void dl_img_start(void)
 }
 #endif
 #ifdef CONFIG_FONT_DATA_UPDATE
+void dl_font_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlFontScreen();
+}
+
 void dl_font_exit(void)
 {
 	dl_run_flag = false;
@@ -423,6 +439,14 @@ void dl_font_start(void)
 }
 #endif
 #ifdef CONFIG_PPG_DATA_UPDATE
+void dl_ppg_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlPpgScreen();
+}
+
 void dl_ppg_exit(void)
 {
 	dl_run_flag = false;
@@ -443,6 +467,31 @@ void dl_ppg_start(void)
 	}
 }
 #endif
+
+void dl_prev(void)
+{
+	switch(g_dl_data_type)
+	{
+	case DL_DATA_IMG:
+	#ifdef CONFIG_IMG_DATA_UPDATE
+		dl_img_prev();
+	#endif
+		break;
+
+	case DL_DATA_FONT:
+	#ifdef CONFIG_FONT_DATA_UPDATE
+		dl_font_prev();
+	#endif
+		break;
+		
+	case DL_DATA_PPG:
+	#ifdef CONFIG_PPG_DATA_UPDATE
+		dl_ppg_prev();
+	#endif 
+		break;
+	}
+}
+
 
 void dl_exit(void)
 {

@@ -33,7 +33,7 @@
 #define IMEI_MAX_LEN	(15)
 #define IMSI_MAX_LEN	(15)
 #define ICCID_MAX_LEN	(20)
-#define MODEM_MAX_LEN   (20)
+#define MODEM_MAX_LEN   (17)
 
 #define APN_MAX_LEN			(100)
 #define	PLMN_MAX_LEN        (6)

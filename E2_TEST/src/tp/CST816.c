@@ -20,6 +20,7 @@
 #include "logger.h"
 
 //#define TP_DEBUG
+//#define TP_TEST
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -563,7 +564,14 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 		break;
 	}
 
+#ifdef TP_TEST //xb test 2022-04-21
+	tp_msg.evt_id = tp_type;
+	tp_msg.x_pos = x_pos;
+	tp_msg.y_pos = y_pos;
+	tp_redraw_flag = true;
+#else
 	check_touch_event_handle(tp_type, x_pos, y_pos);
+#endif
 }
 
 void CaptouchInterruptHandle(void)
@@ -671,15 +679,20 @@ void CST816_init(void)
 
 void test_tp(void)
 {
+	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 
-	sprintf(tmpbuf, "test_tp");
-	LCD_ShowString(20,80,tmpbuf);
+	sprintf(tmpbuf, "TP_TEST");
+	
+	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
 	//CST816_init();
 }
 
 void tp_show_infor(void)
 {
+	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 	
 	switch(tp_msg.evt_id)
@@ -709,11 +722,14 @@ void tp_show_infor(void)
 		strcpy(tmpbuf, "LONG_PRESS  ");
 		break;
 	}
+
+	LCD_SetFontSize(FONT_SIZE_24);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,80,tmpbuf);	
 	
-	LCD_ShowString(20,120,tmpbuf);
-	
-	sprintf(tmpbuf, "x:%5d, y:%5d", tp_msg.x_pos, tp_msg.y_pos);
-	LCD_ShowString(20,140,tmpbuf);
+	sprintf(tmpbuf, "x:%05d, y:%05d", tp_msg.x_pos, tp_msg.y_pos);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,110,tmpbuf);
 }
 
 void TPMsgProcess(void)

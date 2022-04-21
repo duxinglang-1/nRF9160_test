@@ -24,6 +24,7 @@
 #define TLS_SEC_TAG 42
 #define DL_SOCKET_RETRIES 2
 
+static bool dl_start_flag = false;
 static bool dl_run_flag = false;
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
@@ -517,6 +518,11 @@ void dl_exit(void)
 	}
 }
 
+void dl_start(void)
+{
+	dl_start_flag = true;
+}
+
 void dl_start_confirm(void)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -600,6 +606,12 @@ void DlRedrawProgress(void)
 
 void DlMsgProc(void)
 {
+	if(dl_start_flag)
+	{
+		dl_start_confirm();
+		dl_start_flag = false;
+	}
+	
 	if(dl_redraw_pro_flag)
 	{
 		dl_redraw_pro_flag = false;

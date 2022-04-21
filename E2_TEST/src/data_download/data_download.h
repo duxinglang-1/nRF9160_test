@@ -107,6 +107,7 @@ extern void dl_ppg_start(void);
 #endif
 extern void dl_prev(void);
 extern void dl_exit(void);
+extern void dl_start(void);
 extern void dl_start_confirm(void);
 extern void dl_reboot_confirm(void);
 extern bool dl_is_running(void);

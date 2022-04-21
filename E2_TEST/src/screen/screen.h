@@ -111,6 +111,7 @@ extern "C" {
 #define IDLE_TEMP_NUM_Y		188
 
 //notify
+#define NOTIFY_IMG_MAX_COUNT	10
 #define NOTIFY_TEXT_MAX_LEN		80
 #define NOTIFY_TIMER_INTERVAL	5
 
@@ -411,6 +412,14 @@ extern "C" {
 #define POW_OFF_RUNNING_ANI_X		((LCD_WIDTH-POW_OFF_RUNNING_ANI_W)/2)
 #define POW_OFF_RUNNING_ANI_Y		212
 
+//Notify
+#define NOTIFY_RECT_W		240
+#define NOTIFY_RECT_H		240
+#define NOTIFY_RECT_X		((LCD_WIDTH-NOTIFY_RECT_W)/2)
+#define NOTIFY_RECT_Y		((LCD_HEIGHT-NOTIFY_RECT_H)/2)
+
+
+
 //idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000
 #define SCREEN_EVENT_UPDATE_SIG			0x00000001
@@ -430,6 +439,7 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_DL			0x00004000
 #define SCREEN_EVENT_UPDATE_TEMP		0x00008000
 #define SCREEN_EVENT_UPDATE_NET_MODE	0x00010000
+
 
 //screen ID
 typedef enum
@@ -502,6 +512,12 @@ typedef struct
 {
 	NOTIFY_TYPE_ENUM type;
 	NOTIFY_ALIGN_ENUM align;
+	u16_t x;
+	u16_t y;
+	u16_t w;
+	u16_t h;
+	u8_t img_count;
+	u32_t img[NOTIFY_IMG_MAX_COUNT];
 	u8_t text[NOTIFY_TEXT_MAX_LEN+1];
 }notify_infor;
 
@@ -518,7 +534,7 @@ extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
 extern void ExitNotifyScreen(void);
 extern void EnterFOTAScreen(void);
-extern void DisplayPopUp(u8_t *message);
+extern void DisplayPopUp(u32_t *img, u8_t img_count, u8_t *message);
 
 #ifdef __cplusplus
 }

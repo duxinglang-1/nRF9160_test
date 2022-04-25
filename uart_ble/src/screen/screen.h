@@ -402,7 +402,7 @@ extern "C" {
 #define SETTINGS_MENU_RESET_NOTIFY_Y		150
 
 //power off
-#define PWR_OFF_ICON_W				115
+#define PWR_OFF_ICON_W				127
 #define PWR_OFF_ICON_H				127
 #define PWR_OFF_ICON_X				((LCD_WIDTH-PWR_OFF_ICON_W)/2)
 #define PWR_OFF_ICON_Y				((LCD_HEIGHT-PWR_OFF_ICON_H)/2)	

@@ -177,7 +177,7 @@ bool gps_is_working(void)
 void gps_on(void)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
+	uart_sleep_out(UART_MODEM);
 #endif
 	set_gps_enable(true);
 }

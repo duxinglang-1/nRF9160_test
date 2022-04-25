@@ -84,11 +84,15 @@ bool blue_is_on = true;
 bool uart_send_flag = false;
 bool get_ble_info_flag = false;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-bool uart_sleep_flag = false;
-bool uart_wake_flag = false;
-bool uart_is_waked = true;
-#define UART_WAKE_HOLD_TIME_SEC		(5*60)
-#define UART_SLEEP_DELAY_TIME_SEC	(2*60)
+bool uart_log_sleep_flag = false;
+bool uart_log_wake_flag = false;
+bool uart_ble_sleep_flag = false;
+bool uart_ble_wake_flag = false;
+bool uart_log_is_waked = true;
+bool uart_ble_is_waked = true;
+#define UART_LOG_WAKE_HOLD_TIME_SEC		(1*60)
+#define UART_LOG_SLEEP_DELAY_TIME_SEC	(1*60)
+#define UART_BLE_WAKE_HOLD_TIME_SEC		(10)
 #endif
 
 static bool redraw_blt_status_flag = false;
@@ -102,6 +106,7 @@ static u8_t rx_buf[BUF_MAXSIZE]={0};
 static u8_t tx_buf[BUF_MAXSIZE]={0};
 
 static struct device *uart_ble = NULL;
+static struct device *uart_log = NULL;
 static struct device *gpio_ble = NULL;
 static struct gpio_callback gpio_cb;
 
@@ -128,9 +133,12 @@ ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 extern bool app_find_device;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void UartSleepInCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(uart_sleep_in_timer, UartSleepInCallBack, NULL);
-#endif
+static void UartLogSleepInCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_log_sleep_in_timer, UartLogSleepInCallBack, NULL);
+static void UartBleSleepInCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_ble_sleep_in_timer, UartBleSleepInCallBack, NULL);
+#endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
+
 static void GetBLEInfoCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_ble_info_timer, GetBLEInfoCallBack, NULL);
 
@@ -1576,7 +1584,7 @@ void uart_send_data_handle(void)
 	}
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
+	uart_sleep_out(UART_PERIPHERAL);
 #endif
 
 	uart_fifo_fill(uart_ble, tx_buf, send_len);
@@ -1604,7 +1612,7 @@ void wifi_send_data_handle(u8_t *buf, u32_t len)
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
+	uart_sleep_out(UART_PERIPHERAL);
 #endif
 
 	switch_to_wifi();
@@ -1623,7 +1631,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	if(!uart_is_waked)
+	if(!uart_ble_is_waked)
 		return;
 #endif
 
@@ -1735,67 +1743,124 @@ static void uart_cb(struct device *x)
 	}
 }
 
-void uart_sleep_out(void)
-{
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
-		k_timer_stop(&uart_sleep_in_timer);
-	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
+void uart_log_sleep_out(void)
+{
+	if(k_timer_remaining_get(&uart_log_sleep_in_timer) > 0)
+		k_timer_stop(&uart_log_sleep_in_timer);
+	k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), NULL);
 
-	if(uart_is_waked)
+	if(uart_log_is_waked)
 		return;
-	
+
+	device_set_power_state(uart_log, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	k_sleep(K_MSEC(10));
+	uart_log_is_waked = true;
+
+#ifdef UART_DEBUG
+	LOGD("uart log set active success!");
+#endif
+}
+
+void uart_log_sleep_in(void)
+{	
+	if(!uart_log_is_waked)
+		return;
+
+	device_set_power_state(uart_log, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
+	k_sleep(K_MSEC(10));
+	uart_log_is_waked = false;
+
+#ifdef UART_DEBUG
+	LOGD("uart log set low power success!");
+#endif
+}
+
+void uart_ble_sleep_out(void)
+{
+	if(k_timer_remaining_get(&uart_ble_sleep_in_timer) > 0)
+		k_timer_stop(&uart_ble_sleep_in_timer);
+	k_timer_start(&uart_ble_sleep_in_timer, K_SECONDS(UART_BLE_WAKE_HOLD_TIME_SEC), NULL);
+
+	if(uart_ble_is_waked)
+		return;
+
 	device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	uart_irq_rx_enable(uart_ble);
-	uart_irq_tx_enable(uart_ble);
-	
-	k_sleep(K_MSEC(10));
-	
-	uart_is_waked = true;
+	k_sleep(K_MSEC(10));	
+	uart_ble_is_waked = true;
 
 #ifdef UART_DEBUG
-	LOGD("uart set active success!");
-#endif
+	LOGD("uart ble set active success!");
 #endif
 }
 
-void uart_sleep_in(void)
-{
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	if(!uart_is_waked)
+void uart_ble_sleep_in(void)
+{	
+	if(!uart_ble_is_waked)
 		return;
-	
-	uart_irq_rx_disable(uart_ble);
-	uart_irq_tx_disable(uart_ble);
-	device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
 
+	device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
 	k_sleep(K_MSEC(10));
-	
-	uart_is_waked = false;
+	uart_ble_is_waked = false;
 
 #ifdef UART_DEBUG
-	LOGD("uart set low power success!");
-#endif
+	LOGD("uart ble set low power success!");
 #endif
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+void uart_sleep_out(ENUM_UART_TYPE flag)
+{
+	switch(flag)
+	{
+	case UART_MODEM:
+		uart_log_sleep_out();
+		break;
+
+	case UART_PERIPHERAL:
+		uart_ble_sleep_out();
+		break;
+	}
+}
+
+void uart_sleep_in(ENUM_UART_TYPE flag)
+{
+	switch(flag)
+	{
+	case UART_MODEM:
+		uart_log_sleep_in();
+		break;
+
+	case UART_PERIPHERAL:
+		uart_ble_sleep_in();
+		break;
+	}
+}
+
 static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
 {
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
-	uart_wake_flag = true;
+	uart_ble_wake_flag = true;
 }
 
-void UartSleepInCallBack(struct k_timer *timer_id)
+
+static void UartLogSleepInCallBack(struct k_timer *timer_id)
 {
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
-	uart_sleep_flag = true;
+	uart_log_sleep_flag = true;
 }
+
+static void UartBleSleepInCallBack(struct k_timer *timer_id)
+{
+#ifdef UART_DEBUG
+	LOGD("begin");
 #endif
+	uart_ble_sleep_flag = true;
+}
+#endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
 
 static void GetBLEInfoCallBack(struct k_timer *timer_id)
 {
@@ -1808,6 +1873,13 @@ void ble_init(void)
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log = device_get_binding("UART_0");
+	if(uart_log)
+		k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(3*CONFIG_LTE_NETWORK_TIMEOUT), NULL);
+#endif
+
 	uart_ble = device_get_binding(BLE_DEV);
 	if(!uart_ble)
 	{
@@ -1816,7 +1888,7 @@ void ble_init(void)
 	#endif
 		return;
 	}
-	
+
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
 
@@ -1842,10 +1914,7 @@ void ble_init(void)
 	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
 	gpio_add_callback(gpio_ble, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
-
-	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
-		k_timer_stop(&uart_sleep_in_timer);
-	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
+	k_timer_start(&uart_ble_sleep_in_timer, K_SECONDS(UART_BLE_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 
 	k_timer_start(&get_ble_info_timer, K_SECONDS(2), NULL);
@@ -1854,23 +1923,22 @@ void ble_init(void)
 void UartMsgProc(void)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	if(uart_wake_flag)
+	if(uart_log_wake_flag)
 	{
 	#ifdef UART_DEBUG
 		LOGD("uart_wake!");
 	#endif
-		uart_wake_flag = false;
-		uart_sleep_out();
+		uart_log_wake_flag = false;
+		uart_log_sleep_out();
 	}
 
-	if(uart_sleep_flag)
+	if(uart_log_sleep_flag)
 	{
 	#ifdef UART_DEBUG
 		LOGD("uart_sleep!");
 	#endif
-		uart_sleep_flag = false;
+		uart_log_sleep_flag = false;
 
-	#if 0	//xb test 2022-04-20
 		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting() && !mqtt_is_connecting()
 			#ifdef CONFIG_FOTA_DOWNLOAD
 			 && !fota_is_running()
@@ -1883,15 +1951,27 @@ void UartMsgProc(void)
 			#endif
 			)
 		{
-			uart_sleep_in();
+			uart_log_sleep_in();
 		}
-		else
-	#endif		
+		else	
 		{
-			k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_SLEEP_DELAY_TIME_SEC), NULL);
+			k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_SLEEP_DELAY_TIME_SEC), NULL);
 		}
 	}
-#endif	
+
+	if(uart_ble_wake_flag)
+	{
+		uart_ble_wake_flag = false;
+		uart_ble_sleep_out();
+	}
+
+	if(uart_ble_sleep_flag)
+	{
+		uart_ble_sleep_flag = false;
+		uart_ble_sleep_in();
+	}
+#endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
+
 	if(uart_send_flag)
 	{
 		uart_send_data_handle();

@@ -45,10 +45,17 @@ typedef enum
 	DATA_TYPE_MAX
 }ENUM_DATA_TYPE;
 
+typedef enum
+{
+	UART_MODEM,
+	UART_PERIPHERAL,
+	UART_MAX
+}ENUM_UART_TYPE;
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern bool uart_sleep_flag;
-extern bool uart_wake_flag;
-extern bool uart_is_waked;
+extern bool uart_log_sleep_flag;
+extern bool uart_log_wake_flag;
+extern bool uart_log_is_waked;
 #endif
 
 extern bool blue_is_on;
@@ -67,8 +74,8 @@ extern void MCU_get_ble_status(void);
 extern void MCU_set_ble_work_mode(u8_t work_mode);
 extern void MCU_send_find_phone(void);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern void uart_sleep_out(void);
-extern void uart_sleep_in(void);
+extern void uart_sleep_out(ENUM_UART_TYPE flag);
+extern void uart_sleep_in(ENUM_UART_TYPE flag);
 #endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
 
 #endif/*__UART_BLE_H__*/

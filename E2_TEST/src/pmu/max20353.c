@@ -90,7 +90,7 @@ static bool init_i2c(void)
 
 static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t len)
 {
-	u8_t i=0;
+	u32_t i=0;
 	u8_t data[len+1];
 	u32_t rslt = 0;
 

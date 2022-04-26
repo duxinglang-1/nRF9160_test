@@ -3430,6 +3430,7 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_out)
 	{	
 		LCD_SleepOut();
+		pmu_alert_proc();
 		if(IsInIdleScreen())
 		{
 			IdleShowDateTime();

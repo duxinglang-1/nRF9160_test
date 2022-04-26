@@ -45,7 +45,7 @@
 
 #define NB_DEBUG
 
-#define LTE_TAU_WAKEUP_EARLY_TIME	(120)
+#define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 #define AT_CEREG_REG_STATUS_INDEX		1
@@ -825,7 +825,6 @@ static void MqttDicConnectStop(void)
 }
 
 
-#if CONFIG_MODEM_INFO
 /**@brief Callback handler for LTE RSRP data. */
 static void modem_rsrp_handler(char rsrp_value)
 {
@@ -840,6 +839,7 @@ static void modem_rsrp_handler(char rsrp_value)
 	nb_redraw_sig_flag = true;
 }
 
+#if CONFIG_MODEM_INFO
 /**brief Initialize LTE status containers. */
 void modem_data_init(void)
 {
@@ -1063,7 +1063,7 @@ void NBRedrawSignal(void)
 			#endif
 
 				if(g_tau_time > 0)
-					k_timer_start(&get_modem_status_timer, K_SECONDS(g_tau_time+g_act_time+5), NULL);
+					k_timer_start(&get_modem_status_timer, K_SECONDS(g_tau_time+g_act_time), NULL);
 			}
 		}
 	}
@@ -2156,7 +2156,6 @@ void SetModemTurnOn(void)
 		LOGD("Can't turn on modem!");
 	#endif
 	}
-	
 }
 
 void SetModemTurnOff(void)
@@ -2482,8 +2481,9 @@ static void nb_link(struct k_work *work)
 			
 			nb_connected = true;
 			retry_count = 0;
-
+		#ifdef CONFIG_MODEM_INFO
 			modem_data_init();
+		#endif
 			GetModemDateTime();
 			NBRedrawNetMode();
 		}
@@ -2673,7 +2673,7 @@ void NBMsgProcess(void)
 	
 	if(nb_connecting_flag)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(5));
 	}
 }
 

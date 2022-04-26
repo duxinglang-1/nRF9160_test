@@ -87,8 +87,8 @@ bool get_ble_info_flag = false;
 bool uart_sleep_flag = false;
 bool uart_wake_flag = false;
 bool uart_is_waked = true;
-#define UART_WAKE_HOLD_TIME_SEC		(5*60)
-#define UART_SLEEP_DELAY_TIME_SEC	(2*60)
+#define UART_WAKE_HOLD_TIME_SEC		(1*60)
+#define UART_SLEEP_DELAY_TIME_SEC	(1*60)
 #endif
 
 static bool redraw_blt_status_flag = false;
@@ -1839,9 +1839,6 @@ void ble_init(void)
 	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
 	gpio_add_callback(gpio_ble, &gpio_cb);
 	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
-
-	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
-		k_timer_stop(&uart_sleep_in_timer);
 	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 

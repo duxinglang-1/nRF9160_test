@@ -589,6 +589,6 @@ void GPSMsgProcess(void)
 	
 	if(gps_is_on)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(5));
 	}
 }

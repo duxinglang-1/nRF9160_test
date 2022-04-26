@@ -3660,7 +3660,7 @@ void EnterIdleScreen(void)
 	SetLeftKeyUpHandler(EnterSettings);
 #endif
 #endif
-	SetLeftKeyLongPressHandler(SOSTrigger);
+	SetRightKeyLongPressHandler(SOSTrigger);
 	SetRightKeyUpHandler(EnterIdleScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT

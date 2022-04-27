@@ -197,8 +197,8 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 
 	if(tp_type != TP_EVENT_MAX)
 	{
-		tp_x = buf[7]*0x100+buf[8];
-		tp_y = buf[9]*0x100+buf[10];
+		tp_x = (0x0f&buf[7])<<8 | buf[8];
+		tp_y = (0x0f&buf[9])<<8 | buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
 }

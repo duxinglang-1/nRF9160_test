@@ -43,7 +43,7 @@
 #endif
 #include "logger.h"
 
-#define NB_DEBUG
+//#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
@@ -839,7 +839,7 @@ static void modem_rsrp_handler(char rsrp_value)
 	nb_redraw_sig_flag = true;
 }
 
-#if CONFIG_MODEM_INFO
+#ifdef CONFIG_MODEM_INFO
 /**brief Initialize LTE status containers. */
 void modem_data_init(void)
 {
@@ -993,11 +993,74 @@ void NBRedrawSignal(void)
 	u8_t strbuf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 
-	if(at_cmd_write(CMD_GET_CESQ, strbuf, sizeof(strbuf), NULL) == 0)
+	if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
 	{
+		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
+		//<n>
+		//	0 每 Disable unsolicited result codes
+		//	1 每 Enable unsolicited result codes +CEREG:<stat>
+		//	2 每 Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
+		//	3 每 Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
+		//	4 每 Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
+		//	5 每 Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
+		//<stat>
+		//	0 每 Not registered. UE is not currently searching for an operator to register to.
+		//	1 每 Registered, home network.
+		//	2 每 Not registered, but UE is currently trying to attach or searching an operator to register to.
+		//	3 每 Registration denied.
+		//	4 每 Unknown (e.g. out of E-UTRAN coverage).
+		//	5 每 Registered, roaming.
+		//	8 每 Attached for emergency bearer services only.
+		//	90 每 Not registered due to UICC failure.
+		//<tac>
+		//	String. A 2-byte Tracking Area Code (TAC) in hexadecimal format.
+		//<ci>
+		//	String. A 4-byte E-UTRAN cell ID in hexadecimal format.
+		//<AcT>
+		//	7 每 E-UTRAN
+		//	9 每 E-UTRAN NB-S1
+		//<cause_type>
+		//	0 每 <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
+		//<reject_cause>
+		//	EMM cause value. See 3GPP TS 24.301 Annex A
+		//<Active-Time>
+		//	String. One byte in an 8-bit format.
+		//	Indicates the Active Time value (T3324) allocated to the device in E-UTRAN. For the coding and value range, see the GPRS Timer 2 IE in 3GPP TS 24.008 Table 10.5.163/3GPP TS 24.008.
+		//<Periodic-TAU>
+		//	String. One byte in an 8-bit format.
+		//	Indicates the extended periodic TAU value (T3412) allocated to the device in EUTRAN. For the coding and value range, see the GPRS Timer 3 IE in 3GPP TS 24.008 Table 10.5.163a/3GPP TS 24.008.
+		u8_t *ptr;
+		u8_t reg_status;
+		
 	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
 	#endif
+
+		ptr = strstr(strbuf, "+CEREG: ");
+		if(ptr)
+		{
+			//硌鍔芛
+			ptr += strlen("+CEREG: ");
+			//reg_status
+			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
+			reg_status = atoi(tmpbuf);
+		#ifdef NB_DEBUG
+			LOGD("reg_status:%d", reg_status);
+		#endif
+			
+			if(reg_status == 1 || reg_status == 5)
+			{
+				g_nw_registered = true;
+			}
+			else
+			{
+				g_nw_registered = false;
+				nb_connected = false;
+				
+				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+			}
+		}
 	}
 
 	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
@@ -1061,9 +1124,6 @@ void NBRedrawSignal(void)
 				else if(g_tau_time > 0)
 					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), NULL);
 			#endif
-
-				if(g_tau_time > 0)
-					k_timer_start(&get_modem_status_timer, K_SECONDS(g_tau_time+g_act_time), NULL);
 			}
 		}
 	}
@@ -1759,7 +1819,7 @@ static void NBReconnectCallBack(struct k_timer *timer_id)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static void TauWakeUpUartCallBack(struct k_timer *timer_id)
 {
-	uart_wake_flag = true;
+	//uart_wake_flag = true;
 }
 #endif
 
@@ -2118,20 +2178,6 @@ void GetModemStatus(void)
 	int i=0,len,err;
 	u8_t strbuf[64] = {0};
 	u8_t tmpbuf[256] = {0};
-
-	if(at_cmd_write(CMD_GET_CPSMS, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("%s", &tmpbuf);
-	#endif
-	}
-
-	if(at_cmd_write(CMD_GET_CEREG, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("%s", &tmpbuf);
-	#endif
-	}
 
 	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{

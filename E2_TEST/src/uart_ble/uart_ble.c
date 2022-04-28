@@ -87,8 +87,8 @@ bool get_ble_info_flag = false;
 bool uart_sleep_flag = false;
 bool uart_wake_flag = false;
 bool uart_is_waked = true;
-#define UART_WAKE_HOLD_TIME_SEC		(1*60)
-#define UART_SLEEP_DELAY_TIME_SEC	(1*60)
+#define UART_WAKE_HOLD_TIME_SEC		(10)
+#define UART_SLEEP_DELAY_TIME_SEC	(10)
 #endif
 
 static bool redraw_blt_status_flag = false;
@@ -1862,26 +1862,8 @@ void UartMsgProc(void)
 	#ifdef UART_DEBUG
 		LOGD("uart_sleep!");
 	#endif
-		uart_sleep_flag = false;
-		
-		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting() && !mqtt_is_connecting()
-			#ifdef CONFIG_FOTA_DOWNLOAD
-			 && !fota_is_running()
-			#endif
-			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-			 && !dl_is_running()
-			#endif
-			#ifdef CONFIG_WIFI
-			 && !wifi_is_working()
-			#endif
-			)
-		{
-			uart_sleep_in();
-		}
-		else
-		{
-			k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_SLEEP_DELAY_TIME_SEC), NULL);
-		}
+		uart_sleep_flag = false;		
+		uart_sleep_in();
 	}
 #endif	
 	if(uart_send_flag)

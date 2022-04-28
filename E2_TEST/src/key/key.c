@@ -70,11 +70,6 @@ extern bool ppg_stop_flag;
 extern bool get_modem_info_flag;
 extern u8_t g_ppg_trigger;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern bool uart_wake_flag;
-extern bool uart_sleep_flag;
-#endif
-
 static key_event_msg key_msg = {0};
 
 void ClearAllKeyHandler(void)

@@ -69,10 +69,6 @@ static void GetModemStatusCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_modem_status_timer, GetModemStatusCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void TauWakeUpUartCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(tau_wakeup_uart_timer, TauWakeUpUartCallBack, NULL);
-#endif
 
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
 /* Preferred network mode: Narrowband-IoT */
@@ -625,10 +621,6 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 	mqtt_connecting_flag = true;
 	
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif
-
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -1114,16 +1106,6 @@ void NBRedrawSignal(void)
 				{
 					flag = true;	
 				}
-
-			#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-				if(k_timer_remaining_get(&tau_wakeup_uart_timer) > 0)
-					k_timer_stop(&tau_wakeup_uart_timer);
-				
-				if(g_tau_time > LTE_TAU_WAKEUP_EARLY_TIME)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), NULL);
-				else if(g_tau_time > 0)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), NULL);
-			#endif
 			}
 		}
 	}
@@ -1816,13 +1798,6 @@ static void NBReconnectCallBack(struct k_timer *timer_id)
 	nb_reconnect_flag = true;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void TauWakeUpUartCallBack(struct k_timer *timer_id)
-{
-	//uart_wake_flag = true;
-}
-#endif
-
 static void GetNetWorkSignalCallBack(struct k_timer *timer_id)
 {
 	get_modem_signal_flag = true;
@@ -2488,12 +2463,7 @@ static void nb_link(struct k_work *work)
 	#endif
 	
 		nb_connecting_flag = true;
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
-
 		configure_low_power();
-
 		err = net_init_and_link();
 		if(err)
 		{
@@ -2634,9 +2604,6 @@ void NBMsgProcess(void)
 		}
 		else
 		{
-		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-			uart_sleep_out();
-		#endif
 			SetModemTurnOff();
 			modem_configure();
 		}
@@ -2644,9 +2611,6 @@ void NBMsgProcess(void)
 
 	if(get_modem_info_flag)
 	{	
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
 		GetModemInfor();
 		get_modem_info_flag = false;
 	}
@@ -2659,18 +2623,12 @@ void NBMsgProcess(void)
 
 	if(get_modem_signal_flag)
 	{
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
 		GetModemSignal();
 		get_modem_signal_flag = false;
 	}
 
 	if(get_modem_time_flag)
 	{	
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
 		GetModemDateTime();
 		get_modem_time_flag = false;
 	}
@@ -2711,9 +2669,6 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif	
 		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}
 	

@@ -25,7 +25,7 @@
 #include "external_flash.h"
 #include "logger.h"
 
-#define PPG_DEBUG
+//#define PPG_DEBUG
 
 bool ppg_int_event = false;
 bool ppg_fw_upgrade_flag = false;

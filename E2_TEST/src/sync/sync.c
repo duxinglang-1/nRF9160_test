@@ -57,7 +57,7 @@ void SyncStatusUpdate(void)
 		sync_state = SYNC_STATUS_IDLE;
 		if(screen_id == SCREEN_ID_SYNC)
 		{
-			EnterIdleScreen();
+			ExitSyncDataScreen();
 		}
 		break;
 	}

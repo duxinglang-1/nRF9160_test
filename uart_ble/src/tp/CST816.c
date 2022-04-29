@@ -16,13 +16,18 @@
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "CST816.h"
-#include "CST816_update.h"
+#include "CST816S_update.h"
+//#include "CST816T_update.h"
 #include "logger.h"
 
-//#define TP_DEBUG
+#define TP_DEBUG
+//#define TP_TEST
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
+
+u8_t tp_chip_id = 0x00;
+u8_t tp_fw_ver = 0x00;
 
 tp_message tp_msg = {0};
 
@@ -36,7 +41,7 @@ static TpEventNode *tp_event_tail = NULL;
 
 static u8_t init_i2c(void)
 {
-	i2c_ctp = device_get_binding(CTP_DEV);
+	i2c_ctp = device_get_binding(TP_DEV);
 	if(!i2c_ctp)
 	{
 	#ifdef TP_DEBUG
@@ -58,7 +63,7 @@ static s32_t platform_write(u8_t reg, u8_t *bufp, u16_t len)
 
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
-	rslt = i2c_write(i2c_ctp, data, len+1, CST816_I2C_ADDRESS);
+	rslt = i2c_write(i2c_ctp, data, len+1, TP_I2C_ADDRESS);
 	return rslt;
 }
 
@@ -66,10 +71,10 @@ static s32_t platform_read(u8_t reg, u8_t *bufp, u16_t len)
 {
 	u32_t rslt = 0;
 
-	rslt = i2c_write(i2c_ctp, &reg, 1, CST816_I2C_ADDRESS);
+	rslt = i2c_write(i2c_ctp, &reg, 1, TP_I2C_ADDRESS);
 	if(rslt == 0)
 	{
-		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
+		rslt = i2c_read(i2c_ctp, bufp, len, TP_I2C_ADDRESS);
 	}
 	return rslt;
 }
@@ -79,16 +84,11 @@ static s32_t platform_write_word(u16_t reg, u8_t *bufp, u16_t len)
 	u8_t data[len+2];
 	u32_t rslt = 0;
 
-#if 1
-	data[0] = reg&0xFF;
-	data[1] = reg>>8;
-#else
 	data[0] = reg>>8;
 	data[1] = reg&0xFF;
-#endif
 
 	memcpy(&data[2], bufp, len);
-	rslt = i2c_write(i2c_ctp, data, len+2, CST816_I2C_ADDRESS);
+	rslt = i2c_write(i2c_ctp, data, len+2, TP_UPDATE_I2C_ADDRESS);
 	return rslt;
 }
 
@@ -97,18 +97,13 @@ static s32_t platform_read_word(u16_t reg, u8_t *bufp, u16_t len)
 	u8_t data[2];
 	u32_t rslt = 0;
 
-#if 1
-	data[0] = reg&0xFF;
-	data[1] = reg>>8;
-#else
 	data[0] = reg>>8;
 	data[1] = reg&0xFF;
-#endif
 
-	rslt = i2c_write(i2c_ctp, data, 2, CST816_I2C_ADDRESS);
+	rslt = i2c_write(i2c_ctp, data, 2, TP_UPDATE_I2C_ADDRESS);
 	if(rslt == 0)
 	{
-		rslt = i2c_read(i2c_ctp, bufp, len, CST816_I2C_ADDRESS);
+		rslt = i2c_read(i2c_ctp, bufp, len, TP_UPDATE_I2C_ADDRESS);
 	}
 
 	return rslt;
@@ -119,9 +114,9 @@ static int cst816s_enter_bootmode(void)
 	u8_t retryCnt = 50;
 	u8_t cmd[3] = {0};
 
-	gpio_pin_write(gpio_ctp, CTP_RESET, 0);
+	gpio_pin_write(gpio_ctp, TP_RESET, 0);
 	k_sleep(K_MSEC(10));
-	gpio_pin_write(gpio_ctp, CTP_RESET, 1);
+	gpio_pin_write(gpio_ctp, TP_RESET, 1);
 	k_sleep(K_MSEC(10));
 
 	while(retryCnt--)
@@ -159,47 +154,40 @@ static int cst816s_update(u16_t startAddr, u16_t len, const unsigned char *src)
 	k_data=len/PER_LEN;
 	for(i=0;i<k_data;i++)
 	{
+		u8_t retrycnt = 50;
+
 		cmd[0] = startAddr&0xFF;
 		cmd[1] = startAddr>>8;
 		platform_write_word(0xA014,cmd,2);
-		//TP_HRS_WriteBytes_updata(0x6A<<1,0xA014,cmd,2,REG_LEN_2B);
+		
 		memcpy(data_send,src,PER_LEN);
 		platform_write_word(0xA018,data_send,PER_LEN);
-		//TP_HRS_WriteBytes_updata(0x6A<<1,0xA018,data_send,PER_LEN,REG_LEN_2B);
 		k_sleep(K_MSEC(10));
-		//nrf_delay_ms(10);
+
 		cmd[0] = 0xEE;
 		platform_write_word(0xA004,cmd,1);
-		//TP_HRS_WriteBytes_updata(0x6A<<1,0xA004,cmd,1,REG_LEN_2B);
 		k_sleep(K_MSEC(50));
-		//nrf_delay_ms(50);
 
+		while(retrycnt--)
 		{
-			uint8_t retrycnt = 50;
-			while(retrycnt--)
+			cmd[0] = 0;
+			platform_read_word(0xA005,cmd,1);
+			if(cmd[0] == 0x55)
 			{
 				cmd[0] = 0;
-				platform_read_word(0xA005,cmd,1);
-				//TP_HRS_read_updata(0x6A<<1,0xA005,cmd,1,REG_LEN_2B);
-				if(cmd[0] == 0x55)
-				{
-					cmd[0] = 0;
-					break;
-				}
-				k_sleep(K_MSEC(10));
-				//nrf_delay_ms(10);
+				break;
 			}
+			k_sleep(K_MSEC(10));
 		}
+
 		startAddr += PER_LEN;
 		src += PER_LEN;
 		sum_len += PER_LEN;
-
 	}
 
-	// exit program mode
+	//exit program mode
 	cmd[0] = 0x00;
 	platform_write_word(0xA003,cmd,1);
-	//TP_HRS_WriteBytes_updata(0x6A<<1,0xA003,cmd,1,REG_LEN_2B);
 	return 0;
 }
 
@@ -221,15 +209,10 @@ static u32_t cst816s_read_checksum(void)
 
 	cmd[0] = 0;
 	platform_write_word(0xA003,cmd,1);
-	//TP_HRS_WriteBytes_updata(0x6A<<1,0xA003,cmd,1,REG_LEN_2B);
 	k_sleep(K_MSEC(500));
-	//nrf_delay_ms(500);
 
 	checksum.sum = 0;
 	platform_read_word(0xA008,checksum.buf,2);
-	//TP_HRS_read_updata(0x6A<<1,0xA008,checksum.buf,2,REG_LEN_2B);
-	//LOG(LEVEL_INFO,"checksum.sum=%x \r\n",checksum.sum);
-
 	return checksum.sum;
 }
 
@@ -243,20 +226,16 @@ bool ctp_hynitron_update(void)
 
 	if(cst816s_enter_bootmode() == 0)
 	{
-		LCD_ShowString(20,120,"enter bootmode!");
-		
 		if(sizeof(app_bin)>10)
 		{
-			u16_t startAddr = app_bin[1];
-			u16_t length = app_bin[3];					
-			u16_t checksum = app_bin[5];
+			u16_t startAddr;
+			u16_t length;					
+			u16_t checksum;
 			
-			startAddr <<= 8; startAddr |= app_bin[0];
-			length <<= 8; length |= app_bin[2];
-			checksum <<= 8; checksum |= app_bin[4];  
+			startAddr = (app_bin[1]<<8) | app_bin[0];
+			length = (app_bin[3]<<8) | app_bin[2];
+			checksum = (app_bin[5]<<8) | app_bin[4];  
 
-			LCD_ShowString(20,140,"check if need update!");
-			
 			if(cst816s_read_checksum()!= checksum)
 			{
 				LCD_ShowString(20,160,"start update!");
@@ -563,7 +542,14 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 		break;
 	}
 
+#ifdef TP_TEST //xb test 2022-04-21
+	tp_msg.evt_id = tp_type;
+	tp_msg.x_pos = x_pos;
+	tp_msg.y_pos = y_pos;
+	tp_redraw_flag = true;
+#else
 	check_touch_event_handle(tp_type, x_pos, y_pos);
+#endif
 }
 
 void CaptouchInterruptHandle(void)
@@ -577,12 +563,12 @@ void tp_interrupt_proc(void)
 	u8_t tp_temp[10]={0};
 	u16_t x_pos,y_pos;
 	
-	platform_read(CST816_REG_GESTURE, &tp_temp[0], 1);//手势
-	platform_read(CST816_REG_FINGER_NUM, &tp_temp[1], 1);//手指个数
-	platform_read(CST816_REG_XPOS_H, &tp_temp[2], 1);//x坐标高位 (&0x0f,取低4位)
-	platform_read(CST816_REG_XPOS_L, &tp_temp[3], 1);//x坐标低位
-	platform_read(CST816_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
-	platform_read(CST816_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
+	platform_read(TP_REG_GESTURE, &tp_temp[0], 1);//手势
+	platform_read(TP_REG_FINGER_NUM, &tp_temp[1], 1);//手指个数
+	platform_read(TP_REG_XPOS_H, &tp_temp[2], 1);//x坐标高位 (&0x0f,取低4位)
+	platform_read(TP_REG_XPOS_L, &tp_temp[3], 1);//x坐标低位
+	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
+	platform_read(TP_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
 #ifdef TP_DEBUG
 	LOGD("tp_temp=%x,%x,%x,%x,%x,%x",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3],tp_temp[4],tp_temp[5]);
@@ -624,14 +610,42 @@ void tp_interrupt_proc(void)
 	}
 }
 
-void CST816_init(void)
+void tp_get_id(uint8_t *chip_id, uint8_t *fw_ver)
+{
+	platform_read(TP_REG_CHIPID, chip_id, 1);
+	platform_read(TP_REG_FW_VER, fw_ver, 1);
+
+#ifdef TP_DEBUG
+	LOGD("chip_id:0x%x, fw_ver:0x%x", *chip_id, *fw_ver);
+#endif
+}
+
+void tp_set_auto_sleep(void)
+{
+	u8_t data[2] = {0};
+	
+	switch(tp_chip_id)
+	{
+	case TP_CST816S:
+		data[0] = 0;
+		break;
+		
+	case TP_CST816T:
+		data[0] = 0;
+		break;
+	}
+
+	platform_write(TP_REG_DIS_AUTO_SLEEP, &data[0], 1);
+}
+
+void tp_init(void)
 {
 	u8_t tmpbuf[128] = {0};
 	u8_t tp_temp_id=0;
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_LOW|GPIO_INT_DEBOUNCE;
 	
   	//端口初始化
-  	gpio_ctp = device_get_binding(CTP_PORT);
+  	gpio_ctp = device_get_binding(TP_PORT);
 	if(!gpio_ctp)
 	{
 	#ifdef TP_DEBUG
@@ -642,44 +656,55 @@ void CST816_init(void)
 
 	init_i2c();
 
-	gpio_pin_configure(gpio_ctp, CTP_EINT, flag);
-	gpio_pin_disable_callback(gpio_ctp, CTP_EINT);
-	gpio_init_callback(&gpio_cb, CaptouchInterruptHandle, BIT(CTP_EINT));
+	gpio_pin_configure(gpio_ctp, TP_EINT, flag);
+	gpio_pin_disable_callback(gpio_ctp, TP_EINT);
+	gpio_init_callback(&gpio_cb, CaptouchInterruptHandle, BIT(TP_EINT));
 	gpio_add_callback(gpio_ctp, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ctp, CTP_EINT);
+	gpio_pin_enable_callback(gpio_ctp, TP_EINT);
 
-	gpio_pin_configure(gpio_ctp, CTP_RESET, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_ctp, CTP_RESET, 0);
+	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ctp, TP_RESET, 0);
 	k_sleep(K_MSEC(10));
-	gpio_pin_write(gpio_ctp, CTP_RESET, 1);
+	gpio_pin_write(gpio_ctp, TP_RESET, 1);
 	k_sleep(K_MSEC(50));
 
-	platform_read(CST816_REG_CHIPID, &tp_temp_id, 1);
-	if(tp_temp_id == CST816_CHIP_ID)
+	tp_get_id(&tp_chip_id, &tp_fw_ver);
+	switch(tp_chip_id)
 	{
-	#ifdef TP_DEBUG
-		LOGD("It's CST816!");
-	#endif
+	case TP_CST816S:
+		ctp_hynitron_update();
+		break;
+
+	case TP_CST816T:
+		if(tp_fw_ver < 0x03)
+		{
+			ctp_hynitron_update();
+		}
+		break;
+		
 	}
-
-	sprintf(tmpbuf, "CTP ID:%x", tp_temp_id);
-	LCD_ShowString(20,100,tmpbuf);
-
-	//ctp_hynitron_update();
+	
+	tp_set_auto_sleep();
 }
 
 
 void test_tp(void)
 {
+	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 
-	sprintf(tmpbuf, "test_tp");
-	LCD_ShowString(20,80,tmpbuf);
-	//CST816_init();
+	sprintf(tmpbuf, "TP_TEST");
+	
+	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
+
+	tp_init();
 }
 
 void tp_show_infor(void)
 {
+	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 	
 	switch(tp_msg.evt_id)
@@ -709,11 +734,14 @@ void tp_show_infor(void)
 		strcpy(tmpbuf, "LONG_PRESS  ");
 		break;
 	}
+
+	LCD_SetFontSize(FONT_SIZE_24);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,80,tmpbuf);	
 	
-	LCD_ShowString(20,120,tmpbuf);
-	
-	sprintf(tmpbuf, "x:%5d, y:%5d", tp_msg.x_pos, tp_msg.y_pos);
-	LCD_ShowString(20,140,tmpbuf);
+	sprintf(tmpbuf, "x:%05d, y:%05d", tp_msg.x_pos, tp_msg.y_pos);
+	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2,110,tmpbuf);
 }
 
 void TPMsgProcess(void)

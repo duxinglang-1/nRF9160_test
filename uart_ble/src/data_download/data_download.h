@@ -32,7 +32,7 @@
 #define DL_NOTIFY_PRO_NUM_W		58
 #define DL_NOTIFY_PRO_NUM_H		33
 #define DL_NOTIFY_PRO_NUM_X		((LCD_WIDTH-DL_NOTIFY_PRO_NUM_W)/2)
-#define DL_NOTIFY_PRO_NUM_Y		166
+#define DL_NOTIFY_PRO_NUM_Y		(DL_NOTIFY_PRO_Y+DL_NOTIFY_PRO_H+5);
 
 #define DL_NOTIFY_YES_W			60
 #define DL_NOTIFY_YES_H			40
@@ -91,18 +91,23 @@ extern DL_DATA_TYPE g_dl_data_type;
 extern void dl_work_init(struct k_work_q *work_q);
 extern void dl_init(void);
 #ifdef CONFIG_IMG_DATA_UPDATE
+extern void dl_img_prev(void);
 extern void dl_img_exit(void);
 extern void dl_img_start(void);
 #endif
 #ifdef CONFIG_FONT_DATA_UPDATE
+extern void dl_font_prev(void);
 extern void dl_font_exit(void);
 extern void dl_font_start(void);
 #endif
 #ifdef CONFIG_PPG_DATA_UPDATE
+extern void dl_ppg_prev(void);
 extern void dl_ppg_exit(void);
 extern void dl_ppg_start(void);
 #endif
+extern void dl_prev(void);
 extern void dl_exit(void);
+extern void dl_start(void);
 extern void dl_start_confirm(void);
 extern void dl_reboot_confirm(void);
 extern bool dl_is_running(void);

@@ -19,6 +19,7 @@
 #define CMD_GET_CUR_BAND	"AT%XCBAND"
 #define CMD_GET_SUPPORT_BAND	"AT%XCBAND=?"
 #define CMD_GET_LOCKED_BAND		"AT%XBANDLOCK?"
+#define CMD_GET_REG_STATUS	"AT+CEREG?"
 #define CMD_SET_CREG	 	"AT+CEREG=5"
 #if defined(CONFIG_LTE_LEGACY_PCO_MODE)
 #define CMD_SET_EPCO_MODE	"AT%XEPCO=0"
@@ -30,7 +31,7 @@
 #define IMEI_MAX_LEN	(15)
 #define IMSI_MAX_LEN	(15)
 #define ICCID_MAX_LEN	(20)
-#define MODEM_MAX_LEN   (20)
+#define MODEM_MAX_LEN   (17)
 
 #define APN_MAX_LEN			(100)
 #define	PLMN_MAX_LEN        (6)

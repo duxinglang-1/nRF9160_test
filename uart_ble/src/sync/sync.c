@@ -126,7 +126,10 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 			break;
 			
 		case SYNC_STATUS_LINKING:
-			SyncUpdateStatus();
+			if(screen_id == SCREEN_ID_SYNC)
+			{
+				SyncUpdateStatus();
+			}
 			SyncSendHealthData();
 			break;
 			
@@ -136,7 +139,10 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 		#ifdef CONFIG_ANIMATION_SUPPORT 
 			AnimaStopShow();
 		#endif
-			sync_redraw_flag = true;
+			if(screen_id == SCREEN_ID_SYNC)
+			{
+				sync_redraw_flag = true;
+			}	
 			k_timer_start(&sync_timer, K_SECONDS(3), NULL);
 			break;
 		}

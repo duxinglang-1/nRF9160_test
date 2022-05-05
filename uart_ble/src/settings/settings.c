@@ -21,7 +21,7 @@ bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 bool need_fw_update = true;
 
-u8_t g_fw_version[64] = "V1.6.2_20220408";
+u8_t g_fw_version[64] = "V1.6.4_20220428";
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
 static bool reset_redraw_flag = false;
@@ -93,7 +93,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	LANGUAGE_EN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
-	BACKLIGHT_15_SEC,		//backlight time
+	BACKLIGHT_ALWAYS_ON,		//backlight time
 	BACKLIGHT_LEVEL_4,		//backlight level
 	{true,1},				//PHD
 	{500,60},				//position interval

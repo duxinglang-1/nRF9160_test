@@ -163,6 +163,9 @@ void APP_Ask_GPS_off(void)
 
 void gps_off(void)
 {
+	if(!gps_is_on)
+		return;
+	
 	set_gps_enable(false);
 }
 
@@ -176,9 +179,9 @@ bool gps_is_working(void)
 
 void gps_on(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif
+	if(gps_is_on)
+		return;
+	
 	set_gps_enable(true);
 }
 
@@ -580,6 +583,6 @@ void GPSMsgProcess(void)
 	
 	if(gps_is_on)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(5));
 	}
 }

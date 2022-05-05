@@ -45,7 +45,7 @@
 
 #define NB_DEBUG
 
-#define LTE_TAU_WAKEUP_EARLY_TIME	(120)
+#define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
 #define AT_CEREG_REG_STATUS_INDEX		1
@@ -69,10 +69,6 @@ static void GetModemStatusCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_modem_status_timer, GetModemStatusCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void TauWakeUpUartCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(tau_wakeup_uart_timer, TauWakeUpUartCallBack, NULL);
-#endif
 
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
 /* Preferred network mode: Narrowband-IoT */
@@ -163,7 +159,7 @@ u8_t g_timezone[5] = {0};
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
 u16_t g_act_time = 0;
-
+u32_t g_tau_ext_time = 0;
 static struct k_sem net_link;
 
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)||defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
@@ -625,10 +621,6 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 	mqtt_connecting_flag = true;
 	
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif
-
 	client_init(&client);
 
 	err = mqtt_connect(&client);
@@ -825,7 +817,6 @@ static void MqttDicConnectStop(void)
 }
 
 
-#if CONFIG_MODEM_INFO
 /**@brief Callback handler for LTE RSRP data. */
 static void modem_rsrp_handler(char rsrp_value)
 {
@@ -840,6 +831,7 @@ static void modem_rsrp_handler(char rsrp_value)
 	nb_redraw_sig_flag = true;
 }
 
+#ifdef CONFIG_MODEM_INFO
 /**brief Initialize LTE status containers. */
 void modem_data_init(void)
 {
@@ -870,15 +862,12 @@ static void modem_configure(void)
 		TestNBUpdateINfor();
 	}
 
-#if 1 //xb test 20200927
 	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("AT_CMD write fail!");
 	#endif
-		return;
 	}
-#endif
 
 #if defined(CONFIG_LTE_LINK_CONTROL)
 	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT))
@@ -996,11 +985,74 @@ void NBRedrawSignal(void)
 	u8_t strbuf[128] = {0};
 	u8_t tmpbuf[128] = {0};
 
-	if(at_cmd_write(CMD_GET_CESQ, strbuf, sizeof(strbuf), NULL) == 0)
+	if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
 	{
+		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
+		//<n>
+		//	0 每 Disable unsolicited result codes
+		//	1 每 Enable unsolicited result codes +CEREG:<stat>
+		//	2 每 Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
+		//	3 每 Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
+		//	4 每 Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
+		//	5 每 Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
+		//<stat>
+		//	0 每 Not registered. UE is not currently searching for an operator to register to.
+		//	1 每 Registered, home network.
+		//	2 每 Not registered, but UE is currently trying to attach or searching an operator to register to.
+		//	3 每 Registration denied.
+		//	4 每 Unknown (e.g. out of E-UTRAN coverage).
+		//	5 每 Registered, roaming.
+		//	8 每 Attached for emergency bearer services only.
+		//	90 每 Not registered due to UICC failure.
+		//<tac>
+		//	String. A 2-byte Tracking Area Code (TAC) in hexadecimal format.
+		//<ci>
+		//	String. A 4-byte E-UTRAN cell ID in hexadecimal format.
+		//<AcT>
+		//	7 每 E-UTRAN
+		//	9 每 E-UTRAN NB-S1
+		//<cause_type>
+		//	0 每 <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
+		//<reject_cause>
+		//	EMM cause value. See 3GPP TS 24.301 Annex A
+		//<Active-Time>
+		//	String. One byte in an 8-bit format.
+		//	Indicates the Active Time value (T3324) allocated to the device in E-UTRAN. For the coding and value range, see the GPRS Timer 2 IE in 3GPP TS 24.008 Table 10.5.163/3GPP TS 24.008.
+		//<Periodic-TAU>
+		//	String. One byte in an 8-bit format.
+		//	Indicates the extended periodic TAU value (T3412) allocated to the device in EUTRAN. For the coding and value range, see the GPRS Timer 3 IE in 3GPP TS 24.008 Table 10.5.163a/3GPP TS 24.008.
+		u8_t *ptr;
+		u8_t reg_status;
+		
 	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
 	#endif
+
+		ptr = strstr(strbuf, "+CEREG: ");
+		if(ptr)
+		{
+			//硌鍔芛
+			ptr += strlen("+CEREG: ");
+			//reg_status
+			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
+			reg_status = atoi(tmpbuf);
+		#ifdef NB_DEBUG
+			LOGD("reg_status:%d", reg_status);
+		#endif
+			
+			if(reg_status == 1 || reg_status == 5)
+			{
+				g_nw_registered = true;
+			}
+			else
+			{
+				g_nw_registered = false;
+				nb_connected = false;
+				
+				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+			}
+		}
 	}
 
 	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
@@ -1054,16 +1106,6 @@ void NBRedrawSignal(void)
 				{
 					flag = true;	
 				}
-
-		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-				if(k_timer_remaining_get(&tau_wakeup_uart_timer) > 0)
-					k_timer_stop(&tau_wakeup_uart_timer);
-				
-				if(g_tau_time > LTE_TAU_WAKEUP_EARLY_TIME)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time-LTE_TAU_WAKEUP_EARLY_TIME), NULL);
-				else if(g_tau_time > 0)
-					k_timer_start(&tau_wakeup_uart_timer, K_SECONDS(g_tau_time), NULL);
-		#endif
 			}
 		}
 	}
@@ -1756,13 +1798,6 @@ static void NBReconnectCallBack(struct k_timer *timer_id)
 	nb_reconnect_flag = true;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void TauWakeUpUartCallBack(struct k_timer *timer_id)
-{
-	uart_wake_flag = true;
-}
-#endif
-
 static void GetNetWorkSignalCallBack(struct k_timer *timer_id)
 {
 	get_modem_signal_flag = true;
@@ -1812,9 +1847,6 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 			u8_t act = 0;
 			u16_t flag;
 
-			if(g_nw_registered)
-				return;
-			
 			g_nw_registered = true;
 
 		#if 0
@@ -1928,6 +1960,39 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 		#ifdef NB_DEBUG
 			LOGD("Periodic-TAU-ext:%s", tmpbuf);
 		#endif
+			memcpy(strbuf, &tmpbuf[1], 8);
+			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
+			switch(act>>5)
+			{
+			case 0://0 0 0 每 value is incremented in multiples of 10 minutes
+				flag = 10*60;
+				break;
+			case 1://0 0 1 每 value is incremented in multiples of 1 hour
+				flag = 60*60;
+				break;
+			case 2://0 1 0 每 value is incremented in multiples of 10 hours
+				flag = 10*60*60;
+				break;
+			case 3://0 1 1 每 value is incremented in multiples of 2 seconds
+				flag = 2;
+				break;
+			case 4://1 0 0 每 value is incremented in multiples of 30 seconds
+				flag = 30;
+				break;
+			case 5://1 0 1 每 value is incremented in multiples of 1 minute
+				flag = 60;
+				break;
+			case 6://1 1 0 每 value is incremented in multiples of 320 hours
+				flag = 320*60*60;
+				break;
+			case 7://1 1 1 每 value indicates that the timer is deactivated
+				flag = 0;
+				break;
+			}
+			g_tau_ext_time = flag*((strbuf[3]-0x30)*0x10+(strbuf[4]-0x30)*0x08+(strbuf[5]-0x30)*0x04+(strbuf[6]-0x30)*0x02+(strbuf[7]-0x30)*0x01);
+		#ifdef NB_DEBUG
+			LOGD("g_tau_ext_time:%d", g_tau_ext_time);
+		#endif
 			//Periodic-TAU
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 16, tmpbuf);
@@ -1963,9 +2028,6 @@ void DecodeModemMonitor(u8_t *buf, u32_t len)
 			nb_connected = false;
 			g_rsrp = 255;
 			modem_rsrp_handler(g_rsrp);
-
-			if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(30), NULL);
 		}
 	}
 }
@@ -2099,24 +2161,6 @@ void GetModemStatus(void)
 	#endif
 		DecodeModemMonitor(tmpbuf, strlen(tmpbuf));
 	}
-
-#if 0
-	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("cesq:%s", tmpbuf);
-	#endif
-		len = strlen(tmpbuf);
-		tmpbuf[len-2] = ',';
-		tmpbuf[len-1] = 0x00;
-		
-		ptr = strstr(tmpbuf, "+CESQ: ");
-		ptr += strlen("+CESQ: ");
-		GetStringInforBySepa(ptr, ",", 6, strbuf);
-		g_rsrp = atoi(strbuf);
-		modem_rsrp_handler(g_rsrp);
-	}
-#endif	
 }
 
 void SetModemTurnOn(void)
@@ -2419,12 +2463,7 @@ static void nb_link(struct k_work *work)
 	#endif
 	
 		nb_connecting_flag = true;
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
-
 		configure_low_power();
-
 		err = net_init_and_link();
 		if(err)
 		{
@@ -2458,8 +2497,9 @@ static void nb_link(struct k_work *work)
 			
 			nb_connected = true;
 			retry_count = 0;
-
+		#ifdef CONFIG_MODEM_INFO
 			modem_data_init();
+		#endif
 			GetModemDateTime();
 			NBRedrawNetMode();
 		}
@@ -2564,9 +2604,6 @@ void NBMsgProcess(void)
 		}
 		else
 		{
-		#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-			uart_sleep_out();
-		#endif
 			SetModemTurnOff();
 			modem_configure();
 		}
@@ -2574,9 +2611,6 @@ void NBMsgProcess(void)
 
 	if(get_modem_info_flag)
 	{	
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
 		GetModemInfor();
 		get_modem_info_flag = false;
 	}
@@ -2589,18 +2623,12 @@ void NBMsgProcess(void)
 
 	if(get_modem_signal_flag)
 	{
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
 		GetModemSignal();
 		get_modem_signal_flag = false;
 	}
 
 	if(get_modem_time_flag)
 	{	
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif
 		GetModemDateTime();
 		get_modem_time_flag = false;
 	}
@@ -2641,15 +2669,12 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-	#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		uart_sleep_out();
-	#endif	
 		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}
 	
 	if(nb_connecting_flag)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(5));
 	}
 }
 

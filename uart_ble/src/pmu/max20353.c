@@ -85,7 +85,7 @@ static bool init_i2c(void)
 	{
 		i2c_configure(i2c_pmu, I2C_SPEED_SET(I2C_SPEED_FAST));
 		return true;
-	}	
+	}
 }
 
 static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t len)
@@ -97,6 +97,7 @@ static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t l
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
 	rslt = i2c_write(handle, data, len+1, MAX20353_I2C_ADDR);
+
 	return rslt;
 }
 
@@ -109,6 +110,7 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 	{
 		rslt = i2c_read(handle, bufp, len, MAX20353_I2C_ADDR);
 	}
+
 	return rslt;
 }
 

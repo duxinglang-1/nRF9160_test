@@ -24,6 +24,7 @@
 #define TLS_SEC_TAG 42
 #define DL_SOCKET_RETRIES 2
 
+static bool dl_start_flag = false;
 static bool dl_run_flag = false;
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
@@ -381,6 +382,14 @@ bool dl_is_running(void)
 }
 
 #ifdef CONFIG_IMG_DATA_UPDATE
+void dl_img_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlImgScreen();
+}
+
 void dl_img_exit(void)
 {
 	dl_run_flag = false;
@@ -402,6 +411,14 @@ void dl_img_start(void)
 }
 #endif
 #ifdef CONFIG_FONT_DATA_UPDATE
+void dl_font_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlFontScreen();
+}
+
 void dl_font_exit(void)
 {
 	dl_run_flag = false;
@@ -423,6 +440,14 @@ void dl_font_start(void)
 }
 #endif
 #ifdef CONFIG_PPG_DATA_UPDATE
+void dl_ppg_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlPpgScreen();
+}
+
 void dl_ppg_exit(void)
 {
 	dl_run_flag = false;
@@ -443,6 +468,31 @@ void dl_ppg_start(void)
 	}
 }
 #endif
+
+void dl_prev(void)
+{
+	switch(g_dl_data_type)
+	{
+	case DL_DATA_IMG:
+	#ifdef CONFIG_IMG_DATA_UPDATE
+		dl_img_prev();
+	#endif
+		break;
+
+	case DL_DATA_FONT:
+	#ifdef CONFIG_FONT_DATA_UPDATE
+		dl_font_prev();
+	#endif
+		break;
+		
+	case DL_DATA_PPG:
+	#ifdef CONFIG_PPG_DATA_UPDATE
+		dl_ppg_prev();
+	#endif 
+		break;
+	}
+}
+
 
 void dl_exit(void)
 {
@@ -468,12 +518,13 @@ void dl_exit(void)
 	}
 }
 
+void dl_start(void)
+{
+	dl_start_flag = true;
+}
+
 void dl_start_confirm(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif	
-
 	dl_cur_status = DL_STATUS_LINKING;
 	dl_redraw_pro_flag = true;
 
@@ -551,6 +602,12 @@ void DlRedrawProgress(void)
 
 void DlMsgProc(void)
 {
+	if(dl_start_flag)
+	{
+		dl_start_confirm();
+		dl_start_flag = false;
+	}
+	
 	if(dl_redraw_pro_flag)
 	{
 		dl_redraw_pro_flag = false;

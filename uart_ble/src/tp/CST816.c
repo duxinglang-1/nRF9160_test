@@ -17,7 +17,7 @@
 #include "lcd.h"
 #include "CST816.h"
 #include "CST816S_update.h"
-//#include "CST816T_update.h"
+#include "CST816T_update.h"
 #include "logger.h"
 
 #define TP_DEBUG
@@ -51,7 +51,7 @@ static u8_t init_i2c(void)
 	} 
 	else
 	{
-		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_FAST));
+		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_STANDARD));
 		return 0;
 	}
 }
@@ -125,8 +125,8 @@ static int cst816s_enter_bootmode(void)
 		platform_write_word(0xA001,cmd,1);
 		k_sleep(K_MSEC(10));
 		platform_read_word(0xA003,cmd,1);
-		
-		if(cmd[0] != 0x55)
+	
+		if((cmd[0] != 0x55) && (cmd[0] != 0xC1))
 		{
 			k_sleep(K_MSEC(10));
 			continue;
@@ -143,11 +143,10 @@ static int cst816s_enter_bootmode(void)
 
 #define PER_LEN	512
 
-static int cst816s_update(u16_t startAddr, u16_t len, const unsigned char *src)
+static int cst816s_update(u16_t startAddr, u16_t len, unsigned char *src)
 {
-	u8_t cmd[10];
-	u8_t data_send[PER_LEN];
-	u32_t sum_len;
+	u8_t cmd[10] = {0};
+	u32_t sum_len = 0;
 	u32_t i,k_data=0,b_data=0;
 
 	sum_len = 0;
@@ -156,17 +155,20 @@ static int cst816s_update(u16_t startAddr, u16_t len, const unsigned char *src)
 	{
 		u8_t retrycnt = 50;
 
+		if(sum_len >= len)
+			return -1;
+		
 		cmd[0] = startAddr&0xFF;
 		cmd[1] = startAddr>>8;
 		platform_write_word(0xA014,cmd,2);
+		k_sleep(K_MSEC(2));
 		
-		memcpy(data_send,src,PER_LEN);
-		platform_write_word(0xA018,data_send,PER_LEN);
-		k_sleep(K_MSEC(10));
+		platform_write_word(0xA018,src,PER_LEN);
+		k_sleep(K_MSEC(4));
 
 		cmd[0] = 0xEE;
 		platform_write_word(0xA004,cmd,1);
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(100));
 
 		while(retrycnt--)
 		{
@@ -226,26 +228,42 @@ bool ctp_hynitron_update(void)
 
 	if(cst816s_enter_bootmode() == 0)
 	{
-		if(sizeof(app_bin)>10)
+		u8_t *ptr = NULL;
+		u16_t startAddr;
+		u16_t length;					
+		u16_t checksum;
+		
+		switch(tp_chip_id)
 		{
-			u16_t startAddr;
-			u16_t length;					
-			u16_t checksum;
+		case TP_CST816S:
+			if(sizeof(cst816s_app_bin) > 10)
+				ptr = cst816s_app_bin;
+			else
+				return false;
+			break;
 			
-			startAddr = (app_bin[1]<<8) | app_bin[0];
-			length = (app_bin[3]<<8) | app_bin[2];
-			checksum = (app_bin[5]<<8) | app_bin[4];  
-
-			if(cst816s_read_checksum()!= checksum)
-			{
-				LCD_ShowString(20,160,"start update!");
-				
-				cst816s_update(startAddr, length, &app_bin[6]);
-				cst816s_read_checksum();
-
-				LCD_ShowString(20,180,"complete update!");
-			}
+		case TP_CST816T:
+			if(sizeof(cst816t_app_bin) > 10)
+				ptr = cst816t_app_bin;
+			else
+				return false;
+			break;
 		}
+
+		startAddr = *(ptr+1)<<8 | *(ptr+0);
+		length = *(ptr+3)<<8 | *(ptr+2);
+		checksum = *(ptr+5)<<8 | *(ptr+4);  
+
+		if(cst816s_read_checksum()!= checksum)
+		{
+			LCD_ShowString(20,160,"start update!");
+			
+			cst816s_update(startAddr, length, ptr+6);
+			cst816s_read_checksum();
+
+			LCD_ShowString(20,180,"complete update!");
+		}
+
 		return true;
 	}
 	return false;
@@ -672,18 +690,20 @@ void tp_init(void)
 	switch(tp_chip_id)
 	{
 	case TP_CST816S:
-		ctp_hynitron_update();
+		if(tp_fw_ver < 0x02)
+		{
+			ctp_hynitron_update();
+		}
 		break;
 
 	case TP_CST816T:
-		if(tp_fw_ver < 0x03)
+		if(tp_fw_ver < 0x04)
 		{
 			ctp_hynitron_update();
 		}
 		break;
 		
 	}
-	
 	tp_set_auto_sleep();
 }
 

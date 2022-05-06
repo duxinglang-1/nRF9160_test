@@ -9,6 +9,7 @@
 #include "datetime.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
 #include "logger.h"
 
 //#define SHOW_LOG_IN_SCREEN
@@ -204,6 +205,9 @@ void pmu_battery_low_shutdown(void)
 
 void pmu_reg_proc(void)
 {
+	u8_t i;
+	u8_t tmpbuf[128] = {0};
+	notify_infor infor = {0};
 	u8_t int0,int1,int2;
 	u8_t status0,status1,status2,status3;
 
@@ -254,6 +258,16 @@ void pmu_reg_proc(void)
 				g_bat_soc = 100;
 		#endif
 
+			if(screen_id == SCREEN_ID_NOTIFY)
+			{
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
+				notify_msg.img[0] = IMG_BAT_CHRING_ANI_5_ADDR;
+				notify_msg.img_count = 1;
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+				scr_msg[screen_id].para = SCREEN_EVENT_UPDATE_POP_STR|SCREEN_EVENT_UPDATE_POP_IMG;
+			}
+			
 			lcd_sleep_out = true;
 			break;
 		}
@@ -267,6 +281,11 @@ void pmu_reg_proc(void)
 		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
+			u32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
+
+		#ifdef PMU_DEBUG
+			LOGD("charger push in!");
+		#endif	
 			pmu_battery_stop_shutdown();
 			
 			InitCharger();
@@ -276,10 +295,26 @@ void pmu_reg_proc(void)
 			g_chg_status = BAT_CHARGING_PROGRESS;
 			g_bat_level = BAT_LEVEL_NORMAL;
 
+			infor.x = 0;
+			infor.y = 0;
+			infor.w = LCD_WIDTH;
+			infor.h = LCD_HEIGHT;
+			infor.align = NOTIFY_ALIGN_CENTER;
+			infor.type = NOTIFY_TYPE_NOTIFY;
+			sprintf(tmpbuf, "%d%%", g_bat_soc);
+			mmi_asc_to_ucs2(infor.text, tmpbuf);
+			for(i=0;i<ARRAY_SIZE(bat_img);i++)
+				infor.img[i] = bat_img[i];
+			infor.img_count = ARRAY_SIZE(bat_img);
+			DisplayPopUp(infor);
+			
 			lcd_sleep_out = true;
 		}
 		else
-		{			
+		{		
+		#ifdef PMU_DEBUG
+			LOGD("charger push out!");
+		#endif
 			charger_is_connected = false;
 			
 			g_chg_status = BAT_CHARGING_NO;
@@ -307,7 +342,8 @@ void pmu_reg_proc(void)
 				g_bat_level = BAT_LEVEL_GOOD;
 			}
 		#endif
-		
+
+			ExitNotifyScreen();
 			lcd_sleep_out = true;
 		}
 
@@ -332,7 +368,9 @@ void PmuInterruptHandle(void)
 //Clear the corresponding bit after servicing the alert
 bool pmu_alert_proc(void)
 {
-	u8_t buff[128] = {0};
+	u8_t i;
+	u8_t tmpbuf[128] = {0};
+	notify_infor infor = {0};
 	int ret;
 	u8_t MSB,LSB;
 
@@ -369,7 +407,18 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				//DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
+				infor.x = 0;
+				infor.y = 0;
+				infor.w = LCD_WIDTH;
+				infor.h = LCD_HEIGHT;
+				infor.align = NOTIFY_ALIGN_CENTER;
+				infor.type = NOTIFY_TYPE_POPUP;
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(infor.text, tmpbuf);
+				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
+				infor.img_count = 1;
+				DisplayPopUp(infor);
+				
 				pmu_battery_low_shutdown();
 			}
 		}
@@ -378,7 +427,17 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
 			{
-				//DisplayPopUp("Battery voltage is low, please charge in time!");
+				infor.x = 0;
+				infor.y = 0;
+				infor.w = LCD_WIDTH;
+				infor.h = LCD_HEIGHT;
+				infor.align = NOTIFY_ALIGN_CENTER;
+				infor.type = NOTIFY_TYPE_POPUP;
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(infor.text, tmpbuf);
+				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
+				infor.img_count = 1;
+				DisplayPopUp(infor);
 			}
 		}
 		else if(g_bat_soc < 80)
@@ -393,6 +452,14 @@ bool pmu_alert_proc(void)
 		if(charger_is_connected)
 		{
 			g_bat_level = BAT_LEVEL_NORMAL;
+			if(screen_id == SCREEN_ID_NOTIFY)
+			{
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
+				
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
+			}
 		}
 
 		if(g_chg_status == BAT_CHARGING_NO)

@@ -637,6 +637,26 @@ void APPStartHrSpo2(void)
 
 void MenuStartHrSpo2(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	ppg_start_flag = true;
@@ -657,6 +677,26 @@ void APPStartBpt(void)
 
 void MenuStartBpt(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
 	g_ppg_trigger |=TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_BPT;
 	ppg_start_flag = true;
@@ -677,6 +717,26 @@ void APPStartEcg(void)
 
 void MenuStartEcg(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_ECG;
 	ppg_start_flag = true;

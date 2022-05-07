@@ -12,6 +12,7 @@
 #include <zephyr.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
+#include "external_flash.h"
 #include "lcd.h"
 #include "screen.h"
 #include "temp.h"
@@ -72,6 +73,26 @@ void APPStartTemp(void)
 
 void MenuStartTemp(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+	
 	g_temp_trigger |= TEMP_TRIGGER_BY_MENU;
 	temp_start_flag = true;
 }

@@ -2654,9 +2654,9 @@ void NotifyUpdate(void)
 					}
 				}
 			}
-			else
+			else if(w > 0)
 			{
-				x = (w > (str_w-2*offset_w))? 0 : ((str_w-2*offset_w)-w)/2;
+				x = ((str_w-2*offset_w)-w)/2;
 				y = (h > (str_h-2*offset_h))? 0 : ((str_h-2*offset_h)-h)/2;
 				x += (str_x+offset_w);
 				y += (str_y+offset_h);
@@ -2766,9 +2766,9 @@ void NotifyShow(void)
 				}
 			}
 		}
-		else
+		else if(w > 0)
 		{
-			x = (w > (str_w-2*offset_w))? 0 : ((str_w-2*offset_w)-w)/2;
+			x = ((str_w-2*offset_w)-w)/2;
 			y = (h > (str_h-2*offset_h))? 0 : ((str_h-2*offset_h)-h)/2;
 			x += (str_x+offset_w);
 			y += (str_y+offset_h);

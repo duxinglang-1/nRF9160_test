@@ -113,7 +113,7 @@ extern "C" {
 //notify
 #define NOTIFY_IMG_MAX_COUNT	10
 #define NOTIFY_TEXT_MAX_LEN		80
-#define NOTIFY_TIMER_INTERVAL	5
+#define NOTIFY_TIMER_INTERVAL	3
 
 //sport
 #define IMU_SEP_LINE_W				165

@@ -372,7 +372,11 @@ bool pmu_alert_proc(void)
 	u8_t tmpbuf[128] = {0};
 	notify_infor infor = {0};
 	int ret;
-	u8_t MSB,LSB;
+	u8_t MSB=0,LSB=0;
+
+#ifdef PMU_DEBUG
+	LOGD("begin");
+#endif
 
 #ifdef BATTERY_SOC_GAUGE
 	ret = MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
@@ -510,8 +514,13 @@ bool pmu_alert_proc(void)
 		MAX20353_QuickStart();
 	}
 
-	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
-	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+	ret = MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+	if(ret == MAX20353_ERROR)
+		return false;
+	
+	ret = MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+	if(ret == MAX20353_ERROR)
+			return false;
 
 	return true;
 #endif	

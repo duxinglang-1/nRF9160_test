@@ -19,6 +19,12 @@
 #include "esp8266.h"
 #endif
 #include "datetime.h"
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif/*CONFIG_PPG_SUPPORT*/
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif/*CONFIG_TEMP_SUPPORT*/
 #include "communicate.h"
 #include "logger.h"
 
@@ -212,18 +218,39 @@ void TimeCheckSendHealthData(void)
 		sprintf(tmpbuf, "%d,", distance);
 		strcat(databuf, tmpbuf);
 		
+	#ifdef CONFIG_PPG_SUPPORT	
 		//systolic
-		strcat(databuf, "0,");
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		sprintf(tmpbuf, "%d,", g_bp_systolic);
+		strcat(databuf, tmpbuf);
 		
 		//diastolic
-		strcat(databuf, "0,");
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		sprintf(tmpbuf, "%d,", g_bp_diastolic); 	
+		strcat(databuf, tmpbuf);
 		
 		//heart rate
-		strcat(databuf, "0,");
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		sprintf(tmpbuf, "%d,", g_hr);		
+		strcat(databuf, tmpbuf);
 		
 		//SPO2
-		strcat(databuf, "0");
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		sprintf(tmpbuf, "%d,", g_spo2); 	
+		strcat(databuf, tmpbuf);
+	#else
+		strcat(databuf, "0,0,0,0,");
+	#endif/*CONFIG_PPG_SUPPORT*/
 		
+	#ifdef CONFIG_TEMP_SUPPORT
+		//body temp
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		sprintf(tmpbuf, "%0.1f", g_temp_body);	
+		strcat(databuf, tmpbuf);
+	#else
+		strcat(databuf, "0.0");
+	#endif/*CONFIG_TEMP_SUPPORT*/
+
 		NBSendHealthData(databuf, strlen(databuf));
 	}
 }
@@ -362,19 +389,40 @@ void SyncSendHealthData(void)
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", distance);
 	strcat(databuf, tmpbuf);
-	
+
+#ifdef CONFIG_PPG_SUPPORT	
 	//systolic
-	strcat(databuf, "0,");
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_bp_systolic);
+	strcat(databuf, tmpbuf);
 	
 	//diastolic
-	strcat(databuf, "0,");
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_bp_diastolic); 	
+	strcat(databuf, tmpbuf);
 	
 	//heart rate
-	strcat(databuf, "0,");
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_hr);		
+	strcat(databuf, tmpbuf);
 	
 	//SPO2
-	strcat(databuf, "0");
-	
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_spo2); 	
+	strcat(databuf, tmpbuf);
+#else
+	strcat(databuf, "0,0,0,0,");
+#endif/*CONFIG_PPG_SUPPORT*/
+
+#ifdef CONFIG_TEMP_SUPPORT
+	//body temp
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%0.1f", g_temp_body); 	
+	strcat(databuf, tmpbuf);
+#else
+	strcat(databuf, "0.0");
+#endif/*CONFIG_TEMP_SUPPORT*/
+
 	NBSendHealthData(databuf, strlen(databuf));
 }
 
@@ -467,5 +515,35 @@ void SendPowerOffData(u8_t pwroff_mode)
 	strcat(databuf, tmpbuf);
 			
 	NBSendPowerOffInfor(databuf, strlen(databuf));
+}
+
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendSosAlarmData
+ * DESCRIPTION
+ *  发送SOS报警包(无地址信息)
+ * PARAMETERS
+ *	
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendSosAlarmData(void)
+{
+	u8_t reply[256] = {0};
+	u32_t i,count=1;
+
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
+	{
+		strcat(reply, "");
+		strcat(reply, "&");
+		strcat(reply, "");
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
+	}
+
+	NBSendSosWifiData(reply, strlen(reply));
 }
 

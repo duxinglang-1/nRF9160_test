@@ -233,6 +233,8 @@ void SOSStart(void)
 #ifdef CONFIG_WIFI
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
+#else
+	SendSosAlarmData();
 #endif
 
 	lcd_sleep_out = true;

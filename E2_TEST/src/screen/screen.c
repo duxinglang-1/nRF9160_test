@@ -102,25 +102,50 @@ void EnterBPScreen(void);
 void EnterSleepScreen(void);
 void EnterStepsScreen(void);
 
+void ShowBootUpLogoFinished(void)
+{
+	if(charger_is_connected)
+	{
+		u8_t i;
+		u8_t tmpbuf[128] = {0};
+		u32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_NOTIFY;
+		sprintf(tmpbuf, "%d%%", g_bat_soc);
+		mmi_asc_to_ucs2(infor.text, tmpbuf);
+		for(i=0;i<ARRAY_SIZE(bat_img);i++)
+			infor.img[i] = bat_img[i];
+		infor.img_count = ARRAY_SIZE(bat_img);
+		DisplayPopUp(infor);
+	}
+	else
+	{
+		EnterIdleScreen();
+	}
+}
+
 void ShowBootUpLogo(void)
 {
 	u8_t i,count=0;
 	u16_t x,y,w,h;
 
-#ifdef IMG_FONT_FROM_FLASH
-	//LCD_ShowImg_From_Flash(PWRON_STR_X, PWRON_STR_Y, IMG_ALARM_ANI_1_ADDR);
-#endif
-
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 200, false, EnterIdleScreen);
+	AnimaShow(PWRON_LOGO_X, PWRON_LOGO_Y, logo_img, ARRAY_SIZE(logo_img), 200, false, ShowBootUpLogoFinished);
 #else
   #ifdef IMG_FONT_FROM_FLASH
 	LCD_ShowImg_From_Flash(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_PWRON_ANI_6_ADDR);
   #else
 	LCD_ShowImg(PWRON_LOGO_X, PWRON_LOGO_Y, IMG_PWRON_ANI_6_ADDR);
   #endif
+  
 	k_sleep(K_MSEC(1000));
-	EnterIdleScreen();
+	ShowBootUpLogoFinished();
 #endif
 }
 

@@ -24,6 +24,8 @@
 #include "screen.h"
 #include "logger.h"
 
+//#define FOTA_DEBUG
+
 #define TLS_SEC_TAG 42
 #define FOTA_RESULT_NOTIFY_TIMEOUT	5
 
@@ -47,7 +49,9 @@ K_TIMER_DEFINE(fota_timer, fota_timer_handler, NULL);
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
 {
+#ifdef FOTA_DEBUG
 	LOGD("bsdlib recoverable error: %u\n", err);
+#endif
 }
 
 static int modem_configure(void)
@@ -57,13 +61,17 @@ static int modem_configure(void)
 	err = lte_lc_psm_req(false);
 	if(err)
 	{
+	#ifdef FOTA_DEBUG
 		LOGD("lte_lc_psm_req, error: %d", err);
+	#endif
 	}
 
 	err = lte_lc_edrx_req(false);
 	if(err)
 	{
+	#ifdef FOTA_DEBUG
 		LOGD("lte_lc_edrx_req, error: %d", err);
+	#endif
 	}
 
 	return err;
@@ -82,8 +90,11 @@ int cert_provision(void)
 	err = modem_key_mgmt_exists(TLS_SEC_TAG,
 				    MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
 				    &exists, &unused);
-	if (err) {
+	if(err)
+	{
+	#ifdef FOTA_DEBUG
 		LOGD("Failed to check for certificates err %d", err);
+	#endif
 		return err;
 	}
 
@@ -93,21 +104,26 @@ int cert_provision(void)
 		 */
 		err = modem_key_mgmt_delete(TLS_SEC_TAG,
 					    MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN);
-		if (err) {
-			LOGD("Failed to delete existing certificate, err %d",
-			       err);
+		if(err)
+		{
+		#ifdef FOTA_DEBUG
+			LOGD("Failed to delete existing certificate, err %d", err);
+		#endif
 		}
 	}
 
+#ifdef FOTA_DEBUG
 	LOGD("Provisioning certificate");
-
+#endif
 	/*  Provision certificate to the modem */
 	err = modem_key_mgmt_write(TLS_SEC_TAG,
 				   MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
 				   cert, sizeof(cert) - 1);
 	if (err)
 	{
+	#ifdef FOTA_DEBUG
 		LOGD("Failed to provision certificate, err %d", err);
+	#endif
 		return err;
 	}
 
@@ -121,7 +137,9 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	int sec_tag;
 	u8_t host[256] = {0};
 
+#ifdef FOTA_DEBUG
 	LOGD("begin");
+#endif
 
 #ifndef CONFIG_USE_HTTPS
 	sec_tag = -1;
@@ -139,7 +157,9 @@ static void app_dfu_transfer_start(struct k_work *unused)
 				     sec_tag);
 	if (retval != 0)
 	{
+	#ifdef FOTA_DEBUG
 		LOGD("fota_download_start() failed, err %d", retval);
+	#endif
 		fota_run_flag = false;
 		fota_cur_status = FOTA_STATUS_ERROR;
 		fota_redraw_pro_flag = true;
@@ -236,18 +256,24 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 	switch(evt->id)
 	{
 	case FOTA_DOWNLOAD_EVT_ERROR:
+	#ifdef FOTA_DEBUG	
 		LOGD("Received error");
+	#endif
 		fota_cur_status = FOTA_STATUS_ERROR;
 		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:
+	#ifdef FOTA_DEBUG
 		LOGD("Received progress:%d", evt->progress);
+	#endif
 		g_fota_progress = evt->progress;
 		fota_cur_status = FOTA_STATUS_DOWNLOADING;
 		break;
 		
 	case FOTA_DOWNLOAD_EVT_FINISHED:
-		LOGD("Received finished!");
+	#ifdef FOTA_DEBUG
+		LOGD("Received finished!");
+	#endif
 		fota_cur_status = FOTA_STATUS_FINISHED;
 		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);
 		break;
@@ -276,7 +302,9 @@ void fota_init(void)
 {
 	int err;
 
+#ifdef FOTA_DEBUG
 	LOGD("begin");
+#endif
 
 #if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
 	err = bsdlib_init();
@@ -289,32 +317,42 @@ void fota_init(void)
 	switch(err)
 	{
 	case MODEM_DFU_RESULT_OK:
+	#ifdef FOTA_DEBUG	
 		LOGD("Modem firmware update successful!");
 		LOGD("Modem will run the new firmware after reboot");
+	#endif
 		k_thread_suspend(k_current_get());
 		break;
 		
 	case MODEM_DFU_RESULT_UUID_ERROR:
 	case MODEM_DFU_RESULT_AUTH_ERROR:
+	#ifdef FOTA_DEBUG
 		LOGD("Modem firmware update failed");
 		LOGD("Modem will run non-updated firmware on reboot.");
+	#endif
 		break;
 		
 	case MODEM_DFU_RESULT_HARDWARE_ERROR:
 	case MODEM_DFU_RESULT_INTERNAL_ERROR:
+	#ifdef FOTA_DEBUG
 		LOGD("Modem firmware update failed");
 		LOGD("Fatal error.");
+	#endif
 		break;
 		
 	case -1:
+	#ifdef FOTA_DEBUG
 		LOGD("Could not initialize bsdlib.");
 		LOGD("Fatal error.");
+	#endif
 		return;
 		
 	default:
 		break;
 	}
+#ifdef FOTA_DEBUG
 	LOGD("Initialized bsdlib");
+#endif
 
 #if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
 	/* Initialize AT only if bsdlib_init() is manually
@@ -334,7 +372,9 @@ void fota_init(void)
 		return;
 	}
 
+#ifdef FOTA_DEBUG
 	LOGD("done");
+#endif
 }
 
 void FOTARedrawProgress(void)
@@ -378,8 +418,9 @@ void FotaMsgProc(void)
 	
 	if(fota_reboot_flag)
 	{
+	#ifdef FOTA_DEBUG
 		LOGD("fota_reboot!");
-		
+	#endif
 		fota_reboot_flag = false;
 		sys_reboot(0);
 	}

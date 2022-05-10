@@ -24,9 +24,12 @@
 #define TEMP_IF_SINGLE_LINE
 
 //sensor trigger type
-#define TEMP_TRIGGER_BY_MENU			0x01		//menu trigger
-#define	TEMP_TRIGGER_BY_APP_ONE_KEY		0x02		//one-key check trigger
-#define	TEMP_TRIGGER_BY_HOURLY			0x04		//auto check hourly
+typedef enum
+{
+	TEMP_TRIGGER_BY_MENU	=	0x01,
+	TEMP_TRIGGER_BY_APP		=	0x02,
+	TEMP_TRIGGER_BY_HOURLY	=	0x04,
+}TEMP_TARGGER_SOUCE;
 
 extern float g_temp_skin;
 extern float g_temp_body;

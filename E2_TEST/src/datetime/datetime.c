@@ -460,10 +460,56 @@ void UpdateSystemTime(void)
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
 	#endif		
-		{			
+		{
+			static u32_t health_min_count = 0;
+
+			health_min_count++;
+			if((health_min_count+1) == global_settings.health_interval)
+			{
+				if(is_wearing())
+				{
+				#ifdef CONFIG_PPG_SUPPORT
+					TimerStartBpt();
+				#endif/*CONFIG_PPG_SUPPORT*/
+
+				#ifdef CONFIG_TEMP_SUPPORT
+					TimerStartTemp();
+				#endif
+				}
+			}
+			else if(health_min_count == global_settings.health_interval)
+			{
+				health_min_count = 0;
+			}
+			
 			AlarmRemindCheck(date_time);
-			//TimeCheckSendHealthData();
 			//TimeCheckSendLocationData();
+		}
+	}
+
+	if((date_time_changed&0x04) != 0)
+	{		
+		date_time_changed = date_time_changed&0xFB;
+
+	#if defined(CONFIG_FOTA_DOWNLOAD)||defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+		if(1
+  		#ifdef CONFIG_FOTA_DOWNLOAD
+			&& (!fota_is_running())
+ 		#endif/*CONFIG_FOTA_DOWNLOAD*/
+		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			&& (!dl_is_running())
+		#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+		)
+	#endif		
+		{
+			static u32_t health_hour_count = 0;
+
+			health_hour_count++;
+			if(health_hour_count == global_settings.health_interval/60)
+			{
+				health_hour_count = 0;
+				TimeCheckSendHealthData();
+			}
 		}
 	}
 

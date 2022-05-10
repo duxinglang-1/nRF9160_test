@@ -563,7 +563,24 @@ void PPGGetSensorHubData(void)
 						#endif
 
 							get_bpt_flag = true;
-							PPGStopCheck();
+							if(g_ppg_trigger == TRIGGER_BY_MENU)
+								PPGStopCheck();
+						}
+
+						if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
+						{
+							whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
+							
+						#ifdef PPG_DEBUG
+							LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
+						#endif
+
+							if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+							{
+								heart_rate += sensorhub_out.hr;
+								spo2 += sensorhub_out.spo2;
+								j++;
+							}
 						}
 					}
 				}
@@ -586,7 +603,7 @@ void PPGGetSensorHubData(void)
 				}
 			}
 
-			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+			if((g_ppg_alg_mode == ALG_MODE_HR_SPO2) || ((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST)))
 			{
 				if(j > 0)
 				{
@@ -629,8 +646,16 @@ void PPGGetSensorHubData(void)
 	}
 }
 
+void TimerStartHrSpo2(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_HOURLY;
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+	ppg_start_flag = true;
+}
+
 void APPStartHrSpo2(void)
 {
+	g_ppg_trigger |= TRIGGER_BY_APP;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	ppg_start_flag = true;
 }
@@ -666,6 +691,13 @@ void MenuStopHrSpo2(void)
 {
 	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
+}
+
+void TimerStartBpt(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_HOURLY;
+	g_ppg_alg_mode = ALG_MODE_BPT;
+	ppg_start_flag = true;
 }
 
 void APPStartBpt(void)
@@ -708,6 +740,13 @@ void MenuStopBpt(void)
 	ppg_stop_flag = true;
 }
 
+void TimerStartEcg(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_HOURLY;
+	g_ppg_alg_mode = ALG_MODE_ECG;
+	ppg_start_flag = true;
+}
+
 void APPStartEcg(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_APP;
@@ -746,11 +785,6 @@ void MenuStopEcg(void)
 {
 	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
-}
-
-void APPStartPPG(void)
-{
-	ppg_start_flag = true;
 }
 
 void MenuStartPPG(void)
@@ -847,6 +881,7 @@ void PPGStopCheck(void)
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
+		TimeCheckSendHealthData();
 	}
 }
 

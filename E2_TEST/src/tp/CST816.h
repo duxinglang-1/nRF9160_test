@@ -14,56 +14,58 @@
 #include <device.h>
 #include <stdio.h>
 
-#define CTP_PORT 	"GPIO_0"
-#define CTP_DEV 	"I2C_1"
+#define TP_PORT 	"GPIO_0"
+#define TP_DEV 		"I2C_1"
 
-#define CTP_RESET		16
-#define CTP_EINT		25
-#define CTP_SCL			1
-#define CTP_SDA			0
+#define TP_RESET		16
+#define TP_EINT			25
+#define TP_SCL			1
+#define TP_SDA			0
 
-#define CST816_I2C_ADDRESS	 	0x15
-#define CST816_CHIP_ID			0xB4
+#define TP_I2C_ADDRESS			0x15
+#define TP_UPDATE_I2C_ADDRESS	0x6A
+#define TP_CST816S_ID			0xB4
+#define TP_CST816T_ID			0xB5
 
-#define CST816_REG_GESTURE				0x01
-#define CST816_REG_FINGER_NUM			0x02
-#define CST816_REG_XPOS_H				0x03
-#define CST816_REG_XPOS_L				0x04
-#define CST816_REG_YPOS_H				0x05
-#define CST816_REG_YPOS_L				0x06
-#define CST816_REG_BPC0_H				0xB0
-#define CST816_REG_BPC0_L				0xB1
-#define CST816_REG_BPC1_H				0xB2
-#define CST816_REG_BPC1_L				0xB3
-#define CST816_REG_CHIPID				0xA7
-#define CST816_REG_PROJID				0xA8
-#define CST816_REG_FW_VER				0xA9
-#define CST816_REG_SLEEP_MODE			0xE5
-#define CST816_REG_ERR_RESET			0xEA
-#define CST816_REG_LONG_PRESS_TICK		0xEB
-#define CST816_REG_MOTION_MASK			0xEC
-#define CST816_REG_IRQ_PLUSE_WIDTH		0xED
-#define CST816_REG_NOR_SCAN_PER			0xEE
-#define CST816_REG_MOTION_SL_ANGLE		0xEF
-#define CST816_REG_LP_SCAN_RAW1_H		0xF0
-#define CST816_REG_LP_SCAN_RAW1_L		0xF1
-#define CST816_REG_LP_SCAN_RAW2_H		0xF2
-#define CST816_REG_LP_SCAN_RAW2_L		0xF3
-#define CST816_REG_LP_AUTO_WAKE_TIME	0xF4
-#define CST816_REG_LP_SCAN_TH			0xF5
-#define CST816_REG_LP_SCAN_WIN			0xF6
-#define CST816_REG_LP_SCAN_FREQ			0xF7
-#define CST816_REG_LP_SCAN_IDAC			0xF8
-#define CST816_REG_AUTO_SLEEP_TIME		0xF9
-#define CST816_REG_IRQ_CTL				0xFA
-#define CST816_REG_AUTO_RESET			0xFB
-#define CST816_REG_LONG_PRESS_TIME		0xFC
-#define CST816_REG_IO_CTL				0xFD
-#define CST816_REG_DIS_AUTO_SLEEP		0xFE
+#define TP_REG_GESTURE				0x01
+#define TP_REG_FINGER_NUM			0x02
+#define TP_REG_XPOS_H				0x03
+#define TP_REG_XPOS_L				0x04
+#define TP_REG_YPOS_H				0x05
+#define TP_REG_YPOS_L				0x06
+#define TP_REG_BPC0_H				0xB0
+#define TP_REG_BPC0_L				0xB1
+#define TP_REG_BPC1_H				0xB2
+#define TP_REG_BPC1_L				0xB3
+#define TP_REG_CHIPID				0xA7
+#define TP_REG_PROJID				0xA8
+#define TP_REG_FW_VER				0xA9
+#define TP_REG_SLEEP_MODE			0xE5
+#define TP_REG_ERR_RESET			0xEA
+#define TP_REG_LONG_PRESS_TICK		0xEB
+#define TP_REG_MOTION_MASK			0xEC
+#define TP_REG_IRQ_PLUSE_WIDTH		0xED
+#define TP_REG_NOR_SCAN_PER			0xEE
+#define TP_REG_MOTION_SL_ANGLE		0xEF
+#define TP_REG_LP_SCAN_RAW1_H		0xF0
+#define TP_REG_LP_SCAN_RAW1_L		0xF1
+#define TP_REG_LP_SCAN_RAW2_H		0xF2
+#define TP_REG_LP_SCAN_RAW2_L		0xF3
+#define TP_REG_LP_AUTO_WAKE_TIME	0xF4
+#define TP_REG_LP_SCAN_TH			0xF5
+#define TP_REG_LP_SCAN_WIN			0xF6
+#define TP_REG_LP_SCAN_FREQ			0xF7
+#define TP_REG_LP_SCAN_IDAC			0xF8
+#define TP_REG_AUTO_SLEEP_TIME		0xF9
+#define TP_REG_IRQ_CTL				0xFA
+#define TP_REG_AUTO_RESET			0xFB
+#define TP_REG_LONG_PRESS_TIME		0xFC
+#define TP_REG_IO_CTL				0xFD
+#define TP_REG_DIS_AUTO_SLEEP		0xFE
 
 #define GESTURE_NONE			0x00
-#define GESTURE_MOVING_UP		0x02
 #define GESTURE_MOVING_DOWN		0x01
+#define GESTURE_MOVING_UP		0x02
 #define GESTURE_MOVING_LEFT		0x03
 #define GESTURE_MOVING_RIGHT	0x04
 #define GESTURE_SINGLE_CLICK	0x05
@@ -82,6 +84,13 @@ typedef enum
 	TP_EVENT_LONG_PRESS,
 	TP_EVENT_MAX
 }TP_EVENT;
+
+typedef enum
+{
+	TP_CST816S = 0xB4,
+	TP_CST816T = 0xB5,
+	TP_MAX 	   = 0xFF,
+}TP_CHIP_TYPE;
 
 typedef struct
 {
@@ -117,7 +126,7 @@ extern bool tp_redraw_flag;
 
 extern tp_message tp_msg;
 
-extern void CST816_init(void);
+extern void tp_init(void);
 extern void tp_interrupt_proc(void);
 extern void TPMsgProcess(void);
 extern void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop, u16_t y_start, u16_t y_stop, tp_handler_t touch_handler);

@@ -1976,7 +1976,7 @@ void BPShowStatus(void)
 	{
 		if(bpt_max.systolic == 0 || bpt_max.diastolic == 0 || bpt_min.systolic == 0 || bpt_min.diastolic == 0)
 		{
-			if(bpt[i].systolic > 0 && bpt[i].diastolic > 0)
+			if((bpt[i].systolic > 0 && bpt[i].systolic < 0xff) && (bpt[i].diastolic > 0 && bpt[i].diastolic < 0xff))
 			{
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
@@ -1989,10 +1989,10 @@ void BPShowStatus(void)
 			if(bpt[i].systolic < bpt_min.systolic)
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
 		}
-		
-		if(bpt[i].systolic > 30)
+
+		if(bpt[i].systolic > 30 && bpt[i].systolic < 0xff)
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].systolic-30)*15/30, BP_REC_DATA_W, (bpt[i].systolic-30)*15/30, YELLOW);
-		if(bpt[i].diastolic > 30)
+		if(bpt[i].diastolic > 30 && bpt[i].diastolic < 0xff)
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].diastolic-30)*15/30, BP_REC_DATA_W, (bpt[i].diastolic-30)*15/30, RED);
 	}
 
@@ -2158,7 +2158,7 @@ void SPO2ShowStatus(void)
 	{
 		if(spo2_max == 0 || spo2_min == 0)
 		{
-			if(spo2[i] > 0)
+			if(spo2[i] > 0 && spo2[i] < 0xff)
 			{
 				spo2_max = spo2[i];
 				spo2_min = spo2[i];
@@ -2172,7 +2172,7 @@ void SPO2ShowStatus(void)
 				spo2_min = spo2[i];
 		}
 		
-		if(spo2[i] >= 80)
+		if(spo2[i] >= 80 && spo2[i] < 0xff)
 			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(spo2[i]-80)*3, SPO2_REC_DATA_W, (spo2[i]-80)*3, BLUE);
 	}
 
@@ -2315,7 +2315,7 @@ void HRShowStatus(void)
 	{
 		if(hr_max == 0 || hr_min == 0)
 		{
-			if(hr[i] > 0)
+			if(hr[i] > 0 && hr[i] < 0xff)
 			{	
 				hr_max = hr[i];
 				hr_min = hr[i];
@@ -2329,7 +2329,7 @@ void HRShowStatus(void)
 				hr_min = hr[i];
 		}
 		
-		if(hr[i] > 30)
+		if(hr[i] > 30 && hr[i] < 0xff)
 			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-(hr[i]-30)*15/30, HR_REC_DATA_W, (hr[i]-30)*15/30, RED);
 	}
 
@@ -2490,7 +2490,6 @@ void ExitNotifyScreen(void)
 {
 	if(screen_id == SCREEN_ID_NOTIFY)
 	{
-		LOGD("begin");
 	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaStop();
 	#endif
@@ -2878,8 +2877,8 @@ void DlShowStatus(void)
 	y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
 	LCD_ShowString(x,y,"PWR(N)");
 
-	SetLeftKeyUpHandler(dl_start);
-	SetRightKeyUpHandler(dl_exit);
+	SetRightKeyUpHandler(dl_start);
+	SetLeftKeyUpHandler(dl_exit);
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H, dl_start);
@@ -3192,8 +3191,8 @@ void FOTAShowStatus(void)
 	}
 #endif
 
-	SetLeftKeyUpHandler(fota_excu);
-	SetRightKeyUpHandler(fota_exit);
+	SetRightKeyUpHandler(fota_excu);
+	SetLeftKeyUpHandler(fota_exit);
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FOTA_YES_X-30, FOTA_YES_X+FOTA_YES_W+30, FOTA_YES_Y-30, FOTA_YES_Y+FOTA_YES_H+30, fota_excu);

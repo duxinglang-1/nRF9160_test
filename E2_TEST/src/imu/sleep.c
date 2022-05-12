@@ -213,7 +213,7 @@ void GetSleepInfor(void)
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 
-	LOGD("deep_sleep:%d, light_sleep:%d", deep_sleep, light_sleep);
+	//LOGD("deep_sleep:%d, light_sleep:%d", deep_sleep, light_sleep);
 }
 
 void UpdateSleepPara(void)

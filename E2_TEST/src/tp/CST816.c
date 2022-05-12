@@ -20,8 +20,8 @@
 #include "CST816T_update.h"
 #include "logger.h"
 
-#define TP_DEBUG
-#define TP_TEST
+//#define TP_DEBUG
+//#define TP_TEST
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;

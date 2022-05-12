@@ -1974,9 +1974,9 @@ void BPShowStatus(void)
 	GetCurDayBptRecData(bpt);
 	for(i=0;i<24;i++)
 	{
-		if(bpt_max.systolic == 0 || bpt_max.diastolic == 0 || bpt_min.systolic == 0 || bpt_min.diastolic == 0)
+		if((bpt_max.systolic == 0) || (bpt_max.diastolic == 0) || (bpt_min.systolic == 0) || (bpt_min.diastolic == 0))
 		{
-			if((bpt[i].systolic > 0 && bpt[i].systolic < 0xff) && (bpt[i].diastolic > 0 && bpt[i].diastolic < 0xff))
+			if(((bpt[i].systolic > 0) && (bpt[i].systolic < 0xff)) && ((bpt[i].diastolic > 0) && (bpt[i].diastolic < 0xff)))
 			{
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
@@ -1984,15 +1984,15 @@ void BPShowStatus(void)
 		}
 		else
 		{	
-			if(bpt[i].systolic > bpt_max.systolic)
+			if((bpt[i].systolic > bpt_max.systolic) && (bpt[i].systolic < 0xff))
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
-			if(bpt[i].systolic < bpt_min.systolic)
+			if((bpt[i].systolic < bpt_min.systolic) && (bpt[i].systolic < 0xff))
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
 		}
 
-		if(bpt[i].systolic > 30 && bpt[i].systolic < 0xff)
+		if((bpt[i].systolic > 30) && (bpt[i].systolic < 0xff))
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].systolic-30)*15/30, BP_REC_DATA_W, (bpt[i].systolic-30)*15/30, YELLOW);
-		if(bpt[i].diastolic > 30 && bpt[i].diastolic < 0xff)
+		if((bpt[i].diastolic > 30) && (bpt[i].diastolic < 0xff))
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].diastolic-30)*15/30, BP_REC_DATA_W, (bpt[i].diastolic-30)*15/30, RED);
 	}
 
@@ -2156,9 +2156,9 @@ void SPO2ShowStatus(void)
 	GetCurDaySpo2RecData(spo2);
 	for(i=0;i<24;i++)
 	{
-		if(spo2_max == 0 || spo2_min == 0)
+		if((spo2_max == 0) || (spo2_min == 0))
 		{
-			if(spo2[i] > 0 && spo2[i] < 0xff)
+			if((spo2[i] > 0) && (spo2[i] < 0xff))
 			{
 				spo2_max = spo2[i];
 				spo2_min = spo2[i];
@@ -2166,13 +2166,13 @@ void SPO2ShowStatus(void)
 		}
 		else
 		{
-			if(spo2[i] > spo2_max)
+			if((spo2[i] > spo2_max) && (spo2[i] < 0xff))
 				spo2_max = spo2[i];
-			if(spo2[i] < spo2_min)
+			if((spo2[i] < spo2_min) && (spo2[i] < 0xff))
 				spo2_min = spo2[i];
 		}
 		
-		if(spo2[i] >= 80 && spo2[i] < 0xff)
+		if((spo2[i] >= 80) && (spo2[i] < 0xff))
 			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(spo2[i]-80)*3, SPO2_REC_DATA_W, (spo2[i]-80)*3, BLUE);
 	}
 
@@ -2313,9 +2313,9 @@ void HRShowStatus(void)
 	GetCurDayHrRecData(hr);
 	for(i=0;i<24;i++)
 	{
-		if(hr_max == 0 || hr_min == 0)
+		if((hr_max == 0) || (hr_min == 0))
 		{
-			if(hr[i] > 0 && hr[i] < 0xff)
+			if((hr[i] > 0) && (hr[i] < 0xff))
 			{	
 				hr_max = hr[i];
 				hr_min = hr[i];
@@ -2323,13 +2323,13 @@ void HRShowStatus(void)
 		}
 		else
 		{
-			if(hr[i] > hr_max)
+			if((hr[i] > hr_max) && (hr[i] < 0xff))
 				hr_max = hr[i];
-			if(hr[i] < hr_min)
+			if((hr[i] < hr_min) && (hr[i] < 0xff))
 				hr_min = hr[i];
 		}
 		
-		if(hr[i] > 30 && hr[i] < 0xff)
+		if((hr[i] > 30) && (hr[i] < 0xff))
 			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-(hr[i]-30)*15/30, HR_REC_DATA_W, (hr[i]-30)*15/30, RED);
 	}
 

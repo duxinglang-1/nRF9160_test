@@ -502,9 +502,11 @@ void UpdateSystemTime(void)
 		)
 	#endif		
 		{
+		#ifdef CONFIG_PPG_SUPPORT
 			u16_t tmp_hr = 0;
 			u16_t tmp_spo2 = 0;
 			bpt_data tmp_bp = {0};
+		#endif
 			static u32_t health_hour_count = 0;
 
 			health_hour_count++;
@@ -513,15 +515,19 @@ void UpdateSystemTime(void)
 				health_hour_count = 0;
 				TimeCheckSendHealthData();
 
+			#ifdef CONFIG_PPG_SUPPORT
 				tmp_hr = g_hr;
 				tmp_spo2 = g_spo2;
 				tmp_bp.diastolic = g_bp_diastolic;
 				tmp_bp.systolic = g_bp_systolic;
+			#endif
 			}
 
+		#ifdef CONFIG_PPG_SUPPORT
 			SetCurDayHrRecData(tmp_hr);
 			SetCurDaySpo2RecData(tmp_spo2);
 			SetCurDayBptRecData(tmp_bp);
+		#endif
 		}
 	}
 

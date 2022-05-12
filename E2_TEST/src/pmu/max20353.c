@@ -203,36 +203,32 @@ void pmu_battery_low_shutdown(void)
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
-void pmu_reg_proc(void)
+bool pmu_interrupt_proc(void)
 {
-	u8_t i;
+	u8_t i,val;
 	u8_t tmpbuf[128] = {0};
 	notify_infor infor = {0};
-	u8_t int0,int1,int2;
-	u8_t status0,status1,status2,status3;
+	u8_t int0,status0,status1;
+	int ret;
 
-	MAX20353_ReadReg(REG_INT0, &int0);
-#ifdef PMU_DEBUG	
-	MAX20353_ReadReg(REG_INT1, &int1);
-	MAX20353_ReadReg(REG_INT2, &int2);
-	LOGD("INT:%02X, %02X, %02X", int0,int1,int2);
-#endif	
-
-#ifdef PMU_DEBUG
-	MAX20353_ReadReg(REG_STATUS0, &status0);
-	MAX20353_ReadReg(REG_STATUS1, &status1);
-	MAX20353_ReadReg(REG_STATUS2, &status2);
-	MAX20353_ReadReg(REG_STATUS3, &status3);
-	LOGD("status:%02X, %02X, %02X, %02X", status0,status1,status2,status3);
-#endif
+	if(!pmu_check_ok)
+		return true;
+	
+	ret = MAX20353_ReadReg(REG_INT0, &int0);
+	if(ret == MAX20353_ERROR)
+		return false;
+	
 	if((int0&0x40) == 0x40) //Charger status change INT  
 	{
-		MAX20353_ReadReg(REG_STATUS0, &status0);		
+		ret = MAX20353_ReadReg(REG_STATUS0, &status0);
+		if(ret == MAX20353_ERROR)
+			return false;
+		
 		switch((status0&0x07))
 		{
 		case 0x00://Charger off
 		case 0x01://Charging suspended due to temperature (see battery charger state diagram)
-		case 0x07://Charger fault condition (see battery charger state diagram)	
+		case 0x07://Charger fault condition (see battery charger state diagram) 
 			g_chg_status = BAT_CHARGING_NO;
 			break;
 			
@@ -277,7 +273,9 @@ void pmu_reg_proc(void)
 	
 	if((int0&0x08) == 0x08) //USB OK Int
 	{
-		MAX20353_ReadReg(REG_STATUS1, &status1);
+		ret = MAX20353_ReadReg(REG_STATUS1, &status1);
+		if(ret == MAX20353_ERROR)
+			return false;
 		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
@@ -348,14 +346,13 @@ void pmu_reg_proc(void)
 		}
 
 		pmu_redraw_bat_flag = true;
-	}	
-}
+	}
 
-void pmu_interrupt_proc(void)
-{
-	u8_t val;
-	
-	pmu_reg_proc();
+	gpio_pin_read(gpio_pmu, PMU_EINT, &val);
+	if(val == 0)
+		return true;
+	else
+		return false;
 }
 
 void PmuInterruptHandle(void)
@@ -373,6 +370,9 @@ bool pmu_alert_proc(void)
 	notify_infor infor = {0};
 	int ret;
 	u8_t MSB=0,LSB=0;
+
+	if(!pmu_check_ok)
+		return true;
 
 #ifdef PMU_DEBUG
 	LOGD("begin");
@@ -794,38 +794,19 @@ void GetBatterySocString(u8_t *str_utc)
 
 void PMUMsgProcess(void)
 {
+	bool ret = false;
 	u8_t val;
-#ifdef PMU_DEBUG	
-	static u32_t i=0;
-#endif
 
 	if(pmu_trige_flag)
 	{
 	#ifdef PMU_DEBUG
 		LOGD("int");
 	#endif	
-		if(pmu_check_ok)
-			pmu_interrupt_proc();
-		
-		pmu_trige_flag = false;
-	}
-
-	if(gpio_pin_read(gpio_pmu, PMU_EINT, &val) == 0)	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
-	{
-		if(val == 0)
+		ret = pmu_interrupt_proc();
+		if(ret)
 		{
-		#ifdef PMU_DEBUG
-			i++;
-			LOGD("count:%d", i);
-		#endif	
-			pmu_reg_proc();
+			pmu_trige_flag = false;
 		}
-	#ifdef PMU_DEBUG
-		else
-		{
-			i = 0;
-		}
-	#endif	
 	}
 	
 	if(pmu_alert_flag)
@@ -833,17 +814,8 @@ void PMUMsgProcess(void)
 	#ifdef PMU_DEBUG
 		LOGD("alert");
 	#endif
-		if(pmu_check_ok)
-		{
-			bool ret;
-			
-			ret = pmu_alert_proc();
-			if(ret)
-			{
-				pmu_alert_flag = false;
-			}
-		}
-		else
+		ret = pmu_alert_proc();
+		if(ret)
 		{
 			pmu_alert_flag = false;
 		}

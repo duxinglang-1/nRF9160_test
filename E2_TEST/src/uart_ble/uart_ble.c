@@ -162,15 +162,6 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 	LOGD("begin");
 #endif
 
-	if(lcd_is_sleeping)
-	{
-		sleep_out_by_wrist = false;
-		lcd_sleep_out = true;
-		return;
-	}
-	
-	LCD_ResetBL_Timer();
-
 	switch(buf[5])
 	{
 	case GESTURE_NONE:

@@ -502,9 +502,17 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 
 void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 {
-	u8_t tmpbuf[128] = {0};
 	u8_t strbuf[128] = {0};
 	u16_t x,y,w,h;
+
+	if(lcd_is_sleeping)
+	{
+		sleep_out_by_wrist = false;
+		lcd_sleep_out = true;
+		return;
+	}
+	
+	LCD_ResetBL_Timer();
 
 	switch(tp_type)
 	{
@@ -718,6 +726,8 @@ void test_tp(void)
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
+
+	tp_init();
 }
 
 void tp_show_infor(void)

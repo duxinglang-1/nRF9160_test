@@ -348,11 +348,11 @@ bool pmu_interrupt_proc(void)
 		pmu_redraw_bat_flag = true;
 	}
 
-	gpio_pin_read(gpio_pmu, PMU_EINT, &val);
+	gpio_pin_read(gpio_pmu, PMU_EINT, &val);//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
 	if(val == 0)
-		return true;
-	else
 		return false;
+	else
+		return true;
 }
 
 void PmuInterruptHandle(void)

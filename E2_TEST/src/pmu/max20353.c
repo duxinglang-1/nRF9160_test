@@ -520,7 +520,7 @@ bool pmu_alert_proc(void)
 	
 	ret = MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
 	if(ret == MAX20353_ERROR)
-			return false;
+		return false;
 
 	return true;
 #endif	

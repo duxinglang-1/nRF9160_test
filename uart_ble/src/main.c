@@ -668,10 +668,8 @@ void system_init(void)
 #endif
 
 	InitSystemSettings();
-
-	//init_imu_int1();//xb test 2022-04-08
 	
-	//pmu_init();
+	pmu_init();
 	flash_init();
 	LCD_Init();
 	
@@ -767,7 +765,7 @@ int main(void)
 		WifiProcess();
 	#endif
 		GPSMsgProcess();
-		//PMUMsgProcess();
+		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
 	#ifdef CONFIG_FALL_DETECT_SUPPORT

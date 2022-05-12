@@ -31,10 +31,10 @@ typedef enum
 
 typedef enum
 {
-	TRIGGER_BY_MENU=0x01,
-	TRIGGER_BY_APP_ONE_KEY=0x02,
-	TRIGGER_BY_APP=0x04,
-	TRIGGER_BY_HOURLY=0x40
+	TRIGGER_BY_MENU			=	0x01,
+	TRIGGER_BY_APP_ONE_KEY	=	0x02,
+	TRIGGER_BY_APP			=	0x04,
+	TRIGGER_BY_HOURLY		=	0x08,
 }PPG_TARGGER_SOUCE;
 
 typedef enum
@@ -126,6 +126,8 @@ extern void GetHeartRate(u8_t *HR);
 extern void APPStartHrSpo2(void);
 extern void APPStartBpt(void);
 extern void APPStartEcg(void);
-extern void APPStartPPG(void);
+extern void TimerStartHrSpo2(void);
+extern void TimerStartBpt(void);
+extern void TimerStartEcg(void);
 
 #endif/*__MAX32674_H__*/

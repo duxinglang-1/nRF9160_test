@@ -113,7 +113,7 @@ extern "C" {
 //notify
 #define NOTIFY_IMG_MAX_COUNT	10
 #define NOTIFY_TEXT_MAX_LEN		80
-#define NOTIFY_TIMER_INTERVAL	5
+#define NOTIFY_TIMER_INTERVAL	3
 
 //sport
 #define IMU_SEP_LINE_W				165
@@ -439,6 +439,8 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_DL			0x00004000
 #define SCREEN_EVENT_UPDATE_TEMP		0x00008000
 #define SCREEN_EVENT_UPDATE_NET_MODE	0x00010000
+#define SCREEN_EVENT_UPDATE_POP_IMG		0x00020000
+#define SCREEN_EVENT_UPDATE_POP_STR		0x00040000
 
 
 //screen ID
@@ -498,6 +500,7 @@ typedef enum
 {
 	NOTIFY_TYPE_POPUP,
 	NOTIFY_TYPE_CONFIRM,
+	NOTIFY_TYPE_NOTIFY,
 	NOTIFY_TYPE_MAX
 }NOTIFY_TYPE_ENUM;
 
@@ -523,6 +526,7 @@ typedef struct
 
 extern SCREEN_ID_ENUM screen_id;
 extern screen_msg scr_msg[SCREEN_ID_MAX];
+extern notify_infor notify_msg;
 
 extern void ShowBootUpLogo(void);
 extern void EnterIdleScreen(void);
@@ -534,7 +538,7 @@ extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
 extern void ExitNotifyScreen(void);
 extern void EnterFOTAScreen(void);
-extern void DisplayPopUp(u8_t *message);
+extern void DisplayPopUp(notify_infor infor);
 
 #ifdef __cplusplus
 }

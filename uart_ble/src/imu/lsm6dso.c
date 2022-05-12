@@ -30,6 +30,8 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #endif
 #include "logger.h"
 
+//#define IMU_DEBUG
+
 #define IMU_DEV "I2C_1"
 #define IMU_PORT "GPIO_0"
 
@@ -41,8 +43,6 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #define PULL_UP 0
 #endif
 
-#define XB_TEST
-
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
 static struct k_work_q *imu_work_q;
@@ -51,7 +51,7 @@ static struct k_work imu_work;
 static bool imu_check_ok = false;
 static u8_t whoamI, rst;
 static struct device *i2c_imu;
-static struct device *gpio_imu = NULL;
+static struct device *gpio_imu;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
@@ -303,7 +303,9 @@ static uint8_t init_i2c(void)
 	i2c_imu = device_get_binding(IMU_DEV);
 	if(!i2c_imu)
 	{
+	#ifdef IMU_DEBUG
 		LOGD("ERROR SETTING UP I2C");
+	#endif
 		return -1;
 	}
 	else
@@ -371,9 +373,7 @@ uint8_t init_gpio(void)
 {
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
 
-	if(gpio_imu == NULL)
-		gpio_imu = device_get_binding(IMU_PORT);
-	
+	gpio_imu = device_get_binding(IMU_PORT);
 	//steps interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
 	gpio_pin_disable_callback(gpio_imu, LSM6DSO_INT1_PIN);
@@ -515,7 +515,9 @@ void UpdateIMUData(void)
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
+#ifdef IMU_DEBUG
 	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
+#endif
 
 	last_sport.timestamp.year = date_time.year;
 	last_sport.timestamp.month = date_time.month; 
@@ -563,7 +565,9 @@ static void mt_fall_detection(struct k_work *work)
 {
 	if(int1_event)	//steps or tilt
 	{
+	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
+	#endif
 		int1_event = false;
 
 		if(!imu_check_ok)
@@ -580,8 +584,10 @@ static void mt_fall_detection(struct k_work *work)
 		is_tilt();
 		if(wrist_tilt)
 		{
+		#ifdef IMU_DEBUG
 			LOGD("tilt trigger!");
-			
+		#endif
+		
 			wrist_tilt = false;
 
 			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
@@ -592,7 +598,9 @@ static void mt_fall_detection(struct k_work *work)
 		}
 		else
 		{
+		#ifdef IMU_DEBUG
 			LOGD("steps trigger!");
+		#endif
 			
 			UpdateIMUData();
 			imu_redraw_steps_flag = true;	
@@ -641,10 +649,14 @@ static void mt_fall_detection(struct k_work *work)
 
 void IMU_init(struct k_work_q *work_q)
 {
+#ifdef IMU_DEBUG
 	LOGD("IMU_init");
-	
+#endif
+
 	get_cur_sport_from_record(&last_sport);
+#ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
+#endif
 	if(last_sport.timestamp.day == date_time.day)
 	{
 		g_last_steps = last_sport.steps;
@@ -663,7 +675,7 @@ void IMU_init(struct k_work_q *work_q)
 
 	imu_dev_ctx.write_reg = platform_write;
 	imu_dev_ctx.read_reg = platform_read;
-	imu_dev_ctx.handle = NULL;//i2c_imu;
+	imu_dev_ctx.handle = i2c_imu;
 
 	imu_check_ok = sensor_init();
 	if(!imu_check_ok)
@@ -672,8 +684,9 @@ void IMU_init(struct k_work_q *work_q)
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
 	StartSleepTimeMonitor();
-
+#ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
+#endif
 }
 
 /*@brief Check if a wrist tilt happend
@@ -724,25 +737,27 @@ void test_i2c(void)
 	dev0 = device_get_binding("GPIO_0");
 	gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
 	gpio_pin_write(dev0, 0, 1);
-
+#ifdef IMU_DEBUG
 	LOGD("Starting i2c scanner...");
-
+#endif
 	i2c_dev = device_get_binding(IMU_DEV);
 	if(!i2c_dev)
 	{
+	#ifdef IMU_DEBUG
 		LOGD("I2C: Device driver not found.");
+	#endif
 		return;
 	}
 	i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	uint8_t error = 0u;
-
+#ifdef IMU_DEBUG
 	LOGD("Value of NRF_TWIM1_NS->PSEL.SCL: %ld",NRF_TWIM1_NS->PSEL.SCL);
 	LOGD("Value of NRF_TWIM1_NS->PSEL.SDA: %ld",NRF_TWIM1_NS->PSEL.SDA);
 	LOGD("Value of NRF_TWIM1_NS->FREQUENCY: %ld",NRF_TWIM1_NS->FREQUENCY);
 	LOGD("26738688 -> 100k");
 	LOGD("67108864 -> 250k");
 	LOGD("104857600 -> 400k");
-
+#endif
 	for (u8_t i = 0; i < 0x7f; i++)
 	{
 		struct i2c_msg msgs[1];
@@ -756,11 +771,15 @@ void test_i2c(void)
 		error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
 		if(error == 0)
 		{
+		#ifdef IMU_DEBUG
 			LOGD("0x%2x device address found on I2C Bus", i);
+		#endif
 		}
 		else
 		{
+		#ifdef IMU_DEBUG
 			//LOGD("error %d", error);
+		#endif
 		}
 	}
 }
@@ -782,7 +801,9 @@ void IMUMsgProcess(void)
 
 	if(int1_event)	//steps
 	{
+	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
+	#endif
 		int1_event = false;
 
 		if(!imu_check_ok)
@@ -795,17 +816,19 @@ void IMUMsgProcess(void)
 
 		if(!is_wearing())
 			return;
-		
+
+	#ifdef IMU_DEBUG	
 		LOGD("steps trigger!");
-		
+	#endif
 		UpdateIMUData();
 		imu_redraw_steps_flag = true;	
 	}
 		
 	if(int2_event) //tilt
 	{
+	#ifdef IMU_DEBUG
 		LOGD("int2 evt!");
-		
+	#endif
 		int2_event = false;
 
 		if(!imu_check_ok)
@@ -822,8 +845,9 @@ void IMUMsgProcess(void)
 		is_tilt();
 		if(wrist_tilt)
 		{
+		#ifdef IMU_DEBUG
 			LOGD("tilt trigger!");
-			
+		#endif
 			wrist_tilt = false;
 
 			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)

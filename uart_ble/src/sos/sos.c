@@ -197,12 +197,12 @@ bool SOSIsRunning(void)
 {
 	if(sos_state > SOS_STATUS_IDLE)
 	{
-		LOGD("true");
+		//LOGD("true");
 		return true;
 	}
 	else
 	{
-		LOGD("false");
+		//LOGD("false");
 		return false;
 	}
 }
@@ -215,12 +215,10 @@ void SOSSChangrStatus(void)
 void SOSStart(void)
 {
 	u8_t delay;
-	
-	LOGD("begin");
 
 	if(sos_state != SOS_STATUS_IDLE)
 	{
-		LOGD("sos is running!");
+		//LOGD("sos is running!");
 		return;
 	}
 
@@ -233,6 +231,8 @@ void SOSStart(void)
 #ifdef CONFIG_WIFI
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
+#else
+	SendSosAlarmData();
 #endif
 
 	lcd_sleep_out = true;

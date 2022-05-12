@@ -9,10 +9,11 @@
 #include "datetime.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
 #include "logger.h"
 
 //#define SHOW_LOG_IN_SCREEN
-//#define PMU_DEBUG
+#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static u8_t PMICStatus[4], PMICInts[3];
@@ -202,33 +203,32 @@ void pmu_battery_low_shutdown(void)
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
-void pmu_reg_proc(void)
+bool pmu_interrupt_proc(void)
 {
-	u8_t int0,int1,int2;
-	u8_t status0,status1,status2,status3;
+	u8_t i,val;
+	u8_t tmpbuf[128] = {0};
+	notify_infor infor = {0};
+	u8_t int0,status0,status1;
+	int ret;
 
-	MAX20353_ReadReg(REG_INT0, &int0);
-#ifdef PMU_DEBUG	
-	MAX20353_ReadReg(REG_INT1, &int1);
-	MAX20353_ReadReg(REG_INT2, &int2);
-	LOGD("INT:%02X, %02X, %02X", int0,int1,int2);
-#endif	
-
-#ifdef PMU_DEBUG
-	MAX20353_ReadReg(REG_STATUS0, &status0);
-	MAX20353_ReadReg(REG_STATUS1, &status1);
-	MAX20353_ReadReg(REG_STATUS2, &status2);
-	MAX20353_ReadReg(REG_STATUS3, &status3);
-	LOGD("status:%02X, %02X, %02X, %02X", status0,status1,status2,status3);
-#endif
+	if(!pmu_check_ok)
+		return true;
+	
+	ret = MAX20353_ReadReg(REG_INT0, &int0);
+	if(ret == MAX20353_ERROR)
+		return false;
+	
 	if((int0&0x40) == 0x40) //Charger status change INT  
 	{
-		MAX20353_ReadReg(REG_STATUS0, &status0);		
+		ret = MAX20353_ReadReg(REG_STATUS0, &status0);
+		if(ret == MAX20353_ERROR)
+			return false;
+		
 		switch((status0&0x07))
 		{
 		case 0x00://Charger off
 		case 0x01://Charging suspended due to temperature (see battery charger state diagram)
-		case 0x07://Charger fault condition (see battery charger state diagram)	
+		case 0x07://Charger fault condition (see battery charger state diagram) 
 			g_chg_status = BAT_CHARGING_NO;
 			break;
 			
@@ -254,6 +254,16 @@ void pmu_reg_proc(void)
 				g_bat_soc = 100;
 		#endif
 
+			if(screen_id == SCREEN_ID_NOTIFY)
+			{
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
+				notify_msg.img[0] = IMG_BAT_CHRING_ANI_5_ADDR;
+				notify_msg.img_count = 1;
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+				scr_msg[screen_id].para = SCREEN_EVENT_UPDATE_POP_STR|SCREEN_EVENT_UPDATE_POP_IMG;
+			}
+			
 			lcd_sleep_out = true;
 			break;
 		}
@@ -263,10 +273,17 @@ void pmu_reg_proc(void)
 	
 	if((int0&0x08) == 0x08) //USB OK Int
 	{
-		MAX20353_ReadReg(REG_STATUS1, &status1);
+		ret = MAX20353_ReadReg(REG_STATUS1, &status1);
+		if(ret == MAX20353_ERROR)
+			return false;
 		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
+			u32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
+
+		#ifdef PMU_DEBUG
+			LOGD("charger push in!");
+		#endif	
 			pmu_battery_stop_shutdown();
 			
 			InitCharger();
@@ -276,10 +293,26 @@ void pmu_reg_proc(void)
 			g_chg_status = BAT_CHARGING_PROGRESS;
 			g_bat_level = BAT_LEVEL_NORMAL;
 
+			infor.x = 0;
+			infor.y = 0;
+			infor.w = LCD_WIDTH;
+			infor.h = LCD_HEIGHT;
+			infor.align = NOTIFY_ALIGN_CENTER;
+			infor.type = NOTIFY_TYPE_NOTIFY;
+			sprintf(tmpbuf, "%d%%", g_bat_soc);
+			mmi_asc_to_ucs2(infor.text, tmpbuf);
+			for(i=0;i<ARRAY_SIZE(bat_img);i++)
+				infor.img[i] = bat_img[i];
+			infor.img_count = ARRAY_SIZE(bat_img);
+			DisplayPopUp(infor);
+			
 			lcd_sleep_out = true;
 		}
 		else
-		{			
+		{		
+		#ifdef PMU_DEBUG
+			LOGD("charger push out!");
+		#endif
 			charger_is_connected = false;
 			
 			g_chg_status = BAT_CHARGING_NO;
@@ -307,19 +340,19 @@ void pmu_reg_proc(void)
 				g_bat_level = BAT_LEVEL_GOOD;
 			}
 		#endif
-		
+
+			ExitNotifyScreen();
 			lcd_sleep_out = true;
 		}
 
 		pmu_redraw_bat_flag = true;
-	}	
-}
+	}
 
-void pmu_interrupt_proc(void)
-{
-	u8_t val;
-	
-	pmu_reg_proc();
+	gpio_pin_read(gpio_pmu, PMU_EINT, &val);
+	if(val == 0)
+		return true;
+	else
+		return false;
 }
 
 void PmuInterruptHandle(void)
@@ -332,9 +365,18 @@ void PmuInterruptHandle(void)
 //Clear the corresponding bit after servicing the alert
 bool pmu_alert_proc(void)
 {
-	u8_t buff[128] = {0};
+	u8_t i;
+	u8_t tmpbuf[128] = {0};
+	notify_infor infor = {0};
 	int ret;
-	u8_t MSB,LSB;
+	u8_t MSB=0,LSB=0;
+
+	if(!pmu_check_ok)
+		return true;
+
+#ifdef PMU_DEBUG
+	LOGD("begin");
+#endif
 
 #ifdef BATTERY_SOC_GAUGE
 	ret = MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
@@ -369,7 +411,18 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				//DisplayPopUp("Battery voltage is very low, the system will shut down in a few seconds!");
+				infor.x = 0;
+				infor.y = 0;
+				infor.w = LCD_WIDTH;
+				infor.h = LCD_HEIGHT;
+				infor.align = NOTIFY_ALIGN_CENTER;
+				infor.type = NOTIFY_TYPE_POPUP;
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(infor.text, tmpbuf);
+				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
+				infor.img_count = 1;
+				DisplayPopUp(infor);
+				
 				pmu_battery_low_shutdown();
 			}
 		}
@@ -378,7 +431,17 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_LOW;
 			if(!charger_is_connected)
 			{
-				//DisplayPopUp("Battery voltage is low, please charge in time!");
+				infor.x = 0;
+				infor.y = 0;
+				infor.w = LCD_WIDTH;
+				infor.h = LCD_HEIGHT;
+				infor.align = NOTIFY_ALIGN_CENTER;
+				infor.type = NOTIFY_TYPE_POPUP;
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(infor.text, tmpbuf);
+				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
+				infor.img_count = 1;
+				DisplayPopUp(infor);
 			}
 		}
 		else if(g_bat_soc < 80)
@@ -393,6 +456,14 @@ bool pmu_alert_proc(void)
 		if(charger_is_connected)
 		{
 			g_bat_level = BAT_LEVEL_NORMAL;
+			if(screen_id == SCREEN_ID_NOTIFY)
+			{
+				sprintf(tmpbuf, "%d%%", g_bat_soc);
+				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
+				
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
+			}
 		}
 
 		if(g_chg_status == BAT_CHARGING_NO)
@@ -443,8 +514,13 @@ bool pmu_alert_proc(void)
 		MAX20353_QuickStart();
 	}
 
-	MAX20353_SOCWriteReg(0x1A, MSB, LSB);
-	MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+	ret = MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+	if(ret == MAX20353_ERROR)
+		return false;
+	
+	ret = MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+	if(ret == MAX20353_ERROR)
+			return false;
 
 	return true;
 #endif	
@@ -718,38 +794,19 @@ void GetBatterySocString(u8_t *str_utc)
 
 void PMUMsgProcess(void)
 {
+	bool ret = false;
 	u8_t val;
-#ifdef PMU_DEBUG	
-	static u32_t i=0;
-#endif
 
 	if(pmu_trige_flag)
 	{
 	#ifdef PMU_DEBUG
 		LOGD("int");
 	#endif	
-		if(pmu_check_ok)
-			pmu_interrupt_proc();
-		
-		pmu_trige_flag = false;
-	}
-
-	if(gpio_pin_read(gpio_pmu, PMU_EINT, &val) == 0)	//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
-	{
-		if(val == 0)
+		ret = pmu_interrupt_proc();
+		if(ret)
 		{
-		#ifdef PMU_DEBUG
-			i++;
-			LOGD("count:%d", i);
-		#endif	
-			pmu_reg_proc();
+			pmu_trige_flag = false;
 		}
-	#ifdef PMU_DEBUG
-		else
-		{
-			i = 0;
-		}
-	#endif	
 	}
 	
 	if(pmu_alert_flag)
@@ -757,17 +814,8 @@ void PMUMsgProcess(void)
 	#ifdef PMU_DEBUG
 		LOGD("alert");
 	#endif
-		if(pmu_check_ok)
-		{
-			bool ret;
-			
-			ret = pmu_alert_proc();
-			if(ret)
-			{
-				pmu_alert_flag = false;
-			}
-		}
-		else
+		ret = pmu_alert_proc();
+		if(ret)
 		{
 			pmu_alert_flag = false;
 		}

@@ -28,7 +28,7 @@
 #include "esp8266.h"
 #endif
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 #define BLE_DEV			"UART_0"
 #define BLE_PORT		"GPIO_0"
@@ -161,11 +161,6 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
-
-	if(lcd_is_sleeping)
-		return;
-	
-	LCD_ResetBL_Timer();
 
 	switch(buf[5])
 	{

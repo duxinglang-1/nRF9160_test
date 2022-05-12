@@ -21,7 +21,7 @@
 #include "logger.h"
 
 #define TP_DEBUG
-//#define TP_TEST
+#define TP_TEST
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -51,7 +51,7 @@ static u8_t init_i2c(void)
 	} 
 	else
 	{
-		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_STANDARD));
+		i2c_configure(i2c_ctp, I2C_SPEED_SET(I2C_SPEED_FAST));
 		return 0;
 	}
 }
@@ -502,9 +502,17 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 
 void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 {
-	u8_t tmpbuf[128] = {0};
 	u8_t strbuf[128] = {0};
 	u16_t x,y,w,h;
+
+	if(lcd_is_sleeping)
+	{
+		sleep_out_by_wrist = false;
+		lcd_sleep_out = true;
+		return;
+	}
+	
+	LCD_ResetBL_Timer();
 
 	switch(tp_type)
 	{
@@ -715,7 +723,7 @@ void test_tp(void)
 
 	sprintf(tmpbuf, "TP_TEST");
 	
-	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
 
@@ -755,11 +763,12 @@ void tp_show_infor(void)
 		break;
 	}
 
-	LCD_SetFontSize(FONT_SIZE_24);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureString(tmpbuf, &w, &h);
+	LCD_Fill(0, 80, LCD_WIDTH, h, BLACK);
 	LCD_ShowString((LCD_WIDTH-w)/2,80,tmpbuf);	
 	
-	sprintf(tmpbuf, "x:%05d, y:%05d", tp_msg.x_pos, tp_msg.y_pos);
+	sprintf(tmpbuf, "x:%03d, y:%03d", tp_msg.x_pos, tp_msg.y_pos);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,110,tmpbuf);
 }

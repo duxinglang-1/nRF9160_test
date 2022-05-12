@@ -27,6 +27,9 @@
 //#define KEY_DEBUG
 #define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
+static bool key_trigger_flag = false;
+static bool wear_off_trigger_flag = false;
+
 static u8_t flag;
 static u32_t keycode;
 static u32_t keytype;
@@ -41,6 +44,8 @@ static sys_slist_t button_handlers;
 #define WEAR_PIN	06
 static struct device *gpio_wear;
 static struct gpio_callback gpio_wear_cb;
+static void wear_off_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(wear_off_timer, wear_off_timerout, NULL);
 #endif
 
 #define SOS			BIT(0)
@@ -197,12 +202,13 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 	if(curr_func_ptr)
 	{  
 		key_msg.flag[i][keytype] = true;
+		key_trigger_flag = true;
 	}
 }
 
 bool is_wearing(void)
 {
-	return true;
+	return touch_flag;
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)
@@ -564,6 +570,15 @@ static int buttons_init(button_handler_t button_handler)
 }
 
 #ifdef WEAR_CHECK_SUPPORT
+static void wear_off_timerout(struct k_timer *timer_id)
+{
+#ifdef KEY_DEBUG
+	LOGD("begin!");
+#endif
+
+	wear_off_trigger_flag = true;
+}
+
 void WearInterruptHandle(void)
 {
 	u32_t val;
@@ -577,6 +592,7 @@ void WearInterruptHandle(void)
 		LOGD("wear on!");
 	#endif
 		touch_flag = true;
+		k_timer_stop(&wear_off_timer);
 	}
 	else
 	{
@@ -584,6 +600,7 @@ void WearInterruptHandle(void)
 		LOGD("wear off!");
 	#endif
 		touch_flag = false;
+		k_timer_start(&wear_off_timer, K_MSEC(2000), NULL);
 	}
 }
 
@@ -612,17 +629,39 @@ void KeyMsgProcess(void)
 {
 	u8_t i,j;
 
-	for(i=0;i<KEY_MAX;i++)
+	if(key_trigger_flag)
 	{
-		for(j=0;j<KEY_EVENT_MAX;j++)
+		for(i=0;i<KEY_MAX;i++)
 		{
-			if(key_msg.flag[i][j] == true && key_msg.func[i][j] != NULL)
+			for(j=0;j<KEY_EVENT_MAX;j++)
 			{
-				key_msg.func[i][j]();
-				key_msg.flag[i][j] = false;
-				break;
+				if(key_msg.flag[i][j] == true && key_msg.func[i][j] != NULL)
+				{
+					key_msg.func[i][j]();
+					key_msg.flag[i][j] = false;
+					break;
+				}
 			}
 		}
+		
+		key_trigger_flag = false;
+	}
+	
+	if(wear_off_trigger_flag)
+	{
+		if(0
+		#ifdef CONFIG_PPG_SUPPORT
+			|| PPGIsWorking()
+		#endif
+		#ifdef CONFIG_TEMP_SUPPORT
+			|| TempIsWorking()
+		#endif
+			)
+		{
+			EnterIdleScreen();
+		}
+	
+		wear_off_trigger_flag = false;
 	}
 }
 

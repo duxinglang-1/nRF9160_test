@@ -331,8 +331,6 @@ void LCD_SleepOut(void)
 	Delay(120);             //—” ±120ms
 	WriteComm(0x29);
 
-
-	
 	lcd_is_sleeping = false;
 }
 

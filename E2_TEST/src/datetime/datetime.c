@@ -502,6 +502,9 @@ void UpdateSystemTime(void)
 		)
 	#endif		
 		{
+			u16_t tmp_hr = 0;
+			u16_t tmp_spo2 = 0;
+			bpt_data tmp_bp = {0};
 			static u32_t health_hour_count = 0;
 
 			health_hour_count++;
@@ -509,24 +512,18 @@ void UpdateSystemTime(void)
 			{
 				health_hour_count = 0;
 				TimeCheckSendHealthData();
+
+				tmp_hr = g_hr;
+				tmp_spo2 = g_spo2;
+				tmp_bp.diastolic = g_bp_diastolic;
+				tmp_bp.systolic = g_bp_systolic;
 			}
+
+			SetCurDayHrRecData(tmp_hr);
+			SetCurDaySpo2RecData(tmp_spo2);
+			SetCurDayBptRecData(tmp_bp);
 		}
 	}
-
-#if 0
-	if((date_time_changed&0x04) != 0)
-	{
-		u8_t hr[24] = {60,70,84,92,102,110,83,70,56,34,72,81,69,90,101,120,64,72,85,90,73,50,90,76};
-		u8_t spo2[24] = {98,100,88,92,96,83,91,86,86,97,90,81,92,94,86,99,100,96,93,84,99,83,89,95};
-		bpt_data bpt_date[24] = {{134,80},{128,75},{156,70},{188,101},{156,95},{174,110},{98,65},{165,103},{167,114},{181,97},{120,62},{188,105},{142,73},{170,71},{132,86},{147,85},{166,92},{150,61},{172,68},{132,59},{153,86},{171,84},{155,78},{133,66}};
-
-		date_time_changed = date_time_changed&0xFB;
-		
-		SetCurDayHrRecData(hr[date_time.hour]);
-		SetCurDaySpo2RecData(spo2[date_time.hour]);
-		SetCurDayBptRecData(bpt_date[date_time.hour]);
-	}
-#endif
 
 	if((date_time_changed&0x08) != 0)
 	{

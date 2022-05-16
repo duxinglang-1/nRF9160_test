@@ -292,20 +292,6 @@ bool pmu_interrupt_proc(void)
 			
 			g_chg_status = BAT_CHARGING_PROGRESS;
 			g_bat_level = BAT_LEVEL_NORMAL;
-
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_NOTIFY;
-			sprintf(tmpbuf, "%d%%", g_bat_soc);
-			mmi_asc_to_ucs2(infor.text, tmpbuf);
-			for(i=0;i<ARRAY_SIZE(bat_img);i++)
-				infor.img[i] = bat_img[i];
-			infor.img_count = ARRAY_SIZE(bat_img);
-			DisplayPopUp(infor);
-			
 			lcd_sleep_out = true;
 		}
 		else
@@ -411,38 +397,12 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				infor.x = 0;
-				infor.y = 0;
-				infor.w = LCD_WIDTH;
-				infor.h = LCD_HEIGHT;
-				infor.align = NOTIFY_ALIGN_CENTER;
-				infor.type = NOTIFY_TYPE_POPUP;
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(infor.text, tmpbuf);
-				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
-				infor.img_count = 1;
-				DisplayPopUp(infor);
-				
 				pmu_battery_low_shutdown();
 			}
 		}
 		else if(g_bat_soc < 10)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
-			if(!charger_is_connected)
-			{
-				infor.x = 0;
-				infor.y = 0;
-				infor.w = LCD_WIDTH;
-				infor.h = LCD_HEIGHT;
-				infor.align = NOTIFY_ALIGN_CENTER;
-				infor.type = NOTIFY_TYPE_POPUP;
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(infor.text, tmpbuf);
-				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
-				infor.img_count = 1;
-				DisplayPopUp(infor);
-			}
 		}
 		else if(g_bat_soc < 80)
 		{

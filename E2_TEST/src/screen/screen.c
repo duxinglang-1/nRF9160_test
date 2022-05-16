@@ -104,30 +104,7 @@ void EnterStepsScreen(void);
 
 void ShowBootUpLogoFinished(void)
 {
-	if(charger_is_connected)
-	{
-		u8_t i;
-		u8_t tmpbuf[128] = {0};
-		u32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
-		notify_infor infor = {0};
-		
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_NOTIFY;
-		sprintf(tmpbuf, "%d%%", g_bat_soc);
-		mmi_asc_to_ucs2(infor.text, tmpbuf);
-		for(i=0;i<ARRAY_SIZE(bat_img);i++)
-			infor.img[i] = bat_img[i];
-		infor.img_count = ARRAY_SIZE(bat_img);
-		DisplayPopUp(infor);
-	}
-	else
-	{
-		EnterIdleScreen();
-	}
+	EnterIdleScreen();
 }
 
 void ShowBootUpLogo(void)

@@ -2911,10 +2911,12 @@ void DlUpdateStatus(void)
 			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, DL_NOTIFY_PRO_W-1, DL_NOTIFY_PRO_H-1, BLACK);
 
 			sprintf(pro_buf, "%3d%%", g_dl_progress);
-			LCD_MeasureString(pro_buf, &w, &h);
+			memset(strbuf, 0x00, sizeof(strbuf));
+			mmi_asc_to_ucs2(strbuf, pro_buf);
+			LCD_MeasureUniString(strbuf, &w, &h);
 			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
 			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
-			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+			LCD_ShowUniString(pro_str_x,pro_str_y, strbuf);
 		}
 		else
 		{
@@ -2922,7 +2924,9 @@ void DlUpdateStatus(void)
 			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, pro_len, DL_NOTIFY_PRO_H-1, WHITE);
 
 			sprintf(pro_buf, "%3d%%", g_dl_progress);
-			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+			memset(strbuf, 0x00, sizeof(strbuf));
+			mmi_asc_to_ucs2(strbuf, pro_buf);
+			LCD_ShowUniString(pro_str_x, pro_str_y, strbuf);
 		}
 
 		ClearAllKeyHandler();
@@ -2951,19 +2955,21 @@ void DlUpdateStatus(void)
 						  strbuf);
 
 		LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
-		LCD_MeasureString("SOS(Y)", &w, &h);
+		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
+		LCD_MeasureUniString(strbuf, &w, &h);
 		x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
 		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-		LCD_ShowString(x,y,"SOS(Y)");
+		LCD_ShowUniString(x,y,strbuf);
 
 		LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
-		LCD_MeasureString("PWR(N)", &w, &h);
+		mmi_asc_to_ucs2(strbuf, "PWR(N)");
+		LCD_MeasureUniString(strbuf, &w, &h);
 		x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
 		y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
-		LCD_ShowString(x,y,"PWR(N)");
+		LCD_ShowUniString(x,y,strbuf);
 
-		SetLeftKeyUpHandler(dl_reboot_confirm);
-		SetRightKeyUpHandler(dl_exit);
+		SetRightKeyUpHandler(dl_reboot_confirm);
+		SetLeftKeyUpHandler(dl_exit);
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X-10, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W+10, DL_NOTIFY_YES_Y-10, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H+10, dl_reboot_confirm);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_NO_X-10, DL_NOTIFY_NO_X+DL_NOTIFY_NO_W+10, DL_NOTIFY_NO_Y-10, DL_NOTIFY_NO_Y+DL_NOTIFY_NO_H+10, dl_exit);
@@ -2995,10 +3001,11 @@ void DlUpdateStatus(void)
 						  strbuf);
 
 		LCD_DrawRectangle((LCD_WIDTH-DL_NOTIFY_YES_W)/2, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
-		LCD_MeasureString("SOS(Y)", &w, &h);
+		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
+		LCD_MeasureUniString(strbuf, &w, &h);
 		x = (LCD_WIDTH-DL_NOTIFY_YES_W)/2+(DL_NOTIFY_YES_W-w)/2;
 		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-		LCD_ShowString(x,y,"SOS(Y)");
+		LCD_ShowUniString(x,y,strbuf);
 
 		SetLeftKeyUpHandler(dl_exit);
 		SetRightKeyUpHandler(dl_exit);
@@ -3260,10 +3267,12 @@ void FOTAUpdateStatus(void)
 		#else	
 			LCD_SetFontSize(FONT_SIZE_16);
 		#endif
-			LCD_MeasureString(pro_buf, &w, &h);
+			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
+			mmi_asc_to_ucs2(tmpbuf, pro_buf);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
 			pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
 			pro_str_y = FOTA_PRO_NUM_Y+(FOTA_PRO_NUM_H-h)/2;
-			LCD_ShowString(pro_str_x,pro_str_y, pro_buf);
+			LCD_ShowUniString(pro_str_x,pro_str_y, tmpbuf);
 		}
 		else
 		{
@@ -3271,7 +3280,9 @@ void FOTAUpdateStatus(void)
 			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, pro_len, FOTA_PROGRESS_H-1, WHITE);
 			
 			sprintf(pro_buf, "%3d%%", g_fota_progress);
-			LCD_ShowString(pro_str_x, pro_str_y, pro_buf);
+			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
+			mmi_asc_to_ucs2(tmpbuf, pro_buf);
+			LCD_ShowUniString(pro_str_x, pro_str_y, tmpbuf);
 		}		
 
 		ClearAllKeyHandler();

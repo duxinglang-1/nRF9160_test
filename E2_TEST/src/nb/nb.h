@@ -76,6 +76,12 @@ extern u8_t g_imei[IMEI_MAX_LEN+1];
 extern u8_t g_iccid[ICCID_MAX_LEN+1];
 extern u8_t g_modem[MODEM_MAX_LEN+1];
 
+extern u8_t g_new_fw_ver[64];
+extern u8_t g_new_modem_ver[64];
+extern u8_t g_new_ppg_ver[64];
+extern u8_t g_new_ble_ver[64];
+extern u8_t g_new_wifi_ver[64];
+
 extern u8_t g_timezone[5];
 extern u8_t g_rsrp;
 

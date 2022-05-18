@@ -155,6 +155,13 @@ u8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 u8_t g_imei[IMEI_MAX_LEN+1] = {0};
 u8_t g_iccid[ICCID_MAX_LEN+1] = {0};
 u8_t g_modem[MODEM_MAX_LEN+1] = {0};
+
+u8_t g_new_fw_ver[64] = {0};
+u8_t g_new_modem_ver[64] = {0};
+u8_t g_new_ppg_ver[64] = {0};
+u8_t g_new_ble_ver[64] = {0};
+u8_t g_new_wifi_ver[64] = {0};
+
 u8_t g_timezone[5] = {0};
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
@@ -1569,6 +1576,8 @@ void ParseData(u8_t *data, u32_t datalen)
 #endif
 	if(ret)
 	{
+		bool flag = false;
+		
 		if(strcmp(strcmd, "S7") == 0)
 		{
 			u8_t *ptr;
@@ -1586,24 +1595,29 @@ void ParseData(u8_t *data, u32_t datalen)
 				strcpy(strtmp, ptr);
 				global_settings.dot_interval.steps = atoi(strtmp);
 			}
+
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S8") == 0)
 		{
 			//后台下发健康检测间隔
 			global_settings.health_interval = atoi(strdata);
-			
+
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
 			//后台下发抬腕亮屏设置
 			global_settings.wake_screen_by_wrist = atoi(strdata);
 			
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S10") == 0)
 		{
 			//后台下发脱腕检测设置
 			global_settings.wrist_off_check = atoi(strdata);
-			
+
+			flag = true;			
 		}
 		else if(strcmp(strcmd, "S11") == 0)
 		{
@@ -1622,12 +1636,63 @@ void ParseData(u8_t *data, u32_t datalen)
 				strcpy(strtmp, ptr);
 				global_settings.bp_calibra.diastolic = atoi(strtmp);
 			}
+
+			flag = true;
+		}
+		else if(strcmp(strcmd, "S12") == 0)
+		{
+			u8_t *ptr,*ptr1;
+			u8_t strtmp[128] = {0};
+			u32_t copylen = 0;
+
+			//后台下发最新版本信息
+			ptr = strstr(strdata, ",");
+			if(ptr == NULL)
+				return;
+			//9160 fw ver
+			copylen = (ptr-strdata) < sizeof(g_new_fw_ver) ? (ptr-strdata) : sizeof(g_new_fw_ver);
+			memcpy(g_new_fw_ver, strdata, copylen);
+
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			//9160 modem ver
+			copylen = (ptr1-ptr) < sizeof(g_new_modem_ver) ? (ptr1-ptr) : sizeof(g_new_modem_ver);
+			memcpy(g_new_modem_ver, ptr, copylen);
+
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			//52810 fw ver
+			copylen = (ptr1-ptr) < sizeof(g_new_ble_ver) ? (ptr1-ptr) : sizeof(g_new_ble_ver);
+			memcpy(g_new_ble_ver, ptr, copylen);
+
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			//ppg ver
+			copylen = (ptr1-ptr) < sizeof(g_new_ppg_ver) ? (ptr1-ptr) : sizeof(g_new_ppg_ver);
+			memcpy(g_new_ppg_ver, ptr, copylen);
+		
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			//wifi ver
+			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
+			memcpy(g_new_wifi_ver, ptr, copylen);
 		}
 
 		SaveSystemSettings();
 
-		strcmd[0] = 'T';
-		NBSendSettingReply(strcmd, strlen(strcmd));
+		if(flag)
+		{			
+			strcmd[0] = 'T';
+			NBSendSettingReply(strcmd, strlen(strcmd));
+		}
 	}
 }
 

@@ -19,9 +19,9 @@ bool need_save_settings = false;
 bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
-bool need_fw_update = true;
 
 u8_t g_fw_version[64] = "V1.6.6_20220516";
+
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
 static bool reset_redraw_flag = false;
@@ -674,7 +674,9 @@ void SettingsMainMenu2Proc(void)
 void SettingsMainMenu3Proc(void)
 {
 #ifdef CONFIG_FOTA_DOWNLOAD
-	if(need_fw_update)
+	extern u8_t g_new_fw_ver[64];
+
+	if(strcmp(g_new_fw_ver,g_fw_version) > 0)
 	{
 		fota_start();
 	}

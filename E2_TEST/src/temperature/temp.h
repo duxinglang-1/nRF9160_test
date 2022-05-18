@@ -31,6 +31,26 @@ typedef enum
 	TEMP_TRIGGER_BY_HOURLY	=	0x04,
 }TEMP_TARGGER_SOUCE;
 
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hour;
+	u8_t min;
+	u8_t sec;
+	u16_t deca_temp;	//实际温度放大10倍(36.5*10)
+}temp_rec1_data;
+
+//整点测量
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u16_t deca_temp[24];	//实际温度放大10倍(36.5*10)
+}temp_rec2_data;
+
 extern float g_temp_skin;
 extern float g_temp_body;
 

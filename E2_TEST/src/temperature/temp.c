@@ -13,6 +13,7 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include "external_flash.h"
+#include "datetime.h"
 #include "lcd.h"
 #include "screen.h"
 #include "temp.h"
@@ -52,6 +53,82 @@ static void temp_auto_stop_timerout(struct k_timer *timer_id)
 static void temp_get_timerout(struct k_timer *timer_id)
 {
 	temp_get_data_flag = true;
+}
+
+void SetCurDayTempRecData(float data)
+{
+	u8_t i,tmpbuf[512] = {0};
+	temp_rec2_data *p_temp = NULL;
+	
+	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+
+	p_temp = tmpbuf+6*sizeof(temp_rec2_data);
+	if(((date_time.year > p_temp->year)&&(p_temp->year != 0xffff && p_temp->year != 0x0000))
+		||((date_time.year == p_temp->year)&&(date_time.month > p_temp->month)&&(p_temp->month != 0xff && p_temp->month != 0x00))
+		||((date_time.month == p_temp->month)&&(date_time.day > p_temp->day)&&(p_temp->day != 0xff && p_temp->day != 0x00)))
+	{//记录存满。整体前挪并把最新的放在最后
+		temp_rec2_data tmp_temp = {0};
+
+	#ifdef PPG_DEBUG
+		LOGD("rec is full! temp:%0.1f", data);
+	#endif
+		tmp_temp.year = date_time.year;
+		tmp_temp.month = date_time.month;
+		tmp_temp.day = date_time.day;
+		tmp_temp.deca_temp[date_time.hour] = (u16_t)data*10;
+		memcpy(&tmpbuf[0], &tmpbuf[sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
+		memcpy(&tmpbuf[6*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
+		SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	}
+	else
+	{
+	#ifdef PPG_DEBUG
+		LOGD("rec not full! temp:%0.1f", data);
+	#endif
+		for(i=0;i<7;i++)
+		{
+			p_temp = tmpbuf + i*sizeof(temp_rec2_data);
+			if((p_temp->year == 0xffff || p_temp->year == 0x0000)||(p_temp->month == 0xff || p_temp->month == 0x00)||(p_temp->day == 0xff || p_temp->day == 0x00))
+			{
+				p_temp->year = date_time.year;
+				p_temp->month = date_time.month;
+				p_temp->day = date_time.day;
+				p_temp->deca_temp[date_time.hour] = (u16_t)data*10;
+				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+				break;
+			}
+			
+			if((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day == date_time.day))
+			{
+				p_temp->deca_temp[date_time.hour] = (u16_t)data*10;
+				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+				break;
+			}
+		}
+	}
+}
+
+void GetCurDayTempRecData(u16_t *databuf)
+{
+	u8_t i,tmpbuf[512] = {0};
+	temp_rec2_data temp_rec2 = {0};
+	
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&temp_rec2, &tmpbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
+		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)||(temp_rec2.day == 0xff || temp_rec2.day == 0x00))
+			continue;
+		
+		if((temp_rec2.year == date_time.year)&&(temp_rec2.month == date_time.month)&&(temp_rec2.day == date_time.day))
+		{
+			memcpy(databuf, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+			break;
+		}
+	}
 }
 
 bool TempIsWorking(void)

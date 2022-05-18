@@ -23,6 +23,9 @@
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif
 #include "screen.h"
 #include "ucs2.h"
 #include "logger.h"
@@ -507,6 +510,9 @@ void UpdateSystemTime(void)
 			u16_t tmp_spo2 = 0;
 			bpt_data tmp_bp = {0};
 		#endif
+		#ifdef CONFIG_TEMP_SUPPORT
+			float tmp_temp = 0.0;
+		#endif
 			static u32_t health_hour_count = 0;
 
 			health_hour_count++;
@@ -521,12 +527,18 @@ void UpdateSystemTime(void)
 				tmp_bp.diastolic = g_bp_diastolic;
 				tmp_bp.systolic = g_bp_systolic;
 			#endif
+			#ifdef CONFIG_TEMP_SUPPORT
+				tmp_temp = g_temp_body;
+			#endif
 			}
 
 		#ifdef CONFIG_PPG_SUPPORT
 			SetCurDayHrRecData(tmp_hr);
 			SetCurDaySpo2RecData(tmp_spo2);
 			SetCurDayBptRecData(tmp_bp);
+		#endif
+		#ifdef CONFIG_TEMP_SUPPORT
+			SetCurDayTempRecData(tmp_temp);
 		#endif
 		}
 	}

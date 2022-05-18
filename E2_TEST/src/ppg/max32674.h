@@ -50,7 +50,7 @@ typedef struct
 	u8_t diastolic;
 }bpt_data;
 
-//单词测量
+//单次测量
 typedef struct
 {
 	u16_t year;

@@ -650,6 +650,10 @@ void TimerStartHrSpo2(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_HOURLY;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+
+	g_hr = 0;
+	g_spo2 = 0;
+	
 	ppg_start_flag = true;
 }
 
@@ -657,6 +661,10 @@ void APPStartHrSpo2(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_APP;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+
+	g_hr = 0;
+	g_spo2 = 0;
+
 	ppg_start_flag = true;
 }
 
@@ -684,6 +692,16 @@ void MenuStartHrSpo2(void)
 
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+
+	if(screen_id == SCREEN_ID_HR)
+	{
+		g_hr = 0;
+	}
+	else if(screen_id == SCREEN_ID_SPO2)
+	{
+		g_spo2 = 0;
+	}
+
 	ppg_start_flag = true;
 }
 
@@ -697,6 +715,12 @@ void TimerStartBpt(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_HOURLY;
 	g_ppg_alg_mode = ALG_MODE_BPT;
+
+	g_hr = 0;
+	g_spo2 = 0;
+	g_bp_systolic = 0;
+	g_bp_diastolic = 0;
+	
 	ppg_start_flag = true;
 }
 
@@ -704,6 +728,10 @@ void APPStartBpt(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_APP;
 	g_ppg_alg_mode = ALG_MODE_BPT;
+
+	g_bp_systolic = 0;
+	g_bp_diastolic = 0;
+	
 	ppg_start_flag = true;
 }
 
@@ -731,6 +759,10 @@ void MenuStartBpt(void)
 
 	g_ppg_trigger |=TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_BPT;
+
+	g_bp_systolic = 0;
+	g_bp_diastolic = 0;
+	
 	ppg_start_flag = true;
 }
 
@@ -831,7 +863,7 @@ void PPGStartCheck(void)
 		LOGD("ppg hr start success!");
 	#endif
 		ppg_power_flag = 2;
-		
+
 		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 			k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
 	}

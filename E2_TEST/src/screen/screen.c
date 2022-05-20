@@ -1757,79 +1757,106 @@ void SyncScreenProcess(void)
 #ifdef CONFIG_TEMP_SUPPORT
 void TempUpdateStatus(void)
 {
-	static u8_t index = 0;
 	u16_t x,y,w,h;
 	u8_t tmpbuf[64] = {0};
-	u32_t img_addr[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
-
-#ifdef CONFIG_ANIMATION_SUPPORT
-	if(TempIsWorking())
-	{
-		index++;
-		if(index >= ARRAY_SIZE(img_addr))
-			index = 0;
-		LCD_ShowImg_From_Flash(TEMP_RUNNING_ANI_X, TEMP_RUNNING_ANI_Y, img_addr[index]);
-	}
-	else
-	{
-		AnimaStopShow();
-		index = 0;
-	}
-#endif
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_52);
+	LCD_SetFontSize(FONT_SIZE_36);
 #else
-	LCD_SetFontSize(FONT_SIZE_48);
+	LCD_SetFontSize(FONT_SIZE_32);
 #endif
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
-	{
-		if(g_temp_body >= 10.0)
-			sprintf(tmpbuf, "%0.1f", g_temp_body);
-		else
-			sprintf(tmpbuf, " %0.1f", g_temp_body);
-	}
+		sprintf(tmpbuf, "%0.1f", g_temp_body);
 	else
-	{
-		if(g_temp_body >= 10.0)
-			sprintf(tmpbuf, "%0.1f", 32+1.8*g_temp_body);
-		else
-			sprintf(tmpbuf, " %0.1f", 32+1.8*g_temp_body);
-	}
-	
-	LCD_MeasureString(tmpbuf, &w, &h);
-	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
+		sprintf(tmpbuf, "%0.1f", g_temp_body*1.8+32);
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = TEMP_NUM_X+(TEMP_NUM_W-w)/2;
+	y = TEMP_NUM_Y+(TEMP_NUM_H-h)/2;
+	LCD_Fill(TEMP_NUM_X, TEMP_NUM_Y, TEMP_NUM_W, TEMP_NUM_H, BLACK);
+	LCD_ShowString(x,y,tmpbuf);
 }
 
 void TempShowStatus(void)
 {
 	u16_t x,y,w,h;
-	u8_t tmpbuf[64] = {0};
+	u8_t i,tmpbuf[64] = {0};
+	float temp_max = 0.0, temp_min = 0.0;
+	u16_t temp[24] = {0};
+	u16_t color = 0x05DF;
 
 	LCD_Clear(BLACK);
-	
+
 	if(global_settings.temp_unit == TEMP_UINT_C)
-	{
+	{		
 		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_C_ADDR);
-		LCD_ShowImg_From_Flash(TEMP_UNIT_X, TEMP_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_BG_X, TEMP_BG_Y, IMG_TEMP_C_BG_ADDR);
 	}
 	else
 	{
 		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_F_ADDR);
-		LCD_ShowImg_From_Flash(TEMP_UNIT_X, TEMP_UNIT_Y, IMG_TEMP_UNIT_F_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_BG_X, TEMP_BG_Y, IMG_TEMP_F_BG_ADDR);
 	}
-	LCD_ShowImg_From_Flash(TEMP_RUNNING_ANI_X, TEMP_RUNNING_ANI_Y, IMG_RUNNING_ANI_1_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_UP_ARRAW_X, TEMP_UP_ARRAW_Y, IMG_TEMP_UP_ARRAW_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_DOWN_ARRAW_X, TEMP_DOWN_ARRAW_Y, IMG_TEMP_DOWN_ARRAW_ADDR);
+
+	GetCurDayTempRecData(temp);
+	for(i=0;i<24;i++)
+	{
+		if((temp_max == 0.0) || (temp_min == 0.0))
+		{
+			if((temp[i] > 0) && (temp[i] <= 420))
+			{
+				temp_max = (float)temp[i]/10.0;
+				temp_min = (float)temp[i]/10.0;
+			}
+		}
+		else
+		{	
+			if((temp[i]/10.0 > temp_max) && (temp[i] <= 420))
+				temp_max = (float)temp[i]/10.0;
+			if((temp[i]/10.0 < temp_min) && (temp[i] <= 420))
+				temp_min = (float)temp[i]/10.0;
+		}
+
+		if((temp[i]/10.0 > 32.0) && (temp[i]/10.0 < 42.0))
+			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(temp[i]/10.0-32.0)*15/2, TEMP_REC_DATA_W, (temp[i]/10.0-32.0)*15/2, color);
+	}
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_52);
-#else
-	LCD_SetFontSize(FONT_SIZE_48);
+	LCD_SetFontSize(FONT_SIZE_36);
+#else		
+	LCD_SetFontSize(FONT_SIZE_32);
+#endif
+	strcpy(tmpbuf, "0.0");
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = TEMP_NUM_X+(TEMP_NUM_W-w)/2;
+	y = TEMP_NUM_Y+(TEMP_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_28);
+#else		
+	LCD_SetFontSize(FONT_SIZE_24);
 #endif
 
-	sprintf(tmpbuf, "%d", 0);
-	LCD_MeasureString(tmpbuf, &w, &h);
-	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
+	if(global_settings.temp_unit == TEMP_UINT_C)
+		sprintf(tmpbuf, "%0.1f", temp_max);
+	else
+		sprintf(tmpbuf, "%0.1f", temp_max*1.8+32);
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = TEMP_UP_NUM_X+(TEMP_UP_NUM_W-w)/2;
+	y = TEMP_UP_NUM_Y+(TEMP_UP_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
+
+	if(global_settings.temp_unit == TEMP_UINT_C)
+		sprintf(tmpbuf, "%0.1f", temp_min);
+	else
+		sprintf(tmpbuf, "%0.1f", temp_min*1.8+32);
+	LCD_MeasureString(tmpbuf,&w,&h);
+	x = TEMP_DOWN_NUM_X+(TEMP_DOWN_NUM_W-w)/2;
+	y = TEMP_DOWN_NUM_Y+(TEMP_DOWN_NUM_H-h)/2;
+	LCD_ShowString(x,y,tmpbuf);
 }
 
 void TempScreenProcess(void)
@@ -1953,7 +1980,7 @@ void BPShowStatus(void)
 	{
 		if((bpt_max.systolic == 0) || (bpt_max.diastolic == 0) || (bpt_min.systolic == 0) || (bpt_min.diastolic == 0))
 		{
-			if(((bpt[i].systolic > 0) && (bpt[i].systolic < 0xff)) && ((bpt[i].diastolic > 0) && (bpt[i].diastolic < 0xff)))
+			if(((bpt[i].systolic > 0) && (bpt[i].systolic <= 180)) && ((bpt[i].diastolic > 0) && (bpt[i].diastolic <= 180)))
 			{
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
@@ -1961,15 +1988,15 @@ void BPShowStatus(void)
 		}
 		else
 		{	
-			if((bpt[i].systolic > bpt_max.systolic) && (bpt[i].systolic < 0xff))
+			if((bpt[i].systolic > bpt_max.systolic) && (bpt[i].systolic <= 180))
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
-			if((bpt[i].systolic < bpt_min.systolic) && (bpt[i].systolic < 0xff))
+			if((bpt[i].systolic < bpt_min.systolic) && (bpt[i].systolic <= 180))
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
 		}
 
-		if((bpt[i].systolic > 30) && (bpt[i].systolic < 0xff))
+		if((bpt[i].systolic > 30) && (bpt[i].systolic <= 180))
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].systolic-30)*15/30, BP_REC_DATA_W, (bpt[i].systolic-30)*15/30, YELLOW);
-		if((bpt[i].diastolic > 30) && (bpt[i].diastolic < 0xff))
+		if((bpt[i].diastolic > 30) && (bpt[i].diastolic <= 180))
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].diastolic-30)*15/30, BP_REC_DATA_W, (bpt[i].diastolic-30)*15/30, RED);
 	}
 
@@ -2135,7 +2162,7 @@ void SPO2ShowStatus(void)
 	{
 		if((spo2_max == 0) || (spo2_min == 0))
 		{
-			if((spo2[i] > 0) && (spo2[i] < 0xff))
+			if((spo2[i] > 0) && (spo2[i] <= 100))
 			{
 				spo2_max = spo2[i];
 				spo2_min = spo2[i];
@@ -2143,13 +2170,13 @@ void SPO2ShowStatus(void)
 		}
 		else
 		{
-			if((spo2[i] > spo2_max) && (spo2[i] < 0xff))
+			if((spo2[i] > spo2_max) && (spo2[i] <= 100))
 				spo2_max = spo2[i];
-			if((spo2[i] < spo2_min) && (spo2[i] < 0xff))
+			if((spo2[i] < spo2_min) && (spo2[i] <= 100))
 				spo2_min = spo2[i];
 		}
 		
-		if((spo2[i] >= 80) && (spo2[i] < 0xff))
+		if((spo2[i] >= 80) && (spo2[i] <= 100))
 			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(spo2[i]-80)*3, SPO2_REC_DATA_W, (spo2[i]-80)*3, BLUE);
 	}
 
@@ -2292,7 +2319,7 @@ void HRShowStatus(void)
 	{
 		if((hr_max == 0) || (hr_min == 0))
 		{
-			if((hr[i] > 0) && (hr[i] < 0xff))
+			if((hr[i] > 0) && (hr[i] <= 150))
 			{	
 				hr_max = hr[i];
 				hr_min = hr[i];
@@ -2300,13 +2327,13 @@ void HRShowStatus(void)
 		}
 		else
 		{
-			if((hr[i] > hr_max) && (hr[i] < 0xff))
+			if((hr[i] > hr_max) && (hr[i] <= 150))
 				hr_max = hr[i];
-			if((hr[i] < hr_min) && (hr[i] < 0xff))
+			if((hr[i] < hr_min) && (hr[i] <= 150))
 				hr_min = hr[i];
 		}
 		
-		if((hr[i] > 30) && (hr[i] < 0xff))
+		if((hr[i] >= 30) && (hr[i] <= 150))
 			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-(hr[i]-30)*15/30, HR_REC_DATA_W, (hr[i]-30)*15/30, RED);
 	}
 

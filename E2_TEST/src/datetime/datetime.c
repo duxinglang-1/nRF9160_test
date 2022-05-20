@@ -464,25 +464,15 @@ void UpdateSystemTime(void)
 		)
 	#endif		
 		{
-			static u32_t health_min_count = 0;
-
-			health_min_count++;
-			if((health_min_count+1) == global_settings.health_interval)
+			if(date_time.minute == 59)//xb add 20220519 Start sampling 1 minute in advance.
 			{
-				if(is_wearing())
-				{
-				#ifdef CONFIG_PPG_SUPPORT
-					TimerStartBpt();
-				#endif/*CONFIG_PPG_SUPPORT*/
+			#ifdef CONFIG_PPG_SUPPORT
+				TimerStartBpt();
+			#endif/*CONFIG_PPG_SUPPORT*/
 
-				#ifdef CONFIG_TEMP_SUPPORT
-					TimerStartTemp();
-				#endif
-				}
-			}
-			else if(health_min_count == global_settings.health_interval)
-			{
-				health_min_count = 0;
+			#ifdef CONFIG_TEMP_SUPPORT
+				TimerStartTemp();
+			#endif
 			}
 			
 			AlarmRemindCheck(date_time);

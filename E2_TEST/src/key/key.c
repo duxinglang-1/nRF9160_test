@@ -651,10 +651,10 @@ void KeyMsgProcess(void)
 	{
 		if(0
 		#ifdef CONFIG_PPG_SUPPORT
-			|| PPGIsWorking()
+			|| IsInPPGScreen()
 		#endif
 		#ifdef CONFIG_TEMP_SUPPORT
-			|| TempIsWorking()
+			|| IsInTempScreen()
 		#endif
 			)
 		{

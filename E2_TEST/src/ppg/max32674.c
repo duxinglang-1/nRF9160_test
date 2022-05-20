@@ -313,6 +313,14 @@ void GetPPGData(u8_t *hr, u8_t *spo2, u8_t *systolic, u8_t *diastolic)
 		*diastolic = 80;
 }
 
+bool IsInPPGScreen(void)
+{
+	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
+		return true;
+	else
+		return false;
+}
+
 bool PPGIsWorking(void)
 {
 	if(ppg_power_flag == 0)
@@ -529,6 +537,81 @@ void PPGGetSensorHubData(void)
 				
 				#ifdef PPG_DEBUG
 					LOGD("bpt_status:%d, bpt_per:%d, bpt_sys:%d, bpt_dia:%d", bpt.status, bpt.perc_comp, bpt.sys_bp, bpt.dia_bp);
+					switch(bpt.status)
+					{
+					case 0:
+						LOGD("No signal");
+						break;
+					case 1:
+						LOGD("User calibration/estimation in progress ");
+						break;
+					case 2:
+						LOGD("Success");					
+						break;
+					case 3:
+						LOGD("Weak signal");						
+						break;
+					case 4:
+						LOGD("Motion");						
+						break;
+					case 5:
+						LOGD("Estimation failure");						
+						break;
+					case 6:
+						LOGD("Calibration partially complete");							
+						break;
+					case 7:
+						LOGD("Subject initialization failure");					
+						break;
+					case 8:
+						LOGD("Initialization completed");						
+						break;
+					case 9:
+						LOGD("Calibration reference BP trending error");						
+						break;
+					case 10:
+						LOGD("Calibration reference Inconsistency 1 error");						
+						break;
+					case 11:
+						LOGD("Calibration reference Inconsistency 2 error");						
+						break;
+					case 12:
+						LOGD("Calibration reference Inconsistency 3 error");							
+						break;
+					case 13:
+						LOGD("Calibration reference count mismatch");					
+						break;
+					case 14:
+						LOGD("Calibration reference are out of limits (systolic 80 to 180, diastolic 50 to 120)");						
+						break;
+					case 15:
+						LOGD("Number of calibrations exceed maximum");						
+						break;
+					case 16:
+						LOGD("Pulse pressure out of range");							
+						break;
+					case 17:
+						LOGD("Heart rate out of range");					
+						break;
+					case 18:
+						LOGD("Heart rate is above resting");						
+						break;
+					case 19:
+						LOGD("Perfusion Index is out of range");						
+						break;
+					case 20:
+						LOGD("Estimation error, try again");							
+						break;
+					case 21:
+						LOGD("BPT estimate is out of range from calibration references (systolic +-30, diastolic +-20) ");					
+						break;
+					case 22:
+						LOGD("BPT estimate is beyond the maximum limits (systolic 80 to 180, diastolic 50 to 120)");				
+						break;
+					default:
+						LOGD("Unknow");
+						break;
+					}
 				#endif
 
 					if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
@@ -575,7 +658,12 @@ void PPGGetSensorHubData(void)
 							LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
 						#endif
 
-							if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+							if((g_hr > 0) && (g_spo2 > 0))
+							{
+								PPGStopCheck();
+								return;
+							}
+							else if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
 							{
 								heart_rate += sensorhub_out.hr;
 								spo2 += sensorhub_out.spo2;
@@ -648,24 +736,32 @@ void PPGGetSensorHubData(void)
 
 void TimerStartHrSpo2(void)
 {
-	g_ppg_trigger |= TRIGGER_BY_HOURLY;
-	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-
 	g_hr = 0;
 	g_spo2 = 0;
-	
-	ppg_start_flag = true;
+
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_HOURLY;
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		ppg_start_flag = true;	
+	}
 }
 
 void APPStartHrSpo2(void)
 {
-	g_ppg_trigger |= TRIGGER_BY_APP;
-	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-
 	g_hr = 0;
 	g_spo2 = 0;
 
-	ppg_start_flag = true;
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_APP;
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		ppg_start_flag = true;	
+	}
+	else
+	{
+		MCU_send_app_get_hr_data();
+	}
 }
 
 void MenuStartHrSpo2(void)
@@ -713,26 +809,33 @@ void MenuStopHrSpo2(void)
 
 void TimerStartBpt(void)
 {
-	g_ppg_trigger |= TRIGGER_BY_HOURLY;
-	g_ppg_alg_mode = ALG_MODE_BPT;
-
 	g_hr = 0;
 	g_spo2 = 0;
 	g_bp_systolic = 0;
 	g_bp_diastolic = 0;
-	
-	ppg_start_flag = true;
+
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_HOURLY;
+		g_ppg_alg_mode = ALG_MODE_BPT;
+		ppg_start_flag = true;
+	}
 }
 
 void APPStartBpt(void)
 {
-	g_ppg_trigger |= TRIGGER_BY_APP;
-	g_ppg_alg_mode = ALG_MODE_BPT;
-
 	g_bp_systolic = 0;
 	g_bp_diastolic = 0;
 	
-	ppg_start_flag = true;
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_APP;
+		g_ppg_alg_mode = ALG_MODE_BPT;
+		ppg_start_flag = true;
+	}
+	else
+	{
+	}
 }
 
 void MenuStartBpt(void)
@@ -909,11 +1012,9 @@ void PPGStopCheck(void)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	}
-
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
-		TimeCheckSendHealthData();
 	}
 }
 

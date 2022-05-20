@@ -59,7 +59,7 @@ void SetCurDayTempRecData(float data)
 {
 	u8_t i,tmpbuf[512] = {0};
 	temp_rec2_data *p_temp = NULL;
-	
+	u16_t deca_temp = data*10;
 	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 
 	p_temp = tmpbuf+6*sizeof(temp_rec2_data);
@@ -68,6 +68,7 @@ void SetCurDayTempRecData(float data)
 		||((date_time.month == p_temp->month)&&(date_time.day > p_temp->day)&&(p_temp->day != 0xff && p_temp->day != 0x00)))
 	{//记录存满。整体前挪并把最新的放在最后
 		temp_rec2_data tmp_temp = {0};
+		
 
 	#ifdef PPG_DEBUG
 		LOGD("rec is full! temp:%0.1f", data);
@@ -75,7 +76,7 @@ void SetCurDayTempRecData(float data)
 		tmp_temp.year = date_time.year;
 		tmp_temp.month = date_time.month;
 		tmp_temp.day = date_time.day;
-		tmp_temp.deca_temp[date_time.hour] = (u16_t)data*10;
+		tmp_temp.deca_temp[date_time.hour] = deca_temp;
 		memcpy(&tmpbuf[0], &tmpbuf[sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
 		memcpy(&tmpbuf[6*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
 		SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
@@ -93,14 +94,14 @@ void SetCurDayTempRecData(float data)
 				p_temp->year = date_time.year;
 				p_temp->month = date_time.month;
 				p_temp->day = date_time.day;
-				p_temp->deca_temp[date_time.hour] = (u16_t)data*10;
+				p_temp->deca_temp[date_time.hour] = deca_temp;
 				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 				break;
 			}
 			
 			if((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day == date_time.day))
 			{
-				p_temp->deca_temp[date_time.hour] = (u16_t)data*10;
+				p_temp->deca_temp[date_time.hour] = deca_temp;
 				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 				break;
 			}
@@ -131,6 +132,14 @@ void GetCurDayTempRecData(u16_t *databuf)
 	}
 }
 
+bool IsInTempScreen(void)
+{
+	if(screen_id == SCREEN_ID_TEMP)
+		return true;
+	else
+		return false;
+}
+
 bool TempIsWorking(void)
 {
 	if(temp_power_flag == false)
@@ -154,14 +163,26 @@ void TempRedrawData(void)
 
 void TimerStartTemp(void)
 {
-	g_temp_trigger |= TEMP_TRIGGER_BY_HOURLY;
-	temp_start_flag = true;
+	g_temp_skin = 0.0;
+	g_temp_body = 0.0;
+
+	if(is_wearing())
+	{
+		g_temp_trigger |= TEMP_TRIGGER_BY_HOURLY;
+		temp_start_flag = true;
+	}
 }
 
 void APPStartTemp(void)
 {
-	g_temp_trigger |= TEMP_TRIGGER_BY_APP;
-	temp_start_flag = true;
+	g_temp_skin = 0.0;
+	g_temp_body = 0.0;
+
+	if(is_wearing())
+	{
+		g_temp_trigger |= TEMP_TRIGGER_BY_APP;
+		temp_start_flag = true;
+	}
 }
 
 void MenuStartTemp(void)
@@ -228,6 +249,7 @@ void TempMsgProcess(void)
 
 		if(ret)
 		{
+			SetCurDayTempRecData(g_temp_body);
 			temp_stop_flag = true;
 		}
 	}

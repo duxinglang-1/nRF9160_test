@@ -210,10 +210,14 @@ extern unsigned char IMG_SYNC_ERR[42128];
 extern unsigned char IMG_SYNC_FINISH[42128];
 extern unsigned char IMG_SYNC_LOGO[36458];
 //temperature(4)
-extern unsigned char IMG_TEMP_ICON_C[16208];
-extern unsigned char IMG_TEMP_ICON_F[16532];
+extern unsigned char IMG_TEMP_ICON_C[2568];
+extern unsigned char IMG_TEMP_ICON_F[2864];
 extern unsigned char IMG_TEMP_UNIT_C[520];
 extern unsigned char IMG_TEMP_UNIT_F[520];
+extern unsigned char IMG_TEMP_C_BG[31458];
+extern unsigned char IMG_TEMP_F_BG[32648];
+extern unsigned char IMG_TEMP_DOWN_ARRAW[484];
+extern unsigned char IMG_TEMP_UP_ARRAW[484];
 //wrist off(2)
 extern unsigned char IMG_WRIST_OFF_ICON[23372];
 #endif

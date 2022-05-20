@@ -313,22 +313,39 @@ extern "C" {
 #define BP_REC_DATA_OFFSET_X		7
 
 //temperature
-#define TEMP_ICON_W					89
-#define TEMP_ICON_H					110
-#define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
-#define TEMP_ICON_Y					30
-#define TEMP_UNIT_W					16
-#define TEMP_UNIT_H					16
-#define TEMP_UNIT_X					170
-#define TEMP_UNIT_Y					145
-#define TEMP_NUM_W					100
-#define TEMP_NUM_H					26
-#define TEMP_NUM_X					70
-#define TEMP_NUM_Y					150
-#define TEMP_RUNNING_ANI_W			81
-#define TEMP_RUNNING_ANI_H			13
-#define TEMP_RUNNING_ANI_X			((LCD_WIDTH-TEMP_RUNNING_ANI_W)/2)
-#define TEMP_RUNNING_ANI_Y			212
+#define TEMP_ICON_W					34
+#define TEMP_ICON_H					42
+#define TEMP_ICON_X					55
+#define TEMP_ICON_Y					31
+#define TEMP_NUM_W					73
+#define TEMP_NUM_H					31
+#define TEMP_NUM_X					97
+#define TEMP_NUM_Y					36
+#define TEMP_BG_W					192
+#define TEMP_BG_H					85
+#define TEMP_BG_X					((LCD_WIDTH-TEMP_BG_W)/2)
+#define TEMP_BG_Y					80
+#define TEMP_UP_ARRAW_W				14
+#define TEMP_UP_ARRAW_H				17
+#define TEMP_UP_ARRAW_X				43
+#define TEMP_UP_ARRAW_Y				183
+#define TEMP_UP_NUM_W				51
+#define TEMP_UP_NUM_H				17
+#define TEMP_UP_NUM_X				60
+#define TEMP_UP_NUM_Y				183
+#define TEMP_DOWN_ARRAW_W			14
+#define TEMP_DOWN_ARRAW_H			17
+#define TEMP_DOWN_ARRAW_X			133
+#define TEMP_DOWN_ARRAW_Y			183
+#define TEMP_DOWN_NUM_W				49
+#define TEMP_DOWN_NUM_H				17
+#define TEMP_DOWN_NUM_X				148
+#define TEMP_DOWN_NUM_Y				183
+#define TEMP_REC_DATA_X				25
+#define TEMP_REC_DATA_Y				146
+#define TEMP_REC_DATA_W				4
+#define TEMP_REC_DATA_H				58
+#define TEMP_REC_DATA_OFFSET_X		7
 
 //settings
 #define SETTINGS_MAIN_MENU_MAX_PER_PG	4

@@ -25,6 +25,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
@@ -65,6 +66,82 @@ u16_t g_distance = 0;
 sport_record_t last_sport = {0};
 
 extern bool update_sleep_parameter;
+
+void SetCurDayStepRecData(u16_t data)
+{
+	u8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data *p_step = NULL;
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+
+	p_step = tmpbuf+6*sizeof(step_rec2_data);
+	if(((date_time.year > p_step->year)&&(p_step->year != 0xffff && p_step->year != 0x0000))
+		||((date_time.year == p_step->year)&&(date_time.month > p_step->month)&&(p_step->month != 0xff && p_step->month != 0x00))
+		||((date_time.month == p_step->month)&&(date_time.day > p_step->day)&&(p_step->day != 0xff && p_step->day != 0x00)))
+	{//记录存满。整体前挪并把最新的放在最后
+		step_rec2_data tmp_step = {0};
+		
+
+	#ifdef IMU_DEBUG
+		LOGD("rec is full! temp:%0.1f", data);
+	#endif
+		tmp_step.year = date_time.year;
+		tmp_step.month = date_time.month;
+		tmp_step.day = date_time.day;
+		tmp_step.steps[date_time.hour] = data;
+		memcpy(&tmpbuf[0], &tmpbuf[sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
+		memcpy(&tmpbuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	}
+	else
+	{
+	#ifdef IMU_DEBUG
+		LOGD("rec not full! temp:%0.1f", data);
+	#endif
+		for(i=0;i<7;i++)
+		{
+			p_step = tmpbuf + i*sizeof(step_rec2_data);
+			if((p_step->year == 0xffff || p_step->year == 0x0000)||(p_step->month == 0xff || p_step->month == 0x00)||(p_step->day == 0xff || p_step->day == 0x00))
+			{
+				p_step->year = date_time.year;
+				p_step->month = date_time.month;
+				p_step->day = date_time.day;
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+			
+			if((p_step->year == date_time.year)&&(p_step->month == date_time.month)&&(p_step->day == date_time.day))
+			{
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+		}
+	}
+}
+
+void GetCurDayStepRecData(u16_t *databuf)
+{
+	u8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data step_rec2 = {0};
+	
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&step_rec2, &tmpbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
+		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
+			continue;
+		
+		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
+		{
+			memcpy(databuf, step_rec2.steps, sizeof(step_rec2.steps));
+			break;
+		}
+	}
+}
 
 static uint8_t init_i2c(void)
 {

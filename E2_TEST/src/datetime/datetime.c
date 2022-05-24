@@ -464,16 +464,26 @@ void UpdateSystemTime(void)
 		)
 	#endif		
 		{
-			if(date_time.minute == 59)//xb add 20220519 Start sampling 1 minute in advance.
+		#ifdef CONFIG_PPG_SUPPORT
+			if((date_time.minute+PPG_CHECK_TIMELY) == 59)
 			{
-			#ifdef CONFIG_PPG_SUPPORT
 				TimerStartBpt();
-			#endif/*CONFIG_PPG_SUPPORT*/
-
-			#ifdef CONFIG_TEMP_SUPPORT
-				TimerStartTemp();
-			#endif
 			}
+		#endif/*CONFIG_PPG_SUPPORT*/
+		
+		#ifdef CONFIG_TEMP_SUPPORT
+			if((date_time.minute+TEMP_CHECK_TIMELY) == 55)
+			{	
+				TimerStartTemp();
+			}
+		#endif
+
+		#ifdef CONFIG_IMU_SUPPORT
+			if(date_time.minute == 59)
+			{
+				SetCurDayStepRecData(g_steps);
+			}
+		#endif
 			
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();
@@ -495,14 +505,6 @@ void UpdateSystemTime(void)
 		)
 	#endif		
 		{
-		#ifdef CONFIG_PPG_SUPPORT
-			u16_t tmp_hr = 0;
-			u16_t tmp_spo2 = 0;
-			bpt_data tmp_bp = {0};
-		#endif
-		#ifdef CONFIG_TEMP_SUPPORT
-			float tmp_temp = 0.0;
-		#endif
 			static u32_t health_hour_count = 0;
 
 			health_hour_count++;
@@ -510,26 +512,7 @@ void UpdateSystemTime(void)
 			{
 				health_hour_count = 0;
 				TimeCheckSendHealthData();
-
-			#ifdef CONFIG_PPG_SUPPORT
-				tmp_hr = g_hr;
-				tmp_spo2 = g_spo2;
-				tmp_bp.diastolic = g_bp_diastolic;
-				tmp_bp.systolic = g_bp_systolic;
-			#endif
-			#ifdef CONFIG_TEMP_SUPPORT
-				tmp_temp = g_temp_body;
-			#endif
 			}
-
-		#ifdef CONFIG_PPG_SUPPORT
-			SetCurDayHrRecData(tmp_hr);
-			SetCurDaySpo2RecData(tmp_spo2);
-			SetCurDayBptRecData(tmp_bp);
-		#endif
-		#ifdef CONFIG_TEMP_SUPPORT
-			SetCurDayTempRecData(tmp_temp);
-		#endif
 		}
 	}
 

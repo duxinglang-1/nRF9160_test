@@ -5,6 +5,27 @@
 #include <device.h>
 #include "inner_flash.h"
 
+//单次测量
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hour;
+	u8_t min;
+	u8_t sec;
+	u16_t steps;
+}step_rec1_data;
+
+//整点测量
+typedef struct
+{
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u16_t steps[24];
+}step_rec2_data;
+
 extern bool reset_steps;
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 extern bool fall_wait_gps;

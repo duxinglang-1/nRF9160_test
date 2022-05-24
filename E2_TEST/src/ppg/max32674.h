@@ -13,6 +13,8 @@
 #include <zephyr.h>
 #include <device.h>
 
+#define PPG_CHECK_TIMELY	4
+
 typedef enum
 {
 	ALG_MODE_HR_SPO2,
@@ -114,8 +116,7 @@ extern u8_t g_ppg_ver[64];
 
 extern u16_t g_hr;
 extern u16_t g_spo2;
-extern u16_t g_bp_systolic;		// ’Àı—π
-extern u16_t g_bp_diastolic;	// Ê’≈—π
+extern bpt_data g_bpt;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);

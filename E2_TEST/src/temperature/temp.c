@@ -57,7 +57,7 @@ static void temp_get_timerout(struct k_timer *timer_id)
 
 void SetCurDayTempRecData(float data)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
 	temp_rec2_data *p_temp = NULL;
 	u16_t deca_temp = data*10;
 	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
@@ -68,9 +68,8 @@ void SetCurDayTempRecData(float data)
 		||((date_time.month == p_temp->month)&&(date_time.day > p_temp->day)&&(p_temp->day != 0xff && p_temp->day != 0x00)))
 	{//记录存满。整体前挪并把最新的放在最后
 		temp_rec2_data tmp_temp = {0};
-		
 
-	#ifdef PPG_DEBUG
+	#ifdef TEMP_DEBUG
 		LOGD("rec is full! temp:%0.1f", data);
 	#endif
 		tmp_temp.year = date_time.year;
@@ -83,7 +82,7 @@ void SetCurDayTempRecData(float data)
 	}
 	else
 	{
-	#ifdef PPG_DEBUG
+	#ifdef TEMP_DEBUG
 		LOGD("rec not full! temp:%0.1f", data);
 	#endif
 		for(i=0;i<7;i++)
@@ -111,7 +110,7 @@ void SetCurDayTempRecData(float data)
 
 void GetCurDayTempRecData(u16_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
 	temp_rec2_data temp_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -249,7 +248,6 @@ void TempMsgProcess(void)
 
 		if(ret)
 		{
-			SetCurDayTempRecData(g_temp_body);
 			temp_stop_flag = true;
 		}
 	}
@@ -266,7 +264,7 @@ void TempMsgProcess(void)
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)
-			k_timer_start(&temp_stop_timer, K_MSEC(30*1000), NULL);
+			k_timer_start(&temp_stop_timer, K_MSEC(TEMP_CHECK_TIMELY*60*1000), NULL);
 	}
 
 	if(temp_stop_flag)
@@ -292,10 +290,8 @@ void TempMsgProcess(void)
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
-
-		#ifndef CONFIG_PPG_SUPPORT
-			TimeCheckSendHealthData();
-		#endif
+			
+			SetCurDayTempRecData(g_temp_body);
 		}
 	}
 	

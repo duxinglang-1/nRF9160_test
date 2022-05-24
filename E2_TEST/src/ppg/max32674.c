@@ -46,9 +46,8 @@ u8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
 u8_t g_ppg_ver[64] = {0};
 
 u16_t g_hr = 0;
-u16_t g_bp_systolic = 0;	// ’Àı—π
-u16_t g_bp_diastolic = 0;	// Ê’≈—π
 u16_t g_spo2 = 0;
+bpt_data g_bpt = {0};
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
@@ -57,7 +56,7 @@ K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 
 void SetCurDayBptRecData(bpt_data bpt)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data *p_bpt = NULL;
 	
 	SpiFlash_Read(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
@@ -110,7 +109,7 @@ void SetCurDayBptRecData(bpt_data bpt)
 
 void GetCurDayBptRecData(u8_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data bpt_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -133,7 +132,7 @@ void GetCurDayBptRecData(u8_t *databuf)
 
 void SetCurDaySpo2RecData(u8_t spo2)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	ppg_spo2_rec2_data *p_spo2 = NULL;
 	
 	SpiFlash_Read(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
@@ -186,7 +185,7 @@ void SetCurDaySpo2RecData(u8_t spo2)
 
 void GetCurDaySpo2RecData(u8_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	ppg_spo2_rec2_data spo2_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -209,7 +208,7 @@ void GetCurDaySpo2RecData(u8_t *databuf)
 
 void SetCurDayHrRecData(u8_t hr)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	ppg_hr_rec2_data *p_hr = NULL;
 	
 	SpiFlash_Read(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
@@ -262,7 +261,7 @@ void SetCurDayHrRecData(u8_t hr)
 
 void GetCurDayHrRecData(u8_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	ppg_hr_rec2_data hr_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -635,8 +634,8 @@ void PPGGetSensorHubData(void)
 					}
 					else if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
 					{
-						g_bp_systolic = bpt.sys_bp;
-						g_bp_diastolic = bpt.dia_bp;
+						g_bpt.systolic = bpt.sys_bp;
+						g_bpt.diastolic = bpt.dia_bp;
 							
 						if((bpt.status == 2) && (bpt.perc_comp == 100))
 						{
@@ -811,8 +810,8 @@ void TimerStartBpt(void)
 {
 	g_hr = 0;
 	g_spo2 = 0;
-	g_bp_systolic = 0;
-	g_bp_diastolic = 0;
+	g_bpt.diastolic = 0;
+	g_bpt.systolic = 0;
 
 	if(is_wearing())
 	{
@@ -824,8 +823,8 @@ void TimerStartBpt(void)
 
 void APPStartBpt(void)
 {
-	g_bp_systolic = 0;
-	g_bp_diastolic = 0;
+	g_bpt.diastolic = 0;
+	g_bpt.systolic = 0;
 	
 	if(is_wearing())
 	{
@@ -863,8 +862,8 @@ void MenuStartBpt(void)
 	g_ppg_trigger |=TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_BPT;
 
-	g_bp_systolic = 0;
-	g_bp_diastolic = 0;
+	g_bpt.diastolic = 0;
+	g_bpt.systolic = 0;
 	
 	ppg_start_flag = true;
 }
@@ -968,7 +967,7 @@ void PPGStartCheck(void)
 		ppg_power_flag = 2;
 
 		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-			k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
+			k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_TIMELY*60*1000), NULL);
 	}
 	else
 	{
@@ -1015,6 +1014,10 @@ void PPGStopCheck(void)
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
+		
+		SetCurDayHrRecData(g_hr);
+		SetCurDaySpo2RecData(g_spo2);
+		SetCurDayBptRecData(g_bpt);
 	}
 }
 

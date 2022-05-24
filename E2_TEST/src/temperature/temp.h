@@ -23,6 +23,10 @@
 #define TEMP_IF_I2C
 #define TEMP_IF_SINGLE_LINE
 
+#define TEMP_CHECK_TIMELY	2
+
+//#define TEMP_DEBUG
+
 //sensor trigger type
 typedef enum
 {
@@ -31,6 +35,7 @@ typedef enum
 	TEMP_TRIGGER_BY_HOURLY	=	0x04,
 }TEMP_TARGGER_SOUCE;
 
+//µ•¥Œ≤‚¡ø
 typedef struct
 {
 	u16_t year;

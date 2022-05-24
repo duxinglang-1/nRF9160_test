@@ -1430,7 +1430,7 @@ void NBSendFallGpsData(u8_t *data, u32_t datalen)
 }
 #endif
 
-void NBSendHealthData(u8_t *data, u32_t datalen)
+void NBSendSingleHealthData(u8_t *data, u32_t datalen)
 {
 	u8_t buf[256] = {0};
 	u8_t tmpbuf[32] = {0};
@@ -1438,6 +1438,29 @@ void NBSendHealthData(u8_t *data, u32_t datalen)
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T5:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("health data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendTimelyHealthData(u8_t *data, u32_t datalen)
+{
+	u8_t buf[1024] = {0};
+	u8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T14:");
 	strcat(buf, data);
 	strcat(buf, ",");
 	GetBatterySocString(tmpbuf);

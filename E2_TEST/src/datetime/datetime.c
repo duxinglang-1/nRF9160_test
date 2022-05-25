@@ -508,9 +508,13 @@ void UpdateSystemTime(void)
 			static u32_t health_hour_count = 0;
 
 			health_hour_count++;
-			if(health_hour_count == global_settings.health_interval/60)
+			if((health_hour_count == global_settings.health_interval/60)
+				||(date_time.hour == 00)	//xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
+				)
 			{
-				health_hour_count = 0;
+				if(health_hour_count == global_settings.health_interval/60)
+					health_hour_count = 0;
+				
 				TimeCheckSendHealthData();
 			}
 		}

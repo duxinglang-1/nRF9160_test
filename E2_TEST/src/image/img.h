@@ -89,12 +89,13 @@ extern unsigned char IMG_BKL_LEVEL_2[35648];
 extern unsigned char IMG_BKL_LEVEL_3[35648];
 extern unsigned char IMG_BKL_LEVEL_4[35648];
 //blood pressure(7)
-extern unsigned char IMG_BP_BG[35708];
+extern unsigned char IMG_BP_BG[33158];
 extern unsigned char IMG_BP_DOWN_ARRAW[392];
 extern unsigned char IMG_BP_ICON_ANI_1[1768];
 extern unsigned char IMG_BP_ICON_ANI_2[1768];
 extern unsigned char IMG_BP_ICON_ANI_3[1768];
 extern unsigned char IMG_BP_SPE_LINE[504];
+extern unsigned char IMG_BP_UNIT[1100];
 extern unsigned char IMG_BP_UP_ARRAW[586];
 //function option(10)
 extern unsigned char IMG_FUN_OPT_BP_ICON[4240];
@@ -108,7 +109,7 @@ extern unsigned char IMG_FUN_OPT_STEP_ICON[4240];
 extern unsigned char IMG_FUN_OPT_SYNC_ICON[4240];
 extern unsigned char IMG_FUN_OPT_TEMP_ICON[4240];
 //heart rate(6)
-extern unsigned char IMG_HR_BG[34008];
+extern unsigned char IMG_HR_BG[33158];
 extern unsigned char IMG_HR_BPM[1988];
 extern unsigned char IMG_HR_DOWN_ARRAW[548];
 extern unsigned char IMG_HR_ICON_ANI_1[2116];
@@ -191,7 +192,7 @@ extern unsigned char IMG_SOS_ANI_4[40880];
 extern unsigned char IMG_SPO2_ANI_1[2328];
 extern unsigned char IMG_SPO2_ANI_2[2328];
 extern unsigned char IMG_SPO2_ANI_3[2328];
-extern unsigned char IMG_SPO2_BG[32648];
+extern unsigned char IMG_SPO2_BG[33158];
 extern unsigned char IMG_SPO2_DOWN_ARRAW[484];
 extern unsigned char IMG_SPO2_UP_ARRAW[484];
 //sport achieve(4)
@@ -212,10 +213,10 @@ extern unsigned char IMG_SYNC_LOGO[36458];
 //temperature(4)
 extern unsigned char IMG_TEMP_ICON_C[2568];
 extern unsigned char IMG_TEMP_ICON_F[2864];
-extern unsigned char IMG_TEMP_UNIT_C[520];
-extern unsigned char IMG_TEMP_UNIT_F[520];
-extern unsigned char IMG_TEMP_C_BG[31458];
-extern unsigned char IMG_TEMP_F_BG[32648];
+extern unsigned char IMG_TEMP_UNIT_C[1756];
+extern unsigned char IMG_TEMP_UNIT_F[1756];
+extern unsigned char IMG_TEMP_C_BG[31968];
+extern unsigned char IMG_TEMP_F_BG[33158];
 extern unsigned char IMG_TEMP_DOWN_ARRAW[484];
 extern unsigned char IMG_TEMP_UP_ARRAW[484];
 //wrist off(2)

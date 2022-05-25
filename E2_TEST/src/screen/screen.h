@@ -213,7 +213,7 @@ extern "C" {
 #define HR_UNIT_W					45
 #define HR_UNIT_H					22
 #define HR_UNIT_X					151
-#define HR_UNIT_Y					46
+#define HR_UNIT_Y					42
 #define HR_NUM_W					65
 #define HR_NUM_H					42
 #define HR_NUM_X					84
@@ -282,10 +282,12 @@ extern "C" {
 #define BP_ICON_H					40
 #define BP_ICON_X					54
 #define BP_ICON_Y					31
-#define BP_NUM_W					105
+#define BP_NUM_W					92
 #define BP_NUM_H					31
-#define BP_NUM_X					81
-#define BP_NUM_Y					36
+#define BP_NUM_X					75
+#define BP_NUM_Y					40
+#define BP_UNIT_X					166
+#define BP_UNIT_Y					51
 #define BP_BG_W						208
 #define BP_BG_H						87
 #define BP_BG_X						((LCD_WIDTH-BP_BG_W)/2)
@@ -321,6 +323,8 @@ extern "C" {
 #define TEMP_NUM_H					31
 #define TEMP_NUM_X					97
 #define TEMP_NUM_Y					36
+#define TEMP_UINT_X					180
+#define TEMP_UINT_Y					40
 #define TEMP_BG_W					192
 #define TEMP_BG_H					85
 #define TEMP_BG_X					((LCD_WIDTH-TEMP_BG_W)/2)

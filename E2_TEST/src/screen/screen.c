@@ -1791,11 +1791,13 @@ void TempShowStatus(void)
 	{		
 		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_C_ADDR);
 		LCD_ShowImg_From_Flash(TEMP_BG_X, TEMP_BG_Y, IMG_TEMP_C_BG_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_UINT_X, TEMP_UINT_Y, IMG_TEMP_UNIT_C_ADDR);
 	}
 	else
 	{
 		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_ICON_F_ADDR);
 		LCD_ShowImg_From_Flash(TEMP_BG_X, TEMP_BG_Y, IMG_TEMP_F_BG_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_UINT_X, TEMP_UINT_Y, IMG_TEMP_UNIT_F_ADDR);
 	}
 	LCD_ShowImg_From_Flash(TEMP_UP_ARRAW_X, TEMP_UP_ARRAW_Y, IMG_TEMP_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(TEMP_DOWN_ARRAW_X, TEMP_DOWN_ARRAW_Y, IMG_TEMP_DOWN_ARRAW_ADDR);
@@ -1953,11 +1955,10 @@ void BPUpdateStatus(void)
 	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, img_anima[img_index]);
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
-#else
-	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_SetFontSize(FONT_SIZE_28);
+#else		
+	LCD_SetFontSize(FONT_SIZE_24);
 #endif
-
 	sprintf(tmpbuf, "%d/%d", g_bpt.systolic, g_bpt.diastolic);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	x = BP_NUM_X+(BP_NUM_W-w)/2;
@@ -1976,6 +1977,7 @@ void BPShowStatus(void)
 	
 	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, IMG_BP_ICON_ANI_2_ADDR);
 	LCD_ShowImg_From_Flash(BP_BG_X, BP_BG_Y, IMG_BP_BG_ADDR);
+	LCD_ShowImg_From_Flash(BP_UNIT_X, BP_UNIT_Y, IMG_BP_UNIT_ADDR);
 	LCD_ShowImg_From_Flash(BP_UP_ARRAW_X, BP_UP_ARRAW_Y, IMG_BP_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(BP_DOWN_ARRAW_X, BP_DOWN_ARRAW_Y, IMG_BP_DOWN_ARRAW_ADDR);
 
@@ -2005,16 +2007,16 @@ void BPShowStatus(void)
 	}
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 #else		
-	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_SetFontSize(FONT_SIZE_24);
 #endif
 	sprintf(tmpbuf, "%d/%d", g_bpt.systolic, g_bpt.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_NUM_X+(BP_NUM_W-w)/2;
 	y = BP_NUM_Y+(BP_NUM_H-h)/2;
 	LCD_ShowString(x,y,tmpbuf);
-
+	
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
 #else

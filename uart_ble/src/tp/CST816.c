@@ -21,7 +21,7 @@
 #include "logger.h"
 
 #define TP_DEBUG
-#define TP_TEST
+//#define TP_TEST
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -109,14 +109,23 @@ static s32_t platform_read_word(u16_t reg, u8_t *bufp, u16_t len)
 	return rslt;
 }
 
+static void tp_reset(void)
+{
+	gpio_pin_configure(gpio_ctp, TP_RESET_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ctp, TP_RESET_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_write(gpio_ctp, TP_RESET_PIN, 1);
+	k_sleep(K_MSEC(50));
+}
+
 static int cst816s_enter_bootmode(void)
 {
 	u8_t retryCnt = 50;
 	u8_t cmd[3] = {0};
 
-	gpio_pin_write(gpio_ctp, TP_RESET, 0);
+	gpio_pin_write(gpio_ctp, TP_RESET_PIN, 0);
 	k_sleep(K_MSEC(10));
-	gpio_pin_write(gpio_ctp, TP_RESET, 1);
+	gpio_pin_write(gpio_ctp, TP_RESET_PIN, 1);
 	k_sleep(K_MSEC(10));
 
 	while(retryCnt--)
@@ -149,6 +158,9 @@ static int cst816s_update(u16_t startAddr, u16_t len, unsigned char *src)
 	u32_t sum_len = 0;
 	u32_t i,k_data=0,b_data=0;
 
+	if(cst816s_enter_bootmode() == -1)
+		return -1;
+
 	sum_len = 0;
 	k_data=len/PER_LEN;
 	for(i=0;i<k_data;i++)
@@ -174,6 +186,10 @@ static int cst816s_update(u16_t startAddr, u16_t len, unsigned char *src)
 		{
 			cmd[0] = 0;
 			platform_read_word(0xA005,cmd,1);
+		#ifdef TP_DEBUG
+			LOGD("retrycnt:%d, reg_0xA005:%x", retrycnt, cmd[0]);
+		#endif
+			
 			if(cmd[0] == 0x55)
 			{
 				cmd[0] = 0;
@@ -181,12 +197,10 @@ static int cst816s_update(u16_t startAddr, u16_t len, unsigned char *src)
 			}
 			k_sleep(K_MSEC(10));
 		}
-
 		startAddr += PER_LEN;
 		src += PER_LEN;
 		sum_len += PER_LEN;
 	}
-
 	//exit program mode
 	cmd[0] = 0x00;
 	platform_write_word(0xA003,cmd,1);
@@ -215,6 +229,9 @@ static u32_t cst816s_read_checksum(void)
 
 	checksum.sum = 0;
 	platform_read_word(0xA008,checksum.buf,2);
+#ifdef TP_DEBUG
+	LOGD("checksum:%04X", checksum.sum);
+#endif	
 	return checksum.sum;
 }
 
@@ -253,16 +270,28 @@ bool ctp_hynitron_update(void)
 		startAddr = *(ptr+1)<<8 | *(ptr+0);
 		length = *(ptr+3)<<8 | *(ptr+2);
 		checksum = *(ptr+5)<<8 | *(ptr+4);  
+	#ifdef TP_DEBUG
+		LOGD("checksum:%04X", checksum);
+	#endif
 
 		if(cst816s_read_checksum()!= checksum)
 		{
+		#ifdef TP_DEBUG
+			LOGD("start update!");
+		#endif
 			LCD_ShowString(20,160,"start update!");
 			
 			cst816s_update(startAddr, length, ptr+6);
 			cst816s_read_checksum();
 
 			LCD_ShowString(20,180,"complete update!");
+
+		#ifdef TP_DEBUG
+			LOGD("complete update!");
+		#endif	
 		}
+
+		tp_reset();
 
 		return true;
 	}
@@ -275,9 +304,6 @@ void clear_all_touch_event_handle(void)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -291,10 +317,6 @@ void clear_all_touch_event_handle(void)
 			k_free(pnext);
 			pnext = tp_event_info.cache;
 		}while(pnext != NULL);
-
-	#ifdef TP_DEBUG
-		LOGD("002");
-	#endif
 	}
 }
 
@@ -304,9 +326,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -322,18 +341,12 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 			{
 				if(pnext == tp_event_info.cache)
 				{
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					tp_event_info.cache = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
 				}
 				else if(pnext == tp_event_tail)
 				{
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					tp_event_tail = ppre;
 					tp_event_tail->next = NULL;
 					tp_event_info.count--;
@@ -341,9 +354,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					ppre = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
@@ -358,9 +368,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, u16_t x_start, u16_t x_stop
 			}
 				
 		}while(pnext != NULL);
-	#ifdef TP_DEBUG
-		LOGD("005");
-	#endif
 	}
 }
 
@@ -439,9 +446,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return false;
 	}
 	else
@@ -459,9 +463,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					return true;
 				}
 				else if((x_pos >= pnew->x_begin)
@@ -471,31 +472,20 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
+
 					return true;
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					pnew = pnew->next;
 				}
 			}
 			else
 			{
-			#ifdef TP_DEBUG
-				LOGD("005");
-			#endif
 				pnew = pnew->next;
 			}
 				
 		}while(pnew != NULL);
-	#ifdef TP_DEBUG
-		LOGD("006");
-	#endif
 		return false;
 	}
 }
@@ -682,30 +672,26 @@ void tp_init(void)
 
 	init_i2c();
 
-	gpio_pin_configure(gpio_ctp, TP_EINT, flag);
-	gpio_pin_disable_callback(gpio_ctp, TP_EINT);
-	gpio_init_callback(&gpio_cb, CaptouchInterruptHandle, BIT(TP_EINT));
+	gpio_pin_configure(gpio_ctp, TP_EINT_PIN, flag);
+	gpio_pin_disable_callback(gpio_ctp, TP_EINT_PIN);
+	gpio_init_callback(&gpio_cb, CaptouchInterruptHandle, BIT(TP_EINT_PIN));
 	gpio_add_callback(gpio_ctp, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ctp, TP_EINT);
+	gpio_pin_enable_callback(gpio_ctp, TP_EINT_PIN);
 
-	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_ctp, TP_RESET, 0);
-	k_sleep(K_MSEC(10));
-	gpio_pin_write(gpio_ctp, TP_RESET, 1);
-	k_sleep(K_MSEC(50));
+	tp_reset();
 
 	tp_get_id(&tp_chip_id, &tp_fw_ver);
 	switch(tp_chip_id)
 	{
 	case TP_CST816S:
-		if(tp_fw_ver < 0x02)
+		//if(tp_fw_ver < 0x02)
 		{
 			ctp_hynitron_update();
 		}
 		break;
 
 	case TP_CST816T:
-		if(tp_fw_ver < 0x04)
+		//if(tp_fw_ver < 0x04)
 		{
 			ctp_hynitron_update();
 		}

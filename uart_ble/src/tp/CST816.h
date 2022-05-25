@@ -17,10 +17,10 @@
 #define TP_PORT 	"GPIO_0"
 #define TP_DEV 		"I2C_1"
 
-#define TP_RESET		16
-#define TP_EINT			25
-#define TP_SCL			1
-#define TP_SDA			0
+#define TP_RESET_PIN		16
+#define TP_EINT_PIN			25
+#define TP_SCL_PIN			1
+#define TP_SDA_PIN			0
 
 #define TP_I2C_ADDRESS			0x15
 #define TP_UPDATE_I2C_ADDRESS	0x6A

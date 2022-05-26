@@ -1571,6 +1571,7 @@ void EnterSettingsScreen(void)
 	if(screen_id == SCREEN_ID_SETTINGS)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
 #endif
@@ -1578,9 +1579,10 @@ void EnterSettingsScreen(void)
 	if(TempIsWorking())
 		MenuStopTemp();
 #endif
-
-	k_timer_stop(&mainmenu_timer);
-
+#ifdef CONFIG_PPG_SUPPORT
+	if(PPGIsWorking())
+		MenuStopPPG();
+#endif
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
 	history_screen_id = screen_id;
@@ -1621,12 +1623,12 @@ void EnterSettingsScreen(void)
  
   #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
-  #elif defined(CONFIG_TEMP_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+ #elif defined(CONFIG_IMU_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen); 
   #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
-  #elif defined(CONFIG_IMU_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+  #elif defined(CONFIG_TEMP_SUPPORT)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
   #endif
@@ -1646,6 +1648,21 @@ void EnterSyncDataScreen(void)
 	if(screen_id == SCREEN_ID_SYNC)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(PPGIsWorking())
+		MenuStopPPG();
+#endif
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -1654,31 +1671,18 @@ void EnterSyncDataScreen(void)
 	scr_msg[SCREEN_ID_SYNC].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SYNC].status = SCREEN_STATUS_CREATING;
 
-#ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
-#endif
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-
-#ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
-		MenuStopTemp();
-#endif
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
 	SetLeftKeyUpHandler(EnterSettings);
 	SetRightKeyUpHandler(ExitSyncDataScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
-  #ifdef CONFIG_TEMP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  #ifdef CONFIG_IMU_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
   #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
-  #elif defined(CONFIG_IMU_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+  #elif defined(CONFIG_TEMP_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
   #endif
@@ -1899,6 +1903,17 @@ void EnterTempScreen(void)
 	if(screen_id == SCREEN_ID_TEMP)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(PPGIsWorking())
+		MenuStopPPG();
+#endif
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -1907,15 +1922,11 @@ void EnterTempScreen(void)
 	scr_msg[SCREEN_ID_TEMP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_TEMP].status = SCREEN_STATUS_CREATING;
 
-#ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
-#endif
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	
-#ifdef CONFIG_SYNC_SUPPORT
+#ifdef CONFIG_PPG_SUPPORT
+	SetLeftKeyUpHandler(EnterSPO2Screen);
+#elif defined(CONFIG_IMU_SUPPORT)
+	SetLeftKeyUpHandler(EnterStepsScreen);
+#elif defined(CONFIG_SYNC_SUPPORT)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
 	SetLeftKeyUpHandler(EnterSettings);
@@ -1924,15 +1935,17 @@ void EnterTempScreen(void)
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
- #ifdef CONFIG_SYNC_SUPPORT
+ #ifdef CONFIG_PPG_SUPPORT
+ 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+ #elif defined(CONFIG_IMU_SUPPORT)
+ 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+ #elif defined(CONFIG_SYNC_SUPPORT)
  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
  #else
  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
  #endif
  #ifdef CONFIG_PPG_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
- #elif defined(CONFIG_IMU_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
  #else
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
  #endif
@@ -2077,6 +2090,15 @@ void EnterBPScreen(void)
 	if(screen_id == SCREEN_ID_BP)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStopShow();
+#endif
+	if(PPGIsWorking())
+		MenuStopPPG();
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -2086,25 +2108,9 @@ void EnterBPScreen(void)
 	scr_msg[SCREEN_ID_BP].status = SCREEN_STATUS_CREATING;
 
 	img_index = 0;
-#ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
-#endif
 
-#ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
-		MenuStopTemp();
-#endif
-
-	if(PPGIsWorking())
-		MenuStopPPG();
-
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	
-#ifdef CONFIG_TEMP_SUPPORT
-	SetLeftKeyUpHandler(EnterTempScreen);
+#ifdef CONFIG_IMU_SUPPORT
+	SetLeftKeyUpHandler(EnterStepsScreen);
 #elif defined(CONFIG_SYNC_SUPPORT)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
@@ -2114,8 +2120,8 @@ void EnterBPScreen(void)
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
- #ifdef CONFIG_TEMP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);  
+ #ifdef CONFIG_IMU_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);  
  #elif defined(CONFIG_SYNC_SUPPORT)
  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
  #else
@@ -2251,6 +2257,19 @@ void EnterSPO2Screen(void)
 	if(screen_id == SCREEN_ID_SPO2)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking())
+		MenuStopTemp();
+#endif
+	if(PPGIsWorking())
+		MenuStopPPG();
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -2261,24 +2280,16 @@ void EnterSPO2Screen(void)
 
 	img_index = 0;
 	
-#ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
-#endif
-		
-	if(PPGIsWorking())
-		MenuStopPPG();
-	
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	
 	SetLeftKeyUpHandler(EnterBPScreen);
 	SetRightKeyUpHandler(ExitSPO2Screen);
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+  #ifdef CONFIG_TEMP_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+  #endif
 #endif	
 }
 
@@ -2409,6 +2420,19 @@ void EnterHRScreen(void)
 	if(screen_id == SCREEN_ID_HR)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking())
+		MenuStopTemp();
+#endif
+	if(PPGIsWorking())
+		MenuStopPPG();	
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -2419,21 +2443,20 @@ void EnterHRScreen(void)
 
 	img_index = 0;
 
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	
+#ifdef CONFIG_TEMP_SUPPORT
+	SetLeftKeyUpHandler(EnterTempScreen);
+#else
 	SetLeftKeyUpHandler(EnterSPO2Screen);
+#endif
 	SetRightKeyUpHandler(ExitHRScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
-  #ifdef CONFIG_IMU_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+  #ifdef CONFIG_TEMP_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
   #else
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
   #endif
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 #endif	
 }
 #endif/*CONFIG_PPG_SUPPORT*/
@@ -3594,8 +3617,6 @@ void EnterSleepScreen(void)
 	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
 
-	k_timer_stop(&mainmenu_timer);
-
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
 #endif
@@ -3607,15 +3628,11 @@ void EnterSleepScreen(void)
 	if(PPGIsWorking())
 		MenuStopPPG();
 #endif
-	MenuStopGPS();
 
+	k_timer_stop(&mainmenu_timer);
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
-#ifdef CONFIG_PPG_SUPPORT
-	SetLeftKeyUpHandler(EnterHRScreen);
-#elif defined(CONFIG_TEMP_SUPPORT)
-	SetLeftKeyUpHandler(EnterTempScreen);
-#elif defined(CONFIG_SYNC_SUPPORT)
+#ifdef CONFIG_SYNC_SUPPORT
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
 	SetLeftKeyUpHandler(EnterSettings);
@@ -3624,11 +3641,7 @@ void EnterSleepScreen(void)
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
- #ifdef CONFIG_PPG_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen); 
- #elif defined(CONFIG_TEMP_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);  
- #elif defined(CONFIG_SYNC_SUPPORT)
+ #ifdef CONFIG_SYNC_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen); 
  #else
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
@@ -3727,6 +3740,20 @@ void EnterStepsScreen(void)
 	if(screen_id == SCREEN_ID_STEPS)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(PPGIsWorking())
+		MenuStopPPG();
+#endif
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -3741,7 +3768,13 @@ void EnterStepsScreen(void)
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+  #ifdef CONFIG_PPG_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+  #elif defined(CONFIG_TEMP_SUPPORT)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+  #endif
 #endif
 }
 #endif
@@ -3813,7 +3846,6 @@ void EnterIdleScreen(void)
 
 	k_timer_stop(&notify_timer);
 	k_timer_stop(&mainmenu_timer);
-
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
 #endif
@@ -3833,7 +3865,6 @@ void EnterIdleScreen(void)
 	if(SyncIsRunning())
 		SyncDataStop();
 #endif
-
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 	history_screen_id = screen_id;
@@ -3847,12 +3878,12 @@ void EnterIdleScreen(void)
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterNBTestScreen);
 #else
-#ifdef CONFIG_IMU_SUPPORT
-	SetLeftKeyUpHandler(EnterStepsScreen);
-#elif defined(CONFIG_PPG_SUPPORT)
+#ifdef CONFIG_PPG_SUPPORT
 	SetLeftKeyUpHandler(EnterHRScreen);
 #elif defined(CONFIG_TEMP_SUPPORT)
 	SetLeftKeyUpHandler(EnterTempScreen);
+#elif defined(CONFIG_IMU_SUPPORT)
+	SetLeftKeyUpHandler(EnterStepsScreen);
 #elif defined(CONFIG_SYNC_SUPPORT)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
@@ -3867,12 +3898,12 @@ void EnterIdleScreen(void)
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
  #else
-  #ifdef CONFIG_IMU_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);  
-  #elif defined(CONFIG_PPG_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+  #ifdef CONFIG_PPG_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
   #elif defined(CONFIG_TEMP_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  #elif defined(CONFIG_IMU_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
   #elif defined(CONFIG_SYNC_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
   #else

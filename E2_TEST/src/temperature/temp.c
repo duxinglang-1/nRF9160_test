@@ -37,6 +37,7 @@ static bool temp_power_flag = false;
 u8_t g_temp_trigger = 0;
 float g_temp_skin = 0.0;
 float g_temp_body = 0.0;
+float g_temp_timing = 0.0;
 
 static void temp_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_stop_timer, temp_auto_stop_timerout, NULL);
@@ -290,8 +291,7 @@ void TempMsgProcess(void)
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
-			
-			SetCurDayTempRecData(g_temp_body);
+			g_temp_timing = g_temp_body;
 		}
 	}
 	

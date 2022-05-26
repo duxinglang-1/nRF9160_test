@@ -58,6 +58,9 @@ typedef struct
 
 extern float g_temp_skin;
 extern float g_temp_body;
+extern float g_temp_timing;
 
+extern void SetCurDayTempRecData(float data);
+extern void GetCurDayTempRecData(u16_t *databuf);
 #endif/*__TEMP_H__*/
 

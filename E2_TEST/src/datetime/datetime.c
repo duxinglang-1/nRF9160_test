@@ -478,13 +478,6 @@ void UpdateSystemTime(void)
 			}
 		#endif
 
-		#ifdef CONFIG_IMU_SUPPORT
-			if(date_time.minute == 59)
-			{
-				SetCurDayStepRecData(g_steps);
-			}
-		#endif
-			
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();
 		}
@@ -506,6 +499,18 @@ void UpdateSystemTime(void)
 	#endif		
 		{
 			static u32_t health_hour_count = 0;
+
+		#ifdef CONFIG_TEMP_SUPPORT
+			SetCurDayTempRecData(g_temp_timing);
+		#endif
+		#ifdef CONFIG_PPG_SUPPORT
+			SetCurDayHrRecData(g_hr_timing);
+			SetCurDaySpo2RecData(g_spo2_timing);
+			SetCurDayBptRecData(g_bpt_timing);
+		#endif		
+		#ifdef CONFIG_IMU_SUPPORT
+			SetCurDayStepRecData(g_steps);
+		#endif
 
 			health_hour_count++;
 			if((health_hour_count == global_settings.health_interval/60)

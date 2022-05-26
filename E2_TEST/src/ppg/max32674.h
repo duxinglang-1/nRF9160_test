@@ -114,14 +114,22 @@ typedef struct
 extern u8_t g_ppg_trigger;
 extern u8_t g_ppg_ver[64];
 
-extern u16_t g_hr;
-extern u16_t g_spo2;
+extern u8_t g_hr;
+extern u8_t g_hr_timing;
+extern u8_t g_spo2;
+extern u8_t g_spo2_timing;
 extern bpt_data g_bpt;
+extern bpt_data g_bpt_timing;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
 /*heart rate*/
+extern void SetCurDayBptRecData(bpt_data bpt);
+extern void GetCurDayBptRecData(u8_t *databuf);
+extern void SetCurDaySpo2RecData(u8_t spo2);
+extern void GetCurDaySpo2RecData(u8_t *databuf);
+extern void SetCurDayHrRecData(u8_t hr);
 extern void GetCurDayHrRecData(u8_t *databuf);
 extern void GetHeartRate(u8_t *HR);
 extern void APPStartHrSpo2(void);

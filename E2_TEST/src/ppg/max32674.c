@@ -45,9 +45,13 @@ u8_t g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 u8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
 u8_t g_ppg_ver[64] = {0};
 
-u16_t g_hr = 0;
-u16_t g_spo2 = 0;
+u8_t g_hr = 0;
+u8_t g_hr_timing = 0;
+u8_t g_spo2 = 0;
+u8_t g_spo2_timing = 0;
 bpt_data g_bpt = {0};
+bpt_data g_bpt_timing = {0};
+
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
@@ -1014,10 +1018,10 @@ void PPGStopCheck(void)
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
-		
-		SetCurDayHrRecData(g_hr);
-		SetCurDaySpo2RecData(g_spo2);
-		SetCurDayBptRecData(g_bpt);
+
+		g_hr_timing = g_hr;
+		g_spo2_timing = g_spo2;
+		memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
 	}
 }
 

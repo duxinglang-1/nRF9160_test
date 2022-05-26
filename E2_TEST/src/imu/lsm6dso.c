@@ -620,10 +620,17 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
-#ifdef CONFIG_FOTA_DOWNLOAD
-	if(fota_is_running())
+	if(0
+		#ifdef CONFIG_FOTA_DOWNLOAD
+			|| (fota_is_running())
+		#endif
+		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			|| (dl_is_running())
+		#endif
+		)
+	{
 		return;
-#endif
+	}
 
 	if(int1_event)	//steps
 	{
@@ -632,17 +639,9 @@ void IMUMsgProcess(void)
 	#endif
 		int1_event = false;
 
-		if(!imu_check_ok)
+		if(!imu_check_ok || !is_wearing())
 			return;
 		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-
 	#ifdef IMU_DEBUG	
 		LOGD("steps trigger!");
 	#endif
@@ -657,15 +656,7 @@ void IMUMsgProcess(void)
 	#endif
 		int2_event = false;
 
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
+		if(!imu_check_ok || !is_wearing())
 			return;
 
 		is_tilt();
@@ -711,11 +702,6 @@ void IMUMsgProcess(void)
 
 		if(!imu_check_ok)
 			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
 
 		UpdateSleepPara();
 	}

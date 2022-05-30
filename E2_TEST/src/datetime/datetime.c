@@ -507,6 +507,8 @@ void UpdateSystemTime(void)
 			SetCurDayBptRecData(g_bpt_timing);
 		#endif		
 		#ifdef CONFIG_IMU_SUPPORT
+			if((date_time_changed&0x08) != 0)
+				g_steps = 0;
 			SetCurDayStepRecData(g_steps);
 		#endif
 

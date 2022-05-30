@@ -773,7 +773,9 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
-
+ #ifdef NB_SIGNAL_TEST
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+ #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
@@ -785,6 +787,7 @@ void PowerOffShowStatus(void)
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
   #endif
+ #endif  
 #endif
 }
 
@@ -3897,6 +3900,7 @@ void EnterIdleScreen(void)
 	clear_all_touch_event_handle();
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #else
   #ifdef CONFIG_PPG_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
@@ -3944,30 +3948,41 @@ void EnterFindDeviceScreen(void)
 
 void TestGPSUpdateInfor(void)
 {
+	u8_t tmpbuf[512] = {0};
+	
 	LCD_Fill((LCD_WIDTH-194)/2, 50, 194, 160, BLACK);
+
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
+	mmi_asc_to_ucs2(tmpbuf, gps_test_info);
+	LCD_ShowUniStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, (u16_t*)tmpbuf);
 #else	
 	LCD_SetFontSize(FONT_SIZE_16);
-#endif
 	LCD_ShowStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, gps_test_info);
+#endif
 }
 
 void TestGPSShowInfor(void)
 {
 	u16_t x,y,w,h;
-	u8_t strbuf[128] = {0};
+	u8_t strbuf[512] = {0};
 	
 	LCD_Clear(BLACK);
-	strcpy(strbuf, "GPS TESTING");
+	
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
+	mmi_asc_to_ucs2(strbuf, "GPS TESTING");
+	LCD_MeasureUniString((u16_t*)strbuf, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 20, (u16_t*)strbuf);
+	mmi_asc_to_ucs2(strbuf, "GPS Starting...");
+	LCD_ShowUniStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, (u16_t*)strbuf);
 #else	
 	LCD_SetFontSize(FONT_SIZE_16);
-#endif
+	strcpy(strbuf, "GPS TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
 	LCD_ShowStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, "GPS Starting...");
+#endif
 }
 
 void TestGPSScreenProcess(void)
@@ -4027,31 +4042,43 @@ void EnterGPSTestScreen(void)
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }
 
 void TestNBUpdateINfor(void)
 {
+	u8_t tmpbuf[512] = {0};
+
 	LCD_Fill(30, 50, 190, 160, BLACK);
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf, nb_test_info);
+	LCD_ShowUniStringInRect(30, 50, 180, 160, (u16_t*)tmpbuf);	
+#else
 	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+#endif
 }
 
 void TestNBShowInfor(void)
 {
 	u16_t x,y,w,h;
-	u8_t strbuf[128] = {0};
+	u8_t strbuf[512] = {0};
 	
 	LCD_Clear(BLACK);
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
+	mmi_asc_to_ucs2(strbuf, "NB-IoT TESTING");
+	LCD_MeasureUniString((u16_t*)strbuf, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 20, (u16_t*)strbuf);
+	mmi_asc_to_ucs2(strbuf, nb_test_info);
+	LCD_ShowUniStringInRect(30, 50, 180, 160, (u16_t*)strbuf);	
 #else	
 	LCD_SetFontSize(FONT_SIZE_16);
-#endif
 	strcpy(strbuf, "NB-IoT TESTING");
 	LCD_MeasureString(strbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
 	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
-
+#endif
 }
 
 void TestNBScreenProcess(void)

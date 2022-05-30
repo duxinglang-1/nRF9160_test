@@ -2889,7 +2889,7 @@ void LCD_ShowStrInRect(u16_t x, u16_t y, u16_t width, u16_t height, u8_t *p)
 void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,uint8_t *p)
 {
 	uint8_t x0=x;
-	uint16_t phz=0;
+	uint16_t w,phz=0;
 
 	width+=x;
 	height+=y;
@@ -2903,7 +2903,8 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 		{
 		#ifdef IMG_FONT_FROM_FLASH
 		  #ifdef FONTMAKER_UNICODE_FONT
-
+			w = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
+		  	x += w;
 		  #elif defined(FONTMAKER_MBCS_FONT)
 
 		  #else	
@@ -3014,7 +3015,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 void LCD_ShowUniStringInRect(u16_t x, u16_t y, u16_t width, u16_t height, u16_t *p)
 {
 	u8_t x0=x;
-	u16_t end=0x000d;
+	u16_t w,end=0x000a;
 	
 	width+=x;
 	height+=y;
@@ -3025,8 +3026,8 @@ void LCD_ShowUniStringInRect(u16_t x, u16_t y, u16_t width, u16_t height, u16_t 
 		if(y>=height)break;//ÍË³ö
 		if(*p==0x0000)break;//ÍË³ö
 
-		width = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
-		x += width;
+		w = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
+		x += w;
 		p++;
 	}
 }

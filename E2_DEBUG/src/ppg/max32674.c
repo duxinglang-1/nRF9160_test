@@ -25,7 +25,7 @@
 #include "external_flash.h"
 #include "logger.h"
 
-#define PPG_DEBUG
+//#define PPG_DEBUG
 
 bool ppg_int_event = false;
 bool ppg_fw_upgrade_flag = false;
@@ -45,10 +45,13 @@ u8_t g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 u8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
 u8_t g_ppg_ver[64] = {0};
 
-u16_t g_hr = 0;
-u16_t g_bp_systolic = 0;	//ÊÕËõÑ¹
-u16_t g_bp_diastolic = 0;	//ÊæÕÅÑ¹
-u16_t g_spo2 = 0;
+u8_t g_hr = 0;
+u8_t g_hr_timing = 0;
+u8_t g_spo2 = 0;
+u8_t g_spo2_timing = 0;
+bpt_data g_bpt = {0};
+bpt_data g_bpt_timing = {0};
+
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
@@ -57,7 +60,7 @@ K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 
 void SetCurDayBptRecData(bpt_data bpt)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data *p_bpt = NULL;
 	
 	SpiFlash_Read(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
@@ -110,7 +113,7 @@ void SetCurDayBptRecData(bpt_data bpt)
 
 void GetCurDayBptRecData(u8_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data bpt_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -133,7 +136,7 @@ void GetCurDayBptRecData(u8_t *databuf)
 
 void SetCurDaySpo2RecData(u8_t spo2)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	ppg_spo2_rec2_data *p_spo2 = NULL;
 	
 	SpiFlash_Read(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
@@ -186,7 +189,7 @@ void SetCurDaySpo2RecData(u8_t spo2)
 
 void GetCurDaySpo2RecData(u8_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	ppg_spo2_rec2_data spo2_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -209,7 +212,7 @@ void GetCurDaySpo2RecData(u8_t *databuf)
 
 void SetCurDayHrRecData(u8_t hr)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	ppg_hr_rec2_data *p_hr = NULL;
 	
 	SpiFlash_Read(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
@@ -262,7 +265,7 @@ void SetCurDayHrRecData(u8_t hr)
 
 void GetCurDayHrRecData(u8_t *databuf)
 {
-	u8_t i,tmpbuf[512] = {0};
+	u8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	ppg_hr_rec2_data hr_rec2 = {0};
 	
 	if(databuf == NULL)
@@ -311,6 +314,14 @@ void GetPPGData(u8_t *hr, u8_t *spo2, u8_t *systolic, u8_t *diastolic)
 	
 	if(diastolic != NULL)
 		*diastolic = 80;
+}
+
+bool IsInPPGScreen(void)
+{
+	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
+		return true;
+	else
+		return false;
 }
 
 bool PPGIsWorking(void)
@@ -529,6 +540,81 @@ void PPGGetSensorHubData(void)
 				
 				#ifdef PPG_DEBUG
 					LOGD("bpt_status:%d, bpt_per:%d, bpt_sys:%d, bpt_dia:%d", bpt.status, bpt.perc_comp, bpt.sys_bp, bpt.dia_bp);
+					switch(bpt.status)
+					{
+					case 0:
+						LOGD("No signal");
+						break;
+					case 1:
+						LOGD("User calibration/estimation in progress ");
+						break;
+					case 2:
+						LOGD("Success");					
+						break;
+					case 3:
+						LOGD("Weak signal");						
+						break;
+					case 4:
+						LOGD("Motion");						
+						break;
+					case 5:
+						LOGD("Estimation failure");						
+						break;
+					case 6:
+						LOGD("Calibration partially complete");							
+						break;
+					case 7:
+						LOGD("Subject initialization failure");					
+						break;
+					case 8:
+						LOGD("Initialization completed");						
+						break;
+					case 9:
+						LOGD("Calibration reference BP trending error");						
+						break;
+					case 10:
+						LOGD("Calibration reference Inconsistency 1 error");						
+						break;
+					case 11:
+						LOGD("Calibration reference Inconsistency 2 error");						
+						break;
+					case 12:
+						LOGD("Calibration reference Inconsistency 3 error");							
+						break;
+					case 13:
+						LOGD("Calibration reference count mismatch");					
+						break;
+					case 14:
+						LOGD("Calibration reference are out of limits (systolic 80 to 180, diastolic 50 to 120)");						
+						break;
+					case 15:
+						LOGD("Number of calibrations exceed maximum");						
+						break;
+					case 16:
+						LOGD("Pulse pressure out of range");							
+						break;
+					case 17:
+						LOGD("Heart rate out of range");					
+						break;
+					case 18:
+						LOGD("Heart rate is above resting");						
+						break;
+					case 19:
+						LOGD("Perfusion Index is out of range");						
+						break;
+					case 20:
+						LOGD("Estimation error, try again");							
+						break;
+					case 21:
+						LOGD("BPT estimate is out of range from calibration references (systolic +-30, diastolic +-20) ");					
+						break;
+					case 22:
+						LOGD("BPT estimate is beyond the maximum limits (systolic 80 to 180, diastolic 50 to 120)");				
+						break;
+					default:
+						LOGD("Unknow");
+						break;
+					}
 				#endif
 
 					if(g_ppg_bpt_status == BPT_STATUS_GET_CAL)
@@ -552,8 +638,8 @@ void PPGGetSensorHubData(void)
 					}
 					else if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
 					{
-						g_bp_systolic = bpt.sys_bp;
-						g_bp_diastolic = bpt.dia_bp;
+						g_bpt.systolic = bpt.sys_bp;
+						g_bpt.diastolic = bpt.dia_bp;
 							
 						if((bpt.status == 2) && (bpt.perc_comp == 100))
 						{
@@ -563,7 +649,29 @@ void PPGGetSensorHubData(void)
 						#endif
 
 							get_bpt_flag = true;
-							PPGStopCheck();
+							if(g_ppg_trigger == TRIGGER_BY_MENU)
+								PPGStopCheck();
+						}
+
+						if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
+						{
+							whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
+							
+						#ifdef PPG_DEBUG
+							LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
+						#endif
+
+							if((g_hr > 0) && (g_spo2 > 0))
+							{
+								PPGStopCheck();
+								return;
+							}
+							else if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
+							{
+								heart_rate += sensorhub_out.hr;
+								spo2 += sensorhub_out.spo2;
+								j++;
+							}
 						}
 					}
 				}
@@ -586,7 +694,7 @@ void PPGGetSensorHubData(void)
 				}
 			}
 
-			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+			if((g_ppg_alg_mode == ALG_MODE_HR_SPO2) || ((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST)))
 			{
 				if(j > 0)
 				{
@@ -629,16 +737,70 @@ void PPGGetSensorHubData(void)
 	}
 }
 
+void TimerStartHrSpo2(void)
+{
+	g_hr = 0;
+	g_spo2 = 0;
+
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_HOURLY;
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		ppg_start_flag = true;	
+	}
+}
+
 void APPStartHrSpo2(void)
 {
-	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-	ppg_start_flag = true;
+	g_hr = 0;
+	g_spo2 = 0;
+
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_APP;
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		ppg_start_flag = true;	
+	}
+	else
+	{
+		MCU_send_app_get_hr_data();
+	}
 }
 
 void MenuStartHrSpo2(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+
+	if(screen_id == SCREEN_ID_HR)
+	{
+		g_hr = 0;
+	}
+	else if(screen_id == SCREEN_ID_SPO2)
+	{
+		g_spo2 = 0;
+	}
+
 	ppg_start_flag = true;
 }
 
@@ -648,17 +810,65 @@ void MenuStopHrSpo2(void)
 	ppg_stop_flag = true;
 }
 
+void TimerStartBpt(void)
+{
+	g_hr = 0;
+	g_spo2 = 0;
+	g_bpt.diastolic = 0;
+	g_bpt.systolic = 0;
+
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_HOURLY;
+		g_ppg_alg_mode = ALG_MODE_BPT;
+		ppg_start_flag = true;
+	}
+}
+
 void APPStartBpt(void)
 {
-	g_ppg_trigger |= TRIGGER_BY_APP;
-	g_ppg_alg_mode = ALG_MODE_BPT;
-	ppg_start_flag = true;
+	g_bpt.diastolic = 0;
+	g_bpt.systolic = 0;
+	
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_APP;
+		g_ppg_alg_mode = ALG_MODE_BPT;
+		ppg_start_flag = true;
+	}
+	else
+	{
+	}
 }
 
 void MenuStartBpt(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
 	g_ppg_trigger |=TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_BPT;
+
+	g_bpt.diastolic = 0;
+	g_bpt.systolic = 0;
+	
 	ppg_start_flag = true;
 }
 
@@ -666,6 +876,13 @@ void MenuStopBpt(void)
 {
 	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
+}
+
+void TimerStartEcg(void)
+{
+	g_ppg_trigger |= TRIGGER_BY_HOURLY;
+	g_ppg_alg_mode = ALG_MODE_ECG;
+	ppg_start_flag = true;
 }
 
 void APPStartEcg(void)
@@ -677,6 +894,26 @@ void APPStartEcg(void)
 
 void MenuStartEcg(void)
 {
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_ECG;
 	ppg_start_flag = true;
@@ -686,11 +923,6 @@ void MenuStopEcg(void)
 {
 	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
-}
-
-void APPStartPPG(void)
-{
-	ppg_start_flag = true;
 }
 
 void MenuStartPPG(void)
@@ -717,9 +949,10 @@ void PPGStartCheck(void)
 	if(ppg_power_flag > 0)
 		return;
 
-	//Set_PPG_Power_On();
-	SH_Power_On();
-
+	PPG_Power_On();
+	PPG_Enable();
+	PPG_i2c_on();
+	
 	ppg_power_flag = 1;
 
 	ret = StartSensorhub();
@@ -737,9 +970,9 @@ void PPGStartCheck(void)
 		LOGD("ppg hr start success!");
 	#endif
 		ppg_power_flag = 2;
-		
+
 		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-			k_timer_start(&ppg_stop_timer, K_MSEC(60*1000), NULL);
+			k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_TIMELY*60*1000), NULL);
 	}
 	else
 	{
@@ -764,8 +997,9 @@ void PPGStopCheck(void)
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();
 
-	SH_Power_Off();
-	//Set_PPG_Power_Off();
+	PPG_i2c_off();
+	PPG_Disable();
+	PPG_Power_Off();
 
 	ppg_power_flag = 0;
 
@@ -783,10 +1017,13 @@ void PPGStopCheck(void)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	}
-
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
+
+		g_hr_timing = g_hr;
+		g_spo2_timing = g_spo2;
+		memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
 	}
 }
 

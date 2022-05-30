@@ -163,6 +163,9 @@ void APP_Ask_GPS_off(void)
 
 void gps_off(void)
 {
+	if(!gps_is_on)
+		return;
+	
 	set_gps_enable(false);
 }
 
@@ -176,9 +179,9 @@ bool gps_is_working(void)
 
 void gps_on(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out(UART_MODEM);
-#endif
+	if(gps_is_on)
+		return;
+	
 	set_gps_enable(true);
 }
 
@@ -223,16 +226,6 @@ static void set_gps_enable(const bool enable)
 
 	if(enable)
 	{
-		DisConnectMqttLink();
-		SetModemTurnOff();
-		
-		if(at_cmd_write("AT+CFUN=31", NULL, 0, NULL) != 0)
-		{
-		#ifdef GPS_DEBUG
-			LOGD("Can't turn on modem for gps!");
-		#endif
-		}
-		
 	#ifdef GPS_DEBUG	
 		LOGD("Starting GPS");
 	#endif
@@ -250,17 +243,9 @@ static void set_gps_enable(const bool enable)
 	#ifdef GPS_DEBUG
 		LOGD("Stopping GPS");
 	#endif
-	
-		gps_control_stop(K_NO_WAIT);
-
-		if(at_cmd_write("AT+CFUN=30", NULL, 0, NULL) != 0)
-		{
-		#ifdef GPS_DEBUG
-			LOGD("Can't turn off modem for gps!");
-		#endif
-		}
 
 		gps_is_on = false;
+		gps_control_stop(K_NO_WAIT);
 	}
 }
 

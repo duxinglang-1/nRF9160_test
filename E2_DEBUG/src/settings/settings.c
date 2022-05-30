@@ -19,9 +19,9 @@ bool need_save_settings = false;
 bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
-bool need_fw_update = true;
 
-u8_t g_fw_version[64] = "V1.6.2_20220408";
+u8_t g_fw_version[64] = "V1.6.8_20220526";
+
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
 static bool reset_redraw_flag = false;
@@ -94,7 +94,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_10_SEC,		//backlight time
-	BACKLIGHT_LEVEL_4,		//backlight level
+	BACKLIGHT_LEVEL_2,		//backlight level
 	{true,1},				//PHD
 	{500,60},				//position interval
 	{120,70},				//pb calibration
@@ -674,7 +674,9 @@ void SettingsMainMenu2Proc(void)
 void SettingsMainMenu3Proc(void)
 {
 #ifdef CONFIG_FOTA_DOWNLOAD
-	if(need_fw_update)
+	extern u8_t g_new_fw_ver[64];
+
+	if(strcmp(g_new_fw_ver,g_fw_version) > 0)
 	{
 		fota_start();
 	}

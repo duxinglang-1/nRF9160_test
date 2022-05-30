@@ -399,11 +399,11 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_BAT_FULL_ICON_ADDR, &w, &h);
-	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_BAT_FULL_ICON_ADDR);
+	//LCD_get_pic_size_from_flash(IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, &w, &h);
+	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_SEC_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
-	while(0)
+	while(1)
 	{
 		LCD_Clear(BLACK);
 		LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, i*30);
@@ -669,7 +669,7 @@ void system_init(void)
 
 	InitSystemSettings();
 
-	init_imu_int1();//xb test 2022-04-08
+	init_imu_int1();//xb add 2022-05-27
 	
 	pmu_init();
 	flash_init();
@@ -677,7 +677,7 @@ void system_init(void)
 	
 	ShowBootUpLogo();
 
-	//key_init();
+	key_init();
 #ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
 #endif

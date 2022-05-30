@@ -170,14 +170,6 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 	LOGD("begin");
 #endif
 
-	if(lcd_is_sleeping)
-	{
-		lcd_sleep_out = true;
-		return;
-	}
-	
-	LCD_ResetBL_Timer();
-
 	switch(buf[5])
 	{
 	case GESTURE_NONE:
@@ -208,8 +200,8 @@ void CTP_notify_handle(u8_t *buf, u32_t len)
 
 	if(tp_type != TP_EVENT_MAX)
 	{
-		tp_x = buf[7]*0x100+buf[8];
-		tp_y = buf[9]*0x100+buf[10];
+		tp_x = (0x0f&buf[7])<<8 | buf[8];
+		tp_y = (0x0f&buf[9])<<8 | buf[10];
 		touch_panel_event_handle(tp_type, tp_x, tp_y);
 	}
 }
@@ -1938,25 +1930,7 @@ void UartMsgProc(void)
 		LOGD("uart_sleep!");
 	#endif
 		uart_log_sleep_flag = false;
-
-		if(!gps_is_working() && !MqttIsConnected() && !nb_is_connecting() && !mqtt_is_connecting()
-			#ifdef CONFIG_FOTA_DOWNLOAD
-			 && !fota_is_running()
-			#endif
-			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-			 && !dl_is_running()
-			#endif
-			#ifdef CONFIG_WIFI
-			 && !wifi_is_working()
-			#endif
-			)
-		{
-			uart_log_sleep_in();
-		}
-		else	
-		{
-			k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_SLEEP_DELAY_TIME_SEC), NULL);
-		}
+		uart_log_sleep_in();
 	}
 
 	if(uart_ble_wake_flag)

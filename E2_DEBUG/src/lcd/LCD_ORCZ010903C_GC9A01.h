@@ -26,16 +26,6 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define	SDA		20
 #define VDD		18
 
-//TP 
-#define TP_0			12
-#define TP_1			12
-
-//CTP
-#define CTP_EINT	25
-#define	CTP_SDA		0
-#define	CTP_SCL		1
-#define	CTP_RSET	16
-
 //LEDK(LED背光)
 #define LEDK	31
 #define LEDA	14

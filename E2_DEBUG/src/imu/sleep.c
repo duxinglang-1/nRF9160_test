@@ -1,13 +1,19 @@
+/****************************************Copyright (c)************************************************
+** File Name:			    sleep.c
+** Descriptions:			sleep message process source file
+** Created By:				xie biao
+** Created Date:			2020-10-28
+** Modified Date:      		2022-05-26 
+** Version:			    	V1.2
+******************************************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "lsm6dso.h"
+#include "sleep.h"
 #include "datetime.h"
 #include "max20353.h"
 #include "logger.h"
-
-#define SLEEP_TIME_START	20
-#define SLEEP_TIME_END		8
 
 u16_t last_light_sleep = 0;
 u16_t last_deep_sleep = 0;
@@ -92,29 +98,39 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 
 		if((hour>=SLEEP_TIME_START)||(hour<SLEEP_TIME_END))  /*输入时间是 24小时制 ，监测时间段晚上8点到早上8点 */
 		{
+			static bool start_flag = false;
+			
 			if((hour==SLEEP_TIME_START)&&(minute==0))//正式启动当天睡眠监测，清空上一天的数据
 			{
-				move = 0;	 
-				gsensor = 0;
-				rtc_sec = 0;
-				move_flag = 0;
-				watch_state = 0;
-				waggle_flag = 0;
-				waggle_flag = 0;
-				sedentary_time_temp = 0;			
-				memset(waggle_level,0,sizeof(waggle_level)); /* 晃动等级 */
-				
-				last_light_sleep = 0;
-				last_deep_sleep = 0;
-				light_sleep_time = 0;
-				deep_sleep_time = 0;
-				g_light_sleep = 0;
-				g_deep_sleep = 0;
+				if(start_flag)
+				{
+					start_flag = false;
+					
+					move = 0;	 
+					gsensor = 0;
+					rtc_sec = 0;
+					move_flag = 0;
+					watch_state = 0;
+					waggle_flag = 0;
+					waggle_flag = 0;
+					sedentary_time_temp = 0;			
+					memset(waggle_level,0,sizeof(waggle_level)); /* 晃动等级 */
+					
+					last_light_sleep = 0;
+					last_deep_sleep = 0;
+					light_sleep_time = 0;
+					deep_sleep_time = 0;
+					g_light_sleep = 0;
+					g_deep_sleep = 0;
 
-				save_flag = true;
+					save_flag = true;
+				}
 			}
 			else
 			{
+				if(!start_flag)
+					start_flag = true;
+				
 				if((hour>=6)&&(hour<=SLEEP_TIME_END)&&(waggle_flag==0))
 				{
 					for(i=0;i<6;i++)	
@@ -213,7 +229,7 @@ void GetSleepInfor(void)
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 
-	LOGD("deep_sleep:%d, light_sleep:%d", deep_sleep, light_sleep);
+	//LOGD("deep_sleep:%d, light_sleep:%d", deep_sleep, light_sleep);
 }
 
 void UpdateSleepPara(void)

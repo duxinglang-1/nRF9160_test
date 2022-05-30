@@ -12,13 +12,14 @@
 #include <nrf9160.h>
 #include <zephyr.h>
 #include <math.h>
-
 #include "lcd.h"
 #include "settings.h"
 #include "gps.h"
 #include "nb.h"
 #include "font.h"
 #include "external_flash.h"
+#include "max20353.h"
+#include "screen.h"
 #include "logger.h"
 
 #if defined(LCD_ORCZ010903C_GC9A01)
@@ -3430,13 +3431,13 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_out)
 	{	
 		LCD_SleepOut();
+		pmu_alert_proc();
 		if(IsInIdleScreen())
 		{
-			IdleShowDateTime();
-			IdleShowSignal();
-			IdleShowNetMode();
-			IdleUpdateBatSoc();
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK|SCREEN_EVENT_UPDATE_SIG|SCREEN_EVENT_UPDATE_NET_MODE|SCREEN_EVENT_UPDATE_BAT;
 		}
+		
 		LCD_BL_On();
 		lcd_sleep_out = false;
 	}

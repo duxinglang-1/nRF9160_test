@@ -12,13 +12,12 @@
 #include <zephyr.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
+#include "temp.h"
 #include "gxts04.h"
 #include "logger.h"
 #ifdef CONFIG_CRC_SUPPORT
 #include "crc_check.h"
 #endif
-
-//#define TEMP_DEBUG
 
 static struct device *i2c_temp;
 static struct device *gpio_temp;
@@ -120,6 +119,7 @@ void gxts04_stop(void)
 
 bool GetTemperature(float *skin_temp, float *body_temp)
 {
+	bool flag=false;
 	u8_t crc=0;
 	u8_t databuf[10] = {0};
 	u16_t trans_temp = 0;
@@ -205,13 +205,15 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 			t_body = 36.1 + (t_sensor-32)*0.8/4;
 		else
 			t_body = t_sensor;
+
+		flag = true;
 	}
 
 	*body_temp = t_body;
 
 #ifdef TEMP_DEBUG
-	LOGD("count:%d, t_predict:%d.%d, t_temp80:%d.%d, t_body:%d.%d", measure_count, (s16_t)(t_predict*10)/10, (s16_t)(t_predict*10)%10, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
+	LOGD("flag:%d, t_temp80:%d.%d, t_body:%d.%d", flag, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
 #endif
 
-	return true;
+	return flag;
 }

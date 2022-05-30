@@ -25,10 +25,13 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
 #include "logger.h"
+
+//#define IMU_DEBUG
 
 #define IMU_DEV "I2C_1"
 #define IMU_PORT "GPIO_0"
@@ -64,12 +67,90 @@ sport_record_t last_sport = {0};
 
 extern bool update_sleep_parameter;
 
+void SetCurDayStepRecData(u16_t data)
+{
+	u8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data *p_step = NULL;
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+
+	p_step = tmpbuf+6*sizeof(step_rec2_data);
+	if(((date_time.year > p_step->year)&&(p_step->year != 0xffff && p_step->year != 0x0000))
+		||((date_time.year == p_step->year)&&(date_time.month > p_step->month)&&(p_step->month != 0xff && p_step->month != 0x00))
+		||((date_time.month == p_step->month)&&(date_time.day > p_step->day)&&(p_step->day != 0xff && p_step->day != 0x00)))
+	{//记录存满。整体前挪并把最新的放在最后
+		step_rec2_data tmp_step = {0};
+		
+
+	#ifdef IMU_DEBUG
+		LOGD("rec is full! temp:%0.1f", data);
+	#endif
+		tmp_step.year = date_time.year;
+		tmp_step.month = date_time.month;
+		tmp_step.day = date_time.day;
+		tmp_step.steps[date_time.hour] = data;
+		memcpy(&tmpbuf[0], &tmpbuf[sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
+		memcpy(&tmpbuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	}
+	else
+	{
+	#ifdef IMU_DEBUG
+		LOGD("rec not full! temp:%0.1f", data);
+	#endif
+		for(i=0;i<7;i++)
+		{
+			p_step = tmpbuf + i*sizeof(step_rec2_data);
+			if((p_step->year == 0xffff || p_step->year == 0x0000)||(p_step->month == 0xff || p_step->month == 0x00)||(p_step->day == 0xff || p_step->day == 0x00))
+			{
+				p_step->year = date_time.year;
+				p_step->month = date_time.month;
+				p_step->day = date_time.day;
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+			
+			if((p_step->year == date_time.year)&&(p_step->month == date_time.month)&&(p_step->day == date_time.day))
+			{
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+		}
+	}
+}
+
+void GetCurDayStepRecData(u16_t *databuf)
+{
+	u8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data step_rec2 = {0};
+	
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&step_rec2, &tmpbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
+		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
+			continue;
+		
+		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
+		{
+			memcpy(databuf, step_rec2.steps, sizeof(step_rec2.steps));
+			break;
+		}
+	}
+}
+
 static uint8_t init_i2c(void)
 {
 	i2c_imu = device_get_binding(IMU_DEV);
 	if(!i2c_imu)
 	{
+	#ifdef IMU_DEBUG
 		LOGD("ERROR SETTING UP I2C");
+	#endif
 		return -1;
 	}
 	else
@@ -270,7 +351,9 @@ void UpdateIMUData(void)
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
+#ifdef IMU_DEBUG
 	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
+#endif
 
 	last_sport.timestamp.year = date_time.year;
 	last_sport.timestamp.month = date_time.month; 
@@ -284,7 +367,7 @@ void UpdateIMUData(void)
 	last_sport.calorie = g_calorie;
 	save_cur_sport_to_record(&last_sport);
 	
-	StepCheckSendLocationData(g_steps);
+	//StepCheckSendLocationData(g_steps);
 }
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
@@ -318,7 +401,9 @@ static void mt_fall_detection(struct k_work *work)
 {
 	if(int1_event)	//steps or tilt
 	{
+	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
+	#endif
 		int1_event = false;
 
 		if(!imu_check_ok)
@@ -335,8 +420,10 @@ static void mt_fall_detection(struct k_work *work)
 		is_tilt();
 		if(wrist_tilt)
 		{
+		#ifdef IMU_DEBUG
 			LOGD("tilt trigger!");
-			
+		#endif
+		
 			wrist_tilt = false;
 
 			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
@@ -347,7 +434,9 @@ static void mt_fall_detection(struct k_work *work)
 		}
 		else
 		{
+		#ifdef IMU_DEBUG
 			LOGD("steps trigger!");
+		#endif
 			
 			UpdateIMUData();
 			imu_redraw_steps_flag = true;	
@@ -396,10 +485,14 @@ static void mt_fall_detection(struct k_work *work)
 
 void IMU_init(struct k_work_q *work_q)
 {
+#ifdef IMU_DEBUG
 	LOGD("IMU_init");
-	
+#endif
+
 	get_cur_sport_from_record(&last_sport);
+#ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
+#endif
 	if(last_sport.timestamp.day == date_time.day)
 	{
 		g_last_steps = last_sport.steps;
@@ -427,8 +520,9 @@ void IMU_init(struct k_work_q *work_q)
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
 	StartSleepTimeMonitor();
-
+#ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
+#endif
 }
 
 /*@brief Check if a wrist tilt happend
@@ -479,25 +573,27 @@ void test_i2c(void)
 	dev0 = device_get_binding("GPIO_0");
 	gpio_pin_configure(dev0, 0, GPIO_DIR_OUT);
 	gpio_pin_write(dev0, 0, 1);
-
+#ifdef IMU_DEBUG
 	LOGD("Starting i2c scanner...");
-
+#endif
 	i2c_dev = device_get_binding(IMU_DEV);
 	if(!i2c_dev)
 	{
+	#ifdef IMU_DEBUG
 		LOGD("I2C: Device driver not found.");
+	#endif
 		return;
 	}
 	i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	uint8_t error = 0u;
-
+#ifdef IMU_DEBUG
 	LOGD("Value of NRF_TWIM1_NS->PSEL.SCL: %ld",NRF_TWIM1_NS->PSEL.SCL);
 	LOGD("Value of NRF_TWIM1_NS->PSEL.SDA: %ld",NRF_TWIM1_NS->PSEL.SDA);
 	LOGD("Value of NRF_TWIM1_NS->FREQUENCY: %ld",NRF_TWIM1_NS->FREQUENCY);
 	LOGD("26738688 -> 100k");
 	LOGD("67108864 -> 250k");
 	LOGD("104857600 -> 400k");
-
+#endif
 	for (u8_t i = 0; i < 0x7f; i++)
 	{
 		struct i2c_msg msgs[1];
@@ -511,11 +607,15 @@ void test_i2c(void)
 		error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
 		if(error == 0)
 		{
+		#ifdef IMU_DEBUG
 			LOGD("0x%2x device address found on I2C Bus", i);
+		#endif
 		}
 		else
 		{
+		#ifdef IMU_DEBUG
 			//LOGD("error %d", error);
+		#endif
 		}
 	}
 }
@@ -530,55 +630,51 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
-#ifdef CONFIG_FOTA_DOWNLOAD
-	if(fota_is_running())
+	if(0
+		#ifdef CONFIG_FOTA_DOWNLOAD
+			|| (fota_is_running())
+		#endif
+		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			|| (dl_is_running())
+		#endif
+		)
+	{
 		return;
-#endif
+	}
 
 	if(int1_event)	//steps
 	{
+	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
+	#endif
 		int1_event = false;
 
-		if(!imu_check_ok)
+		if(!imu_check_ok || !is_wearing())
 			return;
 		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-		
+	#ifdef IMU_DEBUG	
 		LOGD("steps trigger!");
-		
+	#endif
 		UpdateIMUData();
 		imu_redraw_steps_flag = true;	
 	}
 		
 	if(int2_event) //tilt
 	{
+	#ifdef IMU_DEBUG
 		LOGD("int2 evt!");
-		
+	#endif
 		int2_event = false;
 
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
+		if(!imu_check_ok || !is_wearing())
 			return;
 
 		is_tilt();
 		if(wrist_tilt)
 		{
+		#ifdef IMU_DEBUG
 			LOGD("tilt trigger!");
-			
+		#endif
 			wrist_tilt = false;
 
 			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
@@ -616,11 +712,6 @@ void IMUMsgProcess(void)
 
 		if(!imu_check_ok)
 			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
 
 		UpdateSleepPara();
 	}

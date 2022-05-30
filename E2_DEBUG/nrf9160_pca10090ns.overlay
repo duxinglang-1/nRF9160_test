@@ -11,7 +11,7 @@
 	status = "okay";
 	sck-pin = <22>;
 	mosi-pin = <20>;
-	miso-pin = <26>;
+	miso-pin = <5>;
 };
 
 &i2c1{

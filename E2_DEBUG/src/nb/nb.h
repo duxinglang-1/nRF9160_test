@@ -19,11 +19,11 @@
 #define CMD_GET_CUR_BAND	"AT%XCBAND"
 #define CMD_GET_SUPPORT_BAND	"AT%XCBAND=?"
 #define CMD_GET_LOCKED_BAND		"AT%XBANDLOCK?"
+#define CMD_GET_REG_STATUS	"AT+CEREG?"
 #define CMD_SET_CREG	 	"AT+CEREG=5"
 #if defined(CONFIG_LTE_LEGACY_PCO_MODE)
 #define CMD_SET_EPCO_MODE	"AT%XEPCO=0"
 #endif
-#define CMD_SET_MODEM_TRACE	"AT%XMODEMTRACE=0"
 #define CMD_SET_NW_MODE		"AT%XSYSTEMMODE=0,1,1,0"	//Preferred network mode: Narrowband-IoT and GPS
 #define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
 #define CMD_SET_RAI		 	"AT%XRAI=3"					//Set the modem rai parament
@@ -31,7 +31,7 @@
 #define IMEI_MAX_LEN	(15)
 #define IMSI_MAX_LEN	(15)
 #define ICCID_MAX_LEN	(20)
-#define MODEM_MAX_LEN   (20)
+#define MODEM_MAX_LEN   (17)
 
 #define APN_MAX_LEN			(100)
 #define	PLMN_MAX_LEN        (6)
@@ -75,6 +75,12 @@ extern u8_t g_imsi[IMSI_MAX_LEN+1];
 extern u8_t g_imei[IMEI_MAX_LEN+1];
 extern u8_t g_iccid[ICCID_MAX_LEN+1];
 extern u8_t g_modem[MODEM_MAX_LEN+1];
+
+extern u8_t g_new_fw_ver[64];
+extern u8_t g_new_modem_ver[64];
+extern u8_t g_new_ppg_ver[64];
+extern u8_t g_new_ble_ver[64];
+extern u8_t g_new_wifi_ver[64];
 
 extern u8_t g_timezone[5];
 extern u8_t g_rsrp;

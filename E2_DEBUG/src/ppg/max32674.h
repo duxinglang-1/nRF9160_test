@@ -13,6 +13,8 @@
 #include <zephyr.h>
 #include <device.h>
 
+#define PPG_CHECK_TIMELY	4
+
 typedef enum
 {
 	ALG_MODE_HR_SPO2,
@@ -31,10 +33,10 @@ typedef enum
 
 typedef enum
 {
-	TRIGGER_BY_MENU=0x01,
-	TRIGGER_BY_APP_ONE_KEY=0x02,
-	TRIGGER_BY_APP=0x04,
-	TRIGGER_BY_HOURLY=0x40
+	TRIGGER_BY_MENU			=	0x01,
+	TRIGGER_BY_APP_ONE_KEY	=	0x02,
+	TRIGGER_BY_APP			=	0x04,
+	TRIGGER_BY_HOURLY		=	0x08,
 }PPG_TARGGER_SOUCE;
 
 typedef enum
@@ -50,7 +52,7 @@ typedef struct
 	u8_t diastolic;
 }bpt_data;
 
-//单词测量
+//单次测量
 typedef struct
 {
 	u16_t year;
@@ -112,20 +114,29 @@ typedef struct
 extern u8_t g_ppg_trigger;
 extern u8_t g_ppg_ver[64];
 
-extern u16_t g_hr;
-extern u16_t g_spo2;
-extern u16_t g_bp_systolic;		//收缩压
-extern u16_t g_bp_diastolic;	//舒张压
+extern u8_t g_hr;
+extern u8_t g_hr_timing;
+extern u8_t g_spo2;
+extern u8_t g_spo2_timing;
+extern bpt_data g_bpt;
+extern bpt_data g_bpt_timing;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
 /*heart rate*/
+extern void SetCurDayBptRecData(bpt_data bpt);
+extern void GetCurDayBptRecData(u8_t *databuf);
+extern void SetCurDaySpo2RecData(u8_t spo2);
+extern void GetCurDaySpo2RecData(u8_t *databuf);
+extern void SetCurDayHrRecData(u8_t hr);
 extern void GetCurDayHrRecData(u8_t *databuf);
 extern void GetHeartRate(u8_t *HR);
 extern void APPStartHrSpo2(void);
 extern void APPStartBpt(void);
 extern void APPStartEcg(void);
-extern void APPStartPPG(void);
+extern void TimerStartHrSpo2(void);
+extern void TimerStartBpt(void);
+extern void TimerStartEcg(void);
 
 #endif/*__MAX32674_H__*/

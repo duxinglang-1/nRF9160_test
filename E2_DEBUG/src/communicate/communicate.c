@@ -19,6 +19,12 @@
 #include "esp8266.h"
 #endif
 #include "datetime.h"
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif/*CONFIG_PPG_SUPPORT*/
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif/*CONFIG_TEMP_SUPPORT*/
 #include "communicate.h"
 #include "logger.h"
 
@@ -155,77 +161,141 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
  *****************************************************************************/
 void TimeCheckSendHealthData(void)
 {
-	u16_t steps=0,calorie=0,distance=0;
 	u16_t light_sleep=0,deep_sleep=0;
-	u8_t tmpbuf[20] = {0};
-	u8_t databuf[128] = {0};
-	static u32_t health_hour_count = 0;
-
-	health_hour_count++;
-	if(health_hour_count == global_settings.health_interval)
-	{
-		LOGD("001");
-		
-		health_hour_count = 0;
-
-	#ifdef CONFIG_IMU_SUPPORT
-		GetSportData(&steps, &calorie, &distance);
-		GetSleepTimeData(&deep_sleep, &light_sleep);
-	#endif
+	u8_t i,tmpbuf[20] = {0};
+	u8_t databuf[1024] = {0};
+	u8_t hr_data[24] = {0};
+	u8_t spo2_data[24] = {0};
+	bpt_data bp_data[24] = {0};
+	u16_t temp_data[24] = {0};
+	u16_t step_data[24] = {0};
 	
-		//steps
-		sprintf(tmpbuf, "%d,", steps);
-		strcpy(databuf, tmpbuf);
+	//wrist
+	if(is_wearing())
+		strcat(databuf, "1,");
+	else
+		strcat(databuf, "0,");
+	
+	//sitdown time
+	strcat(databuf, "0,");
+	
+	//activity time
+	strcat(databuf, "0,");
+
+#ifdef CONFIG_IMU_SUPPORT
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
+	//light sleep time
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", light_sleep);
+	strcat(databuf, tmpbuf);
+	
+	//deep sleep time
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", deep_sleep);
+	strcat(databuf, tmpbuf);
+	
+	//move body
+	strcat(databuf, "0,");
+
+#ifdef CONFIG_IMU_SUPPORT
+	GetCurDayStepRecData(step_data);
+#endif
+	for(i=0;i<24;i++)
+	{
+		u16_t calorie,distance;
 		
-		//wrist
-		if(is_wearing())
-			strcat(databuf, "1,");
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		
+		if(step_data[i] == 0xffff)
+			step_data[i] = 0;
+
+		distance = 0.7*step_data[i];
+		calorie = (0.8214*60*distance)/1000;
+		sprintf(tmpbuf, "%d&%d&%d", step_data[i], distance, calorie);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
 		else
-			strcat(databuf, "0,");
+			strcat(tmpbuf,",");
 		
-		//sitdown time
-		strcat(databuf, "0,");
-		
-		//activity time
-		strcat(databuf, "0,");
-		
-		//light sleep time
-		memset(tmpbuf,0,sizeof(tmpbuf));
-		sprintf(tmpbuf, "%d,", light_sleep);
 		strcat(databuf, tmpbuf);
-		
-		//deep sleep time
-		memset(tmpbuf,0,sizeof(tmpbuf));
-		sprintf(tmpbuf, "%d,", deep_sleep);
-		strcat(databuf, tmpbuf);
-		
-		//move body
-		strcat(databuf, "0,");
-		
-		//calorie
-		memset(tmpbuf,0,sizeof(tmpbuf));
-		sprintf(tmpbuf, "%d,", calorie);
-		strcat(databuf, tmpbuf);
-		
-		//distance
-		memset(tmpbuf,0,sizeof(tmpbuf));
-		sprintf(tmpbuf, "%d,", distance);
-		strcat(databuf, tmpbuf);
-		
-		//systolic
-		strcat(databuf, "0,");
-		
-		//diastolic
-		strcat(databuf, "0,");
-		
-		//heart rate
-		strcat(databuf, "0,");
-		
-		//SPO2
-		strcat(databuf, "0");
-		
-		NBSendHealthData(databuf, strlen(databuf));
 	}
+
+#ifdef CONFIG_PPG_SUPPORT
+	//hr
+	GetCurDayHrRecData(hr_data);
+	//spo2
+	GetCurDaySpo2RecData(spo2_data);
+	//bpt
+	GetCurDayBptRecData(bp_data);
+#endif/*CONFIG_PPG_SUPPORT*/
+	//hr
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(hr_data[i] == 0xff)
+			hr_data[i] = 0;		
+		sprintf(tmpbuf, "%d", hr_data[i]);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	//spo2
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(spo2_data[i] == 0xff)
+			spo2_data[i] = 0;	
+		sprintf(tmpbuf, "%d", spo2_data[i]);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	//bpt
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(bp_data[i].systolic == 0xff)
+			bp_data[i].systolic = 0;
+		if(bp_data[i].diastolic == 0xff)
+			bp_data[i].diastolic = 0;
+		sprintf(tmpbuf, "%d&%d", bp_data[i].systolic,bp_data[i].diastolic);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	
+#ifdef CONFIG_TEMP_SUPPORT
+	//body temp
+	GetCurDayTempRecData(temp_data);
+#endif/*CONFIG_TEMP_SUPPORT*/
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(temp_data[i] == 0xffff)
+			temp_data[i] = 0;
+		sprintf(tmpbuf, "%0.1f", (float)temp_data[i]/10.0);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		strcat(databuf, tmpbuf);
+	}
+
+	NBSendTimelyHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
@@ -242,7 +312,7 @@ void TimeCheckSendLocationData(void)
 {
 	static u32_t loc_hour_count = 0;
 	bool flag = false;
-	
+
 	loc_hour_count++;
 	if(date_time.hour >= 21 || date_time.hour < 9)
 	{
@@ -317,8 +387,6 @@ void SyncSendHealthData(void)
 	u8_t tmpbuf[20] = {0};
 	u8_t databuf[128] = {0};
 
-	LOGD("001");
-	
 #ifdef CONFIG_IMU_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
 	GetSleepTimeData(&deep_sleep, &light_sleep);
@@ -362,20 +430,41 @@ void SyncSendHealthData(void)
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", distance);
 	strcat(databuf, tmpbuf);
-	
+
+#ifdef CONFIG_PPG_SUPPORT	
 	//systolic
-	strcat(databuf, "0,");
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_bpt.systolic);
+	strcat(databuf, tmpbuf);
 	
 	//diastolic
-	strcat(databuf, "0,");
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_bpt.diastolic); 	
+	strcat(databuf, tmpbuf);
 	
 	//heart rate
-	strcat(databuf, "0,");
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_hr);		
+	strcat(databuf, tmpbuf);
 	
 	//SPO2
-	strcat(databuf, "0");
-	
-	NBSendHealthData(databuf, strlen(databuf));
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%d,", g_spo2); 	
+	strcat(databuf, tmpbuf);
+#else
+	strcat(databuf, "0,0,0,0,");
+#endif/*CONFIG_PPG_SUPPORT*/
+
+#ifdef CONFIG_TEMP_SUPPORT
+	//body temp
+	memset(tmpbuf,0,sizeof(tmpbuf));
+	sprintf(tmpbuf, "%0.1f", g_temp_body); 	
+	strcat(databuf, tmpbuf);
+#else
+	strcat(databuf, "0.0");
+#endif/*CONFIG_TEMP_SUPPORT*/
+
+	NBSendSingleHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
@@ -390,8 +479,6 @@ void SyncSendHealthData(void)
  *****************************************************************************/
 void SyncSendLocalData(void)
 {
-	LOGD("001");
-	
 #ifdef CONFIG_WIFI
 	location_wait_wifi = true;
 	APP_Ask_wifi_data();
@@ -467,5 +554,35 @@ void SendPowerOffData(u8_t pwroff_mode)
 	strcat(databuf, tmpbuf);
 			
 	NBSendPowerOffInfor(databuf, strlen(databuf));
+}
+
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendSosAlarmData
+ * DESCRIPTION
+ *  发送SOS报警包(无地址信息)
+ * PARAMETERS
+ *	
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendSosAlarmData(void)
+{
+	u8_t reply[256] = {0};
+	u32_t i,count=1;
+
+	strcat(reply, "3,");
+	for(i=0;i<count;i++)
+	{
+		strcat(reply, "");
+		strcat(reply, "&");
+		strcat(reply, "");
+		strcat(reply, "&");
+		if(i < (count-1))
+			strcat(reply, "|");
+	}
+
+	NBSendSosWifiData(reply, strlen(reply));
 }
 

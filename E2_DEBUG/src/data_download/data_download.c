@@ -525,10 +525,6 @@ void dl_start(void)
 
 void dl_start_confirm(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_sleep_out();
-#endif	
-
 	dl_cur_status = DL_STATUS_LINKING;
 	dl_redraw_pro_flag = true;
 

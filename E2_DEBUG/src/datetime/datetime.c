@@ -23,6 +23,9 @@
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif
 #include "screen.h"
 #include "ucs2.h"
 #include "logger.h"
@@ -460,27 +463,65 @@ void UpdateSystemTime(void)
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
 	#endif		
-		{			
+		{
+		#ifdef CONFIG_PPG_SUPPORT
+			if((date_time.minute+PPG_CHECK_TIMELY) == 59)
+			{
+				TimerStartBpt();
+			}
+		#endif/*CONFIG_PPG_SUPPORT*/
+		
+		#ifdef CONFIG_TEMP_SUPPORT
+			if((date_time.minute+TEMP_CHECK_TIMELY) == 55)
+			{	
+				TimerStartTemp();
+			}
+		#endif
+
 			AlarmRemindCheck(date_time);
-			//TimeCheckSendHealthData();
 			//TimeCheckSendLocationData();
 		}
 	}
 
-#if 0
 	if((date_time_changed&0x04) != 0)
-	{
-		u8_t hr[24] = {60,70,84,92,102,110,83,70,56,34,72,81,69,90,101,120,64,72,85,90,73,50,90,76};
-		u8_t spo2[24] = {98,100,88,92,96,83,91,86,86,97,90,81,92,94,86,99,100,96,93,84,99,83,89,95};
-		bpt_data bpt_date[24] = {{134,80},{128,75},{156,70},{188,101},{156,95},{174,110},{98,65},{165,103},{167,114},{181,97},{120,62},{188,105},{142,73},{170,71},{132,86},{147,85},{166,92},{150,61},{172,68},{132,59},{153,86},{171,84},{155,78},{133,66}};
-
+	{		
 		date_time_changed = date_time_changed&0xFB;
-		
-		SetCurDayHrRecData(hr[date_time.hour]);
-		SetCurDaySpo2RecData(spo2[date_time.hour]);
-		SetCurDayBptRecData(bpt_date[date_time.hour]);
+
+		if(1
+  			#ifdef CONFIG_FOTA_DOWNLOAD
+				&& (!fota_is_running())
+ 			#endif/*CONFIG_FOTA_DOWNLOAD*/
+			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+				&& (!dl_is_running())
+			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+			)
+		{
+			static u32_t health_hour_count = 0;
+
+		#ifdef CONFIG_TEMP_SUPPORT
+			SetCurDayTempRecData(g_temp_timing);
+		#endif
+		#ifdef CONFIG_PPG_SUPPORT
+			SetCurDayHrRecData(g_hr_timing);
+			SetCurDaySpo2RecData(g_spo2_timing);
+			SetCurDayBptRecData(g_bpt_timing);
+		#endif		
+		#ifdef CONFIG_IMU_SUPPORT
+			SetCurDayStepRecData(g_steps);
+		#endif
+
+			health_hour_count++;
+			if((health_hour_count == global_settings.health_interval/60)
+				||(date_time.hour == 00)	//xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
+				)
+			{
+				if(health_hour_count == global_settings.health_interval/60)
+					health_hour_count = 0;
+				
+				TimeCheckSendHealthData();
+			}
+		}
 	}
-#endif
 
 	if((date_time_changed&0x08) != 0)
 	{

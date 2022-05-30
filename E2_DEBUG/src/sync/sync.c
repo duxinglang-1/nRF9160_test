@@ -57,7 +57,7 @@ void SyncStatusUpdate(void)
 		sync_state = SYNC_STATUS_IDLE;
 		if(screen_id == SCREEN_ID_SYNC)
 		{
-			EnterIdleScreen();
+			ExitSyncDataScreen();
 		}
 		break;
 	}
@@ -67,20 +67,18 @@ bool SyncIsRunning(void)
 {
 	if(sync_state > SYNC_STATUS_IDLE)
 	{
-		LOGD("true");
+		//LOGD("true");
 		return true;
 	}
 	else
 	{
-		LOGD("false");
+		//LOGD("false");
 		return false;
 	}
 }
 
 void SyncDataStop(void)
 {
-	LOGD("begin");
-
 	k_timer_stop(&sync_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStopShow();
@@ -97,11 +95,8 @@ void SyncDataStart(void)
 {
 	u8_t delay;
 	
-	LOGD("begin");
-
 	if(sync_state != SYNC_STATUS_IDLE)
 	{
-		LOGD("sync is running!");
 		return;
 	}
 
@@ -114,8 +109,6 @@ void SyncDataStart(void)
 
 void SyncNetWorkCallBack(SYNC_STATUS status)
 {
-	LOGD("status:%d", status);
-	
 	if(sync_state != SYNC_STATUS_IDLE)
 	{
 		sync_state = status;
@@ -126,7 +119,10 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 			break;
 			
 		case SYNC_STATUS_LINKING:
-			SyncUpdateStatus();
+			if(screen_id == SCREEN_ID_SYNC)
+			{
+				SyncUpdateStatus();
+			}
 			SyncSendHealthData();
 			break;
 			
@@ -136,7 +132,10 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 		#ifdef CONFIG_ANIMATION_SUPPORT 
 			AnimaStopShow();
 		#endif
-			sync_redraw_flag = true;
+			if(screen_id == SCREEN_ID_SYNC)
+			{
+				sync_redraw_flag = true;
+			}	
 			k_timer_start(&sync_timer, K_SECONDS(3), NULL);
 			break;
 		}

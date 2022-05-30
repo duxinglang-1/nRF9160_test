@@ -28,9 +28,9 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_CHN,	//Chinese
 	LANGUAGE_EN,	//English
 	LANGUAGE_DE,	//Deutsch
+	LANGUAGE_CHN,	//Chinese
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 

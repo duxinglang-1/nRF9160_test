@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define PPG_CHECK_TIMELY	4
+#define PPG_CHECK_TIMELY	5
 
 typedef enum
 {

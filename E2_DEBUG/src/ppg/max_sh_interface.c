@@ -69,8 +69,8 @@
 //max size is used for bootloader page loading
 #define SS_TX_BUF_SIZE		(BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE+BL_FLASH_CMD_LEN)
 
-static struct device *i2c_ppg;
-static struct device *gpio_ppg;
+static struct device *i2c_ppg = NULL;
+static struct device *gpio_ppg = NULL;
 static struct gpio_callback gpio_cb;
 
 u8_t sh_write_buf[SS_TX_BUF_SIZE]={0};
@@ -92,12 +92,18 @@ void wait_ms(int ms)
 
 void PPG_i2c_on(void)
 {
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
+
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 1);
 }
 
 void PPG_i2c_off(void)
 {
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
+
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 0);
 }
@@ -138,7 +144,8 @@ static void sh_init_gpio(void)
 {
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
 
-	gpio_ppg = device_get_binding(PPG_PORT);
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
 	
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
@@ -149,6 +156,7 @@ static void sh_init_gpio(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
+	k_sleep(K_MSEC(10));
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 1);

@@ -23,6 +23,7 @@
 //#define TP_DEBUG
 //#define TP_TEST
 
+bool tp_int_flag = false;
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
 
@@ -502,7 +503,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 
 void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 {
-	u8_t strbuf[128] = {0};
 	u16_t x,y,w,h;
 
 	if(lcd_is_sleeping)
@@ -520,67 +520,59 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 	#ifdef TP_DEBUG
 		LOGD("tp none!");
 	#endif
-		sprintf(strbuf, "GESTURE_NONE");
 		break;
 	case TP_EVENT_MOVING_UP:
 	#ifdef TP_DEBUG
 		LOGD("tp moving up! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "MOVING_UP   ");
 		break;
 	case TP_EVENT_MOVING_DOWN:
 	#ifdef TP_DEBUG
 		LOGD("tp moving down! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "MOVING_DOWN ");
 		break;
 	case TP_EVENT_MOVING_LEFT:
 	#ifdef TP_DEBUG
 		LOGD("tp moving left! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "MOVING_LEFT ");
 		break;
 	case TP_EVENT_MOVING_RIGHT:
 	#ifdef TP_DEBUG
 		LOGD("tp moving right! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "MOVING_RIGHT");
 		break;
 	case TP_EVENT_SINGLE_CLICK:
 	#ifdef TP_DEBUG
 		LOGD("tp single click! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "SINGLE_CLICK");
 		break;
 	case TP_EVENT_DOUBLE_CLICK:
 	#ifdef TP_DEBUG
 		LOGD("tp double click! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "DOUBLE_CLICK");
 		break;
 	case TP_EVENT_LONG_PRESS:
 	#ifdef TP_DEBUG
 		LOGD("tp long press! x:%d, y:%d", x_pos,y_pos);
 	#endif
-		sprintf(strbuf, "LONG_PRESS  ");
 		break;
 	case TP_EVENT_MAX:
 		break;
 	}
 
-#ifdef TP_TEST //xb test 2022-04-21
 	tp_msg.evt_id = tp_type;
 	tp_msg.x_pos = x_pos;
 	tp_msg.y_pos = y_pos;
+	
+#ifdef TP_TEST //xb test 2022-04-21
 	tp_redraw_flag = true;
-#else
-	check_touch_event_handle(tp_type, x_pos, y_pos);
 #endif
+	tp_trige_flag = true;
 }
 
 void CaptouchInterruptHandle(void)
 {
-	tp_trige_flag = true;
+	tp_int_flag = true;
 }
 
 void tp_interrupt_proc(void)
@@ -775,12 +767,18 @@ void tp_show_infor(void)
 
 void TPMsgProcess(void)
 {
-	if(tp_trige_flag)
+	if(tp_int_flag)
 	{
-		tp_trige_flag = false;
+		tp_int_flag = false;
 		tp_interrupt_proc();
 	}
 
+	if(tp_trige_flag)
+	{
+		tp_trige_flag = false;
+		check_touch_event_handle(tp_msg.evt_id, tp_msg.x_pos, tp_msg.y_pos);
+	}
+	
 	if(tp_redraw_flag)
 	{
 		tp_redraw_flag = false;

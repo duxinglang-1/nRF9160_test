@@ -31,7 +31,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #endif
 #include "logger.h"
 
-//#define IMU_DEBUG
+#define IMU_DEBUG
 
 #define IMU_DEV "I2C_1"
 #define IMU_PORT "GPIO_0"
@@ -368,6 +368,11 @@ void UpdateIMUData(void)
 	save_cur_sport_to_record(&last_sport);
 	
 	//StepCheckSendLocationData(g_steps);
+	
+	if(date_time.hour == 23)//xb add 2022-05-31 防止23点到0点之间的数据没有被记录到
+	{
+		SetCurDayStepRecData(g_steps);
+	}
 }
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)

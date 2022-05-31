@@ -208,7 +208,11 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 
 bool is_wearing(void)
 {
+#ifdef WEAR_CHECK_SUPPORT
 	return touch_flag;
+#else
+	return true;
+#endif
 }
 
 static void key_event_handler(u8_t key_code, u8_t key_type)

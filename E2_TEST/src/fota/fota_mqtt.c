@@ -272,7 +272,7 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 		
 	case FOTA_DOWNLOAD_EVT_FINISHED:
 	#ifdef FOTA_DEBUG
-		LOGD("Received finished!");
+		LOGD("Received finished!");
 	#endif
 		fota_cur_status = FOTA_STATUS_FINISHED;
 		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);

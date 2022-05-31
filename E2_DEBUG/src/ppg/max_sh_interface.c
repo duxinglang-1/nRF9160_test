@@ -1285,6 +1285,14 @@ bool sh_init_interface(void)
 	#endif
 		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, NULL, 0, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
+		s32_status = sh_get_hub_fw_version(u8_rxbuf);
+		if(s32_status == SS_SUCCESS)
+		{
+			sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		#ifdef MAX_DEBUG
+			LOGD("FW version is:%s", g_ppg_ver);
+		#endif
+		}
 		LCD_SleepOut();
 	}
 

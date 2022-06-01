@@ -25,7 +25,7 @@
 &uart0{
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <29>;
+	tx-pin = <4>;
 	rx-pin = <28>;
 	#rts-pin = <14>;
 	#cts-pin = <15>;

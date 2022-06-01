@@ -97,6 +97,9 @@ void PPG_i2c_on(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 1);
+
+	gpio_pin_configure(gpio_ppg, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, 29, 1);
 }
 
 void PPG_i2c_off(void)
@@ -106,6 +109,9 @@ void PPG_i2c_off(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, 29, 0);
 }
 
 void PPG_Enable(void)
@@ -160,6 +166,9 @@ static void sh_init_gpio(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 1);
+
+	gpio_pin_configure(gpio_ppg, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, 29, 1);
 	
 	//PPGÄ£Ê½Ñ¡Ôñ(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_DIR_OUT);

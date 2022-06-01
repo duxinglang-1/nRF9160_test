@@ -203,6 +203,55 @@ void pmu_battery_low_shutdown(void)
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), NULL);
 }
 
+void pmu_battery_update(void)
+{
+	u8_t tmpbuf[128] = {0};
+
+	g_bat_soc = MAX20353_CalculateSOC();
+#ifdef PMU_DEBUG
+	LOGD("SOC:%d", g_bat_soc);
+#endif	
+	if(g_bat_soc>100)
+		g_bat_soc = 100;
+	
+	if(g_bat_soc < 5)
+	{
+		g_bat_level = BAT_LEVEL_VERY_LOW;
+		if(!charger_is_connected)
+		{
+			pmu_battery_low_shutdown();
+		}
+	}
+	else if(g_bat_soc < 10)
+	{
+		g_bat_level = BAT_LEVEL_LOW;
+	}
+	else if(g_bat_soc < 80)
+	{
+		g_bat_level = BAT_LEVEL_NORMAL;
+	}
+	else
+	{
+		g_bat_level = BAT_LEVEL_GOOD;
+	}
+
+	if(charger_is_connected)
+	{
+		g_bat_level = BAT_LEVEL_NORMAL;
+		if(screen_id == SCREEN_ID_NOTIFY)
+		{
+			sprintf(tmpbuf, "%d%%", g_bat_soc);
+			mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
+			
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
+		}
+	}
+
+	if(g_chg_status == BAT_CHARGING_NO)
+		pmu_redraw_bat_flag = true;
+}
+
 bool pmu_interrupt_proc(void)
 {
 	u8_t i,val;
@@ -352,7 +401,6 @@ void PmuInterruptHandle(void)
 bool pmu_alert_proc(void)
 {
 	u8_t i;
-	u8_t tmpbuf[128] = {0};
 	notify_infor infor = {0};
 	int ret;
 	u8_t MSB=0,LSB=0;
@@ -384,50 +432,11 @@ bool pmu_alert_proc(void)
 	{
 		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
 		MSB = MSB&0xDF;
-
-		g_bat_soc = MAX20353_CalculateSOC();
 	#ifdef PMU_DEBUG
-		LOGD("SOC:%d", g_bat_soc);
-	#endif	
-		if(g_bat_soc>100)
-			g_bat_soc = 100;
-		
-		if(g_bat_soc < 5)
-		{
-			g_bat_level = BAT_LEVEL_VERY_LOW;
-			if(!charger_is_connected)
-			{
-				pmu_battery_low_shutdown();
-			}
-		}
-		else if(g_bat_soc < 10)
-		{
-			g_bat_level = BAT_LEVEL_LOW;
-		}
-		else if(g_bat_soc < 80)
-		{
-			g_bat_level = BAT_LEVEL_NORMAL;
-		}
-		else
-		{
-			g_bat_level = BAT_LEVEL_GOOD;
-		}
+		LOGD("SOC change alert!");
+	#endif
 
-		if(charger_is_connected)
-		{
-			g_bat_level = BAT_LEVEL_NORMAL;
-			if(screen_id == SCREEN_ID_NOTIFY)
-			{
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
-				
-				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
-			}
-		}
-
-		if(g_chg_status == BAT_CHARGING_NO)
-			pmu_redraw_bat_flag = true;
+		pmu_battery_update();
 	}
 	if(MSB&0x10)
 	{

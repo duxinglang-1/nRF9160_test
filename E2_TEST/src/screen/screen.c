@@ -190,28 +190,77 @@ void IdleShowSystemDate(void)
 {
 	u16_t x,y,w,h;
 	u8_t str_date[20] = {0};
+	u8_t tmpbuf[128] = {0};
+#ifdef FONTMAKER_UNICODE_FONT	
+	u16_t str_mon[LANGUAGE_MAX][12][5] = {
+										{
+											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
+											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
+											{0x004D,0x0061,0x0072,0x0000,0x0000},//"Mar"
+											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
+											{0x004D,0x0061,0x0079,0x0000,0x0000},//"May"
+											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
+											{0x004A,0x0075,0x006C,0x0000,0x0000},//"Jul"
+											{0x0041,0x0075,0x0067,0x0000,0x0000},//"Aug"
+											{0x0053,0x0065,0x0070,0x0074,0x0000},//"Sept"
+											{0x004F,0x0063,0x0074,0x0000,0x0000},//"Oct"
+											{0x004E,0x006F,0x0076,0x0000,0x0000},//"Nov"
+											{0x0044,0x0065,0x0063,0x0000,0x0000} //"Dec"
+										},
+										{
+											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
+											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
+											{0x004D,0x00E4,0x0072,0x007A,0x0000},//"März"
+											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
+											{0x004D,0x0061,0x0069,0x0000,0x0000},//"Mai"
+											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
+											{0x004A,0x0075,0x006C,0x0000,0x0000},//"Jul"
+											{0x0041,0x0075,0x0067,0x0000,0x0000},//"Aug"
+											{0x0053,0x0065,0x0070,0x0074,0x0000},//"Sept"
+											{0x004F,0x006B,0x0074,0x0000,0x0000},//"Okt"
+											{0x004E,0x006F,0x0076,0x0000,0x0000},//"Nov"
+											{0x0044,0x0065,0x007A,0x0000,0x0000} //"Dez"
+										},
+										{
+											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
+											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
+											{0x004D,0x0061,0x0072,0x0000,0x0000},//"Mar"
+											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
+											{0x004D,0x0061,0x0079,0x0000,0x0000},//"May"
+											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
+											{0x004A,0x0075,0x006C,0x0000,0x0000},//"Jul"
+											{0x0041,0x0075,0x0067,0x0000,0x0000},//"Aug"
+											{0x0053,0x0065,0x0070,0x0074,0x0000},//"Sept"
+											{0x004F,0x0063,0x0074,0x0000,0x0000},//"Oct"
+											{0x004E,0x006F,0x0076,0x0000,0x0000},//"Nov"
+											{0x0044,0x0065,0x0063,0x0000,0x0000} //"Dec"
+										},
+									};
+#else	
 	u8_t *str_mon[12] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"};
-	
+#endif
+
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_36);
+
+	LCD_FillColor(IDLE_DATE_DAY_X, IDLE_DATE_DAY_Y, IDLE_DATE_DAY_W, IDLE_DATE_DAY_H, BLACK);
+	sprintf((char*)str_date, "%02d", date_time.day);
+	mmi_asc_to_ucs2(tmpbuf, str_date);
+	LCD_ShowUniString(IDLE_DATE_DAY_X, IDLE_DATE_DAY_Y, (u16_t*)tmpbuf);
+
+	LCD_FillColor(IDLE_DATE_MON_X, IDLE_DATE_MON_Y, IDLE_DATE_MON_W, IDLE_DATE_MON_H, BLACK);
+	LCD_ShowUniString(IDLE_DATE_MON_X, IDLE_DATE_MON_Y, str_mon[global_settings.language][date_time.month-1]);
 #else
 	LCD_SetFontSize(FONT_SIZE_32);
-#endif
 
 	sprintf((char*)str_date, "%02d", date_time.day);
-	LCD_MeasureString(str_date,&w,&h);
-	x = IDLE_DATE_DAY_X;
-	y = IDLE_DATE_DAY_Y;
-	LCD_ShowString(x,y,str_date);
-
+	LCD_ShowString(IDLE_DATE_DAY_X,IDLE_DATE_DAY_Y,str_date);
 	strcpy((char*)str_date, str_mon[date_time.month-1]);
-	LCD_MeasureString(str_date,&w,&h);
-	x = IDLE_DATE_MON_X;
-	y = IDLE_DATE_MON_Y;
-	LCD_ShowString(x,y,str_date);
+	LCD_ShowString(IDLE_DATE_MON_X,IDLE_DATE_MON_Y,str_date);
+#endif
 }
 
 void IdleShowBleStatus(bool flag)
@@ -313,6 +362,7 @@ void IdleShowSystemWeek(void)
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_FillColor(IDLE_WEEK_X, IDLE_WEEK_Y, IDLE_WEEK_W, IDLE_WEEK_H, BLACK);
 	LCD_ShowUniString(IDLE_WEEK_X, IDLE_WEEK_Y, str_week[global_settings.language][date_time.week]);
 #else
 	LCD_SetFontSize(FONT_SIZE_32);

@@ -35,10 +35,16 @@ extern "C" {
 #define IDLE_TIME_Y	52
 #define IDLE_DATE_MON_X	149
 #define IDLE_DATE_MON_Y	120
+#define IDLE_DATE_MON_W	65
+#define IDLE_DATE_MON_H	36
 #define IDLE_DATE_DAY_X	110
 #define IDLE_DATE_DAY_Y	120
+#define IDLE_DATE_DAY_W	28
+#define IDLE_DATE_DAY_H	36
 #define IDLE_WEEK_X	45
 #define IDLE_WEEK_Y	120
+#define IDLE_WEEK_W	60
+#define IDLE_WEEK_H	36
 
 //ble
 #define IDLE_BLE_X		45

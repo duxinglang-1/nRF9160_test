@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "inner_flash.h"
+#include "lsm6dso.h"
 #include "logger.h"
 
 //#define INNER_FLASH_DEBUG
@@ -230,7 +231,6 @@ bool clear_current_data_in_record(ENUM_RECORD_TYPE record_type)
 
 void clear_cur_local_in_record(void)
 {
-	memset(last_sport, 0, sizeof(last_sport));
 	clear_current_data_in_record(RECORD_TYPE_LOCATION);
 }
 
@@ -241,7 +241,7 @@ void clear_cur_health_in_record(void)
 
 void clear_cur_sport_in_record(void)
 {
-	memset(last_sport, 0, sizeof(last_sport));
+	memset(&last_sport, 0, sizeof(last_sport));
 	
 	clear_current_data_in_record(RECORD_TYPE_SPORT);
 }

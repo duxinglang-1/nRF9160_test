@@ -62,8 +62,8 @@ void ClearAllBptRecData(void)
 {
 	u8_t tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0xff};
 
-	memset(g_bpt, 0, sizeof(bpt_data));
-	memset(g_bpt_timing, 0, sizeof(bpt_data));
+	memset(&g_bpt, 0, sizeof(bpt_data));
+	memset(&g_bpt_timing, 0, sizeof(bpt_data));
 	
 	SpiFlash_Write(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 }

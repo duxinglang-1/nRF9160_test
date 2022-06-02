@@ -4184,6 +4184,7 @@ void EnterNBTestScreen(void)
 	SetRightKeyUpHandler(ExitNBTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 #endif
 }
 

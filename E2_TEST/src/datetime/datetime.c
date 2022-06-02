@@ -27,6 +27,7 @@
 #include "temp.h"
 #endif
 #include "screen.h"
+#include "nb.h"
 #include "ucs2.h"
 #include "logger.h"
 
@@ -453,7 +454,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#if defined(CONFIG_FOTA_DOWNLOAD)||defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+	#ifndef NB_SIGNAL_TEST
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -462,7 +463,6 @@ void UpdateSystemTime(void)
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
-	#endif		
 		{
 		#ifdef CONFIG_PPG_SUPPORT
 			if((date_time.minute+PPG_CHECK_TIMELY) == 59)
@@ -481,12 +481,14 @@ void UpdateSystemTime(void)
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();
 		}
+	#endif
 	}
 
 	if((date_time_changed&0x04) != 0)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
+	#ifndef NB_SIGNAL_TEST
 		if(1
   			#ifdef CONFIG_FOTA_DOWNLOAD
 				&& (!fota_is_running())
@@ -523,6 +525,7 @@ void UpdateSystemTime(void)
 				TimeCheckSendHealthData();
 			}
 		}
+	#endif		
 	}
 
 	if((date_time_changed&0x08) != 0)

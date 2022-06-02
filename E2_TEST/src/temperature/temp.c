@@ -56,6 +56,17 @@ static void temp_get_timerout(struct k_timer *timer_id)
 	temp_get_data_flag = true;
 }
 
+void ClearAllTempRecData(void)
+{
+	u8_t tmpbuf[TEMP_REC2_DATA_SIZE] = {0xff};
+
+	g_temp_skin = 0.0;
+	g_temp_body = 0.0;
+	g_temp_timing = 0.0;
+
+	SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+}
+
 void SetCurDayTempRecData(float data)
 {
 	u8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};

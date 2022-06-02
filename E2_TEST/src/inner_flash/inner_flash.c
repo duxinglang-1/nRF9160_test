@@ -175,6 +175,78 @@ void test_nvs(void)
 	}
 }
 
+bool clear_current_data_in_record(ENUM_RECORD_TYPE record_type)
+{
+	ssize_t bytes_written;
+	u16_t addr_id;
+	u32_t data_len;
+	imu_data_u data = {0};
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
+
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		addr_id = CUR_LOCAL_ID;
+		data_len = sizeof(local_record_t);
+		break;
+
+	case RECORD_TYPE_HEALTH:
+		addr_id = CUR_HEALTH_ID;
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		addr_id = CUR_SPORT_ID;
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	bytes_written = nvs_write(&fs, addr_id, &data, data_len);
+	if(bytes_written <= 0)
+	{
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("save current %d_data fail!", record_type);
+	#endif
+		return false;
+	}
+
+#ifdef INNER_FLASH_DEBUG
+	LOGD("save current %d_data success!", record_type);
+#endif
+	return true;	
+}
+
+void clear_cur_local_in_record(void)
+{
+	memset(last_sport, 0, sizeof(last_sport));
+	clear_current_data_in_record(RECORD_TYPE_LOCATION);
+}
+
+void clear_cur_health_in_record(void)
+{
+	clear_current_data_in_record(RECORD_TYPE_HEALTH);
+}
+
+void clear_cur_sport_in_record(void)
+{
+	memset(last_sport, 0, sizeof(last_sport));
+	
+	clear_current_data_in_record(RECORD_TYPE_SPORT);
+}
+
+
 bool save_current_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 {
 	ssize_t bytes_written;
@@ -428,6 +500,92 @@ bool save_health_to_record(health_record_t *health_data)
 bool save_sport_to_record(sport_record_t *sport_data)
 {
 	return save_data_to_record(sport_data, RECORD_TYPE_SPORT);
+}
+
+bool clear_data_in_record(ENUM_RECORD_TYPE record_type)
+{
+	u16_t nvs_rx=0;
+	ssize_t bytes_written,bytes_read;
+	u16_t index_addr_id,count_addr_id;
+	u16_t index_begin,index_max,count_max;
+	u16_t tmp_index,tmp_count;
+	u32_t data_len;
+	imu_data_u data = {0};
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return false;
+		}
+	}
+	
+	switch(record_type)
+	{
+	case RECORD_TYPE_LOCATION:
+		index_addr_id = LOCAL_INDEX_ADDR_ID;
+		count_addr_id = LOCAL_COUNT_ADDR_ID;
+		index_begin = LOCAL_INDEX_BEGIN;
+		index_max = LOCAL_INDEX_MAX;
+		count_max = (LOCAL_INDEX_MAX-LOCAL_INDEX_BEGIN);
+		data_len = sizeof(local_record_t);
+		break;
+
+	case RECORD_TYPE_HEALTH:
+		index_addr_id = HEALTH_INDEX_ADDR_ID;
+		count_addr_id = HEALTH_COUNT_ADDR_ID;
+		index_begin = HEALTH_INDEX_BEGIN;
+		index_max = HEALTH_INDEX_MAX;
+		count_max = (HEALTH_INDEX_MAX-HEALTH_INDEX_BEGIN);
+		data_len = sizeof(health_record_t);
+		break;
+
+	case RECORD_TYPE_SPORT:
+		index_addr_id = SPORT_INDEX_ADDR_ID;
+		count_addr_id = SPORT_COUNT_ADDR_ID;
+		index_begin = SPORT_INDEX_BEGIN;
+		index_max = SPORT_INDEX_MAX;
+		count_max = (SPORT_INDEX_MAX-SPORT_INDEX_BEGIN);
+		data_len = sizeof(sport_record_t);
+		break;
+	}
+
+	tmp_index = index_begin;
+	tmp_count = 0;
+	
+	bytes_written = nvs_write(&fs, tmp_index, &data, data_len);
+	if(bytes_written <= 0)
+		return false;
+
+	bytes_written = nvs_write(&fs, index_addr_id, &tmp_index, sizeof(tmp_index));
+	if(bytes_written <= 0)
+		return false;
+	
+	bytes_written = nvs_write(&fs, count_addr_id, &tmp_count, sizeof(tmp_count));
+	if(bytes_written <= 0)
+		return false;
+
+	return true;	
+}
+
+void clear_local_in_record(void)
+{
+	clear_data_in_record(RECORD_TYPE_LOCATION);
+}
+
+void clear_health_in_record(void)
+{
+	clear_data_in_record(RECORD_TYPE_HEALTH);
+}
+
+void clear_sport_in_record(void)
+{
+	clear_data_in_record(RECORD_TYPE_SPORT);
 }
 
 bool get_date_from_record(void *databuf, u32_t index, ENUM_RECORD_TYPE record_type)

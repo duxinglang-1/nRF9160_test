@@ -67,6 +67,18 @@ sport_record_t last_sport = {0};
 
 extern bool update_sleep_parameter;
 
+void ClearAllStepRecData(void)
+{
+	u8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
+
+	g_last_steps = 0;
+	g_steps = 0;
+	g_distance = 0;
+	g_calorie = 0;
+		
+	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+}
+
 void SetCurDayStepRecData(u16_t data)
 {
 	u8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};

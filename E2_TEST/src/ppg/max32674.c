@@ -58,6 +58,16 @@ K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
 static void ppg_get_data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 
+void ClearAllBptRecData(void)
+{
+	u8_t tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0xff};
+
+	memset(g_bpt, 0, sizeof(bpt_data));
+	memset(g_bpt_timing, 0, sizeof(bpt_data));
+	
+	SpiFlash_Write(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+}
+
 void SetCurDayBptRecData(bpt_data bpt)
 {
 	u8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
@@ -134,6 +144,16 @@ void GetCurDayBptRecData(u8_t *databuf)
 	}
 }
 
+void ClearAllSpo2RecData(void)
+{
+	u8_t tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0xff};
+
+	g_spo2 = 0;
+	g_spo2_timing = 0;
+
+	SpiFlash_Write(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+}
+
 void SetCurDaySpo2RecData(u8_t spo2)
 {
 	u8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
@@ -208,6 +228,16 @@ void GetCurDaySpo2RecData(u8_t *databuf)
 			break;
 		}
 	}
+}
+
+void ClearAllHrRecData(void)
+{
+	u8_t tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0xff};
+
+	g_hr = 0;
+	g_hr_timing = 0;
+
+	SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 }
 
 void SetCurDayHrRecData(u8_t hr)

@@ -78,6 +78,13 @@ typedef struct
 	struct gps_datetime datetime;
 }local_record_t;
 
+typedef union
+{
+	sport_record_t sport;
+	health_record_t health;
+	local_record_t local;
+}imu_data_u;
+
 extern void test_nvs(void);
 
 extern void ReadSettingsFromInnerFlash(global_settings_t *settings);

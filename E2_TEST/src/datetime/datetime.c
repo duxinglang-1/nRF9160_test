@@ -465,14 +465,18 @@ void UpdateSystemTime(void)
 		)
 		{
 		#ifdef CONFIG_PPG_SUPPORT
-			if((date_time.minute+PPG_CHECK_TIMELY) == 59)
+			if((date_time.minute+PPG_CHECK_BPT_TIMELY) == 54)
 			{
 				TimerStartBpt();
+			}
+			if((date_time.minute+PPG_CHECK_SPO2_TIMELY) == 59)
+			{
+				TimerStartHrSpo2();
 			}
 		#endif/*CONFIG_PPG_SUPPORT*/
 		
 		#ifdef CONFIG_TEMP_SUPPORT
-			if((date_time.minute+TEMP_CHECK_TIMELY) == 55)
+			if((date_time.minute+TEMP_CHECK_TIMELY) == 50)
 			{	
 				TimerStartTemp();
 			}

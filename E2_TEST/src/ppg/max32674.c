@@ -689,33 +689,11 @@ void PPGGetSensorHubData(void)
 						#endif
 
 							get_bpt_flag = true;
-							if(g_ppg_trigger == TRIGGER_BY_MENU)
-								PPGStopCheck();
-						}
-
-						if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
-						{
-							whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
-							
-						#ifdef PPG_DEBUG
-							LOGD("skin:%d, hr:%d, spo2:%d", sensorhub_out.scd_contact_state, sensorhub_out.hr, sensorhub_out.spo2);
-						#endif
-
-							if((g_hr > 0) && (g_spo2 > 0))
-							{
-								PPGStopCheck();
-								return;
-							}
-							else if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
-							{
-								heart_rate += sensorhub_out.hr;
-								spo2 += sensorhub_out.spo2;
-								j++;
-							}
+							PPGStopCheck();
 						}
 					}
 				}
-				else
+				else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 				{
 					//accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
 					//max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
@@ -734,19 +712,25 @@ void PPGGetSensorHubData(void)
 				}
 			}
 
-			if((g_ppg_alg_mode == ALG_MODE_HR_SPO2) || ((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST)))
+			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
 				if(j > 0)
 				{
 					heart_rate = heart_rate/j;
 					spo2 = spo2/j;
 				}
+
 				g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
 				g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
 			#ifdef PPG_DEBUG
 				LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
 				LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
-			#endif	
+			#endif
+
+				if((g_hr > 0) && (g_spo2 > 0))
+				{
+					PPGStopCheck();
+				}
 			}
 		}
 		else
@@ -852,8 +836,6 @@ void MenuStopHrSpo2(void)
 
 void TimerStartBpt(void)
 {
-	g_hr = 0;
-	g_spo2 = 0;
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
 
@@ -1011,7 +993,16 @@ void PPGStartCheck(void)
 		ppg_power_flag = 2;
 
 		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-			k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_TIMELY*60*1000), NULL);
+		{
+			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+			{
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_SPO2_TIMELY*60*1000), NULL);
+			}
+			else if(g_ppg_alg_mode == ALG_MODE_BPT)
+			{
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), NULL);
+			}
+		}
 	}
 	else
 	{
@@ -1059,9 +1050,15 @@ void PPGStopCheck(void)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
 
-		g_hr_timing = g_hr;
-		g_spo2_timing = g_spo2;
-		memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
+		if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+		{
+			g_hr_timing = g_hr;
+			g_spo2_timing = g_spo2;
+		}
+		else if(g_ppg_alg_mode == ALG_MODE_BPT)
+		{
+			memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
+		}
 	}
 }
 

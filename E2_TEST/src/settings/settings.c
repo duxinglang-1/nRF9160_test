@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V1.6.9_20220602";
+u8_t g_fw_version[64] = "V1.7.0_20220606";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -571,13 +571,15 @@ void ResetFactoryDefault(void)
 	ResetSystemSettings();
 
 	clear_cur_local_in_record();
+	clear_local_in_record();	
 	clear_cur_health_in_record();
-	clear_cur_sport_in_record();
-	clear_local_in_record();
 	clear_health_in_record();
-	clear_sport_in_record();
-
 #ifdef CONFIG_IMU_SUPPORT
+	clear_cur_sport_in_record();
+	clear_sport_in_record();
+#endif
+
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 	ClearAllStepRecData();
 #endif
 #ifdef CONFIG_PPG_SUPPORT

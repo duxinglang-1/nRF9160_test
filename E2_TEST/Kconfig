@@ -221,6 +221,12 @@ menu "IMU"
 config IMU_SUPPORT
 	bool "imu support"
 	default n
+config STEP_SUPPORT
+	bool "step support"
+	default n		
+config SLEEP_SUPPORT
+	bool "sleep support"
+	default n		
 config FALL_DETECT_SUPPORT
 	bool "fall detect support"
 	default n		

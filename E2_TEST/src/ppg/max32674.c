@@ -72,9 +72,15 @@ void SetCurDayBptRecData(bpt_data bpt)
 {
 	u8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data *p_bpt = NULL;
+
+	if((bpt.systolic > PPG_BPT_SYS_MAX) || (bpt.systolic < PPG_BPT_SYS_MIN) 
+		|| (bpt.diastolic > PPG_BPT_DIA_MAX) || (bpt.diastolic < PPG_BPT_DIA_MIN)
+		)
+	{
+		memset(&bpt, 0, sizeof(bpt_data));
+	}
 	
 	SpiFlash_Read(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
-
 	p_bpt = tmpbuf+6*sizeof(ppg_bpt_rec2_data);
 	if(((date_time.year > p_bpt->year)&&(p_bpt->year != 0xffff && p_bpt->year != 0x0000))
 		||((date_time.year == p_bpt->year)&&(date_time.month > p_bpt->month)&&(p_bpt->month != 0xff && p_bpt->month != 0x00))
@@ -158,9 +164,11 @@ void SetCurDaySpo2RecData(u8_t spo2)
 {
 	u8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	ppg_spo2_rec2_data *p_spo2 = NULL;
-	
-	SpiFlash_Read(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
 
+	if((spo2 > PPG_SPO2_MAX) || (spo2 < PPG_SPO2_MIN))
+		spo2 = 0;
+
+	SpiFlash_Read(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
 	p_spo2 = tmpbuf+6*sizeof(ppg_spo2_rec2_data);
 	if(((date_time.year > p_spo2->year)&&(p_spo2->year != 0xffff && p_spo2->year != 0x0000))
 		||((date_time.year == p_spo2->year)&&(date_time.month > p_spo2->month)&&(p_spo2->month != 0xff && p_spo2->month != 0x00))
@@ -244,9 +252,11 @@ void SetCurDayHrRecData(u8_t hr)
 {
 	u8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	ppg_hr_rec2_data *p_hr = NULL;
+
+	if((hr > PPG_HR_MAX) || (hr < PPG_HR_MIN))
+		hr = 0;
 	
 	SpiFlash_Read(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
-
 	p_hr = tmpbuf+6*sizeof(ppg_hr_rec2_data);
 	if(((date_time.year > p_hr->year)&&(p_hr->year != 0xffff && p_hr->year != 0x0000))
 		||((date_time.year == p_hr->year)&&(date_time.month > p_hr->month)&&(p_hr->month != 0xff && p_hr->month != 0x00))

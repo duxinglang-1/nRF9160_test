@@ -15,6 +15,15 @@
 
 #define PPG_CHECK_TIMELY	5
 
+#define PPG_HR_MAX		150
+#define PPG_HR_MIN		30
+#define PPG_SPO2_MAX	100
+#define	PPG_SPO2_MIN	80
+#define PPG_BPT_SYS_MAX	180
+#define PPG_BPT_SYS_MIN	30
+#define PPG_BPT_DIA_MAX	180
+#define PPG_BPT_DIA_MIN	30
+
 typedef enum
 {
 	ALG_MODE_HR_SPO2,

@@ -523,10 +523,14 @@ void IMU_init(struct k_work_q *work_q)
 	imu_check_ok = sensor_init();
 	if(!imu_check_ok)
 		return;
-	
+
+#ifdef CONFIG_STEP_SUPPORT
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
 	StartSleepTimeMonitor();
+#endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
@@ -649,6 +653,7 @@ void IMUMsgProcess(void)
 		return;
 	}
 
+#ifdef CONFIG_STEP_SUPPORT
 	if(int1_event)	//steps
 	{
 	#ifdef IMU_DEBUG
@@ -665,7 +670,8 @@ void IMUMsgProcess(void)
 		UpdateIMUData();
 		imu_redraw_steps_flag = true;	
 	}
-		
+#endif
+
 	if(int2_event) //tilt
 	{
 	#ifdef IMU_DEBUG
@@ -691,7 +697,8 @@ void IMUMsgProcess(void)
 			}
 		}
 	}
-	
+
+#ifdef CONFIG_STEP_SUPPORT	
 	if(reset_steps)
 	{
 		reset_steps = false;
@@ -712,7 +719,9 @@ void IMUMsgProcess(void)
 		
 		IMURedrawSteps();
 	}
+#endif
 
+#ifdef CONFIG_SLEEP_SUPPORT
 	if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
@@ -722,5 +731,6 @@ void IMUMsgProcess(void)
 
 		UpdateSleepPara();
 	}
+#endif	
 }
 #endif/*CONFIG_IMU_SUPPORT*/

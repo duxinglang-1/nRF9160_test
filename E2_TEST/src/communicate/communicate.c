@@ -182,7 +182,7 @@ void TimeCheckSendHealthData(void)
 	//activity time
 	strcat(databuf, "0,");
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 #endif
 	//light sleep time
@@ -198,7 +198,7 @@ void TimeCheckSendHealthData(void)
 	//move body
 	strcat(databuf, "0,");
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 	GetCurDayStepRecData(step_data);
 #endif
 	for(i=0;i<24;i++)
@@ -388,8 +388,12 @@ void SyncSendHealthData(void)
 	u8_t databuf[128] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
+  #ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
+  #endif
+  #ifdef CONFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+  #endif
 #endif
 
 	//steps

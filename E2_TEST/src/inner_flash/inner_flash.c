@@ -13,7 +13,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "inner_flash.h"
+#ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
+#endif
 #include "logger.h"
 
 //#define INNER_FLASH_DEBUG
@@ -239,13 +241,14 @@ void clear_cur_health_in_record(void)
 	clear_current_data_in_record(RECORD_TYPE_HEALTH);
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void clear_cur_sport_in_record(void)
 {
 	memset(&last_sport, 0, sizeof(last_sport));
 	
 	clear_current_data_in_record(RECORD_TYPE_SPORT);
 }
-
+#endif
 
 bool save_current_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 {
@@ -309,10 +312,12 @@ bool save_cur_health_to_record(health_record_t *health_data)
 	return save_current_data_to_record(health_data, RECORD_TYPE_HEALTH);
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 bool save_cur_sport_to_record(sport_record_t *sport_data)
 {
 	return save_current_data_to_record(sport_data, RECORD_TYPE_SPORT);
 }
+#endif
 
 bool get_current_data_from_record(void *data, ENUM_RECORD_TYPE record_type)
 {
@@ -376,10 +381,12 @@ bool get_cur_health_from_record(health_record_t *health_data)
 	return get_current_data_from_record(health_data, RECORD_TYPE_HEALTH);
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 bool get_cur_sport_from_record(sport_record_t *sport_data)
 {
 	return get_current_data_from_record(sport_data, RECORD_TYPE_SPORT);
 }
+#endif
 
 bool save_data_to_record(void *data, ENUM_RECORD_TYPE record_type)
 {
@@ -583,10 +590,12 @@ void clear_health_in_record(void)
 	clear_data_in_record(RECORD_TYPE_HEALTH);
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 void clear_sport_in_record(void)
 {
 	clear_data_in_record(RECORD_TYPE_SPORT);
 }
+#endif
 
 bool get_date_from_record(void *databuf, u32_t index, ENUM_RECORD_TYPE record_type)
 {
@@ -695,10 +704,12 @@ bool get_health_from_record(health_record_t *health_data, u32_t index)
 	return get_date_from_record(health_data, index, RECORD_TYPE_HEALTH);
 }
 
+#ifdef CONFIG_IMU_SUPPORT
 bool get_sport_from_record(sport_record_t *sport_data, u32_t index)
 {
 	return get_date_from_record(sport_data, index, RECORD_TYPE_SPORT);
 }
+#endif
 
 bool get_last_data_from_record(void *databuf, ENUM_RECORD_TYPE record_type)
 {

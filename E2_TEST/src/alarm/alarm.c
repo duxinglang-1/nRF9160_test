@@ -41,9 +41,6 @@ bool app_find_device = false;
 extern bool lcd_sleep_out;
 extern bool show_date_time_first;
 
-extern void VibrateStart(void);
-extern void VibrateStop(void);
-
 void AlarmRemindStop(void)
 {
 	vibrate_stop_flag = true;

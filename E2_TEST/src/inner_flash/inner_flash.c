@@ -40,6 +40,9 @@ static bool nvs_init_flag = false;
 static struct nvs_fs fs;
 static struct flash_pages_info info;
 
+sport_record_t last_sport = {0};
+health_record_t last_health = {0};
+
 static int nvs_setup(void)
 {	
 	int err;	

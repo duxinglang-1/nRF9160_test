@@ -22,6 +22,7 @@
 #include "max_sh_interface.h"
 #include "max_sh_api.h"
 #include "datetime.h"
+#include "inner_flash.h"
 #include "external_flash.h"
 #include "logger.h"
 
@@ -765,6 +766,8 @@ void TimerStartHrSpo2(void)
 {
 	g_hr = 0;
 	g_spo2 = 0;
+	g_hr_timing = 0;
+	g_spo2_timing = 0;
 
 	if(is_wearing())
 	{
@@ -838,6 +841,8 @@ void TimerStartBpt(void)
 {
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
+	g_bpt_timing.diastolic = 0;
+	g_bpt_timing.systolic = 0;
 
 	if(is_wearing())
 	{
@@ -1060,6 +1065,25 @@ void PPGStopCheck(void)
 			memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
 		}
 	}
+
+	last_health.timestamp.year = date_time.year;
+	last_health.timestamp.month = date_time.month; 
+	last_health.timestamp.day = date_time.day;
+	last_health.timestamp.hour = date_time.hour;
+	last_health.timestamp.minute = date_time.minute;
+	last_health.timestamp.second = date_time.second;
+	last_health.timestamp.week = date_time.week;
+	if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+	{
+		last_health.hr = g_hr;
+		last_health.spo2 = g_spo2;
+	}
+	else if(g_ppg_alg_mode == ALG_MODE_BPT)
+	{
+		last_health.systolic = g_bpt.systolic;
+		last_health.diastolic = g_bpt.diastolic;
+	}
+	save_cur_health_to_record(&last_health);
 }
 
 void ppg_auto_stop_timerout(struct k_timer *timer_id)
@@ -1073,6 +1097,15 @@ void PPG_init(void)
 #ifdef PPG_DEBUG
 	LOGD("PPG_init");
 #endif
+
+	get_cur_health_from_record(&last_health);
+	if(last_health.timestamp.day == date_time.day)
+	{
+		g_hr = last_health.hr;
+		g_spo2 = last_health.spo2;
+		g_bpt.systolic = last_health.systolic;
+		g_bpt.diastolic = last_health.diastolic;
+	}
 
 	if(!sh_init_interface())
 		return;

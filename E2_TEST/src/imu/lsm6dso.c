@@ -63,8 +63,6 @@ u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
 
-sport_record_t last_sport = {0};
-
 extern bool update_sleep_parameter;
 
 void ClearAllStepRecData(void)

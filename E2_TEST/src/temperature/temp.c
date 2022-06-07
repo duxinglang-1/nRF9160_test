@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include "screen.h"
 #include "temp.h"
+#include "inner_flash.h"
 #include "logger.h"
 #if defined(TEMP_GXTS04)
 #include "gxts04.h"
@@ -229,6 +230,12 @@ void MenuStopTemp(void)
 
 void temp_init(void)
 {
+	get_cur_health_from_record(&last_health);
+	if(last_health.timestamp.day == date_time.day)
+	{
+		g_temp_body = (float)(last_health.deca_temp/10.0);
+	}
+
 #ifdef TEMP_GXTS04
 	temp_check_ok = gxts04_init();
 #elif defined(TEMP_MAX30208)
@@ -304,6 +311,16 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
 			g_temp_timing = g_temp_body;
 		}
+
+		last_health.timestamp.year = date_time.year;
+		last_health.timestamp.month = date_time.month; 
+		last_health.timestamp.day = date_time.day;
+		last_health.timestamp.hour = date_time.hour;
+		last_health.timestamp.minute = date_time.minute;
+		last_health.timestamp.second = date_time.second;
+		last_health.timestamp.week = date_time.week;
+		last_health.deca_temp = (u16_t)(g_temp_body*10);
+		save_cur_health_to_record(&last_health);
 	}
 	
 	if(temp_redraw_data_flag)

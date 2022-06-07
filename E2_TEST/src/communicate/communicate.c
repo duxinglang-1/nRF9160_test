@@ -166,7 +166,9 @@ void TimeCheckSendHealthData(void)
 	u8_t databuf[1024] = {0};
 	u8_t hr_data[24] = {0};
 	u8_t spo2_data[24] = {0};
+#ifdef CONFIG_PPG_SUPPORT	
 	bpt_data bp_data[24] = {0};
+#endif
 	u16_t temp_data[24] = {0};
 	u16_t step_data[24] = {0};
 	
@@ -265,12 +267,16 @@ void TimeCheckSendHealthData(void)
 	{
 		memset(tmpbuf,0,sizeof(tmpbuf));
 
+	#ifdef CONFIG_PPG_SUPPORT
 		if(bp_data[i].systolic == 0xff)
 			bp_data[i].systolic = 0;
 		if(bp_data[i].diastolic == 0xff)
 			bp_data[i].diastolic = 0;
 		sprintf(tmpbuf, "%d&%d", bp_data[i].systolic,bp_data[i].diastolic);
-
+	#else
+		strcpy(tmpbuf, "0&0");
+	#endif
+	
 		if(i<23)
 			strcat(tmpbuf,"|");
 		else

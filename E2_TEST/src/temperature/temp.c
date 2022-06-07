@@ -35,6 +35,8 @@ static bool temp_stop_flag = false;
 static bool temp_redraw_data_flag = false;
 static bool temp_power_flag = false;
 
+bool get_temp_ok_flag = false;
+
 u8_t g_temp_trigger = 0;
 float g_temp_skin = 0.0;
 float g_temp_body = 0.0;
@@ -268,6 +270,7 @@ void TempMsgProcess(void)
 		if(ret)
 		{
 			temp_stop_flag = true;
+			get_temp_ok_flag = true;
 		}
 	}
 
@@ -279,7 +282,8 @@ void TempMsgProcess(void)
 		gxts04_start();
 	#endif
 		temp_power_flag = true;
-	
+		get_temp_ok_flag = false;
+		
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)

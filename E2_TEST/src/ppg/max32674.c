@@ -37,6 +37,9 @@ bool ppg_get_data_flag = false;
 bool ppg_redraw_data_flag = false;
 bool ppg_get_cal_flag = false;
 bool ppg_bpt_is_calbraed = false;
+bool get_bpt_ok_flag = false;
+bool get_hr_ok_flag = false;
+bool get_spo2_ok_flag = false;
 
 u8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static u8_t whoamI=0, rst=0;
@@ -503,7 +506,6 @@ bool StartSensorhub(void)
 
 void PPGGetSensorHubData(void)
 {
-	bool get_bpt_flag = false;
 	int ret = 0;
 	int num_bytes_to_read = 0;
 	u8_t hubStatus = 0;
@@ -689,7 +691,7 @@ void PPGGetSensorHubData(void)
 							LOGD("get bpt data success!");
 						#endif
 
-							get_bpt_flag = true;
+							get_bpt_ok_flag = true;
 							PPGStopCheck();
 						}
 					}
@@ -715,6 +717,8 @@ void PPGGetSensorHubData(void)
 
 			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
+				static u8_t count = 0;
+				
 				if(j > 0)
 				{
 					heart_rate = heart_rate/j;
@@ -728,9 +732,40 @@ void PPGGetSensorHubData(void)
 				LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
 			#endif
 
-				if((g_hr > 0) && (g_spo2 > 0))
+				if(screen_id == SCREEN_ID_HR)
 				{
-					PPGStopCheck();
+					if(g_hr > 0)
+					{
+						count++;
+						if(count > 10)
+						{
+							count = 0;
+							get_hr_ok_flag = true;
+							PPGStopCheck();
+						}
+					}
+					else
+					{
+						count = 0;
+					}
+				}
+				
+				if(screen_id == SCREEN_ID_SPO2)
+				{
+					if(g_spo2 > 0)
+					{
+						count++;
+						if(count > 10)
+						{
+							count = 0;
+							get_spo2_ok_flag = true;
+							PPGStopCheck();
+						}
+					}
+					else
+					{
+						count = 0;
+					}
 				}
 			}
 		}
@@ -750,11 +785,7 @@ void PPGGetSensorHubData(void)
 
 	if(g_ppg_alg_mode == ALG_MODE_BPT)
 	{
-		static bool flag = false;
-
-		flag = !flag;
-		if(flag || get_bpt_flag)
-			ppg_redraw_data_flag = true;
+		ppg_redraw_data_flag = true;
 	}
 	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{

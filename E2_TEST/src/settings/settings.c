@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V1.7.0_20220606";
+u8_t g_fw_version[64] = "V1.7.0_20220607";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -486,6 +486,8 @@ const settings_menu_t SETTING_MENU_FW =
 
 void FactoryResetCallBack(struct k_timer *timer_id)
 {
+	extern bool sys_pwr_off_flag;
+	
 	switch(g_reset_status)
 	{
 	case RESET_STATUS_IDLE:
@@ -497,6 +499,9 @@ void FactoryResetCallBack(struct k_timer *timer_id)
 		break;
 
 	case RESET_STATUS_SUCCESS:
+		sys_reboot(0);
+		break;
+
 	case RESET_STATUS_FAIL:
 		g_reset_status = RESET_STATUS_IDLE;
 		reset_redraw_flag = true;
@@ -579,14 +584,21 @@ void ResetFactoryDefault(void)
 	clear_sport_in_record();
 #endif
 
-#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
 	ClearAllStepRecData();
 #endif
+#ifdef CONFIG_SLEEP_SUPPORT
+	ClearAllSleepRecData();
+#endif
+#endif
+
 #ifdef CONFIG_PPG_SUPPORT
 	ClearAllHrRecData();
 	ClearAllSpo2RecData();
 	ClearAllBptRecData();
 #endif
+
 #ifdef CONFIG_TEMP_SUPPORT
 	ClearAllTempRecData();
 #endif
@@ -639,11 +651,8 @@ void SettingsMsgPorcess(void)
 	if(need_reset_settings)
 	{
 		need_reset_settings = false;
-		ResetSystemSettings();
-		ResetSystemTime();
-
-		lcd_sleep_out = true;
-		update_date_time = true;
+		k_timer_start(&reset_timer, K_MSEC(1000), NULL);
+		ResetFactoryDefault();
 	}
 	if(need_reset_bk_level)
 	{

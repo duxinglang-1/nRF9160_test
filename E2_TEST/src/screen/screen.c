@@ -828,9 +828,7 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
- #ifdef NB_SIGNAL_TEST
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
- #else
+ 
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
@@ -842,7 +840,6 @@ void PowerOffShowStatus(void)
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
   #endif
- #endif  
 #endif
 }
 
@@ -1701,6 +1698,9 @@ void EnterSettingsScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #endif
  
+ #ifdef NB_SIGNAL_TEST
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+ #else
   #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
   #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -1716,6 +1716,7 @@ void EnterSettingsScreen(void)
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
   #endif
+ #endif
 #endif
 }
 
@@ -1869,6 +1870,30 @@ void TempUpdateStatus(void)
 	y = TEMP_NUM_Y+(TEMP_NUM_H-h)/2;
 	LCD_Fill(TEMP_NUM_X, TEMP_NUM_Y, TEMP_NUM_W, TEMP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
+
+	if(get_temp_ok_flag)
+	{
+		notify_infor infor = {0};
+
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_68);
+	#else		
+		LCD_SetFontSize(FONT_SIZE_64);
+	#endif
+
+		infor.w = 180;
+		infor.h = 80;
+		infor.x = (LCD_WIDTH-infor.w)/2;
+		infor.y = (LCD_HEIGHT-infor.h)/2;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		mmi_asc_to_ucs2(infor.text, tmpbuf);
+		infor.img_count = 0;
+
+		DisplayPopUp(infor);
+	}
 }
 
 void TempShowStatus(void)
@@ -2061,7 +2086,6 @@ void BPUpdateStatus(void)
 	u16_t x,y,w,h;
 	u8_t tmpbuf[64] = {0};
 	u32_t img_anima[3] = {IMG_BP_ICON_ANI_1_ADDR,IMG_BP_ICON_ANI_2_ADDR,IMG_BP_ICON_ANI_3_ADDR};
-	notify_infor infor = {0};
 
 	img_index++;
 	if(img_index >= 3)
@@ -2080,29 +2104,29 @@ void BPUpdateStatus(void)
 	LCD_Fill(BP_NUM_X, BP_NUM_Y, BP_NUM_W, BP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
-	if(g_bpt.diastolic > 0 && g_bpt.systolic > 0)
+	if(get_bpt_ok_flag)
 	{
+		notify_infor infor = {0};
+
 	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_68);
+		LCD_SetFontSize(FONT_SIZE_52);
 	#else		
-		LCD_SetFontSize(FONT_SIZE_64);
+		LCD_SetFontSize(FONT_SIZE_48);
 	#endif
 		
-		infor.x = 40;
-		infor.y = 40;
-		infor.w = (LCD_WIDTH-40)/2;
-		infor.h = (LCD_HEIGHT-40)/2;
+		infor.w = 180;
+		infor.h = 80;
+		infor.x = (LCD_WIDTH-infor.w)/2;
+		infor.y = (LCD_HEIGHT-infor.h)/2;
 
 		infor.align = NOTIFY_ALIGN_CENTER;
 		infor.type = NOTIFY_TYPE_POPUP;
 
-		strcpy(infor.text, tmpbuf);
+		mmi_asc_to_ucs2(infor.text, tmpbuf);
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
 	}
-#endif	
 }
 
 void BPShowStatus(void)
@@ -2289,6 +2313,30 @@ void SPO2UpdateStatus(void)
 	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
 	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
+
+	if(get_spo2_ok_flag)
+	{
+		notify_infor infor = {0};
+
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_68);
+	#else		
+		LCD_SetFontSize(FONT_SIZE_64);
+	#endif
+		
+		infor.w = 120;
+		infor.h = 80;
+		infor.x = (LCD_WIDTH-infor.w)/2;
+		infor.y = (LCD_HEIGHT-infor.h)/2;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		mmi_asc_to_ucs2(infor.text, tmpbuf);
+		infor.img_count = 0;
+
+		DisplayPopUp(infor);
+	}
 }
 
 void SPO2ShowStatus(void)
@@ -2432,7 +2480,6 @@ void HRUpdateStatus(void)
 	u16_t x,y,w,h;
 	u8_t tmpbuf[64] = {0};
 	unsigned char *img_anima[2] = {IMG_HR_ICON_ANI_1_ADDR, IMG_HR_ICON_ANI_2_ADDR};
-	notify_infor infor = {0};
 	
 	img_index++;
 	if(img_index >= 2)
@@ -2451,11 +2498,18 @@ void HRUpdateStatus(void)
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
-	if(g_hr > 0)
+	if(get_hr_ok_flag)
 	{
-		infor.w = 100;
-		infor.h = 100;
+		notify_infor infor = {0};
+
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_68);
+	#else		
+		LCD_SetFontSize(FONT_SIZE_64);
+	#endif
+		
+		infor.w = 120;
+		infor.h = 80;
 		infor.x = (LCD_WIDTH-infor.w)/2;
 		infor.y = (LCD_HEIGHT-infor.h)/2;
 
@@ -2467,7 +2521,6 @@ void HRUpdateStatus(void)
 
 		DisplayPopUp(infor);
 	}
-#endif
 }
 
 void HRShowStatus(void)
@@ -2629,6 +2682,7 @@ void EnterNotifyScreen(void)
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
 #endif	
@@ -2887,14 +2941,8 @@ void NotifyShow(void)
 	u16_t x,y,w=0,h=0;
 	u16_t offset_w=4,offset_h=4;
 
-	//LCD_DrawRectangle(notify_msg.x, notify_msg.y, notify_msg.w, notify_msg.h);
+	LCD_DrawRectangle(notify_msg.x, notify_msg.y, notify_msg.w, notify_msg.h);
 	LCD_Fill(notify_msg.x+1, notify_msg.y+1, notify_msg.w-2, notify_msg.h-2, BLACK);
-
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_68);
-#else	
-	LCD_SetFontSize(FONT_SIZE_64);
-#endif
 
 	switch(notify_msg.align)
 	{
@@ -4226,7 +4274,7 @@ void EnterGPSTestScreen(void)
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }

@@ -27,6 +27,7 @@
 #include "temp.h"
 #endif
 #include "screen.h"
+#include "nb.h"
 #include "ucs2.h"
 #include "logger.h"
 
@@ -453,7 +454,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#if defined(CONFIG_FOTA_DOWNLOAD)||defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+	#ifndef NB_SIGNAL_TEST
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -462,17 +463,20 @@ void UpdateSystemTime(void)
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
-	#endif		
 		{
 		#ifdef CONFIG_PPG_SUPPORT
-			if((date_time.minute+PPG_CHECK_TIMELY) == 59)
+			if((date_time.minute+PPG_CHECK_BPT_TIMELY) == 54)
 			{
 				TimerStartBpt();
+			}
+			if((date_time.minute+PPG_CHECK_SPO2_TIMELY) == 59)
+			{
+				TimerStartHrSpo2();
 			}
 		#endif/*CONFIG_PPG_SUPPORT*/
 		
 		#ifdef CONFIG_TEMP_SUPPORT
-			if((date_time.minute+TEMP_CHECK_TIMELY) == 55)
+			if((date_time.minute+TEMP_CHECK_TIMELY) == 50)
 			{	
 				TimerStartTemp();
 			}
@@ -481,12 +485,14 @@ void UpdateSystemTime(void)
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();
 		}
+	#endif
 	}
 
 	if((date_time_changed&0x04) != 0)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
+	#ifndef NB_SIGNAL_TEST
 		if(1
   			#ifdef CONFIG_FOTA_DOWNLOAD
 				&& (!fota_is_running())
@@ -506,7 +512,7 @@ void UpdateSystemTime(void)
 			SetCurDaySpo2RecData(g_spo2_timing);
 			SetCurDayBptRecData(g_bpt_timing);
 		#endif		
-		#ifdef CONFIG_IMU_SUPPORT
+		#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 			if((date_time_changed&0x08) != 0)
 				g_steps = 0;
 			SetCurDayStepRecData(g_steps);
@@ -523,6 +529,7 @@ void UpdateSystemTime(void)
 				TimeCheckSendHealthData();
 			}
 		}
+	#endif		
 	}
 
 	if((date_time_changed&0x08) != 0)

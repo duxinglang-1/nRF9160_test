@@ -56,6 +56,8 @@ typedef struct
 	u16_t deca_temp[24];	//实际温度放大10倍(36.5*10)
 }temp_rec2_data;
 
+extern bool get_temp_ok_flag;
+
 extern float g_temp_skin;
 extern float g_temp_body;
 extern float g_temp_timing;

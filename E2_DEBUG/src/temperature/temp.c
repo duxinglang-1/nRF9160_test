@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include "screen.h"
 #include "temp.h"
+#include "inner_flash.h"
 #include "logger.h"
 #if defined(TEMP_GXTS04)
 #include "gxts04.h"
@@ -33,6 +34,8 @@ static bool temp_test_flag = false;
 static bool temp_stop_flag = false;
 static bool temp_redraw_data_flag = false;
 static bool temp_power_flag = false;
+
+bool get_temp_ok_flag = false;
 
 u8_t g_temp_trigger = 0;
 float g_temp_skin = 0.0;
@@ -54,6 +57,17 @@ static void temp_auto_stop_timerout(struct k_timer *timer_id)
 static void temp_get_timerout(struct k_timer *timer_id)
 {
 	temp_get_data_flag = true;
+}
+
+void ClearAllTempRecData(void)
+{
+	u8_t tmpbuf[TEMP_REC2_DATA_SIZE] = {0xff};
+
+	g_temp_skin = 0.0;
+	g_temp_body = 0.0;
+	g_temp_timing = 0.0;
+
+	SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 }
 
 void SetCurDayTempRecData(float data)
@@ -218,6 +232,12 @@ void MenuStopTemp(void)
 
 void temp_init(void)
 {
+	get_cur_health_from_record(&last_health);
+	if(last_health.timestamp.day == date_time.day)
+	{
+		g_temp_body = (float)(last_health.deca_temp/10.0);
+	}
+
 #ifdef TEMP_GXTS04
 	temp_check_ok = gxts04_init();
 #elif defined(TEMP_MAX30208)
@@ -249,7 +269,8 @@ void TempMsgProcess(void)
 
 		if(ret)
 		{
-			temp_stop_flag = true;
+			//temp_stop_flag = true;
+			get_temp_ok_flag = true;
 		}
 	}
 
@@ -261,7 +282,8 @@ void TempMsgProcess(void)
 		gxts04_start();
 	#endif
 		temp_power_flag = true;
-	
+		get_temp_ok_flag = false;
+		
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)
@@ -293,6 +315,16 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
 			g_temp_timing = g_temp_body;
 		}
+
+		last_health.timestamp.year = date_time.year;
+		last_health.timestamp.month = date_time.month; 
+		last_health.timestamp.day = date_time.day;
+		last_health.timestamp.hour = date_time.hour;
+		last_health.timestamp.minute = date_time.minute;
+		last_health.timestamp.second = date_time.second;
+		last_health.timestamp.week = date_time.week;
+		last_health.deca_temp = (u16_t)(g_temp_body*10);
+		save_cur_health_to_record(&last_health);
 	}
 	
 	if(temp_redraw_data_flag)

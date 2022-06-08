@@ -741,7 +741,9 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_hr_ok_flag = true;
-							PPGStopCheck();
+							
+							if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
+								PPGStopCheck();
 						}
 					}
 					else
@@ -749,8 +751,7 @@ void PPGGetSensorHubData(void)
 						count = 0;
 					}
 				}
-				
-				if(screen_id == SCREEN_ID_SPO2)
+				else if(screen_id == SCREEN_ID_SPO2)
 				{
 					if(g_spo2 > 0)
 					{
@@ -759,7 +760,29 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_spo2_ok_flag = true;
-							PPGStopCheck();
+							
+							if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
+								PPGStopCheck();
+						}
+					}
+					else
+					{
+						count = 0;
+					}
+				}
+				else
+				{
+					if((g_hr > 0) && (g_spo2 > 0))
+					{
+						count++;
+						if(count > 10)
+						{
+							count = 0;
+							get_hr_ok_flag = true;
+							get_spo2_ok_flag = true;
+							
+							if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
+								PPGStopCheck();
 						}
 					}
 					else
@@ -800,6 +823,9 @@ void TimerStartHrSpo2(void)
 	g_hr_timing = 0;
 	g_spo2_timing = 0;
 
+	get_hr_ok_flag = false;
+	get_spo2_ok_flag = false;
+	
 	if(is_wearing())
 	{
 		g_ppg_trigger |= TRIGGER_BY_HOURLY;
@@ -812,6 +838,9 @@ void APPStartHrSpo2(void)
 {
 	g_hr = 0;
 	g_spo2 = 0;
+
+	get_hr_ok_flag = false;
+	get_spo2_ok_flag = false;
 
 	if(is_wearing())
 	{
@@ -853,10 +882,12 @@ void MenuStartHrSpo2(void)
 	if(screen_id == SCREEN_ID_HR)
 	{
 		g_hr = 0;
+		get_hr_ok_flag = false;
 	}
 	else if(screen_id == SCREEN_ID_SPO2)
 	{
 		g_spo2 = 0;
+		get_spo2_ok_flag = false;
 	}
 
 	ppg_start_flag = true;
@@ -870,6 +901,8 @@ void MenuStopHrSpo2(void)
 
 void TimerStartBpt(void)
 {
+	get_bpt_ok_flag = false;
+	
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
 	g_bpt_timing.diastolic = 0;
@@ -885,6 +918,8 @@ void TimerStartBpt(void)
 
 void APPStartBpt(void)
 {
+	get_bpt_ok_flag = false;
+	
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
 	
@@ -926,7 +961,8 @@ void MenuStartBpt(void)
 
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
-	
+
+	get_bpt_ok_flag = false;
 	ppg_start_flag = true;
 }
 

@@ -668,7 +668,7 @@ void system_init(void)
 #endif
 
 	InitSystemSettings();
-	
+
 	pmu_init();
 	flash_init();
 	LCD_Init();

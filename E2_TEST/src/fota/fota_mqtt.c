@@ -418,10 +418,8 @@ void FotaMsgProc(void)
 	
 	if(fota_reboot_flag)
 	{
-	#ifdef FOTA_DEBUG
-		LOGD("fota_reboot!");
-	#endif
 		fota_reboot_flag = false;
+		LCD_Clear(BLACK);
 		sys_reboot(0);
 	}
 

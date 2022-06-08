@@ -1871,6 +1871,7 @@ void TempUpdateStatus(void)
 	LCD_Fill(TEMP_NUM_X, TEMP_NUM_Y, TEMP_NUM_W, TEMP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
+#if 0
 	if(get_temp_ok_flag)
 	{
 		notify_infor infor = {0};
@@ -1894,6 +1895,7 @@ void TempUpdateStatus(void)
 
 		DisplayPopUp(infor);
 	}
+#endif	
 }
 
 void TempShowStatus(void)
@@ -2104,6 +2106,7 @@ void BPUpdateStatus(void)
 	LCD_Fill(BP_NUM_X, BP_NUM_Y, BP_NUM_W, BP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
+#if 0
 	if(get_bpt_ok_flag)
 	{
 		notify_infor infor = {0};
@@ -2127,6 +2130,7 @@ void BPUpdateStatus(void)
 
 		DisplayPopUp(infor);
 	}
+#endif	
 }
 
 void BPShowStatus(void)
@@ -2314,6 +2318,7 @@ void SPO2UpdateStatus(void)
 	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
+#if 0
 	if(get_spo2_ok_flag)
 	{
 		notify_infor infor = {0};
@@ -2324,7 +2329,7 @@ void SPO2UpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_64);
 	#endif
 		
-		infor.w = 120;
+		infor.w = 180;
 		infor.h = 80;
 		infor.x = (LCD_WIDTH-infor.w)/2;
 		infor.y = (LCD_HEIGHT-infor.h)/2;
@@ -2337,6 +2342,7 @@ void SPO2UpdateStatus(void)
 
 		DisplayPopUp(infor);
 	}
+#endif	
 }
 
 void SPO2ShowStatus(void)
@@ -2498,6 +2504,7 @@ void HRUpdateStatus(void)
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
+#if 0
 	if(get_hr_ok_flag)
 	{
 		notify_infor infor = {0};
@@ -2521,6 +2528,7 @@ void HRUpdateStatus(void)
 
 		DisplayPopUp(infor);
 	}
+#endif	
 }
 
 void HRShowStatus(void)

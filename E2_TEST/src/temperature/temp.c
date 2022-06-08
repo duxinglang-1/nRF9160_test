@@ -269,7 +269,7 @@ void TempMsgProcess(void)
 
 		if(ret)
 		{
-			temp_stop_flag = true;
+			//temp_stop_flag = true;
 			get_temp_ok_flag = true;
 		}
 	}

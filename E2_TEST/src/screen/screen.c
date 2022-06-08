@@ -187,8 +187,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	else if(screen_id == SCREEN_ID_SETTINGS)
 	{
 		ExitSettingsScreen();
-	
-}
+	}
 }
 
 void IdleShowSystemDate(void)
@@ -4282,7 +4281,7 @@ void EnterGPSTestScreen(void)
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }

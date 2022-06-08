@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V2.0.0_20220531";
+u8_t g_fw_version[64] = "V2.0.0_20220608";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -497,6 +497,10 @@ void FactoryResetCallBack(struct k_timer *timer_id)
 		break;
 
 	case RESET_STATUS_SUCCESS:
+		LCD_Clear(BLACK);
+		sys_reboot(0);
+		break;
+
 	case RESET_STATUS_FAIL:
 		g_reset_status = RESET_STATUS_IDLE;
 		reset_redraw_flag = true;
@@ -570,6 +574,34 @@ void ResetFactoryDefault(void)
 	ResetSystemTime();
 	ResetSystemSettings();
 
+	clear_cur_local_in_record();
+	clear_local_in_record();	
+	clear_cur_health_in_record();
+	clear_health_in_record();
+#ifdef CONFIG_IMU_SUPPORT
+	clear_cur_sport_in_record();
+	clear_sport_in_record();
+#endif
+
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+	ClearAllStepRecData();
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
+	ClearAllSleepRecData();
+#endif
+#endif
+
+#ifdef CONFIG_PPG_SUPPORT
+	ClearAllHrRecData();
+	ClearAllSpo2RecData();
+	ClearAllBptRecData();
+#endif
+
+#ifdef CONFIG_TEMP_SUPPORT
+	ClearAllTempRecData();
+#endif
+
 	if(k_timer_remaining_get(&reset_timer) > 0)
 		k_timer_stop(&reset_timer);
 
@@ -618,11 +650,8 @@ void SettingsMsgPorcess(void)
 	if(need_reset_settings)
 	{
 		need_reset_settings = false;
-		ResetSystemSettings();
-		ResetSystemTime();
-
-		lcd_sleep_out = true;
-		update_date_time = true;
+		k_timer_start(&reset_timer, K_MSEC(1000), NULL);
+		ResetFactoryDefault();
 	}
 	if(need_reset_bk_level)
 	{
@@ -676,7 +705,11 @@ void SettingsMainMenu3Proc(void)
 #ifdef CONFIG_FOTA_DOWNLOAD
 	extern u8_t g_new_fw_ver[64];
 
+#ifdef NB_SIGNAL_TEST
+	if(strcmp(g_new_fw_ver,g_fw_version) >= 0)
+#else
 	if(strcmp(g_new_fw_ver,g_fw_version) > 0)
+#endif		
 	{
 		fota_start();
 	}

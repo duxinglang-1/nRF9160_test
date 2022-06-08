@@ -31,7 +31,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #endif
 #include "logger.h"
 
-#define IMU_DEBUG
+//#define IMU_DEBUG
 
 #define IMU_DEV "I2C_1"
 #define IMU_PORT "GPIO_0"
@@ -63,9 +63,19 @@ u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
 
-sport_record_t last_sport = {0};
-
 extern bool update_sleep_parameter;
+
+void ClearAllStepRecData(void)
+{
+	u8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
+
+	g_last_steps = 0;
+	g_steps = 0;
+	g_distance = 0;
+	g_calorie = 0;
+		
+	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+}
 
 void SetCurDayStepRecData(u16_t data)
 {
@@ -521,10 +531,14 @@ void IMU_init(struct k_work_q *work_q)
 	imu_check_ok = sensor_init();
 	if(!imu_check_ok)
 		return;
-	
+
+#ifdef CONFIG_STEP_SUPPORT
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
 	StartSleepTimeMonitor();
+#endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
@@ -647,6 +661,7 @@ void IMUMsgProcess(void)
 		return;
 	}
 
+#ifdef CONFIG_STEP_SUPPORT
 	if(int1_event)	//steps
 	{
 	#ifdef IMU_DEBUG
@@ -663,7 +678,8 @@ void IMUMsgProcess(void)
 		UpdateIMUData();
 		imu_redraw_steps_flag = true;	
 	}
-		
+#endif
+
 	if(int2_event) //tilt
 	{
 	#ifdef IMU_DEBUG
@@ -689,7 +705,8 @@ void IMUMsgProcess(void)
 			}
 		}
 	}
-	
+
+#ifdef CONFIG_STEP_SUPPORT	
 	if(reset_steps)
 	{
 		reset_steps = false;
@@ -710,7 +727,9 @@ void IMUMsgProcess(void)
 		
 		IMURedrawSteps();
 	}
+#endif
 
+#ifdef CONFIG_SLEEP_SUPPORT
 	if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
@@ -720,5 +739,6 @@ void IMUMsgProcess(void)
 
 		UpdateSleepPara();
 	}
+#endif	
 }
 #endif/*CONFIG_IMU_SUPPORT*/

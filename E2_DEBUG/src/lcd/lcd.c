@@ -3432,7 +3432,7 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_out)
 	{	
 		LCD_SleepOut();
-		pmu_alert_proc();
+		pmu_battery_update();
 		if(IsInIdleScreen())
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;

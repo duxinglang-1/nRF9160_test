@@ -707,9 +707,13 @@ void APP_get_current_data(u8_t *buf, u32_t len)
 	refresh_time.hour = buf[10];
 	refresh_time.minute = buf[11];
 
-#ifdef CONFIG_IMU_SUPPORT	
+#ifdef CONFIG_IMU_SUPPORT
+  #ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
+  #endif
+  #ifdef CPNFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+  #endif
 #endif
 	
 	wake = 8;

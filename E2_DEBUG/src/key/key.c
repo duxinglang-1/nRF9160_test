@@ -22,14 +22,16 @@
 #endif
 #include "Alarm.h"
 #include "lcd.h"
+#include "settings.h"
 #include "logger.h"
 
 //#define KEY_DEBUG
 #define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
 static bool key_trigger_flag = false;
+#ifdef WEAR_CHECK_SUPPORT
 static bool wear_off_trigger_flag = false;
-
+#endif
 static u8_t flag;
 static u32_t keycode;
 static u32_t keytype;
@@ -209,7 +211,10 @@ void ExecKeyHandler(u8_t keycode, u8_t keytype)
 bool is_wearing(void)
 {
 #ifdef WEAR_CHECK_SUPPORT
-	return touch_flag;
+	if(global_settings.wrist_off_check)
+		return touch_flag;
+	else
+		return true;
 #else
 	return true;
 #endif
@@ -586,6 +591,9 @@ static void wear_off_timerout(struct k_timer *timer_id)
 void WearInterruptHandle(void)
 {
 	u32_t val;
+
+	if(!global_settings.wrist_off_check)
+		return;
 
 	if(gpio_pin_read(gpio_wear, WEAR_PIN, &val))
 		return;

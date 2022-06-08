@@ -486,8 +486,6 @@ const settings_menu_t SETTING_MENU_FW =
 
 void FactoryResetCallBack(struct k_timer *timer_id)
 {
-	extern bool sys_pwr_off_flag;
-	
 	switch(g_reset_status)
 	{
 	case RESET_STATUS_IDLE:

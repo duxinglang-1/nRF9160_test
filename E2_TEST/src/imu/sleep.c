@@ -206,7 +206,7 @@ static void sleep_timer_handler(struct k_timer *timer)
 	update_sleep_parameter = true;
 }
 
-void ClearAllStepRecData(void)
+void ClearAllSleepRecData(void)
 {
 	last_light_sleep = 0;
 	last_deep_sleep = 0;

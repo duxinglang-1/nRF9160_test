@@ -448,7 +448,9 @@ void system_power_off(u8_t flag)
 			SendPowerOffData(flag);
 		}
 
-		vibrate_on(VIB_ONCE, 100, 0);
+		VibrateStart();
+		k_sleep(K_MSEC(100));
+		VibrateStop();
 
 		k_timer_start(&sys_pwroff, K_MSEC(5*1000), NULL);
 	}

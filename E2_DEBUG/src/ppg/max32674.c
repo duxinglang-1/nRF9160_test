@@ -741,9 +741,7 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_hr_ok_flag = true;
-							
-							if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-								PPGStopCheck();
+							PPGStopCheck();
 						}
 					}
 					else
@@ -760,9 +758,7 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_spo2_ok_flag = true;
-							
-							if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-								PPGStopCheck();
+							PPGStopCheck();
 						}
 					}
 					else
@@ -780,9 +776,7 @@ void PPGGetSensorHubData(void)
 							count = 0;
 							get_hr_ok_flag = true;
 							get_spo2_ok_flag = true;
-							
-							if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-								PPGStopCheck();
+							PPGStopCheck();
 						}
 					}
 					else
@@ -808,7 +802,11 @@ void PPGGetSensorHubData(void)
 
 	if(g_ppg_alg_mode == ALG_MODE_BPT)
 	{
-		ppg_redraw_data_flag = true;
+		static bool flag = false;
+		
+		flag = !flag;
+		if(flag || get_bpt_ok_flag)
+			ppg_redraw_data_flag = true;
 	}
 	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{
@@ -1096,7 +1094,7 @@ void PPGStopCheck(void)
 		return;
 
 	k_timer_stop(&ppg_get_hr_timer);
-		
+
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();
 

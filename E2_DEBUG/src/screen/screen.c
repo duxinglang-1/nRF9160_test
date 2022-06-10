@@ -187,8 +187,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	else if(screen_id == SCREEN_ID_SETTINGS)
 	{
 		ExitSettingsScreen();
-	
-}
+	}
 }
 
 void IdleShowSystemDate(void)

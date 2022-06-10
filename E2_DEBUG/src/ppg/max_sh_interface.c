@@ -447,6 +447,21 @@ s32_t sh_get_hub_fw_version(u8_t* fw_version)
 	return status;
 }
 
+int sh_set_sensorhub_active(void)
+{
+	gpio_pin_write(gpio_ppg, PPG_INT_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_write(gpio_ppg, PPG_INT_PIN, 1);
+}
+
+int sh_set_sensorhub_sleep(void)
+{
+	u8_t ByteSeq[] = {0x04,0x00,0x02};
+	
+	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+    return status;
+}
+
 int sh_set_sensorhub_operating_mode(u8_t hubMode)
 {
 	u8_t ByteSeq[] = {0x01,0x00,hubMode};

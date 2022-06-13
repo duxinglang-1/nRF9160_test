@@ -29,8 +29,9 @@
 #define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
 static bool key_trigger_flag = false;
+#ifdef WEAR_CHECK_SUPPORT
 static bool wear_off_trigger_flag = false;
-
+#endif
 static u8_t flag;
 static u32_t keycode;
 static u32_t keytype;

@@ -1760,7 +1760,7 @@ static int configure_low_power(void)
 {
 	int err;
 
-#if defined(CONFIG_LTE_PSM_ENABLE)
+#if defined(CONFIG_LTE_PSM_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** Power Saving Mode */
 	err = lte_lc_psm_req(true);
 	if(err)
@@ -1779,7 +1779,7 @@ static int configure_low_power(void)
 	}
 #endif
 
-#if defined(CONFIG_LTE_EDRX_ENABLE)
+#if defined(CONFIG_LTE_EDRX_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** enhanced Discontinuous Reception */
 	err = lte_lc_edrx_req(true);
 	if(err)

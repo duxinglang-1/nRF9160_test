@@ -210,12 +210,15 @@ uint8_t init_gpio(void)
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
 
 	gpio_imu = device_get_binding(IMU_PORT);
+
+#ifdef CONFIG_STEP_SUPPORT	
 	//steps interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
 	gpio_pin_disable_callback(gpio_imu, LSM6DSO_INT1_PIN);
 	gpio_init_callback(&gpio_cb1, step_event, BIT(LSM6DSO_INT1_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb1);
 	gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT1_PIN);
+#endif
 
 	//tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT2_PIN, flag);
@@ -259,14 +262,15 @@ static bool sensor_init(void){
   int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE; 
   lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
+#ifdef CONFIG_STEP_SUPPORT
   /*Step Counter enable*/
   lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
   int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
   lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-
   /* Enable False Positive Rejection. */
   lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
   lsm6dso_steps_reset(&imu_dev_ctx);
+#endif
 
   /* Tilt enable */
   lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);

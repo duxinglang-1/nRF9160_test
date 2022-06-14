@@ -52,7 +52,7 @@ static struct k_work imu_work;
 static bool imu_check_ok = false;
 static u8_t whoamI, rst;
 static struct device *i2c_imu;
-static struct device *gpio_imu;
+static struct device *gpio_imu = NULL;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
@@ -205,12 +205,21 @@ void step_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
 	int1_event = true;
 }
 
+void init_imu_int1(void)
+{
+	if(gpio_imu == NULL)
+		gpio_imu = device_get_binding(IMU_PORT);
+	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_imu, LSM6DSO_INT1_PIN, 0);
+}
+
 uint8_t init_gpio(void)
 {
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
 
-	gpio_imu = device_get_binding(IMU_PORT);
-
+	if(gpio_imu == NULL)
+		gpio_imu = device_get_binding(IMU_PORT);
+	
 #ifdef CONFIG_STEP_SUPPORT	
 	//steps interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);

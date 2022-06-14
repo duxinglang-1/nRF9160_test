@@ -669,6 +669,8 @@ void system_init(void)
 
 	InitSystemSettings();
 
+	init_imu_int1();//xb add 2022-05-27
+	
 	pmu_init();
 	flash_init();
 	LCD_Init();

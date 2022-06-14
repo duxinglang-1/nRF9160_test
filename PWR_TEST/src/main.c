@@ -11,10 +11,11 @@
 #include <string.h>
 
 #define MY_PORT	"GPIO_0"
-#define GPIO_DERECT	GPIO_DIR_IN
-#define GPIO_LEVEL	1
+#define FLAG	(GPIO_DIR_OUT)
+#define GPIO_LEVEL	0
 
 struct device *gpio_lcd;
+static struct gpio_callback gpio_cb1;
 
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
@@ -22,8 +23,15 @@ void bsd_recoverable_error_handler(uint32_t err)
 	printk("bsdlib recoverable error: %u\n", err);
 }
 
+void int_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
+{
+	;
+}
+
 void main(void)
 {
+	u8_t i;
+	
 	//¶Ë¿Ú³õÊ¼»¯
 	gpio_lcd = device_get_binding(MY_PORT);
 	if(!gpio_lcd)
@@ -33,76 +41,19 @@ void main(void)
 	}
 
 #if 1	//xb test
-	gpio_pin_configure(gpio_lcd, 0, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 0, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 1, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 1, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 2, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 2, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 3, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 3, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 4, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 4, GPIO_LEVEL);
-	
-	gpio_pin_configure(gpio_lcd, 5, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 5, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 6, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 6, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 7, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 7, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 8, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 8, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 9, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 9, GPIO_LEVEL);
-	
-	gpio_pin_configure(gpio_lcd, 10, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 10, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 11, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 11, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 12, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 12, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 13, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 13, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 14, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 14, GPIO_LEVEL);
-	
-	gpio_pin_configure(gpio_lcd, 15, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 15, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 16, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 16, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 17, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 17, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 18, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 18, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 19, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 19, GPIO_LEVEL);	
-	
-	gpio_pin_configure(gpio_lcd, 20, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 20, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 21, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 21, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 22, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 22, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 23, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 23, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 24, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 24, GPIO_LEVEL);
+	for(i=0;i<32;i++)
+	{
+		gpio_pin_configure(gpio_lcd, i, FLAG);
+		//gpio_pin_disable_callback(gpio_lcd, i);
+		//gpio_init_callback(&gpio_cb1, int_event, BIT(i));
+		//gpio_add_callback(gpio_lcd, &gpio_cb1);
+		//gpio_pin_enable_callback(gpio_lcd, i);
+	}
 
-	gpio_pin_configure(gpio_lcd, 25, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 25, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 26, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 26, GPIO_LEVEL);
-	gpio_pin_configure(gpio_lcd, 27, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 27, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 28, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 28, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 29, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 29, GPIO_LEVEL);
-
-	gpio_pin_configure(gpio_lcd, 30, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 30, GPIO_LEVEL);	
-	gpio_pin_configure(gpio_lcd, 31, GPIO_DERECT);
-	gpio_pin_write(gpio_lcd, 31, GPIO_LEVEL);
+	for(i=0;i<32;i++)
+	{
+		gpio_pin_write(gpio_lcd, i, GPIO_LEVEL);
+	}
 #endif
 
 	while(1)

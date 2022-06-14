@@ -1288,8 +1288,8 @@ bool sh_init_interface(void)
 	#endif
 	
 		PPG_i2c_off();
-		PPG_Disable();
 		PPG_Power_Off();
+		PPG_Disable();
 		return false;
 	}
 	else
@@ -1321,8 +1321,8 @@ bool sh_init_interface(void)
 	}
 
 	PPG_i2c_off();
+	PPG_Power_Off();
 	PPG_Disable();
-	PPG_Power_Off();	
 	return true;
 }
 

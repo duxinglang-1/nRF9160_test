@@ -1041,8 +1041,9 @@ void PPGStartCheck(void)
 	if(ppg_power_flag > 0)
 		return;
 
-	PPG_Power_On();
 	PPG_Enable();
+	k_sleep(K_MSEC(10));
+	PPG_Power_On();
 	PPG_i2c_on();
 	
 	ppg_power_flag = 1;
@@ -1099,8 +1100,8 @@ void PPGStopCheck(void)
 	sensorhub_disable_algo();
 
 	PPG_i2c_off();
-	PPG_Disable();
 	PPG_Power_Off();
+	PPG_Disable();
 
 	ppg_power_flag = 0;
 

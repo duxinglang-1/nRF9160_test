@@ -2249,6 +2249,7 @@ void EnterBPScreen(void)
 #endif
 	if(PPGIsWorking())
 		MenuStopPPG();
+
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	history_screen_id = screen_id;
@@ -2259,6 +2260,7 @@ void EnterBPScreen(void)
 	scr_msg[SCREEN_ID_BP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_BP].status = SCREEN_STATUS_CREATING;
 
+	get_bpt_ok_flag = false;
 	img_index = 0;
 
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -2455,6 +2457,7 @@ void EnterSPO2Screen(void)
 #endif
 	if(PPGIsWorking())
 		MenuStopPPG();
+	
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	history_screen_id = screen_id;
@@ -2465,6 +2468,7 @@ void EnterSPO2Screen(void)
 	scr_msg[SCREEN_ID_SPO2].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SPO2].status = SCREEN_STATUS_CREATING;
 
+	get_spo2_ok_flag = false;
 	img_index = 0;
 	
 	SetLeftKeyUpHandler(EnterBPScreen);
@@ -2642,7 +2646,8 @@ void EnterHRScreen(void)
 		MenuStopTemp();
 #endif
 	if(PPGIsWorking())
-		MenuStopPPG();	
+		MenuStopPPG();
+	
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	history_screen_id = screen_id;
@@ -2653,6 +2658,7 @@ void EnterHRScreen(void)
 	scr_msg[SCREEN_ID_HR].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_HR].status = SCREEN_STATUS_CREATING;
 
+	get_hr_ok_flag = false;
 	img_index = 0;
 
 #ifdef CONFIG_TEMP_SUPPORT

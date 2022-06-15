@@ -2527,6 +2527,14 @@ static void nb_link(struct k_work *work)
 	}
 #endif
 
+	if(strlen(g_imsi) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("Can't get sim info, cancel the connecting!");
+	#endif
+		return;
+	}
+	
 	if(gps_is_working())
 	{
 	#ifdef NB_DEBUG

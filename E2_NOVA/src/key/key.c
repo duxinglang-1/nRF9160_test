@@ -658,7 +658,8 @@ void KeyMsgProcess(void)
 		
 		key_trigger_flag = false;
 	}
-	
+
+#ifdef WEAR_CHECK_SUPPORT	
 	if(wear_off_trigger_flag)
 	{
 		if(0
@@ -675,6 +676,7 @@ void KeyMsgProcess(void)
 	
 		wear_off_trigger_flag = false;
 	}
+#endif	
 }
 
 void key_init(void)

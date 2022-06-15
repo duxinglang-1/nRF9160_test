@@ -36,7 +36,7 @@
 #define APN_MAX_LEN			(100)
 #define	PLMN_MAX_LEN        (6)
 
-#define NB_SIGNAL_TEST		//xb add 2022-01-14 需要测试NB和GPS天线的时候打开这里
+//#define NB_SIGNAL_TEST		//xb add 2022-01-14 需要测试NB和GPS天线的时候打开这里
 
 typedef enum
 {

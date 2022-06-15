@@ -26,6 +26,7 @@ RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
 static bool reset_redraw_flag = false;
 static bool reset_start_flag = false;
+static bool reset_reboot_flag = false;
 
 static u8_t main_menu_index_bk = 0;
 
@@ -497,8 +498,7 @@ void FactoryResetCallBack(struct k_timer *timer_id)
 		break;
 
 	case RESET_STATUS_SUCCESS:
-		LCD_Clear(BLACK);
-		sys_reboot(0);
+		reset_reboot_flag = true;
 		break;
 
 	case RESET_STATUS_FAIL:
@@ -630,45 +630,6 @@ void ResetUpdateStatus(void)
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMsgPorcess(void)
-{
-	if(need_save_time)
-	{
-		SaveSystemDateTime();
-		need_save_time = false;
-	}
-	
-	if(need_save_settings)
-	{
-		need_save_settings = false;
-		SaveSystemSettings();
-	}
-
-	if(need_reset_settings)
-	{
-		need_reset_settings = false;
-		k_timer_start(&reset_timer, K_MSEC(1000), NULL);
-		ResetFactoryDefault();
-	}
-	if(need_reset_bk_level)
-	{
-		need_reset_bk_level = false;
-		Set_Screen_Backlight_Level(global_settings.backlight_level);
-	}
-	if(reset_redraw_flag)
-	{
-		reset_redraw_flag = false;
-		ResetUpdateStatus();
-	}
-	if(reset_start_flag)
-	{
-		reset_start_flag = false;
-		
-		k_timer_start(&reset_timer, K_MSEC(1000), NULL);
-		ResetFactoryDefault();
 	}
 }
 
@@ -1004,6 +965,50 @@ void SettingsMenuPgLeftProc(void)
 
 void SettingsMenuPgRightProc(void)
 {
+}
+
+void SettingsMsgPorcess(void)
+{
+	if(need_save_time)
+	{
+		SaveSystemDateTime();
+		need_save_time = false;
+	}
+	
+	if(need_save_settings)
+	{
+		need_save_settings = false;
+		SaveSystemSettings();
+	}
+
+	if(need_reset_settings)
+	{
+		need_reset_settings = false;
+		k_timer_start(&reset_timer, K_MSEC(1000), NULL);
+		ResetFactoryDefault();
+	}
+	if(need_reset_bk_level)
+	{
+		need_reset_bk_level = false;
+		Set_Screen_Backlight_Level(global_settings.backlight_level);
+	}
+	if(reset_redraw_flag)
+	{
+		reset_redraw_flag = false;
+		ResetUpdateStatus();
+	}
+	if(reset_start_flag)
+	{
+		reset_start_flag = false;
+		k_timer_start(&reset_timer, K_MSEC(1000), NULL);
+		ResetFactoryDefault();
+	}
+	if(reset_reboot_flag)
+	{
+		reset_reboot_flag = false;
+		LCD_Clear(BLACK);
+		sys_reboot(0);
+	}
 }
 
 void EnterSettings(void)

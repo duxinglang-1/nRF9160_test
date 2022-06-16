@@ -133,19 +133,40 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	if(screen_id == SCREEN_ID_HR)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartHrSpo2();
+		if(get_hr_ok_flag)
+		{
+			EnterIdleScreen();
+		}
+		else
+		{
+			MenuStartHrSpo2();
+		}
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_SPO2)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartHrSpo2();
+		if(get_spo2_ok_flag)
+		{
+			EnterIdleScreen();
+		}
+		else
+		{
+			MenuStartHrSpo2();
+		}
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_BP)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartBpt();
+		if(get_bpt_ok_flag)
+		{
+			EnterIdleScreen();
+		}
+		else
+		{
+			MenuStartBpt();
+		}
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_GPS_TEST)
@@ -181,7 +202,14 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 #ifdef CONFIG_TEMP_SUPPORT
 	else if(screen_id == SCREEN_ID_TEMP)
 	{
-		MenuStartTemp();
+		if(get_temp_ok_flag)
+		{
+			EnterIdleScreen();
+		}
+		else
+		{
+			MenuStartTemp();
+		}
 	}
 #endif
 	else if(screen_id == SCREEN_ID_SETTINGS)
@@ -1870,9 +1898,11 @@ void TempUpdateStatus(void)
 	LCD_Fill(TEMP_NUM_X, TEMP_NUM_Y, TEMP_NUM_W, TEMP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_temp_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0	
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -1893,8 +1923,8 @@ void TempUpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void TempShowStatus(void)
@@ -2105,9 +2135,11 @@ void BPUpdateStatus(void)
 	LCD_Fill(BP_NUM_X, BP_NUM_Y, BP_NUM_W, BP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_bpt_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -2128,8 +2160,8 @@ void BPUpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void BPShowStatus(void)
@@ -2319,9 +2351,11 @@ void SPO2UpdateStatus(void)
 	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_spo2_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0	
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -2342,8 +2376,8 @@ void SPO2UpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void SPO2ShowStatus(void)
@@ -2507,9 +2541,11 @@ void HRUpdateStatus(void)
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_hr_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0	
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -2530,8 +2566,8 @@ void HRUpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void HRShowStatus(void)

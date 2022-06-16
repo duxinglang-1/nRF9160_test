@@ -797,8 +797,10 @@ void EnterPoweroffScreen(void)
 	if(screen_id == SCREEN_ID_POWEROFF)
 		return;
 
+#ifdef NB_SIGNAL_TEST
 	if(gps_is_working())
 		MenuStopGPS();
+#endif
 
 #ifdef CONFIG_PPG_SUPPORT
 	if(PPGIsWorking())
@@ -855,7 +857,10 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
- 
+
+ #ifdef NB_SIGNAL_TEST
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+ #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
@@ -867,6 +872,7 @@ void PowerOffShowStatus(void)
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
   #endif
+ #endif 
 #endif
 }
 
@@ -1725,24 +1731,20 @@ void EnterSettingsScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #endif
  
- #ifdef NB_SIGNAL_TEST
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
- #else
-  #ifdef CONFIG_SYNC_SUPPORT
+ #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
-  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+ #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
    #elif defined(CONFIG_STEP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
    #endif
-  #elif defined(CONFIG_PPG_SUPPORT)
+ #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
-  #elif defined(CONFIG_TEMP_SUPPORT)
+ #elif defined(CONFIG_TEMP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
-  #else
+ #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
-  #endif
  #endif
 #endif
 }
@@ -4127,6 +4129,7 @@ void EnterIdleScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef NB_SIGNAL_TEST
+	MenuStopNB();
 	if(gps_is_working())
 		MenuStopGPS();
 #endif	
@@ -4142,6 +4145,7 @@ void EnterIdleScreen(void)
 	if(SyncIsRunning())
 		SyncDataStop();
 #endif
+
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 	history_screen_id = screen_id;
@@ -4318,12 +4322,14 @@ void EnterGPSTestScreen(void)
 	PPGStopCheck();
 #endif
 
+	MenuStopNB();
+
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }

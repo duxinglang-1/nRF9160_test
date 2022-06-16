@@ -24,7 +24,13 @@
 #if defined(CONFIG_LTE_LEGACY_PCO_MODE)
 #define CMD_SET_EPCO_MODE	"AT%XEPCO=0"
 #endif
-#define CMD_SET_NW_MODE		"AT%XSYSTEMMODE=0,1,1,0"	//Preferred network mode: Narrowband-IoT and GPS
+
+#define CMD_SET_NW_MODE_NB			"AT%XSYSTEMMODE=0,1,0,0"	//Preferred network mode: Narrowband-IoT
+#define CMD_SET_NW_MODE_NB_GPS		"AT%XSYSTEMMODE=0,1,1,0"	//Preferred network mode: Narrowband-IoT and GPS
+#define CMD_SET_NW_MODE_LTE_M		"AT%XSYSTEMMODE=1,0,0,0"	//Preferred network mode: LTE-M
+#define CMD_SET_NW_MODE_LTE_M_GPS	"AT%XSYSTEMMODE=1,0,1,0"	//Preferred network mode: LTE-M and GPS
+#define CMD_SET_NW_MODE_GPS			"AT%XSYSTEMMODE=0,0,1,0"	//Preferred network mode: GPS
+
 #define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
 #define CMD_SET_RAI		 	"AT%XRAI=3"					//Set the modem rai parament
 
@@ -89,3 +95,5 @@ extern void NB_init(struct k_work_q *work_q);
 extern void NBMsgProcess(void);
 extern void NBSendSosData(u8_t *data, u32_t datalen);
 extern void SetModemTurnOff(void);
+extern void SetModemTurnOn(void);
+extern void SetModemGps(void);

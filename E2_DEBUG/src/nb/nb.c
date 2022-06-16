@@ -863,6 +863,10 @@ void modem_data_init(void)
  */
 static void modem_configure(void)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(test_nb_flag)
 	{
 		strcpy(nb_test_info, "modem_configure");
@@ -925,6 +929,7 @@ static void modem_configure(void)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
 			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 		}
 	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
@@ -991,6 +996,10 @@ void NBRedrawSignal(void)
 	bool flag=false;
 	u8_t strbuf[128] = {0};
 	u8_t tmpbuf[128] = {0};
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
 
 	if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
 	{
@@ -1190,6 +1199,10 @@ void GetModemDateTime(void)
 	u8_t tz_dir[3] = {0};
 	u8_t tz_count,daylight;
 	static u8_t retry = 5;
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
 
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
@@ -1760,6 +1773,10 @@ static int configure_low_power(void)
 {
 	int err;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 #if defined(CONFIG_LTE_PSM_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** Power Saving Mode */
 	err = lte_lc_psm_req(true);
@@ -1820,7 +1837,11 @@ void GetModemSignal(void)
 	u8_t tmpbuf[64] = {0};
 	s32_t rsrq=0,rsrp,snr;
 	static s32_t rsrpbk = 0;
-	
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -1858,7 +1879,7 @@ void GetModemSignal(void)
 
 	if(test_nb_flag)
 	{
-		sprintf(nb_test_info, " snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
+		sprintf(nb_test_info, "  snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
 		nb_test_update_flag = true;
 	}
 	else
@@ -2125,6 +2146,10 @@ void SetNetWorkApn(u8_t *imsi_buf)
 	u32_t i;
 	u8_t tmpbuf[256] = {0};
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	for(i=0;i<ARRAY_SIZE(nb_apn_table);i++)
 	{
 		if(strncmp(imsi_buf, nb_apn_table[i].plmn, strlen(nb_apn_table[i].plmn)) == 0)
@@ -2177,6 +2202,10 @@ void SetNetWorkParaByPlmn(u8_t *imsi)
 void GetModemInfor(void)
 {
 	u8_t tmpbuf[256] = {0};
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
 
 	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
@@ -2242,6 +2271,10 @@ void GetModemStatus(void)
 	u8_t strbuf[64] = {0};
 	u8_t tmpbuf[256] = {0};
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2253,6 +2286,10 @@ void GetModemStatus(void)
 
 void SetModemTurnOn(void)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2269,6 +2306,10 @@ void SetModemTurnOn(void)
 
 void SetModemTurnOff(void)
 {
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2285,10 +2326,62 @@ void SetModemTurnOff(void)
 	nb_connected = false;
 }
 
+void SetModemGps(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
+	if(at_cmd_write(CMD_SET_NW_MODE_GPS, NULL, 0, NULL) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for gps success!");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for gps fail!");
+	#endif
+	}
+}
+
+void SetMomomNw(void)
+{
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
+#if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
+	if(at_cmd_write(CMD_SET_NW_MODE_NB, NULL, 0, NULL) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
+	if(at_cmd_write(CMD_SET_NW_MODE_NB_GPS, NULL, 0, NULL) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)
+	if(at_cmd_write(CMD_SET_NW_MODE_LTE_M, NULL, 0, NULL) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
+	if(at_cmd_write(CMD_SET_NW_MODE_LTE_M_GPS, NULL, 0, NULL) == 0)
+#endif
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for nw success!");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for nw fail!");
+	#endif
+	}
+}
+
 void GetModemAPN(void)
 {
 	u8_t tmpbuf[128] = {0};
-	
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2300,7 +2393,11 @@ void GetModemAPN(void)
 void SetModemAPN(void)
 {
 	u8_t tmpbuf[128] = {0};
-	
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
+
 	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 	#ifdef NB_DEBUG
@@ -2525,7 +2622,6 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 		SetNetWorkParaByPlmn(g_imsi);
 	}
-#endif
 
 	if(strlen(g_imsi) == 0)
 	{
@@ -2534,7 +2630,8 @@ static void nb_link(struct k_work *work)
 	#endif
 		return;
 	}
-	
+#endif
+
 	if(gps_is_working())
 	{
 	#ifdef NB_DEBUG
@@ -2590,6 +2687,13 @@ static void nb_link(struct k_work *work)
 		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
 		#endif
+		
+			if(test_nb_flag)
+			{
+				strcpy(nb_test_info, "LTE Link Connected!");
+				TestNBUpdateINfor();
+				k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
+			}
 			
 			nb_connected = true;
 			retry_count = 0;
@@ -2619,6 +2723,10 @@ static void nb_link(struct k_work *work)
 void GetNBSignal(void)
 {
 	u8_t str_rsrp[128] = {0};
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_log_sleep_out();
+#endif
 
 	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	{
@@ -2664,6 +2772,14 @@ bool nb_is_connecting(void)
 	return nb_connecting_flag;
 }
 
+bool nb_reconnect(void)
+{
+	if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+		k_timer_stop(&nb_reconnect_timer);
+	
+	k_timer_start(&nb_reconnect_timer, K_SECONDS(5), NULL);
+}
+
 bool nb_is_connected(void)
 {
 	return nb_connected;
@@ -2691,7 +2807,9 @@ void NBMsgProcess(void)
 	
 		if(nb_is_connected())
 		{
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
+			strcpy(nb_test_info, "LTE Link Connected!");
+			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 		}
 		else if(nb_is_connecting())
 		{
@@ -2701,6 +2819,7 @@ void NBMsgProcess(void)
 		else
 		{
 			SetModemTurnOff();
+			configure_low_power();
 			modem_configure();
 		}
 	}
@@ -2721,6 +2840,8 @@ void NBMsgProcess(void)
 	{
 		GetModemSignal();
 		get_modem_signal_flag = false;
+		if(screen_id == SCREEN_ID_NB_TEST)
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 	}
 
 	if(get_modem_time_flag)

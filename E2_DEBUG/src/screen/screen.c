@@ -4411,7 +4411,7 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;
 
 	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 	
 	if(gps_is_working())
 		MenuStopGPS();

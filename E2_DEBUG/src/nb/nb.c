@@ -2603,7 +2603,6 @@ static int net_init_and_link(void)
 static void nb_link(struct k_work *work)
 {
 	int err=0;
-	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
 	static bool frist_flag = false;
 
@@ -2691,7 +2690,7 @@ static void nb_link(struct k_work *work)
 			if(test_nb_flag)
 			{
 				strcpy(nb_test_info, "LTE Link Connected!");
-				TestNBUpdateINfor();
+				nb_test_update_flag = true;
 				k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 			}
 			
@@ -2777,7 +2776,7 @@ bool nb_reconnect(void)
 	if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
 		k_timer_stop(&nb_reconnect_timer);
 	
-	k_timer_start(&nb_reconnect_timer, K_SECONDS(5), NULL);
+	nb_reconnect_flag = true;
 }
 
 bool nb_is_connected(void)
@@ -2886,7 +2885,7 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
 	}
 	
 	if(nb_connecting_flag)

@@ -465,7 +465,7 @@ void UpdateSystemTime(void)
 		)
 		{
 		#ifdef CONFIG_PPG_SUPPORT
-			if((date_time.minute+PPG_CHECK_BPT_TIMELY) == 54)
+			if((date_time.minute+PPG_CHECK_BPT_TIMELY) == 53)
 			{
 				TimerStartBpt();
 			}

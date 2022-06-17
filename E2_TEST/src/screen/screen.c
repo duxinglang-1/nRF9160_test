@@ -2068,6 +2068,8 @@ void EnterTempScreen(void)
 	scr_msg[SCREEN_ID_TEMP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_TEMP].status = SCREEN_STATUS_CREATING;
 
+	get_temp_ok_flag = false;
+
 #ifdef CONFIG_PPG_SUPPORT
 	SetLeftKeyUpHandler(EnterSPO2Screen);
 #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))

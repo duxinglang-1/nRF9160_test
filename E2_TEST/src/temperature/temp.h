@@ -23,7 +23,7 @@
 #define TEMP_IF_I2C
 #define TEMP_IF_SINGLE_LINE
 
-#define TEMP_CHECK_TIMELY	2
+#define TEMP_CHECK_TIMELY	1
 
 //#define TEMP_DEBUG
 

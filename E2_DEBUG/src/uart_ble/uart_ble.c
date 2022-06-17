@@ -653,7 +653,7 @@ void APP_get_one_key_measure_data(u8_t *buf, u32_t len)
 	if(buf[6] == 1)//¿ªÆô
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP_ONE_KEY; 
-		APPStartHrSpo2();
+		APPStartHr();
 	}
 	else
 	{
@@ -1001,7 +1001,7 @@ void APP_get_heart_rate(u8_t *buf, u32_t len)
 	else
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP; 
-		APPStartHrSpo2();
+		APPStartHr();
 	}
 }
 #endif

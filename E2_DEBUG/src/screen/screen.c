@@ -139,7 +139,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 		}
 		else
 		{
-			MenuStartHrSpo2();
+			MenuStartHr();
 		}
 	#endif
 	}
@@ -152,7 +152,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 		}
 		else
 		{
-			MenuStartHrSpo2();
+			MenuStartSpo2();
 		}
 	#endif
 	}
@@ -2069,6 +2069,8 @@ void EnterTempScreen(void)
 	screen_id = SCREEN_ID_TEMP;
 	scr_msg[SCREEN_ID_TEMP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_TEMP].status = SCREEN_STATUS_CREATING;
+
+	get_temp_ok_flag = false;
 
 #ifdef CONFIG_PPG_SUPPORT
 	SetLeftKeyUpHandler(EnterSPO2Screen);

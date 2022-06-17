@@ -13,8 +13,9 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define PPG_CHECK_SPO2_TIMELY		4
-#define PPG_CHECK_BPT_TIMELY		3
+#define PPG_CHECK_HR_TIMELY			1
+#define PPG_CHECK_SPO2_TIMELY		5
+#define PPG_CHECK_BPT_TIMELY		2
 
 #define PPG_HR_MAX		150
 #define PPG_HR_MIN		30
@@ -24,6 +25,15 @@
 #define PPG_BPT_SYS_MIN	30
 #define PPG_BPT_DIA_MAX	180
 #define PPG_BPT_DIA_MIN	30
+
+typedef enum
+{
+	PPG_DATA_HR,
+	PPG_DATA_SPO2,
+	PPG_DATA_BPT,
+	PPG_DATA_ECG,
+	PPG_DATA_MAX
+}PPG_DATA_TYPE;
 
 typedef enum
 {
@@ -146,10 +156,12 @@ extern void GetCurDaySpo2RecData(u8_t *databuf);
 extern void SetCurDayHrRecData(u8_t hr);
 extern void GetCurDayHrRecData(u8_t *databuf);
 extern void GetHeartRate(u8_t *HR);
-extern void APPStartHrSpo2(void);
+extern void APPStartHr(void);
+extern void APPStartSpo2(void);
 extern void APPStartBpt(void);
 extern void APPStartEcg(void);
-extern void TimerStartHrSpo2(void);
+extern void TimerStartHr(void);
+extern void TimerStartSpo2(void);
 extern void TimerStartBpt(void);
 extern void TimerStartEcg(void);
 

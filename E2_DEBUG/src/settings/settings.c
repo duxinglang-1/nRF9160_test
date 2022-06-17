@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V2.0.1_20220616";
+u8_t g_fw_version[64] = "V2.0.2_20220617";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -70,13 +70,13 @@ static void SettingsMenuFWProc(void);
 
 const sys_date_timer_t FACTORY_DEFAULT_TIME = 
 {
-	2020,
+	2022,
 	1,
 	1,
 	0,
 	0,
 	0,
-	3		//0=sunday
+	6		//0=sunday
 };
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 

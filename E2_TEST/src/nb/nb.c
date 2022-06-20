@@ -37,6 +37,9 @@
 #include "lsm6dso.h"
 #include "fall.h"
 #endif
+#ifdef CONFIG_PPG_SUPPORT
+#include "Max32674.h"
+#endif
 #include "transfer_cache.h"
 #ifdef CONFIG_SYNC_SUPPORT
 #include "sync.h"
@@ -1671,6 +1674,11 @@ void ParseData(u8_t *data, u32_t datalen)
 				memset(strtmp, 0, sizeof(strtmp));
 				strcpy(strtmp, ptr);
 				global_settings.bp_calibra.diastolic = atoi(strtmp);
+
+			#ifdef CONFIG_PPG_SUPPORT
+				ppg_bpt_is_calbraed = false;
+				ppg_bpt_cal_need_update = true;
+			#endif
 			}
 
 			flag = true;

@@ -37,6 +37,7 @@ bool ppg_get_data_flag = false;
 bool ppg_redraw_data_flag = false;
 bool ppg_get_cal_flag = false;
 bool ppg_bpt_is_calbraed = false;
+bool ppg_bpt_cal_need_update = false;
 bool get_bpt_ok_flag = false;
 bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
@@ -417,19 +418,19 @@ bool StartSensorhub(void)
 		if(!ppg_bpt_is_calbraed)
 		{
 			status = sh_check_bpt_cal_data();
-			if(status)
+			if(status && !ppg_bpt_cal_need_update)
 			{
 			#ifdef PPG_DEBUG
 				LOGD("check bpt cal success");
 			#endif
 				sh_set_bpt_cal_data();
-				//ppg_bpt_is_calbraed = true;
+				ppg_bpt_is_calbraed = true;
 				g_ppg_bpt_status = BPT_STATUS_GET_EST;
 			}
 			else
 			{
 			#ifdef PPG_DEBUG
-				LOGD("check bpt cal fail, req cal from algo");
+				LOGD("check bpt cal fail, req cal from algo, (%d/%d)", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
 			#endif
 				sh_req_bpt_cal_data();
 				g_ppg_bpt_status = BPT_STATUS_GET_CAL;
@@ -671,7 +672,8 @@ void PPGGetSensorHubData(void)
 						#endif
 							//ppg_bpt_is_calbraed = true;
 							sh_get_bpt_cal_data();
-						
+							ppg_bpt_cal_need_update = false;
+
 							PPGStopCheck();
 							
 							g_ppg_bpt_status = BPT_STATUS_GET_EST;

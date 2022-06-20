@@ -179,6 +179,8 @@ void TimerStartTemp(void)
 {
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
+	g_temp_timing = 0.0;
+	get_temp_ok_flag = false;
 
 	if(is_wearing())
 	{
@@ -191,6 +193,7 @@ void APPStartTemp(void)
 {
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
+	get_temp_ok_flag = false;
 
 	if(is_wearing())
 	{
@@ -220,7 +223,10 @@ void MenuStartTemp(void)
 		
 		return;
 	}
-	
+
+	g_temp_skin = 0.0;
+	g_temp_body = 0.0;
+	get_temp_ok_flag = false;
 	g_temp_trigger |= TEMP_TRIGGER_BY_MENU;
 	temp_start_flag = true;
 }
@@ -282,8 +288,7 @@ void TempMsgProcess(void)
 		gxts04_start();
 	#endif
 		temp_power_flag = true;
-		get_temp_ok_flag = false;
-		
+	
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)

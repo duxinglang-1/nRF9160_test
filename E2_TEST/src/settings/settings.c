@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V1.7.1_20220617";
+u8_t g_fw_version[64] = "V1.7.1_20220620";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -98,7 +98,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	BACKLIGHT_LEVEL_2,		//backlight level
 	{true,1},				//PHD
 	{500,60},				//position interval
-	{120,70},				//pb calibration
+	{120,75},				//pb calibration
 	{						//alarm
 		{false,0,0,0},		
 		{false,0,0,0},
@@ -596,6 +596,7 @@ void ResetFactoryDefault(void)
 	ClearAllHrRecData();
 	ClearAllSpo2RecData();
 	ClearAllBptRecData();
+	sh_clear_bpt_cal_data();
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT

@@ -424,7 +424,7 @@ bool StartSensorhub(void)
 				LOGD("check bpt cal success");
 			#endif
 				sh_set_bpt_cal_data();
-				ppg_bpt_is_calbraed = true;
+				//ppg_bpt_is_calbraed = true;
 				g_ppg_bpt_status = BPT_STATUS_GET_EST;
 			}
 			else

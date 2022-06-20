@@ -45,6 +45,7 @@ u8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static u8_t whoamI=0, rst=0;
 
 u8_t g_ppg_trigger = 0;
+u8_t g_ppg_data = PPG_DATA_MAX;
 u8_t g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 u8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
 u8_t g_ppg_ver[64] = {0};
@@ -732,7 +733,7 @@ void PPGGetSensorHubData(void)
 				LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
 			#endif
 
-				if(screen_id == SCREEN_ID_HR)
+				if(g_ppg_data == PPG_DATA_HR)
 				{
 					if(g_hr > 0)
 					{
@@ -749,7 +750,7 @@ void PPGGetSensorHubData(void)
 						count = 0;
 					}
 				}
-				else if(screen_id == SCREEN_ID_SPO2)
+				else if(g_ppg_data == PPG_DATA_SPO2)
 				{
 					if(g_spo2 > 0)
 					{
@@ -757,24 +758,6 @@ void PPGGetSensorHubData(void)
 						if(count > 10)
 						{
 							count = 0;
-							get_spo2_ok_flag = true;
-							PPGStopCheck();
-						}
-					}
-					else
-					{
-						count = 0;
-					}
-				}
-				else
-				{
-					if((g_hr > 0) && (g_spo2 > 0))
-					{
-						count++;
-						if(count > 10)
-						{
-							count = 0;
-							get_hr_ok_flag = true;
 							get_spo2_ok_flag = true;
 							PPGStopCheck();
 						}
@@ -800,7 +783,7 @@ void PPGGetSensorHubData(void)
 	#endif
 	}
 
-	if(g_ppg_alg_mode == ALG_MODE_BPT)
+	if(g_ppg_data == PPG_DATA_BPT || screen_id == SCREEN_ID_BP)
 	{
 		static bool flag = false;
 		
@@ -808,42 +791,41 @@ void PPGGetSensorHubData(void)
 		if(flag || get_bpt_ok_flag)
 			ppg_redraw_data_flag = true;
 	}
-	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+	else if(g_ppg_data == PPG_DATA_SPO2 || screen_id == SCREEN_ID_SPO2)
+	{
+		ppg_redraw_data_flag = true;
+	}
+	else if(g_ppg_data == PPG_DATA_HR || screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_IDLE)
 	{
 		ppg_redraw_data_flag = true;
 	}
 }
 
-void TimerStartHrSpo2(void)
+void TimerStartHr(void)
 {
 	g_hr = 0;
-	g_spo2 = 0;
 	g_hr_timing = 0;
-	g_spo2_timing = 0;
-
 	get_hr_ok_flag = false;
-	get_spo2_ok_flag = false;
 	
 	if(is_wearing())
 	{
 		g_ppg_trigger |= TRIGGER_BY_HOURLY;
 		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		g_ppg_data = PPG_DATA_HR;
 		ppg_start_flag = true;	
 	}
 }
 
-void APPStartHrSpo2(void)
+void APPStartHr(void)
 {
 	g_hr = 0;
-	g_spo2 = 0;
-
 	get_hr_ok_flag = false;
-	get_spo2_ok_flag = false;
 
 	if(is_wearing())
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP;
 		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		g_ppg_data = PPG_DATA_HR;
 		ppg_start_flag = true;	
 	}
 	else
@@ -852,7 +834,7 @@ void APPStartHrSpo2(void)
 	}
 }
 
-void MenuStartHrSpo2(void)
+void MenuStartHr(void)
 {
 	if(!is_wearing())
 	{
@@ -874,24 +856,84 @@ void MenuStartHrSpo2(void)
 		return;
 	}
 
+	g_hr = 0;
+	get_hr_ok_flag = false;
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-
-	if(screen_id == SCREEN_ID_HR)
-	{
-		g_hr = 0;
-		get_hr_ok_flag = false;
-	}
-	else if(screen_id == SCREEN_ID_SPO2)
-	{
-		g_spo2 = 0;
-		get_spo2_ok_flag = false;
-	}
-
+	g_ppg_data = PPG_DATA_HR;
 	ppg_start_flag = true;
 }
 
-void MenuStopHrSpo2(void)
+void MenuStopHr(void)
+{
+	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
+	ppg_stop_flag = true;
+}
+
+void TimerStartSpo2(void)
+{
+	g_spo2 = 0;
+	g_spo2_timing = 0;
+	get_spo2_ok_flag = false;
+	
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_HOURLY;
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		g_ppg_data = PPG_DATA_SPO2;
+		ppg_start_flag = true;	
+	}
+}
+
+void APPStartSpo2(void)
+{
+	g_spo2 = 0;
+	get_spo2_ok_flag = false;
+
+	if(is_wearing())
+	{
+		g_ppg_trigger |= TRIGGER_BY_APP;
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		g_ppg_data = PPG_DATA_SPO2;
+		ppg_start_flag = true;	
+	}
+	else
+	{
+		MCU_send_app_get_hr_data();
+	}
+}
+
+void MenuStartSpo2(void)
+{
+	if(!is_wearing())
+	{
+		notify_infor infor = {0};
+		
+		infor.x = 0;
+		infor.y = 0;
+		infor.w = LCD_WIDTH;
+		infor.h = LCD_HEIGHT;
+
+		infor.align = NOTIFY_ALIGN_CENTER;
+		infor.type = NOTIFY_TYPE_POPUP;
+
+		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+		infor.img_count = 1;
+
+		DisplayPopUp(infor);
+		
+		return;
+	}
+
+	g_spo2 = 0;
+	get_spo2_ok_flag = false;
+	g_ppg_trigger |= TRIGGER_BY_MENU;
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+	g_ppg_data = PPG_DATA_SPO2;
+	ppg_start_flag = true;
+}
+
+void MenuStopSpo2(void)
 {
 	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
@@ -899,17 +941,17 @@ void MenuStopHrSpo2(void)
 
 void TimerStartBpt(void)
 {
-	get_bpt_ok_flag = false;
-	
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
 	g_bpt_timing.diastolic = 0;
 	g_bpt_timing.systolic = 0;
+	get_bpt_ok_flag = false;
 
 	if(is_wearing())
 	{
 		g_ppg_trigger |= TRIGGER_BY_HOURLY;
 		g_ppg_alg_mode = ALG_MODE_BPT;
+		g_ppg_data = PPG_DATA_BPT;
 		ppg_start_flag = true;
 	}
 }
@@ -925,6 +967,7 @@ void APPStartBpt(void)
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP;
 		g_ppg_alg_mode = ALG_MODE_BPT;
+		g_ppg_data = PPG_DATA_BPT;
 		ppg_start_flag = true;
 	}
 	else
@@ -954,13 +997,12 @@ void MenuStartBpt(void)
 		return;
 	}
 
-	g_ppg_trigger |=TRIGGER_BY_MENU;
-	g_ppg_alg_mode = ALG_MODE_BPT;
-
 	g_bpt.diastolic = 0;
 	g_bpt.systolic = 0;
-
 	get_bpt_ok_flag = false;
+	g_ppg_trigger |=TRIGGER_BY_MENU;
+	g_ppg_alg_mode = ALG_MODE_BPT;
+	g_ppg_data = PPG_DATA_BPT;
 	ppg_start_flag = true;
 }
 
@@ -974,6 +1016,7 @@ void TimerStartEcg(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_HOURLY;
 	g_ppg_alg_mode = ALG_MODE_ECG;
+	g_ppg_data = PPG_DATA_ECG;
 	ppg_start_flag = true;
 }
 
@@ -981,6 +1024,7 @@ void APPStartEcg(void)
 {
 	g_ppg_trigger |= TRIGGER_BY_APP;
 	g_ppg_alg_mode = ALG_MODE_ECG;
+	g_ppg_data = PPG_DATA_ECG;
 	ppg_start_flag = true;
 }
 
@@ -1008,6 +1052,7 @@ void MenuStartEcg(void)
 
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_ECG;
+	g_ppg_data = PPG_DATA_ECG;
 	ppg_start_flag = true;
 }
 
@@ -1064,11 +1109,15 @@ void PPGStartCheck(void)
 
 		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 		{
-			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+			if(g_ppg_data == PPG_DATA_HR)
+			{
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_HR_TIMELY*60*1000), NULL);
+			}
+			else if(g_ppg_data == PPG_DATA_SPO2)
 			{
 				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_SPO2_TIMELY*60*1000), NULL);
 			}
-			else if(g_ppg_alg_mode == ALG_MODE_BPT)
+			else if(g_ppg_data == PPG_DATA_BPT)
 			{
 				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), NULL);
 			}
@@ -1093,7 +1142,7 @@ void PPGStopCheck(void)
 		return;
 
 	k_timer_stop(&ppg_get_hr_timer);
-		
+
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();
 
@@ -1120,12 +1169,15 @@ void PPGStopCheck(void)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
 
-		if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+		if(g_ppg_data == PPG_DATA_HR)
 		{
 			g_hr_timing = g_hr;
+		}
+		else if(g_ppg_data == PPG_DATA_SPO2)
+		{
 			g_spo2_timing = g_spo2;
 		}
-		else if(g_ppg_alg_mode == ALG_MODE_BPT)
+		else if(g_ppg_data == PPG_DATA_BPT)
 		{
 			memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
 		}

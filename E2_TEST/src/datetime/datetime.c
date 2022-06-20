@@ -464,23 +464,26 @@ void UpdateSystemTime(void)
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
 		{
-		#ifdef CONFIG_PPG_SUPPORT
-			if((date_time.minute+PPG_CHECK_BPT_TIMELY) == 53)
-			{
-				TimerStartBpt();
-			}
-			if((date_time.minute+PPG_CHECK_SPO2_TIMELY) == 59)
-			{
-				TimerStartHrSpo2();
-			}
-		#endif/*CONFIG_PPG_SUPPORT*/
-		
 		#ifdef CONFIG_TEMP_SUPPORT
-			if((date_time.minute+TEMP_CHECK_TIMELY) == 50)
+			if(date_time.minute == 49-TEMP_CHECK_TIMELY)
 			{	
 				TimerStartTemp();
 			}
 		#endif
+		#ifdef CONFIG_PPG_SUPPORT
+			if(date_time.minute == 50-PPG_CHECK_HR_TIMELY)
+			{
+				TimerStartHr();
+			}
+			if(date_time.minute == 53-PPG_CHECK_BPT_TIMELY)
+			{
+				TimerStartBpt();
+			}
+			if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
+			{
+				TimerStartSpo2();
+			}
+		#endif/*CONFIG_PPG_SUPPORT*/
 
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();

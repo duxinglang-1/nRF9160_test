@@ -1632,7 +1632,7 @@ static void uart_receive_data(u8_t data, u32_t datalen)
 		if(rece_len == 3)
 			data_len = (256*rx_buf[1]+rx_buf[2]+3);
 		
-        if(rece_len == data_len)	
+        if(rece_len == data_len)
         {
             ble_receive_data_handle(rx_buf, rece_len);
             

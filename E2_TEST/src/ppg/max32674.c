@@ -728,15 +728,15 @@ void PPGGetSensorHubData(void)
 					spo2 = spo2/j;
 				}
 
-				g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
-				g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
 			#ifdef PPG_DEBUG
 				LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
-				LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
 			#endif
-
 				if(g_ppg_data == PPG_DATA_HR)
 				{
+					g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
+				#ifdef PPG_DEBUG
+					LOGD("g_hr:%d", g_hr);
+				#endif
 					if(g_hr > 0)
 					{
 						count++;
@@ -754,6 +754,10 @@ void PPGGetSensorHubData(void)
 				}
 				else if(g_ppg_data == PPG_DATA_SPO2)
 				{
+					g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
+				#ifdef PPG_DEBUG
+					LOGD("g_spo2:%d", g_spo2);
+				#endif
 					if(g_spo2 > 0)
 					{
 						count++;
@@ -785,7 +789,7 @@ void PPGGetSensorHubData(void)
 	#endif
 	}
 
-	if(g_ppg_data == PPG_DATA_BPT || screen_id == SCREEN_ID_BP)
+	if((g_ppg_data == PPG_DATA_BPT)&&(screen_id == SCREEN_ID_BP))
 	{
 		static bool flag = false;
 		
@@ -793,11 +797,11 @@ void PPGGetSensorHubData(void)
 		if(flag || get_bpt_ok_flag)
 			ppg_redraw_data_flag = true;
 	}
-	else if(g_ppg_data == PPG_DATA_SPO2 || screen_id == SCREEN_ID_SPO2)
+	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2))
 	{
 		ppg_redraw_data_flag = true;
 	}
-	else if(g_ppg_data == PPG_DATA_HR || screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_IDLE)
+	else if((g_ppg_data == PPG_DATA_HR)&&(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_IDLE))
 	{
 		ppg_redraw_data_flag = true;
 	}

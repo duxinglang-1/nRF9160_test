@@ -1957,24 +1957,23 @@ void TempShowStatus(void)
 	GetCurDayTempRecData(temp);
 	for(i=0;i<24;i++)
 	{
-		if((temp_max == 0.0) || (temp_min == 0.0))
+		if((temp[i] >= TEMP_MIN) && (temp[i] <= TEMP_MAX))
 		{
-			if((temp[i] > 0) && (temp[i] <= 420))
+			if((temp_max == 0.0) && (temp_min == 0.0))
 			{
 				temp_max = (float)temp[i]/10.0;
 				temp_min = (float)temp[i]/10.0;
 			}
-		}
-		else
-		{	
-			if((temp[i]/10.0 > temp_max) && (temp[i] <= 420))
-				temp_max = (float)temp[i]/10.0;
-			if((temp[i]/10.0 < temp_min) && (temp[i] <= 420))
-				temp_min = (float)temp[i]/10.0;
-		}
+			else
+			{
+				if(temp[i]/10.0 > temp_max)
+					temp_max = (float)temp[i]/10.0;
+				if(temp[i]/10.0 < temp_min)
+					temp_min = (float)temp[i]/10.0;
+			}
 
-		if((temp[i]/10.0 > 32.0) && (temp[i]/10.0 < 42.0))
 			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(temp[i]/10.0-32.0)*15/2, TEMP_REC_DATA_W, (temp[i]/10.0-32.0)*15/2, color);
+		}
 	}
 
 #ifdef FONTMAKER_UNICODE_FONT
@@ -2189,7 +2188,8 @@ void BPShowStatus(void)
 			&& (bpt[i].diastolic >= PPG_BPT_DIA_MIN) && (bpt[i].diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
-			if(i == 0)
+			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
+				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
 			{
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
@@ -2402,7 +2402,7 @@ void SPO2ShowStatus(void)
 	{
 		if((spo2[i] >= PPG_SPO2_MIN) && (spo2[i] <= PPG_SPO2_MAX))
 		{
-			if(i == 0)
+			if((spo2_max == 0) && (spo2_min == 0))
 			{
 				spo2_max = spo2[i];
 				spo2_min = spo2[i];
@@ -2593,7 +2593,7 @@ void HRShowStatus(void)
 	{
 		if((hr[i] >= PPG_HR_MIN) && (hr[i] <= PPG_HR_MAX))
 		{
-			if(i == 0)
+			if((hr_max == 0) && (hr_min == 0))
 			{
 				hr_max = hr[i];
 				hr_min = hr[i];

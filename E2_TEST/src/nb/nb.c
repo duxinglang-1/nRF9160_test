@@ -1676,6 +1676,7 @@ void ParseData(u8_t *data, u32_t datalen)
 				global_settings.bp_calibra.diastolic = atoi(strtmp);
 
 			#ifdef CONFIG_PPG_SUPPORT
+				sh_clear_bpt_cal_data();
 				ppg_bpt_is_calbraed = false;
 				ppg_bpt_cal_need_update = true;
 			#endif

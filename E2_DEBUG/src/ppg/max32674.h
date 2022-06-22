@@ -134,6 +134,8 @@ typedef struct
 extern bool get_bpt_ok_flag;
 extern bool get_hr_ok_flag;
 extern bool get_spo2_ok_flag;
+extern bool ppg_bpt_is_calbraed;
+extern bool ppg_bpt_cal_need_update;
 
 extern u8_t g_ppg_trigger;
 extern u8_t g_ppg_ver[64];

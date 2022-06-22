@@ -1455,6 +1455,12 @@ void sh_get_APP_version(void)
 	}
 }
 
+bool sh_clear_bpt_cal_data(void)
+{
+	memset(&sh_bpt_cal, 0x00, CAL_RESULT_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+}
+
 bool sh_check_bpt_cal_data(void)
 {
 	SpiFlash_Read(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
@@ -1541,7 +1547,7 @@ void sh_req_bpt_cal_data(void)
 	//Set the cal_index, reference systolic, reference diastolic
 	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
 #ifdef MAX_DEBUG
-	LOGD("set cal_index sys&dia ret:%d", status);
+	LOGD("set cal_index sys:%d&dia:%d ret:%d", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic, status);
 #endif
 	//set algo submode
 	status = sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);

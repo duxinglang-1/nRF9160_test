@@ -57,6 +57,7 @@
 static u8_t scr_index = 0;
 static u8_t bat_charging_index = 0;
 static bool exit_notify_flag = false;
+static bool entry_idle_flag = false;
 
 static void NotifyTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
@@ -135,7 +136,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	#ifdef CONFIG_PPG_SUPPORT
 		if(get_hr_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -148,7 +149,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	#ifdef CONFIG_PPG_SUPPORT
 		if(get_spo2_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -161,7 +162,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	#ifdef CONFIG_PPG_SUPPORT
 		if(get_bpt_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -204,7 +205,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		if(get_temp_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -1673,7 +1674,7 @@ void SettingsScreenProcess(void)
 
 void ExitSettingsScreen(void)
 {
-	EnterIdleScreen();
+	EntryIdleScr();
 }
 
 void EnterSettingsScreen(void)
@@ -1957,24 +1958,23 @@ void TempShowStatus(void)
 	GetCurDayTempRecData(temp);
 	for(i=0;i<24;i++)
 	{
-		if((temp_max == 0.0) || (temp_min == 0.0))
+		if((temp[i] >= TEMP_MIN) && (temp[i] <= TEMP_MAX))
 		{
-			if((temp[i] > 0) && (temp[i] <= 420))
+			if((temp_max == 0.0) && (temp_min == 0.0))
 			{
 				temp_max = (float)temp[i]/10.0;
 				temp_min = (float)temp[i]/10.0;
 			}
-		}
-		else
-		{	
-			if((temp[i]/10.0 > temp_max) && (temp[i] <= 420))
-				temp_max = (float)temp[i]/10.0;
-			if((temp[i]/10.0 < temp_min) && (temp[i] <= 420))
-				temp_min = (float)temp[i]/10.0;
-		}
+			else
+			{
+				if(temp[i]/10.0 > temp_max)
+					temp_max = (float)temp[i]/10.0;
+				if(temp[i]/10.0 < temp_min)
+					temp_min = (float)temp[i]/10.0;
+			}
 
-		if((temp[i]/10.0 > 32.0) && (temp[i]/10.0 < 42.0))
 			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(temp[i]/10.0-32.0)*15/2, TEMP_REC_DATA_W, (temp[i]/10.0-32.0)*15/2, color);
+		}
 	}
 
 #ifdef FONTMAKER_UNICODE_FONT
@@ -2189,7 +2189,8 @@ void BPShowStatus(void)
 			&& (bpt[i].diastolic >= PPG_BPT_DIA_MIN) && (bpt[i].diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
-			if(i == 0)
+			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
+				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
 			{
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
@@ -2402,7 +2403,7 @@ void SPO2ShowStatus(void)
 	{
 		if((spo2[i] >= PPG_SPO2_MIN) && (spo2[i] <= PPG_SPO2_MAX))
 		{
-			if(i == 0)
+			if((spo2_max == 0) && (spo2_min == 0))
 			{
 				spo2_max = spo2[i];
 				spo2_min = spo2[i];
@@ -2593,7 +2594,7 @@ void HRShowStatus(void)
 	{
 		if((hr[i] >= PPG_HR_MIN) && (hr[i] <= PPG_HR_MAX))
 		{
-			if(i == 0)
+			if((hr_max == 0) && (hr_min == 0))
 			{
 				hr_max = hr[i];
 				hr_min = hr[i];
@@ -2792,7 +2793,10 @@ void ExitNotifyScreen(void)
 
 void NotifyTimerOutCallBack(struct k_timer *timer_id)
 {
-	ExitNotifyScreen();
+	if(screen_id == SCREEN_ID_NOTIFY)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_EXIT;
+	}
 }
 
 void ShowStringsInRect(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, u8_t *strbuf)
@@ -3107,6 +3111,10 @@ void NotifyScreenProcess(void)
 		
 	case SCREEN_ACTION_UPDATE:
 		NotifyUpdate();
+		break;
+
+	case SCREEN_ACTION_EXIT:
+		ExitNotifyScreen();
 		break;
 	}
 	
@@ -4120,6 +4128,11 @@ void WristScreenProcess(void)
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
 }
 
+void EntryIdleScr(void)
+{
+	entry_idle_flag = true;
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -4592,6 +4605,12 @@ void GoBackHistoryScreen(void)
 
 void ScreenMsgProcess(void)
 {
+	if(entry_idle_flag)
+	{
+		EnterIdleScreen();
+		entry_idle_flag = false;
+	}
+	
 	if(scr_msg[screen_id].act != SCREEN_ACTION_NO)
 	{
 		if(scr_msg[screen_id].status != SCREEN_STATUS_CREATED)

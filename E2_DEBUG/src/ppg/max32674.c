@@ -37,9 +37,13 @@ bool ppg_get_data_flag = false;
 bool ppg_redraw_data_flag = false;
 bool ppg_get_cal_flag = false;
 bool ppg_bpt_is_calbraed = false;
+bool ppg_bpt_cal_need_update = false;
 bool get_bpt_ok_flag = false;
 bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
+bool menu_start_hr = false;
+bool menu_start_spo2 = false;
+bool menu_start_bpt = false;
 
 u8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static u8_t whoamI=0, rst=0;
@@ -417,7 +421,7 @@ bool StartSensorhub(void)
 		if(!ppg_bpt_is_calbraed)
 		{
 			status = sh_check_bpt_cal_data();
-			if(status)
+			if(status && !ppg_bpt_cal_need_update)
 			{
 			#ifdef PPG_DEBUG
 				LOGD("check bpt cal success");
@@ -429,7 +433,7 @@ bool StartSensorhub(void)
 			else
 			{
 			#ifdef PPG_DEBUG
-				LOGD("check bpt cal fail, req cal from algo");
+				LOGD("check bpt cal fail, req cal from algo, (%d/%d)", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
 			#endif
 				sh_req_bpt_cal_data();
 				g_ppg_bpt_status = BPT_STATUS_GET_CAL;
@@ -671,7 +675,8 @@ void PPGGetSensorHubData(void)
 						#endif
 							//ppg_bpt_is_calbraed = true;
 							sh_get_bpt_cal_data();
-						
+							ppg_bpt_cal_need_update = false;
+
 							PPGStopCheck();
 							
 							g_ppg_bpt_status = BPT_STATUS_GET_EST;
@@ -726,15 +731,15 @@ void PPGGetSensorHubData(void)
 					spo2 = spo2/j;
 				}
 
-				g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
-				g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
 			#ifdef PPG_DEBUG
 				LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
-				LOGD("g_hr:%d, g_spo2:%d", g_hr, g_spo2);
 			#endif
-
 				if(g_ppg_data == PPG_DATA_HR)
 				{
+					g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
+				#ifdef PPG_DEBUG
+					LOGD("g_hr:%d", g_hr);
+				#endif
 					if(g_hr > 0)
 					{
 						count++;
@@ -752,6 +757,10 @@ void PPGGetSensorHubData(void)
 				}
 				else if(g_ppg_data == PPG_DATA_SPO2)
 				{
+					g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
+				#ifdef PPG_DEBUG
+					LOGD("g_spo2:%d", g_spo2);
+				#endif
 					if(g_spo2 > 0)
 					{
 						count++;
@@ -783,7 +792,7 @@ void PPGGetSensorHubData(void)
 	#endif
 	}
 
-	if(g_ppg_alg_mode == ALG_MODE_BPT)
+	if((g_ppg_data == PPG_DATA_BPT)&&(screen_id == SCREEN_ID_BP))
 	{
 		static bool flag = false;
 		
@@ -791,7 +800,11 @@ void PPGGetSensorHubData(void)
 		if(flag || get_bpt_ok_flag)
 			ppg_redraw_data_flag = true;
 	}
-	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2))
+	{
+		ppg_redraw_data_flag = true;
+	}
+	else if((g_ppg_data == PPG_DATA_HR)&&(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_IDLE))
 	{
 		ppg_redraw_data_flag = true;
 	}
@@ -830,7 +843,7 @@ void APPStartHr(void)
 	}
 }
 
-void MenuStartHr(void)
+void MenuTriggerHr(void)
 {
 	if(!is_wearing())
 	{
@@ -858,6 +871,11 @@ void MenuStartHr(void)
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_HR;
 	ppg_start_flag = true;
+}
+
+void MenuStartHr(void)
+{
+	menu_start_hr = true;
 }
 
 void MenuStopHr(void)
@@ -899,7 +917,7 @@ void APPStartSpo2(void)
 	}
 }
 
-void MenuStartSpo2(void)
+void MenuTriggerSpo2(void)
 {
 	if(!is_wearing())
 	{
@@ -927,6 +945,11 @@ void MenuStartSpo2(void)
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_SPO2;
 	ppg_start_flag = true;
+}
+
+void MenuStartSpo2(void)
+{
+	menu_start_spo2 = true;
 }
 
 void MenuStopSpo2(void)
@@ -971,7 +994,7 @@ void APPStartBpt(void)
 	}
 }
 
-void MenuStartBpt(void)
+void MenuTriggerBpt(void)
 {
 	if(!is_wearing())
 	{
@@ -1000,6 +1023,11 @@ void MenuStartBpt(void)
 	g_ppg_alg_mode = ALG_MODE_BPT;
 	g_ppg_data = PPG_DATA_BPT;
 	ppg_start_flag = true;
+}
+
+void MenuStartBpt(void)
+{
+	menu_start_bpt = true;
 }
 
 void MenuStopBpt(void)
@@ -1237,11 +1265,31 @@ void PPGMsgProcess(void)
 	{
 		ppg_int_event = false;
 	}
+	
 	if(ppg_fw_upgrade_flag)
 	{
 		SH_OTA_upgrade_process();
 		ppg_fw_upgrade_flag = false;
 	}
+	
+	if(menu_start_hr)
+	{
+		MenuTriggerHr();
+		menu_start_hr = false;
+	}
+	
+	if(menu_start_spo2)
+	{
+		MenuTriggerSpo2();
+		menu_start_spo2 = false;
+	}
+	
+	if(menu_start_bpt)
+	{
+		MenuTriggerBpt();
+		menu_start_bpt = false;
+	}
+	
 	if(ppg_start_flag)
 	{
 	#ifdef PPG_DEBUG
@@ -1250,6 +1298,7 @@ void PPGMsgProcess(void)
 		PPGStartCheck();
 		ppg_start_flag = false;
 	}
+	
 	if(ppg_stop_flag)
 	{
 	#ifdef PPG_DEBUG
@@ -1269,6 +1318,7 @@ void PPGMsgProcess(void)
 		PPGGetSensorHubData();
 		ppg_get_data_flag = false;
 	}
+	
 	if(ppg_redraw_data_flag)
 	{
 		PPGRedrawData();

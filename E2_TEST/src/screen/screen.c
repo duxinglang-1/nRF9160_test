@@ -57,6 +57,7 @@
 static u8_t scr_index = 0;
 static u8_t bat_charging_index = 0;
 static bool exit_notify_flag = false;
+static bool entry_idle_flag = false;
 
 static void NotifyTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
@@ -135,7 +136,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	#ifdef CONFIG_PPG_SUPPORT
 		if(get_hr_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -148,7 +149,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	#ifdef CONFIG_PPG_SUPPORT
 		if(get_spo2_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -161,7 +162,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	#ifdef CONFIG_PPG_SUPPORT
 		if(get_bpt_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -204,7 +205,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		if(get_temp_ok_flag)
 		{
-			EnterIdleScreen();
+			EntryIdleScr();
 		}
 		else
 		{
@@ -1673,7 +1674,7 @@ void SettingsScreenProcess(void)
 
 void ExitSettingsScreen(void)
 {
-	EnterIdleScreen();
+	EntryIdleScr();
 }
 
 void EnterSettingsScreen(void)
@@ -2792,7 +2793,10 @@ void ExitNotifyScreen(void)
 
 void NotifyTimerOutCallBack(struct k_timer *timer_id)
 {
-	ExitNotifyScreen();
+	if(screen_id == SCREEN_ID_NOTIFY)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_EXIT;
+	}
 }
 
 void ShowStringsInRect(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, u8_t *strbuf)
@@ -3107,6 +3111,10 @@ void NotifyScreenProcess(void)
 		
 	case SCREEN_ACTION_UPDATE:
 		NotifyUpdate();
+		break;
+
+	case SCREEN_ACTION_EXIT:
+		ExitNotifyScreen();
 		break;
 	}
 	
@@ -4120,6 +4128,11 @@ void WristScreenProcess(void)
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
 }
 
+void EntryIdleScr(void)
+{
+	entry_idle_flag = true;
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -4592,6 +4605,12 @@ void GoBackHistoryScreen(void)
 
 void ScreenMsgProcess(void)
 {
+	if(entry_idle_flag)
+	{
+		EnterIdleScreen();
+		entry_idle_flag = false;
+	}
+	
 	if(scr_msg[screen_id].act != SCREEN_ACTION_NO)
 	{
 		if(scr_msg[screen_id].status != SCREEN_STATUS_CREATED)

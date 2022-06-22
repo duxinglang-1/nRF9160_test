@@ -41,6 +41,9 @@ bool ppg_bpt_cal_need_update = false;
 bool get_bpt_ok_flag = false;
 bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
+bool menu_start_hr = false;
+bool menu_start_spo2 = false;
+bool menu_start_bpt = false;
 
 u8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static u8_t whoamI=0, rst=0;
@@ -840,7 +843,7 @@ void APPStartHr(void)
 	}
 }
 
-void MenuStartHr(void)
+void MenuTriggerHr(void)
 {
 	if(!is_wearing())
 	{
@@ -868,6 +871,11 @@ void MenuStartHr(void)
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_HR;
 	ppg_start_flag = true;
+}
+
+void MenuStartHr(void)
+{
+	menu_start_hr = true;
 }
 
 void MenuStopHr(void)
@@ -909,7 +917,7 @@ void APPStartSpo2(void)
 	}
 }
 
-void MenuStartSpo2(void)
+void MenuTriggerSpo2(void)
 {
 	if(!is_wearing())
 	{
@@ -937,6 +945,11 @@ void MenuStartSpo2(void)
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_SPO2;
 	ppg_start_flag = true;
+}
+
+void MenuStartSpo2(void)
+{
+	menu_start_spo2 = true;
 }
 
 void MenuStopSpo2(void)
@@ -981,7 +994,7 @@ void APPStartBpt(void)
 	}
 }
 
-void MenuStartBpt(void)
+void MenuTriggerBpt(void)
 {
 	if(!is_wearing())
 	{
@@ -1010,6 +1023,11 @@ void MenuStartBpt(void)
 	g_ppg_alg_mode = ALG_MODE_BPT;
 	g_ppg_data = PPG_DATA_BPT;
 	ppg_start_flag = true;
+}
+
+void MenuStartBpt(void)
+{
+	menu_start_bpt = true;
 }
 
 void MenuStopBpt(void)
@@ -1244,11 +1262,31 @@ void PPGMsgProcess(void)
 	{
 		ppg_int_event = false;
 	}
+	
 	if(ppg_fw_upgrade_flag)
 	{
 		SH_OTA_upgrade_process();
 		ppg_fw_upgrade_flag = false;
 	}
+	
+	if(menu_start_hr)
+	{
+		MenuTriggerHr();
+		menu_start_hr = false;
+	}
+	
+	if(menu_start_spo2)
+	{
+		MenuTriggerSpo2();
+		menu_start_spo2 = false;
+	}
+	
+	if(menu_start_bpt)
+	{
+		MenuTriggerBpt();
+		menu_start_bpt = false;
+	}
+	
 	if(ppg_start_flag)
 	{
 	#ifdef PPG_DEBUG
@@ -1257,6 +1295,7 @@ void PPGMsgProcess(void)
 		PPGStartCheck();
 		ppg_start_flag = false;
 	}
+	
 	if(ppg_stop_flag)
 	{
 	#ifdef PPG_DEBUG
@@ -1276,6 +1315,7 @@ void PPGMsgProcess(void)
 		PPGGetSensorHubData();
 		ppg_get_data_flag = false;
 	}
+	
 	if(ppg_redraw_data_flag)
 	{
 		PPGRedrawData();

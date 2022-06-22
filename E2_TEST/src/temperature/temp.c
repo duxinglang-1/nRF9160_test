@@ -34,6 +34,7 @@ static bool temp_test_flag = false;
 static bool temp_stop_flag = false;
 static bool temp_redraw_data_flag = false;
 static bool temp_power_flag = false;
+static bool menu_start_temp = false;
 
 bool get_temp_ok_flag = false;
 
@@ -46,7 +47,6 @@ static void temp_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_stop_timer, temp_auto_stop_timerout, NULL);
 static void temp_get_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_check_timer, temp_get_timerout, NULL);
-
 
 static void temp_auto_stop_timerout(struct k_timer *timer_id)
 {
@@ -205,7 +205,7 @@ void APPStartTemp(void)
 	}
 }
 
-void MenuStartTemp(void)
+void MenuTriggerTemp(void)
 {
 	if(!is_wearing())
 	{
@@ -232,6 +232,11 @@ void MenuStartTemp(void)
 	get_temp_ok_flag = false;
 	g_temp_trigger |= TEMP_TRIGGER_BY_MENU;
 	temp_start_flag = true;
+}
+
+void MenuStartTemp(void)
+{
+	menu_start_temp = true;
 }
 
 void MenuStopTemp(void)
@@ -283,6 +288,12 @@ void TempMsgProcess(void)
 		}
 	}
 
+	if(menu_start_temp)
+	{
+		MenuTriggerTemp();
+		menu_start_temp = false;
+	}
+	
 	if(temp_start_flag)
 	{
 		temp_start_flag = false;

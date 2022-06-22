@@ -57,8 +57,6 @@ maxdev_ctx_t pmu_dev_ctx;
 extern bool key_pwroff_flag;
 
 #ifdef SHOW_LOG_IN_SCREEN
-static u8_t tmpbuf[256] = {0};
-
 static void show_infor1(u8_t *strbuf)
 {
 	//LCD_Clear(BLACK);
@@ -72,7 +70,6 @@ static void show_infor2(u8_t *strbuf)
 	LCD_Fill(30,130,180,70,BLACK);
 	LCD_ShowStringInRect(30,130,180,70,strbuf);
 }
-
 #endif
 
 
@@ -382,14 +379,14 @@ void Set_Screen_Backlight_On(void)
 
 	ret = MAX20353_LED0(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 	ret = MAX20353_LED1(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	MAX20353_BuckBoostConfig();
+	//MAX20353_BuckBoostConfig();
 }
 
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
 
-	MAX20353_BuckBoostDisable();
+	//MAX20353_BuckBoostDisable();
 	ret = MAX20353_LED0(2, 0, false);
 	ret = MAX20353_LED1(2, 0, false);
 }
@@ -482,7 +479,7 @@ void pmu_battery_low_shutdown(void)
 
 void pmu_battery_update(void)
 {
-	u8_t tmpbuf[128] = {0};
+	u8_t tmpbuf[8] = {0};
 
 	g_bat_soc = MAX20353_CalculateSOC();
 #ifdef PMU_DEBUG
@@ -532,7 +529,7 @@ void pmu_battery_update(void)
 bool pmu_interrupt_proc(void)
 {
 	u8_t i,val;
-	u8_t tmpbuf[128] = {0};
+	u8_t tmpbuf[8] = {0};
 	notify_infor infor = {0};
 	u8_t int0,status0,status1;
 	int ret;
@@ -1160,6 +1157,8 @@ void MAX20353_ReadStatus(void)
 
 void test_bat_soc(void)
 {
+	u8_t tmpbuf[16] = {0};
+
 #ifdef SHOW_LOG_IN_SCREEN
 	sprintf(tmpbuf, "SOC:%d\n", g_bat_soc);
 	show_infor1(tmpbuf);

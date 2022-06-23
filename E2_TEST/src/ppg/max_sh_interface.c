@@ -201,7 +201,7 @@ void SH_rst_to_APP_mode(void)
 	wait_ms(50);
 	
 	//enter application mode end delay for initialization finishes
-	wait_ms(2000);
+	wait_ms(1500);
 
 #ifdef MAX_DEBUG	
 	LOGD("set app mode success!");

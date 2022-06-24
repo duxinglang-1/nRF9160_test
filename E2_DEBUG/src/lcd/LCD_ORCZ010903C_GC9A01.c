@@ -11,7 +11,7 @@
 #include "LCD_ORCZ010903C_GC9A01.h"
 
 #define SPI_BUF_LEN	8
-#define XB_TEST
+#define SPI_MUIT_BY_CS
 
 struct device *spi_lcd;
 struct device *gpio_lcd;
@@ -31,7 +31,7 @@ static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
-#ifdef XB_TEST	//xb test 2022-04-15
+#ifdef SPI_MUIT_BY_CS
 void LCD_CS_LOW(void)
 {
 	gpio_pin_write(gpio_lcd, CS, 0);
@@ -56,7 +56,7 @@ static void LCD_SPI_Init(void)
 	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
-#ifndef XB_TEST	//xb test 2022-04-15
+#ifndef SPI_MUIT_BY_CS
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
 	if (!spi_cs_ctr.gpio_dev)
 	{
@@ -84,11 +84,11 @@ static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t r
 	rx_bufs.buffers = &rx_buff;
 	rx_bufs.count = 1;
 
-#ifdef XB_TEST
+#ifdef SPI_MUIT_BY_CS
 	LCD_CS_LOW();
 #endif
 	err = spi_transceive(spi_lcd, &spi_cfg, &tx_bufs, &rx_bufs);
-#ifdef XB_TEST
+#ifdef SPI_MUIT_BY_CS
 	LCD_CS_HIGH();
 #endif
 	if(err)

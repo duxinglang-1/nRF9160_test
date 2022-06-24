@@ -2731,14 +2731,14 @@ void EnterNotifyScreen(void)
 	scr_msg[SCREEN_ID_NOTIFY].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_NOTIFY].status = SCREEN_STATUS_CREATING;
 
-	SetLeftKeyUpHandler(ExitNotifyScreen);
-	SetRightKeyUpHandler(ExitNotifyScreen);
+	SetLeftKeyUpHandler(ExitNotify);
+	SetRightKeyUpHandler(ExitNotify);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotify);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotify);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotify);
 #endif	
 }
 
@@ -2777,6 +2777,14 @@ void DisplayPopUp(notify_infor infor)
 	}
 	
 	EnterNotifyScreen();
+}
+
+void ExitNotify(void)
+{
+	if(screen_id == SCREEN_ID_NOTIFY)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_EXIT;
+	}
 }
 
 void ExitNotifyScreen(void)

@@ -564,7 +564,7 @@ extern void EnterGPSTestScreen(void);
 extern void EnterNBTestScreen(void);
 extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
-extern void ExitNotifyScreen(void);
+extern void ExitNotify(void);
 extern void EnterFOTAScreen(void);
 extern void DisplayPopUp(notify_infor infor);
 

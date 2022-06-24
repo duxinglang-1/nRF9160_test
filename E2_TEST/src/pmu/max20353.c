@@ -410,7 +410,7 @@ bool pmu_interrupt_proc(void)
 			}
 		#endif
 
-			ExitNotifyScreen();
+			ExitNotify();
 			lcd_sleep_out = true;
 		}
 

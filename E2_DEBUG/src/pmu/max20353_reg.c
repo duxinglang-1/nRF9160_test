@@ -963,7 +963,7 @@ int ReadWord(u8_t reg, u8_t *MSB, u8_t *LSB)
 	u8_t data = reg;
 	u8_t value[2];
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	ret = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, &data, sizeof(data));
 #else
 	ret = i2c_write(pmu_dev_ctx.handle, &data, sizeof(data), MAX20353_I2C_ADDR_FUEL_GAUGE);
@@ -973,7 +973,7 @@ int ReadWord(u8_t reg, u8_t *MSB, u8_t *LSB)
 		return MAX20353_ERROR;
 	}
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	ret = I2C_read_data(MAX20353_I2C_ADDR_FUEL_GAUGE, value, sizeof(value));
 #else
 	ret = i2c_read(pmu_dev_ctx.handle, value, sizeof(value), MAX20353_I2C_ADDR_FUEL_GAUGE);
@@ -995,7 +995,7 @@ int WriteWord(u8_t reg, u8_t MSB, u8_t LSB)
 	u8_t cmdData[3] = {reg, MSB, LSB};
 	u32_t rslt = 0;
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	rslt = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, cmdData, sizeof(cmdData));
 #else
 	rslt = i2c_write(pmu_dev_ctx.handle, cmdData, sizeof(cmdData), MAX20353_I2C_ADDR_FUEL_GAUGE);
@@ -1009,7 +1009,7 @@ int WriteMulti(u8_t *data, u8_t len)
 {
 	u32_t ret;
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	ret = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, data, len);
 #else
 	ret = i2c_write(pmu_dev_ctx.handle, data, len, MAX20353_I2C_ADDR_FUEL_GAUGE);
@@ -1575,7 +1575,7 @@ int MAX20353_SOCReadReg(u8_t reg, u8_t *MSB, u8_t *LSB)
 	u8_t data = reg;
 	u8_t value[2];
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	ret = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, &data, sizeof(data));
 #else
 	ret = i2c_write(pmu_dev_ctx.handle, &data, sizeof(data), MAX20353_I2C_ADDR_FUEL_GAUGE);
@@ -1585,7 +1585,7 @@ int MAX20353_SOCReadReg(u8_t reg, u8_t *MSB, u8_t *LSB)
 		return MAX20353_ERROR;
 	}
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	ret = I2C_read_data(MAX20353_I2C_ADDR_FUEL_GAUGE, value, sizeof(value));
 #else
 	ret = i2c_read(pmu_dev_ctx.handle, value, sizeof(value), MAX20353_I2C_ADDR_FUEL_GAUGE);
@@ -1607,7 +1607,7 @@ int MAX20353_SOCWriteReg(u8_t reg, u8_t MSB, u8_t LSB)
 	u8_t cmdData[3] = {reg, MSB, LSB};
 	u32_t rslt = 0;
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	rslt = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, cmdData, sizeof(cmdData));
 #else
 	rslt = i2c_write(pmu_dev_ctx.handle, cmdData, sizeof(cmdData), MAX20353_I2C_ADDR_FUEL_GAUGE);

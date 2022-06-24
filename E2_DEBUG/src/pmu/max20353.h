@@ -10,7 +10,7 @@
 #define BATTERY_SOC_GAUGE	//xb add 20201124 电量计功能的代码
 #define BATTERT_NTC_CHECK	//xb add 20210106 电池增加NTC温度检测
 
-#define XB_TEST
+#define GPIO_ACT_I2C
 
 typedef enum
 {

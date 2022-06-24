@@ -72,8 +72,7 @@ static void show_infor2(u8_t *strbuf)
 }
 #endif
 
-
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 #define SCL_PIN		0
 #define SDA_PIN		1
 
@@ -299,7 +298,7 @@ err:
 
 static bool init_i2c(void)
 {
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	I2C_INIT();
 	return true;
 #else
@@ -327,7 +326,7 @@ static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t l
 
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	rslt = I2C_write_data(MAX20353_I2C_ADDR, data, len+1);
 #else
 	rslt = i2c_write(handle, data, len+1, MAX20353_I2C_ADDR);
@@ -339,7 +338,7 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 {
 	u32_t rslt = 0;
 
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	rslt = I2C_write_data(MAX20353_I2C_ADDR, &reg, 1);
 	if(rslt == 0)
 	{
@@ -901,7 +900,7 @@ void pmu_init(void)
 
 	pmu_dev_ctx.write_reg = platform_write;
 	pmu_dev_ctx.read_reg  = platform_read;
-#ifdef XB_TEST
+#ifdef GPIO_ACT_I2C
 	pmu_dev_ctx.handle    = NULL;
 #else
 	pmu_dev_ctx.handle    = i2c_pmu;

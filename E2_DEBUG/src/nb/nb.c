@@ -1730,6 +1730,96 @@ void ParseData(u8_t *data, u32_t datalen)
 			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
 			memcpy(g_new_wifi_ver, ptr, copylen);
 		}
+		else if(strcmp(strcmd, "S15") == 0)
+		{
+			u8_t *ptr,*ptr1;
+			u8_t tz_count,tz_dir,tz_buf[4] = {0};
+			u8_t date_buf[8] = {0};
+			u8_t time_buf[6] = {0};
+			u8_t tmpbuf[16] = {0};
+			sys_date_timer_t tmp_dt = {0};
+			u32_t copylen = 0;
+
+			//后台下发校时指令
+			//timezone
+			ptr = strstr(strdata, ",");
+			if(ptr == NULL)
+				return;
+			copylen = (ptr-strdata) < sizeof(tz_buf) ? (ptr-strdata) : sizeof(tz_buf);
+			memcpy(tz_buf, strdata, copylen);
+			if(tz_buf[0] == '+' || tz_buf[0] == '-')
+			{
+				if(tz_buf[0] == '+')
+					tz_dir = 1;
+				else
+					tz_dir = 0;
+
+				tz_count = atoi(&tz_buf[1]);
+			}
+			else
+			{
+				tz_dir = 1;
+				tz_count = atoi(tz_buf);
+			}
+
+		#ifdef NB_DEBUG
+			LOGD("timezone:%c%d",  (tz_dir == 1 ? '+':'-'), tz_count);
+		#endif
+
+			//date
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(date_buf) ? (ptr1-ptr) : sizeof(date_buf);
+			memcpy(date_buf, ptr, copylen);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[0], 4);
+			tmp_dt.year = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[4], 2);
+			tmp_dt.month = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[6], 2);
+			tmp_dt.day = atoi(tmpbuf);
+
+			//time
+			ptr = ptr1+1;
+			copylen = (datalen-(ptr-strdata)) < sizeof(time_buf) ? (datalen-(ptr-strdata)) : sizeof(time_buf);
+			memcpy(time_buf, ptr, copylen);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[0], 2);
+			tmp_dt.hour = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[2], 2);
+			tmp_dt.minute = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[4], 2);
+			tmp_dt.second = atoi(tmpbuf);
+
+			//if(tz_dir == 1)
+			//{
+			//	TimeIncrease(&tmp_dt, tz_count*15);
+			//}
+			//else
+			//{
+			//	TimeDecrease(&tmp_dt, tz_count*15);
+			//}
+			
+		#ifdef NB_DEBUG
+			LOGD("%04d%02d%02d %02d:%02d:%02d", tmp_dt.year,tmp_dt.month,tmp_dt.day,tmp_dt.hour,tmp_dt.minute,tmp_dt.second);
+		#endif
+
+			if(CheckSystemDateTimeIsValid(tmp_dt))
+			{
+				tmp_dt.week = GetWeekDayByDate(tmp_dt);
+				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
+				RedrawSystemTime();
+				SaveSystemDateTime();
+			}
+
+			flag = true;			
+		}
 
 		SaveSystemSettings();
 

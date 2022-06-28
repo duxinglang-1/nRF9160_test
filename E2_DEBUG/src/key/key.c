@@ -688,7 +688,7 @@ void KeyMsgProcess(void)
 		}
 
 	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorkingTiming())
+		if(PPGIsWorking())
 		{
 			PPGStopCheck();
 		}

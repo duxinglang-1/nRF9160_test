@@ -165,6 +165,11 @@ bool TempIsWorking(void)
 		return true;
 }
 
+void TempStop(void)
+{
+	temp_stop_flag = true;
+}
+
 void TempRedrawData(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -297,6 +302,8 @@ void TempMsgProcess(void)
 	if(temp_start_flag)
 	{
 		temp_start_flag = false;
+		if(temp_power_flag)
+			return;
 		
 	#ifdef TEMP_GXTS04	
 		gxts04_start();
@@ -312,6 +319,8 @@ void TempMsgProcess(void)
 	if(temp_stop_flag)
 	{
 		temp_stop_flag = false;
+		if(!temp_power_flag)
+			return;
 		
 	#ifdef TEMP_GXTS04	
 		gxts04_stop();

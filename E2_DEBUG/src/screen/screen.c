@@ -804,12 +804,11 @@ void EnterPoweroffScreen(void)
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
-
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(TempIsWorking()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 
@@ -1687,11 +1686,11 @@ void EnterSettingsScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(TempIsWorking()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -1769,11 +1768,11 @@ void EnterSyncDataScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(TempIsWorking()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -2039,7 +2038,8 @@ void ExitTempScreen(void)
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif
-	MenuStopTemp();
+	if(!TempIsWorkingTiming())
+		MenuStopTemp();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
@@ -2057,7 +2057,7 @@ void EnterTempScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -2266,7 +2266,7 @@ void ExitBPScreen(void)
 	AnimaStop();
 #endif
 
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -2472,7 +2472,7 @@ void ExitSPO2Screen(void)
 	AnimaStop();
 #endif
 
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -2491,7 +2491,7 @@ void EnterSPO2Screen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
@@ -2664,7 +2664,7 @@ void ExitHRScreen(void)
 	AnimaStop();
 #endif
 
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -2683,7 +2683,7 @@ void EnterHRScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
@@ -2757,7 +2757,7 @@ void DisplayPopUp(notify_infor infor)
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_SYNC_SUPPORT
@@ -3891,11 +3891,11 @@ void EnterSleepScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 
@@ -4027,11 +4027,11 @@ void EnterStepsScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -4161,7 +4161,7 @@ void EnterIdleScreen(void)
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_SYNC_SUPPORT
@@ -4533,7 +4533,7 @@ void EnterSOSScreen(void)
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_SYNC_SUPPORT

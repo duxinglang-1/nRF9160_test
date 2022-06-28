@@ -157,6 +157,18 @@ bool IsInTempScreen(void)
 		return false;
 }
 
+bool TempIsWorkingTiming(void)
+{
+	if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool TempIsWorking(void)
 {
 	if(temp_power_flag == false)

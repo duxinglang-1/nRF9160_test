@@ -309,6 +309,20 @@ int MAX20353_BoostConfig(void)
 	return ret;
 }
 
+int MAX20353_BoostDisable(void)
+{
+	int32_t ret = 0;
+	
+	appcmdoutvalue_ = 0x30;
+	appdatainoutbuffer_[0] = 0x00;
+	appdatainoutbuffer_[1] = 0x00;
+	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
+	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	ret = MAX20353_AppWrite(4);
+
+	return ret;
+}
+
 int MAX20353_ChargePumpConfig(void)
 {
     int32_t ret = 0;

@@ -465,13 +465,13 @@ void UpdateSystemTime(void)
 		)
 		{
 		#ifdef CONFIG_TEMP_SUPPORT
-			if(date_time.minute == 49-TEMP_CHECK_TIMELY)
+			if(date_time.minute == 48-TEMP_CHECK_TIMELY)
 			{	
 				TimerStartTemp();
 			}
 		#endif
 		#ifdef CONFIG_PPG_SUPPORT
-			if(date_time.minute == 50-PPG_CHECK_HR_TIMELY)
+			if(date_time.minute == 49-PPG_CHECK_HR_TIMELY)
 			{
 				TimerStartHr();
 			}

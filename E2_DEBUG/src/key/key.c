@@ -686,7 +686,21 @@ void KeyMsgProcess(void)
 		{
 			EnterIdleScreen();
 		}
-	
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorkingTiming())
+		{
+			PPGStopCheck();
+		}
+	#endif
+
+	#ifdef CONFIG_TEMP_SUPPORT
+		if(TempIsWorking())
+		{
+			TempStop();
+		}
+	#endif
+
 		wear_off_trigger_flag = false;
 	}
 #endif	

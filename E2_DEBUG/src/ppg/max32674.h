@@ -15,7 +15,7 @@
 
 #define PPG_CHECK_HR_TIMELY			1
 #define PPG_CHECK_SPO2_TIMELY		5
-#define PPG_CHECK_BPT_TIMELY		2
+#define PPG_CHECK_BPT_TIMELY		3
 
 #define PPG_HR_MAX		150
 #define PPG_HR_MIN		30

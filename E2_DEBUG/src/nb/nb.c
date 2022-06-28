@@ -866,10 +866,6 @@ void modem_data_init(void)
  */
 static void modem_configure(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	if(test_nb_flag)
 	{
 		strcpy(nb_test_info, "modem_configure");
@@ -999,10 +995,6 @@ void NBRedrawSignal(void)
 	bool flag=false;
 	u8_t strbuf[128] = {0};
 	u8_t tmpbuf[128] = {0};
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
 
 	if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
 	{
@@ -1202,10 +1194,6 @@ void GetModemDateTime(void)
 	u8_t tz_dir[3] = {0};
 	u8_t tz_count,daylight;
 	static u8_t retry = 5;
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
 
 	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
 	{
@@ -1872,10 +1860,6 @@ static int configure_low_power(void)
 {
 	int err;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 #if defined(CONFIG_LTE_PSM_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** Power Saving Mode */
 	err = lte_lc_psm_req(true);
@@ -1936,10 +1920,6 @@ void GetModemSignal(void)
 	u8_t tmpbuf[64] = {0};
 	s32_t rsrq=0,rsrp,snr;
 	static s32_t rsrpbk = 0;
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
 
 	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
@@ -2245,10 +2225,6 @@ void SetNetWorkApn(u8_t *imsi_buf)
 	u32_t i;
 	u8_t tmpbuf[256] = {0};
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	for(i=0;i<ARRAY_SIZE(nb_apn_table);i++)
 	{
 		if(strncmp(imsi_buf, nb_apn_table[i].plmn, strlen(nb_apn_table[i].plmn)) == 0)
@@ -2301,10 +2277,6 @@ void SetNetWorkParaByPlmn(u8_t *imsi)
 void GetModemInfor(void)
 {
 	u8_t tmpbuf[256] = {0};
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
 
 	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
@@ -2370,10 +2342,6 @@ void GetModemStatus(void)
 	u8_t strbuf[64] = {0};
 	u8_t tmpbuf[256] = {0};
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2385,10 +2353,6 @@ void GetModemStatus(void)
 
 void SetModemTurnOn(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2405,10 +2369,6 @@ void SetModemTurnOn(void)
 
 void SetModemTurnOff(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2427,10 +2387,6 @@ void SetModemTurnOff(void)
 
 void SetModemGps(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	if(at_cmd_write(CMD_SET_NW_MODE_GPS, NULL, 0, NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2447,10 +2403,6 @@ void SetModemGps(void)
 
 void SetMomomNw(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
 	if(at_cmd_write(CMD_SET_NW_MODE_NB, NULL, 0, NULL) == 0)
 #elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
@@ -2477,10 +2429,6 @@ void GetModemAPN(void)
 {
 	u8_t tmpbuf[128] = {0};
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
-
 	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2492,10 +2440,6 @@ void GetModemAPN(void)
 void SetModemAPN(void)
 {
 	u8_t tmpbuf[128] = {0};
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
 
 	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
@@ -2821,10 +2765,6 @@ static void nb_link(struct k_work *work)
 void GetNBSignal(void)
 {
 	u8_t str_rsrp[128] = {0};
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uart_log_sleep_out();
-#endif
 
 	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	{

@@ -157,12 +157,29 @@ bool IsInTempScreen(void)
 		return false;
 }
 
+bool TempIsWorkingTiming(void)
+{
+	if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool TempIsWorking(void)
 {
 	if(temp_power_flag == false)
 		return false;
 	else
 		return true;
+}
+
+void TempStop(void)
+{
+	temp_stop_flag = true;
 }
 
 void TempRedrawData(void)
@@ -297,6 +314,8 @@ void TempMsgProcess(void)
 	if(temp_start_flag)
 	{
 		temp_start_flag = false;
+		if(temp_power_flag)
+			return;
 		
 	#ifdef TEMP_GXTS04	
 		gxts04_start();
@@ -312,6 +331,8 @@ void TempMsgProcess(void)
 	if(temp_stop_flag)
 	{
 		temp_stop_flag = false;
+		if(!temp_power_flag)
+			return;
 		
 	#ifdef TEMP_GXTS04	
 		gxts04_stop();

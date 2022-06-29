@@ -294,7 +294,7 @@ void whrm_wspo2_suite_data_rx_mode1(void * p_algo_data_mode1, uint8_t* data_ptr)
 	sample->spo2State = data_ptr[18];
 	sample->scd_contact_state = data_ptr[19];
 
-	LOGD("HR:%d, SPO2:%d", sample->hr, sample->spo2);
+	//LOGD("HR:%d, SPO2:%d", sample->hr, sample->spo2);
 }
 
 void whrm_wspo2_suite_data_rx_mode2(void * p_algo_data_mode2, uint8_t* data_ptr)
@@ -372,7 +372,7 @@ void bpt_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr)
 	uint16_t bpt_flags = (data_ptr[4] << 8) | data_ptr[5];
 	uint8_t est_error = bpt_flags & 0b0000000000100000;
 
-	LOGD("bptr = %d %d %d %d %d" ,  data_ptr[0] ,  data_ptr[1] , data_ptr[2] , data_ptr[3], est_error);
+	//LOGD("bptr = %d %d %d %d %d" ,  data_ptr[0] ,  data_ptr[1] , data_ptr[2] , data_ptr[3], est_error);
 	//LOGD("bpt exec cnt = %" , (int)((data_ptr[6] << 8) | data_ptr[7]));
 }
 

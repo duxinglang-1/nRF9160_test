@@ -380,6 +380,12 @@ void LCD_ResetBL_Timer(void)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
 }
 
+//获取屏幕当前背光模式
+LCD_BL_MODE LCD_Get_BL_Mode(void)
+{
+	return bl_mode;
+}
+
 //屏幕背光模式设置
 void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 {

@@ -29,9 +29,6 @@
 //#define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
 static bool key_trigger_flag = false;
-#ifdef WEAR_CHECK_SUPPORT
-static bool wear_off_trigger_flag = false;
-#endif
 static u8_t flag;
 static u32_t keycode;
 static u32_t keytype;
@@ -44,6 +41,10 @@ static sys_slist_t button_handlers;
 #ifdef WEAR_CHECK_SUPPORT
 #define WEAR_PORT 	"GPIO_0"
 #define WEAR_PIN	06
+
+static bool wear_int_flag = false;
+static bool wear_off_trigger_flag = false;
+
 static struct device *gpio_wear;
 static struct gpio_callback gpio_wear_cb;
 static void wear_off_timerout(struct k_timer *timer_id);
@@ -590,6 +591,11 @@ static void wear_off_timerout(struct k_timer *timer_id)
 
 void WearInterruptHandle(void)
 {
+	wear_int_flag = true;
+}
+
+void WearMsgProc(void)
+{
 	u32_t val;
 
 	if(!global_settings.wrist_off_check)
@@ -633,7 +639,7 @@ void wear_init(void)
 	gpio_add_callback(gpio_wear, &gpio_wear_cb);
 	gpio_pin_enable_callback(gpio_wear, WEAR_PIN);
 
-	WearInterruptHandle();
+	WearMsgProc();
 }
 #endif
 
@@ -659,7 +665,14 @@ void KeyMsgProcess(void)
 		key_trigger_flag = false;
 	}
 
-#ifdef WEAR_CHECK_SUPPORT	
+#ifdef WEAR_CHECK_SUPPORT
+	if(wear_int_flag)
+	{
+		WearMsgProc();
+		
+		wear_int_flag = false;
+	}
+	
 	if(wear_off_trigger_flag)
 	{
 		if(0
@@ -673,7 +686,21 @@ void KeyMsgProcess(void)
 		{
 			EnterIdleScreen();
 		}
-	
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+		{
+			PPGStopCheck();
+		}
+	#endif
+
+	#ifdef CONFIG_TEMP_SUPPORT
+		if(TempIsWorking())
+		{
+			TempStop();
+		}
+	#endif
+
 		wear_off_trigger_flag = false;
 	}
 #endif	

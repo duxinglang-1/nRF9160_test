@@ -505,6 +505,7 @@ typedef enum
 	SCREEN_ACTION_NO,
 	SCREEN_ACTION_ENTER,
 	SCREEN_ACTION_UPDATE,
+	SCREEN_ACTION_EXIT,
 	SCREEN_ACTION_MAX
 }SCREEN_ACTION_ENUM;
 
@@ -548,7 +549,7 @@ typedef struct
 	u16_t h;
 	u8_t img_count;
 	u32_t img[NOTIFY_IMG_MAX_COUNT];
-	u8_t text[NOTIFY_TEXT_MAX_LEN+1];
+	u16_t text[NOTIFY_TEXT_MAX_LEN+1];
 }notify_infor;
 
 extern SCREEN_ID_ENUM screen_id;
@@ -563,7 +564,7 @@ extern void EnterGPSTestScreen(void);
 extern void EnterNBTestScreen(void);
 extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
-extern void ExitNotifyScreen(void);
+extern void ExitNotify(void);
 extern void EnterFOTAScreen(void);
 extern void DisplayPopUp(notify_infor infor);
 

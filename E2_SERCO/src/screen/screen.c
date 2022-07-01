@@ -57,6 +57,7 @@
 static u8_t scr_index = 0;
 static u8_t bat_charging_index = 0;
 static bool exit_notify_flag = false;
+static bool entry_idle_flag = false;
 
 static void NotifyTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
@@ -133,19 +134,40 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	if(screen_id == SCREEN_ID_HR)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartHrSpo2();
+		if(get_hr_ok_flag)
+		{
+			EntryIdleScr();
+		}
+		else
+		{
+			MenuStartHr();
+		}
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_SPO2)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartHrSpo2();
+		if(get_spo2_ok_flag)
+		{
+			EntryIdleScr();
+		}
+		else
+		{
+			MenuStartSpo2();
+		}
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_BP)
 	{
 	#ifdef CONFIG_PPG_SUPPORT
-		MenuStartBpt();
+		if(get_bpt_ok_flag)
+		{
+			EntryIdleScr();
+		}
+		else
+		{
+			MenuStartBpt();
+		}
 	#endif
 	}
 	else if(screen_id == SCREEN_ID_GPS_TEST)
@@ -181,7 +203,14 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 #ifdef CONFIG_TEMP_SUPPORT
 	else if(screen_id == SCREEN_ID_TEMP)
 	{
-		MenuStartTemp();
+		if(get_temp_ok_flag)
+		{
+			EntryIdleScr();
+		}
+		else
+		{
+			MenuStartTemp();
+		}
 	}
 #endif
 	else if(screen_id == SCREEN_ID_SETTINGS)
@@ -769,16 +798,17 @@ void EnterPoweroffScreen(void)
 	if(screen_id == SCREEN_ID_POWEROFF)
 		return;
 
+#ifdef NB_SIGNAL_TEST
 	if(gps_is_working())
 		MenuStopGPS();
-
-#ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
-		MenuStopPPG();
 #endif
 
+#ifdef CONFIG_PPG_SUPPORT
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+		MenuStopPPG();
+#endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(TempIsWorking()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 
@@ -827,7 +857,10 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
- 
+
+ #ifdef NB_SIGNAL_TEST
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+ #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
@@ -839,6 +872,7 @@ void PowerOffShowStatus(void)
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
   #endif
+ #endif 
 #endif
 }
 
@@ -1639,7 +1673,7 @@ void SettingsScreenProcess(void)
 
 void ExitSettingsScreen(void)
 {
-	EnterIdleScreen();
+	EntryIdleScr();
 }
 
 void EnterSettingsScreen(void)
@@ -1652,11 +1686,11 @@ void EnterSettingsScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(TempIsWorking()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -1697,24 +1731,20 @@ void EnterSettingsScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #endif
  
- #ifdef NB_SIGNAL_TEST
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
- #else
-  #ifdef CONFIG_SYNC_SUPPORT
+ #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
-  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+ #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
    #elif defined(CONFIG_STEP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
    #endif
-  #elif defined(CONFIG_PPG_SUPPORT)
+ #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
-  #elif defined(CONFIG_TEMP_SUPPORT)
+ #elif defined(CONFIG_TEMP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
-  #else
+ #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
-  #endif
  #endif
 #endif
 }
@@ -1738,11 +1768,11 @@ void EnterSyncDataScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(TempIsWorking()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -1870,9 +1900,11 @@ void TempUpdateStatus(void)
 	LCD_Fill(TEMP_NUM_X, TEMP_NUM_Y, TEMP_NUM_W, TEMP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_temp_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0	
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -1893,8 +1925,8 @@ void TempUpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void TempShowStatus(void)
@@ -1925,24 +1957,23 @@ void TempShowStatus(void)
 	GetCurDayTempRecData(temp);
 	for(i=0;i<24;i++)
 	{
-		if((temp_max == 0.0) || (temp_min == 0.0))
+		if((temp[i] >= TEMP_MIN) && (temp[i] <= TEMP_MAX))
 		{
-			if((temp[i] > 0) && (temp[i] <= 420))
+			if((temp_max == 0.0) && (temp_min == 0.0))
 			{
 				temp_max = (float)temp[i]/10.0;
 				temp_min = (float)temp[i]/10.0;
 			}
-		}
-		else
-		{	
-			if((temp[i]/10.0 > temp_max) && (temp[i] <= 420))
-				temp_max = (float)temp[i]/10.0;
-			if((temp[i]/10.0 < temp_min) && (temp[i] <= 420))
-				temp_min = (float)temp[i]/10.0;
-		}
+			else
+			{
+				if(temp[i]/10.0 > temp_max)
+					temp_max = (float)temp[i]/10.0;
+				if(temp[i]/10.0 < temp_min)
+					temp_min = (float)temp[i]/10.0;
+			}
 
-		if((temp[i]/10.0 > 32.0) && (temp[i]/10.0 < 42.0))
 			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(temp[i]/10.0-32.0)*15/2, TEMP_REC_DATA_W, (temp[i]/10.0-32.0)*15/2, color);
+		}
 	}
 
 #ifdef FONTMAKER_UNICODE_FONT
@@ -2007,7 +2038,8 @@ void ExitTempScreen(void)
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif
-	MenuStopTemp();
+	if(!TempIsWorkingTiming())
+		MenuStopTemp();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
@@ -2025,7 +2057,7 @@ void EnterTempScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -2037,6 +2069,8 @@ void EnterTempScreen(void)
 	screen_id = SCREEN_ID_TEMP;
 	scr_msg[SCREEN_ID_TEMP].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_TEMP].status = SCREEN_STATUS_CREATING;
+
+	get_temp_ok_flag = false;
 
 #ifdef CONFIG_PPG_SUPPORT
 	SetLeftKeyUpHandler(EnterSPO2Screen);
@@ -2105,9 +2139,11 @@ void BPUpdateStatus(void)
 	LCD_Fill(BP_NUM_X, BP_NUM_Y, BP_NUM_W, BP_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_bpt_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -2128,8 +2164,8 @@ void BPUpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void BPShowStatus(void)
@@ -2153,7 +2189,8 @@ void BPShowStatus(void)
 			&& (bpt[i].diastolic >= PPG_BPT_DIA_MIN) && (bpt[i].diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
-			if(i == 0)
+			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
+				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
 			{
 				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
 				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
@@ -2229,7 +2266,7 @@ void ExitBPScreen(void)
 	AnimaStop();
 #endif
 
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -2247,7 +2284,7 @@ void EnterBPScreen(void)
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
 #endif
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -2319,9 +2356,11 @@ void SPO2UpdateStatus(void)
 	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_spo2_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0	
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -2342,8 +2381,8 @@ void SPO2UpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void SPO2ShowStatus(void)
@@ -2364,7 +2403,7 @@ void SPO2ShowStatus(void)
 	{
 		if((spo2[i] >= PPG_SPO2_MIN) && (spo2[i] <= PPG_SPO2_MAX))
 		{
-			if(i == 0)
+			if((spo2_max == 0) && (spo2_min == 0))
 			{
 				spo2_max = spo2[i];
 				spo2_min = spo2[i];
@@ -2433,7 +2472,7 @@ void ExitSPO2Screen(void)
 	AnimaStop();
 #endif
 
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -2452,10 +2491,10 @@ void EnterSPO2Screen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 	
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -2507,9 +2546,11 @@ void HRUpdateStatus(void)
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
 	LCD_ShowString(x,y,tmpbuf);
 
-#if 0
 	if(get_hr_ok_flag)
 	{
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
+
+	#if 0	
 		notify_infor infor = {0};
 
 	#ifdef FONTMAKER_UNICODE_FONT
@@ -2530,8 +2571,8 @@ void HRUpdateStatus(void)
 		infor.img_count = 0;
 
 		DisplayPopUp(infor);
+	#endif	
 	}
-#endif	
 }
 
 void HRShowStatus(void)
@@ -2553,7 +2594,7 @@ void HRShowStatus(void)
 	{
 		if((hr[i] >= PPG_HR_MIN) && (hr[i] <= PPG_HR_MAX))
 		{
-			if(i == 0)
+			if((hr_max == 0) && (hr_min == 0))
 			{
 				hr_max = hr[i];
 				hr_min = hr[i];
@@ -2623,7 +2664,7 @@ void ExitHRScreen(void)
 	AnimaStop();
 #endif
 
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -2642,10 +2683,10 @@ void EnterHRScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 	
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -2690,14 +2731,14 @@ void EnterNotifyScreen(void)
 	scr_msg[SCREEN_ID_NOTIFY].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_NOTIFY].status = SCREEN_STATUS_CREATING;
 
-	SetLeftKeyUpHandler(ExitNotifyScreen);
-	SetRightKeyUpHandler(ExitNotifyScreen);
+	SetLeftKeyUpHandler(ExitNotify);
+	SetRightKeyUpHandler(ExitNotify);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotifyScreen);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotify);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotify);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitNotify);
 #endif	
 }
 
@@ -2712,11 +2753,11 @@ void DisplayPopUp(notify_infor infor)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_SYNC_SUPPORT
@@ -2726,7 +2767,7 @@ void DisplayPopUp(notify_infor infor)
 
 	memcpy(&notify_msg, &infor, sizeof(notify_infor));
 
-	len = strlen(notify_msg.text);
+	len = mmi_ucs2strlen((u8_t*)notify_msg.text);
 	if(len > NOTIFY_TEXT_MAX_LEN)
 		len = NOTIFY_TEXT_MAX_LEN;
 	
@@ -2736,6 +2777,14 @@ void DisplayPopUp(notify_infor infor)
 	}
 	
 	EnterNotifyScreen();
+}
+
+void ExitNotify(void)
+{
+	if(screen_id == SCREEN_ID_NOTIFY)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_EXIT;
+	}
 }
 
 void ExitNotifyScreen(void)
@@ -2752,7 +2801,10 @@ void ExitNotifyScreen(void)
 
 void NotifyTimerOutCallBack(struct k_timer *timer_id)
 {
-	ExitNotifyScreen();
+	if(screen_id == SCREEN_ID_NOTIFY)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_EXIT;
+	}
 }
 
 void ShowStringsInRect(u16_t rect_x, u16_t rect_y, u16_t rect_w, u16_t rect_h, u8_t *strbuf)
@@ -2885,12 +2937,12 @@ void NotifyUpdate(void)
 					line_count = line_max;
 
 				line_no = 0;
-				text_len = strlen(notify_msg.text);
+				text_len = mmi_ucs2strlen(notify_msg.text);
 				y = ((str_h-2*offset_h)-line_count*line_h)/2;
 				y += (str_y+offset_h);
 				while(line_no < line_count)
 				{
-					u8_t tmpbuf[128] = {0};
+					u16_t tmpbuf[128] = {0};
 					u8_t i=0;
 
 					tmpbuf[i++] = notify_msg.text[byte_no++];
@@ -2991,12 +3043,12 @@ void NotifyShow(void)
 				line_count = line_max;
 
 			line_no = 0;
-			text_len = strlen(notify_msg.text);
+			text_len = mmi_ucs2strlen(notify_msg.text);
 			y = ((str_h-2*offset_h)-line_count*line_h)/2;
 			y += (str_y+offset_h);
 			while(line_no < line_count)
 			{
-				u8_t tmpbuf[128] = {0};
+				u16_t tmpbuf[128] = {0};
 				u8_t i=0;
 
 				tmpbuf[i++] = notify_msg.text[byte_no++];
@@ -3067,6 +3119,10 @@ void NotifyScreenProcess(void)
 		
 	case SCREEN_ACTION_UPDATE:
 		NotifyUpdate();
+		break;
+
+	case SCREEN_ACTION_EXIT:
+		ExitNotifyScreen();
 		break;
 	}
 	
@@ -3835,11 +3891,11 @@ void EnterSleepScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 
@@ -3971,11 +4027,11 @@ void EnterStepsScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -4080,6 +4136,11 @@ void WristScreenProcess(void)
 	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
 }
 
+void EntryIdleScr(void)
+{
+	entry_idle_flag = true;
+}
+
 void EnterIdleScreen(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
@@ -4091,21 +4152,23 @@ void EnterIdleScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef NB_SIGNAL_TEST
+	MenuStopNB();
 	if(gps_is_working())
 		MenuStopGPS();
 #endif	
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_SYNC_SUPPORT
 	if(SyncIsRunning())
 		SyncDataStop();
 #endif
+
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 	history_screen_id = screen_id;
@@ -4282,12 +4345,14 @@ void EnterGPSTestScreen(void)
 	PPGStopCheck();
 #endif
 
+	MenuStopNB();
+
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }
@@ -4369,7 +4434,7 @@ void EnterNBTestScreen(void)
 	scr_msg[SCREEN_ID_NB_TEST].status = SCREEN_STATUS_CREATING;
 
 	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), NULL);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 	
 	if(gps_is_working())
 		MenuStopGPS();
@@ -4468,7 +4533,7 @@ void EnterSOSScreen(void)
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking())
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_SYNC_SUPPORT
@@ -4548,6 +4613,12 @@ void GoBackHistoryScreen(void)
 
 void ScreenMsgProcess(void)
 {
+	if(entry_idle_flag)
+	{
+		EnterIdleScreen();
+		entry_idle_flag = false;
+	}
+	
 	if(scr_msg[screen_id].act != SCREEN_ACTION_NO)
 	{
 		if(scr_msg[screen_id].status != SCREEN_STATUS_CREATED)

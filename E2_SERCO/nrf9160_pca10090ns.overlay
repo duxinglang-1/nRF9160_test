@@ -1,6 +1,6 @@
 &spi2{
 	compatible = "nordic,nrf-spim";
-	status = "okay";
+	status = "disabled";
 	sck-pin = <3>;
 	mosi-pin = <4>;
 	miso-pin = <5>;
@@ -11,7 +11,7 @@
 	status = "okay";
 	sck-pin = <22>;
 	mosi-pin = <20>;
-	miso-pin = <20>;
+	miso-pin = <5>;
 };
 
 &i2c1{
@@ -25,8 +25,17 @@
 &uart0{
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <29>;
+	tx-pin = <4>;
 	rx-pin = <28>;
+	#rts-pin = <14>;
+	#cts-pin = <15>;
+};
+
+&uart2{
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <18>;
+	rx-pin = <19>;
 	#rts-pin = <14>;
 	#cts-pin = <15>;
 };

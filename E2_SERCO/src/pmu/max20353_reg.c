@@ -309,6 +309,20 @@ int MAX20353_BoostConfig(void)
 	return ret;
 }
 
+int MAX20353_BoostDisable(void)
+{
+	int32_t ret = 0;
+	
+	appcmdoutvalue_ = 0x30;
+	appdatainoutbuffer_[0] = 0x00;
+	appdatainoutbuffer_[1] = 0x00;
+	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
+	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	ret = MAX20353_AppWrite(4);
+
+	return ret;
+}
+
 int MAX20353_ChargePumpConfig(void)
 {
     int32_t ret = 0;
@@ -949,13 +963,21 @@ int ReadWord(u8_t reg, u8_t *MSB, u8_t *LSB)
 	u8_t data = reg;
 	u8_t value[2];
 
+#ifdef GPIO_ACT_I2C
+	ret = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, &data, sizeof(data));
+#else
 	ret = i2c_write(pmu_dev_ctx.handle, &data, sizeof(data), MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if(ret != 0)
 	{
 		return MAX20353_ERROR;
 	}
 
+#ifdef GPIO_ACT_I2C
+	ret = I2C_read_data(MAX20353_I2C_ADDR_FUEL_GAUGE, value, sizeof(value));
+#else
 	ret = i2c_read(pmu_dev_ctx.handle, value, sizeof(value), MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if (ret != 0)
 	{
 		return MAX20353_ERROR;
@@ -973,7 +995,11 @@ int WriteWord(u8_t reg, u8_t MSB, u8_t LSB)
 	u8_t cmdData[3] = {reg, MSB, LSB};
 	u32_t rslt = 0;
 
+#ifdef GPIO_ACT_I2C
+	rslt = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, cmdData, sizeof(cmdData));
+#else
 	rslt = i2c_write(pmu_dev_ctx.handle, cmdData, sizeof(cmdData), MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if (rslt != 0)
 		return MAX20353_ERROR;
 	return MAX20353_NO_ERROR;
@@ -983,7 +1009,11 @@ int WriteMulti(u8_t *data, u8_t len)
 {
 	u32_t ret;
 
+#ifdef GPIO_ACT_I2C
+	ret = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, data, len);
+#else
 	ret = i2c_write(pmu_dev_ctx.handle, data, len, MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if (ret != 0)
 		return MAX20353_ERROR;
 	return MAX20353_NO_ERROR;
@@ -1545,13 +1575,21 @@ int MAX20353_SOCReadReg(u8_t reg, u8_t *MSB, u8_t *LSB)
 	u8_t data = reg;
 	u8_t value[2];
 
+#ifdef GPIO_ACT_I2C
+	ret = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, &data, sizeof(data));
+#else
 	ret = i2c_write(pmu_dev_ctx.handle, &data, sizeof(data), MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if(ret != 0)
 	{
 		return MAX20353_ERROR;
 	}
 
+#ifdef GPIO_ACT_I2C
+	ret = I2C_read_data(MAX20353_I2C_ADDR_FUEL_GAUGE, value, sizeof(value));
+#else
 	ret = i2c_read(pmu_dev_ctx.handle, value, sizeof(value), MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if (ret != 0)
 	{
 		return MAX20353_ERROR;
@@ -1569,7 +1607,11 @@ int MAX20353_SOCWriteReg(u8_t reg, u8_t MSB, u8_t LSB)
 	u8_t cmdData[3] = {reg, MSB, LSB};
 	u32_t rslt = 0;
 
+#ifdef GPIO_ACT_I2C
+	rslt = I2C_write_data(MAX20353_I2C_ADDR_FUEL_GAUGE, cmdData, sizeof(cmdData));
+#else
 	rslt = i2c_write(pmu_dev_ctx.handle, cmdData, sizeof(cmdData), MAX20353_I2C_ADDR_FUEL_GAUGE);
+#endif
 	if (rslt != 0)
 		return MAX20353_ERROR;
 	return MAX20353_NO_ERROR;

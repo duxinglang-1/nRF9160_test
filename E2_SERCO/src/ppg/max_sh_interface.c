@@ -51,7 +51,8 @@
 #define PPG_MFIO_PIN	14
 #define PPG_RST_PIN		16
 #define PPG_EN_PIN		17
-	
+#define PPG_I2C_EN_PIN	3
+
 #define MAX32674_I2C_ADD     0x55
 	
 #ifdef DT_ALIAS_SW0_GPIOS_FLAGS
@@ -68,8 +69,8 @@
 //max size is used for bootloader page loading
 #define SS_TX_BUF_SIZE		(BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE+BL_FLASH_CMD_LEN)
 
-static struct device *i2c_ppg;
-static struct device *gpio_ppg;
+static struct device *i2c_ppg = NULL;
+static struct device *gpio_ppg = NULL;
 static struct gpio_callback gpio_cb;
 
 u8_t sh_write_buf[SS_TX_BUF_SIZE]={0};
@@ -89,16 +90,38 @@ void wait_ms(int ms)
 	k_sleep(K_MSEC(ms));
 }
 
-void SH_Power_On(void)
+void PPG_i2c_on(void)
 {
-	//PPG供电打开
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
+
+	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 1);
+
+	gpio_pin_configure(gpio_ppg, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, 29, 1);
+}
+
+void PPG_i2c_off(void)
+{
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
+
+	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, 29, 0);
+}
+
+void PPG_Enable(void)
+{
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
 }
 
-void SH_Power_Off(void)
+void PPG_Disable(void)
 {
-	//PPG供电关闭
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
 }
@@ -127,7 +150,8 @@ static void sh_init_gpio(void)
 {
 	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_DOWN|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
 
-	gpio_ppg = device_get_binding(PPG_PORT);
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
 	
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
@@ -138,6 +162,13 @@ static void sh_init_gpio(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 1);
+	k_sleep(K_MSEC(10));
+
+	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, PPG_I2C_EN_PIN, 1);
+
+	gpio_pin_configure(gpio_ppg, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_ppg, 29, 1);
 	
 	//PPG模式选择(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_DIR_OUT);
@@ -414,6 +445,21 @@ s32_t sh_get_hub_fw_version(u8_t* fw_version)
 
 	memcpy(fw_version, &rxbuf[1],sizeof(rxbuf) - 1);
 	return status;
+}
+
+int sh_set_sensorhub_active(void)
+{
+	gpio_pin_write(gpio_ppg, PPG_INT_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_write(gpio_ppg, PPG_INT_PIN, 1);
+}
+
+int sh_set_sensorhub_sleep(void)
+{
+	u8_t ByteSeq[] = {0x04,0x00,0x02};
+	
+	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+    return status;
 }
 
 int sh_set_sensorhub_operating_mode(u8_t hubMode)
@@ -1223,8 +1269,10 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
-		SH_Power_Off();
-		//Set_PPG_Power_Off();
+
+		PPG_i2c_off();
+		PPG_Disable();
+		PPG_Power_Off();
 		return false;
 	}
 #ifdef MAX_DEBUG	
@@ -1239,8 +1287,9 @@ bool sh_init_interface(void)
 		LOGD("read FW version fail %x", s32_status);
 	#endif
 	
-		SH_Power_Off();
-		//Set_PPG_Power_Off();
+		PPG_i2c_off();
+		PPG_Power_Off();
+		PPG_Disable();
 		return false;
 	}
 	else
@@ -1271,9 +1320,9 @@ bool sh_init_interface(void)
 		LCD_SleepOut();
 	}
 
-	SH_Power_Off();
-	//Set_PPG_Power_Off();
-	
+	PPG_i2c_off();
+	PPG_Power_Off();
+	PPG_Disable();
 	return true;
 }
 
@@ -1406,6 +1455,12 @@ void sh_get_APP_version(void)
 	}
 }
 
+bool sh_clear_bpt_cal_data(void)
+{
+	memset(&sh_bpt_cal, 0x00, CAL_RESULT_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+}
+
 bool sh_check_bpt_cal_data(void)
 {
 	SpiFlash_Read(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
@@ -1492,7 +1547,7 @@ void sh_req_bpt_cal_data(void)
 	//Set the cal_index, reference systolic, reference diastolic
 	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
 #ifdef MAX_DEBUG
-	LOGD("set cal_index sys&dia ret:%d", status);
+	LOGD("set cal_index sys:%d&dia:%d ret:%d", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic, status);
 #endif
 	//set algo submode
 	status = sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);

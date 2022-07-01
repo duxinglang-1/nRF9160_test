@@ -14,12 +14,12 @@
 #include "font.h"
 
 //SPIÒý½Å¶¨Òå
-#define FLASH_DEVICE 	"SPI_2"
+#define FLASH_DEVICE 	"SPI_3"
 #define FLASH_NAME 		"W25Q64FW"
 #define FLASH_PORT		"GPIO_0"
 #define FLASH_CS_PIN		(2)
-#define FLASH_CLK_PIN		(3)
-#define FLASH_MOSI_PIN		(4)
+#define FLASH_CLK_PIN		(22)
+#define FLASH_MOSI_PIN		(20)
 #define FLASH_MISO_PIN		(5)
 
 //W25Q64 ID

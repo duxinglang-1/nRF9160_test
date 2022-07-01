@@ -34,6 +34,7 @@ static bool temp_test_flag = false;
 static bool temp_stop_flag = false;
 static bool temp_redraw_data_flag = false;
 static bool temp_power_flag = false;
+static bool menu_start_temp = false;
 
 bool get_temp_ok_flag = false;
 
@@ -46,7 +47,6 @@ static void temp_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_stop_timer, temp_auto_stop_timerout, NULL);
 static void temp_get_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_check_timer, temp_get_timerout, NULL);
-
 
 static void temp_auto_stop_timerout(struct k_timer *timer_id)
 {
@@ -75,8 +75,11 @@ void SetCurDayTempRecData(float data)
 	u8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
 	temp_rec2_data *p_temp = NULL;
 	u16_t deca_temp = data*10;
-	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 
+	if((deca_temp > TEMP_MAX) || (deca_temp < TEMP_MIN))
+		deca_temp = 0;
+	
+	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	p_temp = tmpbuf+6*sizeof(temp_rec2_data);
 	if(((date_time.year > p_temp->year)&&(p_temp->year != 0xffff && p_temp->year != 0x0000))
 		||((date_time.year == p_temp->year)&&(date_time.month > p_temp->month)&&(p_temp->month != 0xff && p_temp->month != 0x00))
@@ -154,12 +157,29 @@ bool IsInTempScreen(void)
 		return false;
 }
 
+bool TempIsWorkingTiming(void)
+{
+	if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool TempIsWorking(void)
 {
 	if(temp_power_flag == false)
 		return false;
 	else
 		return true;
+}
+
+void TempStop(void)
+{
+	temp_stop_flag = true;
 }
 
 void TempRedrawData(void)
@@ -179,6 +199,8 @@ void TimerStartTemp(void)
 {
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
+	g_temp_timing = 0.0;
+	get_temp_ok_flag = false;
 
 	if(is_wearing())
 	{
@@ -191,6 +213,7 @@ void APPStartTemp(void)
 {
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
+	get_temp_ok_flag = false;
 
 	if(is_wearing())
 	{
@@ -199,7 +222,7 @@ void APPStartTemp(void)
 	}
 }
 
-void MenuStartTemp(void)
+void MenuTriggerTemp(void)
 {
 	if(!is_wearing())
 	{
@@ -220,9 +243,17 @@ void MenuStartTemp(void)
 		
 		return;
 	}
-	
+
+	g_temp_skin = 0.0;
+	g_temp_body = 0.0;
+	get_temp_ok_flag = false;
 	g_temp_trigger |= TEMP_TRIGGER_BY_MENU;
 	temp_start_flag = true;
+}
+
+void MenuStartTemp(void)
+{
+	menu_start_temp = true;
 }
 
 void MenuStopTemp(void)
@@ -274,16 +305,23 @@ void TempMsgProcess(void)
 		}
 	}
 
+	if(menu_start_temp)
+	{
+		MenuTriggerTemp();
+		menu_start_temp = false;
+	}
+	
 	if(temp_start_flag)
 	{
 		temp_start_flag = false;
+		if(temp_power_flag)
+			return;
 		
 	#ifdef TEMP_GXTS04	
 		gxts04_start();
 	#endif
 		temp_power_flag = true;
-		get_temp_ok_flag = false;
-		
+	
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)
@@ -293,6 +331,8 @@ void TempMsgProcess(void)
 	if(temp_stop_flag)
 	{
 		temp_stop_flag = false;
+		if(!temp_power_flag)
+			return;
 		
 	#ifdef TEMP_GXTS04	
 		gxts04_stop();

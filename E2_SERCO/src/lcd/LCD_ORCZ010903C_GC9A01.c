@@ -11,6 +11,7 @@
 #include "LCD_ORCZ010903C_GC9A01.h"
 
 #define SPI_BUF_LEN	8
+#define SPI_MUIT_BY_CS
 
 struct device *spi_lcd;
 struct device *gpio_lcd;
@@ -30,6 +31,18 @@ static u8_t rx_buffer[SPI_BUF_LEN] = {0};
 
 u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
+#ifdef SPI_MUIT_BY_CS
+void LCD_CS_LOW(void)
+{
+	gpio_pin_write(gpio_lcd, CS, 0);
+}
+
+void LCD_CS_HIGH(void)
+{
+	gpio_pin_write(gpio_lcd, CS, 1);
+}
+#endif
+
 static void LCD_SPI_Init(void)
 {
 	spi_lcd = device_get_binding(LCD_DEV);
@@ -43,6 +56,7 @@ static void LCD_SPI_Init(void)
 	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
+#ifndef SPI_MUIT_BY_CS
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
 	if (!spi_cs_ctr.gpio_dev)
 	{
@@ -53,6 +67,7 @@ static void LCD_SPI_Init(void)
 	spi_cs_ctr.gpio_pin = CS;
 	spi_cs_ctr.delay = 0U;
 	spi_cfg.cs = &spi_cs_ctr;
+#endif
 }
 
 static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t rxbuflen)
@@ -69,7 +84,13 @@ static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t r
 	rx_bufs.buffers = &rx_buff;
 	rx_bufs.count = 1;
 
+#ifdef SPI_MUIT_BY_CS
+	LCD_CS_LOW();
+#endif
 	err = spi_transceive(spi_lcd, &spi_cfg, &tx_bufs, &rx_bufs);
+#ifdef SPI_MUIT_BY_CS
+	LCD_CS_HIGH();
+#endif
 	if(err)
 	{
 		printk("SPI error: %d\n", err);
@@ -357,6 +378,12 @@ void LCD_ResetBL_Timer(void)
 	
 	if(global_settings.backlight_time != 0)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//获取屏幕当前背光模式
+LCD_BL_MODE LCD_Get_BL_Mode(void)
+{
+	return bl_mode;
 }
 
 //屏幕背光模式设置

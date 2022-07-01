@@ -37,6 +37,9 @@
 #include "lsm6dso.h"
 #include "fall.h"
 #endif
+#ifdef CONFIG_PPG_SUPPORT
+#include "Max32674.h"
+#endif
 #include "transfer_cache.h"
 #ifdef CONFIG_SYNC_SUPPORT
 #include "sync.h"
@@ -925,6 +928,7 @@ static void modem_configure(void)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
 			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 		}
 	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
@@ -1658,6 +1662,12 @@ void ParseData(u8_t *data, u32_t datalen)
 				memset(strtmp, 0, sizeof(strtmp));
 				strcpy(strtmp, ptr);
 				global_settings.bp_calibra.diastolic = atoi(strtmp);
+
+			#ifdef CONFIG_PPG_SUPPORT
+				sh_clear_bpt_cal_data();
+				ppg_bpt_is_calbraed = false;
+				ppg_bpt_cal_need_update = true;
+			#endif
 			}
 
 			flag = true;
@@ -1707,6 +1717,96 @@ void ParseData(u8_t *data, u32_t datalen)
 			//wifi ver
 			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
 			memcpy(g_new_wifi_ver, ptr, copylen);
+		}
+		else if(strcmp(strcmd, "S15") == 0)
+		{
+			u8_t *ptr,*ptr1;
+			u8_t tz_count,tz_dir,tz_buf[4] = {0};
+			u8_t date_buf[8] = {0};
+			u8_t time_buf[6] = {0};
+			u8_t tmpbuf[16] = {0};
+			sys_date_timer_t tmp_dt = {0};
+			u32_t copylen = 0;
+
+			//后台下发校时指令
+			//timezone
+			ptr = strstr(strdata, ",");
+			if(ptr == NULL)
+				return;
+			copylen = (ptr-strdata) < sizeof(tz_buf) ? (ptr-strdata) : sizeof(tz_buf);
+			memcpy(tz_buf, strdata, copylen);
+			if(tz_buf[0] == '+' || tz_buf[0] == '-')
+			{
+				if(tz_buf[0] == '+')
+					tz_dir = 1;
+				else
+					tz_dir = 0;
+
+				tz_count = atoi(&tz_buf[1]);
+			}
+			else
+			{
+				tz_dir = 1;
+				tz_count = atoi(tz_buf);
+			}
+
+		#ifdef NB_DEBUG
+			LOGD("timezone:%c%d",  (tz_dir == 1 ? '+':'-'), tz_count);
+		#endif
+
+			//date
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(date_buf) ? (ptr1-ptr) : sizeof(date_buf);
+			memcpy(date_buf, ptr, copylen);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[0], 4);
+			tmp_dt.year = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[4], 2);
+			tmp_dt.month = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[6], 2);
+			tmp_dt.day = atoi(tmpbuf);
+
+			//time
+			ptr = ptr1+1;
+			copylen = (datalen-(ptr-strdata)) < sizeof(time_buf) ? (datalen-(ptr-strdata)) : sizeof(time_buf);
+			memcpy(time_buf, ptr, copylen);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[0], 2);
+			tmp_dt.hour = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[2], 2);
+			tmp_dt.minute = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[4], 2);
+			tmp_dt.second = atoi(tmpbuf);
+
+			//if(tz_dir == 1)
+			//{
+			//	TimeIncrease(&tmp_dt, tz_count*15);
+			//}
+			//else
+			//{
+			//	TimeDecrease(&tmp_dt, tz_count*15);
+			//}
+			
+		#ifdef NB_DEBUG
+			LOGD("%04d%02d%02d %02d:%02d:%02d", tmp_dt.year,tmp_dt.month,tmp_dt.day,tmp_dt.hour,tmp_dt.minute,tmp_dt.second);
+		#endif
+
+			if(CheckSystemDateTimeIsValid(tmp_dt))
+			{
+				tmp_dt.week = GetWeekDayByDate(tmp_dt);
+				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
+				RedrawSystemTime();
+				SaveSystemDateTime();
+			}
+
+			flag = true;			
 		}
 
 		SaveSystemSettings();
@@ -1820,7 +1920,7 @@ void GetModemSignal(void)
 	u8_t tmpbuf[64] = {0};
 	s32_t rsrq=0,rsrp,snr;
 	static s32_t rsrpbk = 0;
-	
+
 	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -1858,7 +1958,7 @@ void GetModemSignal(void)
 
 	if(test_nb_flag)
 	{
-		sprintf(nb_test_info, " snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
+		sprintf(nb_test_info, "  snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
 		nb_test_update_flag = true;
 	}
 	else
@@ -2285,10 +2385,50 @@ void SetModemTurnOff(void)
 	nb_connected = false;
 }
 
+void SetModemGps(void)
+{
+	if(at_cmd_write(CMD_SET_NW_MODE_GPS, NULL, 0, NULL) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for gps success!");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for gps fail!");
+	#endif
+	}
+}
+
+void SetMomomNw(void)
+{
+#if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
+	if(at_cmd_write(CMD_SET_NW_MODE_NB, NULL, 0, NULL) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
+	if(at_cmd_write(CMD_SET_NW_MODE_NB_GPS, NULL, 0, NULL) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)
+	if(at_cmd_write(CMD_SET_NW_MODE_LTE_M, NULL, 0, NULL) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
+	if(at_cmd_write(CMD_SET_NW_MODE_LTE_M_GPS, NULL, 0, NULL) == 0)
+#endif
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for nw success!");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for nw fail!");
+	#endif
+	}
+}
+
 void GetModemAPN(void)
 {
 	u8_t tmpbuf[128] = {0};
-	
+
 	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2300,7 +2440,7 @@ void GetModemAPN(void)
 void SetModemAPN(void)
 {
 	u8_t tmpbuf[128] = {0};
-	
+
 	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	{
 	#ifdef NB_DEBUG
@@ -2506,7 +2646,6 @@ static int net_init_and_link(void)
 static void nb_link(struct k_work *work)
 {
 	int err=0;
-	u8_t tmpbuf[128] = {0};
 	static u32_t retry_count = 0;
 	static bool frist_flag = false;
 
@@ -2524,6 +2663,14 @@ static void nb_link(struct k_work *work)
 		GetModemInfor();
 		SetModemTurnOff();
 		SetNetWorkParaByPlmn(g_imsi);
+	}
+
+	if(strlen(g_imsi) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("Can't get sim info, cancel the connecting!");
+	#endif
+		return;
 	}
 #endif
 
@@ -2582,6 +2729,13 @@ static void nb_link(struct k_work *work)
 		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
 		#endif
+		
+			if(test_nb_flag)
+			{
+				strcpy(nb_test_info, "LTE Link Connected!");
+				nb_test_update_flag = true;
+				k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
+			}
 			
 			nb_connected = true;
 			retry_count = 0;
@@ -2656,6 +2810,14 @@ bool nb_is_connecting(void)
 	return nb_connecting_flag;
 }
 
+bool nb_reconnect(void)
+{
+	if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+		k_timer_stop(&nb_reconnect_timer);
+	
+	nb_reconnect_flag = true;
+}
+
 bool nb_is_connected(void)
 {
 	return nb_connected;
@@ -2683,7 +2845,9 @@ void NBMsgProcess(void)
 	
 		if(nb_is_connected())
 		{
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
+			strcpy(nb_test_info, "LTE Link Connected!");
+			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 		}
 		else if(nb_is_connecting())
 		{
@@ -2693,6 +2857,7 @@ void NBMsgProcess(void)
 		else
 		{
 			SetModemTurnOff();
+			configure_low_power();
 			modem_configure();
 		}
 	}
@@ -2713,6 +2878,8 @@ void NBMsgProcess(void)
 	{
 		GetModemSignal();
 		get_modem_signal_flag = false;
+		if(screen_id == SCREEN_ID_NB_TEST)
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), NULL);
 	}
 
 	if(get_modem_time_flag)
@@ -2757,7 +2924,7 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
 	}
 	
 	if(nb_connecting_flag)

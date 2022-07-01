@@ -24,6 +24,8 @@
 #define TEMP_IF_SINGLE_LINE
 
 #define TEMP_CHECK_TIMELY	2
+#define TEMP_MAX			420
+#define TEMP_MIN			320
 
 //#define TEMP_DEBUG
 

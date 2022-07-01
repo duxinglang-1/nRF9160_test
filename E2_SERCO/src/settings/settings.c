@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V1.7.1_20220614";
+u8_t g_fw_version[64] = "V2.0.3_20220629";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -70,13 +70,13 @@ static void SettingsMenuFWProc(void);
 
 const sys_date_timer_t FACTORY_DEFAULT_TIME = 
 {
-	2020,
+	2022,
 	1,
 	1,
 	0,
 	0,
 	0,
-	3		//0=sunday
+	6		//0=sunday
 };
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
@@ -98,7 +98,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	BACKLIGHT_LEVEL_2,		//backlight level
 	{true,1},				//PHD
 	{500,60},				//position interval
-	{120,70},				//pb calibration
+	{120,75},				//pb calibration
 	{						//alarm
 		{false,0,0,0},		
 		{false,0,0,0},
@@ -596,6 +596,7 @@ void ResetFactoryDefault(void)
 	ClearAllHrRecData();
 	ClearAllSpo2RecData();
 	ClearAllBptRecData();
+	sh_clear_bpt_cal_data();
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT
@@ -666,7 +667,11 @@ void SettingsMainMenu3Proc(void)
 #ifdef CONFIG_FOTA_DOWNLOAD
 	extern u8_t g_new_fw_ver[64];
 
-	if((strcmp(g_new_fw_ver,g_fw_version) > 0) && (strncmp(g_new_fw_ver, "V1", strlen("V1")) == 0))
+#ifdef NB_SIGNAL_TEST
+	if(strcmp(g_new_fw_ver,g_fw_version) >= 0)
+#else
+	if(strcmp(g_new_fw_ver,g_fw_version) > 0)
+#endif		
 	{
 		fota_start();
 	}

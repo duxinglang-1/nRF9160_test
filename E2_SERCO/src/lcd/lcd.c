@@ -3424,13 +3424,22 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
+		lcd_sleep_in = false;
+		
+		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
+			return;
+		
 		LCD_BL_Off();
 		LCD_SleepIn();
-		lcd_sleep_in = false;
 	}
 
 	if(lcd_sleep_out)
 	{	
+		lcd_sleep_out = false;
+		
+		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
+			return;
+		
 		LCD_SleepOut();
 		pmu_battery_update();
 		if(IsInIdleScreen())
@@ -3441,6 +3450,5 @@ void LCDMsgProcess(void)
 		}
 		
 		LCD_BL_On();
-		lcd_sleep_out = false;
 	}
 }

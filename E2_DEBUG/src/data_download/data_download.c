@@ -300,7 +300,8 @@ static void dl_transfer_start(struct k_work *unused)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
 		else
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
-		strcpy(dl_file, CONFIG_IMG_DATA_DOWNLOAD_FILE);
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_IMG_DATA_DOWNLOAD_FILE);
 		break;
 	#endif
 
@@ -310,7 +311,8 @@ static void dl_transfer_start(struct k_work *unused)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
 		else
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
-		strcpy(dl_file, CONFIG_FONT_DATA_DOWNLOAD_FILE);		
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_FONT_DATA_DOWNLOAD_FILE);		
 		break;
 	#endif
 
@@ -320,7 +322,8 @@ static void dl_transfer_start(struct k_work *unused)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
 		else
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
-		strcpy(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
 		break;
 	#endif		
 	}
@@ -616,9 +619,8 @@ void DlMsgProc(void)
 	
 	if(dl_reboot_flag)
 	{
-		LOGD("download_reboot!");
-		
 		dl_reboot_flag = false;
+		LCD_Clear(BLACK);
 		sys_reboot(0);
 	}
 

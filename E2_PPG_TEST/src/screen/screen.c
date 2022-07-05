@@ -1983,9 +1983,9 @@ void TempShowStatus(void)
 #endif
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
-		sprintf(tmpbuf, "%0.1f", g_temp_body);
+		sprintf(tmpbuf, "%0.1f", 0);
 	else
-		sprintf(tmpbuf, "%0.1f", g_temp_body*1.8+32);
+		sprintf(tmpbuf, "%0.1f", 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = TEMP_NUM_X+(TEMP_NUM_W-w)/2;
 	y = TEMP_NUM_Y+(TEMP_NUM_H-h)/2;
@@ -2213,7 +2213,7 @@ void BPShowStatus(void)
 #else		
 	LCD_SetFontSize(FONT_SIZE_24);
 #endif
-	sprintf(tmpbuf, "%d/%d", g_bpt.systolic, g_bpt.diastolic);
+	sprintf(tmpbuf, "%d/%d", 0, 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = BP_NUM_X+(BP_NUM_W-w)/2;
 	y = BP_NUM_Y+(BP_NUM_H-h)/2;
@@ -2425,7 +2425,7 @@ void SPO2ShowStatus(void)
 #else
 	LCD_SetFontSize(FONT_SIZE_32);
 #endif
-	sprintf(tmpbuf, "%d%%", g_spo2);
+	sprintf(tmpbuf, "%d%%", 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = SPO2_NUM_X+(SPO2_NUM_W-w)/2;
 	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
@@ -2616,7 +2616,7 @@ void HRShowStatus(void)
 #else	
 	LCD_SetFontSize(FONT_SIZE_32);
 #endif
-	sprintf(tmpbuf, "%d", g_hr);
+	sprintf(tmpbuf, "%d", 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	x = HR_NUM_X+(HR_NUM_W-w)/2;
 	y = HR_NUM_Y+(HR_NUM_H-h)/2;

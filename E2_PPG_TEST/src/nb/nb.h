@@ -87,8 +87,8 @@ extern u8_t g_new_modem_ver[64];
 extern u8_t g_new_ppg_ver[64];
 extern u8_t g_new_ble_ver[64];
 extern u8_t g_new_wifi_ver[64];
-
 extern u8_t g_timezone[5];
+extern u8_t g_prj_dir[128];
 extern u8_t g_rsrp;
 
 extern void NB_init(struct k_work_q *work_q);

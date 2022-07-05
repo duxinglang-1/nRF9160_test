@@ -26,7 +26,7 @@
 #include "external_flash.h"
 #include "logger.h"
 
-//#define PPG_DEBUG
+#define PPG_DEBUG
 
 bool ppg_int_event = false;
 bool ppg_fw_upgrade_flag = false;
@@ -45,6 +45,7 @@ bool get_spo2_ok_flag = false;
 bool menu_start_hr = false;
 bool menu_start_spo2 = false;
 bool menu_start_bpt = false;
+bool ppg_polling_timeout_flag = false;
 
 u8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static u8_t whoamI=0, rst=0;
@@ -62,13 +63,851 @@ u8_t g_spo2_timing = 0;
 bpt_data g_bpt = {0};
 bpt_data g_bpt_timing = {0};
 
-
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
 static void ppg_get_data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 static void ppg_delay_start_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_delay_start_timer, ppg_delay_start_timerout, NULL);
+static void ppg_polling_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(ppg_polling_timer, ppg_polling_timerout, NULL);
+
+//xb test 20220629
+#define POLL_PERIOD_40MS       (0x1)
+
+#define SS_OP_MODE_CONT_WHRM_CONT_SPO2     0x0
+#define SS_OP_MODE_CONT_WHRM_ONE_SPO2      0x1
+#define SS_OP_MODE_CONT_WHRM               0x2
+#define SS_OP_MODE_SAMPLE_WHRM             0x3
+#define SS_OP_MODE_SAMPLE_WHRM_ONE_SPO2    0x4
+#define SS_OP_MODE_ACTIVITY_TARCK          0x5
+#define SS_OP_MODE_SPO2_CALIB              0x6
+
+
+static uint8_t sh_data_buf[READ_SAMPLE_COUNT_MAX * SS_EXTEND_PACKAGE_SIZE + 1];
+sh_read_fifo_callback  gf_fifo_callback  = NULL;
+uint32_t gu32_RxSampleSize = 0 ;
+
+//only for test
+//in real application, caibVector is used subject by subject
+uint8_t gu8_Bpt_calibVector[CAL_RESULT_SIZE] = {
+		79, 60, 52, 1, 231, 8, 2, 0, 119, 0, 0, 0, 74, 0, 0, 0,
+		0, 0, 0, 0, 83, 243, 173, 60, 0, 0, 128, 66, 242, 25, 117, 63,
+		11, 106, 238, 186, 74, 42, 157, 61, 88, 133, 115, 62, 150, 159, 222, 62,
+		179, 233, 28, 63, 212, 206, 62, 63, 154, 152, 83, 63, 220, 152, 94, 63,
+		181, 76, 101, 63, 71, 1, 109, 63, 157, 16, 117, 63, 199, 113, 123, 63,
+		201, 35, 125, 63, 144, 208, 121, 63, 250, 106, 114, 63, 188, 44, 106, 63,
+		65, 241, 98, 63, 236, 185, 92, 63, 74, 166, 89, 63, 45, 65, 88, 63,
+		164, 242, 86, 63, 244, 109, 82, 63, 143, 52, 76, 63, 230, 177, 68, 63,
+		34, 109, 61, 63, 133, 52, 53, 63, 189, 154, 43, 63, 76, 206, 33, 63,
+		251, 14, 26, 63, 73, 191, 19, 63, 42, 24, 13, 63, 207, 170, 5, 63,
+		193, 7, 254, 62, 255, 15, 241, 62, 245, 182, 226, 62, 220, 17, 209, 62,
+		136, 156, 195, 62, 95, 165, 183, 62, 132, 126, 168, 62, 54, 32, 152, 62,
+		203, 216, 136, 62, 107, 120, 116, 62, 50, 66, 93, 62, 62, 0, 70, 62,
+		99, 89, 36, 62, 183, 133, 241, 61, 122, 40, 166, 61, 93, 222, 63, 61,
+		65, 134, 19, 60, 255, 95, 222, 188, 0, 0, 0, 0, 77, 77, 77, 77
+};
+
+//Was only mode, HR + SPO2
+void sh_HR_SPO2_mode_Fifo_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
+sshub_ctrl_params_t  sh_ctrl_HR_SPO2_param = {
+	.biometricOpMode             = SH_OPERATION_WHRM_MODE,                   //HR+SPO2 only , no BPT
+	.algoWasOperatingMode        = SS_OP_MODE_CONT_WHRM_CONT_SPO2,           //continuously HR and continuously SPO2
+	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
+	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
+	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS * 1,
+	.tmrPeriod_ms                = POLL_PERIOD_40MS *1 * 40,
+	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE,
+	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
+	.sh_fn_cb                    = sh_HR_SPO2_mode_Fifo_cb,
+};
+
+void sh_BPT_Calib_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
+sshub_ctrl_params_t  sh_ctrl_WAS_BPT_CALIB_param = {
+	.biometricOpMode             = SH_OPERATION_WHRM_BPT_MODE,               //HR+SPO2+BPT
+	.algoWasOperatingMode        = SS_OP_MODE_CONT_WHRM_CONT_SPO2,           //continuously HR and continuously SPO2
+	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
+	.algoBptMode                 = BPT_ALGO_MODE_CALIBRATION,                //BPT calibration mode
+	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
+	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS *10 * 4,
+	.tmrPeriod_ms                = POLL_PERIOD_40MS * 10,
+	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE + SSBPT_ALGO_DATASIZE,
+	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
+	.bpt_ref_syst                = 119,
+	.bpt_ref_dias                = 74,
+	.sh_fn_cb                    = sh_BPT_Calib_mode_cb,
+};
+
+void sh_BPT_Est_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
+sshub_ctrl_params_t  sh_ctrl_WAS_BPT_EST_param = {
+	.biometricOpMode             = SH_OPERATION_WHRM_BPT_MODE,               //HR+SPO2+BPT
+	.algoWasOperatingMode        = SS_OP_MODE_CONT_WHRM_CONT_SPO2,           //continuously HR and continuously SPO2
+	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
+	.algoBptMode                 = BPT_ALGO_MODE_ESTIMATION,                 //BPT estimation mode
+	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
+	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS * 10 * 4,
+	.tmrPeriod_ms                = POLL_PERIOD_40MS * 10,
+	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE + SSBPT_ALGO_DATASIZE,
+	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
+	.sh_fn_cb                    = sh_BPT_Est_mode_cb,
+};
+
+
+void sh_rawdata_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
+sshub_ctrl_params_t  sh_ctrl_rawdata_param = {
+	.biometricOpMode             = SH_OPERATION_RAW_MODE,                	 //raw data
+	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
+	.FifoDataType                = SS_DATATYPE_RAW | SS_DATATYPE_CNT_MSK,
+	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS,
+	.tmrPeriod_ms                = POLL_PERIOD_40MS * 40,
+	.FifoSampleSize              = SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE,
+	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
+	.sh_fn_cb                    = sh_rawdata_cb,
+};
+
+
+void sh_ecg_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
+sshub_ctrl_params_t  sh_ctrl_ecg_param = {
+	.biometricOpMode             = SH_OPERATION_RAW_MODE,                    //raw data
+	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
+	.FifoDataType                = SS_DATATYPE_RAW | SS_DATATYPE_CNT_MSK,
+	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS,
+	.tmrPeriod_ms                = POLL_PERIOD_40MS * 40,
+	.FifoSampleSize              = SS_PACKET_COUNTERSIZE + SSRAW_ECG_DATASIZE,
+	.sh_fn_cb                    = sh_ecg_cb,
+};
+
+static void demoLogAllData(uint8_t u8_sampleIndex, sensorhub_output *sh_output)
+{
+#if 1//def PPG_DEBUG
+	LOGD("%d, %d,%d,%d,  %d,%d,%d,%d,%d,%d,    %d,%d, %d,%d,%d,%d,  %d,%d,%d, %d,%d,%d,%d,%d, %d",
+
+			u8_sampleIndex,
+
+			sh_output->acc_data.x,
+			sh_output->acc_data.y,
+			sh_output->acc_data.z,
+
+			sh_output->ppg_data.led1,
+			sh_output->ppg_data.led2,
+			sh_output->ppg_data.led3,
+			sh_output->ppg_data.led4,
+			sh_output->ppg_data.led5,
+			sh_output->ppg_data.led6,
+
+			sh_output->algo_data.hr,
+			sh_output->algo_data.hr_conf,
+
+			sh_output->algo_data.rr,
+			sh_output->algo_data.rr_conf,
+			sh_output->algo_data.activity_class,
+			sh_output->algo_data.r,
+
+			sh_output->algo_data.spo2_conf,
+			sh_output->algo_data.spo2,
+			sh_output->algo_data.percentComplete,
+
+			sh_output->algo_data.lowSignalQualityFlag,
+			sh_output->algo_data.motionFlag,
+			sh_output->algo_data.lowPiFlag,
+			sh_output->algo_data.unreliableRFlag,
+			sh_output->algo_data.spo2State,
+
+			sh_output->algo_data.scd_contact_state
+			);
+#endif
+}
+
+void demoLogPPGRawData(uint8_t u8_sampleIndex, sensorhub_output *sh_output)
+{
+#ifdef PPG_DEBUG
+	LOGD("%d,  %d,%d,%d,%d",
+			u8_sampleIndex,
+			sh_output->ppg_data.led1,
+			sh_output->ppg_data.led2,
+			sh_output->ppg_data.led3,
+			sh_output->ppg_data.led4
+			);
+#endif
+}
+
+static void sh_loadFifoParam(sshub_ctrl_params_t* sh_param)
+{
+	gu32_RxSampleSize = sh_param->FifoSampleSize;
+	if (sh_param->sh_fn_cb != NULL)
+	{
+		gf_fifo_callback  = sh_param->sh_fn_cb;
+	}
+}
+
+int32_t sh_enter_app_mode(void* param)
+{
+	sh_reset_to_main_app();
+	sh_get_hub_fw_version();
+	return 0;
+}
+
+int32_t sh_enter_bl_mode(void* param)
+{
+	sh_reset_to_bootloader();
+	sh_get_hub_fw_version();
+	return 0;
+}
+
+int32_t sh_disable_sensor(void* param)
+{
+	sh_stop_polling_timer();
+	sensorhub_disable_sensor();
+
+	gf_fifo_callback = NULL;
+
+	return 0;
+}
+
+
+void sh_HR_SPO2_mode_Fifo_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
+{
+	sensorhub_output sensorhub_out;
+	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
+	memset(&sensorhub_out, 0, sizeof(sensorhub_output));
+
+	uint32_t u32_idx = 0;
+	for (int i= 0; i < u32_sampleCnt; i++)
+	{
+		u32_idx = i * u32_sampleSize  + 1;
+
+		accel_data_rx(&sensorhub_out.acc_data, &u8_fifo_buf[ u32_idx + SS_PACKET_COUNTERSIZE]);
+		max86176_data_rx(&sensorhub_out.ppg_data, &u8_fifo_buf[u32_idx+ SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
+		whrm_wspo2_suite_data_rx_mode1(&sensorhub_out.algo_data, &u8_fifo_buf[u32_idx + SS_PACKET_COUNTERSIZE +
+																		  SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE] );
+
+		demoLogAllData(u8_fifo_buf[u32_idx], &sensorhub_out);
+
+	}
+}
+
+int32_t sh_start_HR_SPO2_mode(void* param)
+{
+	int status = -1;
+	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
+
+	//10 01 01
+	status = sh_set_fifo_thresh(1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_fifo_thresh eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//10 02 01
+	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_report_period eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//enabled AEC: 50 08 0B 01
+	status = sh_set_cfg_wearablesuite_afeenable(1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("enable AEC eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//enable auto pd current: 50 08 12 01
+	status = sh_set_cfg_wearablesuite_autopdcurrentenable(0x1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("enable auto PD current eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set output format: 10 00 07
+	///TODO:clean up output type
+	status = sh_set_data_type(sh_param->FifoDataType, true);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_data_type eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//44 04 01 00
+	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, sh_param->AccelType);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_ACC eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//AA 44 06 01 00
+	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, 0);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_MAX86176 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set WAS only ,no BPT
+	//50 08 40 01
+	status = sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("set biometric mode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set algorithm operation mode
+	//50 08 0A 00
+	status = sh_set_cfg_wearablesuite_algomode(sh_param->algoWasOperatingMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_cfg_wearablesuite_algomode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set to basic output mode and enable algo
+	//AA 52 08 01
+	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X ,sh_param->algoWasRptMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_enable_algo_ eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set fifo callback function
+	sh_loadFifoParam(sh_param);
+
+	///TODO: set timer based on setting report rate
+	sh_start_polling_timer(sh_param->tmrPeriod_ms);
+
+	return 0;
+}
+
+void sh_BPT_Calib_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
+{
+	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
+#if 0
+	uint8_t u8_idx = 1;
+	for (int i= 0; i < u32_sampleCnt; i++)
+	{
+		for (int x = 0; x < u32_sampleSize; x ++)
+		{
+			printf("%x,", u8_fifo_buf[u8_idx+x]);
+		}
+
+		u8_idx += u32_sampleSize;
+		printf("\n");
+	}
+#endif
+	uint8_t Bpt_status = u8_fifo_buf[SS_NORMAL_PACKAGE_SIZE +1];
+	uint8_t calib_progress = u8_fifo_buf[SS_NORMAL_PACKAGE_SIZE +1 + 1];
+
+#ifdef PPG_DEBUG
+	LOGD("BPT status is %d, calib prgoress is %d", Bpt_status, calib_progress);
+#endif
+	if ((Bpt_status == 2 ) && (calib_progress = 100))
+	{
+		sh_get_cfg_bpt_cal_result(gu8_Bpt_calibVector);
+		sh_stop_polling_timer();
+		sensorhub_disable_sensor();
+	}
+}
+
+void sh_BPT_Est_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
+{
+	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
+#if 1
+	uint8_t u8_idx = 1;
+	for (int i= 0; i < u32_sampleCnt; i++)
+	{
+		for (int x = 0; x < u32_sampleSize; x ++)
+		{
+		#ifdef PPG_DEBUG
+			LOGD("%x,", u8_fifo_buf[u8_idx+x]);
+		#endif
+		}
+
+		u8_idx += u32_sampleSize;
+	}
+#endif
+}
+
+//HR + SPO2 + BPT mode
+int32_t sh_start_WAS_BPT_mode(void* param)
+{
+	int status = -1;
+	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
+
+	if (sh_param->algoBptMode == BPT_ALGO_MODE_CALIBRATION)
+	{
+		//50 08 62 00 75 4C
+		status = sh_set_cfg_bpt_sys_dia(0x00, sh_param->bpt_ref_syst, sh_param->bpt_ref_dias);
+		if (status != SS_SUCCESS)
+		{		
+		#ifdef PPG_DEBUG
+			LOGD("sh_set_cfg_bpt_sys_dia eorr %d", status);
+		#endif
+			return -1;
+		}
+		else
+		{		
+		#ifdef PPG_DEBUG
+			LOGD("Set reference BP value done");
+		#endif
+		}
+	}
+	else if (sh_param->algoBptMode == BPT_ALGO_MODE_ESTIMATION)
+	{
+		status = sh_set_cfg_bpt_cal_index(0x0);
+		if (status != SS_SUCCESS)
+		{		
+		#ifdef PPG_DEBUG
+			LOGD("sh_set_cfg_bpt_cal_index eorr %d", status);
+		#endif
+			return -1;
+		}
+
+		status = sh_set_cfg_bpt_cal_result(gu8_Bpt_calibVector);
+		if (status != SS_SUCCESS)
+		{		
+		#ifdef PPG_DEBUG
+			LOGD("sh_set_cfg_bpt_cal_result eorr %d", status);
+		#endif
+			return -1;
+		}
+		else
+		{		
+		#ifdef PPG_DEBUG
+			LOGD("set user BP vector done");
+		#endif
+		}
+	}
+
+	//10 01 01
+	status = sh_set_fifo_thresh(1);
+	if (status != SS_SUCCESS)
+	{	
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_fifo_thresh eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//10 02 01
+	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);  //1Hz or 25Hz
+	if (status != SS_SUCCESS)
+	{	
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_report_period eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//enabled AEC: 50 08 0B 01
+	status = sh_set_cfg_wearablesuite_afeenable(1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("enable AEC eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//enable auto pd current: 50 08 12 01
+	status = sh_set_cfg_wearablesuite_autopdcurrentenable(0x1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("enable auto PD current eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set output format: 10 00 07
+	///TODO:clean up output type
+	status = sh_set_data_type(sh_param->FifoDataType, true);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_data_type eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//44 04 01 00
+	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, sh_param->AccelType);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_ACC eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//AA 44 06 01 00
+	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
+	if (status != SS_SUCCESS)
+	{	
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_MAX86176 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set WAS + BPT
+	//50 08 40 03
+	sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sensorhub_set_algo_operation_mode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set algorithm operation mode
+	//50 08 0A 00
+	status = sh_set_cfg_wearablesuite_algomode(sh_param->algoWasOperatingMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_cfg_wearablesuite_algomode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set bpt calibration mode
+	status = sensorhub_set_bpt_algo_submode(sh_param->algoBptMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sensorhub_set_bpt_algo_submode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set to basic output mode and enable algo
+	//AA 52 08 01
+	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X , sh_param->algoWasRptMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_MAX86176 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set fifo callback function
+	sh_loadFifoParam(sh_param);
+
+	///TODO: set timer based on setting report rate
+	sh_start_polling_timer(40);
+
+	return 0;
+}
+
+
+void sh_rawdata_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
+{
+	sensorhub_output sensorhub_out;
+	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
+
+	uint32_t u32_idx = 1;
+	for (int i= 0; i < u32_sampleCnt; i++)
+	{
+		//accel_data_rx(&sensorhub_out.acc_data, &u8_fifo_buf[ u32_idx + SS_PACKET_COUNTERSIZE]);
+		max86176_data_rx(&sensorhub_out.ppg_data, &u8_fifo_buf[u32_idx+ SS_PACKET_COUNTERSIZE]);
+		demoLogPPGRawData(u8_fifo_buf[u32_idx], &sensorhub_out);
+
+		u32_idx += u32_sampleSize;
+	}
+}
+
+int32_t sh_start_rawdata_mode(void* param)
+{
+	int status = -1;
+	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
+
+	//10 01 01
+	status = sh_set_fifo_thresh(1);
+	if (status != SS_SUCCESS)
+	{	
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_fifo_thresh eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//10 02 01
+	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_report_period eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set output format: 10 00 07
+	///TODO:clean up output type
+	status = sh_set_data_type(sh_param->FifoDataType, true);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_data_type eorr %d", status);
+	#endif
+		return -1;
+	}
+
+#if 0
+	//44 04 01 00
+	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, sh_param->AccelType);
+	if (status != SS_SUCCESS)
+	{
+		printf("sh_sensor_enable_ACC eorr %d \n", status);
+		return -1;
+	}
+#endif
+
+	//AA 44 06 01 00
+	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, 0);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_MAX86176 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set rawdata only mode
+	//50 08 40 00
+	status = sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("set biometric mode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set to basic output mode and enable algo
+	//AA 52 08 01
+	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X ,sh_param->algoWasRptMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_enable_algo_ eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	status = sh_set_cfg_wearablesuite_initledcurr(0, 0x0064);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("ah_set_cfg_wearablesuite_initledcurr 0 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	status = sh_set_cfg_wearablesuite_initledcurr(1, 0x00C8);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("ah_set_cfg_wearablesuite_initledcurr 1 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	status = sh_set_cfg_wearablesuite_initledcurr(2, 0x00C8);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("ah_set_cfg_wearablesuite_initledcurr 2 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set fifo callback function
+	sh_loadFifoParam(sh_param);
+
+	///TODO: set timer based on setting report rate
+	sh_start_polling_timer(sh_param->tmrPeriod_ms);
+
+	return 0;
+}
+
+
+void sh_ecg_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
+{
+	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
+	uint8_t u8_idx = 1;
+	uint32_t u32_EcgSample;
+
+	//divide every 48 bytes
+	for (int i= 0; i < u32_sampleCnt; i++)
+	{
+		//printf("----------counter = %d \n,", u8_fifo_buf[u8_idx]);
+		u8_idx = u8_idx +1;    //first byte is fifo counter
+
+		//divide 16 ecg samples
+		for (int x = 0; x < 16; x ++)
+		{
+			u32_EcgSample  = u8_fifo_buf[u8_idx]<<16;
+			u32_EcgSample += u8_fifo_buf[u8_idx+1]<<8;
+			u32_EcgSample += u8_fifo_buf[u8_idx+2];
+			u32_EcgSample  = u32_EcgSample & 0xFFFFF;   // ECG[0:19], ECG_TAG[20:23]
+			u8_idx = u8_idx +3;
+		
+		#ifdef PPG_DEBUG
+			LOGD("%d", u32_EcgSample);
+		#endif
+		}
+	}
+}
+
+int32_t sh_start_ecg_mode(void* param)
+{
+	int status = -1;
+	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
+
+	//10 01 01
+	status = sh_set_fifo_thresh(1);
+	if (status != SS_SUCCESS)
+	{	
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_fifo_thresh eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//10 02 01
+	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);
+	if (status != SS_SUCCESS)
+	{	
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_report_period eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set output format: 10 00 07
+	///TODO:clean up output type
+	status = sh_set_data_type(sh_param->FifoDataType, true);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_data_type eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//AA 44 06 02 00
+	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 0x2, 0);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_sensor_enable_MAX86176 eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set rawdata only mode
+	//50 08 40 00
+	status = sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("set biometric mode eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set to basic output mode and enable algo
+	//AA 52 08 01
+	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X ,sh_param->algoWasRptMode);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_enable_algo_ eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//set fifo callback function
+	sh_loadFifoParam(sh_param);
+
+	///TODO: set timer based on setting report rate
+	sh_start_polling_timer(sh_param->tmrPeriod_ms);
+
+	return 0;
+}
+
+//timer callback function, poling sensor hub FIFO
+void sh_FIFO_polling_handler(void)
+{
+	uint32_t ret = 0;
+	uint8_t hubStatus = 0;
+	int u32_sampleCnt = 0;
+
+	ret = sh_get_sensorhub_status(&hubStatus);
+	//printf("sh_get_sensorhub_status ret = %d, hubStatus =  %d \n", ret, hubStatus);
+
+	if ((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
+	{
+		//printf("FIFO status is ready \n");
+		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
+	#if 0
+		if (ret ==  SS_SUCCESS)
+			printf("sample count is %d \n", u32_sampleCnt);
+	#endif
+
+		//limit the maximum counter to prevent reading fifo overflow
+		u32_sampleCnt = (u32_sampleCnt > READ_SAMPLE_COUNT_MAX) ? READ_SAMPLE_COUNT_MAX :  u32_sampleCnt;
+		//read fifo data, sample size must be loaded before FIFO reading by sh_loadFifoParam()
+		ret = sh_read_fifo_data(u32_sampleCnt, gu32_RxSampleSize, sh_data_buf, sizeof(sh_data_buf));
+
+		if (ret ==  SS_SUCCESS)
+		{
+			//process fifo data
+			if (gf_fifo_callback != NULL)
+			{
+				gf_fifo_callback(u32_sampleCnt, gu32_RxSampleSize, sh_data_buf);
+			}
+		}
+		else
+		{
+			//printf("read FIFO result fail %d \n", ret);
+		}
+	}
+	else
+	{
+		//printf(" FIFO status is not ready  %d, %d \n", ret, hubStatus);
+	}
+
+}
+//xb end 2022.06.29
 
 void ClearAllBptRecData(void)
 {
@@ -479,7 +1318,7 @@ bool StartSensorhub(void)
 		//set fifo thresh
 		sh_set_fifo_thresh(1);
 		//Set the samples report period to 40ms(minimum is 32ms for BPT).
-		sh_set_report_period(25);
+		sh_set_report_period(1);
 		//Enable the sensor.
 		sensorhub_enable_sensors();
 		//set algo mode
@@ -720,7 +1559,7 @@ void PPGGetSensorHubData(void)
 				else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 				{
 					//accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
-					//max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
+					max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
 					whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
 					
 				#ifdef PPG_DEBUG
@@ -962,7 +1801,8 @@ void MenuTriggerHr(void)
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_HR;
-	ppg_start_flag = true;
+	//ppg_start_flag = true;
+	ppg_test_flag = true;
 }
 
 void MenuStartHr(void)
@@ -1371,9 +2211,11 @@ void PPGStartCheck(void)
 	if(ppg_power_flag > 0)
 		return;
 
-	//Set_PPG_Power_On();
-	SH_Power_On();
-
+	PPG_Enable();
+	k_sleep(K_MSEC(10));
+	PPG_Power_On();
+	PPG_i2c_on();
+	
 	ppg_power_flag = 1;
 
 	ret = StartSensorhub();
@@ -1427,12 +2269,14 @@ void PPGStopCheck(void)
 		return;
 
 	k_timer_stop(&ppg_get_hr_timer);
+	sh_stop_polling_timer();
 
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();
 
-	SH_Power_Off();
-	//Set_PPG_Power_Off();
+	PPG_i2c_off();
+	PPG_Power_Off();
+	PPG_Disable();
 
 	ppg_power_flag = 0;
 
@@ -1492,6 +2336,44 @@ void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
 	if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 		ppg_stop_flag = true;
+}
+
+void ppg_polling_timerout(struct k_timer *timer_id)
+{
+	ppg_polling_timeout_flag = true;
+}
+
+void sh_stop_polling_timer(void)
+{
+	k_timer_stop(&ppg_polling_timer);
+}
+
+void sh_start_polling_timer(u32_t delay_ms)
+{
+	k_timer_start(&ppg_polling_timer, K_MSEC(delay_ms), K_MSEC(delay_ms));	
+}
+
+void PPGStartRawData(void)
+{
+	bool ret = false;
+
+#ifdef PPG_DEBUG
+	LOGD("ppg_power_flag:%d", ppg_power_flag);
+#endif
+	if(ppg_power_flag > 0)
+		return;
+
+	PPG_Enable();
+	k_sleep(K_MSEC(10));
+	PPG_Power_On();
+	PPG_i2c_on();
+
+	ppg_power_flag = 1;
+
+	SH_rst_to_APP_mode();
+
+	//sh_start_rawdata_mode(&sh_ctrl_rawdata_param);
+	sh_start_HR_SPO2_mode(&sh_ctrl_HR_SPO2_param);
 }
 
 void PPG_init(void)
@@ -1556,6 +2438,15 @@ void PPGMsgProcess(void)
 		PPGStartCheck();
 		ppg_start_flag = false;
 	}
+
+	if(ppg_test_flag)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("PPG test start!");
+	#endif
+		PPGStartRawData();
+		ppg_test_flag = false;
+	}
 	
 	if(ppg_stop_flag)
 	{
@@ -1602,749 +2493,10 @@ void PPGMsgProcess(void)
 
 		ppg_delay_start_flag = false;
 	}
-}
 
-
-//xb test 20220629
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-
-#include "defs.h"
-#include "sh_comm.h"
-#include "sensorhub_api.h"
-#include "sh_config_api.h"
-#include "sensorhub_demo.h"
-
-
-static uint8_t sh_data_buf[READ_SAMPLE_COUNT_MAX * SS_EXTEND_PACKAGE_SIZE + 1];
-sh_read_fifo_callback  gf_fifo_callback  = NULL;
-uint32_t gu32_RxSampleSize = 0 ;
-
-//only for test
-//in real application, caibVector is used subject by subject
-uint8_t gu8_Bpt_calibVector[CAL_RESULT_SIZE] = {
-		79, 60, 52, 1, 231, 8, 2, 0, 119, 0, 0, 0, 74, 0, 0, 0,
-		0, 0, 0, 0, 83, 243, 173, 60, 0, 0, 128, 66, 242, 25, 117, 63,
-		11, 106, 238, 186, 74, 42, 157, 61, 88, 133, 115, 62, 150, 159, 222, 62,
-		179, 233, 28, 63, 212, 206, 62, 63, 154, 152, 83, 63, 220, 152, 94, 63,
-		181, 76, 101, 63, 71, 1, 109, 63, 157, 16, 117, 63, 199, 113, 123, 63,
-		201, 35, 125, 63, 144, 208, 121, 63, 250, 106, 114, 63, 188, 44, 106, 63,
-		65, 241, 98, 63, 236, 185, 92, 63, 74, 166, 89, 63, 45, 65, 88, 63,
-		164, 242, 86, 63, 244, 109, 82, 63, 143, 52, 76, 63, 230, 177, 68, 63,
-		34, 109, 61, 63, 133, 52, 53, 63, 189, 154, 43, 63, 76, 206, 33, 63,
-		251, 14, 26, 63, 73, 191, 19, 63, 42, 24, 13, 63, 207, 170, 5, 63,
-		193, 7, 254, 62, 255, 15, 241, 62, 245, 182, 226, 62, 220, 17, 209, 62,
-		136, 156, 195, 62, 95, 165, 183, 62, 132, 126, 168, 62, 54, 32, 152, 62,
-		203, 216, 136, 62, 107, 120, 116, 62, 50, 66, 93, 62, 62, 0, 70, 62,
-		99, 89, 36, 62, 183, 133, 241, 61, 122, 40, 166, 61, 93, 222, 63, 61,
-		65, 134, 19, 60, 255, 95, 222, 188, 0, 0, 0, 0, 77, 77, 77, 77
-};
-
-//Was only mode, HR + SPO2
-void sh_HR_SPO2_mode_Fifo_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
-sshub_ctrl_params_t  sh_ctrl_HR_SPO2_param = {
-	.biometricOpMode             = BROMETERIC_OP_MODE_WAS,                   //HR+SPO2 only , no BPT
-	.algoWasOperatingMode        = SS_OP_MODE_CONT_WHRM_CONT_SPO2,           //continuously HR and continuously SPO2
-	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
-	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
-	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS * 25,
-	.tmrPeriod_ms                = POLL_PERIOD_40MS *25 * 40,
-	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE,
-	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
-	.sh_fn_cb                    = sh_HR_SPO2_mode_Fifo_cb,
-};
-
-void sh_BPT_Calib_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
-sshub_ctrl_params_t  sh_ctrl_WAS_BPT_CALIB_param = {
-	.biometricOpMode             = BROMETERIC_OP_MODE_WAS_BPT,               //HR+SPO2+BPT
-	.algoWasOperatingMode        = SS_OP_MODE_CONT_WHRM_CONT_SPO2,           //continuously HR and continuously SPO2
-	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
-	.algoBptMode                 = BPT_ALGO_MODE_CALIBRATION,                //BPT calibration mode
-	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
-	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS *10 * 4,
-	.tmrPeriod_ms                = POLL_PERIOD_40MS * 10,
-	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE + SSBPT_ALGO_DATASIZE,
-	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
-	.bpt_ref_syst                = 119,
-	.bpt_ref_dias                = 74,
-	.sh_fn_cb                    = sh_BPT_Calib_mode_cb,
-};
-
-void sh_BPT_Est_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
-sshub_ctrl_params_t  sh_ctrl_WAS_BPT_EST_param = {
-	.biometricOpMode             = BROMETERIC_OP_MODE_WAS_BPT,               //HR+SPO2+BPT
-	.algoWasOperatingMode        = SS_OP_MODE_CONT_WHRM_CONT_SPO2,           //continuously HR and continuously SPO2
-	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
-	.algoBptMode                 = BPT_ALGO_MODE_ESTIMATION,                 //BPT estimation mode
-	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
-	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS * 10 * 4,
-	.tmrPeriod_ms                = POLL_PERIOD_40MS * 10,
-	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE + SSBPT_ALGO_DATASIZE,
-	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
-	.sh_fn_cb                    = sh_BPT_Est_mode_cb,
-};
-
-
-void sh_rawdata_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
-sshub_ctrl_params_t  sh_ctrl_rawdata_param = {
-	.biometricOpMode             = BROMETERIC_OP_MODE_RAW,                //raw data
-	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
-	.FifoDataType                = SS_DATATYPE_RAW | SS_DATATYPE_CNT_MSK,
-	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS,
-	.tmrPeriod_ms                = POLL_PERIOD_40MS * 40,
-	.FifoSampleSize              = SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE,
-	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
-	.sh_fn_cb                    = sh_rawdata_cb,
-};
-
-
-void sh_ecg_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf);
-sshub_ctrl_params_t  sh_ctrl_ecg_param = {
-	.biometricOpMode             = BROMETERIC_OP_MODE_RAW,                   //raw data
-	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
-	.FifoDataType                = SS_DATATYPE_RAW | SS_DATATYPE_CNT_MSK,
-	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS,
-	.tmrPeriod_ms                = POLL_PERIOD_40MS * 40,
-	.FifoSampleSize              = SS_PACKET_COUNTERSIZE + SSRAW_ECG_DATASIZE,
-	.sh_fn_cb                    = sh_ecg_cb,
-};
-
-static void demoLogAllData(uint8_t u8_sampleIndex, sensorhub_output *sh_output)
-{
-	printf("%d, %d,%d,%d,  %d,%d,%d,%d,%d,%d,    %d,%d, %d,%d,%d,%d,  %d,%d,%d, %d,%d,%d,%d,%d, %d \n",
-
-			u8_sampleIndex,
-
-			sh_output->acc_data.x,
-			sh_output->acc_data.y,
-			sh_output->acc_data.z,
-
-			sh_output->ppg_data.led1,
-			sh_output->ppg_data.led2,
-			sh_output->ppg_data.led3,
-			sh_output->ppg_data.led4,
-			sh_output->ppg_data.led5,
-			sh_output->ppg_data.led6,
-
-			sh_output->algo_data.hr,
-			sh_output->algo_data.hr_conf,
-
-			sh_output->algo_data.rr,
-			sh_output->algo_data.rr_conf,
-			sh_output->algo_data.activity_class,
-			sh_output->algo_data.r,
-
-			sh_output->algo_data.spo2_conf,
-			sh_output->algo_data.spo2,
-			sh_output->algo_data.percentComplete,
-
-			sh_output->algo_data.lowSignalQualityFlag,
-			sh_output->algo_data.motionFlag,
-			sh_output->algo_data.lowPiFlag,
-			sh_output->algo_data.unreliableRFlag,
-			sh_output->algo_data.spo2State,
-
-			sh_output->algo_data.scd_contact_state
-			);
-}
-
-void demoLogPPGRawData(uint8_t u8_sampleIndex, sensorhub_output *sh_output)
-{
-	printf("%d,  %d,%d,%d,%d, \n",
-			u8_sampleIndex,
-			sh_output->ppg_data.led1,
-			sh_output->ppg_data.led2,
-			sh_output->ppg_data.led3,
-			sh_output->ppg_data.led4
-			);
-}
-
-static void sh_loadFifoParam(sshub_ctrl_params_t* sh_param)
-{
-	gu32_RxSampleSize = sh_param->FifoSampleSize;
-	if (sh_param->sh_fn_cb != NULL)
+	if(ppg_polling_timeout_flag)
 	{
-		gf_fifo_callback  = sh_param->sh_fn_cb;
+		sh_FIFO_polling_handler();
+		ppg_polling_timeout_flag = false;
 	}
 }
-int32_t sh_enter_app_mode(void* param)
-{
-	sh_reset_to_main_app();
-	sh_get_hub_fw_version();
-	return 0;
-}
-
-int32_t sh_enter_bl_mode(void* param)
-{
-	sh_reset_to_bootloader();
-	sh_get_hub_fw_version();
-	return 0;
-}
-
-int32_t sh_disable_sensor(void* param)
-{
-	sh_stop_polling_timer();
-	sensorhub_disable_sensor();
-
-	gf_fifo_callback = NULL;
-
-	return 0;
-}
-
-
-void sh_HR_SPO2_mode_Fifo_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
-{
-	sensorhub_output sensorhub_out;
-	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
-	memset(&sensorhub_out, 0, sizeof(sensorhub_output));
-
-	uint32_t u32_idx = 0;
-	for (int i= 0; i < u32_sampleCnt; i++)
-	{
-		u32_idx = i * u32_sampleSize  + 1;
-
-		accel_data_rx(&sensorhub_out.acc_data, &u8_fifo_buf[ u32_idx + SS_PACKET_COUNTERSIZE]);
-		max86176_data_rx(&sensorhub_out.ppg_data, &u8_fifo_buf[u32_idx+ SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
-		whrm_wspo2_suite_data_rx_mode1(&sensorhub_out.algo_data, &u8_fifo_buf[u32_idx + SS_PACKET_COUNTERSIZE +
-																		  SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE] );
-
-		demoLogAllData(u8_fifo_buf[u32_idx], &sensorhub_out);
-
-	}
-}
-
-int32_t sh_start_HR_SPO2_mode(void* param)
-{
-	int status = -1;
-	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
-
-	//10 01 01
-	status = sh_set_fifo_thresh(1);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_fifo_thresh eorr %d \n", status);
-		return -1;
-	}
-
-	//10 02 01
-	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_report_period eorr %d \n", status);
-		return -1;
-	}
-
-	//enabled AEC: 50 08 0B 01
-	status = sh_set_cfg_wearablesuite_afeenable(1);
-	if (status != SS_SUCCESS)
-	{
-		printf("enable AEC eorr %d \n", status);
-		return -1;
-	}
-
-	//enable auto pd current: 50 08 12 01
-	status = sh_set_cfg_wearablesuite_autopdcurrentenable(0x1);
-	if (status != SS_SUCCESS)
-	{
-		printf("enable auto PD current eorr %d \n", status);
-		return -1;
-	}
-
-	//set output format: 10 00 07
-	///TODO:clean up output type
-	status = sh_set_data_type(sh_param->FifoDataType, true);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_data_type eorr %d \n", status);
-		return -1;
-	}
-
-	//44 04 01 00
-	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, sh_param->AccelType);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_ACC eorr %d \n", status);
-		return -1;
-	}
-
-	//AA 44 06 01 00
-	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, 0);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_MAX86176 eorr %d \n", status);
-		return -1;
-	}
-
-	//set WAS only ,no BPT
-	//50 08 40 01
-	status = sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("set biometric mode eorr %d \n", status);
-		return -1;
-	}
-
-	//set algorithm operation mode
-	//50 08 0A 00
-	status = sh_set_cfg_wearablesuite_algomode(sh_param->algoWasOperatingMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_cfg_wearablesuite_algomode eorr %d \n", status);
-		return -1;
-	}
-
-	//set to basic output mode and enable algo
-	//AA 52 08 01
-	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X ,sh_param->algoWasRptMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_enable_algo_ eorr %d \n", status);
-		return -1;
-	}
-
-	//set fifo callback function
-	sh_loadFifoParam(sh_param);
-
-	///TODO: set timer based on setting report rate
-	sh_start_polling_timer(sh_param->tmrPeriod_ms);
-
-	return 0;
-}
-
-void sh_BPT_Calib_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
-{
-	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
-#if 0
-	uint8_t u8_idx = 1;
-	for (int i= 0; i < u32_sampleCnt; i++)
-	{
-		for (int x = 0; x < u32_sampleSize; x ++)
-		{
-			printf("%x,", u8_fifo_buf[u8_idx+x]);
-		}
-
-		u8_idx += u32_sampleSize;
-		printf("\n");
-	}
-#endif
-	uint8_t Bpt_status = u8_fifo_buf[SS_NORMAL_PACKAGE_SIZE +1];
-	uint8_t calib_progress = u8_fifo_buf[SS_NORMAL_PACKAGE_SIZE +1 + 1];
-	printf("BPT status is %d, calib prgoress is %d \n", Bpt_status, calib_progress);
-	if ((Bpt_status == 2 ) && (calib_progress = 100))
-	{
-		sh_get_cfg_bpt_cal_result(gu8_Bpt_calibVector);
-		sh_stop_polling_timer();
-		sensorhub_disable_sensor();
-	}
-}
-
-void sh_BPT_Est_mode_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
-{
-	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
-#if 1
-	uint8_t u8_idx = 1;
-	for (int i= 0; i < u32_sampleCnt; i++)
-	{
-		for (int x = 0; x < u32_sampleSize; x ++)
-		{
-			printf("%x,", u8_fifo_buf[u8_idx+x]);
-		}
-
-		u8_idx += u32_sampleSize;
-		printf("\n");
-	}
-#endif
-}
-
-//HR + SPO2 + BPT mode
-int32_t sh_start_WAS_BPT_mode(void* param)
-{
-	int status = -1;
-	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
-
-	if (sh_param->algoBptMode == BPT_ALGO_MODE_CALIBRATION)
-	{
-		//50 08 62 00 75 4C
-		status = sh_set_cfg_bpt_sys_dia(0x00, sh_param->bpt_ref_syst, sh_param->bpt_ref_dias);
-		if (status != SS_SUCCESS)
-		{
-			printf("sh_set_cfg_bpt_sys_dia eorr %d \n", status);
-			return -1;
-		}
-		else
-		{
-			printf("Set reference BP value done \n");
-		}
-	}
-	else if (sh_param->algoBptMode == BPT_ALGO_MODE_ESTIMATION)
-	{
-		status = sh_set_cfg_bpt_cal_index(0x0);
-		if (status != SS_SUCCESS)
-		{
-			printf("sh_set_cfg_bpt_cal_index eorr %d \n", status);
-			return -1;
-		}
-
-		status = sh_set_cfg_bpt_cal_result(gu8_Bpt_calibVector);
-		if (status != SS_SUCCESS)
-		{
-			printf("sh_set_cfg_bpt_cal_result eorr %d \n", status);
-			return -1;
-		}
-		else
-		{
-			printf("set user BP vector done \n");
-		}
-	}
-
-	//10 01 01
-	status = sh_set_fifo_thresh(1);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_fifo_thresh eorr %d \n", status);
-		return -1;
-	}
-
-	//10 02 01
-	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);  //1Hz or 25Hz
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_report_period eorr %d \n", status);
-		return -1;
-	}
-
-	//enabled AEC: 50 08 0B 01
-	status = sh_set_cfg_wearablesuite_afeenable(1);
-	if (status != SS_SUCCESS)
-	{
-		printf("enable AEC eorr %d \n", status);
-		return -1;
-	}
-
-	//enable auto pd current: 50 08 12 01
-	status = sh_set_cfg_wearablesuite_autopdcurrentenable(0x1);
-	if (status != SS_SUCCESS)
-	{
-		printf("enable auto PD current eorr %d \n", status);
-		return -1;
-	}
-
-	//set output format: 10 00 07
-	///TODO:clean up output type
-	status = sh_set_data_type(sh_param->FifoDataType, true);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_data_type eorr %d \n", status);
-		return -1;
-	}
-
-	//44 04 01 00
-	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, sh_param->AccelType);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_ACC eorr %d \n", status);
-		return -1;
-	}
-
-	//AA 44 06 01 00
-	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_MAX86176 eorr %d \n", status);
-		return -1;
-	}
-
-	//set WAS + BPT
-	//50 08 40 03
-	sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sensorhub_set_algo_operation_mode eorr %d \n", status);
-		return -1;
-	}
-
-	//set algorithm operation mode
-	//50 08 0A 00
-	status = sh_set_cfg_wearablesuite_algomode(sh_param->algoWasOperatingMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_cfg_wearablesuite_algomode eorr %d \n", status);
-		return -1;
-	}
-
-	//set bpt calibration mode
-	status = sensorhub_set_bpt_algo_submode(sh_param->algoBptMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sensorhub_set_bpt_algo_submode eorr %d \n", status);
-		return -1;
-	}
-
-	//set to basic output mode and enable algo
-	//AA 52 08 01
-	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X , sh_param->algoWasRptMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_MAX86176 eorr %d \n", status);
-		return -1;
-	}
-
-	//set fifo callback function
-	sh_loadFifoParam(sh_param);
-
-	///TODO: set timer based on setting report rate
-	sh_start_polling_timer(40);
-
-	return 0;
-}
-
-
-void sh_rawdata_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
-{
-	sensorhub_output sensorhub_out;
-	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
-
-	uint32_t u32_idx = 1;
-	for (int i= 0; i < u32_sampleCnt; i++)
-	{
-		//accel_data_rx(&sensorhub_out.acc_data, &u8_fifo_buf[ u32_idx + SS_PACKET_COUNTERSIZE]);
-		max86176_data_rx(&sensorhub_out.ppg_data, &u8_fifo_buf[u32_idx+ SS_PACKET_COUNTERSIZE]);
-		demoLogPPGRawData(u8_fifo_buf[u32_idx], &sensorhub_out);
-
-		u32_idx += u32_sampleSize;
-	}
-}
-
-int32_t sh_start_rawdata_mode(void* param)
-{
-	int status = -1;
-	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
-
-	//10 01 01
-	status = sh_set_fifo_thresh(1);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_fifo_thresh eorr %d \n", status);
-		return -1;
-	}
-
-	//10 02 01
-	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_report_period eorr %d \n", status);
-		return -1;
-	}
-
-	//set output format: 10 00 07
-	///TODO:clean up output type
-	status = sh_set_data_type(sh_param->FifoDataType, true);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_data_type eorr %d \n", status);
-		return -1;
-	}
-
-#if 0
-	//44 04 01 00
-	status = sh_sensor_enable_(SH_SENSORIDX_ACCEL, 1, sh_param->AccelType);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_ACC eorr %d \n", status);
-		return -1;
-	}
-#endif
-
-	//AA 44 06 01 00
-	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, 0);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_MAX86176 eorr %d \n", status);
-		return -1;
-	}
-
-	//set rawdata only mode
-	//50 08 40 00
-	status = sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("set biometric mode eorr %d \n", status);
-		return -1;
-	}
-
-	//set to basic output mode and enable algo
-	//AA 52 08 01
-	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X ,sh_param->algoWasRptMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_enable_algo_ eorr %d \n", status);
-		return -1;
-	}
-
-	status = sh_set_cfg_wearablesuite_initledcurr(0, 0x0064);
-	if (status != SS_SUCCESS)
-	{
-		printf("ah_set_cfg_wearablesuite_initledcurr 0 eorr %d \n", status);
-		return -1;
-	}
-
-	status = sh_set_cfg_wearablesuite_initledcurr(1, 0x00C8);
-	if (status != SS_SUCCESS)
-	{
-		printf("ah_set_cfg_wearablesuite_initledcurr 1 eorr %d \n", status);
-		return -1;
-	}
-
-	status = sh_set_cfg_wearablesuite_initledcurr(2, 0x00C8);
-	if (status != SS_SUCCESS)
-	{
-		printf("ah_set_cfg_wearablesuite_initledcurr 2 eorr %d \n", status);
-		return -1;
-	}
-
-	//set fifo callback function
-	sh_loadFifoParam(sh_param);
-
-	///TODO: set timer based on setting report rate
-	sh_start_polling_timer(sh_param->tmrPeriod_ms);
-
-	return 0;
-}
-
-
-void sh_ecg_cb(uint32_t u32_sampleCnt, uint32_t u32_sampleSize, uint8_t* u8_data_buf)
-{
-	uint8_t* u8_fifo_buf = (uint8_t*)u8_data_buf;
-	uint8_t u8_idx = 1;
-	uint32_t u32_EcgSample;
-
-	//divide every 48 bytes
-	for (int i= 0; i < u32_sampleCnt; i++)
-	{
-		//printf("----------counter = %d \n,", u8_fifo_buf[u8_idx]);
-		u8_idx = u8_idx +1;    //first byte is fifo counter
-
-		//divide 16 ecg samples
-		for (int x = 0; x < 16; x ++)
-		{
-			u32_EcgSample  = u8_fifo_buf[u8_idx]<<16;
-			u32_EcgSample += u8_fifo_buf[u8_idx+1]<<8;
-			u32_EcgSample += u8_fifo_buf[u8_idx+2];
-			u32_EcgSample  = u32_EcgSample & 0xFFFFF;   // ECG[0:19], ECG_TAG[20:23]
-			u8_idx = u8_idx +3;
-
-			printf("%d\n", u32_EcgSample);
-		}
-	}
-}
-
-int32_t sh_start_ecg_mode(void* param)
-{
-	int status = -1;
-	sshub_ctrl_params_t* sh_param = (sshub_ctrl_params_t*)param;
-
-	//10 01 01
-	status = sh_set_fifo_thresh(1);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_fifo_thresh eorr %d \n", status);
-		return -1;
-	}
-
-	//10 02 01
-	status = sh_set_report_period(sh_param->reportPeriod_in40msSteps);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_report_period eorr %d \n", status);
-		return -1;
-	}
-
-	//set output format: 10 00 07
-	///TODO:clean up output type
-	status = sh_set_data_type(sh_param->FifoDataType, true);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_set_data_type eorr %d \n", status);
-		return -1;
-	}
-
-	//AA 44 06 02 00
-	status = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 0x2, 0);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_sensor_enable_MAX86176 eorr %d \n", status);
-		return -1;
-	}
-
-	//set rawdata only mode
-	//50 08 40 00
-	status = sensorhub_set_algo_operation_mode(sh_param->biometricOpMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("set biometric mode eorr %d \n", status);
-		return -1;
-	}
-
-	//set to basic output mode and enable algo
-	//AA 52 08 01
-	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X ,sh_param->algoWasRptMode);
-	if (status != SS_SUCCESS)
-	{
-		printf("sh_enable_algo_ eorr %d \n", status);
-		return -1;
-	}
-
-	//set fifo callback function
-	sh_loadFifoParam(sh_param);
-
-	///TODO: set timer based on setting report rate
-	sh_start_polling_timer(sh_param->tmrPeriod_ms);
-
-	return 0;
-}
-
-//timer callback function, poling sensor hub FIFO
-void sh_FIFO_polling_handler(void)
-{
-	uint32_t ret = 0;
-	uint8_t hubStatus = 0;
-	int u32_sampleCnt = 0;
-
-	ret = sh_get_sensorhub_status(&hubStatus);
-	//printf("sh_get_sensorhub_status ret = %d, hubStatus =  %d \n", ret, hubStatus);
-
-	if ((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
-	{
-		//printf("FIFO status is ready \n");
-		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
-#if 0
-		if (ret ==  SS_SUCCESS)
-			printf("sample count is %d \n", u32_sampleCnt);
-#endif
-
-		//limit the maximum counter to prevent reading fifo overflow
-		u32_sampleCnt = (u32_sampleCnt > READ_SAMPLE_COUNT_MAX) ? READ_SAMPLE_COUNT_MAX :  u32_sampleCnt;
-		//read fifo data, sample size must be loaded before FIFO reading by sh_loadFifoParam()
-		ret = sh_read_fifo_data(u32_sampleCnt, gu32_RxSampleSize, sh_data_buf, sizeof(sh_data_buf));
-
-		if (ret ==  SS_SUCCESS)
-		{
-			//process fifo data
-			if (gf_fifo_callback != NULL)
-			{
-				gf_fifo_callback(u32_sampleCnt, gu32_RxSampleSize, sh_data_buf);
-			}
-		}
-		else
-		{
-			//printf("read FIFO result fail %d \n", ret);
-		}
-	}
-	else
-	{
-		//printf(" FIFO status is not ready  %d, %d \n", ret, hubStatus);
-	}
-
-}
-

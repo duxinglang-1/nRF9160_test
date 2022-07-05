@@ -699,6 +699,7 @@ void system_init(void)
 	InitSystemSettings();
 
 	init_imu_int1();//xb add 2022-05-27
+	PPG_i2c_off();
 	
 	pmu_init();
 	flash_init();

@@ -26,7 +26,7 @@
 #include "logger.h"
 
 //#define KEY_DEBUG
-#define WEAR_CHECK_SUPPORT	//脱腕检测功能
+//#define WEAR_CHECK_SUPPORT	//脱腕检测功能
 
 static bool key_trigger_flag = false;
 static u8_t flag;

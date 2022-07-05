@@ -164,8 +164,9 @@ u8_t g_new_modem_ver[64] = {0};
 u8_t g_new_ppg_ver[64] = {0};
 u8_t g_new_ble_ver[64] = {0};
 u8_t g_new_wifi_ver[64] = {0};
-
 u8_t g_timezone[5] = {0};
+u8_t g_prj_dir[128] = {0};
+
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
 u16_t g_act_time = 0;
@@ -1679,44 +1680,49 @@ void ParseData(u8_t *data, u32_t datalen)
 			u32_t copylen = 0;
 
 			//后台下发最新版本信息
+			//9160 fw ver
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
 				return;
-			//9160 fw ver
 			copylen = (ptr-strdata) < sizeof(g_new_fw_ver) ? (ptr-strdata) : sizeof(g_new_fw_ver);
 			memcpy(g_new_fw_ver, strdata, copylen);
 
+			//9160 modem ver
 			ptr++;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
 				return;
-			//9160 modem ver
 			copylen = (ptr1-ptr) < sizeof(g_new_modem_ver) ? (ptr1-ptr) : sizeof(g_new_modem_ver);
 			memcpy(g_new_modem_ver, ptr, copylen);
 
+			//52810 fw ver
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
 				return;
-			//52810 fw ver
 			copylen = (ptr1-ptr) < sizeof(g_new_ble_ver) ? (ptr1-ptr) : sizeof(g_new_ble_ver);
 			memcpy(g_new_ble_ver, ptr, copylen);
 
+			//ppg ver
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
 				return;
-			//ppg ver
 			copylen = (ptr1-ptr) < sizeof(g_new_ppg_ver) ? (ptr1-ptr) : sizeof(g_new_ppg_ver);
 			memcpy(g_new_ppg_ver, ptr, copylen);
-		
+
+			//wifi ver
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
 				return;
-			//wifi ver
 			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
 			memcpy(g_new_wifi_ver, ptr, copylen);
+
+			//project dir
+			ptr = ptr1+1;
+			copylen = (datalen-(ptr-strdata)) < sizeof(g_prj_dir) ? (datalen-(ptr-strdata)) : sizeof(g_prj_dir);
+			memcpy(g_prj_dir, ptr, copylen);
 		}
 		else if(strcmp(strcmd, "S15") == 0)
 		{
@@ -2952,6 +2958,6 @@ void NB_init(struct k_work_q *work_q)
 #ifdef NB_SIGNAL_TEST
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
 #else
-	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
+	//k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
 #endif
 }

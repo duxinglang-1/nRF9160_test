@@ -72,8 +72,236 @@ static void show_infor2(u8_t *strbuf)
 }
 #endif
 
+#ifdef GPIO_ACT_I2C
+#define SCL_PIN		0
+#define SDA_PIN		1
+
+void I2C_INIT(void)
+{
+	if(gpio_pmu == NULL)
+		gpio_pmu = device_get_binding(PMU_PORT);
+
+	gpio_pin_configure(gpio_pmu, SCL_PIN, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_pmu, SCL_PIN, 1);
+	gpio_pin_write(gpio_pmu, SDA_PIN, 1);
+}
+
+void I2C_SDA_OUT(void)
+{
+	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_DIR_OUT);
+}
+
+void I2C_SDA_IN(void)
+{
+	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_DIR_IN);
+}
+
+void I2C_SDA_H(void)
+{
+	gpio_pin_write(gpio_pmu, SDA_PIN, 1);
+}
+
+void I2C_SDA_L(void)
+{
+	gpio_pin_write(gpio_pmu, SDA_PIN, 0);
+}
+
+void I2C_SCL_H(void)
+{
+	gpio_pin_write(gpio_pmu, SCL_PIN, 1);
+}
+
+void I2C_SCL_L(void)
+{
+	gpio_pin_write(gpio_pmu, SCL_PIN, 0);
+}
+
+void Delay_ms(unsigned int dly)
+{
+	k_sleep(dly);
+}
+
+void Delay_us(unsigned int dly)
+{
+	k_usleep(dly);
+}
+
+//产生起始信号
+void I2C_Start(void)
+{
+	I2C_SDA_OUT();
+
+	I2C_SDA_H();
+	I2C_SCL_H();
+	//Delay_us(10);
+	I2C_SDA_L();
+	//Delay_us(10);
+	I2C_SCL_L();
+}
+
+//产生停止信号
+void I2C_Stop(void)
+{
+	I2C_SDA_OUT();
+
+	I2C_SCL_L();
+	I2C_SDA_L();
+	I2C_SCL_H();
+	//Delay_us(10);
+	I2C_SDA_H();
+	//Delay_us(10);
+}
+
+//主机产生应答信号ACK
+void I2C_Ack(void)
+{
+	I2C_SDA_OUT();
+	I2C_SCL_L();
+
+	I2C_SDA_L();
+	I2C_SCL_H();
+	I2C_SCL_L();
+}
+
+//主机不产生应答信号NACK
+void I2C_NAck(void)
+{
+	I2C_SDA_OUT();
+	I2C_SCL_L();
+
+	I2C_SDA_H();
+	I2C_SCL_H();
+	I2C_SCL_L();
+}
+
+//等待从机应答信号
+//返回值：1 接收应答失败
+//		  0 接收应答成功
+u8_t I2C_Wait_Ack(void)
+{
+	u8_t val,tempTime=0;
+
+	I2C_SDA_IN();
+	I2C_SCL_H();
+
+	while(1)
+	{
+		gpio_pin_read(gpio_pmu, SDA_PIN, &val);
+		if(val == 0)
+			break;
+		
+		tempTime++;
+		if(tempTime>250)
+		{
+			I2C_Stop();
+			return 1;
+		}	 
+	}
+
+	I2C_SCL_L();
+	return 0;
+}
+
+//I2C 发送一个字节
+u8_t I2C_Write_Byte(u8_t txd)
+{
+	u8_t i=0;
+
+	I2C_SDA_OUT();
+	I2C_SCL_L();//拉低时钟开始数据传输
+
+	for(i=0;i<8;i++)
+	{
+		if((txd&0x80)>0) //0x80  1000 0000
+			I2C_SDA_H();
+		else
+			I2C_SDA_L();
+
+		txd<<=1;
+		I2C_SCL_H();
+		I2C_SCL_L();
+	}
+
+	return I2C_Wait_Ack();
+}
+
+//I2C 读取一个字节
+void I2C_Read_Byte(bool ack, u8_t *data)
+{
+   u8_t i=0,receive=0,val=0;
+
+   I2C_SDA_IN();
+   for(i=0;i<8;i++)
+   {
+   		I2C_SCL_L();
+		I2C_SCL_H();
+
+		receive<<=1;
+		gpio_pin_read(gpio_pmu, SDA_PIN, &val);
+		if(val == 1)
+		   receive++;
+   }
+
+   	if(ack == false)
+	   	I2C_NAck();
+	else
+		I2C_Ack();
+
+	*data = receive;
+}
+
+u8_t I2C_write_data(u8_t addr, u8_t *databuf, u16_t len)
+{
+	u8_t i;
+
+	addr = (addr<<1);
+
+	I2C_Start();
+	if(I2C_Write_Byte(addr))
+		goto err;
+
+	for(i=0;i<len;i++)
+	{
+		if(I2C_Write_Byte(databuf[i]))
+			goto err;
+	}
+
+	I2C_Stop();
+	return 0;
+	
+err:
+	return -1;
+}
+
+u8_t I2C_read_data(u8_t addr, u8_t *databuf, u16_t len)
+{
+	u8_t i;
+
+	addr = (addr<<1)|1;
+
+	I2C_Start();
+	if(I2C_Write_Byte(addr))
+		goto err;
+
+	for(i=0;i<len;i++)
+	{
+		I2C_Read_Byte(false, &databuf[i]);
+	}
+	I2C_Stop();
+	return 0;
+	
+err:
+	return -1;
+}
+#endif
+
 static bool init_i2c(void)
 {
+#ifdef GPIO_ACT_I2C
+	I2C_INIT();
+	return true;
+#else
 	i2c_pmu = device_get_binding(PMU_DEV);
 	if(!i2c_pmu)
 	{
@@ -87,6 +315,7 @@ static bool init_i2c(void)
 		i2c_configure(i2c_pmu, I2C_SPEED_SET(I2C_SPEED_FAST));
 		return true;
 	}
+#endif	
 }
 
 static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t len)
@@ -97,8 +326,11 @@ static s32_t platform_write(struct device *handle, u8_t reg, u8_t *bufp, u16_t l
 
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
+#ifdef GPIO_ACT_I2C
+	rslt = I2C_write_data(MAX20353_I2C_ADDR, data, len+1);
+#else
 	rslt = i2c_write(handle, data, len+1, MAX20353_I2C_ADDR);
-
+#endif
 	return rslt;
 }
 
@@ -106,23 +338,30 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 {
 	u32_t rslt = 0;
 
+#ifdef GPIO_ACT_I2C
+	rslt = I2C_write_data(MAX20353_I2C_ADDR, &reg, 1);
+	if(rslt == 0)
+	{
+		rslt = I2C_read_data(MAX20353_I2C_ADDR, bufp, len);
+	}
+#else
 	rslt = i2c_write(handle, &reg, 1, MAX20353_I2C_ADDR);
 	if(rslt == 0)
 	{
 		rslt = i2c_read(handle, bufp, len, MAX20353_I2C_ADDR);
 	}
-
+#endif
 	return rslt;
 }
 
-void Set_PPG_Power_On(void)
+void PPG_Power_On(void)
 {
-	MAX20353_LDO1Config();
+	MAX20353_BoostConfig();
 }
 
-void Set_PPG_Power_Off(void)
+void PPG_Power_Off(void)
 {
-	MAX20353_LDO1Disable();
+	MAX20353_BoostDisable();
 }
 
 void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
@@ -661,7 +900,11 @@ void pmu_init(void)
 
 	pmu_dev_ctx.write_reg = platform_write;
 	pmu_dev_ctx.read_reg  = platform_read;
+#ifdef GPIO_ACT_I2C
+	pmu_dev_ctx.handle    = NULL;
+#else
 	pmu_dev_ctx.handle    = i2c_pmu;
+#endif
 
 	pmu_check_ok = MAX20353_Init();
 	if(!pmu_check_ok)

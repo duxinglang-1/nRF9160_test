@@ -533,7 +533,11 @@ void SendPowerOnData(void)
 	//battery
 	GetBatterySocString(tmpbuf);
 	strcat(databuf, tmpbuf);
-			
+	strcat(databuf, ",");
+
+	//mcu fw version
+	strcat(databuf, g_fw_version);	
+
 	NBSendPowerOnInfor(databuf, strlen(databuf));
 }
 

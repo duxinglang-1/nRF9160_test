@@ -56,8 +56,8 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 
 	if(n > 0)
 	{
-		*(buf + n) = '\n';
-		n++;
+		//*(buf + n) = '\n';
+		//n++;
 		
 		LOG_INF("%s", buf);
 	}

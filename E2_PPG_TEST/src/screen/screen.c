@@ -2689,7 +2689,7 @@ void EnterHRScreen(void)
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 	
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;

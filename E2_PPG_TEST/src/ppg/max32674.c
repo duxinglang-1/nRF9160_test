@@ -28,6 +28,14 @@
 
 #define PPG_DEBUG
 
+#define PPG_LED_G_CUR		0xff	//0x04 0x32 0xb0 0xff
+#define PPG_LED_R_CUR		0xff	//0x04 0x22 0x5d 0xff
+#define PPG_LED_IR_CUR		0xff	//0x06 0x28 0x6d 0xff
+
+#define PPG_LED_G_ADC_RANGE		0x3f  //0x3f 0x30
+#define PPG_LED_R_ADC_RANGE		0x3f  //0x3f
+#define PPG_LED_IR_ADC_RANGE	0x3f  //0x3f
+
 bool ppg_int_event = false;
 bool ppg_fw_upgrade_flag = false;
 bool ppg_delay_start_flag = false;
@@ -221,12 +229,14 @@ static void demoLogAllData(uint8_t u8_sampleIndex, sensorhub_output *sh_output)
 void demoLogPPGRawData(uint8_t u8_sampleIndex, sensorhub_output *sh_output)
 {
 #ifdef PPG_DEBUG
-	LOGD("%d,  %d,%d,%d,%d",
+	LOGD("%d,  %d,%d,%d,%d,%d,%d",
 			u8_sampleIndex,
 			sh_output->ppg_data.led1,
 			sh_output->ppg_data.led2,
 			sh_output->ppg_data.led3,
-			sh_output->ppg_data.led4
+			sh_output->ppg_data.led4,
+			sh_output->ppg_data.led5,
+			sh_output->ppg_data.led6
 			);
 #endif
 }
@@ -731,24 +741,90 @@ int32_t sh_start_rawdata_mode(void* param)
 		return -1;
 	}
 
-	status = sh_set_cfg_wearablesuite_initledcurr(1, 0x00C8);
+	//LED current
+	//status = sh_set_cfg_wearablesuite_initledcurr(1, 0x00cf);
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x25, PPG_LED_G_CUR, 1);//green
 	if (status != SS_SUCCESS)
 	{
 	#ifdef PPG_DEBUG
-		LOGD("ah_set_cfg_wearablesuite_initledcurr 1 eorr %d", status);
+		LOGD("sh_set_reg led green curr eorr %d", status);
+	#endif
+		return -1;
+	}
+	//status = sh_set_cfg_wearablesuite_initledcurr(2, 0x00cf);
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x2d, PPG_LED_IR_CUR, 1);//IR
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led IR curr eorr %d", status);
+	#endif
+		return -1;
+	}
+	//status = sh_set_cfg_wearablesuite_initledcurr(3, 0x00cf);
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x35, PPG_LED_R_CUR, 1);//red
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led red curr eorr %d", status);
 	#endif
 		return -1;
 	}
 
-	status = sh_set_cfg_wearablesuite_initledcurr(2, 0x00C8);
+	//LED Tint
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x21, 0x18, 1);//green
 	if (status != SS_SUCCESS)
 	{
 	#ifdef PPG_DEBUG
-		LOGD("ah_set_cfg_wearablesuite_initledcurr 2 eorr %d", status);
+		LOGD("sh_set_reg led green Tint eorr %d", status);
+	#endif
+		return -1;
+	}
+	//status = sh_set_cfg_wearablesuite_initledcurr(2, 0x00cf);
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x29, 0x18, 1);//IR
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led IR Tint eorr %d", status);
+	#endif
+		return -1;
+	}
+	//status = sh_set_cfg_wearablesuite_initledcurr(3, 0x00cf);
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x31, 0x18, 1);//red
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led red Tint eorr %d", status);
 	#endif
 		return -1;
 	}
 
+	//ADC range
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x22, PPG_LED_G_ADC_RANGE, 1);//0x30 0x3f
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led green adc eorr %d", status);
+	#endif
+		return -1;
+	}
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x2a, PPG_LED_IR_ADC_RANGE, 1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led IR adc eorr %d", status);
+	#endif
+		return -1;
+	}
+	status = sh_set_reg(SH_SENSORIDX_MAX86176, 0x32, PPG_LED_R_ADC_RANGE, 1);
+	if (status != SS_SUCCESS)
+	{
+	#ifdef PPG_DEBUG
+		LOGD("sh_set_reg led red adc eorr %d", status);
+	#endif
+		return -1;
+	}
+
+	//sps
 	//set fifo callback function
 	sh_loadFifoParam(sh_param);
 
@@ -2372,8 +2448,8 @@ void PPGStartRawData(void)
 
 	SH_rst_to_APP_mode();
 
-	//sh_start_rawdata_mode(&sh_ctrl_rawdata_param);
-	sh_start_HR_SPO2_mode(&sh_ctrl_HR_SPO2_param);
+	sh_start_rawdata_mode(&sh_ctrl_rawdata_param);
+	//sh_start_HR_SPO2_mode(&sh_ctrl_HR_SPO2_param);
 }
 
 void PPG_init(void)

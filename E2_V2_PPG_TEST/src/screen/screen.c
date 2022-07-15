@@ -831,7 +831,7 @@ void EnterPoweroffScreen(void)
 
 void PowerOffUpdateStatus(void)
 {
-	u32_t *img_anima[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
+	u32_t img_anima[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
@@ -1811,7 +1811,7 @@ void EnterSyncDataScreen(void)
 
 void SyncUpdateStatus(void)
 {
-	unsigned char *img_anima[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
+	u32_t img_anima[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
 	
 	switch(sync_state)
 	{

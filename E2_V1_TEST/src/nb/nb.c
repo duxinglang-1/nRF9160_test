@@ -119,6 +119,7 @@ static bool nb_connecting_flag = false;
 static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
 static bool get_modem_status_flag = false;
+static bool server_has_timed_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -1810,6 +1811,8 @@ void ParseData(u8_t *data, u32_t datalen)
 				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
 				RedrawSystemTime();
 				SaveSystemDateTime();
+
+				server_has_timed_flag = true;
 			}
 
 			flag = true;			
@@ -2748,7 +2751,10 @@ static void nb_link(struct k_work *work)
 		#ifdef CONFIG_MODEM_INFO
 			modem_data_init();
 		#endif
-			GetModemDateTime();
+
+			if(!server_has_timed_flag)
+				GetModemDateTime();
+			
 			NBRedrawNetMode();
 		}
 

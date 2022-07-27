@@ -14,7 +14,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 
-#define SEND_NODE_CACHE_MAX	10
+#define SEND_NODE_CACHE_MAX	8
 
 struct node
 {

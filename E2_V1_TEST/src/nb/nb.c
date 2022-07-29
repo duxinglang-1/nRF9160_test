@@ -1062,8 +1062,9 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+				if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+					k_timer_stop(&nb_reconnect_timer);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 			}
 		}
 	}
@@ -2936,7 +2937,8 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
+		if(!nb_connecting_flag)
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}
 	
 	if(nb_connecting_flag)

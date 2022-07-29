@@ -99,8 +99,10 @@ void SH_Power_On(void)
 void SH_Power_Off(void)
 {
 	//PPG¹©µç¹Ø±Õ
+#if 1	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_ppg, PPG_EN_PIN, 0);
+#endif	
 }
 
 static void sh_init_i2c(void)
@@ -285,6 +287,30 @@ int sh_read_cmd(u8_t *cmd_bytes,
 	return (int)((SS_STATUS)rxbuf[0]);
 }
 
+int sh_write_cmd_without_status_cb(u8_t *tx_buf,
+								   int tx_len,
+				 				   int sleep_ms)
+{
+	int retries = SS_DEFAULT_RETRIES;
+
+	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	SH_pull_mfio_to_high();
+
+	while((ret != 0) && (retries--) > 0)
+	{
+		WAIT_MS(1);
+		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+		SH_pull_mfio_to_high();
+	}
+
+	if((ret != 0) && (retries == 0))
+	{
+	   return SS_ERR_UNAVAILABLE;
+	}
+}
+
 int sh_write_cmd(u8_t *tx_buf,
 				 int tx_len,
 				 int sleep_ms)
@@ -414,6 +440,32 @@ s32_t sh_get_hub_fw_version(u8_t* fw_version)
 
 	memcpy(fw_version, &rxbuf[1],sizeof(rxbuf) - 1);
 	return status;
+}
+
+int sh_set_sensorhub_active(void)
+{
+	gpio_pin_write(gpio_ppg, PPG_INT_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_write(gpio_ppg, PPG_INT_PIN, 1);
+}
+
+int sh_set_sensorhub_sleep(void)
+{
+	u8_t ByteSeq[] = {0x04,0x00,0x02};
+	
+	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+    return status;
+}
+
+int sh_set_sensorhub_shutdown(void)
+{
+#if 0
+	u8_t ByteSeq[] = {0x01,0x00,0x01};
+	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+	return status;
+#else
+	return 0;
+#endif	
 }
 
 int sh_set_sensorhub_operating_mode(u8_t hubMode)
@@ -1223,6 +1275,8 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
+
+		sh_set_sensorhub_shutdown();
 		SH_Power_Off();
 		//Set_PPG_Power_Off();
 		return false;
@@ -1238,7 +1292,8 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
 	#endif
-	
+
+		sh_set_sensorhub_shutdown();
 		SH_Power_Off();
 		//Set_PPG_Power_Off();
 		return false;
@@ -1251,7 +1306,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (u8_rxbuf[1] != 4))
+	if((mcu_type != 1) || (u8_rxbuf[1] < 4))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
@@ -1271,6 +1326,7 @@ bool sh_init_interface(void)
 		LCD_SleepOut();
 	}
 
+	sh_set_sensorhub_shutdown();
 	SH_Power_Off();
 	//Set_PPG_Power_Off();
 	

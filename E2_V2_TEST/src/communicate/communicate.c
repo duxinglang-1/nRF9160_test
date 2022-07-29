@@ -391,7 +391,7 @@ void SyncSendHealthData(void)
 	u16_t steps=0,calorie=0,distance=0;
 	u16_t light_sleep=0,deep_sleep=0;
 	u8_t tmpbuf[20] = {0};
-	u8_t databuf[128] = {0};
+	u8_t databuf[256] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
   #ifdef CONFIG_STEP_SUPPORT

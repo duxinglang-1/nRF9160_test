@@ -1394,7 +1394,7 @@ bool StartSensorhub(void)
 		//set fifo thresh
 		sh_set_fifo_thresh(1);
 		//Set the samples report period to 40ms(minimum is 32ms for BPT).
-		sh_set_report_period(1);
+		sh_set_report_period(25);
 		//Enable the sensor.
 		sensorhub_enable_sensors();
 		//set algo mode
@@ -2443,8 +2443,8 @@ void PPGStartRawData(void)
 
 	SH_rst_to_APP_mode();
 
-	sh_start_rawdata_mode(&sh_ctrl_rawdata_param);
-	//sh_start_HR_SPO2_mode(&sh_ctrl_HR_SPO2_param);
+	//sh_start_rawdata_mode(&sh_ctrl_rawdata_param);
+	sh_start_HR_SPO2_mode(&sh_ctrl_HR_SPO2_param);
 }
 
 void PPG_init(void)

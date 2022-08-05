@@ -133,6 +133,8 @@
 			#define SS_DATATYPE_RAW					1
 			#define SS_DATATYPE_ALGO				2
 			#define SS_DATATYPE_BOTH				3
+			#define SS_DATATYPE_CNT_MSK             (1<<2)
+			
 		#define SS_SHIFT_OUTPUTMODE_SC_EN		2
 		#define SS_MASK_OUTPUTMODE_SC_EN		(1 << SS_SHIFT_OUTPUTMODE_SC_EN)
 	#define SS_CMDIDX_FIFOAFULL		0x01

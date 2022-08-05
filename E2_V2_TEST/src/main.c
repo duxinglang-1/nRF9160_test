@@ -53,7 +53,7 @@ static u8_t show_pic_count = 0;//Õº∆¨œ‘ æÀ≥–Ú
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
-		      2048);
+		      4096);
 static struct k_work_q nb_work_q;
 
 #ifdef CONFIG_IMU_SUPPORT

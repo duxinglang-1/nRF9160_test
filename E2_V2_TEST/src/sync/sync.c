@@ -81,7 +81,7 @@ void SyncDataStop(void)
 {
 	k_timer_stop(&sync_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStop();
+	AnimaStopShow();
 #endif
 	sync_state = SYNC_STATUS_IDLE;
 }
@@ -130,7 +130,7 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 		case SYNC_STATUS_FAIL:
 			k_timer_stop(&sync_timer);
 		#ifdef CONFIG_ANIMATION_SUPPORT 
-			AnimaStop();
+			AnimaStopShow();
 		#endif
 			if(screen_id == SCREEN_ID_SYNC)
 			{

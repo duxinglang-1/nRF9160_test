@@ -119,6 +119,7 @@ static bool nb_connecting_flag = false;
 static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
 static bool get_modem_status_flag = false;
+static bool server_has_timed_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -722,7 +723,7 @@ static void SendDataCallBack(struct k_timer *timer)
 
 static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(100), NULL);
+	k_timer_start(&send_data_timer, K_MSEC(500), NULL);
 }
 
 static void NbSendDataStop(void)
@@ -1061,8 +1062,9 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+				if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+					k_timer_stop(&nb_reconnect_timer);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 			}
 		}
 	}
@@ -1336,10 +1338,12 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 		#ifdef NB_DEBUG
 			LOGD("begin 004", __func__);
 		#endif
-			if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-				k_timer_stop(&nb_reconnect_timer);
 
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+			if(!nb_connecting_flag)
+			{
+				k_timer_stop(&nb_reconnect_timer);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+			}
 		}
 	}
 }
@@ -1810,6 +1814,8 @@ void ParseData(u8_t *data, u32_t datalen)
 				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
 				RedrawSystemTime();
 				SaveSystemDateTime();
+
+				server_has_timed_flag = true;
 			}
 
 			flag = true;			
@@ -2748,7 +2754,10 @@ static void nb_link(struct k_work *work)
 		#ifdef CONFIG_MODEM_INFO
 			modem_data_init();
 		#endif
-			GetModemDateTime();
+
+			if(!server_has_timed_flag)
+				GetModemDateTime();
+			
 			NBRedrawNetMode();
 		}
 
@@ -2930,7 +2939,8 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
+		if(!nb_connecting_flag&&!nb_connected)
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}
 	
 	if(nb_connecting_flag)

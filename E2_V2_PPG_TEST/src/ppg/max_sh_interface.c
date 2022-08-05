@@ -316,6 +316,30 @@ int sh_read_cmd(u8_t *cmd_bytes,
 	return (int)((SS_STATUS)rxbuf[0]);
 }
 
+int sh_write_cmd_without_status_cb(u8_t *tx_buf,
+								   int tx_len,
+				 				   int sleep_ms)
+{
+	int retries = SS_DEFAULT_RETRIES;
+
+	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	SH_pull_mfio_to_high();
+
+	while((ret != 0) && (retries--) > 0)
+	{
+		WAIT_MS(1);
+		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+		SH_pull_mfio_to_high();
+	}
+
+	if((ret != 0) && (retries == 0))
+	{
+	   return SS_ERR_UNAVAILABLE;
+	}
+}
+
 int sh_write_cmd(u8_t *tx_buf,
 				 int tx_len,
 				 int sleep_ms)
@@ -460,6 +484,17 @@ int sh_set_sensorhub_sleep(void)
 	
 	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
     return status;
+}
+
+int sh_set_sensorhub_shutdown(void)
+{
+#if 0
+	u8_t ByteSeq[] = {0x01,0x00,0x01};
+	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+	return status;
+#else
+	return 0;
+#endif	
 }
 
 int sh_set_sensorhub_operating_mode(u8_t hubMode)
@@ -1300,7 +1335,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (u8_rxbuf[1] < 4))
+	if((mcu_type != 1) || (u8_rxbuf[1] != 4))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);

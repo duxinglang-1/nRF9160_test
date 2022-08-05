@@ -584,45 +584,13 @@ void GetSystemTimeSecString(u8_t *str_utc)
 	u32_t i;
 	u32_t total_sec,total_day=0;
 
-
-	if(date_time.year >= SEC_START_YEAR)
-	{
-		total_day += (date_time.day-1);
-
-		for(i=1;i<date_time.month;i++)
-		{
-			switch(i)
-			{
-			case 1:
-			case 3:
-			case 5:
-			case 7:
-			case 8:
-			case 10:
-			case 12:
-				total_day += 31;
-				break;
-			case 2:
-				total_day += (28+(CheckYearIsLeap(date_time.year)));
-				break;
-			case 4:
-			case 6:
-			case 9:
-			case 11:
-				total_day += 30;
-				break;
-			}
-		}
-		
-		for(i=SEC_START_YEAR;i<date_time.year;i++)
-		{
-			total_day += (365+(CheckYearIsLeap(i)));
-		}
-
-		total_sec = total_day*SEC_PER_DAY+date_time.hour*SEC_PER_HOUR+date_time.minute*SEC_PER_MINUTE+date_time.second;
-
-		sprintf(str_utc, "%d", total_sec);
-	}
+	sprintf(str_utc, "%04d%02d%02d%02d%02d%02d", 
+						date_time.year,
+						date_time.month,
+						date_time.day,
+						date_time.hour,
+						date_time.minute,
+						date_time.second);
 }
 
 void GetSystemDateStrings(u8_t *str_date)

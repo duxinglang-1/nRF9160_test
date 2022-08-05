@@ -459,8 +459,12 @@ void LCD_Init(void)
 	WriteData(0x00); 
 	WriteData(0x00);
 
-	WriteComm(0x36);			
+	WriteComm(0x36);
+#ifdef LCD_SHOW_ROTATE_180	
+	WriteData(0x88);
+#else
 	WriteData(0x48);
+#endif
 
 	WriteComm(0x3A);			
 	WriteData(0x05); 

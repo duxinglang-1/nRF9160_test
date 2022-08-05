@@ -1820,7 +1820,7 @@ void SyncUpdateStatus(void)
 
 	case SYNC_STATUS_LINKING:
 	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaShow(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
+		AnimaShow(SYNC_RUNNING_ANI_X, SYNC_RUNNING_ANI_Y, img_anima, ARRAY_SIZE(img_anima), 1000, true, NULL);
 	#endif
 		break;
 		

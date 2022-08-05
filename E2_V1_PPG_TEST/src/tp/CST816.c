@@ -560,10 +560,33 @@ void touch_panel_event_handle(TP_EVENT tp_type, u16_t x_pos, u16_t y_pos)
 		break;
 	}
 
+#ifdef LCD_SHOW_ROTATE_180
+	if((tp_type == TP_EVENT_MOVING_UP)
+		|| (tp_type == TP_EVENT_MOVING_DOWN)
+		|| (tp_type == TP_EVENT_MOVING_LEFT)
+		|| (tp_type == TP_EVENT_MOVING_RIGHT))
+	{
+		if(tp_type == TP_EVENT_MOVING_UP)
+			tp_msg.evt_id = TP_EVENT_MOVING_DOWN;
+		else if(tp_type == TP_EVENT_MOVING_DOWN)
+			tp_msg.evt_id = TP_EVENT_MOVING_UP;
+		else if(tp_type == TP_EVENT_MOVING_LEFT)
+			tp_msg.evt_id = TP_EVENT_MOVING_RIGHT;
+		else if(tp_type == TP_EVENT_MOVING_RIGHT)
+			tp_msg.evt_id = TP_EVENT_MOVING_LEFT;
+	}
+	else
+	{
+		tp_msg.evt_id = tp_type;
+	}
+	tp_msg.x_pos = LCD_WIDTH - x_pos;
+	tp_msg.y_pos = LCD_HEIGHT - y_pos;
+#else
 	tp_msg.evt_id = tp_type;
 	tp_msg.x_pos = x_pos;
 	tp_msg.y_pos = y_pos;
-	
+#endif
+
 #ifdef TP_TEST //xb test 2022-04-21
 	tp_redraw_flag = true;
 #endif

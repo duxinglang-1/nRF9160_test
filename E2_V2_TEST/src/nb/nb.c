@@ -723,7 +723,7 @@ static void SendDataCallBack(struct k_timer *timer)
 
 static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(100), NULL);
+	k_timer_start(&send_data_timer, K_MSEC(500), NULL);
 }
 
 static void NbSendDataStop(void)
@@ -1338,10 +1338,12 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 		#ifdef NB_DEBUG
 			LOGD("begin 004", __func__);
 		#endif
-			if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-				k_timer_stop(&nb_reconnect_timer);
 
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+			if(!nb_connecting_flag)
+			{
+				k_timer_stop(&nb_reconnect_timer);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+			}
 		}
 	}
 }
@@ -2937,7 +2939,8 @@ void NBMsgProcess(void)
 		if(test_gps_flag)
 			return;
 
-		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		if(!nb_connecting_flag&&!nb_connected)
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}
 	
 	if(nb_connecting_flag)

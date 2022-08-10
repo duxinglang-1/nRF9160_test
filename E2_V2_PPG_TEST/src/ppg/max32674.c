@@ -949,12 +949,12 @@ void sh_FIFO_polling_handler(void)
 
 	ret = sh_get_sensorhub_status(&hubStatus);
 #ifdef PPG_DEBUG
-	LOGD("sh_get_sensorhub_status ret = %d, hubStatus =  %d", ret, hubStatus);
+	//LOGD("sh_get_sensorhub_status ret = %d, hubStatus =  %d", ret, hubStatus);
 #endif	
 	if ((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
 	{
 	#ifdef PPG_DEBUG
-		LOGD("FIFO status is ready");
+		//LOGD("FIFO status is ready");
 	#endif
 		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
 	#if 0
@@ -978,14 +978,14 @@ void sh_FIFO_polling_handler(void)
 		else
 		{
 		#ifdef PPG_DEBUG
-			LOGD("read FIFO result fail %d", ret);
+			//LOGD("read FIFO result fail %d", ret);
 		#endif
 		}
 	}
 	else
 	{
 	#ifdef PPG_DEBUG
-		LOGD("FIFO status is not ready  %d, %d", ret, hubStatus);
+		//LOGD("FIFO status is not ready  %d, %d", ret, hubStatus);
 	#endif
 	}
 }

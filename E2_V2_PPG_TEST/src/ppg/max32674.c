@@ -124,7 +124,7 @@ sshub_ctrl_params_t  sh_ctrl_HR_SPO2_param = {
 	.algoWasRptMode              = SENSORHUB_MODE_BASIC,                     //basic output for WAS
 	.FifoDataType                = SS_DATATYPE_BOTH | SS_DATATYPE_CNT_MSK,
 	.reportPeriod_in40msSteps    = POLL_PERIOD_40MS * 1,
-	.tmrPeriod_ms                = POLL_PERIOD_40MS *1 * 40,
+	.tmrPeriod_ms                = POLL_PERIOD_40MS * 1 * 40,
 	.FifoSampleSize              = SS_NORMAL_PACKAGE_SIZE,
 	.AccelType                   = SH_INPUT_DATA_DIRECT_SENSOR,
 	.sh_fn_cb                    = sh_HR_SPO2_mode_Fifo_cb,
@@ -948,11 +948,14 @@ void sh_FIFO_polling_handler(void)
 	int u32_sampleCnt = 0;
 
 	ret = sh_get_sensorhub_status(&hubStatus);
-	//printf("sh_get_sensorhub_status ret = %d, hubStatus =  %d \n", ret, hubStatus);
-
+#ifdef PPG_DEBUG
+	LOGD("sh_get_sensorhub_status ret = %d, hubStatus =  %d", ret, hubStatus);
+#endif	
 	if ((0 == ret) && (hubStatus & SS_MASK_STATUS_DATA_RDY))
 	{
-		//printf("FIFO status is ready \n");
+	#ifdef PPG_DEBUG
+		LOGD("FIFO status is ready");
+	#endif
 		ret = sensorhub_get_output_sample_number(&u32_sampleCnt);
 	#if 0
 		if (ret ==  SS_SUCCESS)
@@ -974,14 +977,17 @@ void sh_FIFO_polling_handler(void)
 		}
 		else
 		{
-			//printf("read FIFO result fail %d \n", ret);
+		#ifdef PPG_DEBUG
+			LOGD("read FIFO result fail %d", ret);
+		#endif
 		}
 	}
 	else
 	{
-		//printf(" FIFO status is not ready  %d, %d \n", ret, hubStatus);
+	#ifdef PPG_DEBUG
+		LOGD("FIFO status is not ready  %d, %d", ret, hubStatus);
+	#endif
 	}
-
 }
 //xb end 2022.06.29
 

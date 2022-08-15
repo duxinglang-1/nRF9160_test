@@ -40,8 +40,15 @@
 #define SH_MFIO_PIN            		14
 #endif
 
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define PPG_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define PPG_DEV	""
+#endif
 
-#define PPG_DEV 	"I2C_1"
 #define PPG_PORT 	"GPIO_0"
 	
 #define PPG_SDA_PIN		11
@@ -128,10 +135,12 @@ static void sh_init_gpio(void)
 	
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
-	gpio_pin_disable_callback(gpio_ppg, PPG_INT_PIN);
+	//gpio_pin_disable_callback(gpio_ppg, PPG_INT_PIN); //this API no longer supported in zephyr version 2.7.0
+        gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN);
+	//gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN); //this API no longer supported in zephyr version 2.7.0
+        gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE);
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);

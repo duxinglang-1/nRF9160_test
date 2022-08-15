@@ -214,7 +214,7 @@ int MAX20353_HapticConfig(void)
 void VibrateStart(void)
 {
 #ifdef MOTOR_TYPE_ERM
-	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3F);	//������ƣ���0x00��0x7f
+	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3F);	//������ƣ���x00��0x7f
 	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x26); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x06
 #else defined(MOTOR_TYPE_LRA)
 	appcmdoutvalue_ = 0xAC;
@@ -662,7 +662,7 @@ int MAX20353_ReadReg(max20353_reg_t reg, uint8_t *value)
 }
 
 /******************************************************************************
-��ȡ����ֽ�
+��ȡ����ֽ�
 */
 int MAX20353_ReadRegMulti(max20353_reg_t reg, uint8_t *value, uint8_t len)
 {
@@ -799,7 +799,7 @@ int MAX20353_EnablePMICIntMaskRegisters(unsigned char buf_results[3])
 	return ret;
 }
 
-//�������    
+//�������   
 int MAX20353_ChargerCfg(void)
 {
 	int32_t ret = 0;
@@ -814,7 +814,7 @@ int MAX20353_ChargerCfg(void)
 	return ret;
 }
 
-//���ʹ��
+//���ʹ��
 int MAX20353_ChargerCtrl(void)
 {
 	int32_t ret = 0;
@@ -831,7 +831,7 @@ int MAX20353_InputCurCfg(void)
 	int32_t ret = 0;
 
 	appcmdoutvalue_ = 0x10;
-	appdatainoutbuffer_[0] = 0x1E;  //����������500ma(������+ϵͳ��������,���ǳ���������������F3�ĵ��������Ŀǰ����Ϊ160ma),�ض�ʱ��10ms
+	appdatainoutbuffer_[0] = 0x1E;  //����������500ma(������+ϵͳ��������,���ǳ���������������F3�ĵ��������Ŀǰ�����60ma),�ض�ʱ��10ms
 	ret = MAX20353_AppWrite(1);
 
 	return ret;
@@ -869,7 +869,7 @@ int InitCharger(void)
 	return ret;
 }
 
-//�������     
+//�������    
 int MAX20353_MotorCtrl(uint32_t time_num, uint32_t count)
 {
 	int32_t ret = 0;
@@ -911,7 +911,7 @@ bool MAX20353_Init(void)
 	if(HardwareID != MAX20353_HARDWARE_ID)
 		return false;
 	
-	//�����ѹ����������
+	//�����ѹ����������
 	MAX20353_Buck1Config();		//1.8V 350mA
 	MAX20353_Buck2Config(); 	//3.3V 350mA
 	MAX20353_LDO1Config();		//1.8V 50mA switch mode
@@ -935,7 +935,7 @@ bool MAX20353_Init(void)
 	MAX20353_SOCInit();
 #endif
 
-	//�������
+	//�������
 	MAX20353_ChargerInit();
 
 	return true;

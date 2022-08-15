@@ -14,7 +14,13 @@
 #include "font.h"
 
 //SPIÒý½Å¶¨Òå
-#define FLASH_DEVICE 	"SPI_2"
+#define SPI2_NODE DT_NODELABEL(spi2)
+#if DT_NODE_HAS_STATUS(SPI2_NODE, okay)
+#define FLASH_DEVICE	DT_LABEL(SPI2_NODE)
+#else
+#error "spi2 devicetree node is disabled"
+#define FLASH_DEVICE ""
+#endif 
 #define FLASH_NAME 		"W25Q64FW"
 #define FLASH_PORT		"GPIO_0"
 #define FLASH_CS_PIN		(2)

@@ -8,6 +8,7 @@
 ******************************************************************************************************/
 #include <fs/nvs.h>
 #include <drivers/flash.h>
+#include <flash_map_pm.h>
 #include <device.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,6 +17,8 @@
 #include "logger.h"
 
 //#define INNER_FLASH_DEBUG
+
+#define STORAGE_NODE_LABEL storage
 
 #define value1  "53.760241,-5.147095,1.023,11:20:22"
 #define value2  "53.760241,-5.147095,1.023,11:20:23"
@@ -39,24 +42,31 @@ static struct flash_pages_info info;
 
 static int nvs_setup(void)
 {	
-        struct device *flash_dev;
+    struct device *flash_dev;
 	int err;	
 
-	//fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
-        fs.offset = DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(storage));	
-	//err = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME), fs.offset, &info);
-        err = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);	
-	if(err)
+	flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
+	if(!device_is_ready(flash_dev))
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOGD("Unable to get page info");	
+		LOGD("Flash device %s is not ready", flash_dev->name);
+	#endif	
+		return;
+	}
+	fs.offset = FLASH_AREA_OFFSET(STORAGE_NODE_LABEL);
+	err = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
+	if (err)
+	{		
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("Unable to get page info");
 	#endif
-	}	
+		return;
+	}
 
 	fs.sector_size = info.size;
 	fs.sector_count = 6U;
-	//err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-        err = nvs_init(&fs, flash_dev);
+
+    err = nvs_init(&fs, flash_dev->name);
 	if(err)
 	{
 	#ifdef INNER_FLASH_DEBUG

@@ -15,8 +15,10 @@
 #include <modem/at_cmd_parser.h>
 #include <modem/at_params.h>
 #include <modem/lte_lc.h>
+#include <modem/lte_lc_trace.h>
 #include <modem/modem_info.h>
 #include <modem/nrf_modem_lib.h>
+#include <modem/at_monitor.h>
 #include <nrf_modem_at.h>
 //#include <modem/at_notif.h>
 #if defined(CONFIG_LWM2M_CARRIER)
@@ -170,6 +172,9 @@ NETWORK_MODE g_net_mode = NET_MODE_NB;
 #elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)||defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
 NETWORK_MODE g_net_mode = NET_MODE_LTE_M;
 #endif
+
+//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
+AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
 
 static NB_APN_PARAMENT nb_apn_table[] = 
 {
@@ -864,8 +869,9 @@ static void modem_configure(void)
 		strcpy(nb_test_info, "modem_configure");
 		TestNBUpdateINfor();
 	}
-        nrf_modem_at_cmd();
-	if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
+
+	//if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
+	if(nrf_modem_at_cmd(NULL, 0, "AT%CESQ=1") != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("AT_CMD write fail!");
@@ -988,7 +994,8 @@ void NBRedrawSignal(void)
 	uint8_t strbuf[128] = {0};
 	uint8_t tmpbuf[128] = {0};
 
-	if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_GET_REG_STATUS) == 0)
 	{
 		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
 		//<n>
@@ -1058,7 +1065,8 @@ void NBRedrawSignal(void)
 		}
 	}
 
-	if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
+	//if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), "AT+CSCON?") == 0)
 	{
 		//+CSCON: <n>,<mode>[,<state>[,<access]]
 		//<n>
@@ -1187,7 +1195,8 @@ void GetModemDateTime(void)
 	uint8_t tz_count,daylight;
 	static uint8_t retry = 5;
 
-	if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
+	//if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
+	if(nrf_modem_at_cmd(timebuf,sizeof(timebuf),"AT%CCLK?") != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("Get CCLK fail!");
@@ -1715,7 +1724,8 @@ static int configure_low_power(void)
 
 #if defined(CONFIG_LTE_RAI_ENABLE)
 	/** Release Assistance Indication  */
-	err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
+	//err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
+	err = nrf_modem_at_cmd(NULL, 0, CMD_SET_RAI);
 	if(err)
 	{
 	#ifdef NB_DEBUG
@@ -1736,7 +1746,8 @@ void GetModemSignal(void)
 	int32_t rsrq=0,rsrp,snr;
 	static int32_t rsrpbk = 0;
 	
-	if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_CESQ) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("%s", tmpbuf);
@@ -1760,7 +1771,8 @@ void GetModemSignal(void)
 		rsrp = atoi(strbuf);
 	}
 
-	if(at_cmd_write(CMD_GET_SNR, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_SNR, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SNR) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("%s", tmpbuf);
@@ -2050,7 +2062,8 @@ void SetNetWorkApn(uint8_t *imsi_buf)
 		#ifdef NB_DEBUG
 			LOGD("cmdbuf:%s", cmdbuf); 
 		#endif
-			if(at_cmd_write(cmdbuf, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+			//if(at_cmd_write(cmdbuf, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+			if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), cmdbuf) != 0)
 			{
 			#ifdef NB_DEBUG
 				LOGD("set apn fail!");
@@ -2061,7 +2074,8 @@ void SetNetWorkApn(uint8_t *imsi_buf)
 		}
 	}
 
-	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_APN) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("apn:%s", tmpbuf); 
@@ -2093,7 +2107,8 @@ void GetModemInfor(void)
 {
 	uint8_t tmpbuf[256] = {0};
 
-	if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_V) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("MODEM version:%s", &tmpbuf);
@@ -2103,21 +2118,24 @@ void GetModemInfor(void)
 	}
 
 #if 0
-	if(at_cmd_write(CMD_GET_SUPPORT_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_SUPPORT_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SUPPORT_BAND) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("support band:%s", tmpbuf);
 	#endif
 	}
 
-	if(at_cmd_write(CMD_GET_CUR_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_CUR_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_CUR_BAND) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("current band:%s", tmpbuf);
 	#endif
 	}
 
-	if(at_cmd_write(CMD_GET_LOCKED_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_LOCKED_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_LOCKED_BAND) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("locked band:%s", tmpbuf);
@@ -2125,7 +2143,8 @@ void GetModemInfor(void)
 	}
 #endif
 
-	if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMEI) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("imei:%s", tmpbuf);
@@ -2133,7 +2152,8 @@ void GetModemInfor(void)
 		strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
 	}
 
-	if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMSI) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("imsi:%s", tmpbuf);
@@ -2141,7 +2161,8 @@ void GetModemInfor(void)
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
 	}
 
-	if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_ICCID) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("iccid:%s", &tmpbuf[9]);
@@ -2157,7 +2178,8 @@ void GetModemStatus(void)
 	uint8_t strbuf[64] = {0};
 	uint8_t tmpbuf[256] = {0};
 
-	if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_PARA) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("MODEM parameter:%s", &tmpbuf);
@@ -2168,7 +2190,8 @@ void GetModemStatus(void)
 
 void SetModemTurnOn(void)
 {
-	if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
+	//if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
+	if(nrf_modem_at_cmd(NULL, 0, "AT+CFUN=1") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("turn on modem success!");
@@ -2184,7 +2207,8 @@ void SetModemTurnOn(void)
 
 void SetModemTurnOff(void)
 {
-	if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
+	//if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
+	if(nrf_modem_at_cmd(NULL, 0, "AT+CFUN=4") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("turn off modem success!");
@@ -2204,7 +2228,8 @@ void GetModemAPN(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	
-	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_APN) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("apn:%s", tmpbuf);	
@@ -2216,14 +2241,16 @@ void SetModemAPN(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	
-	if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	//if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT+CGDCONT=0,\"IP\",\"arkessalp.com\"") != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("set apn fail!");
 	#endif
 	}
 
-	if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	//if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_APN) != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("Get apn fail!");
@@ -2253,7 +2280,7 @@ static bool response_is_valid(const char *response, size_t response_len, const c
 	return true;
 }
 
-static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_status *status, size_t reg_status_index)
+/*static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_status *status, size_t reg_status_index)
 {
 	int err, reg_status;
 	struct at_param_list resp_list = {0};
@@ -2267,7 +2294,7 @@ static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_statu
 	if(err)
 		return err;
 
-	/* Parse CEREG response and populate AT parameter list */
+	/* Parse CEREG response and populate AT parameter list 
 	err = at_parser_max_params_from_str(at_response,
 					    NULL,
 					    &resp_list,
@@ -2275,7 +2302,7 @@ static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_statu
 	if(err)
 		goto clean_exit;
 
-	/* Check if AT command response starts with +CEREG */
+	/* Check if AT command response starts with +CEREG 
 	err = at_params_string_get(&resp_list,
 				   AT_RESPONSE_PREFIX_INDEX,
 				   response_prefix,
@@ -2286,12 +2313,12 @@ static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_statu
 	if(!response_is_valid(response_prefix, response_prefix_len, AT_CEREG_RESPONSE_PREFIX))
 		goto clean_exit;
 
-	/* Get the network registration status parameter from the response */
+	/* Get the network registration status parameter from the response 
 	err = at_params_int_get(&resp_list, reg_status_index, &reg_status);
 	if(err)
 		goto clean_exit;
 
-	/* Check if the parsed value maps to a valid registration status */
+	/* Check if the parsed value maps to a valid registration status 
 	switch(reg_status)
 	{
 	case LTE_LC_NW_REG_NOT_REGISTERED:
@@ -2312,9 +2339,9 @@ static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_statu
 clean_exit:
 	at_params_list_free(&resp_list);
 	return err;
-}
+}*/
 
-static void at_handler(void *context, const char *response)
+/*static void at_handler(void *context, const char *response)
 {
 	ARG_UNUSED(context);
 
@@ -2333,7 +2360,139 @@ static void at_handler(void *context, const char *response)
 	{
 		k_sem_give(&net_link);
 	}
+}*/
+
+static bool is_cellid_valid(uint32_t cellid)
+{
+	if (cellid == LTE_LC_CELL_EUTRAN_ID_INVALID) {
+		return false;
+	}
+
+	return true;
 }
+
+static void at_handler_cereg(const char *response)
+{
+	int err;
+	struct lte_lc_evt evt = {0};
+
+	__ASSERT_NO_MSG(response != NULL);
+
+	static enum lte_lc_nw_reg_status prev_reg_status =
+		LTE_LC_NW_REG_NOT_REGISTERED;
+	static struct lte_lc_cell prev_cell;
+	static struct lte_lc_psm_cfg prev_psm_cfg;
+	static enum lte_lc_lte_mode prev_lte_mode = LTE_LC_LTE_MODE_NONE;
+	enum lte_lc_nw_reg_status reg_status = 0;
+	struct lte_lc_cell cell = {0};
+	enum lte_lc_lte_mode lte_mode;
+	struct lte_lc_psm_cfg psm_cfg = {0};
+
+	LOGD("+CEREG notification: %s", log_strdup(response));
+
+	err = parse_cereg(response, true, &reg_status, &cell, &lte_mode);
+	if (err) {
+		LOGD("Failed to parse notification (error %d): %s",
+			err, log_strdup(response));
+		return;
+	}
+
+	if ((reg_status == LTE_LC_NW_REG_REGISTERED_HOME) ||
+	    (reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING)) {
+		/* Set the network registration status to UNKNOWN if the cell ID is parsed
+		 * to UINT32_MAX (FFFFFFFF) when the registration status is either home or
+		 * roaming.
+		 */
+		if (!is_cellid_valid(cell.id)) {
+			reg_status = LTE_LC_NW_REG_UNKNOWN;
+		} else {
+			k_sem_give(&net_link);
+		}
+	}
+
+	switch (reg_status) {
+	case LTE_LC_NW_REG_NOT_REGISTERED:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_NOT_REGISTERED);
+		break;
+	case LTE_LC_NW_REG_REGISTERED_HOME:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTERED_HOME);
+		break;
+	case LTE_LC_NW_REG_SEARCHING:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_SEARCHING);
+		break;
+	case LTE_LC_NW_REG_REGISTRATION_DENIED:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTRATION_DENIED);
+		break;
+	case LTE_LC_NW_REG_UNKNOWN:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_UNKNOWN);
+		break;
+	case LTE_LC_NW_REG_REGISTERED_ROAMING:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTERED_ROAMING);
+		break;
+	case LTE_LC_NW_REG_REGISTERED_EMERGENCY:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTERED_EMERGENCY);
+		break;
+	case LTE_LC_NW_REG_UICC_FAIL:
+		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_UICC_FAIL);
+		break;
+	}
+
+	if (event_handler_list_is_empty()) {
+		return;
+	}
+
+	/* Network registration status event */
+	if (reg_status != prev_reg_status) {
+		prev_reg_status = reg_status;
+		evt.type = LTE_LC_EVT_NW_REG_STATUS;
+		evt.nw_reg_status = reg_status;
+
+		event_handler_list_dispatch(&evt);
+	}
+
+	/* Cell update event */
+	if (memcmp(&cell, &prev_cell, sizeof(struct lte_lc_cell))) {
+		evt.type = LTE_LC_EVT_CELL_UPDATE;
+
+		memcpy(&prev_cell, &cell, sizeof(struct lte_lc_cell));
+		memcpy(&evt.cell, &cell, sizeof(struct lte_lc_cell));
+		event_handler_list_dispatch(&evt);
+	}
+
+	if (lte_mode != prev_lte_mode) {
+		prev_lte_mode = lte_mode;
+		evt.type = LTE_LC_EVT_LTE_MODE_UPDATE;
+		evt.lte_mode = lte_mode;
+
+		LTE_LC_TRACE(lte_mode == LTE_LC_LTE_MODE_LTEM ?
+			     LTE_LC_TRACE_LTE_MODE_UPDATE_LTEM :
+			     LTE_LC_TRACE_LTE_MODE_UPDATE_NBIOT);
+
+		event_handler_list_dispatch(&evt);
+	}
+
+	if ((reg_status != LTE_LC_NW_REG_REGISTERED_HOME) &&
+	    (reg_status != LTE_LC_NW_REG_REGISTERED_ROAMING)) {
+		return;
+	}
+
+	err = lte_lc_psm_get(&psm_cfg.tau, &psm_cfg.active_time);
+	if (err) {
+		LOGD("Failed to get PSM information");
+		return;
+	}
+
+	/* PSM configuration update event */
+	if (memcmp(&psm_cfg, &prev_psm_cfg, sizeof(struct lte_lc_psm_cfg))) {
+		evt.type = LTE_LC_EVT_PSM_UPDATE;
+
+		memcpy(&prev_psm_cfg, &psm_cfg, sizeof(struct lte_lc_psm_cfg));
+		memcpy(&evt.psm_cfg, &psm_cfg, sizeof(struct lte_lc_psm_cfg));
+		event_handler_list_dispatch(&evt);
+	}
+}
+
+
 
 static int net_connect(void)
 {
@@ -2343,7 +2502,8 @@ static int net_connect(void)
 
 	k_sem_init(&net_link, 0, 1);
 
-	rc = at_notif_register_handler(NULL, at_handler);
+	//rc = at_notif_register_handler(NULL, at_handler);
+        rc = at_monitor_resume(ltelc_atmon_cereg_info);
 	if(rc != 0)
 		return rc;
 
@@ -2351,7 +2511,8 @@ static int net_connect(void)
 	{
 		retry = false;
 
-		if(at_cmd_write(current_network_mode, NULL, 0, NULL) != 0)
+		//if(at_cmd_write(current_network_mode, NULL, 0, NULL) != 0)
+		if(nrf_modem_at_cmd(NULL, 0, current_network_mode) != 0)
 		{
 			err = -EIO;
 			goto exit;
@@ -2359,7 +2520,8 @@ static int net_connect(void)
 
 		NBGetNetMode(current_network_mode);
 
-		if(at_cmd_write(normal, NULL, 0, NULL) != 0)
+		//if(at_cmd_write(normal, NULL, 0, NULL) != 0)
+		if(nrf_modem_at_cmd(NULL, 0, normal) != 0)
 		{
 			err = -EIO;
 			goto exit;
@@ -2377,7 +2539,8 @@ static int net_connect(void)
 				current_network_mode = nw_mode_fallback;
 				retry = true;
 
-				if(at_cmd_write(offline, NULL, 0, NULL) != 0)
+				//if(at_cmd_write(offline, NULL, 0, NULL) != 0)
+				if(nrf_modem_at_cmd(NULL, 0, offline) != 0)
 				{
 					err = -EIO;
 					goto exit;
@@ -2394,7 +2557,8 @@ static int net_connect(void)
 	}while(retry);
 
 exit:
-	rc = at_notif_deregister_handler(NULL, at_handler);
+	//rc = at_notif_deregister_handler(NULL, at_handler);
+        rc = at_monitor_pause(ltelc_atmon_cereg_info);
 	if(rc != 0)
 	{
 	#ifdef NB_DEBUG
@@ -2452,7 +2616,7 @@ static void nb_link(struct k_work *work)
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
 		else if(retry_count <= 4)	//3�次�分钟重连一�
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-		else if(retry_count <= 6)	//5�次�分钟重连一�
+		else if(retry_count <= 6)	//5�次�分钟重连一�
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
 		else if(retry_count <= 8)	//7�次�小时重连一�
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
@@ -2485,7 +2649,7 @@ static void nb_link(struct k_work *work)
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
 			else if(retry_count <= 4)	//3�次�分钟重连一�
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-			else if(retry_count <= 6)	//5�次�分钟重连一�
+			else if(retry_count <= 6)	//5�次�分钟重连一�
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
 			else if(retry_count <= 8)	//7�次�小时重连一�
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
@@ -2527,35 +2691,40 @@ void GetNBSignal(void)
 {
 	uint8_t str_rsrp[128] = {0};
 
-	if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	//if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CFUN?") == 0)
 	{
 	#ifdef NB_DEBUG	
 		LOGD("cfun:%s", str_rsrp);
 	#endif
 	}
 
-	if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	//if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CPSMS?") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("cpsms:%s", str_rsrp);
 	#endif
 	}
 	
-	if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CESQ) == 0)
 	{
 	#ifdef NB_DEBUG	
 		LOGD("cesq:%s", str_rsrp);
 	#endif
 	}
 
-	if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+    if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_APN) == 0)
 	{
 	#ifdef NB_DEBUG	
 		LOGD("apn:%s", str_rsrp);
 	#endif
 	}
 	
-	if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	//if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CSQ) == 0)
 	{
 	#ifdef NB_DEBUG	
 		LOGD("csq:%s", str_rsrp);

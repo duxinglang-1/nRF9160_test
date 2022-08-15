@@ -292,11 +292,13 @@ static int callback_ctrl(bool enable)
 	{
 		if(enable)
 		{
-			err = gpio_pin_enable_callback(button_devs[i], button_pins[i].number);
+			//err = gpio_pin_enable_callback(button_devs[i], button_pins[i].number);
+                        err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_ENABLE);
 		}
 		else
 		{
-			err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
+			//err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
+                        err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_DISABLE);
 		}
 	}
 
@@ -536,7 +538,8 @@ static int buttons_init(button_handler_t button_handler)
 		/* Module starts in scanning mode and will switch to
 		 * callback mode if no button is pressed.
 		 */
-		err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
+		//err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
+                err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_DISABLE);
 		if(err)
 		{
 			return err;
@@ -619,10 +622,12 @@ void wear_init(void)
 
 	//wear interrupt
 	gpio_pin_configure(gpio_wear, WEAR_PIN, flag);
-	gpio_pin_disable_callback(gpio_wear, WEAR_PIN);
+	//gpio_pin_disable_callback(gpio_wear, WEAR_PIN);
+        gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN,GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_wear_cb, WearInterruptHandle, BIT(WEAR_PIN));
 	gpio_add_callback(gpio_wear, &gpio_wear_cb);
-	gpio_pin_enable_callback(gpio_wear, WEAR_PIN);
+	//gpio_pin_enable_callback(gpio_wear, WEAR_PIN);
+        gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN, GPIO_INT_ENABLE);
 
 	WearInterruptHandle();
 }

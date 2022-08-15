@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <zephyr.h>
 #include <drivers/i2c.h>
+#include <drivers/gpio.h>
 #include "max20353.h"
 #include "max20353_reg.h"
 #include "Lcd.h"
@@ -584,12 +585,11 @@ void MAX20353_InitData(void)
 void pmu_init(void)
 {
 	bool rst;
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_UP|GPIO_INT_LOW_0|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
 #ifdef PMU_DEBUG
 	LOGD("pmu_init");
 #endif
-  	//�˿ڳ�ʼ��
   	gpio_pmu = device_get_binding(PMU_PORT);
 	if(!gpio_pmu)
 	{
@@ -601,17 +601,21 @@ void pmu_init(void)
 
 	//charger interrupt
 	gpio_pin_configure(gpio_pmu, PMU_EINT, flag);
-	gpio_pin_disable_callback(gpio_pmu, PMU_EINT);
+	//gpio_pin_disable_callback(gpio_pmu, PMU_EINT); //this API no longer supported in zephyr version 2.7.0
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, PmuInterruptHandle, BIT(PMU_EINT));
 	gpio_add_callback(gpio_pmu, &gpio_cb1);
-	gpio_pin_enable_callback(gpio_pmu, PMU_EINT);
+	//gpio_pin_enable_callback(gpio_pmu, PMU_EINT); //this API no longer supported in zephyr version 2.7.0
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
 
 	//alert interrupt
 	gpio_pin_configure(gpio_pmu, PMU_ALRTB, flag);
-	gpio_pin_disable_callback(gpio_pmu, PMU_ALRTB);
+	//gpio_pin_disable_callback(gpio_pmu, PMU_ALRTB); //this API no longer supported in zephyr version 2.7.0
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, PmuAlertHandle, BIT(PMU_ALRTB));
 	gpio_add_callback(gpio_pmu, &gpio_cb2);
-	gpio_pin_enable_callback(gpio_pmu, PMU_ALRTB);
+	//gpio_pin_enable_callback(gpio_pmu, PMU_ALRTB); //this API no longer supported in zephyr version 2.7.0
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
 
 	rst = init_i2c();
 	if(!rst)

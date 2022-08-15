@@ -6,6 +6,9 @@
 #include <modem/nrf_modem_lib.h>
 //#include <modem/at_cmd.h>
 //#include <modem/at_notif.h>
+#include <modem/modem_info.h>
+#include <nrf_modem_at.h>
+#include <modem/lte_lc.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "imei.h"
@@ -124,20 +127,22 @@ static bar_code128_t code128[95] =
 	'~', "bsssbsbbbbs",
 };
 
-/*bool get_imei(uint8_t len, uint8_t *str_imei)
+bool get_imei(uint8_t len, uint8_t *str_imei)
 {
 	int err;
-	enum at_cmd_state at_state;
+	//enum at_cmd_state at_state;
 
-	err = at_cmd_write(GET_IMEI, str_imei, len, &at_state);
+	//err = at_cmd_write(GET_IMEI, str_imei, len, &at_state);
+    err = nrf_modem_at_cmd(str_imei, len, GET_IMEI);
 	if(err) 
 	{
-		printk("get imei error, err:%d, at_state:%d", err,at_state);
+		//printk("get imei error, err:%d, at_state:%d", err,at_state);
+        printk("get imei error, err:%d", err);
 		return false;
 	}
 
 	return true;
-}*/
+}
 
 void show_QR_code(uint32_t datalen, uint8_t *data)
 {

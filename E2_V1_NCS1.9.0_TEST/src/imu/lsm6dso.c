@@ -32,7 +32,15 @@ ULTRA LOW POWER AND INACTIVITY MODE
 
 //#define IMU_DEBUG
 
-#define IMU_DEV "I2C_1"
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define IMU_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define IMU_DEV	""
+#endif
+
 #define IMU_PORT "GPIO_0"
 
 #define LSM6DSO_I2C_ADD     LSM6DSO_I2C_ADD_L >> 1 //need to shift 1 bit to the right.
@@ -126,16 +134,20 @@ uint8_t init_gpio(void)
 	//steps interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
 	//gpio_pin_disable_callback(gpio_imu, LSM6DSO_INT1_PIN); //this API no longer supported in zephyr version 2.7.0
+        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, step_event, BIT(LSM6DSO_INT1_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb1);
 	//gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT1_PIN); //this API no longer supported in zephyr version 2.7.0
+        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE);
 
 	//tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT2_PIN, flag);
 	//gpio_pin_disable_callback(gpio_imu, LSM6DSO_INT2_PIN); //this API no longer supported in zephyr version 2.7.0
+        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, interrupt_event, BIT(LSM6DSO_INT2_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb2);
 	//gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT2_PIN); //this API no longer supported in zephyr version 2.7.0
+        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE);
 
 	return 0;
 }

@@ -114,9 +114,9 @@ static int cst816s_enter_bootmode(void)
 	uint8_t retryCnt = 50;
 	uint8_t cmd[3] = {0};
 
-	gpio_pin_write(gpio_ctp, TP_RESET, 0);
+	gpio_pin_set(gpio_ctp, TP_RESET, 0);
 	k_sleep(K_MSEC(10));
-	gpio_pin_write(gpio_ctp, TP_RESET, 1);
+	gpio_pin_set(gpio_ctp, TP_RESET, 1);
 	k_sleep(K_MSEC(10));
 
 	while(retryCnt--)
@@ -689,9 +689,9 @@ void tp_init(void)
 	gpio_pin_enable_callback(gpio_ctp, TP_EINT);
 
 	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
-	gpio_pin_write(gpio_ctp, TP_RESET, 0);
+	gpio_pin_set(gpio_ctp, TP_RESET, 0);
 	k_sleep(K_MSEC(10));
-	gpio_pin_write(gpio_ctp, TP_RESET, 1);
+	gpio_pin_set(gpio_ctp, TP_RESET, 1);
 	k_sleep(K_MSEC(50));
 
 	tp_get_id(&tp_chip_id, &tp_fw_ver);

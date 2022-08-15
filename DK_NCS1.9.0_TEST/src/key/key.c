@@ -324,12 +324,12 @@ static uint32_t get_buttons(void)
 	{
 		uint32_t val;
 
-		//if(gpio_pin_get(button_devs[i], button_pins[i].number, &val))
-                if(gpio_pin_get(button_devs[i], button_pins[i].number)) //this API accepts only two arguments
+		val = gpio_pin_get_raw(button_devs[i], button_pins[i].number);
+		if(val < 0)
 		{
 			return 0;
 		}
-
+		
 		switch(button_pins[i].active_flag)
 		{
 		case ACTIVE_LOW:
@@ -394,12 +394,9 @@ static void buttons_scan_fn(struct k_work *work)
 
 	last_button_scan = button_scan;
 
-	if (button_scan != 0)
+	if(button_scan != 0)
 	{
-		int err = k_delayed_work_submit(&buttons_scan, K_MSEC(CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL));
-		if(err)
-		{
-		}
+		k_work_reschedule(&buttons_scan, K_MSEC(CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL));
 	}
 	else
 	{
@@ -428,7 +425,7 @@ static void buttons_scan_fn(struct k_work *work)
 	}
 }
 
-static int set_trig_mode(int trig_mode)
+static int set_trig_mode(void)
 {
 	int err = 0;
 	int flag1 = (GPIO_PULL_UP | GPIO_INT_LOW_0);
@@ -440,14 +437,14 @@ static int set_trig_mode(int trig_mode)
 		switch(button_pins[i].active_flag)
 		{
 		case ACTIVE_LOW:
-			flags = flag1 | (GPIO_INPUT | GPIO_INT_ENABLE | trig_mode);
+			flags = GPIO_INT_LEVEL_LOW;
 			break;
 		case ACTIVE_HIGH:
-			flags = flag2 | (GPIO_INPUT | GPIO_INT_ENABLE | trig_mode);
+			flags = GPIO_INT_LEVEL_HIGH;
 			break;
 		}
 		
-		err = gpio_pin_configure(button_devs[i], button_pins[i].number, flags);
+		err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_ENABLE|flags);
 	}
 
 	return err;
@@ -486,7 +483,7 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, ui
 	{
 	case STATE_WAITING:
 		state = STATE_SCANNING;
-		k_delayed_work_submit(&buttons_scan, K_SECONDS(1));
+		k_delayed_work_submit(&buttons_scan, K_NO_WAIT);
 		break;
 
 	case STATE_SCANNING:
@@ -521,10 +518,10 @@ static int buttons_init(button_handler_t button_handler)
 		switch(button_pins[i].active_flag)
 		{
 		case ACTIVE_LOW:
-			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT | GPIO_PULL_UP);
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT|GPIO_PULL_UP);
 			break;
 		case ACTIVE_HIGH:
-			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT | GPIO_PULL_DOWN);
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT|GPIO_PULL_DOWN);
 			break;
 		}
 

@@ -459,7 +459,7 @@ int sh_set_sensorhub_sleep(void)
 
 int sh_set_sensorhub_shutdown(void)
 {
-#if 1
+#if 0
 	u8_t ByteSeq[] = {0x01,0x00,0x01};
 	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
 	return status;
@@ -1277,8 +1277,8 @@ bool sh_init_interface(void)
 	#endif
 
 		sh_set_sensorhub_shutdown();
-		Set_PPG_Power_Off();
-		SH_Power_Off();	
+		SH_Power_Off();
+		//Set_PPG_Power_Off();
 		return false;
 	}
 #ifdef MAX_DEBUG	
@@ -1294,8 +1294,8 @@ bool sh_init_interface(void)
 	#endif
 
 		sh_set_sensorhub_shutdown();
-		Set_PPG_Power_Off();
 		SH_Power_Off();
+		//Set_PPG_Power_Off();
 		return false;
 	}
 	else
@@ -1327,8 +1327,9 @@ bool sh_init_interface(void)
 	}
 
 	sh_set_sensorhub_shutdown();
-	Set_PPG_Power_Off();
 	SH_Power_Off();
+	//Set_PPG_Power_Off();
+	
 	return true;
 }
 

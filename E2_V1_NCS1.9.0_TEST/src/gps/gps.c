@@ -171,7 +171,7 @@ void gps_off(void)
 
 #ifdef NB_SIGNAL_TEST
 	SetModemTurnOff();
-	SetMomomNw();
+	SetModemNw();
 	nb_reconnect();
 #endif	
 }

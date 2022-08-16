@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
 #
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
 
 menu "MQTT simple sample"
 config APPLICATION_WORKQUEUE_STACK_SIZE
@@ -316,7 +319,10 @@ config USE_HTTPS
 	depends on DOWNLOAD_CLIENT_TLS
 endmenu #FOTA_MQTT
 
-
 menu "Zephyr Kernel"
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "Kconfig.zephyr"
 endmenu
+
+module = APPLICATION_MODULE
+module-str = Application module
+source "subsys/logging/Kconfig.template.log_config"

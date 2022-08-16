@@ -19,7 +19,6 @@ static void init_i2c(void)
 	ATECC608A_I2C = device_get_binding(CRYPTO_DEV);
 	if(!ATECC608A_I2C)
 	{
-		printk("Could not get %s device\n", CRYPTO_DEV);
 		return 0;
 	}
 
@@ -66,7 +65,6 @@ void atecc608a_init(void)
 	while(1)
 	{
 		readi2c(ATECC608A_I2C_ADD, ATECC608A_WHO_AM_I,&whoamI,1);
-		printk("ATECC608A id:%x\n", whoamI);
 		if(whoamI != ATECC608A_ID)
 			k_sleep(K_MSEC(1000));
 		else

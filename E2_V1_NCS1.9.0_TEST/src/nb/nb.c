@@ -36,7 +36,7 @@
 #include "nb.h"
 #include "screen.h"
 #include "sos.h"
-//#include "gps.h"
+#include "gps.h"
 #include "uart_ble.h"
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
@@ -56,11 +56,6 @@
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
 
-#define AT_CEREG_REG_STATUS_INDEX		1
-#define AT_RESPONSE_PREFIX_INDEX		0
-#define AT_CEREG_RESPONSE_PREFIX		"+CEREG"
-#define AT_CEREG_PARAMS_COUNT_MAX		10
-
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
 static void ParseDataCallBack(struct k_timer *timer_id);
@@ -77,35 +72,6 @@ static void GetModemStatusCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_modem_status_timer, GetModemStatusCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
-
-#if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
-/* Preferred network mode: Narrowband-IoT */
-static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=0,1,0,0";
-/* Fallback network mode: LTE-M */
-static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=1,0,0,0";
-#elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
-/* Preferred network mode: Narrowband-IoT and GPS */
-static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=0,1,1,0";
-/* Fallback network mode: LTE-M and GPS*/
-static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=1,0,1,0";
-#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)
-/* Preferred network mode: LTE-M */
-static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=1,0,0,0";
-/* Fallback network mode: Narrowband-IoT */
-static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=0,1,0,0";
-#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
-/* Preferred network mode: LTE-M and GPS*/
-static const char nw_mode_preferred[] = "AT%XSYSTEMMODE=1,0,1,0";
-/* Fallback network mode: Narrowband-IoT and GPS */
-static const char nw_mode_fallback[] = "AT%XSYSTEMMODE=0,1,1,0";
-#endif
-
-/* Set the modem to power off mode */
-static const char power_off[] = "AT+CFUN=0";
-/* Set the modem to Normal mode */
-static const char normal[] = "AT+CFUN=1";
-/* Set the modem to Offline mode */
-static const char offline[] = "AT+CFUN=4";
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
@@ -177,16 +143,14 @@ uint8_t g_rsrp = 0;
 uint16_t g_tau_time = 0;
 uint16_t g_act_time = 0;
 uint32_t g_tau_ext_time = 0;
-static struct k_sem net_link;
+
+uint8_t nb_test_info[256] = {0};
 
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)||defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
 NETWORK_MODE g_net_mode = NET_MODE_NB;
 #elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)||defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
 NETWORK_MODE g_net_mode = NET_MODE_LTE_M;
 #endif
-
-//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
-AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
 
 static NB_APN_PARAMENT nb_apn_table[] = 
 {
@@ -227,55 +191,64 @@ static NB_APN_PARAMENT nb_apn_table[] =
 	},
 };
 
-
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);
 static void MqttReceData(uint8_t *data, uint32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
-uint8_t nb_test_info[256] = {0};
+//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
+//AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
+AT_MONITOR(ltelc_atmon_modem_info, "%XMODEMSLEEP", at_handler_modem_notify, PAUSED);
 
-#if defined(CONFIG_LWM2M_CARRIER)
-K_SEM_DEFINE(carrier_registered, 0, 1);
-
-void lwm2m_carrier_event_handler(const lwm2m_carrier_event_t *event)
+static void at_handler_modem_notify(const char *response)
 {
-	switch (event->type) {
-	case LWM2M_CARRIER_EVENT_BSDLIB_INIT:
-	#ifdef NB_DEBUG	
-		LOGD("LWM2M_CARRIER_EVENT_BSDLIB_INIT");
-	#endif
-		break;
-	case LWM2M_CARRIER_EVENT_CONNECT:
-	#ifdef NB_DEBUG	
-		LOGD("LWM2M_CARRIER_EVENT_CONNECT");
-	#endif
-		break;
-	case LWM2M_CARRIER_EVENT_DISCONNECT:
+	int err;
+	struct lte_lc_evt evt = {0};
+
+	__ASSERT_NO_MSG(response != NULL);
+
+#ifdef NB_DEBUG
+	LOGD("%%XMODEMSLEEP notification");
+#endif
+
+	err = parse_xmodemsleep(response, &evt.modem_sleep);
+	if(err)
+	{
 	#ifdef NB_DEBUG
-		LOGD("LWM2M_CARRIER_EVENT_DISCONNECT");
+		LOGD("Can't parse modem sleep pre-warning notification, error: %d", err);
 	#endif
-		break;
-	case LWM2M_CARRIER_EVENT_READY:
-	#ifdef NB_DEBUG
-		LOGD("LWM2M_CARRIER_EVENT_READY");
-	#endif
-		k_sem_give(&carrier_registered);
-		break;
-	case LWM2M_CARRIER_EVENT_FOTA_START:
-	#ifdef NB_DEBUG	
-		LOGD("LWM2M_CARRIER_EVENT_FOTA_START");
-	#endif
-		break;
-	case LWM2M_CARRIER_EVENT_REBOOT:
-	#ifdef NB_DEBUG	
-		LOGD("LWM2M_CARRIER_EVENT_REBOOT");
-	#endif
-		break;
+		return;
 	}
+
+	/* Link controller only supports PSM, RF inactivity and flight mode
+	 * modem sleep types.
+	 */
+	if((evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_PSM) &&
+		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_RF_INACTIVITY) &&
+		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_FLIGHT_MODE))
+	{
+		return;
+	}
+
+	/* Propagate the appropriate event depending on the parsed time parameter. */
+	if(evt.modem_sleep.time == CONFIG_LTE_LC_MODEM_SLEEP_PRE_WARNING_TIME_MS)
+	{
+		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING;
+	}
+	else if(evt.modem_sleep.time == 0)
+	{
+		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_EXIT);
+		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT;
+	}
+	else
+	{
+		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_ENTER);
+		evt.type = LTE_LC_EVT_MODEM_SLEEP_ENTER;
+	}
+
+	event_handler_list_dispatch(&evt);
 }
-#endif /* defined(CONFIG_LWM2M_CARRIER) */
 
 /**@brief Function to publish data on the configured topic
  */
@@ -876,14 +849,15 @@ void modem_data_init(void)
  */
 static void modem_configure(void)
 {
+	uint8_t buf[128] = {0};
+	
 	if(test_nb_flag)
 	{
 		strcpy(nb_test_info, "modem_configure");
 		TestNBUpdateINfor();
 	}
 
-	//if(at_cmd_write("AT%CESQ=1", NULL, 0, NULL) != 0)
-	if(nrf_modem_at_cmd(NULL, 0, "AT%CESQ=1") != 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%CESQ=1") != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("AT_CMD write fail!");
@@ -1007,7 +981,6 @@ void NBRedrawSignal(void)
 	uint8_t strbuf[128] = {0};
 	uint8_t tmpbuf[128] = {0};
 
-	//if(at_cmd_write(CMD_GET_REG_STATUS, strbuf, sizeof(strbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_GET_REG_STATUS) == 0)
 	{
 		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
@@ -1079,22 +1052,21 @@ void NBRedrawSignal(void)
 		}
 	}
 
-	//if(at_cmd_write("AT+CSCON?", strbuf, sizeof(strbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), "AT+CSCON?") == 0)
 	{
 		//+CSCON: <n>,<mode>[,<state>[,<access]]
 		//<n>
-		//0 ï¿½Unsolicited indications disabled
-		//1 ï¿½Enabled: <mode>
-		//2 ï¿½Enabled: <mode>[,<state>]
-		//3 ï¿½Enabled: <mode>[,<state>[,<access>]]
+		//0 ¨C Unsolicited indications disabled
+		//1 ¨C Enabled: <mode>
+		//2 ¨C Enabled: <mode>[,<state>]
+		//3 ¨C Enabled: <mode>[,<state>[,<access>]]
 		//<mode>
-		//0 ï¿½Idle
-		//1 ï¿½Connected
+		//0 ¨C Idle
+		//1 ¨C Connected
 		//<state>
-		//7 ï¿½E-UTRAN connected
+		//7 ¨C E-UTRAN connected
 		//<access>
-		//4 ï¿½Radio access of type E-UTRAN FDD
+		//4 ¨C Radio access of type E-UTRAN FDD
 	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
 	#endif
@@ -1209,8 +1181,7 @@ void GetModemDateTime(void)
 	uint8_t tz_count,daylight;
 	static uint8_t retry = 5;
 
-	//if(at_cmd_write("AT%CCLK?", timebuf, sizeof(timebuf), NULL) != 0)
-	if(nrf_modem_at_cmd(timebuf,sizeof(timebuf),"AT%CCLK?") != 0)
+	if(nrf_modem_at_cmd(timebuf, sizeof(timebuf), "AT+CCLK?") != 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("Get CCLK fail!");
@@ -1227,11 +1198,12 @@ void GetModemDateTime(void)
 	}
 
 	retry = 5;
-	
+
 #ifdef NB_DEBUG	
 	LOGD("%s", timebuf);
 #endif
 	//%CCLK: "21/02/26,08:31:33+32",0
+	//+CCLK: "22/08/16,10:30:41+32"
 	ptr = strstr(timebuf, "\"");
 	if(ptr)
 	{
@@ -1295,15 +1267,19 @@ void GetModemDateTime(void)
 		strcpy(g_timezone, tz_dir);
 		sprintf(tmpbuf, "%d", tz_count/4);
 		strcat(g_timezone, tmpbuf);
+
+		
+
+		RedrawSystemTime();
+		SaveSystemDateTime();
 	}
+
 #ifdef NB_DEBUG	
 	LOGD("real time:%04d/%02d/%02d,%02d:%02d:%02d,%02d", 
 					date_time.year,date_time.month,date_time.day,
 					date_time.hour,date_time.minute,date_time.second,
 					date_time.week);
 #endif
-	RedrawSystemTime();
-	SaveSystemDateTime();
 }
 
 static void MqttSendData(uint8_t *data, uint32_t datalen)
@@ -1883,7 +1859,8 @@ static void MqttReceData(uint8_t *data, uint32_t datalen)
 static int configure_low_power(void)
 {
 	int err;
-
+	uint8_t buf[128] = {0};
+	
 #if defined(CONFIG_LTE_PSM_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** Power Saving Mode */
 	err = lte_lc_psm_req(true);
@@ -1924,8 +1901,7 @@ static int configure_low_power(void)
 
 #if defined(CONFIG_LTE_RAI_ENABLE)
 	/** Release Assistance Indication  */
-	//err = at_cmd_write(CMD_SET_RAI, NULL, 0, NULL);
-	err = nrf_modem_at_cmd(NULL, 0, CMD_SET_RAI);
+	err = nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_RAI);
 	if(err)
 	{
 	#ifdef NB_DEBUG
@@ -2390,8 +2366,9 @@ void GetModemStatus(void)
 
 void SetModemTurnOn(void)
 {
-	//if(at_cmd_write("AT+CFUN=1", NULL, 0, NULL) == 0)
-	if(nrf_modem_at_cmd(NULL, 0, "AT+CFUN=1") == 0)
+	uint8_t buf[128] = {0};
+	
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=1") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("turn on modem success!");
@@ -2407,8 +2384,9 @@ void SetModemTurnOn(void)
 
 void SetModemTurnOff(void)
 {
-	//if(at_cmd_write("AT+CFUN=4", NULL, 0, NULL) == 0)
-	if(nrf_modem_at_cmd(NULL, 0, "AT+CFUN=4") == 0)
+	uint8_t buf[128] = {0};
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=4") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("turn off modem success!");
@@ -2426,7 +2404,9 @@ void SetModemTurnOff(void)
 
 void SetModemGps(void)
 {
-	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_GPS) == 0)
+	uint8_t buf[128] = {0};
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_NW_MODE_GPS) == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("set modem for gps success!");
@@ -2440,16 +2420,46 @@ void SetModemGps(void)
 	}
 }
 
-void SetMomomNw(void)
+void GetModemNw(void)
 {
+	int err;
+	enum lte_lc_system_mode mode;
+
+	err = lte_lc_system_mode_get(&mode, NULL);
+	if(err)
+	{
+		return;
+	}
+
+	switch(mode)
+	{
+	case LTE_LC_SYSTEM_MODE_LTEM:
+	case LTE_LC_SYSTEM_MODE_LTEM_GPS:
+		g_net_mode = NET_MODE_LTE_M;
+		
+	case LTE_LC_SYSTEM_MODE_NBIOT:
+	case LTE_LC_SYSTEM_MODE_NBIOT_GPS:
+		g_net_mode = NET_MODE_NB;
+		break;
+		
+	default:
+		g_net_mode = NET_MODE_MAX;
+		break;
+	}
+}
+
+void SetModemNw(void)
+{
+	uint8_t buf[128] = {0};
+
 #if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
-	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_NB) == 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_NW_MODE_NB) == 0)
 #elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
-	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_NB_GPS) == 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_NW_MODE_NB_GPS) == 0)
 #elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)
-	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_LTE_M) == 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_NW_MODE_LTE_M) == 0)
 #elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
-	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_LTE_M_GPS) == 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_NW_MODE_LTE_M_GPS) == 0)
 #endif
 	{
 	#ifdef NB_DEBUG
@@ -2509,319 +2519,6 @@ static void modem_init(struct k_work *work)
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 }
 
-static bool response_is_valid(const char *response, size_t response_len, const char *check)
-{
-	if((response == NULL) || (check == NULL))
-		return false;
-
-	if((response_len < strlen(check))||(memcmp(response, check, response_len) != 0))
-		return false;
-
-	return true;
-}
-
-/*static int parse_nw_reg_status(const char *at_response, enum lte_lc_nw_reg_status *status, size_t reg_status_index)
-{
-	int err, reg_status;
-	struct at_param_list resp_list = {0};
-	char response_prefix[sizeof(AT_CEREG_RESPONSE_PREFIX)] = {0};
-	size_t response_prefix_len = sizeof(response_prefix);
-
-	if((at_response == NULL) || (status == NULL))
-		return -EINVAL;
-
-	err = at_params_list_init(&resp_list, AT_CEREG_PARAMS_COUNT_MAX);
-	if(err)
-		return err;
-
-	/* Parse CEREG response and populate AT parameter list 
-	err = at_parser_max_params_from_str(at_response,
-					    NULL,
-					    &resp_list,
-					    AT_CEREG_PARAMS_COUNT_MAX);
-	if(err)
-		goto clean_exit;
-
-	/* Check if AT command response starts with +CEREG 
-	err = at_params_string_get(&resp_list,
-				   AT_RESPONSE_PREFIX_INDEX,
-				   response_prefix,
-				   &response_prefix_len);
-	if(err)
-		goto clean_exit;
-
-	if(!response_is_valid(response_prefix, response_prefix_len, AT_CEREG_RESPONSE_PREFIX))
-		goto clean_exit;
-
-	/* Get the network registration status parameter from the response 
-	err = at_params_int_get(&resp_list, reg_status_index, &reg_status);
-	if(err)
-		goto clean_exit;
-
-	/* Check if the parsed value maps to a valid registration status 
-	switch(reg_status)
-	{
-	case LTE_LC_NW_REG_NOT_REGISTERED:
-	case LTE_LC_NW_REG_REGISTERED_HOME:
-	case LTE_LC_NW_REG_SEARCHING:
-	case LTE_LC_NW_REG_REGISTRATION_DENIED:
-	case LTE_LC_NW_REG_UNKNOWN:
-	case LTE_LC_NW_REG_REGISTERED_ROAMING:
-	case LTE_LC_NW_REG_REGISTERED_EMERGENCY:
-	case LTE_LC_NW_REG_UICC_FAIL:
-		*status = reg_status;
-		break;
-		
-	default:
-		err = -EIO;
-	}
-
-clean_exit:
-	at_params_list_free(&resp_list);
-	return err;
-}*/
-
-/*static void at_handler(void *context, const char *response)
-{
-	ARG_UNUSED(context);
-
-	int err;
-	enum lte_lc_nw_reg_status status;
-
-	if(response == NULL)
-		return;
-
-	err = parse_nw_reg_status(response, &status, AT_CEREG_REG_STATUS_INDEX);
-	if(err)
-		return;
-
-	if((status == LTE_LC_NW_REG_REGISTERED_HOME) ||
-	    (status == LTE_LC_NW_REG_REGISTERED_ROAMING))
-	{
-		k_sem_give(&net_link);
-	}
-}*/
-
-static bool is_cellid_valid(uint32_t cellid)
-{
-	if (cellid == LTE_LC_CELL_EUTRAN_ID_INVALID) {
-		return false;
-	}
-
-	return true;
-}
-
-static void at_handler_cereg(const char *response)
-{
-	int err;
-	struct lte_lc_evt evt = {0};
-
-	__ASSERT_NO_MSG(response != NULL);
-
-	static enum lte_lc_nw_reg_status prev_reg_status =
-		LTE_LC_NW_REG_NOT_REGISTERED;
-	static struct lte_lc_cell prev_cell;
-	static struct lte_lc_psm_cfg prev_psm_cfg;
-	static enum lte_lc_lte_mode prev_lte_mode = LTE_LC_LTE_MODE_NONE;
-	enum lte_lc_nw_reg_status reg_status = 0;
-	struct lte_lc_cell cell = {0};
-	enum lte_lc_lte_mode lte_mode;
-	struct lte_lc_psm_cfg psm_cfg = {0};
-
-	LOGD("+CEREG notification: %s", log_strdup(response));
-
-	err = parse_cereg(response, true, &reg_status, &cell, &lte_mode);
-	if (err) {
-		LOGD("Failed to parse notification (error %d): %s",
-			err, log_strdup(response));
-		return;
-	}
-
-	if ((reg_status == LTE_LC_NW_REG_REGISTERED_HOME) ||
-	    (reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING)) {
-		/* Set the network registration status to UNKNOWN if the cell ID is parsed
-		 * to UINT32_MAX (FFFFFFFF) when the registration status is either home or
-		 * roaming.
-		 */
-		if (!is_cellid_valid(cell.id)) {
-			reg_status = LTE_LC_NW_REG_UNKNOWN;
-		} else {
-			k_sem_give(&net_link);
-		}
-	}
-
-	switch (reg_status) {
-	case LTE_LC_NW_REG_NOT_REGISTERED:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_NOT_REGISTERED);
-		break;
-	case LTE_LC_NW_REG_REGISTERED_HOME:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTERED_HOME);
-		break;
-	case LTE_LC_NW_REG_SEARCHING:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_SEARCHING);
-		break;
-	case LTE_LC_NW_REG_REGISTRATION_DENIED:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTRATION_DENIED);
-		break;
-	case LTE_LC_NW_REG_UNKNOWN:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_UNKNOWN);
-		break;
-	case LTE_LC_NW_REG_REGISTERED_ROAMING:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTERED_ROAMING);
-		break;
-	case LTE_LC_NW_REG_REGISTERED_EMERGENCY:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_REGISTERED_EMERGENCY);
-		break;
-	case LTE_LC_NW_REG_UICC_FAIL:
-		LTE_LC_TRACE(LTE_LC_TRACE_NW_REG_UICC_FAIL);
-		break;
-	}
-
-	if (event_handler_list_is_empty()) {
-		return;
-	}
-
-	/* Network registration status event */
-	if (reg_status != prev_reg_status) {
-		prev_reg_status = reg_status;
-		evt.type = LTE_LC_EVT_NW_REG_STATUS;
-		evt.nw_reg_status = reg_status;
-
-		event_handler_list_dispatch(&evt);
-	}
-
-	/* Cell update event */
-	if (memcmp(&cell, &prev_cell, sizeof(struct lte_lc_cell))) {
-		evt.type = LTE_LC_EVT_CELL_UPDATE;
-
-		memcpy(&prev_cell, &cell, sizeof(struct lte_lc_cell));
-		memcpy(&evt.cell, &cell, sizeof(struct lte_lc_cell));
-		event_handler_list_dispatch(&evt);
-	}
-
-	if (lte_mode != prev_lte_mode) {
-		prev_lte_mode = lte_mode;
-		evt.type = LTE_LC_EVT_LTE_MODE_UPDATE;
-		evt.lte_mode = lte_mode;
-
-		LTE_LC_TRACE(lte_mode == LTE_LC_LTE_MODE_LTEM ?
-			     LTE_LC_TRACE_LTE_MODE_UPDATE_LTEM :
-			     LTE_LC_TRACE_LTE_MODE_UPDATE_NBIOT);
-
-		event_handler_list_dispatch(&evt);
-	}
-
-	if ((reg_status != LTE_LC_NW_REG_REGISTERED_HOME) &&
-	    (reg_status != LTE_LC_NW_REG_REGISTERED_ROAMING)) {
-		return;
-	}
-
-	err = lte_lc_psm_get(&psm_cfg.tau, &psm_cfg.active_time);
-	if (err) {
-		LOGD("Failed to get PSM information");
-		return;
-	}
-
-	/* PSM configuration update event */
-	if (memcmp(&psm_cfg, &prev_psm_cfg, sizeof(struct lte_lc_psm_cfg))) {
-		evt.type = LTE_LC_EVT_PSM_UPDATE;
-
-		memcpy(&prev_psm_cfg, &psm_cfg, sizeof(struct lte_lc_psm_cfg));
-		memcpy(&evt.psm_cfg, &psm_cfg, sizeof(struct lte_lc_psm_cfg));
-		event_handler_list_dispatch(&evt);
-	}
-}
-
-
-
-static int net_connect(void)
-{
-	int err, rc;
-	const char *current_network_mode = nw_mode_preferred;
-	bool retry;
-
-	k_sem_init(&net_link, 0, 1);
-
-	//rc = at_notif_register_handler(NULL, at_handler);
-        rc = at_monitor_resume(ltelc_atmon_cereg_info);
-	if(rc != 0)
-		return rc;
-
-	do
-	{
-		retry = false;
-
-		//if(at_cmd_write(current_network_mode, NULL, 0, NULL) != 0)
-		if(nrf_modem_at_cmd(NULL, 0, current_network_mode) != 0)
-		{
-			err = -EIO;
-			goto exit;
-		}
-
-		NBGetNetMode(current_network_mode);
-
-		//if(at_cmd_write(normal, NULL, 0, NULL) != 0)
-		if(nrf_modem_at_cmd(NULL, 0, normal) != 0)
-		{
-			err = -EIO;
-			goto exit;
-		}
-
-		err = k_sem_take(&net_link, K_SECONDS(CONFIG_LTE_NETWORK_TIMEOUT));
-		if(err == -EAGAIN)
-		{
-		#ifdef NB_DEBUG
-			LOGD("Network connection attempt timed out");
-		#endif
-
-			if(IS_ENABLED(CONFIG_LTE_NETWORK_USE_FALLBACK)&&(current_network_mode == nw_mode_preferred))
-			{
-				current_network_mode = nw_mode_fallback;
-				retry = true;
-
-				//if(at_cmd_write(offline, NULL, 0, NULL) != 0)
-				if(nrf_modem_at_cmd(NULL, 0, offline) != 0)
-				{
-					err = -EIO;
-					goto exit;
-				}
-			#ifdef NB_DEBUG
-				LOGD("Using fallback network mode");
-			#endif
-			}
-			else
-			{
-				err = -ETIMEDOUT;
-			}
-		}
-	}while(retry);
-
-exit:
-	//rc = at_notif_deregister_handler(NULL, at_handler);
-        rc = at_monitor_pause(ltelc_atmon_cereg_info);
-	if(rc != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Can't de-register handler rc=%d", rc);
-	#endif
-	}
-
-	return err;
-}
-
-static int net_init_and_link(void)
-{
-	int ret;
-
-	ret = lte_lc_init();
-	if(ret)
-	{
-		return ret;
-	}
-
-	return net_connect();
-}
-
 static void nb_link(struct k_work *work)
 {
 	int err=0;
@@ -2879,7 +2576,7 @@ static void nb_link(struct k_work *work)
 	
 		nb_connecting_flag = true;
 		configure_low_power();
-		err = net_init_and_link();
+		err = lte_lc_init_and_connect();
 		if(err)
 		{
 		#ifdef NB_DEBUG
@@ -2909,7 +2606,9 @@ static void nb_link(struct k_work *work)
 		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
 		#endif
-		
+
+			GetModemNw();
+
 			if(test_nb_flag)
 			{
 				strcpy(nb_test_info, "LTE Link Connected!");

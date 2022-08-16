@@ -335,9 +335,8 @@ bool pmu_interrupt_proc(void)
 		pmu_redraw_bat_flag = true;
 	}
 
-	//gpio_pin_get(gpio_pmu, PMU_EINT, &val);//xb add 20201202 ��ֹ����ж�ͬʱ������MCUû��ʱ��������PMU�жϽ�һֱ����
-	val = gpio_pin_get(gpio_pmu, PMU_EINT); ////this API accepts only two arguments
-        if(val == 0)
+	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT); ////this API accepts only two arguments
+	if(val == 0)
 		return false;
 	else
 		return true;
@@ -601,21 +600,17 @@ void pmu_init(void)
 
 	//charger interrupt
 	gpio_pin_configure(gpio_pmu, PMU_EINT, flag);
-	//gpio_pin_disable_callback(gpio_pmu, PMU_EINT); //this API no longer supported in zephyr version 2.7.0
 	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, PmuInterruptHandle, BIT(PMU_EINT));
 	gpio_add_callback(gpio_pmu, &gpio_cb1);
-	//gpio_pin_enable_callback(gpio_pmu, PMU_EINT); //this API no longer supported in zephyr version 2.7.0
-	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	//alert interrupt
 	gpio_pin_configure(gpio_pmu, PMU_ALRTB, flag);
-	//gpio_pin_disable_callback(gpio_pmu, PMU_ALRTB); //this API no longer supported in zephyr version 2.7.0
 	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, PmuAlertHandle, BIT(PMU_ALRTB));
 	gpio_add_callback(gpio_pmu, &gpio_cb2);
-	//gpio_pin_enable_callback(gpio_pmu, PMU_ALRTB); //this API no longer supported in zephyr version 2.7.0
-	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	rst = init_i2c();
 	if(!rst)

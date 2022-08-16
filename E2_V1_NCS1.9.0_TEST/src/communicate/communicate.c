@@ -35,9 +35,9 @@ extern uint16_t g_last_steps;
  * FUNCTION
  *  location_get_wifi_data_reply
  * DESCRIPTION
- *  ï¿½ï¿½Î»Ð­ï¿½ï¿½ï¿½ï¿½ï¿½È¡WiFiï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½ï¿½ï¿
+ *  ¶¨Î»Ð­Òé°ü»ñÈ¡WiFiÊý¾ÝÖ®ºóµÄÉÏ´«Êý¾Ý°ü´¦Àí
  * PARAMETERS
- *  wifi_data       [IN]       wifiï¿½ï¿½ï¿½Ý½á¹¹ï¿½ï¿½
+ *  wifi_data       [IN]       wifiÊý¾Ý½á¹¹Ìå
  * RETURNS
  *  Nothing
  *****************************************************************************/
@@ -68,10 +68,10 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
  * FUNCTION
  *  location_get_gps_data_reply
  * DESCRIPTION
- *  ï¿½ï¿½Î»Ð­ï¿½ï¿½ï¿½ï¿½ï¿½È¡GPSï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½ï¿½ï¿
+ *  ¶¨Î»Ð­Òé°ü»ñÈ¡GPSÊý¾ÝÖ®ºóµÄÉÏ´«Êý¾Ý°ü´¦Àí
  * PARAMETERS
- *	flag			[IN]		GPSï¿½ï¿½ï¿½Ý»ï¿½È¡ï¿½ï¿½ï¿ ture:ï¿½É¹ï¿½ false:Ê§ï¿½ï¿½
- *  gps_data       	[IN]		GPSï¿½ï¿½ï¿½Ý½á¹¹ï¿½ï¿½
+ *	flag			[IN]		GPSÊý¾Ý»ñÈ¡±ê¼Ç, ture:³É¹¦ false:Ê§°Ü
+ *  gps_data       	[IN]		GPSÊý¾Ý½á¹¹Ìå
  * RETURNS
  *  Nothing
  *****************************************************************************/
@@ -153,7 +153,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
  * FUNCTION
  *  TimeCheckSendHealthData
  * DESCRIPTION
- *  ï¿½ï¿½Ê±ï¿½ï¿½â²¢ï¿½Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿
+ *  ¶¨Ê±¼ì²â²¢ÉÏ´«½¡¿µÊý¾Ý°ü
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -161,19 +161,16 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
  *****************************************************************************/
 void TimeCheckSendHealthData(void)
 {
-	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;
-	uint8_t tmpbuf[20] = {0};
-	uint8_t databuf[128] = {0};
-
-#ifdef CONFIG_IMU_SUPPORT
-	GetSportData(&steps, &calorie, &distance);
-	GetSleepTimeData(&deep_sleep, &light_sleep);
+	uint8_t i,tmpbuf[20] = {0};
+	uint8_t databuf[1024] = {0};
+	uint8_t hr_data[24] = {0};
+	uint8_t spo2_data[24] = {0};
+#ifdef CONFIG_PPG_SUPPORT	
+	bpt_data bp_data[24] = {0};
 #endif
-
-	//steps
-	sprintf(tmpbuf, "%d,", steps);
-	strcpy(databuf, tmpbuf);
+	uint16_t temp_data[24] = {0};
+	uint16_t step_data[24] = {0};
 	
 	//wrist
 	if(is_wearing())
@@ -186,7 +183,10 @@ void TimeCheckSendHealthData(void)
 	
 	//activity time
 	strcat(databuf, "0,");
-	
+
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
 	//light sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", light_sleep);
@@ -199,58 +199,116 @@ void TimeCheckSendHealthData(void)
 	
 	//move body
 	strcat(databuf, "0,");
-	
-	//calorie
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", calorie);
-	strcat(databuf, tmpbuf);
-	
-	//distance
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", distance);
-	strcat(databuf, tmpbuf);
-	
-#ifdef CONFIG_PPG_SUPPORT	
-	//systolic
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_systolic);
-	strcat(databuf, tmpbuf);
-	
-	//diastolic
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_diastolic); 	
-	strcat(databuf, tmpbuf);
-	
-	//heart rate
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_hr);		
-	strcat(databuf, tmpbuf);
-	
-	//SPO2
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_spo2); 	
-	strcat(databuf, tmpbuf);
-#else
-	strcat(databuf, "0,0,0,0,");
+
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	GetCurDayStepRecData(step_data);
+#endif
+	for(i=0;i<24;i++)
+	{
+		uint16_t calorie,distance;
+		
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		
+		if(step_data[i] == 0xffff)
+			step_data[i] = 0;
+
+		distance = 0.7*step_data[i];
+		calorie = (0.8214*60*distance)/1000;
+		sprintf(tmpbuf, "%d&%d&%d", step_data[i], distance, calorie);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		
+		strcat(databuf, tmpbuf);
+	}
+
+#ifdef CONFIG_PPG_SUPPORT
+	//hr
+	GetCurDayHrRecData(hr_data);
+	//spo2
+	GetCurDaySpo2RecData(spo2_data);
+	//bpt
+	GetCurDayBptRecData(bp_data);
 #endif/*CONFIG_PPG_SUPPORT*/
+	//hr
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(hr_data[i] == 0xff)
+			hr_data[i] = 0;		
+		sprintf(tmpbuf, "%d", hr_data[i]);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	//spo2
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(spo2_data[i] == 0xff)
+			spo2_data[i] = 0;	
+		sprintf(tmpbuf, "%d", spo2_data[i]);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	//bpt
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(bp_data[i].systolic == 0xff)
+			bp_data[i].systolic = 0;
+		if(bp_data[i].diastolic == 0xff)
+			bp_data[i].diastolic = 0;
+		sprintf(tmpbuf, "%d&%d", bp_data[i].systolic,bp_data[i].diastolic);
+	#else
+		strcpy(tmpbuf, "0&0");
+	#endif
+	
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
 	
 #ifdef CONFIG_TEMP_SUPPORT
 	//body temp
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%0.1f", g_temp_body);	
-	strcat(databuf, tmpbuf);
-#else
-	strcat(databuf, "0.0");
+	GetCurDayTempRecData(temp_data);
 #endif/*CONFIG_TEMP_SUPPORT*/
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
 
-	NBSendHealthData(databuf, strlen(databuf));
+		if(temp_data[i] == 0xffff)
+			temp_data[i] = 0;
+		sprintf(tmpbuf, "%0.1f", (float)temp_data[i]/10.0);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		strcat(databuf, tmpbuf);
+	}
+
+	NBSendTimelyHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendLocationData
  * DESCRIPTION
- *  ï¿½ï¿½Ê±ï¿½ï¿½â²¢ï¿½Ï´ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½Ý°ï¿
+ *  ¶¨Ê±¼ì²â²¢ÉÏ´«¶¨Î»Êý¾Ý°ü
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -291,9 +349,9 @@ void TimeCheckSendLocationData(void)
  * FUNCTION
  *  StepCheckSendLocationData
  * DESCRIPTION
- *  ï¿½Æ²ï¿½ï¿½ï¿½â²¢ï¿½Ï´ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½Ý°ï¿
+ *  ¼Æ²½¼ì²â²¢ÉÏ´«¶¨Î»Êý¾Ý°ü
  * PARAMETERS
- *	steps			[IN]		ï¿½ï¿½Ç°ï¿½Û¼ÆµÄ¼Ç²ï¿½ï¿½ï¿½
+ *	steps			[IN]		µ±Ç°ÀÛ¼ÆµÄ¼Ç²½Êý
  * RETURNS
  *  Nothing
  *****************************************************************************/
@@ -322,7 +380,7 @@ void StepCheckSendLocationData(uint16_t steps)
  * FUNCTION
  *  SyncSendHealthData
  * DESCRIPTION
- *  ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½
+ *  Êý¾ÝÍ¬²½ÉÏ´«½¡¿µÊý¾Ý°ü
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -336,8 +394,12 @@ void SyncSendHealthData(void)
 	uint8_t databuf[128] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
+  #ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
+  #endif
+  #ifdef CONFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+  #endif
 #endif
 
 	//steps
@@ -382,12 +444,12 @@ void SyncSendHealthData(void)
 #ifdef CONFIG_PPG_SUPPORT	
 	//systolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_systolic);
+	sprintf(tmpbuf, "%d,", g_bpt.systolic);
 	strcat(databuf, tmpbuf);
 	
 	//diastolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_diastolic); 	
+	sprintf(tmpbuf, "%d,", g_bpt.diastolic); 	
 	strcat(databuf, tmpbuf);
 	
 	//heart rate
@@ -412,14 +474,14 @@ void SyncSendHealthData(void)
 	strcat(databuf, "0.0");
 #endif/*CONFIG_TEMP_SUPPORT*/
 
-	NBSendHealthData(databuf, strlen(databuf));
+	NBSendSingleHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
  * FUNCTION
  *  SyncSendLocalData
  * DESCRIPTION
- *  ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½Ý°ï¿½
+ *  Êý¾ÝÍ¬²½ÉÏ´«¶¨Î»Êý¾Ý°ü
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -441,7 +503,7 @@ void SyncSendLocalData(void)
  * FUNCTION
  *  SendPowerOnData
  * DESCRIPTION
- *  ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½
+ *  ·¢ËÍ¿ª»úÊý¾Ý°ü
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -471,7 +533,11 @@ void SendPowerOnData(void)
 	//battery
 	GetBatterySocString(tmpbuf);
 	strcat(databuf, tmpbuf);
-			
+	strcat(databuf, ",");
+
+	//mcu fw version
+	strcat(databuf, g_fw_version);	
+
 	NBSendPowerOnInfor(databuf, strlen(databuf));
 }
 
@@ -479,9 +545,9 @@ void SendPowerOnData(void)
  * FUNCTION
  *  SendPowerOffData
  * DESCRIPTION
- *  ï¿½ï¿½ï¿½Í¹Ø»ï¿½ï¿½ï¿½ï¿½Ý°ï¿½
+ *  ·¢ËÍ¹Ø»úÊý¾Ý°ü
  * PARAMETERS
- *	pwroff_mode			[IN]		ï¿½Ø»ï¿½Ä£Ê½ 1:ï¿½Íµï¿½Ø»ï¿2:ï¿½ï¿½ï¿½ï¿½ï¿½Ø»ï¿½ 3:ï¿½ï¿½ï¿½ï¿½ï¿½Ø»ï¿½ 
+ *	pwroff_mode			[IN]		¹Ø»úÄ£Ê½ 1:µÍµç¹Ø»ú 2:°´¼ü¹Ø»ú 3:ÖØÆô¹Ø»ú 
  * RETURNS
  *  Nothing
  *****************************************************************************/
@@ -509,7 +575,7 @@ void SendPowerOffData(uint8_t pwroff_mode)
  * FUNCTION
  *  SendSosAlarmData
  * DESCRIPTION
- *  ï¿½ï¿½ï¿½ï¿½SOSï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½Þµï¿½Ö·ï¿½ï¿½Ï¢)
+ *  ·¢ËÍSOS±¨¾¯°ü(ÎÞµØÖ·ÐÅÏ¢)
  * PARAMETERS
  *	
  * RETURNS

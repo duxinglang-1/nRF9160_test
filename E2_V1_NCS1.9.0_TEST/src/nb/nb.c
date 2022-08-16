@@ -42,6 +42,9 @@
 #include "lsm6dso.h"
 #include "fall.h"
 #endif
+#ifdef CONFIG_PPG_SUPPORT
+#include "Max32674.h"
+#endif
 #include "transfer_cache.h"
 #ifdef CONFIG_SYNC_SUPPORT
 #include "sync.h"
@@ -121,6 +124,7 @@ static bool nb_connecting_flag = false;
 static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
 static bool get_modem_status_flag = false;
+static bool server_has_timed_flag = false;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -160,7 +164,15 @@ uint8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 uint8_t g_imei[IMEI_MAX_LEN+1] = {0};
 uint8_t g_iccid[ICCID_MAX_LEN+1] = {0};
 uint8_t g_modem[MODEM_MAX_LEN+1] = {0};
+
+uint8_t g_new_fw_ver[64] = {0};
+uint8_t g_new_modem_ver[64] = {0};
+uint8_t g_new_ppg_ver[64] = {0};
+uint8_t g_new_ble_ver[64] = {0};
+uint8_t g_new_wifi_ver[64] = {0};
 uint8_t g_timezone[5] = {0};
+uint8_t g_prj_dir[128] = {0};
+
 uint8_t g_rsrp = 0;
 uint16_t g_tau_time = 0;
 uint16_t g_act_time = 0;
@@ -927,6 +939,7 @@ static void modem_configure(void)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
 			TestNBUpdateINfor();
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
 	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
@@ -999,30 +1012,30 @@ void NBRedrawSignal(void)
 	{
 		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
 		//<n>
-		//	0 锟紻isable unsolicited result codes
-		//	1 锟紼nable unsolicited result codes +CEREG:<stat>
-		//	2 锟紼nable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
-		//	3 锟紼nable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
-		//	4 锟紼nable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
-		//	5 锟紼nable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
+		//	0 – Disable unsolicited result codes
+		//	1 – Enable unsolicited result codes +CEREG:<stat>
+		//	2 – Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
+		//	3 – Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
+		//	4 – Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
+		//	5 – Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
 		//<stat>
-		//	0 锟絅ot registered. UE is not currently searching for an operator to register to.
-		//	1 锟絉egistered, home network.
-		//	2 锟絅ot registered, but UE is currently trying to attach or searching an operator to register to.
-		//	3 锟絉egistration denied.
-		//	4 锟経nknown (e.g. out of E-UTRAN coverage).
-		//	5 锟絉egistered, roaming.
-		//	8 锟紸ttached for emergency bearer services only.
-		//	90 锟絅ot registered due to UICC failure.
+		//	0 – Not registered. UE is not currently searching for an operator to register to.
+		//	1 – Registered, home network.
+		//	2 – Not registered, but UE is currently trying to attach or searching an operator to register to.
+		//	3 – Registration denied.
+		//	4 – Unknown (e.g. out of E-UTRAN coverage).
+		//	5 – Registered, roaming.
+		//	8 – Attached for emergency bearer services only.
+		//	90 – Not registered due to UICC failure.
 		//<tac>
 		//	String. A 2-byte Tracking Area Code (TAC) in hexadecimal format.
 		//<ci>
 		//	String. A 4-byte E-UTRAN cell ID in hexadecimal format.
 		//<AcT>
-		//	7 锟紼-UTRAN
-		//	9 锟紼-UTRAN NB-S1
+		//	7 – E-UTRAN
+		//	9 – E-UTRAN NB-S1
 		//<cause_type>
-		//	0 锟絩eject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
+		//	0 – <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
 		//<reject_cause>
 		//	EMM cause value. See 3GPP TS 24.301 Annex A
 		//<Active-Time>
@@ -1041,7 +1054,7 @@ void NBRedrawSignal(void)
 		ptr = strstr(strbuf, "+CEREG: ");
 		if(ptr)
 		{
-			//鎸囦护锟
+			//指令头
 			ptr += strlen("+CEREG: ");
 			//reg_status
 			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
@@ -1059,8 +1072,9 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+				if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+					k_timer_stop(&nb_reconnect_timer);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 			}
 		}
 	}
@@ -1336,10 +1350,12 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 		#ifdef NB_DEBUG
 			LOGD("begin 004", __func__);
 		#endif
-			if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-				k_timer_stop(&nb_reconnect_timer);
 
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			if(!nb_connecting_flag)
+			{
+				k_timer_stop(&nb_reconnect_timer);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			}
 		}
 	}
 }
@@ -1435,7 +1451,7 @@ void NBSendFallGpsData(uint8_t *data, uint32_t datalen)
 }
 #endif
 
-void NBSendHealthData(uint8_t *data, uint32_t datalen)
+void NBSendSingleHealthData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1443,6 +1459,29 @@ void NBSendHealthData(uint8_t *data, uint32_t datalen)
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T5:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("health data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T14:");
 	strcat(buf, data);
 	strcat(buf, ",");
 	GetBatterySocString(tmpbuf);
@@ -1581,12 +1620,14 @@ void ParseData(uint8_t *data, uint32_t datalen)
 #endif
 	if(ret)
 	{
+		bool flag = false;
+		
 		if(strcmp(strcmd, "S7") == 0)
 		{
 			uint8_t *ptr;
 			uint8_t strtmp[128] = {0};
 
-			//鍚庡彴涓嬪彂瀹氫綅涓婃姤闂撮殧
+			//后台下发定位上报间隔
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -1598,31 +1639,36 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				strcpy(strtmp, ptr);
 				global_settings.dot_interval.steps = atoi(strtmp);
 			}
+
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S8") == 0)
 		{
-			//鍚庡彴涓嬪彂鍋ュ悍妫�娴嬮棿锟
+			//后台下发健康检测间隔
 			global_settings.health_interval = atoi(strdata);
-			
+
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
-			//鍚庡彴涓嬪彂鎶厱浜睆璁剧疆
+			//后台下发抬腕亮屏设置
 			global_settings.wake_screen_by_wrist = atoi(strdata);
 			
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S10") == 0)
 		{
-			//鍚庡彴涓嬪彂鑴辫厱妫�娴嬭锟
+			//后台下发脱腕检测设置
 			global_settings.wrist_off_check = atoi(strdata);
-			
+
+			flag = true;			
 		}
 		else if(strcmp(strcmd, "S11") == 0)
 		{
 			uint8_t *ptr;
 			uint8_t strtmp[128] = {0};
 			
-			//鍚庡彴涓嬪彂琛�鍘嬫牎鍑嗭拷
+			//后台下发血压校准值
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -1633,13 +1679,167 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				memset(strtmp, 0, sizeof(strtmp));
 				strcpy(strtmp, ptr);
 				global_settings.bp_calibra.diastolic = atoi(strtmp);
+
+			#ifdef CONFIG_PPG_SUPPORT
+				sh_clear_bpt_cal_data();
+				ppg_bpt_is_calbraed = false;
+				ppg_bpt_cal_need_update = true;
+			#endif
 			}
+
+			flag = true;
+		}
+		else if(strcmp(strcmd, "S12") == 0)
+		{
+			uint8_t *ptr,*ptr1;
+			uint8_t strtmp[128] = {0};
+			uint32_t copylen = 0;
+
+			//后台下发最新版本信息
+			//9160 fw ver
+			ptr = strstr(strdata, ",");
+			if(ptr == NULL)
+				return;
+			copylen = (ptr-strdata) < sizeof(g_new_fw_ver) ? (ptr-strdata) : sizeof(g_new_fw_ver);
+			memcpy(g_new_fw_ver, strdata, copylen);
+
+			//9160 modem ver
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_modem_ver) ? (ptr1-ptr) : sizeof(g_new_modem_ver);
+			memcpy(g_new_modem_ver, ptr, copylen);
+
+			//52810 fw ver
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_ble_ver) ? (ptr1-ptr) : sizeof(g_new_ble_ver);
+			memcpy(g_new_ble_ver, ptr, copylen);
+
+			//ppg ver
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_ppg_ver) ? (ptr1-ptr) : sizeof(g_new_ppg_ver);
+			memcpy(g_new_ppg_ver, ptr, copylen);
+
+			//wifi ver
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
+			memcpy(g_new_wifi_ver, ptr, copylen);
+
+			//project dir
+			ptr = ptr1+1;
+			copylen = (datalen-(ptr-strdata)) < sizeof(g_prj_dir) ? (datalen-(ptr-strdata)) : sizeof(g_prj_dir);
+			memcpy(g_prj_dir, ptr, copylen);
+		}
+		else if(strcmp(strcmd, "S15") == 0)
+		{
+			uint8_t *ptr,*ptr1;
+			uint8_t tz_count,tz_dir,tz_buf[4] = {0};
+			uint8_t date_buf[8] = {0};
+			uint8_t time_buf[6] = {0};
+			uint8_t tmpbuf[16] = {0};
+			sys_date_timer_t tmp_dt = {0};
+			uint32_t copylen = 0;
+
+			//后台下发校时指令
+			//timezone
+			ptr = strstr(strdata, ",");
+			if(ptr == NULL)
+				return;
+			copylen = (ptr-strdata) < sizeof(tz_buf) ? (ptr-strdata) : sizeof(tz_buf);
+			memcpy(tz_buf, strdata, copylen);
+			if(tz_buf[0] == '+' || tz_buf[0] == '-')
+			{
+				if(tz_buf[0] == '+')
+					tz_dir = 1;
+				else
+					tz_dir = 0;
+
+				tz_count = atoi(&tz_buf[1]);
+			}
+			else
+			{
+				tz_dir = 1;
+				tz_count = atoi(tz_buf);
+			}
+
+		#ifdef NB_DEBUG
+			LOGD("timezone:%c%d",  (tz_dir == 1 ? '+':'-'), tz_count);
+		#endif
+
+			//date
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(date_buf) ? (ptr1-ptr) : sizeof(date_buf);
+			memcpy(date_buf, ptr, copylen);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[0], 4);
+			tmp_dt.year = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[4], 2);
+			tmp_dt.month = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &date_buf[6], 2);
+			tmp_dt.day = atoi(tmpbuf);
+
+			//time
+			ptr = ptr1+1;
+			copylen = (datalen-(ptr-strdata)) < sizeof(time_buf) ? (datalen-(ptr-strdata)) : sizeof(time_buf);
+			memcpy(time_buf, ptr, copylen);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[0], 2);
+			tmp_dt.hour = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[2], 2);
+			tmp_dt.minute = atoi(tmpbuf);
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			memcpy(tmpbuf, &time_buf[4], 2);
+			tmp_dt.second = atoi(tmpbuf);
+
+			//if(tz_dir == 1)
+			//{
+			//	TimeIncrease(&tmp_dt, tz_count*15);
+			//}
+			//else
+			//{
+			//	TimeDecrease(&tmp_dt, tz_count*15);
+			//}
+			
+		#ifdef NB_DEBUG
+			LOGD("%04d%02d%02d %02d:%02d:%02d", tmp_dt.year,tmp_dt.month,tmp_dt.day,tmp_dt.hour,tmp_dt.minute,tmp_dt.second);
+		#endif
+
+			if(CheckSystemDateTimeIsValid(tmp_dt))
+			{
+				tmp_dt.week = GetWeekDayByDate(tmp_dt);
+				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
+				RedrawSystemTime();
+				SaveSystemDateTime();
+
+				server_has_timed_flag = true;
+			}
+
+			flag = true;			
 		}
 
 		SaveSystemSettings();
 
-		strcmd[0] = 'T';
-		NBSendSettingReply(strcmd, strlen(strcmd));
+		if(flag)
+		{			
+			strcmd[0] = 'T';
+			NBSendSettingReply(strcmd, strlen(strcmd));
+		}
 	}
 }
 
@@ -1684,7 +1884,7 @@ static int configure_low_power(void)
 {
 	int err;
 
-#if defined(CONFIG_LTE_PSM_ENABLE)
+#if defined(CONFIG_LTE_PSM_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** Power Saving Mode */
 	err = lte_lc_psm_req(true);
 	if(err)
@@ -1703,7 +1903,7 @@ static int configure_low_power(void)
 	}
 #endif
 
-#if defined(CONFIG_LTE_EDRX_ENABLE)
+#if defined(CONFIG_LTE_EDRX_ENABLE)&&!defined(NB_SIGNAL_TEST)
 	/** enhanced Discontinuous Reception */
 	err = lte_lc_edrx_req(true);
 	if(err)
@@ -1840,22 +2040,22 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 	ptr = strstr(buf, "%XMONITOR: ");
 	if(ptr)
 	{
-		//琛ヤ笂涓�涓�楀彿浣滀负鏈熬鐨勫垎闅旂,鏇挎崲浠ュ墠锟絰0d,0x0a
+		//补上一个逗号作为末尾的分隔符,替换以前的0x0d,0x0a
 		buf[len-2] = ',';
 		buf[len-1] = 0x00;
-		//鎸囦护锟
+		//指令头
 		ptr += strlen("%XMONITOR: ");
 		//reg_status
 		GetStringInforBySepa(ptr, ",", 1, tmpbuf);
 		reg_status = atoi(tmpbuf);
-		//0 锟絅ot registered. UE is not currently searching for an operator to register to.
-		//1 锟絉egistered, home network.
-		//2 锟絅ot registered, but UE is currently trying to attach or searching an operator to register to.
-		//3 锟絉egistration denied.
-		//4 锟経nknown (e.g. out of E-UTRAN coverage).
-		//5 锟絉egistered, roaming.
-		//8 锟紸ttached for emergency bearer services only.
-		//90 锟絅ot registered due to UICC failure.
+		//0 – Not registered. UE is not currently searching for an operator to register to.
+		//1 – Registered, home network.
+		//2 – Not registered, but UE is currently trying to attach or searching an operator to register to.
+		//3 – Registration denied.
+		//4 – Unknown (e.g. out of E-UTRAN coverage).
+		//5 – Registered, roaming.
+		//8 – Attached for emergency bearer services only.
+		//90 – Not registered due to UICC failure.
 		if(reg_status == 1 || reg_status == 5)
 		{
 			uint8_t tau = 0;
@@ -1952,16 +2152,16 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
 			{
-			case 0://0 0 0 锟絭alue is incremented in multiples of 2 seconds
+			case 0://0 0 0 – value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 1://0 0 1 锟絭alue is incremented in multiples of 1 minute
+			case 1://0 0 1 – value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 2://0 1 0 锟絭alue is incremented in multiples of 6 minutes
+			case 2://0 1 0 – value is incremented in multiples of 6 minutes
 				flag = 6*60;
 				break;
-			case 3://0 1 1 锟絭alue indicates that the timer is deactivated
+			case 3://0 1 1 – value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -1979,28 +2179,28 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
 			{
-			case 0://0 0 0 锟絭alue is incremented in multiples of 10 minutes
+			case 0://0 0 0 – value is incremented in multiples of 10 minutes
 				flag = 10*60;
 				break;
-			case 1://0 0 1 锟絭alue is incremented in multiples of 1 hour
+			case 1://0 0 1 – value is incremented in multiples of 1 hour
 				flag = 60*60;
 				break;
-			case 2://0 1 0 锟絭alue is incremented in multiples of 10 hours
+			case 2://0 1 0 – value is incremented in multiples of 10 hours
 				flag = 10*60*60;
 				break;
-			case 3://0 1 1 锟絭alue is incremented in multiples of 2 seconds
+			case 3://0 1 1 – value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 4://1 0 0 锟絭alue is incremented in multiples of 30 seconds
+			case 4://1 0 0 – value is incremented in multiples of 30 seconds
 				flag = 30;
 				break;
-			case 5://1 0 1 锟絭alue is incremented in multiples of 1 minute
+			case 5://1 0 1 – value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 6://1 1 0 锟絭alue is incremented in multiples of 320 hours
+			case 6://1 1 0 – value is incremented in multiples of 320 hours
 				flag = 320*60*60;
 				break;
-			case 7://1 1 1 锟絭alue indicates that the timer is deactivated
+			case 7://1 1 1 – value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2019,16 +2219,16 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			tau = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(tau>>5)
 			{
-			case 0://0 0 0 锟絭alue is incremented in multiples of 2 seconds
+			case 0://0 0 0 – value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 1://0 0 1 锟絭alue is incremented in multiples of 1 minute
+			case 1://0 0 1 – value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 2://0 1 0 锟絭alue is incremented in multiples of 6 minute
+			case 2://0 1 0 – value is incremented in multiples of 6 minute
 				flag = 6*60;
 				break;
-			case 7://1 1 1 锟絭alue indicates that the timer is deactivated
+			case 7://1 1 1 – value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2222,6 +2422,46 @@ void SetModemTurnOff(void)
 	}
 
 	nb_connected = false;
+}
+
+void SetModemGps(void)
+{
+	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_GPS) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for gps success!");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for gps fail!");
+	#endif
+	}
+}
+
+void SetMomomNw(void)
+{
+#if defined(CONFIG_LTE_NETWORK_MODE_NBIOT)
+	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_NB) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
+	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_NB_GPS) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M)
+	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_LTE_M) == 0)
+#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
+	if(nrf_modem_at_cmd(NULL, 0, CMD_SET_NW_MODE_LTE_M_GPS) == 0)
+#endif
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for nw success!");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("set modem for nw fail!");
+	#endif
+	}
 }
 
 void GetModemAPN(void)
@@ -2604,6 +2844,14 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 		SetNetWorkParaByPlmn(g_imsi);
 	}
+
+	if(strlen(g_imsi) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("Can't get sim info, cancel the connecting!");
+	#endif
+		return;
+	}
 #endif
 
 	/*if(gps_is_working())
@@ -2661,13 +2909,23 @@ static void nb_link(struct k_work *work)
 		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
 		#endif
+		
+			if(test_nb_flag)
+			{
+				strcpy(nb_test_info, "LTE Link Connected!");
+				nb_test_update_flag = true;
+				k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
+			}
 			
 			nb_connected = true;
 			retry_count = 0;
 		#ifdef CONFIG_MODEM_INFO
 			modem_data_init();
 		#endif
-			GetModemDateTime();
+
+			if(!server_has_timed_flag)
+				GetModemDateTime();
+			
 			NBRedrawNetMode();
 		}
 
@@ -2740,6 +2998,14 @@ bool nb_is_connecting(void)
 	return nb_connecting_flag;
 }
 
+bool nb_reconnect(void)
+{
+	if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+		k_timer_stop(&nb_reconnect_timer);
+	
+	nb_reconnect_flag = true;
+}
+
 bool nb_is_connected(void)
 {
 	return nb_connected;
@@ -2767,6 +3033,8 @@ void NBMsgProcess(void)
 	
 		if(nb_is_connected())
 		{
+			strcpy(nb_test_info, "LTE Link Connected!");
+			TestNBUpdateINfor();
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
 		}
 		else if(nb_is_connecting())
@@ -2777,6 +3045,7 @@ void NBMsgProcess(void)
 		else
 		{
 			SetModemTurnOff();
+			configure_low_power();
 			modem_configure();
 		}
 	}
@@ -2797,6 +3066,8 @@ void NBMsgProcess(void)
 	{
 		GetModemSignal();
 		get_modem_signal_flag = false;
+		if(screen_id == SCREEN_ID_NB_TEST)
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 	}
 
 	if(get_modem_time_flag)

@@ -19,6 +19,8 @@
 #include "font.h"
 #include "logger.h"
 
+//#define MAX_DEBUG
+
 #define MAX630FTHR       1
 #define ME15_DEV_MRD103  0
 #define ME15_DEV_OB7     0
@@ -97,14 +99,14 @@ void wait_ms(int ms)
 
 void SH_Power_On(void)
 {
-	//PPGï¿½ï¿½ï¿½ï¿½ï¿
+	//PPG¹©µç´ò¿ª
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 }
 
 void SH_Power_Off(void)
 {
-	//PPGï¿½ï¿½ï¿½ï¿½Ø±ï¿
+	//PPG¹©µç¹Ø±Õ
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 0);
 }
@@ -114,7 +116,9 @@ static void sh_init_i2c(void)
 	i2c_ppg = device_get_binding(PPG_DEV);
 	if(!i2c_ppg)
 	{
-		//LOGD("ERROR SETTING UP I2C");
+	#ifdef MAX_DEBUG
+		LOGD("ERROR SETTING UP I2C");
+	#endif
 	}
 	else
 	{
@@ -129,23 +133,21 @@ static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, 
 
 static void sh_init_gpio(void)
 {
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_DOWN|GPIO_INT_HIGH_1|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
 	gpio_ppg = device_get_binding(PPG_PORT);
 	
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
-	//gpio_pin_disable_callback(gpio_ppg, PPG_INT_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
-	//gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE);
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	
-	//PPGÄ£Ê½Ñ¡ï¿½ï¿½(bootload\application)
+	//PPGÄ£Ê½Ñ¡Ôñ(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_OUTPUT);
 }
@@ -181,14 +183,18 @@ void SH_rst_to_BL_mode(void)
 	int s32_status = sh_put_in_bootloader();
 	if(s32_status != SS_SUCCESS)
 	{
-		//LOGD("set bl mode fail, %x", s32_status);
+	#ifdef MAX_DEBUG
+		LOGD("set bl mode fail, %x", s32_status);
+	#endif
 		return;
 	}
 
 	k_sleep(K_MSEC(50));
 	gpio_pin_set(gpio_ppg, PPG_MFIO_PIN, 1);
 
+#ifdef MAX_DEBUG
 	LOGD("set bl mode success!");
+#endif
 }
 
 void SH_rst_to_APP_mode(void)
@@ -204,8 +210,10 @@ void SH_rst_to_APP_mode(void)
 	
 	//enter application mode end delay for initialization finishes
 	wait_ms(2000);
-	
+
+#ifdef MAX_DEBUG	
 	LOGD("set app mode success!");
+#endif
 }
 
 void SH_to_APP_from_BL_timing_out(void)
@@ -283,6 +291,30 @@ int sh_read_cmd(uint8_t *cmd_bytes,
 	}
 
 	return (int)((SS_STATUS)rxbuf[0]);
+}
+
+int sh_write_cmd_without_status_cb(uint8_t *tx_buf,
+								   int tx_len,
+				 				   int sleep_ms)
+{
+	int retries = SS_DEFAULT_RETRIES;
+
+	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	SH_pull_mfio_to_high();
+
+	while((ret != 0) && (retries--) > 0)
+	{
+		WAIT_MS(1);
+		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+		SH_pull_mfio_to_high();
+	}
+
+	if((ret != 0) && (retries == 0))
+	{
+	   return SS_ERR_UNAVAILABLE;
+	}
 }
 
 int sh_write_cmd(uint8_t *tx_buf,
@@ -414,6 +446,32 @@ int32_t sh_get_hub_fw_version(uint8_t* fw_version)
 
 	memcpy(fw_version, &rxbuf[1],sizeof(rxbuf) - 1);
 	return status;
+}
+
+int sh_set_sensorhub_active(void)
+{
+	gpio_pin_set(gpio_ppg, PPG_INT_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_set(gpio_ppg, PPG_INT_PIN, 1);
+}
+
+int sh_set_sensorhub_sleep(void)
+{
+	uint8_t ByteSeq[] = {0x04,0x00,0x02};
+	
+	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+    return status;
+}
+
+int sh_set_sensorhub_shutdown(void)
+{
+#if 1
+	uint8_t ByteSeq[] = {0x01,0x00,0x01};
+	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+	return status;
+#else
+	return 0;
+#endif	
 }
 
 int sh_set_sensorhub_operating_mode(uint8_t hubMode)
@@ -600,7 +658,9 @@ int sh_get_reg(int idx, uint8_t addr, uint32_t *val)
     }
     else
     {
-    	//LOGD("read register wideth fail");
+    #ifdef MAX_DEBUG
+    	LOGD("read register wideth fail");
+    #endif
     }
 
     return status;
@@ -732,15 +792,21 @@ int sensorhub_enable_algo(sensorhub_report_mode_t mode , int sh_operation_mode ,
 
     //SH_OPERATION_WHRM_MODE here.
 	ret = sensorhub_set_algo_operation_mode(sh_operation_mode);
-	//LOGD("set algo oper mode Ret:%d", ret);
+#ifdef MAX_DEBUG	
+	LOGD("set algo oper mode Ret:%d", ret);
+#endif
 	//if(ret < 0)
 	//	return -1;  MYG: not define in regular sensorhub release
 
 	ret = sensorhub_set_algo_submode(sh_operation_mode, sh_algo_submode);
-	//LOGD("set algo submode Ret:%d", ret);
+#ifdef MAX_DEBUG
+	LOGD("set algo submode Ret:%d", ret);
+#endif
 
 	ret = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, (int)mode);
-	//LOGD("set algo enable Ret:%d", ret);
+#ifdef MAX_DEBUG
+	LOGD("set algo enable Ret:%d", ret);
+#endif
 	if(ret < 0)
     	return -1;
 
@@ -1066,12 +1132,15 @@ int32_t sh_set_bootloader_flashpages(uint32_t FwData_addr, uint8_t u8_pageSize)
 
 			if(status != SS_SUCCESS)
 			{
-				//LOGD("Write page %d part %d data FW fail: %x", i, j, status);
+			#ifdef MAX_DEBUG
+				LOGD("Write page %d part %d data FW fail: %x", i, j, status);
+			#endif
 				return status;
 			}
 		}
-
-		//LOGD("write page %d data done!", i);
+	#ifdef MAX_DEBUG
+		LOGD("write page %d data done!", i);
+	#endif
 	}
 	return status;
 }
@@ -1096,10 +1165,14 @@ int32_t sh_set_bootloader_flashpages(uint8_t *u8p_FwData , uint8_t u8_pageSize)
 
 		if (status != SS_SUCCESS)
 		{
-			//LOGD("Write page %d data FW fail: %x", i,  status);
+		#ifdef MAX_DEBUG
+			LOGD("Write page %d data FW fail: %x", i,  status);
+		#endif
 			return status;
 		}
-		//LOGD("write  page %d data done", i);
+	#ifdef MAX_DEBUG
+		LOGD("write  page %d data done", i);
+	#endif
 	}
 	return status;
 }
@@ -1205,39 +1278,54 @@ bool sh_init_interface(void)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
+	#endif
 
 		SH_Power_Off();
 		//Set_PPG_Power_Off();
 		return false;
 	}
+#ifdef MAX_DEBUG	
 	LOGD("MCU type = %d", u8_rxbuf[0]);
+#endif
 	mcu_type = u8_rxbuf[0];
 	
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
+	#endif
 
 		SH_Power_Off();
-		//Set_PPG_Power_Off();
 		return false;
 	}
 	else
 	{
 		sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+	#ifdef MAX_DEBUG
 		LOGD("FW version is:%s", g_ppg_ver);
+	#endif
 	}
 
-	if((mcu_type != 1) || (u8_rxbuf[1] != 4))
+	if((mcu_type != 1) || (u8_rxbuf[1] < 4))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
 	#else	
 		LCD_SetFontSize(FONT_SIZE_16);
 	#endif
-		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, "PPG is upgrading firmware, please wait a few minutes!");
+		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, NULL, 0, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
+		s32_status = sh_get_hub_fw_version(u8_rxbuf);
+		if(s32_status == SS_SUCCESS)
+		{
+			sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		#ifdef MAX_DEBUG
+			LOGD("FW version is:%s", g_ppg_ver);
+		#endif
+		}
 		LCD_SleepOut();
 	}
 
@@ -1259,40 +1347,56 @@ void sh_get_BL_version(void)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
+	#endif
 	}
+#ifdef MAX_DEBUG	
 	LOGD("MCU type = %d", u8_rxbuf[0]);
+#endif
 
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
+	#endif
 	}
 	else
 	{
+	#ifdef MAX_DEBUG
 		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+	#endif
 	}
 
 	uint32_t u32_sensorID = 0;
 	s32_status = sh_get_reg(0x0, 0xFF, &u32_sensorID);
 	if(s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read MAX86141 ID fail, %x", s32_status);
+	#endif
 	}
 	else
 	{
+	#ifdef MAX_DEBUG
 		LOGD("sensor MAX86141 ID = %x", u32_sensorID);
+	#endif
 	}
 
 	uint32_t u32_accSensorId = 0;
 	s32_status = sh_get_reg(SH_SENSORIDX_ACCEL, 0xF, &u32_accSensorId);
 	if (s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read acc sensor ID fail %x", s32_status);
+	#endif
 	}
 	else
 	{
+	#ifdef MAX_DEBUG
 		LOGD("acc sensor ID is %x", u32_accSensorId);
+	#endif
 	}
 }
 
@@ -1307,41 +1411,63 @@ void sh_get_APP_version(void)
 	s32_status = sh_get_bootloader_MCU_tye(u8_rxbuf);
 	if(s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
+	#endif
 	}
+#ifdef MAX_DEBUG
 	LOGD("MCU type = %d", u8_rxbuf[0]);
+#endif
 
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
 	if (s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
+	#endif
 	}
 	else
 	{
+	#ifdef MAX_DEBUG
 		LOGD("FW version is %d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+	#endif
 	}
 
 	uint32_t u32_sensorID = 0;
 	s32_status = sh_get_reg(0x0, 0xFF, &u32_sensorID);
 	if(s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read MAX86141 ID fail, %x", s32_status);
+	#endif
 	}
 	else
 	{
+	#ifdef MAX_DEBUG
 		LOGD("sensor MAX86141 ID = %x", u32_sensorID);
+	#endif
 	}
 
 	uint32_t u32_accSensorId = 0;
 	s32_status = sh_get_reg(SH_SENSORIDX_ACCEL, 0xF, &u32_accSensorId);
 	if (s32_status != SS_SUCCESS)
 	{
+	#ifdef MAX_DEBUG
 		LOGD("read acc sensor ID fail %x", s32_status);
+	#endif
 	}
 	else
 	{
+	#ifdef MAX_DEBUG
 		LOGD("acc sensor ID is %x", u32_accSensorId);
+	#endif
 	}
+}
+
+bool sh_clear_bpt_cal_data(void)
+{
+	memset(&sh_bpt_cal, 0x00, CAL_RESULT_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
 }
 
 bool sh_check_bpt_cal_data(void)
@@ -1368,54 +1494,81 @@ void sh_req_bpt_cal_data(void)
 
 	//Enable AEC
 	status = sh_set_cfg_wearablesuite_afeenable(1);
+#ifdef MAX_DEBUG
 	LOGD("enabel aec ret:%d", status);
+#endif
 	//Enable automatic calculation of target PD current
 	status = sh_set_cfg_wearablesuite_autopdcurrentenable(1);
+#ifdef MAX_DEBUG
 	LOGD("enabel auto pd cur ret:%d", status);
+#endif
 	//Set minimum PD current to 12.5uA
 	status = sh_set_cfg_wearablesuite_minpdcurrent(125);
+#ifdef MAX_DEBUG
 	LOGD("set min pd cur ret:%d", status);
+#endif
 	//Set initial PD current to 31.2uA
 	status = sh_set_cfg_wearablesuite_initialpdcurrent(312);
+#ifdef MAX_DEBUG
 	LOGD("set init pd cur ret:%d", status);
+#endif
 	//Set target PD current to 31.2uA
 	status = sh_set_cfg_wearablesuite_targetpdcurrent(312);
+#ifdef MAX_DEBUG
 	LOGD("set target pd cur ret:%d", status);
+#endif
 	//Enable SCD
 	status = sh_set_cfg_wearablesuite_scdenable(1);
+#ifdef MAX_DEBUG
 	LOGD("enable scd ret:%d", status);
+#endif
 	//Set the output format to Sample Counter byte, Sensor Data and Algorithm
 	status = sh_set_data_type(SS_DATATYPE_BOTH, true);
+#ifdef MAX_DEBUG
 	LOGD("set output format ret:%d", status);
+#endif
 	//set fifo thresh
 	status = sh_set_fifo_thresh(1);
+#ifdef MAX_DEBUG
 	LOGD("set fifo thresh ret:%d", status);	
+#endif
 	//Set the samples report period to 40ms(minimum is 32ms for BPT).
 	status = sh_set_report_period(25);
+#ifdef MAX_DEBUG
 	LOGD("set samples period ret:%d", status);	
+#endif
 	//Enable the sensor.
 	status = sensorhub_enable_sensors();
+#ifdef MAX_DEBUG
 	LOGD("enabel sensor ret:%d", status);
+#endif
 	//set algo mode
 	status = sh_set_cfg_wearablesuite_algomode(0x0);
+#ifdef MAX_DEBUG
 	LOGD("set algo mode Ret:%d", status);
+#endif
 	//set algo oper mode
 	status = sensorhub_set_algo_operation_mode(SH_OPERATION_WHRM_BPT_MODE);
 	g_algo_sensor_stat.bpt_algo_enabled = 1;
+#ifdef MAX_DEBUG
 	LOGD("set algo oper mode Ret:%d", status);
+#endif
 	//Set the cal_index, reference systolic, reference diastolic
 	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
-	LOGD("set cal_index sys&dia ret:%d", status);
+#ifdef MAX_DEBUG
+	LOGD("set cal_index sys:%d&dia:%d ret:%d", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic, status);
+#endif
 	//set algo submode
 	status = sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);
+#ifdef MAX_DEBUG
 	LOGD("set algo submode Ret:%d", status);
+#endif
 	//enable algo
 	status = sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
 	g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
+#ifdef MAX_DEBUG
 	LOGD("set algo enable Ret:%d", status);
-	//Set the biometric operation mode to WAS and BPT, BPT run mode to calibration, and enable
-	//status = sensorhub_enable_algo(SENSORHUB_MODE_BASIC, SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);
-	//LOGD("enbale algo:%d", status);	
+#endif
 }
 
 void sh_set_bpt_cal_data(void)
@@ -1424,34 +1577,55 @@ void sh_set_bpt_cal_data(void)
 
 	//Set the the cal_index to 0.
 	status = sh_set_cfg_bpt_cal_index(0);
+#ifdef MAX_DEBUG
 	LOGD("Set the the cal_index to 0 ret:%d", status);
+#endif
 	//Set the BPT user calibration vector (using cal_index 0).
 	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[0*CAL_RESULT_SIZE]);
+#ifdef MAX_DEBUG
 	LOGD("Set the BPT user calibration vector ret:%d", status);
+#endif
+
 #if 0
 	//Set the the cal_index to 1.
 	status = sh_set_cfg_bpt_cal_index(1);
+#ifdef MAX_DEBUG
 	LOGD("Set the the cal_index to 1 ret:%d", status);
+#endif
 	//Set the BPT user calibration vector (using cal_index 1).
 	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[0*CAL_RESULT_SIZE]);
+#ifdef MAX_DEBUG
 	LOGD("Set the BPT user calibration vector ret:%d", status);
+#endif
 	//Set the the cal_index to 2.
 	status = sh_set_cfg_bpt_cal_index(2);
+#ifdef MAX_DEBUG
 	LOGD("Set the the cal_index to 2 ret:%d", status);
+#endif
 	//Set the BPT user calibration vector (using cal_index 2).
 	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[0*CAL_RESULT_SIZE]);
+#ifdef MAX_DEBUG
 	LOGD("Set the BPT user calibration vector ret:%d", status);
+#endif
 	//Set the the cal_index to 3.
 	status = sh_set_cfg_bpt_cal_index(3);
+#ifdef MAX_DEBUG
 	LOGD("Set the the cal_index to 3 ret:%d", status);
+#endif
 	//Set the BPT user calibration vector (using cal_index 3).
 	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[0*CAL_RESULT_SIZE]);
+#ifdef MAX_DEBUG
 	LOGD("Set the BPT user calibration vector ret:%d", status);
+#endif
 	//Set the the cal_index to 4.
 	status = sh_set_cfg_bpt_cal_index(4);
+#ifdef MAX_DEBUG
 	LOGD("Set the the cal_index to 4 ret:%d", status);
+#endif
 	//Set the BPT user calibration vector (using cal_index 4).
 	status = sh_set_cfg_bpt_cal_result(&sh_bpt_cal[0*CAL_RESULT_SIZE]);	
+#ifdef MAX_DEBUG
 	LOGD("Set the BPT user calibration vector ret:%d", status);
+#endif
 #endif	
 }

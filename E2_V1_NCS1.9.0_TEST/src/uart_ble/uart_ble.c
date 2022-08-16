@@ -17,7 +17,7 @@
 #ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
 #endif
-//#include "gps.h"
+#include "gps.h"
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
@@ -40,45 +40,45 @@
 #define PACKET_HEAD	0xAB
 #define PACKET_END	0x88
 
-#define BLE_WORK_MODE_ID		0xFF10			//52810ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½
-#define HEART_RATE_ID			0xFF31			//ï¿½ï¿½ï¿½ï¿½
-#define BLOOD_OXYGEN_ID			0xFF32			//Ñªï¿½ï¿½
+#define BLE_WORK_MODE_ID		0xFF10			//52810¹¤×÷×´Ì¬Õý³£
+#define HEART_RATE_ID			0xFF31			//ÐÄÂÊ
+#define BLOOD_OXYGEN_ID			0xFF32			//ÑªÑõ
 #define BLOOD_PRESSURE_ID		0xFF33			//ÑªÑ¹
-#define	ONE_KEY_MEASURE_ID		0xFF34			//Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	PULL_REFRESH_ID			0xFF35			//ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½
-#define	SLEEP_DETAILS_ID		0xFF36			//Ë¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	FIND_DEVICE_ID			0xFF37			//ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½
-#define SMART_NOTIFY_ID			0xFF38			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	ALARM_SETTING_ID		0xFF39			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define USER_INFOR_ID			0xFF40			//ï¿½Ã»ï¿½ï¿½ï¿½Ï¢
-#define	SEDENTARY_ID			0xFF41			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	SHAKE_SCREEN_ID			0xFF42			//Ì§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	MEASURE_HOURLY_ID		0xFF43			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
-#define	SHAKE_PHOTO_ID			0xFF44			//Ò¡Ò»Ò¡ï¿½ï¿½ï¿½ï¿½
-#define	LANGUAGE_SETTING_ID		0xFF45			//ï¿½ï¿½Ó¢ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½
-#define	TIME_24_SETTING_ID		0xFF46			//12/24Ð¡Ê±ï¿½ï¿½ï¿½ï¿½
-#define	FIND_PHONE_ID			0xFF47			//ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ø¸ï¿½
-#define	WEATHER_INFOR_ID		0xFF48			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½Â·ï¿½
-#define	TIME_SYNC_ID			0xFF49			//Ê±ï¿½ï¿½Í¬ï¿½ï¿½
-#define	TARGET_STEPS_ID			0xFF50			//Ä¿ï¿½ê²½ï¿½ï¿½
-#define	BATTERY_LEVEL_ID		0xFF51			//ï¿½ï¿½Øµï¿½ï¿½ï¿
-#define	FIRMWARE_INFOR_ID		0xFF52			//ï¿½Ì¼ï¿½ï¿½æ±¾ï¿½ï¿½
-#define	FACTORY_RESET_ID		0xFF53			//ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿
-#define	ECG_ID					0xFF54			//ï¿½Äµï¿½
-#define	LOCATION_ID				0xFF55			//ï¿½ï¿½È¡ï¿½ï¿½Î»ï¿½ï¿½Ï¢
-#define	DATE_FORMAT_ID			0xFF56			//ï¿½ï¿½ï¿½ï¿½ï¿½Õ¸ï¿½Ê½ï¿½ï¿½ï¿½ï¿½
-#define NOTIFY_CONTENT_ID		0xFF57			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define CHECK_WHITELIST_ID		0xFF58			//ï¿½Ð¶ï¿½ï¿½Ö»ï¿½IDï¿½Ç·ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define INSERT_WHITELIST_ID`	0xFF59			//ï¿½ï¿½ï¿½Ö»ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
-#define DEVICE_SEND_128_RAND_ID	0xFF60			//ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿28Î»ï¿½ï¿½ï¿½ï¿½ï¿
-#define PHONE_SEND_128_AES_ID	0xFF61			//ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½AES 128 CBCï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½Ö»ï¿½
+#define	ONE_KEY_MEASURE_ID		0xFF34			//Ò»¼ü²âÁ¿
+#define	PULL_REFRESH_ID			0xFF35			//ÏÂÀ­Ë¢ÐÂ
+#define	SLEEP_DETAILS_ID		0xFF36			//Ë¯ÃßÏêÇé
+#define	FIND_DEVICE_ID			0xFF37			//²éÕÒÊÖ»·
+#define SMART_NOTIFY_ID			0xFF38			//ÖÇÄÜÌáÐÑ
+#define	ALARM_SETTING_ID		0xFF39			//ÄÖÖÓÉèÖÃ
+#define USER_INFOR_ID			0xFF40			//ÓÃ»§ÐÅÏ¢
+#define	SEDENTARY_ID			0xFF41			//¾Ã×øÌáÐÑ
+#define	SHAKE_SCREEN_ID			0xFF42			//Ì§ÊÖÁÁÆÁ
+#define	MEASURE_HOURLY_ID		0xFF43			//Õûµã²âÁ¿ÉèÖÃ
+#define	SHAKE_PHOTO_ID			0xFF44			//Ò¡Ò»Ò¡ÅÄÕÕ
+#define	LANGUAGE_SETTING_ID		0xFF45			//ÖÐÓ¢ÈÕÎÄÇÐ»»
+#define	TIME_24_SETTING_ID		0xFF46			//12/24Ð¡Ê±ÉèÖÃ
+#define	FIND_PHONE_ID			0xFF47			//²éÕÒÊÖ»ú»Ø¸´
+#define	WEATHER_INFOR_ID		0xFF48			//ÌìÆøÐÅÏ¢ÏÂ·¢
+#define	TIME_SYNC_ID			0xFF49			//Ê±¼äÍ¬²½
+#define	TARGET_STEPS_ID			0xFF50			//Ä¿±ê²½Êý
+#define	BATTERY_LEVEL_ID		0xFF51			//µç³ØµçÁ¿
+#define	FIRMWARE_INFOR_ID		0xFF52			//¹Ì¼þ°æ±¾ºÅ
+#define	FACTORY_RESET_ID		0xFF53			//Çå³ýÊÖ»·Êý¾Ý
+#define	ECG_ID					0xFF54			//ÐÄµç
+#define	LOCATION_ID				0xFF55			//»ñÈ¡¶¨Î»ÐÅÏ¢
+#define	DATE_FORMAT_ID			0xFF56			//ÄêÔÂÈÕ¸ñÊ½ÉèÖÃ
+#define NOTIFY_CONTENT_ID		0xFF57			//ÖÇÄÜÌáÐÑÄÚÈÝ
+#define CHECK_WHITELIST_ID		0xFF58			//ÅÐ¶ÏÊÖ»úIDÊÇ·ñÔÚÊÖ»·°×Ãûµ¥
+#define INSERT_WHITELIST_ID`	0xFF59			//½«ÊÖ»úID²åÈë°×Ãûµ¥
+#define DEVICE_SEND_128_RAND_ID	0xFF60			//ÊÖ»··¢ËÍËæ»úµÄ128Î»Ëæ»úÊý
+#define PHONE_SEND_128_AES_ID	0xFF61			//ÊÖ»ú·¢ËÍAES 128 CBC¼ÓÃÜÊý¾Ý¸øÊÖ»·
 
-#define	BLE_CONNECT_ID			0xFFB0			//BLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	CTP_NOTIFY_ID			0xFFB1			//CTPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
-#define GET_NRF52810_VER_ID		0xFFB2			//ï¿½ï¿½È¡52810ï¿½æ±¾ï¿½ï¿½
-#define GET_BLE_MAC_ADDR_ID		0xFFB3			//ï¿½ï¿½È¡BLE MACï¿½ï¿½Ö·
-#define GET_BLE_STATUS_ID		0xFFB4			//ï¿½ï¿½È¡BLEï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½×´Ì¬	0:ï¿½Ø±ï¿½ 1:ï¿½ï¿½ï¿½ï¿½ 2:ï¿½ã²¥ 3:ï¿½ï¿½ï¿½ï¿½
-#define SET_BEL_WORK_MODE_ID	0xFFB5			//ï¿½ï¿½ï¿½ï¿½BLEï¿½ï¿½ï¿½ï¿½Ä£Ê½		0:ï¿½Ø±ï¿½ 1:ï¿½ï¿½ 2:ï¿½ï¿½ï¿½ï¿½ 3:ï¿½ï¿½ï¿½ï¿½
+#define	BLE_CONNECT_ID			0xFFB0			//BLE¶ÏÁ¬ÌáÐÑ
+#define	CTP_NOTIFY_ID			0xFFB1			//CTP´¥ÆÁÏûÏ¢
+#define GET_NRF52810_VER_ID		0xFFB2			//»ñÈ¡52810°æ±¾ºÅ
+#define GET_BLE_MAC_ADDR_ID		0xFFB3			//»ñÈ¡BLE MACµØÖ·
+#define GET_BLE_STATUS_ID		0xFFB4			//»ñÈ¡BLEµ±Ç°¹¤×÷×´Ì¬	0:¹Ø±Õ 1:ÐÝÃß 2:¹ã²¥ 3:Á¬½Ó
+#define SET_BEL_WORK_MODE_ID	0xFFB5			//ÉèÖÃBLE¹¤×÷Ä£Ê½		0:¹Ø±Õ 1:´ò¿ª 2:»½ÐÑ 3:ÐÝÃß
 
 bool blue_is_on = true;
 bool uart_send_flag = false;
@@ -142,7 +142,7 @@ void ble_connect_or_disconnect_handle(uint8_t *buf, uint32_t len)
 	LOGD("BLE status:%x", buf[6]);
 #endif
 
-	if(buf[6] == 0x01)				//ï¿½é¿´controlÖµ
+	if(buf[6] == 0x01)				//²é¿´controlÖµ
 		g_ble_connected = true;
 	else if(buf[6] == 0x00)
 		g_ble_connected = false;
@@ -642,10 +642,10 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 	LOGD("setting:%d", buf[6]);
 #endif
 
-	if(buf[6] == 1)//ï¿½ï¿½ï¿½ï¿½
+	if(buf[6] == 1)//¿ªÆô
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP_ONE_KEY; 
-		APPStartHrSpo2();
+		APPStartHr();
 	}
 	else
 	{
@@ -699,9 +699,13 @@ void APP_get_current_data(uint8_t *buf, uint32_t len)
 	refresh_time.hour = buf[10];
 	refresh_time.minute = buf[11];
 
-#ifdef CONFIG_IMU_SUPPORT	
+#ifdef CONFIG_IMU_SUPPORT
+  #ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
+  #endif
+  #ifdef CPNFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+  #endif
 #endif
 	
 	wake = 8;
@@ -745,7 +749,7 @@ void APP_get_current_data(uint8_t *buf, uint32_t len)
 
 	ble_send_date_handle(reply, reply_len);
 
-	//ï¿½Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//ÉÏ´«ÐÄÂÊÊý¾Ý
 #ifdef CONFIG_PPG_SUPPORT	
 	MCU_send_heart_rate();
 #endif
@@ -757,7 +761,7 @@ void APP_get_location_data(uint8_t *buf, uint32_t len)
 	LOGD("begin");
 #endif
 
-	//ble_wait_gps = true; //commented because of no GPS use
+	ble_wait_gps = true;
 	APP_Ask_GPS_Data();
 }
 
@@ -809,10 +813,10 @@ void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	}
 	//direction	E\W
 	reply[reply_len++] = tmpgps;
-	tmp1 = (uint32_t)(gps_data.longitude); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	tmp2 = gps_data.longitude - tmp1;	//ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	tmp1 = (uint32_t)(gps_data.longitude); //¾­¶ÈÕûÊý²¿·Ö
+	tmp2 = gps_data.longitude - tmp1;	//¾­¶ÈÐ¡Êý²¿·Ö
 	//degree int
-	reply[reply_len++] = tmp1;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	reply[reply_len++] = tmp1;//ÕûÊý²¿·Ö
 	tmp1 = (uint32_t)(tmp2*1000000);
 	//degree dot1~2
 	reply[reply_len++] = (uint8_t)(tmp1/10000);
@@ -831,10 +835,10 @@ void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	}
 	//direction N\S
 	reply[reply_len++] = tmpgps;
-	tmp1 = (uint32_t)(gps_data.latitude);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	tmp2 = gps_data.latitude - tmp1;	//ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	tmp1 = (uint32_t)(gps_data.latitude);	//¾­¶ÈÕûÊý²¿·Ö
+	tmp2 = gps_data.latitude - tmp1;	//¾­¶ÈÐ¡Êý²¿·Ö
 	//degree int
-	reply[reply_len++] = tmp1;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	reply[reply_len++] = tmp1;//ÕûÊý²¿·Ö
 	tmp1 = (uint32_t)(tmp2*1000000);
 	//degree dot1~2
 	reply[reply_len++] = (uint8_t)(tmp1/10000);
@@ -946,17 +950,17 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 
 	switch(buf[5])
 	{
-	case 0x01://ÊµÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case 0x01://ÊµÊ±²âÁ¿ÐÄÂÊ
 		break;
-	case 0x02://ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case 0x02://µ¥´Î²âÁ¿ÐÄÂÊ
 		break;
 	}
 
 	switch(buf[6])
 	{
-	case 0://ï¿½Ø±Õ´ï¿½ï¿½ï¿½ï¿½ï¿½
+	case 0://¹Ø±Õ´«¸ÐÆ÷
 		break;
-	case 1://ï¿½ò¿ª´ï¿½ï¿½ï¿½ï¿½ï¿½
+	case 1://´ò¿ª´«¸ÐÆ÷
 		break;
 	}
 
@@ -989,12 +993,12 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 	else
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP; 
-		APPStartHrSpo2();
+		APPStartHr();
 	}
 }
 #endif
 
-//APPï¿½Ø¸ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½
+//APP»Ø¸´ÊÖ»·²éÕÒÊÖ»ú
 void APP_reply_find_phone(uint8_t *buf, uint32_t len)
 {
 	uint32_t i;
@@ -1100,7 +1104,7 @@ void MCU_get_ble_status(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-//ï¿½ï¿½ï¿½ï¿½BLEï¿½ï¿½ï¿½ï¿½Ä£Ê½		0:ï¿½Ø±ï¿½ 1:ï¿½ï¿½ 2:ï¿½ï¿½ï¿½ï¿½ 3:ï¿½ï¿½ï¿½ï¿½
+//ÉèÖÃBLE¹¤×÷Ä£Ê½		0:¹Ø±Õ 1:´ò¿ª 2:»½ÐÑ 3:ÐÝÃß
 void MCU_set_ble_work_mode(uint8_t work_mode)
 {
 	uint8_t reply[128] = {0};
@@ -1133,7 +1137,7 @@ void MCU_set_ble_work_mode(uint8_t work_mode)
 	ble_send_date_handle(reply, reply_len);	
 }
 
-//ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½
+//ÊÖ»·²éÕÒÊÖ»ú
 void MCU_send_find_phone(void)
 {
 	uint8_t reply[128] = {0};
@@ -1168,7 +1172,7 @@ void MCU_send_find_phone(void)
 	ble_send_date_handle(reply, reply_len);	
 }
 
-//ï¿½Ö»ï¿½ï¿½Ï±ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//ÊÖ»·ÉÏ±¨Ò»¼ü²âÁ¿Êý¾Ý
 void MCU_send_app_one_key_measure_data(void)
 {
 	uint8_t heart_rate,spo2,systolic,diastolic;
@@ -1249,7 +1253,7 @@ void MCU_send_app_get_hr_data(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-//ï¿½Ö»ï¿½ï¿½Ï±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//ÊÖ»·ÉÏ±¨ÕûµãÐÄÂÊÊý¾Ý
 void MCU_send_heart_rate(void)
 {
 	uint8_t heart_rate,reply[128] = {0};
@@ -1363,31 +1367,31 @@ void get_ble_status_response(uint8_t *buf, uint32_t len)
 
 /**********************************************************************************
 *Name: ble_receive_data_handle
-*Function:  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+*Function:  ´¦ÀíÀ¶ÑÀ½ÓÊÕµ½µÄÊý¾Ý
 *Parameter: 
 *			Input:
-*				buf ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-*				len ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½
+*				buf ½ÓÊÕµ½µÄÊý¾Ý
+*				len ½ÓÊÕµ½µÄÊý¾Ý³¤¶È
 *			Output:
 *				none
 *			Return:
 *				void
 *Description:
-*	ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ï¿½Ä¸ï¿½Ê½ï¿½ï¿½ï¿½ï¿½:
-*	ï¿½ï¿½Í·			ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½		ï¿½ï¿½ï¿½ï¿½		×´Ì¬ï¿½ï¿½ï¿½ï¿½	ï¿½ï¿½ï¿½ï¿½		ï¿½ï¿½ï¿½ï¿½1	ï¿½ï¿½ï¿½Ý¡ï¿½		Ð£ï¿½ï¿½		ï¿½ï¿½Î²
-*	(StarFrame)		(Data length)	(ID)		(Status)	(Control)	(Data1)	(Dataï¿½ï¿½)	(CRC8)		(EndFrame)
-*	(1 bytes)		(2 byte)		(2 byte)	(1 byte)	(1 byte)	(ï¿½ï¿½Ñ¡)	(ï¿½ï¿½Ñ¡)		(1 bytes)	(1 bytes)
+*	½ÓÊÕµ½µÄÊý¾Ý°üµÄ¸ñÊ½ÈçÏÂ:
+*	°üÍ·			Êý¾Ý³¤¶È		²Ù×÷		×´Ì¬ÀàÐÍ	¿ØÖÆ		Êý¾Ý1	Êý¾Ý¡­		Ð£Ñé		°üÎ²
+*	(StarFrame)		(Data length)	(ID)		(Status)	(Control)	(Data1)	(Data¡­)	(CRC8)		(EndFrame)
+*	(1 bytes)		(2 byte)		(2 byte)	(1 byte)	(1 byte)	(¿ÉÑ¡)	(¿ÉÑ¡)		(1 bytes)	(1 bytes)
 *
-*	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â±ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½
-*	Offset	Field		Size	Value(Ê®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)		Description
-*	0		StarFrame	1		0xAB				ï¿½ï¿½Ê¼Ö¡
-*	1		Data length	2		0x0000-0xFFFF		ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½,ï¿½ï¿½IDï¿½ï¿½Ê¼Ò»Ö±ï¿½ï¿½ï¿½ï¿½Î²
+*	Àý×ÓÈçÏÂ±íËùÊ¾£º
+*	Offset	Field		Size	Value(Ê®Áù½øÖÆ)		Description
+*	0		StarFrame	1		0xAB				ÆðÊ¼Ö¡
+*	1		Data length	2		0x0000-0xFFFF		Êý¾Ý³¤¶È,´ÓID¿ªÊ¼Ò»Ö±µ½°üÎ²
 *	3		Data ID		2		0x0000-0xFFFF	    ID
 *	5		Status		1		0x00-0xFF	        Status
-*	6		Control		1		0x00-0x01			ï¿½ï¿½ï¿½ï¿½
-*	7		Data0		1-14	0x00-0xFF			ï¿½ï¿½ï¿½ï¿½0
-*	8+n		CRC8		1		0x00-0xFF			ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½,ï¿½Ó°ï¿½Í·ï¿½ï¿½Ê¼ï¿½ï¿½CRCÇ°Ò»Î»
-*	9+n		EndFrame	1		0x88				ï¿½ï¿½ï¿½ï¿½Ö¡
+*	6		Control		1		0x00-0x01			¿ØÖÆ
+*	7		Data0		1-14	0x00-0xFF			Êý¾Ý0
+*	8+n		CRC8		1		0x00-0xFF			Êý¾ÝÐ£Ñé,´Ó°üÍ·¿ªÊ¼µ½CRCÇ°Ò»Î»
+*	9+n		EndFrame	1		0x88				½áÊøÖ¡
 **********************************************************************************/
 void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 {
@@ -1424,82 +1428,82 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	switch(data_ID)
 	{
 	case BLE_WORK_MODE_ID:
-		nrf52810_report_work_mode(buf, len);//52810ï¿½ï¿½ï¿½ï¿½×´Ì¬
+		nrf52810_report_work_mode(buf, len);//52810¹¤×÷×´Ì¬
 		break;
-	case HEART_RATE_ID:			//ï¿½ï¿½ï¿½ï¿½
+	case HEART_RATE_ID:			//ÐÄÂÊ
 	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_heart_rate(buf, len);
 	#endif
 		break;
-	case BLOOD_OXYGEN_ID:		//Ñªï¿½ï¿½
+	case BLOOD_OXYGEN_ID:		//ÑªÑõ
 		break;
 	case BLOOD_PRESSURE_ID:		//ÑªÑ¹
 		break;
-	case ONE_KEY_MEASURE_ID:	//Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case ONE_KEY_MEASURE_ID:	//Ò»¼ü²âÁ¿
 	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_one_key_measure_data(buf, len);
 	#endif
 		break;
-	case PULL_REFRESH_ID:		//ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½
+	case PULL_REFRESH_ID:		//ÏÂÀ­Ë¢ÐÂ
 		APP_get_current_data(buf, len);
 		break;
-	case SLEEP_DETAILS_ID:		//Ë¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case SLEEP_DETAILS_ID:		//Ë¯ÃßÏêÇé
 		break;
-	case FIND_DEVICE_ID:		//ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½
+	case FIND_DEVICE_ID:		//²éÕÒÊÖ»·
 		APP_set_find_device(buf, len);
 		break;
-	case SMART_NOTIFY_ID:		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case SMART_NOTIFY_ID:		//ÖÇÄÜÌáÐÑ
 		break;
-	case ALARM_SETTING_ID:		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case ALARM_SETTING_ID:		//ÄÖÖÓÉèÖÃ
 		APP_set_alarm(buf, len);
 		break;
-	case USER_INFOR_ID:			//ï¿½Ã»ï¿½ï¿½ï¿½Ï¢
+	case USER_INFOR_ID:			//ÓÃ»§ÐÅÏ¢
 		break;
-	case SEDENTARY_ID:			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case SEDENTARY_ID:			//¾Ã×øÌáÐÑ
 		break;
-	case SHAKE_SCREEN_ID:		//Ì§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case SHAKE_SCREEN_ID:		//Ì§ÊÖÁÁÆÁ
 		APP_set_wake_screen_by_wrist(buf, len);
 		break;
-	case MEASURE_HOURLY_ID:		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+	case MEASURE_HOURLY_ID:		//Õûµã²âÁ¿ÉèÖÃ
 		APP_set_PHD_interval(buf, len);
 		break;
-	case SHAKE_PHOTO_ID:		//Ò¡Ò»Ò¡ï¿½ï¿½ï¿½ï¿½
+	case SHAKE_PHOTO_ID:		//Ò¡Ò»Ò¡ÅÄÕÕ
 		break;
-	case LANGUAGE_SETTING_ID:	//ï¿½ï¿½Ó¢ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½
+	case LANGUAGE_SETTING_ID:	//ÖÐÓ¢ÈÕÎÄÇÐ»»
 		APP_set_language(buf, len);
 		break;
-	case TIME_24_SETTING_ID:	//12/24Ð¡Ê±ï¿½ï¿½ï¿½ï¿½
+	case TIME_24_SETTING_ID:	//12/24Ð¡Ê±ÉèÖÃ
 		APP_set_time_24_format(buf, len);
 		break;
-	case FIND_PHONE_ID:			//ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ø¸ï¿½
+	case FIND_PHONE_ID:			//²éÕÒÊÖ»ú»Ø¸´
 		APP_reply_find_phone(buf, len);
 		break;
-	case WEATHER_INFOR_ID:		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½Â·ï¿½
+	case WEATHER_INFOR_ID:		//ÌìÆøÐÅÏ¢ÏÂ·¢
 		break;
-	case TIME_SYNC_ID:			//Ê±ï¿½ï¿½Í¬ï¿½ï¿½
+	case TIME_SYNC_ID:			//Ê±¼äÍ¬²½
 		APP_set_date_time(buf, len);
 		break;
-	case TARGET_STEPS_ID:		//Ä¿ï¿½ê²½ï¿½ï¿½
+	case TARGET_STEPS_ID:		//Ä¿±ê²½Êý
 		APP_set_target_steps(buf, len);
 		break;
-	case BATTERY_LEVEL_ID:		//ï¿½ï¿½Øµï¿½ï¿½ï¿
+	case BATTERY_LEVEL_ID:		//µç³ØµçÁ¿
 		APP_get_battery_level(buf, len);
 		break;
-	case FIRMWARE_INFOR_ID:		//ï¿½Ì¼ï¿½ï¿½æ±¾ï¿½ï¿½
+	case FIRMWARE_INFOR_ID:		//¹Ì¼þ°æ±¾ºÅ
 		APP_get_firmware_version(buf, len);
 		break;
-	case FACTORY_RESET_ID:		//ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿
+	case FACTORY_RESET_ID:		//Çå³ýÊÖ»·Êý¾Ý
 		APP_set_factory_reset(buf, len);
 		break;
-	case ECG_ID:				//ï¿½Äµï¿½
+	case ECG_ID:				//ÐÄµç
 		break;
-	case LOCATION_ID:			//ï¿½ï¿½È¡ï¿½ï¿½Î»ï¿½ï¿½Ï¢
-		//APP_get_location_data(buf, len);
+	case LOCATION_ID:			//»ñÈ¡¶¨Î»ÐÅÏ¢
+		APP_get_location_data(buf, len);
 		break;
-	case DATE_FORMAT_ID:		//ï¿½ï¿½ï¿½ï¿½ï¿½Õ¸ï¿½Ê½
+	case DATE_FORMAT_ID:		//ÄêÔÂÈÕ¸ñÊ½
 		APP_set_date_format(buf, len);
 		break;
-	case BLE_CONNECT_ID:		//BLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	case BLE_CONNECT_ID:		//BLE¶ÏÁ¬ÌáÐÑ
 		ble_connect_or_disconnect_handle(buf, len);
 		break;
 	case CTP_NOTIFY_ID:
@@ -1547,7 +1551,7 @@ void ble_wakeup_nrf52810(void)
 	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 0);
 }
 
-//xb add 2021-11-01 ï¿½ï¿½ï¿½ï¿½52810ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ÒªÊ±ï¿½ä£¬ï¿½ï¿½ï¿½ï¿½Ö±ï¿½ï¿½ï¿½Ú½ï¿½ï¿½Õµï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
+//xb add 2021-11-01 »½ÐÑ52810µÄ´®¿ÚÐèÒªÊ±¼ä£¬²»ÄÜÖ±½ÓÔÚ½ÓÊÕµÄÖÐ¶ÏÀïÑÓÊ±µÈ´ý£¬·ÀÖ¹ÖØÆô
 void uart_send_data_handle(void)
 {
 	switch(uart_data_type)
@@ -1796,7 +1800,8 @@ static void GetBLEInfoCallBack(struct k_timer *timer_id)
 
 void ble_init(void)
 {
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_DOWN|GPIO_INT_HIGH_1|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
+
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
@@ -1830,10 +1835,10 @@ void ble_init(void)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
-	gpio_pin_disable_callback(gpio_ble, BLE_INT_PIN);
+	gpio_pin_interrupt_configure(gpio_ble, BLE_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
 	gpio_add_callback(gpio_ble, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
+	gpio_pin_interrupt_configure(gpio_ble, BLE_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);	
 	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 

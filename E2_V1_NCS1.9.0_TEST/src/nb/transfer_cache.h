@@ -14,6 +14,8 @@
 #include <zephyr/types.h>
 #include <string.h>
 
+#define SEND_NODE_CACHE_MAX	20
+
 struct node
 {
 	uint32_t len;

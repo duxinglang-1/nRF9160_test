@@ -23,6 +23,12 @@
 #define TEMP_IF_I2C
 #define TEMP_IF_SINGLE_LINE
 
+#define TEMP_CHECK_TIMELY	2
+#define TEMP_MAX			420
+#define TEMP_MIN			320
+
+//#define TEMP_DEBUG
+
 //sensor trigger type
 typedef enum
 {
@@ -31,8 +37,34 @@ typedef enum
 	TEMP_TRIGGER_BY_HOURLY	=	0x04,
 }TEMP_TARGGER_SOUCE;
 
+//单次测量
+typedef struct
+{
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+	uint16_t deca_temp;	//实际温度放大10倍(36.5*10)
+}temp_rec1_data;
+
+//整点测量
+typedef struct
+{
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint16_t deca_temp[24];	//实际温度放大10倍(36.5*10)
+}temp_rec2_data;
+
+extern bool get_temp_ok_flag;
+
 extern float g_temp_skin;
 extern float g_temp_body;
+extern float g_temp_timing;
 
+extern void SetCurDayTempRecData(float data);
+extern void GetCurDayTempRecData(uint16_t *databuf);
 #endif/*__TEMP_H__*/
 

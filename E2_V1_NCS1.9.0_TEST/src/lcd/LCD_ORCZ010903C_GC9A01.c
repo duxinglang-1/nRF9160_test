@@ -30,6 +30,14 @@ static uint8_t rx_buffer[SPI_BUF_LEN] = {0};
 
 uint8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
+void SpiLcd_CS_LOW(void)
+{
+	gpio_pin_set(gpio_lcd, CS, 0);
+}
+void SpiLcd_CS_HIGH(void)
+{
+	gpio_pin_set(gpio_lcd, CS, 1);
+}
 static void LCD_SPI_Init(void)
 {
 	spi_lcd = device_get_binding(LCD_DEV);
@@ -42,17 +50,6 @@ static void LCD_SPI_Init(void)
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
-
-	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
-	if (!spi_cs_ctr.gpio_dev)
-	{
-		printk("Unable to get GPIO SPI CS device\n");
-		return;
-	}
-
-	spi_cs_ctr.gpio_pin = CS;
-	spi_cs_ctr.delay = 0U;
-	spi_cfg.cs = &spi_cs_ctr;
 }
 
 static void LCD_SPI_Transceive(uint8_t *txbuf, uint32_t txbuflen, uint8_t *rxbuf, uint32_t rxbuflen)
@@ -69,7 +66,9 @@ static void LCD_SPI_Transceive(uint8_t *txbuf, uint32_t txbuflen, uint8_t *rxbuf
 	rx_bufs.buffers = &rx_buff;
 	rx_bufs.count = 1;
 
+	SpiLcd_CS_LOW();
 	err = spi_transceive(spi_lcd, &spi_cfg, &tx_bufs, &rx_bufs);
+	SpiLcd_CS_HIGH();
 	if(err)
 	{
 		printk("SPI error: %d\n", err);

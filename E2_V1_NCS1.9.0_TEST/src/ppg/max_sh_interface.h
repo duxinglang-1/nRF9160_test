@@ -83,8 +83,6 @@
 #define SH_INPUT_DATA_DIRECT_SENSOR	0x00
 #define SH_INPUT_DATA_FROM_HOST		0x01
 
-#define POLL_PERIOD_40MS       (0x1)
-
 #define SS_FAM_R_STATUS		0x00
 	#define SS_CMDIDX_STATUS	0x00
 		#define SS_SHIFT_STATUS_ERR				0
@@ -135,7 +133,8 @@
 			#define SS_DATATYPE_RAW					1
 			#define SS_DATATYPE_ALGO				2
 			#define SS_DATATYPE_BOTH				3
-			#define SS_DATATYPE_CNT_MSK                 (1<<2)
+			#define SS_DATATYPE_CNT_MSK             (1<<2)
+			
 		#define SS_SHIFT_OUTPUTMODE_SC_EN		2
 		#define SS_MASK_OUTPUTMODE_SC_EN		(1 << SS_SHIFT_OUTPUTMODE_SC_EN)
 	#define SS_CMDIDX_FIFOAFULL		0x01
@@ -342,7 +341,6 @@ typedef enum
 	E_BAD_PARAM 	= -1,
 	E_NONE_AVAIL    = -2,
 }SS_ERROR;
-
 
 #define SYSTEM_USES_MFIO_PIN
 #define SYSTEM_USES_RST_PIN

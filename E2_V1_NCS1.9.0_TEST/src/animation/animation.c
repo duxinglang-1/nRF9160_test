@@ -17,10 +17,10 @@
 #include "animation.h"
 #include "logger.h"
 
-//#define ANIMA_DEBUG		//ï¿½ï¿½LOG
+//#define ANIMA_DEBUG		//´ò¿ªLOG
 
-#define ANIMA_SHOW_INTERVIEW	200		//ï¿½ï¿½ï¿½ï¿½Í¼Æ¬Ö®ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿
-#define ANIMA_SHOW_ONE_DELAY	200		//Ö»ï¿½ï¿½Ò»ï¿½Å³ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾Ê±ï¿½ï¿½
+#define ANIMA_SHOW_INTERVIEW	200		//¶àÕÅÍ¼Æ¬Ö®¼äÏÔÊ¾¼ä¸ô
+#define ANIMA_SHOW_ONE_DELAY	200		//Ö»ÓÐÒ»ÕÅ³ÖÐøÏÔÊ¾Ê±¼ä
 
 static bool anima_stop_flag = false;
 static bool anima_redraw_flag = false;
@@ -288,7 +288,7 @@ static void AnimaShowNextImg(void)
 	anima_head = anima_head->next;
 	if(anima_head == NULL)
 	{		
-		if(anima_show.loop)	//Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		if(anima_show.loop)	//Ñ­»·²¥·Å
 		{
 		#ifdef ANIMA_DEBUG
 			LOGD("001");
@@ -301,7 +301,7 @@ static void AnimaShowNextImg(void)
 		#endif
 			k_timer_start(&anima_redraw_timer, K_MSEC(anima_show.interval), K_NO_WAIT);
 		}
-		else				//ï¿½ï¿½ï¿½Å½ï¿½ï¿½ï¿½
+		else				//²¥·Å½áÊø
 		{
 		#ifdef ANIMA_DEBUG
 			LOGD("002");

@@ -11,6 +11,7 @@
 #include <net/nrf_cloud_agps.h>
 #endif
 #include <stdio.h>
+#include <random/rand32.h>
 //#include <modem/at_cmd.h>
 //#include <modem/at_notif.h>
 #include "datetime.h"
@@ -167,6 +168,12 @@ void gps_off(void)
 		return;
 	
 	set_gps_enable(false);
+
+#ifdef NB_SIGNAL_TEST
+	SetModemTurnOff();
+	SetMomomNw();
+	nb_reconnect();
+#endif	
 }
 
 bool gps_is_working(void)
@@ -182,6 +189,12 @@ void gps_on(void)
 	if(gps_is_on)
 		return;
 	
+#ifdef NB_SIGNAL_TEST
+	SetModemTurnOff();
+	SetModemGps();	
+	SetModemTurnOn();
+#endif
+
 	set_gps_enable(true);
 }
 
@@ -236,7 +249,7 @@ static void set_gps_enable(const bool enable)
 		gps_start_time = k_uptime_get();
 		memset(&gps_pvt_data, 0, sizeof(gps_pvt_data));
 		
-		gps_control_start(K_NO_WAIT);
+		gps_control_start(0);
 	}
 	else
 	{
@@ -245,7 +258,7 @@ static void set_gps_enable(const bool enable)
 	#endif
 
 		gps_is_on = false;
-		gps_control_stop(K_NO_WAIT);
+		gps_control_stop(0);
 	}
 }
 

@@ -143,8 +143,8 @@ void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 		gps_data.latitude = -gps_data.latitude;
 	}
 
-	tmp1 = (uint32_t)(gps_data.latitude);	//������������
-	tmp2 = gps_data.latitude - tmp1;		//����С������
+	tmp1 = (uint32_t)(gps_data.latitude);	//经度整数部分
+	tmp2 = gps_data.latitude - tmp1;		//经度小数部分
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
 	strcat(reply, tmpbuf);
@@ -171,8 +171,8 @@ void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 		gps_data.longitude = -gps_data.longitude;
 	}
 
-	tmp1 = (uint32_t)(gps_data.longitude);	//������������
-	tmp2 = gps_data.longitude - tmp1;	//����С������
+	tmp1 = (uint32_t)(gps_data.longitude);	//经度整数部分
+	tmp2 = gps_data.longitude - tmp1;	//经度小数部分
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
 	strcat(reply, tmpbuf);

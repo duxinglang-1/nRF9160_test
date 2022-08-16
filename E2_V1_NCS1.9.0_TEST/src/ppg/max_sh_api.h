@@ -58,7 +58,7 @@
 
 #define SS_EXTEND_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE)
 
-#define READ_SAMPLE_COUNT_MAX                   15
+#define READ_SAMPLE_COUNT_MAX                    5
 
 typedef enum
 {
@@ -105,8 +105,8 @@ typedef struct __attribute__((packed))
 
 	// WSPO2 data
 	uint16_t r;						// mode 1 & 2
-	uint8_t spo2_conf;				// mode 1 & 2
-	uint16_t spo2;					// mode 1 & 2
+	uint8_t spo2_conf;		// mode 1 & 2
+	uint16_t spo2;			// mode 1 & 2
 	uint8_t percentComplete;		// mode 1 & 2
 	uint8_t lowSignalQualityFlag;	// mode 1 & 2
 	uint8_t motionFlag;				// mode 1 & 2
@@ -251,15 +251,6 @@ int sensorhub_get_result(sensorhub_output *  p_result);
 int sensorhub_get_version(uint8_t algoVersion[3]);
 
 int sensorhub_reset_sensor_configuration();
-
-/* Data parser functions */
-static void data_time_stamper(void * p_time_stamp, uint8_t* data_ptr);
-void accel_data_rx(void * p_accel_data, uint8_t* data_ptr);
-void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr);
-void whrm_wspo2_suite_data_rx_mode1(void * p_algo_data_mode1, uint8_t* data_ptr);
-void whrm_wspo2_suite_data_rx_mode2(void * p_algo_data_mode2, uint8_t* data_ptr);
-void bpt_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr);
-void raw_algo_data_rx(void * p_bpt_algo_data, uint8_t* data_ptr);
 
 
 #endif /* ALGOHUB_SENSORHUB_API_H_ */

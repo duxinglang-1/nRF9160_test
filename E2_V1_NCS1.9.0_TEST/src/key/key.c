@@ -292,13 +292,23 @@ static int callback_ctrl(bool enable)
 	{
 		if(enable)
 		{
-			//err = gpio_pin_enable_callback(button_devs[i], button_pins[i].number);
-                        err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_ENABLE);
+			gpio_flags_t flags;
+			
+			switch(button_pins[i].active_flag)
+			{
+			case ACTIVE_LOW:
+				flags = GPIO_INT_LEVEL_LOW;
+				break;
+			case ACTIVE_HIGH:
+				flags = GPIO_INT_LEVEL_HIGH;
+				break;
+			}
+			
+			err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, flags);
 		}
 		else
 		{
-			//err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
-                        err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_DISABLE);
+			err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_DISABLE);
 		}
 	}
 
@@ -314,12 +324,12 @@ static uint32_t get_buttons(void)
 	{
 		uint32_t val;
 
-		//if(gpio_pin_get(button_devs[i], button_pins[i].number, &val))
-                if(gpio_pin_get(button_devs[i], button_pins[i].number)) //this API accepts only two arguments
+		val = gpio_pin_get_raw(button_devs[i], button_pins[i].number);
+		if(val < 0)
 		{
 			return 0;
 		}
-
+		
 		switch(button_pins[i].active_flag)
 		{
 		case ACTIVE_LOW:
@@ -384,12 +394,9 @@ static void buttons_scan_fn(struct k_work *work)
 
 	last_button_scan = button_scan;
 
-	if (button_scan != 0)
+	if(button_scan != 0)
 	{
-		int err = k_delayed_work_submit(&buttons_scan, K_MSEC(CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL));
-		if(err)
-		{
-		}
+		k_work_reschedule(&buttons_scan, K_MSEC(CONFIG_DK_LIBRARY_BUTTON_SCAN_INTERVAL));
 	}
 	else
 	{
@@ -418,7 +425,7 @@ static void buttons_scan_fn(struct k_work *work)
 	}
 }
 
-static int set_trig_mode(int trig_mode)
+static int set_trig_mode(void)
 {
 	int err = 0;
 	int flag1 = (GPIO_PULL_UP | GPIO_INT_LOW_0);
@@ -430,14 +437,14 @@ static int set_trig_mode(int trig_mode)
 		switch(button_pins[i].active_flag)
 		{
 		case ACTIVE_LOW:
-			flags = flag1 | (GPIO_INPUT | GPIO_INT_ENABLE | trig_mode);
+			flags = GPIO_INT_LEVEL_LOW;
 			break;
 		case ACTIVE_HIGH:
-			flags = flag2 | (GPIO_INPUT | GPIO_INT_ENABLE | trig_mode);
+			flags = GPIO_INT_LEVEL_HIGH;
 			break;
 		}
 		
-		err = gpio_pin_configure(button_devs[i], button_pins[i].number, flags);
+		err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_ENABLE|flags);
 	}
 
 	return err;
@@ -476,7 +483,7 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, ui
 	{
 	case STATE_WAITING:
 		state = STATE_SCANNING;
-		k_delayed_work_submit(&buttons_scan, K_SECONDS(1));
+		k_delayed_work_submit(&buttons_scan, K_NO_WAIT);
 		break;
 
 	case STATE_SCANNING:
@@ -511,10 +518,10 @@ static int buttons_init(button_handler_t button_handler)
 		switch(button_pins[i].active_flag)
 		{
 		case ACTIVE_LOW:
-			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT | GPIO_PULL_UP);
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT|GPIO_PULL_UP);
 			break;
 		case ACTIVE_HIGH:
-			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT | GPIO_PULL_DOWN);
+			err = gpio_pin_configure(button_devs[i], button_pins[i].number, GPIO_INPUT|GPIO_PULL_DOWN);
 			break;
 		}
 
@@ -524,13 +531,6 @@ static int buttons_init(button_handler_t button_handler)
 		}
 	}
 
-        // by default interrupts are level sensitive. see note: C:\Users\skygo\ncs151\v1.9.0\zephyr\include\drivers\gpio.h Line 107.
-	/*err = set_trig_mode(GPIO_INT_LEVEL);
-	if(err)
-	{
-		return err;
-	}*/
-
 	uint32_t pin_mask = 0;
 
 	for (size_t i = 0; i < ARRAY_SIZE(button_pins); i++)
@@ -538,8 +538,7 @@ static int buttons_init(button_handler_t button_handler)
 		/* Module starts in scanning mode and will switch to
 		 * callback mode if no button is pressed.
 		 */
-		//err = gpio_pin_disable_callback(button_devs[i], button_pins[i].number);
-                err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_DISABLE);
+        err = gpio_pin_interrupt_configure(button_devs[i], button_pins[i].number, GPIO_INT_DISABLE);
 		if(err)
 		{
 			return err;
@@ -559,18 +558,16 @@ static int buttons_init(button_handler_t button_handler)
 		}
 	}
 
-	k_delayed_work_init(&buttons_scan, buttons_scan_fn);
+	k_work_init_delayable(&buttons_scan, buttons_scan_fn);
 
 	state = STATE_SCANNING;
 
-	err = k_delayed_work_submit(&buttons_scan, K_SECONDS(0));
-	if(err)
-	{
-		return err;
-	}
+	k_work_schedule(&buttons_scan, K_NO_WAIT);
 
 	read_buttons(NULL, NULL);
 
+	atomic_set(&my_buttons, (atomic_val_t)get_buttons());
+	
 	return 0;
 }
 
@@ -613,7 +610,7 @@ void WearInterruptHandle(void)
 void wear_init(void)
 {
 	bool rst;
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_EDGE_BOTH|GPIO_PULL_UP|GPIO_INT_LOW_0|GPIO_INT_DEBOUNCE;
+	int flag = GPIO_INPUT|GPIO_PULL_UP;
 
   	//¶Ë¿Ú³õÊ¼»¯
   	gpio_wear = device_get_binding(WEAR_PORT);
@@ -622,12 +619,10 @@ void wear_init(void)
 
 	//wear interrupt
 	gpio_pin_configure(gpio_wear, WEAR_PIN, flag);
-	//gpio_pin_disable_callback(gpio_wear, WEAR_PIN);
-        gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN,GPIO_INT_DISABLE);
+    gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN,GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_wear_cb, WearInterruptHandle, BIT(WEAR_PIN));
 	gpio_add_callback(gpio_wear, &gpio_wear_cb);
-	//gpio_pin_enable_callback(gpio_wear, WEAR_PIN);
-        gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN, GPIO_INT_ENABLE);
+    gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
 
 	WearInterruptHandle();
 }

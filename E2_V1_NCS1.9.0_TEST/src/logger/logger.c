@@ -59,7 +59,7 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 		*(buf + n) = '\n';
 		n++;
 		
-		LOG_INF("%s", buf);
+		LOG_INF("%s", log_strdup(buf));
 	}
 #endif	
 }

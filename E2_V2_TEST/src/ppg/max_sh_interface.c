@@ -488,7 +488,7 @@ int sh_set_sensorhub_sleep(void)
 
 int sh_set_sensorhub_shutdown(void)
 {
-#if 1
+#if 0
 	u8_t ByteSeq[] = {0x01,0x00,0x01};
 	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
 	return status;
@@ -1305,9 +1305,8 @@ bool sh_init_interface(void)
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
 
-		sh_set_sensorhub_shutdown();
 		PPG_i2c_off();
-		//PPG_Disable();
+		PPG_Disable();
 		PPG_Power_Off();
 		return false;
 	}
@@ -1323,10 +1322,9 @@ bool sh_init_interface(void)
 		LOGD("read FW version fail %x", s32_status);
 	#endif
 	
-		sh_set_sensorhub_shutdown();
 		PPG_i2c_off();
 		PPG_Power_Off();
-		//PPG_Disable();
+		PPG_Disable();
 		return false;
 	}
 	else
@@ -1337,7 +1335,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (u8_rxbuf[1] < 5))
+	if((mcu_type != 1) || (u8_rxbuf[1] < 4))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
@@ -1357,10 +1355,9 @@ bool sh_init_interface(void)
 		LCD_SleepOut();
 	}
 
-	sh_set_sensorhub_shutdown();
 	PPG_i2c_off();
 	PPG_Power_Off();
-	//PPG_Disable();
+	PPG_Disable();
 	return true;
 }
 

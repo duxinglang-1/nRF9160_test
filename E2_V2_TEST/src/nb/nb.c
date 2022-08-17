@@ -1062,8 +1062,7 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-					k_timer_stop(&nb_reconnect_timer);
+				k_timer_stop(&nb_reconnect_timer);
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 			}
 		}
@@ -1339,11 +1338,8 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 			LOGD("begin 004", __func__);
 		#endif
 
-			if(!nb_connecting_flag)
-			{
-				k_timer_stop(&nb_reconnect_timer);
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
-			}
+			k_timer_stop(&nb_reconnect_timer);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 		}
 	}
 }
@@ -2669,12 +2665,9 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 		SetNetWorkParaByPlmn(g_imsi);
 	}
-	else if(strlen(g_imsi) == 0)
+	else
 	{
-		SetModemTurnOn();
-		GetModemInfor();
 		SetModemTurnOff();
-		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(strlen(g_imsi) == 0)
@@ -2731,10 +2724,10 @@ static void nb_link(struct k_work *work)
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
 			else if(retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
-			else if(retry_count <= 8)	//7到8次每1小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
-			else						//8次以上每6小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), NULL);
+			else if(retry_count <= 8)	//7到8次每0.5小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
+			else						//8次以上每0.5小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
 		}
 		else
 		{
@@ -2936,11 +2929,18 @@ void NBMsgProcess(void)
 	if(nb_reconnect_flag)
 	{
 		nb_reconnect_flag = false;
-		if(test_gps_flag)
+		
+		if(test_gps_flag || nb_connected)
 			return;
-
-		if(!nb_connecting_flag&&!nb_connected)
+	
+		if(!nb_connecting_flag)
+		{
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+		}
 	}
 	
 	if(nb_connecting_flag)

@@ -80,7 +80,7 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
 {
-	false,					//system inited flag
+	true,					//system inited flag
 	false,					//heart rate turn on
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
@@ -746,7 +746,7 @@ void SettingsMainMenu8Proc(void)
 void SettingsMenuLang1Proc(void)
 {
 	global_settings.language = LANGUAGE_EN;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -760,7 +760,7 @@ void SettingsMenuLang1Proc(void)
 void SettingsMenuLang2Proc(void)
 {
 	global_settings.language = LANGUAGE_DE;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -774,7 +774,7 @@ void SettingsMenuLang2Proc(void)
 void SettingsMenuLang3Proc(void)
 {
 	global_settings.language = LANGUAGE_CHN;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -824,7 +824,7 @@ void SettingsMenuBrightness1Proc(void)
 	if(global_settings.backlight_level > BACKLIGHT_LEVEL_MIN)
 	{
 		global_settings.backlight_level--;
-		need_save_time = true;
+		need_save_settings = true;
 		need_reset_bk_level = true;
 
 		if(screen_id == SCREEN_ID_SETTINGS)
@@ -839,7 +839,7 @@ void SettingsMenuBrightness2Proc(void)
 	if(global_settings.backlight_level < BACKLIGHT_LEVEL_MAX)
 	{
 		global_settings.backlight_level++;
-		need_save_time = true;
+		need_save_settings = true;
 		need_reset_bk_level = true;
 
 		if(screen_id == SCREEN_ID_SETTINGS)
@@ -863,7 +863,7 @@ void SettingsMenuBrightness3Proc(void)
 void SettingsMenuTemp1Proc(void)
 {
 	global_settings.temp_unit = TEMP_UINT_C;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -877,7 +877,7 @@ void SettingsMenuTemp1Proc(void)
 void SettingsMenuTemp2Proc(void)
 {
 	global_settings.temp_unit = TEMP_UINT_F;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;

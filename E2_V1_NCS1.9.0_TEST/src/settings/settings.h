@@ -28,9 +28,9 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_CHN,	//Chinese
 	LANGUAGE_EN,	//English
 	LANGUAGE_DE,	//Deutsch
+	LANGUAGE_CHN,	//Chinese
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 
@@ -116,13 +116,13 @@ typedef struct{
 	bool is_on;
 	uint8_t hour;
 	uint8_t minute;
-	uint8_t repeat;	//ȫ��1����ÿ�����ѣ�ȫ��0����ֻ����һ�Σ�0x1111100���ǹ��������ѣ����������Զ���
+	uint8_t repeat;	//全是1就是每天提醒，全是0就是只提醒一次，0x1111100就是工作日提醒，其他就是自定义
 }alarm_infor_t;
 
 typedef struct{
 	bool is_on;
 	uint8_t interval;
-}phd_measure_t;		//�������
+}phd_measure_t;		//整点测量
 
 typedef struct{
 	uint32_t steps;
@@ -130,8 +130,8 @@ typedef struct{
 }location_interval_t;
 
 typedef struct{
-	uint8_t systolic;		//����ѹ
-	uint8_t diastolic;		//����ѹ
+	uint8_t systolic;		//收缩压
+	uint8_t diastolic;		//舒张压
 }bp_calibra_t;
 
 typedef struct{

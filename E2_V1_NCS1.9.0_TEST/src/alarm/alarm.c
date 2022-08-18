@@ -2,11 +2,11 @@
 ** File name:			    alarm.c
 ** Last modified Date:          
 ** Last Version:		   
-** Descriptions:		   	ʹ�õ�ncs�汾-1.2		
-** Created by:				л��
+** Descriptions:		   	使用的ncs版本-1.2		
+** Created by:				谢彪
 ** Created date:			2020-11-03
 ** Version:			    	1.0
-** Descriptions:			ϵͳ���ӹ���C�ļ�
+** Descriptions:			系统闹钟管理C文件
 ******************************************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
@@ -40,6 +40,9 @@ bool app_find_device = false;
 
 extern bool lcd_sleep_out;
 extern bool show_date_time_first;
+
+extern void VibrateStart(void);
+extern void VibrateStop(void);
 
 void AlarmRemindStop(void)
 {

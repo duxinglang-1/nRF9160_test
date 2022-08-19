@@ -161,19 +161,16 @@ void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
  *****************************************************************************/
 void TimeCheckSendHealthData(void)
 {
-	u16_t steps=0,calorie=0,distance=0;
 	u16_t light_sleep=0,deep_sleep=0;
-	u8_t tmpbuf[20] = {0};
-	u8_t databuf[128] = {0};
-
-#ifdef CONFIG_IMU_SUPPORT
-	GetSportData(&steps, &calorie, &distance);
-	GetSleepTimeData(&deep_sleep, &light_sleep);
+	u8_t i,tmpbuf[20] = {0};
+	u8_t databuf[1024] = {0};
+	u8_t hr_data[24] = {0};
+	u8_t spo2_data[24] = {0};
+#ifdef CONFIG_PPG_SUPPORT	
+	bpt_data bp_data[24] = {0};
 #endif
-
-	//steps
-	sprintf(tmpbuf, "%d,", steps);
-	strcpy(databuf, tmpbuf);
+	u16_t temp_data[24] = {0};
+	u16_t step_data[24] = {0};
 	
 	//wrist
 	if(is_wearing())
@@ -186,7 +183,10 @@ void TimeCheckSendHealthData(void)
 	
 	//activity time
 	strcat(databuf, "0,");
-	
+
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
 	//light sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", light_sleep);
@@ -199,51 +199,109 @@ void TimeCheckSendHealthData(void)
 	
 	//move body
 	strcat(databuf, "0,");
-	
-	//calorie
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", calorie);
-	strcat(databuf, tmpbuf);
-	
-	//distance
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", distance);
-	strcat(databuf, tmpbuf);
-	
-#ifdef CONFIG_PPG_SUPPORT	
-	//systolic
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_systolic);
-	strcat(databuf, tmpbuf);
-	
-	//diastolic
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_diastolic); 	
-	strcat(databuf, tmpbuf);
-	
-	//heart rate
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_hr);		
-	strcat(databuf, tmpbuf);
-	
-	//SPO2
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_spo2); 	
-	strcat(databuf, tmpbuf);
-#else
-	strcat(databuf, "0,0,0,0,");
+
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	GetCurDayStepRecData(step_data);
+#endif
+	for(i=0;i<24;i++)
+	{
+		u16_t calorie,distance;
+		
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		
+		if(step_data[i] == 0xffff)
+			step_data[i] = 0;
+
+		distance = 0.7*step_data[i];
+		calorie = (0.8214*60*distance)/1000;
+		sprintf(tmpbuf, "%d&%d&%d", step_data[i], distance, calorie);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		
+		strcat(databuf, tmpbuf);
+	}
+
+#ifdef CONFIG_PPG_SUPPORT
+	//hr
+	GetCurDayHrRecData(hr_data);
+	//spo2
+	GetCurDaySpo2RecData(spo2_data);
+	//bpt
+	GetCurDayBptRecData(bp_data);
 #endif/*CONFIG_PPG_SUPPORT*/
+	//hr
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(hr_data[i] == 0xff)
+			hr_data[i] = 0;		
+		sprintf(tmpbuf, "%d", hr_data[i]);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	//spo2
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if(spo2_data[i] == 0xff)
+			spo2_data[i] = 0;	
+		sprintf(tmpbuf, "%d", spo2_data[i]);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
+	//bpt
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(bp_data[i].systolic == 0xff)
+			bp_data[i].systolic = 0;
+		if(bp_data[i].diastolic == 0xff)
+			bp_data[i].diastolic = 0;
+		sprintf(tmpbuf, "%d&%d", bp_data[i].systolic,bp_data[i].diastolic);
+	#else
+		strcpy(tmpbuf, "0&0");
+	#endif
+	
+		if(i<23)
+			strcat(tmpbuf,"|");
+		else
+			strcat(tmpbuf,",");
+		strcat(databuf, tmpbuf);
+	}
 	
 #ifdef CONFIG_TEMP_SUPPORT
 	//body temp
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%0.1f", g_temp_body);	
-	strcat(databuf, tmpbuf);
-#else
-	strcat(databuf, "0.0");
+	GetCurDayTempRecData(temp_data);
 #endif/*CONFIG_TEMP_SUPPORT*/
+	for(i=0;i<24;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
 
-	NBSendHealthData(databuf, strlen(databuf));
+		if(temp_data[i] == 0xffff)
+			temp_data[i] = 0;
+		sprintf(tmpbuf, "%0.1f", (float)temp_data[i]/10.0);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		strcat(databuf, tmpbuf);
+	}
+
+	NBSendTimelyHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
@@ -336,8 +394,12 @@ void SyncSendHealthData(void)
 	u8_t databuf[128] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
+  #ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
+  #endif
+  #ifdef CONFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+  #endif
 #endif
 
 	//steps
@@ -382,12 +444,12 @@ void SyncSendHealthData(void)
 #ifdef CONFIG_PPG_SUPPORT	
 	//systolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_systolic);
+	sprintf(tmpbuf, "%d,", g_bpt.systolic);
 	strcat(databuf, tmpbuf);
 	
 	//diastolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bp_diastolic); 	
+	sprintf(tmpbuf, "%d,", g_bpt.diastolic); 	
 	strcat(databuf, tmpbuf);
 	
 	//heart rate
@@ -412,7 +474,7 @@ void SyncSendHealthData(void)
 	strcat(databuf, "0.0");
 #endif/*CONFIG_TEMP_SUPPORT*/
 
-	NBSendHealthData(databuf, strlen(databuf));
+	NBSendSingleHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
@@ -471,7 +533,11 @@ void SendPowerOnData(void)
 	//battery
 	GetBatterySocString(tmpbuf);
 	strcat(databuf, tmpbuf);
-			
+	strcat(databuf, ",");
+
+	//mcu fw version
+	strcat(databuf, g_fw_version);	
+
 	NBSendPowerOnInfor(databuf, strlen(databuf));
 }
 

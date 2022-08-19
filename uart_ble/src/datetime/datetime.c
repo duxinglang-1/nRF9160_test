@@ -23,7 +23,11 @@
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif
 #include "screen.h"
+#include "nb.h"
 #include "ucs2.h"
 #include "logger.h"
 
@@ -450,7 +454,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#if defined(CONFIG_FOTA_DOWNLOAD)||defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+	#ifndef NB_SIGNAL_TEST
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -459,76 +463,76 @@ void UpdateSystemTime(void)
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
-	#endif		
 		{
-			static u32_t health_min_count = 0;
-
-			health_min_count++;
-			if((health_min_count+1) == global_settings.health_interval)
-			{
-				if(is_wearing())
-				{
-				#ifdef CONFIG_PPG_SUPPORT
-					TimerStartBpt();
-				#endif/*CONFIG_PPG_SUPPORT*/
-
-				#ifdef CONFIG_TEMP_SUPPORT
-					TimerStartTemp();
-				#endif
-				}
+		#ifdef CONFIG_TEMP_SUPPORT
+			if(date_time.minute == 48-TEMP_CHECK_TIMELY)
+			{	
+				TimerStartTemp();
 			}
-			else if(health_min_count == global_settings.health_interval)
+		#endif
+		#ifdef CONFIG_PPG_SUPPORT
+			if(date_time.minute == 49-PPG_CHECK_HR_TIMELY)
 			{
-				health_min_count = 0;
+				TimerStartHr();
 			}
-			
+			if(date_time.minute == 53-PPG_CHECK_BPT_TIMELY)
+			{
+				TimerStartBpt();
+			}
+			if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
+			{
+				TimerStartSpo2();
+			}
+		#endif/*CONFIG_PPG_SUPPORT*/
+
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();
 		}
+	#endif
 	}
 
 	if((date_time_changed&0x04) != 0)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
-	#if defined(CONFIG_FOTA_DOWNLOAD)||defined(CONFIG_DATA_DOWNLOAD_SUPPORT)
+	#ifndef NB_SIGNAL_TEST
 		if(1
-  		#ifdef CONFIG_FOTA_DOWNLOAD
-			&& (!fota_is_running())
- 		#endif/*CONFIG_FOTA_DOWNLOAD*/
-		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-			&& (!dl_is_running())
-		#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
-		)
-	#endif		
+  			#ifdef CONFIG_FOTA_DOWNLOAD
+				&& (!fota_is_running())
+ 			#endif/*CONFIG_FOTA_DOWNLOAD*/
+			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+				&& (!dl_is_running())
+			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+			)
 		{
-		#ifdef CONFIG_PPG_SUPPORT
-			u16_t tmp_hr = 0;
-			u16_t tmp_spo2 = 0;
-			bpt_data tmp_bp = {0};
+			static uint32_t health_hour_count = 0;
+
+		#ifdef CONFIG_TEMP_SUPPORT
+			SetCurDayTempRecData(g_temp_timing);
 		#endif
-			static u32_t health_hour_count = 0;
+		#ifdef CONFIG_PPG_SUPPORT
+			SetCurDayHrRecData(g_hr_timing);
+			SetCurDaySpo2RecData(g_spo2_timing);
+			SetCurDayBptRecData(g_bpt_timing);
+		#endif		
+		#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+			if((date_time_changed&0x08) != 0)
+				g_steps = 0;
+			SetCurDayStepRecData(g_steps);
+		#endif
 
 			health_hour_count++;
-			if(health_hour_count == global_settings.health_interval/60)
+			if((health_hour_count == global_settings.health_interval/60)
+				||(date_time.hour == 00)	//xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
+				)
 			{
-				health_hour_count = 0;
+				if(health_hour_count == global_settings.health_interval/60)
+					health_hour_count = 0;
+				
 				TimeCheckSendHealthData();
-
-			#ifdef CONFIG_PPG_SUPPORT
-				tmp_hr = g_hr;
-				tmp_spo2 = g_spo2;
-				tmp_bp.diastolic = g_bp_diastolic;
-				tmp_bp.systolic = g_bp_systolic;
-			#endif
 			}
-
-		#ifdef CONFIG_PPG_SUPPORT
-			SetCurDayHrRecData(tmp_hr);
-			SetCurDaySpo2RecData(tmp_spo2);
-			SetCurDayBptRecData(tmp_bp);
-		#endif
 		}
+	#endif		
 	}
 
 	if((date_time_changed&0x08) != 0)
@@ -580,45 +584,13 @@ void GetSystemTimeSecString(u8_t *str_utc)
 	u32_t i;
 	u32_t total_sec,total_day=0;
 
-
-	if(date_time.year >= SEC_START_YEAR)
-	{
-		total_day += (date_time.day-1);
-
-		for(i=1;i<date_time.month;i++)
-		{
-			switch(i)
-			{
-			case 1:
-			case 3:
-			case 5:
-			case 7:
-			case 8:
-			case 10:
-			case 12:
-				total_day += 31;
-				break;
-			case 2:
-				total_day += (28+(CheckYearIsLeap(date_time.year)));
-				break;
-			case 4:
-			case 6:
-			case 9:
-			case 11:
-				total_day += 30;
-				break;
-			}
-		}
-		
-		for(i=SEC_START_YEAR;i<date_time.year;i++)
-		{
-			total_day += (365+(CheckYearIsLeap(i)));
-		}
-
-		total_sec = total_day*SEC_PER_DAY+date_time.hour*SEC_PER_HOUR+date_time.minute*SEC_PER_MINUTE+date_time.second;
-
-		sprintf(str_utc, "%d", total_sec);
-	}
+	sprintf(str_utc, "%04d%02d%02d%02d%02d%02d", 
+						date_time.year,
+						date_time.month,
+						date_time.day,
+						date_time.hour,
+						date_time.minute,
+						date_time.second);
 }
 
 void GetSystemDateStrings(u8_t *str_date)

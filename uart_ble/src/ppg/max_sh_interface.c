@@ -285,6 +285,30 @@ int sh_read_cmd(u8_t *cmd_bytes,
 	return (int)((SS_STATUS)rxbuf[0]);
 }
 
+int sh_write_cmd_without_status_cb(uint8_t *tx_buf,
+								   int tx_len,
+				 				   int sleep_ms)
+{
+	int retries = SS_DEFAULT_RETRIES;
+
+	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	SH_pull_mfio_to_high();
+
+	while((ret != 0) && (retries--) > 0)
+	{
+		WAIT_MS(1);
+		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+		SH_pull_mfio_to_high();
+	}
+
+	if((ret != 0) && (retries == 0))
+	{
+	   return SS_ERR_UNAVAILABLE;
+	}
+}
+
 int sh_write_cmd(u8_t *tx_buf,
 				 int tx_len,
 				 int sleep_ms)
@@ -414,6 +438,32 @@ s32_t sh_get_hub_fw_version(u8_t* fw_version)
 
 	memcpy(fw_version, &rxbuf[1],sizeof(rxbuf) - 1);
 	return status;
+}
+
+int sh_set_sensorhub_active(void)
+{
+	gpio_pin_set(gpio_ppg, PPG_INT_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_set(gpio_ppg, PPG_INT_PIN, 1);
+}
+
+int sh_set_sensorhub_sleep(void)
+{
+	uint8_t ByteSeq[] = {0x04,0x00,0x02};
+	
+	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+    return status;
+}
+
+int sh_set_sensorhub_shutdown(void)
+{
+#if 1
+	uint8_t ByteSeq[] = {0x01,0x00,0x01};
+	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+	return status;
+#else
+	return 0;
+#endif	
 }
 
 int sh_set_sensorhub_operating_mode(u8_t hubMode)
@@ -1260,6 +1310,14 @@ bool sh_init_interface(void)
 	#endif
 		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, NULL, 0, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
+		s32_status = sh_get_hub_fw_version(u8_rxbuf);
+		if(s32_status == SS_SUCCESS)
+		{
+			sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		#ifdef MAX_DEBUG
+			LOGD("FW version is:%s", g_ppg_ver);
+		#endif
+		}
 		LCD_SleepOut();
 	}
 
@@ -1398,6 +1456,12 @@ void sh_get_APP_version(void)
 	}
 }
 
+bool sh_clear_bpt_cal_data(void)
+{
+	memset(&sh_bpt_cal, 0x00, CAL_RESULT_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+}
+
 bool sh_check_bpt_cal_data(void)
 {
 	SpiFlash_Read(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
@@ -1484,7 +1548,7 @@ void sh_req_bpt_cal_data(void)
 	//Set the cal_index, reference systolic, reference diastolic
 	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
 #ifdef MAX_DEBUG
-	LOGD("set cal_index sys&dia ret:%d", status);
+	LOGD("set cal_index sys:%d&dia:%d ret:%d", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic, status);
 #endif
 	//set algo submode
 	status = sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);

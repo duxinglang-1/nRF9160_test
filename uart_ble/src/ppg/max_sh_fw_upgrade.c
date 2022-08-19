@@ -82,7 +82,7 @@ s32_t SH_OTA_upgrade_process(void)
 	s32_status = sh_get_bootloader_pagesz(&u16_pageSize);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOGD("read FW version fail %x", s32_status);
+		LOGD("read page size fail %x", s32_status);
 		return s32_status;
 	}
 	else

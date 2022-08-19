@@ -25,6 +25,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
@@ -61,8 +62,6 @@ u16_t g_last_steps = 0;
 u16_t g_steps = 0;
 u16_t g_calorie = 0;
 u16_t g_distance = 0;
-
-sport_record_t last_sport = {0};
 
 extern bool update_sleep_parameter;
 
@@ -294,6 +293,94 @@ err:
 	return -1;
 }
 #endif
+
+void ClearAllStepRecData(void)
+{
+	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
+
+	g_last_steps = 0;
+	g_steps = 0;
+	g_distance = 0;
+	g_calorie = 0;
+		
+	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+}
+
+void SetCurDayStepRecData(uint16_t data)
+{
+	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data *p_step = NULL;
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+
+	p_step = tmpbuf+6*sizeof(step_rec2_data);
+	if(((date_time.year > p_step->year)&&(p_step->year != 0xffff && p_step->year != 0x0000))
+		||((date_time.year == p_step->year)&&(date_time.month > p_step->month)&&(p_step->month != 0xff && p_step->month != 0x00))
+		||((date_time.month == p_step->month)&&(date_time.day > p_step->day)&&(p_step->day != 0xff && p_step->day != 0x00)))
+	{//记录存满。整体前挪并把最新的放在最后
+		step_rec2_data tmp_step = {0};
+		
+
+	#ifdef IMU_DEBUG
+		LOGD("rec is full! temp:%0.1f", data);
+	#endif
+		tmp_step.year = date_time.year;
+		tmp_step.month = date_time.month;
+		tmp_step.day = date_time.day;
+		tmp_step.steps[date_time.hour] = data;
+		memcpy(&tmpbuf[0], &tmpbuf[sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
+		memcpy(&tmpbuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	}
+	else
+	{
+	#ifdef IMU_DEBUG
+		LOGD("rec not full! temp:%0.1f", data);
+	#endif
+		for(i=0;i<7;i++)
+		{
+			p_step = tmpbuf + i*sizeof(step_rec2_data);
+			if((p_step->year == 0xffff || p_step->year == 0x0000)||(p_step->month == 0xff || p_step->month == 0x00)||(p_step->day == 0xff || p_step->day == 0x00))
+			{
+				p_step->year = date_time.year;
+				p_step->month = date_time.month;
+				p_step->day = date_time.day;
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+			
+			if((p_step->year == date_time.year)&&(p_step->month == date_time.month)&&(p_step->day == date_time.day))
+			{
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+		}
+	}
+}
+
+void GetCurDayStepRecData(uint16_t *databuf)
+{
+	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data step_rec2 = {0};
+	
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&step_rec2, &tmpbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
+		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
+			continue;
+		
+		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
+		{
+			memcpy(databuf, step_rec2.steps, sizeof(step_rec2.steps));
+			break;
+		}
+	}
+}
 
 static uint8_t init_i2c(void)
 {
@@ -531,7 +618,12 @@ void UpdateIMUData(void)
 	last_sport.calorie = g_calorie;
 	save_cur_sport_to_record(&last_sport);
 	
-	StepCheckSendLocationData(g_steps);
+	//StepCheckSendLocationData(g_steps);
+	
+	if(date_time.hour == 23)//xb add 2022-05-31 防止23点到0点之间的数据没有被记录到
+	{
+		SetCurDayStepRecData(g_steps);
+	}
 }
 
 void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
@@ -680,10 +772,14 @@ void IMU_init(struct k_work_q *work_q)
 	imu_check_ok = sensor_init();
 	if(!imu_check_ok)
 		return;
-	
+
+#ifdef CONFIG_STEP_SUPPORT
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
 	StartSleepTimeMonitor();
+#endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
@@ -794,11 +890,19 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
-#ifdef CONFIG_FOTA_DOWNLOAD
-	if(fota_is_running())
+	if(0
+		#ifdef CONFIG_FOTA_DOWNLOAD
+			|| (fota_is_running())
+		#endif
+		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			|| (dl_is_running())
+		#endif
+		)
+	{
 		return;
-#endif
+	}
 
+#ifdef CONFIG_STEP_SUPPORT
 	if(int1_event)	//steps
 	{
 	#ifdef IMU_DEBUG
@@ -806,24 +910,17 @@ void IMUMsgProcess(void)
 	#endif
 		int1_event = false;
 
-		if(!imu_check_ok)
+		if(!imu_check_ok || !is_wearing())
 			return;
 		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-
 	#ifdef IMU_DEBUG	
 		LOGD("steps trigger!");
 	#endif
 		UpdateIMUData();
 		imu_redraw_steps_flag = true;	
 	}
-		
+#endif
+
 	if(int2_event) //tilt
 	{
 	#ifdef IMU_DEBUG
@@ -831,15 +928,7 @@ void IMUMsgProcess(void)
 	#endif
 		int2_event = false;
 
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
+		if(!imu_check_ok || !is_wearing())
 			return;
 
 		is_tilt();
@@ -857,7 +946,8 @@ void IMUMsgProcess(void)
 			}
 		}
 	}
-	
+
+#ifdef CONFIG_STEP_SUPPORT	
 	if(reset_steps)
 	{
 		reset_steps = false;
@@ -878,7 +968,9 @@ void IMUMsgProcess(void)
 		
 		IMURedrawSteps();
 	}
+#endif
 
+#ifdef CONFIG_SLEEP_SUPPORT
 	if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
@@ -886,12 +978,8 @@ void IMUMsgProcess(void)
 		if(!imu_check_ok)
 			return;
 
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
 		UpdateSleepPara();
 	}
+#endif	
 }
 #endif/*CONFIG_IMU_SUPPORT*/

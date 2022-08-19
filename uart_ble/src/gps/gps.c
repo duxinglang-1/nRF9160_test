@@ -167,6 +167,12 @@ void gps_off(void)
 		return;
 	
 	set_gps_enable(false);
+
+#ifdef NB_SIGNAL_TEST
+	SetModemTurnOff();
+	SetModemNw();
+	nb_reconnect();
+#endif	
 }
 
 bool gps_is_working(void)
@@ -182,6 +188,12 @@ void gps_on(void)
 	if(gps_is_on)
 		return;
 	
+#ifdef NB_SIGNAL_TEST
+	SetModemTurnOff();
+	SetModemGps();	
+	SetModemTurnOn();
+#endif
+
 	set_gps_enable(true);
 }
 

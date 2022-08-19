@@ -36,7 +36,6 @@ static void LCD_SPI_Init(void)
 	spi_lcd = device_get_binding(LCD_DEV);
 	if(!spi_lcd) 
 	{
-		printk("Could not get %s device\n", LCD_DEV);
 		return;
 	}
 
@@ -47,7 +46,6 @@ static void LCD_SPI_Init(void)
 	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
 	if (!spi_cs_ctr.gpio_dev)
 	{
-		printk("Unable to get GPIO SPI CS device\n");
 		return;
 	}
 
@@ -74,7 +72,6 @@ static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t r
 	err = spi_transceive(spi_lcd, &spi_cfg, &tx_bufs, &rx_bufs);
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
 	}
 
 }
@@ -106,7 +103,6 @@ void Write_Data(uint8_t i)
 	ret = spi_write(spi_lcd, &spi_cfg, &tx_bufs);
 	if(ret)
 	{
-		printk("Write_Data FAIL %d\n", ret);
 	}
 }
 
@@ -151,7 +147,6 @@ void WriteDispData(u8_t DataH,u8_t DataL)
 	ret = spi_write(spi_lcd, &spi_cfg, &tx_bufs);
 	if(ret)
 	{
-		printk("WriteDispData FAIL %d\n", ret);
 	}
 }
 
@@ -441,13 +436,10 @@ void LCD_Init(void)
 {
 	int err;
 
-	printk("LCD_Init\n");
-	
   	//¶Ë¿Ú³õÊ¼»¯
   	gpio_lcd = device_get_binding(LCD_PORT);
 	if(!gpio_lcd)
 	{
-		printk("Cannot bind gpio device\n");
 		return;
 	}
 

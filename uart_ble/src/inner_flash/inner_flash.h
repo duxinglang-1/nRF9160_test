@@ -65,6 +65,7 @@ typedef struct
 	u8_t spo2;
 	u8_t systolic;		//收缩压
 	u8_t diastolic;	//舒张压
+	uint16_t deca_temp;///实际温度放大10倍(36.5*10)
 }health_record_t;
 
 typedef struct
@@ -77,6 +78,16 @@ typedef struct
 	float heading;
 	struct gps_datetime datetime;
 }local_record_t;
+
+typedef union
+{
+	sport_record_t sport;
+	health_record_t health;
+	local_record_t local;
+}imu_data_u;
+
+extern sport_record_t last_sport;
+extern health_record_t last_health;
 
 extern void test_nvs(void);
 

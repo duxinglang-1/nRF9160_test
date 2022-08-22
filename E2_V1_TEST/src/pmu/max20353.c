@@ -117,13 +117,11 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 
 void Set_PPG_Power_On(void)
 {
-	//MAX20353_LDO1Config();
 	MAX20353_BoostConfig();
 }
 
 void Set_PPG_Power_Off(void)
 {
-	//MAX20353_LDO1Disable();
 	MAX20353_BoostDisable();
 }
 

@@ -38,10 +38,10 @@
 #include "logger.h"
 
 #ifdef SH_OTA_DATA_STORE_IN_FLASH
-s32_t SH_OTA_upgrade_process(void)
+int32_t SH_OTA_upgrade_process(void)
 {
-	s32_t s32_status;
-	u8_t u8_rxbuf[3]={0};
+	int32_t s32_status;
+	uint8_t u8_rxbuf[3]={0};
 
 	LOGD("start to upgrade MAX32674 firmware");
 
@@ -78,11 +78,11 @@ s32_t SH_OTA_upgrade_process(void)
 	}
 
 	//read page size
-	u16_t u16_pageSize;
+	uint16_t u16_pageSize;
 	s32_status = sh_get_bootloader_pagesz(&u16_pageSize);
 	if(s32_status != SS_SUCCESS)
 	{
-		LOGD("read FW version fail %x", s32_status);
+		LOGD("read page size fail %x", s32_status);
 		return s32_status;
 	}
 	else
@@ -91,7 +91,7 @@ s32_t SH_OTA_upgrade_process(void)
 	}
 
 	//set page number
-	u8_t u8_pageNumber;
+	uint8_t u8_pageNumber;
 	SpiFlash_Read(&u8_pageNumber, PPG_ALGO_FW_ADDR+BL_PAGE_COUNT_INDEX, sizeof(u8_pageNumber));
 	s32_status = sh_set_bootloader_numberofpages(u8_pageNumber);
 	if(s32_status != SS_SUCCESS)
@@ -105,7 +105,7 @@ s32_t SH_OTA_upgrade_process(void)
 	}
 
 	//Set vector bytes
-	u8_t u8p_ivData[BL_AES_NONCE_SIZE] = {0};
+	uint8_t u8p_ivData[BL_AES_NONCE_SIZE] = {0};
 	SpiFlash_Read(u8p_ivData, PPG_ALGO_FW_ADDR+BL_IV_INDEX, BL_AES_NONCE_SIZE);
 	s32_status = sh_set_bootloader_iv(u8p_ivData);
 	if(s32_status != SS_SUCCESS)
@@ -119,7 +119,7 @@ s32_t SH_OTA_upgrade_process(void)
 	}
 
 	//Set auth bytes
-	u8_t u8p_authData[BL_AES_AUTH_SIZE];
+	uint8_t u8p_authData[BL_AES_AUTH_SIZE];
 	SpiFlash_Read(u8p_authData, PPG_ALGO_FW_ADDR+BL_AUTH_INDEX, BL_AES_AUTH_SIZE);
 	s32_status = sh_set_bootloader_auth(u8p_authData);
 	if(s32_status != SS_SUCCESS)
@@ -132,7 +132,7 @@ s32_t SH_OTA_upgrade_process(void)
 		LOGD("Setting the authentication is done");
 	}
 
-	u32_t u32_partialSize = BL_FLASH_PARTIAL_SIZE;
+	uint32_t u32_partialSize = BL_FLASH_PARTIAL_SIZE;
 	s32_status = sh_set_bootloader_partial_write_size(u32_partialSize);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -194,10 +194,10 @@ s32_t SH_OTA_upgrade_process(void)
 
 #else
 
-s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
+int32_t SH_OTA_upgrade_process(uint8_t* u8p_FwData)
 {
-	s32_t s32_status;
-	u8_t u8_rxbuf[3];
+	int32_t s32_status;
+	uint8_t u8_rxbuf[3];
 
 	LOGD("start to upgrade MAX32674 firmware");
 
@@ -234,7 +234,7 @@ s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
 	}
 
 	//read page size
-	u16_t u16_pageSize;
+	uint16_t u16_pageSize;
 	s32_status = sh_get_bootloader_pagesz(&u16_pageSize);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -247,7 +247,7 @@ s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
 	}
 
 	//set page number
-	u8_t u8_pageNumber = u8p_FwData[BL_PAGE_COUNT_INDEX];
+	uint8_t u8_pageNumber = u8p_FwData[BL_PAGE_COUNT_INDEX];
 	s32_status =  sh_set_bootloader_numberofpages(u8_pageNumber);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -260,7 +260,7 @@ s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
 	}
 
 	//Set vector bytes
-	u8_t* u8p_ivData = &u8p_FwData[BL_IV_INDEX];
+	uint8_t* u8p_ivData = &u8p_FwData[BL_IV_INDEX];
 	s32_status =  sh_set_bootloader_iv(u8p_ivData);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -273,7 +273,7 @@ s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData)
 	}
 
 	//Set vector bytes
-	u8_t* u8p_authData = &u8p_FwData[BL_AUTH_INDEX];
+	uint8_t* u8p_authData = &u8p_FwData[BL_AUTH_INDEX];
 	s32_status = sh_set_bootloader_auth(u8p_authData);
 	if(s32_status != SS_SUCCESS)
 	{

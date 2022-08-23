@@ -17,7 +17,7 @@
 #ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
 #endif
-//#include "gps.h"
+#include "gps.h"
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
@@ -645,7 +645,7 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 	if(buf[6] == 1)//开启
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP_ONE_KEY; 
-		APPStartHrSpo2();
+		APPStartHr();
 	}
 	else
 	{
@@ -699,9 +699,13 @@ void APP_get_current_data(uint8_t *buf, uint32_t len)
 	refresh_time.hour = buf[10];
 	refresh_time.minute = buf[11];
 
-#ifdef CONFIG_IMU_SUPPORT	
+#ifdef CONFIG_IMU_SUPPORT
+  #ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
+  #endif
+  #ifdef CPNFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+  #endif
 #endif
 	
 	wake = 8;
@@ -757,7 +761,7 @@ void APP_get_location_data(uint8_t *buf, uint32_t len)
 	LOGD("begin");
 #endif
 
-	//ble_wait_gps = true; //commented because of no GPS use
+	ble_wait_gps = true;
 	APP_Ask_GPS_Data();
 }
 
@@ -989,7 +993,7 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 	else
 	{
 		g_ppg_trigger |= TRIGGER_BY_APP; 
-		APPStartHrSpo2();
+		APPStartHr();
 	}
 }
 #endif
@@ -1494,7 +1498,7 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case ECG_ID:				//心电
 		break;
 	case LOCATION_ID:			//获取定位信息
-		//APP_get_location_data(buf, len);
+		APP_get_location_data(buf, len);
 		break;
 	case DATE_FORMAT_ID:		//年月日格式
 		APP_set_date_format(buf, len);
@@ -1796,7 +1800,8 @@ static void GetBLEInfoCallBack(struct k_timer *timer_id)
 
 void ble_init(void)
 {
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_DOWN|GPIO_INT_HIGH_1|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
+
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
@@ -1830,10 +1835,10 @@ void ble_init(void)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
-	gpio_pin_disable_callback(gpio_ble, BLE_INT_PIN);
+	gpio_pin_interrupt_configure(gpio_ble, BLE_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
 	gpio_add_callback(gpio_ble, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ble, BLE_INT_PIN);
+	gpio_pin_interrupt_configure(gpio_ble, BLE_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);	
 	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 

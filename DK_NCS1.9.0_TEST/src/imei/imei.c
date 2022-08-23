@@ -130,14 +130,10 @@ static bar_code128_t code128[95] =
 bool get_imei(uint8_t len, uint8_t *str_imei)
 {
 	int err;
-	//enum at_cmd_state at_state;
 
-	//err = at_cmd_write(GET_IMEI, str_imei, len, &at_state);
     err = nrf_modem_at_cmd(str_imei, len, GET_IMEI);
 	if(err) 
 	{
-		//printk("get imei error, err:%d, at_state:%d", err,at_state);
-        printk("get imei error, err:%d", err);
 		return false;
 	}
 
@@ -206,8 +202,6 @@ void test_imei(void)
 	uint16_t w,h;
 	uint8_t tmpbuf[128] = {0};
 	
-	printk("test_imei\n");
-
 	LCD_ShowString(0,0,"IMEI:");
 	if(get_imei(128, tmpbuf))
 	{

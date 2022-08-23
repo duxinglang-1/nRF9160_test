@@ -19,13 +19,13 @@ bool need_save_settings = false;
 bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
-bool need_fw_update = true;
 
 uint8_t g_fw_version[64] = "V1.6.6_20220516";
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
 static bool reset_redraw_flag = false;
 static bool reset_start_flag = false;
+static bool reset_reboot_flag = false;
 
 static uint8_t main_menu_index_bk = 0;
 
@@ -69,18 +69,18 @@ static void SettingsMenuFWProc(void);
 
 const sys_date_timer_t FACTORY_DEFAULT_TIME = 
 {
-	2020,
+	2022,
 	1,
 	1,
 	0,
 	0,
 	0,
-	3		//0=sunday
+	6		//0=sunday
 };
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
 {
-	false,					//system inited flag
+	true,					//system inited flag
 	false,					//heart rate turn on
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
@@ -97,7 +97,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	BACKLIGHT_LEVEL_2,		//backlight level
 	{true,1},				//PHD
 	{500,60},				//position interval
-	{120,70},				//pb calibration
+	{120,75},				//pb calibration
 	{						//alarm
 		{false,0,0,0},		
 		{false,0,0,0},
@@ -116,16 +116,6 @@ const settings_menu_t SETTING_MAIN_MENU =
 	0,
 	8,
 	{
-		{
-			{0x8BED,0x8A00,0x0000},//语言
-			{0x6062,0x590D,0x51FA,0x5382,0x8BBE,0x7F6E,0x0000},//恢复出厂设置
-			{0x004F,0x0054,0x0041,0x5347,0x7EA7,0x0000},//OTA升级
-			{0x80CC,0x5149,0x4EAE,0x5EA6,0x0000},//背光亮度
-			{0x4F53,0x6E29,0x663E,0x793A,0x0000},//体温显示
-			{0x8BBE,0x5907,0x4FE1,0x606F,0x0000},//设备信息
-			{0x0053,0x0049,0x004D,0x4FE1,0x606F,0x0000},//SIM信息
-			{0x56FA,0x4EF6,0x4FE1,0x606F,0x0000},//固件信息
-		},	
 		{
 			{0x004c,0x0061,0x006e,0x0067,0x0075,0x0061,0x0067,0x0065,0x0000},//language
 			{0x0046,0x0061,0x0063,0x0074,0x006f,0x0072,0x0079,0x0020,0x0064,0x0065,0x0066,0x0061,0x0075,0x006c,0x0074,0x0000},//Factory default
@@ -146,6 +136,16 @@ const settings_menu_t SETTING_MAIN_MENU =
 			{0x0053,0x0049,0x004d,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//SIM Info
 			{0x0046,0x0057,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//FW Info
 		},
+		{
+			{0x8BED,0x8A00,0x0000},//语言
+			{0x6062,0x590D,0x51FA,0x5382,0x8BBE,0x7F6E,0x0000},//恢复出厂设置
+			{0x004F,0x0054,0x0041,0x5347,0x7EA7,0x0000},//OTA升级
+			{0x80CC,0x5149,0x4EAE,0x5EA6,0x0000},//背光亮度
+			{0x4F53,0x6E29,0x663E,0x793A,0x0000},//体温显示
+			{0x8BBE,0x5907,0x4FE1,0x606F,0x0000},//设备信息
+			{0x0053,0x0049,0x004D,0x4FE1,0x606F,0x0000},//SIM信息
+			{0x56FA,0x4EF6,0x4FE1,0x606F,0x0000},//固件信息
+		},			
 	},
 	{
 		//select proc func
@@ -174,19 +174,19 @@ const settings_menu_t SETTING_MENU_LANGUAGE =
 	3,
 	{
 		{
-			{0x4E2D,0x6587,0x0000},//中文
 			{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
 			{0x0044,0x0065,0x0075,0x0074,0x0073,0x0063,0x0068,0x0000},//Deutsch
+			{0x4E2D,0x6587,0x0000},//中文
 		},
 		{
-			{0x4E2D,0x6587,0x0000},//中文
 			{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
 			{0x0044,0x0065,0x0075,0x0074,0x0073,0x0063,0x0068,0x0000},//Deutsch
+			{0x4E2D,0x6587,0x0000},//中文
 		},
 		{
-			{0x4E2D,0x6587,0x0000},//中文
 			{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
 			{0x0044,0x0065,0x0075,0x0074,0x0073,0x0063,0x0068,0x0000},//Deutsch
+			{0x4E2D,0x6587,0x0000},//中文
 		},		
 	},
 	{
@@ -327,17 +327,17 @@ const settings_menu_t SETTING_MENU_TEMP =
 	2,
 	{
 		{
+			{0x0043,0x0065,0x006C,0x0073,0x0069,0x0075,0x0073,0x0000},//Celsius
+			{0x0046,0x0061,0x0068,0x0072,0x0065,0x006E,0x0068,0x0065,0x0069,0x0074,0x0000},//Fahrenheit
+		},
+		{
+			{0x0043,0x0065,0x006C,0x0073,0x0069,0x0075,0x0073,0x0000},//Celsius
+			{0x0046,0x0061,0x0068,0x0072,0x0065,0x006E,0x0068,0x0065,0x0069,0x0074,0x0000},//Fahrenheit
+		},
+		{
 			{0x6444,0x6C0F,0x5EA6,0x0000},//摄氏度
 			{0x534E,0x6C0F,0x5EA6,0x0000},//华氏度
 		},
-		{
-			{0x0043,0x0065,0x006C,0x0073,0x0069,0x0075,0x0073,0x0000},//Celsius
-			{0x0046,0x0061,0x0068,0x0072,0x0065,0x006E,0x0068,0x0065,0x0069,0x0074,0x0000},//Fahrenheit
-		},
-		{
-			{0x0043,0x0065,0x006C,0x0073,0x0069,0x0075,0x0073,0x0000},//Celsius
-			{0x0046,0x0061,0x0068,0x0072,0x0065,0x006E,0x0068,0x0065,0x0069,0x0074,0x0000},//Fahrenheit
-		},		
 	},
 	{
 		SettingsMenuTemp1Proc,
@@ -497,6 +497,9 @@ void FactoryResetCallBack(struct k_timer *timer_id)
 		break;
 
 	case RESET_STATUS_SUCCESS:
+		reset_reboot_flag = true;
+		break;
+
 	case RESET_STATUS_FAIL:
 		g_reset_status = RESET_STATUS_IDLE;
 		reset_redraw_flag = true;
@@ -570,6 +573,35 @@ void ResetFactoryDefault(void)
 	ResetSystemTime();
 	ResetSystemSettings();
 
+	clear_cur_local_in_record();
+	clear_local_in_record();	
+	clear_cur_health_in_record();
+	clear_health_in_record();
+#ifdef CONFIG_IMU_SUPPORT
+	clear_cur_sport_in_record();
+	clear_sport_in_record();
+#endif
+
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+	ClearAllStepRecData();
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
+	ClearAllSleepRecData();
+#endif
+#endif
+
+#ifdef CONFIG_PPG_SUPPORT
+	ClearAllHrRecData();
+	ClearAllSpo2RecData();
+	ClearAllBptRecData();
+	sh_clear_bpt_cal_data();
+#endif
+
+#ifdef CONFIG_TEMP_SUPPORT
+	ClearAllTempRecData();
+#endif
+
 	if(k_timer_remaining_get(&reset_timer) > 0)
 		k_timer_stop(&reset_timer);
 
@@ -598,48 +630,6 @@ void ResetUpdateStatus(void)
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMsgPorcess(void)
-{
-	if(need_save_time)
-	{
-		SaveSystemDateTime();
-		need_save_time = false;
-	}
-	
-	if(need_save_settings)
-	{
-		need_save_settings = false;
-		SaveSystemSettings();
-	}
-
-	if(need_reset_settings)
-	{
-		need_reset_settings = false;
-		ResetSystemSettings();
-		ResetSystemTime();
-
-		lcd_sleep_out = true;
-		update_date_time = true;
-	}
-	if(need_reset_bk_level)
-	{
-		need_reset_bk_level = false;
-		Set_Screen_Backlight_Level(global_settings.backlight_level);
-	}
-	if(reset_redraw_flag)
-	{
-		reset_redraw_flag = false;
-		ResetUpdateStatus();
-	}
-	if(reset_start_flag)
-	{
-		reset_start_flag = false;
-		
-		k_timer_start(&reset_timer, K_MSEC(1000), K_NO_WAIT);
-		ResetFactoryDefault();
 	}
 }
 
@@ -674,7 +664,9 @@ void SettingsMainMenu2Proc(void)
 void SettingsMainMenu3Proc(void)
 {
 #ifdef CONFIG_FOTA_DOWNLOAD
-	if(need_fw_update)
+	extern uint8_t g_new_fw_ver[64];
+
+	if((strcmp(g_new_fw_ver,g_fw_version) > 0) && (strncmp(g_new_fw_ver, "V1", strlen("V1")) == 0))
 	{
 		fota_start();
 	}
@@ -753,8 +745,8 @@ void SettingsMainMenu8Proc(void)
 
 void SettingsMenuLang1Proc(void)
 {
-	global_settings.language = LANGUAGE_CHN;
-	need_save_time = true;
+	global_settings.language = LANGUAGE_EN;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -767,8 +759,8 @@ void SettingsMenuLang1Proc(void)
 
 void SettingsMenuLang2Proc(void)
 {
-	global_settings.language = LANGUAGE_EN;
-	need_save_time = true;
+	global_settings.language = LANGUAGE_DE;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -781,8 +773,8 @@ void SettingsMenuLang2Proc(void)
 
 void SettingsMenuLang3Proc(void)
 {
-	global_settings.language = LANGUAGE_DE;
-	need_save_time = true;
+	global_settings.language = LANGUAGE_CHN;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -832,7 +824,7 @@ void SettingsMenuBrightness1Proc(void)
 	if(global_settings.backlight_level > BACKLIGHT_LEVEL_MIN)
 	{
 		global_settings.backlight_level--;
-		need_save_time = true;
+		need_save_settings = true;
 		need_reset_bk_level = true;
 
 		if(screen_id == SCREEN_ID_SETTINGS)
@@ -847,7 +839,7 @@ void SettingsMenuBrightness2Proc(void)
 	if(global_settings.backlight_level < BACKLIGHT_LEVEL_MAX)
 	{
 		global_settings.backlight_level++;
-		need_save_time = true;
+		need_save_settings = true;
 		need_reset_bk_level = true;
 
 		if(screen_id == SCREEN_ID_SETTINGS)
@@ -871,7 +863,7 @@ void SettingsMenuBrightness3Proc(void)
 void SettingsMenuTemp1Proc(void)
 {
 	global_settings.temp_unit = TEMP_UINT_C;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -885,7 +877,7 @@ void SettingsMenuTemp1Proc(void)
 void SettingsMenuTemp2Proc(void)
 {
 	global_settings.temp_unit = TEMP_UINT_F;
-	need_save_time = true;
+	need_save_settings = true;
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -969,6 +961,50 @@ void SettingsMenuPgLeftProc(void)
 
 void SettingsMenuPgRightProc(void)
 {
+}
+
+void SettingsMsgPorcess(void)
+{
+	if(need_save_time)
+	{
+		SaveSystemDateTime();
+		need_save_time = false;
+	}
+	
+	if(need_save_settings)
+	{
+		need_save_settings = false;
+		SaveSystemSettings();
+	}
+
+	if(need_reset_settings)
+	{
+		need_reset_settings = false;
+		k_timer_start(&reset_timer, K_MSEC(1000), K_NO_WAIT);
+		ResetFactoryDefault();
+	}
+	if(need_reset_bk_level)
+	{
+		need_reset_bk_level = false;
+		Set_Screen_Backlight_Level(global_settings.backlight_level);
+	}
+	if(reset_redraw_flag)
+	{
+		reset_redraw_flag = false;
+		ResetUpdateStatus();
+	}
+	if(reset_start_flag)
+	{
+		reset_start_flag = false;
+		k_timer_start(&reset_timer, K_MSEC(1000), K_NO_WAIT);
+		ResetFactoryDefault();
+	}
+	if(reset_reboot_flag)
+	{
+		reset_reboot_flag = false;
+		LCD_Clear(BLACK);
+		sys_reboot(0);
+	}
 }
 
 void EnterSettings(void)

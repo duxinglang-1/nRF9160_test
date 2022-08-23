@@ -9,12 +9,12 @@
 #define SLEEP_TIME_START	20
 #define SLEEP_TIME_END		8
 
-u16_t last_light_sleep = 0;
-u16_t last_deep_sleep = 0;
-u16_t light_sleep_time = 0;
-u16_t deep_sleep_time = 0;
-u16_t g_light_sleep = 0;
-u16_t g_deep_sleep = 0;
+uint16_t last_light_sleep = 0;
+uint16_t last_deep_sleep = 0;
+uint16_t light_sleep_time = 0;
+uint16_t deep_sleep_time = 0;
+uint16_t g_light_sleep = 0;
+uint16_t g_deep_sleep = 0;
 int waggle_level[12] = {0};
 int hour_time = 0;
 
@@ -201,7 +201,7 @@ void StartSleepTimeMonitor(void)
 	g_deep_sleep = last_deep_sleep;
 }
 
-void GetSleepTimeData(u16_t *deep_sleep, u16_t *light_sleep)
+void GetSleepTimeData(uint16_t *deep_sleep, uint16_t *light_sleep)
 {
 	*deep_sleep = g_deep_sleep;
 	*light_sleep = g_light_sleep;
@@ -209,7 +209,7 @@ void GetSleepTimeData(u16_t *deep_sleep, u16_t *light_sleep)
 
 void GetSleepInfor(void)
 {
-	u16_t deep_sleep, light_sleep;
+	uint16_t deep_sleep, light_sleep;
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 
@@ -218,7 +218,7 @@ void GetSleepInfor(void)
 
 void UpdateSleepPara(void)
 {
-	u16_t steps;
+	uint16_t steps;
 	float sensor_x,sensor_y,sensor_z;
 	int chg = 0;
 

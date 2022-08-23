@@ -17,13 +17,13 @@
 #define MAX_FILE_SEARCH_LEN 500
 #define UI_HEADER_MAGIC 0x96f3b83d
 
-static u32_t rece_count = 0;
+static uint32_t rece_count = 0;
 
 bool dl_target_ui_identify(const void *const buf)
 {
 	LOGD("begin");
 
-	//return *((const u32_t *)buf) == UI_HEADER_MAGIC;
+	//return *((const uint32_t *)buf) == UI_HEADER_MAGIC;
 	return true;
 }
 
@@ -45,9 +45,9 @@ int dl_target_ui_offset_get(size_t *out)
 
 int dl_target_ui_write(const void *const buf, size_t len)
 {
-	static s32_t last_index = -1;
-	s32_t cur_index;
-	u32_t PageByteRemain,addr=0;
+	static int32_t last_index = -1;
+	int32_t cur_index;
+	uint32_t PageByteRemain,addr=0;
 	
 	LOGD("rece_count:%d, len:%d", rece_count, len);
 

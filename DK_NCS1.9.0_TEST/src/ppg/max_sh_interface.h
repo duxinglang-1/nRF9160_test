@@ -133,6 +133,8 @@
 			#define SS_DATATYPE_RAW					1
 			#define SS_DATATYPE_ALGO				2
 			#define SS_DATATYPE_BOTH				3
+			#define SS_DATATYPE_CNT_MSK             (1<<2)
+			
 		#define SS_SHIFT_OUTPUTMODE_SC_EN		2
 		#define SS_MASK_OUTPUTMODE_SC_EN		(1 << SS_SHIFT_OUTPUTMODE_SC_EN)
 	#define SS_CMDIDX_FIFOAFULL		0x01
@@ -800,10 +802,10 @@ int sh_set_report_period(uint8_t period);
  *			BOOTLOADER ADDITIONS                     									     *
  *                                                    										 *
  * ***************************************************************************************** */
-s32_t sh_get_bootloader_pagesz(u16_t *pagesz);
-s32_t sh_set_bootloader_iv(u8_t* iv_bytes);
-s32_t sh_set_bootloader_auth(u8_t* auth_bytes);
-s32_t sh_set_bootloader_erase(void);
+int32_t sh_get_bootloader_pagesz(uint16_t *pagesz);
+int32_t sh_set_bootloader_iv(uint8_t* iv_bytes);
+int32_t sh_set_bootloader_auth(uint8_t* auth_bytes);
+int32_t sh_set_bootloader_erase(void);
 int sh_bootloader_flashpage(uint8_t *flashDataPreceedByCmdBytes , const int page_size);
 int sh_set_bootloader_delayfactor(const int factor );
 const int sh_get_bootloader_delayfactor(void);

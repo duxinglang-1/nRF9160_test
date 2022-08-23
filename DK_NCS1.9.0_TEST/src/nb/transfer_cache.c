@@ -63,7 +63,12 @@ bool add_data_into_send_cache(uint8_t *data, uint32_t len)
 	#ifdef TRANSFER_LOG
 		LOGD("002");
 	#endif
-	
+
+		if(g_nb_send_cache.count > SEND_NODE_CACHE_MAX)
+		{
+			delete_data_from_send_cache();
+		}
+		
 		if(send_tail == NULL)
 		{
 			send_tail = g_nb_send_cache.cache;

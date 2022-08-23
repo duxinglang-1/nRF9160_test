@@ -12,13 +12,12 @@
 #include <zephyr.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
+#include "temp.h"
 #include "gxts04.h"
 #include "logger.h"
 #ifdef CONFIG_CRC_SUPPORT
 #include "crc_check.h"
 #endif
-
-//#define TEMP_DEBUG
 
 static struct device *i2c_temp;
 static struct device *gpio_temp;
@@ -27,14 +26,14 @@ static struct device *gpio_temp;
 static CRC_8 crc_8_CUSTOM = {0x31,0xff,0x00,false,false};
 #endif
 
-static u32_t measure_count = 0;
+static uint32_t measure_count = 0;
 static float t_sensor = 0.0;		//传感器温度值
 static float t_body = 0.0; 			//显示的温度值
 static float t_predict = 0.0;		//预测的人体温度值
 static float t_temp80 = 0.0;		//预测的人体温度值
 
 
-static u8_t init_i2c(void)
+static uint8_t init_i2c(void)
 {
 	i2c_temp = device_get_binding(TEMP_DEV);
 	if(!i2c_temp)
@@ -48,13 +47,13 @@ static u8_t init_i2c(void)
 	}
 }
 
-static s32_t gxts04_read_data(u16_t cmd, u8_t* bufp, u16_t len)
+static int32_t gxts04_read_data(uint16_t cmd, uint8_t* bufp, uint16_t len)
 {
-	u8_t data[2] = {0};
-	u32_t rslt = 0;
+	uint8_t data[2] = {0};
+	uint32_t rslt = 0;
 
-	data[0] = (u8_t)(0x00ff&(cmd>>8));
-	data[1] = (u8_t)(0x00ff&cmd);
+	data[0] = (uint8_t)(0x00ff&(cmd>>8));
+	data[1] = (uint8_t)(0x00ff&cmd);
 
 	rslt = i2c_write(i2c_temp, data, 2, GXTS04_I2C_ADDR);
 	if(rslt == 0)
@@ -70,13 +69,13 @@ static s32_t gxts04_read_data(u16_t cmd, u8_t* bufp, u16_t len)
 	return rslt;
 }
 
-static s32_t gxts04_write_data(u16_t cmd)
+static int32_t gxts04_write_data(uint16_t cmd)
 {
-	u8_t data[2] = {0};
-	u32_t rslt = 0;
+	uint8_t data[2] = {0};
+	uint32_t rslt = 0;
 
-	data[0] = (u8_t)(0x00ff&(cmd>>8));
-	data[1] = (u8_t)(0x00ff&cmd);
+	data[0] = (uint8_t)(0x00ff&(cmd>>8));
+	data[1] = (uint8_t)(0x00ff&cmd);
 
 	rslt = i2c_write(i2c_temp, data, 2, GXTS04_I2C_ADDR);
 	return rslt;
@@ -84,8 +83,8 @@ static s32_t gxts04_write_data(u16_t cmd)
 
 bool gxts04_init(void)
 {
-	u8_t databuf[2] = {0};
-	u16_t HardwareID = 0;
+	uint8_t databuf[2] = {0};
+	uint16_t HardwareID = 0;
 
 	if(init_i2c() != 0)
 		return;
@@ -121,9 +120,9 @@ void gxts04_stop(void)
 bool GetTemperature(float *skin_temp, float *body_temp)
 {
 	bool flag=false;
-	u8_t crc=0;
-	u8_t databuf[10] = {0};
-	u16_t trans_temp = 0;
+	uint8_t crc=0;
+	uint8_t databuf[10] = {0};
+	uint16_t trans_temp = 0;
 
 	if(!is_wearing())
 		return;
@@ -153,7 +152,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	*body_temp = 0;
 
 #ifdef TEMP_DEBUG
-	LOGD("count:%d, real temp:%d.%d", measure_count, (s16_t)(t_sensor*10)/10, (s16_t)(t_sensor*10)%10);
+	LOGD("count:%d, real temp:%d.%d", measure_count, (int16_t)(t_sensor*10)/10, (int16_t)(t_sensor*10)%10);
 #endif
 
 	if(t_sensor > 32)			//如果上一次测温大于32，那么开始计数
@@ -213,7 +212,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	*body_temp = t_body;
 
 #ifdef TEMP_DEBUG
-	LOGD("count:%d, t_predict:%d.%d, t_temp80:%d.%d, t_body:%d.%d", measure_count, (s16_t)(t_predict*10)/10, (s16_t)(t_predict*10)%10, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
+	LOGD("flag:%d, t_temp80:%d.%d, t_body:%d.%d", flag, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
 #endif
 
 	return flag;

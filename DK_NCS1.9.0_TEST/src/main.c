@@ -30,7 +30,7 @@
 #include "lsm6dso.h"
 #endif
 #include "Alarm.h"
-//#include "gps.h"
+#include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
 #ifdef CONFIG_AUDIO_SUPPORT

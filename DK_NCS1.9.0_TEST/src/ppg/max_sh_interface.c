@@ -80,12 +80,12 @@ static struct device *i2c_ppg;
 static struct device *gpio_ppg;
 static struct gpio_callback gpio_cb;
 
-u8_t sh_write_buf[SS_TX_BUF_SIZE]={0};
-u8_t sh_bpt_cal[CAL_RESULT_SIZE]={0};
+uint8_t sh_write_buf[SS_TX_BUF_SIZE]={0};
+uint8_t sh_bpt_cal[CAL_RESULT_SIZE]={0};
 
 extern bool ppg_int_event;
-extern u8_t g_ppg_bpt_status;
-extern u8_t g_ppg_ver[64];
+extern uint8_t g_ppg_bpt_status;
+extern uint8_t g_ppg_ver[64];
 
 void wait_us(int us)
 {
@@ -126,25 +126,23 @@ static void sh_init_i2c(void)
 	}
 }
 
-static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
+static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 	ppg_int_event = true; 
 }
 
 static void sh_init_gpio(void)
 {
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_DOWN|GPIO_INT_HIGH_1|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
 	gpio_ppg = device_get_binding(PPG_PORT);
 	
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
-	//gpio_pin_disable_callback(gpio_ppg, PPG_INT_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
-	//gpio_pin_enable_callback(gpio_ppg, PPG_INT_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE);
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
@@ -237,11 +235,11 @@ void SH_to_APP_from_BL_timing_out(void)
  * @brief	   Read data from BPT sensor
  * @retval	   SS_SUCCESS  if everything is successful, others	communication error
  */
-int sh_read_cmd(u8_t *cmd_bytes,
+int sh_read_cmd(uint8_t *cmd_bytes,
 				int cmd_bytes_len,
-				u8_t *data,
+				uint8_t *data,
 				int data_len,
-				u8_t *rxbuf,
+				uint8_t *rxbuf,
 				int rxbuf_sz,
 				int sleep_ms )
 {
@@ -295,7 +293,31 @@ int sh_read_cmd(u8_t *cmd_bytes,
 	return (int)((SS_STATUS)rxbuf[0]);
 }
 
-int sh_write_cmd(u8_t *tx_buf,
+int sh_write_cmd_without_status_cb(uint8_t *tx_buf,
+								   int tx_len,
+				 				   int sleep_ms)
+{
+	int retries = SS_DEFAULT_RETRIES;
+
+	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	SH_pull_mfio_to_high();
+
+	while((ret != 0) && (retries--) > 0)
+	{
+		WAIT_MS(1);
+		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+		SH_pull_mfio_to_high();
+	}
+
+	if((ret != 0) && (retries == 0))
+	{
+	   return SS_ERR_UNAVAILABLE;
+	}
+}
+
+int sh_write_cmd(uint8_t *tx_buf,
 				 int tx_len,
 				 int sleep_ms)
 {
@@ -320,9 +342,9 @@ int sh_write_cmd(u8_t *tx_buf,
 
 	WAIT_MS(sleep_ms);
 
-	u8_t status_byte;
+	uint8_t status_byte;
 	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
-	ret = i2c_read(i2c_ppg, (u8_t*)&status_byte, 1, MAX32674_I2C_ADD);
+	ret = i2c_read(i2c_ppg, (uint8_t*)&status_byte, 1, MAX32674_I2C_ADD);
 	SH_pull_mfio_to_high();
 
 	bool try_again = (status_byte == SS_ERR_TRY_AGAIN);
@@ -332,7 +354,7 @@ int sh_write_cmd(u8_t *tx_buf,
 		WAIT_MS(sleep_ms);
 
 		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
-		ret = i2c_read(i2c_ppg, (u8_t*)&status_byte, 1, MAX32674_I2C_ADD);
+		ret = i2c_read(i2c_ppg, (uint8_t*)&status_byte, 1, MAX32674_I2C_ADD);
 		SH_pull_mfio_to_high();
 
 		try_again = (status_byte == SS_ERR_TRY_AGAIN);
@@ -351,9 +373,9 @@ int sh_write_cmd(u8_t *tx_buf,
 	return (int)((SS_STATUS)status_byte);
 }
 
-int sh_write_cmd_with_data(u8_t *cmd_bytes,
+int sh_write_cmd_with_data(uint8_t *cmd_bytes,
 						   int cmd_bytes_len,
-						   u8_t *data,
+						   uint8_t *data,
 						   int data_len,
 						   int cmd_delay_ms)
 {
@@ -363,25 +385,25 @@ int sh_write_cmd_with_data(u8_t *cmd_bytes,
 	return status;
 }
 
-s32_t sh_enter_int_mode(void)
+int32_t sh_enter_int_mode(void)
 {
-	u8_t ByteSeq[] =  {0xB8,0x01};
+	uint8_t ByteSeq[] =  {0xB8,0x01};
 	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
     return status;
 }
 
-s32_t sh_enter_polling_mode(void)
+int32_t sh_enter_polling_mode(void)
 {
-	u8_t ByteSeq[] =  {0xB8,0x00};
+	uint8_t ByteSeq[] =  {0xB8,0x00};
 	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
     return status;
 }
 
-s32_t sh_get_sensorhub_operating_mode(u8_t *hubMode)
+int32_t sh_get_sensorhub_operating_mode(uint8_t *hubMode)
 {
 
-	u8_t ByteSeq[] = {0x02,0x00};
-	u8_t rxbuf[2]  = { 0 };
+	uint8_t ByteSeq[] = {0x02,0x00};
+	uint8_t rxbuf[2]  = { 0 };
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 			                    0, 0,
@@ -393,12 +415,12 @@ s32_t sh_get_sensorhub_operating_mode(u8_t *hubMode)
 }
 
 
-s32_t sh_get_hub_fw_version(u8_t* fw_version)
+int32_t sh_get_hub_fw_version(uint8_t* fw_version)
 {
-	u8_t u8_work_mode;
-	u8_t cmd_bytes[2];
-	u8_t rxbuf[4];
-	u32_t status;
+	uint8_t u8_work_mode;
+	uint8_t cmd_bytes[2];
+	uint8_t rxbuf[4];
+	uint32_t status;
 
 	sh_get_sensorhub_operating_mode(&u8_work_mode);
 
@@ -426,17 +448,43 @@ s32_t sh_get_hub_fw_version(u8_t* fw_version)
 	return status;
 }
 
-int sh_set_sensorhub_operating_mode(u8_t hubMode)
+int sh_set_sensorhub_active(void)
 {
-	u8_t ByteSeq[] = {0x01,0x00,hubMode};
+	gpio_pin_set(gpio_ppg, PPG_INT_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_set(gpio_ppg, PPG_INT_PIN, 1);
+}
+
+int sh_set_sensorhub_sleep(void)
+{
+	uint8_t ByteSeq[] = {0x04,0x00,0x02};
+	
+	int status = sh_write_cmd( &ByteSeq[0], sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+    return status;
+}
+
+int sh_set_sensorhub_shutdown(void)
+{
+#if 1
+	uint8_t ByteSeq[] = {0x01,0x00,0x01};
+	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
+	return status;
+#else
+	return 0;
+#endif	
+}
+
+int sh_set_sensorhub_operating_mode(uint8_t hubMode)
+{
+	uint8_t ByteSeq[] = {0x01,0x00,hubMode};
 	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
     return status;
 }
 
-int sh_get_sensorhub_status(u8_t *hubStatus)
+int sh_get_sensorhub_status(uint8_t *hubStatus)
 {
-	u8_t ByteSeq[] = {0x00,0x00};
-	u8_t rxbuf[2]  = { 0 };
+	uint8_t ByteSeq[] = {0x00,0x00};
+	uint8_t rxbuf[2]  = { 0 };
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 			                    0, 0,
@@ -450,8 +498,8 @@ int sh_get_sensorhub_status(u8_t *hubStatus)
 int sh_set_data_type(int data_type_, bool sc_en_)
 {
 
-	u8_t cmd_bytes[] = { 0x10, 0x00 };
-	u8_t data_bytes[] = { (u8_t)((sc_en_ ? SS_MASK_OUTPUTMODE_SC_EN : 0) |
+	uint8_t cmd_bytes[] = { 0x10, 0x00 };
+	uint8_t data_bytes[] = { (uint8_t)((sc_en_ ? SS_MASK_OUTPUTMODE_SC_EN : 0) |
 							((data_type_ << SS_SHIFT_OUTPUTMODE_DATATYPE) & SS_MASK_OUTPUTMODE_DATATYPE)) };
 
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes),
@@ -462,8 +510,8 @@ int sh_set_data_type(int data_type_, bool sc_en_)
 
 int sh_get_data_type(int *data_type_, bool *sc_en_)
 {
-	u8_t ByteSeq[] = {0x11,0x00};
-	u8_t rxbuf[2]  = {0};
+	uint8_t ByteSeq[] = {0x11,0x00};
+	uint8_t rxbuf[2]  = {0};
 
 	int status = sh_read_cmd( &ByteSeq[0], sizeof(ByteSeq),
 							  0, 0,
@@ -482,8 +530,8 @@ int sh_get_data_type(int *data_type_, bool *sc_en_)
 
 int sh_set_fifo_thresh(int threshold)
 {
-	u8_t cmd_bytes[]  = { 0x10 , 0x01 };
-	u8_t data_bytes[] = { (u8_t)threshold };
+	uint8_t cmd_bytes[]  = { 0x10 , 0x01 };
+	uint8_t data_bytes[] = { (uint8_t)threshold };
 
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes),
 								&data_bytes[0], sizeof(data_bytes),
@@ -494,8 +542,8 @@ int sh_set_fifo_thresh(int threshold)
 
 int sh_get_fifo_thresh(int *thresh)
 {
-	u8_t ByteSeq[] = {0x11,0x01};
-	u8_t rxbuf[2]  = {0};
+	uint8_t ByteSeq[] = {0x11,0x01};
+	uint8_t rxbuf[2]  = {0};
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 							 0, 0,
@@ -508,8 +556,8 @@ int sh_get_fifo_thresh(int *thresh)
 
 int sh_ss_comm_check(void)
 {
-	u8_t ByteSeq[] = {0xFF, 0x00};
-	u8_t rxbuf[2];
+	uint8_t ByteSeq[] = {0xFF, 0x00};
+	uint8_t rxbuf[2];
 
 	int status = sh_read_cmd( &ByteSeq[0], sizeof(ByteSeq),
 							  0, 0,
@@ -533,8 +581,8 @@ int sh_ss_comm_check(void)
 int sh_num_avail_samples(int *numSamples)
 {
 
-	 u8_t ByteSeq[] = {0x12,0x00};
-	 u8_t rxbuf[2]  = {0};
+	 uint8_t ByteSeq[] = {0x12,0x00};
+	 uint8_t rxbuf[2]  = {0};
 
 	 int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 							  0, 0,
@@ -546,10 +594,10 @@ int sh_num_avail_samples(int *numSamples)
 	 return status;
 }
 
-int sh_read_fifo_data(int numSamples, int sampleSize, u8_t* databuf, int databufSz)
+int sh_read_fifo_data(int numSamples, int sampleSize, uint8_t* databuf, int databufSz)
 {
 	int bytes_to_read = numSamples * sampleSize + 1; //+1 for status byte
-	u8_t ByteSeq[] = {0x12,0x01};
+	uint8_t ByteSeq[] = {0x12,0x01};
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 							 0, 0,
@@ -559,10 +607,10 @@ int sh_read_fifo_data(int numSamples, int sampleSize, u8_t* databuf, int databuf
 	return status;
 }
 
-int sh_set_reg(int idx, u8_t addr, u32_t val, int regSz)
+int sh_set_reg(int idx, uint8_t addr, uint32_t val, int regSz)
 {
-	u8_t ByteSeq[] = { 0x40 , ((u8_t)idx) , addr};
-	u8_t data_bytes[4];
+	uint8_t ByteSeq[] = { 0x40 , ((uint8_t)idx) , addr};
+	uint8_t data_bytes[4];
 
 	for(int i = 0; i < regSz; i++)
 	{
@@ -570,17 +618,17 @@ int sh_set_reg(int idx, u8_t addr, u32_t val, int regSz)
 	}
 	
 	int status = sh_write_cmd_with_data( &ByteSeq[0], sizeof(ByteSeq),
-							             &data_bytes[0], (u8_t) regSz,
+							             &data_bytes[0], (uint8_t) regSz,
 										 SS_DEFAULT_CMD_SLEEP_MS);
 
     return status;
 }
 
-int sh_get_reg(int idx, u8_t addr, u32_t *val)
+int sh_get_reg(int idx, uint8_t addr, uint32_t *val)
 {
-	u32_t i32tmp;
-	u8_t ByteSeq[] = { 0x42, ((u8_t) idx)};
-	u8_t rxbuf[3]  = {0};
+	uint32_t i32tmp;
+	uint8_t ByteSeq[] = { 0x42, ((uint8_t) idx)};
+	uint8_t rxbuf[3]  = {0};
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 								0, 0,
@@ -590,8 +638,8 @@ int sh_get_reg(int idx, u8_t addr, u32_t *val)
     if(status == 0x00 /* SS_SUCCESS */)
     {
     	int reg_width = rxbuf[1];
-    	u8_t ByteSeq2[] = { 0x41, ((u8_t)idx) , addr} ;
-    	u8_t rxbuf2[5]  = {0};
+    	uint8_t ByteSeq2[] = { 0x41, ((uint8_t)idx) , addr} ;
+    	uint8_t rxbuf2[5]  = {0};
 
     	status = sh_read_cmd(&ByteSeq2[0], sizeof(ByteSeq2),
     						0, 0,
@@ -649,9 +697,9 @@ int sh_spi_status(uint8_t * spi_status)
 	return status;
 }
 
-int sh_sensor_enable_(int idx, int mode, u8_t ext_mode)
+int sh_sensor_enable_(int idx, int mode, uint8_t ext_mode)
 {
-	u8_t ByteSeq[] = {0x44, (u8_t)idx, (u8_t)mode, ext_mode};
+	uint8_t ByteSeq[] = {0x44, (uint8_t)idx, (uint8_t)mode, ext_mode};
 
 	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_ENABLE_SENSOR_SLEEP_MS);
     return status;
@@ -659,7 +707,7 @@ int sh_sensor_enable_(int idx, int mode, u8_t ext_mode)
 
 int sh_sensor_disable(int idx)
 {
-	u8_t ByteSeq[] = {0x44, ((u8_t) idx), 0x00};
+	uint8_t ByteSeq[] = {0x44, ((uint8_t) idx), 0x00};
 
 	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), SS_ENABLE_SENSOR_SLEEP_MS);
 	return status;
@@ -667,8 +715,8 @@ int sh_sensor_disable(int idx)
 
 int sh_get_input_fifo_size(int *fifo_size)
 {
-	u8_t ByteSeq[] = {0x13,0x01};
-	u8_t rxbuf[3]; /* status + fifo size */
+	uint8_t ByteSeq[] = {0x13,0x01};
+	uint8_t rxbuf[3]; /* status + fifo size */
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 							  0, 0,
@@ -823,7 +871,7 @@ int sensorhub_disable_algo(void)
 
 int sh_enable_algo_(int idx, int mode)
 {
-    u8_t cmd_bytes[] = { 0x52, (u8_t)idx, (u8_t)mode };
+    uint8_t cmd_bytes[] = { 0x52, (uint8_t)idx, (uint8_t)mode };
 
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes), 0, 0, 50 * SS_ENABLE_SENSOR_SLEEP_MS);
 
@@ -832,7 +880,7 @@ int sh_enable_algo_(int idx, int mode)
 
 int sh_disable_algo(int idx)
 {
-	u8_t ByteSeq[] = { 0x52, ((u8_t) idx) , 0x00};
+	uint8_t ByteSeq[] = { 0x52, ((uint8_t) idx) , 0x00};
 
 	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), SS_ENABLE_SENSOR_SLEEP_MS );
 
@@ -841,7 +889,7 @@ int sh_disable_algo(int idx)
 
 int sh_set_algo_cfg(int algo_idx, int cfg_idx, uint8_t *cfg, int cfg_sz)
 {
-	u8_t ByteSeq[] = { 0x50 , ((u8_t) algo_idx) , ((u8_t) cfg_idx) };
+	uint8_t ByteSeq[] = { 0x50 , ((uint8_t) algo_idx) , ((uint8_t) cfg_idx) };
 
 	int status = sh_write_cmd_with_data( &ByteSeq[0], sizeof(ByteSeq),
 			                             cfg, cfg_sz,
@@ -849,9 +897,9 @@ int sh_set_algo_cfg(int algo_idx, int cfg_idx, uint8_t *cfg, int cfg_sz)
 	return status;
 }
 
-int sh_get_algo_cfg(int algo_idx, int cfg_idx, u8_t *cfg, int cfg_sz)
+int sh_get_algo_cfg(int algo_idx, int cfg_idx, uint8_t *cfg, int cfg_sz)
 {
-	u8_t ByteSeq[] = { 0x51 , ((u8_t) algo_idx) , ((u8_t) cfg_idx) };
+	uint8_t ByteSeq[] = { 0x51 , ((uint8_t) algo_idx) , ((uint8_t) cfg_idx) };
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 						     0, 0,
@@ -860,11 +908,11 @@ int sh_get_algo_cfg(int algo_idx, int cfg_idx, u8_t *cfg, int cfg_sz)
 	return status;
 }
 
-int sh_feed_to_input_fifo(u8_t *tx_buf, int tx_buf_sz, int *nb_written)
+int sh_feed_to_input_fifo(uint8_t *tx_buf, int tx_buf_sz, int *nb_written)
 {
 	int status;
 
-	u8_t rxbuf[3];
+	uint8_t rxbuf[3];
 	tx_buf[0] = 0x14;
 	tx_buf[1] = 0x00;
 
@@ -880,8 +928,8 @@ int sh_feed_to_input_fifo(u8_t *tx_buf, int tx_buf_sz, int *nb_written)
 
 int sh_get_num_bytes_in_input_fifo(int *fifo_size)
 {
-    u8_t ByteSeq[] = {0x13,0x04};
-	u8_t rxbuf[3]; /* status + fifo size */
+    uint8_t ByteSeq[] = {0x13,0x04};
+	uint8_t rxbuf[3]; /* status + fifo size */
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
 							 0, 0,
@@ -893,10 +941,10 @@ int sh_get_num_bytes_in_input_fifo(int *fifo_size)
 	return status;
 }
 
-int sh_set_report_period(u8_t period)
+int sh_set_report_period(uint8_t period)
 {
-	u8_t cmd_bytes[]  = { SS_FAM_W_COMMCHAN, SS_CMDIDX_REPORTPERIOD };
-	u8_t data_bytes[] = { (u8_t)period };
+	uint8_t cmd_bytes[]  = { SS_FAM_W_COMMCHAN, SS_CMDIDX_REPORTPERIOD };
+	uint8_t data_bytes[] = { (uint8_t)period };
 
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes),
 								              &data_bytes[0], sizeof(data_bytes), SS_DEFAULT_CMD_SLEEP_MS );
@@ -904,9 +952,9 @@ int sh_set_report_period(u8_t period)
 }
 
 
-int sh_set_sensor_cfg(int sensor_idx, int cfg_idx, u8_t *cfg, int cfg_sz, int sleep_ms)
+int sh_set_sensor_cfg(int sensor_idx, int cfg_idx, uint8_t *cfg, int cfg_sz, int sleep_ms)
 {
-	u8_t cmd_bytes[] = { SS_FAM_W_SENSOR_CONFIG, (u8_t)sensor_idx, (u8_t)cfg_idx };
+	uint8_t cmd_bytes[] = { SS_FAM_W_SENSOR_CONFIG, (uint8_t)sensor_idx, (uint8_t)cfg_idx };
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes),
 								 	 	 	 	  cfg, cfg_sz, sleep_ms   );
 	return status;
@@ -914,7 +962,7 @@ int sh_set_sensor_cfg(int sensor_idx, int cfg_idx, u8_t *cfg, int cfg_sz, int sl
 
 int sh_disable_sensor_list(void)
 {
-	u8_t cmd_bytes[] = { SS_FAM_W_SENSORMODE, 0xFF, 2, SH_SENSORIDX_ACCEL, 0, SH_INPUT_DATA_DIRECT_SENSOR, SH_SENSORIDX_MAX8614X, 0, SH_INPUT_DATA_DIRECT_SENSOR };
+	uint8_t cmd_bytes[] = { SS_FAM_W_SENSORMODE, 0xFF, 2, SH_SENSORIDX_ACCEL, 0, SH_INPUT_DATA_DIRECT_SENSOR, SH_SENSORIDX_MAX8614X, 0, SH_INPUT_DATA_DIRECT_SENSOR };
 
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes), 0, 0, 5 * SS_ENABLE_SENSOR_SLEEP_MS);
 
@@ -928,27 +976,27 @@ int sh_disable_sensor_list(void)
  *
  * */
 
-s32_t sh_exit_from_bootloader(void)
+int32_t sh_exit_from_bootloader(void)
 {
 	return sh_set_sensorhub_operating_mode(0x00);
 }
 
-s32_t sh_put_in_bootloader(void)
+int32_t sh_put_in_bootloader(void)
 {
 	return sh_set_sensorhub_operating_mode(0x08);
 }
 
-s32_t sh_checkif_bootldr_mode(void)
+int32_t sh_checkif_bootldr_mode(void)
 {
-	u8_t hubMode;
+	uint8_t hubMode;
 	int status = sh_get_sensorhub_operating_mode(&hubMode);
 	return (status != SS_SUCCESS)? -1:(hubMode & SS_MASK_MODE_BOOTLDR);
 }
 
-s32_t sh_get_bootloader_MCU_tye(u8_t *type)
+int32_t sh_get_bootloader_MCU_tye(uint8_t *type)
 {
-	u8_t ByteSeq[]= { 0xFF, 0x00 };
-    u8_t rxbuf[2];
+	uint8_t ByteSeq[]= { 0xFF, 0x00 };
+    uint8_t rxbuf[2];
 
     int status = sh_read_cmd( &ByteSeq[0], sizeof(ByteSeq),
                           0, 0,
@@ -966,10 +1014,10 @@ s32_t sh_get_bootloader_MCU_tye(u8_t *type)
     return status;
 }
 
-s32_t sh_get_bootloader_pagesz(u16_t *pagesz)
+int32_t sh_get_bootloader_pagesz(uint16_t *pagesz)
 {
-	u8_t ByteSeq[]= { 0x81, 0x01 };
-	u8_t rxbuf[3];
+	uint8_t ByteSeq[]= { 0x81, 0x01 };
+	uint8_t rxbuf[3];
 	int sz = 0;
 
 	int status = sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq),
@@ -990,11 +1038,11 @@ s32_t sh_get_bootloader_pagesz(u16_t *pagesz)
 	return status;
 }
 
-s32_t sh_set_bootloader_numberofpages(u8_t pageCount)
+int32_t sh_set_bootloader_numberofpages(uint8_t pageCount)
 {
-    u8_t ByteSeq[] = { 0x80, 0x02 };
+    uint8_t ByteSeq[] = { 0x80, 0x02 };
 
-    u8_t data_bytes[] = { (u8_t)((pageCount >> 8) & 0xFF), (u8_t)(pageCount & 0xFF) };
+    uint8_t data_bytes[] = { (uint8_t)((pageCount >> 8) & 0xFF), (uint8_t)(pageCount & 0xFF) };
 
     int status = sh_write_cmd_with_data(&ByteSeq[0], sizeof(ByteSeq),
 								        &data_bytes[0], sizeof(data_bytes),
@@ -1003,9 +1051,9 @@ s32_t sh_set_bootloader_numberofpages(u8_t pageCount)
     return status;
 }
 
-s32_t sh_set_bootloader_iv(u8_t* iv_bytes)
+int32_t sh_set_bootloader_iv(uint8_t* iv_bytes)
 {
-	 u8_t ByteSeq[] = { 0x80, 0x00 };
+	 uint8_t ByteSeq[] = { 0x80, 0x00 };
 
 	 int status = sh_write_cmd_with_data( &ByteSeq[0], sizeof(ByteSeq),
 			                              &iv_bytes[0], BL_AES_NONCE_SIZE ,
@@ -1016,9 +1064,9 @@ s32_t sh_set_bootloader_iv(u8_t* iv_bytes)
 }
 
 
-s32_t sh_set_bootloader_auth(u8_t* auth_bytes)
+int32_t sh_set_bootloader_auth(uint8_t* auth_bytes)
 {
-	 u8_t ByteSeq[] = { 0x80, 0x01 };
+	 uint8_t ByteSeq[] = { 0x80, 0x01 };
 
 	 int status = sh_write_cmd_with_data( &ByteSeq[0], sizeof(ByteSeq),
 			                              &auth_bytes[0], BL_AES_AUTH_SIZE,
@@ -1029,10 +1077,10 @@ s32_t sh_set_bootloader_auth(u8_t* auth_bytes)
 }
 
 
-s32_t sh_set_bootloader_partial_write_size(u32_t partial_size)
+int32_t sh_set_bootloader_partial_write_size(uint32_t partial_size)
 {
-    u8_t ByteSeq[] = { 0x80, 0x06 };
-    u8_t data_bytes[] = { (u8_t)((partial_size >> 8) & 0xFF), (u8_t)(partial_size & 0xFF) };
+    uint8_t ByteSeq[] = { 0x80, 0x06 };
+    uint8_t data_bytes[] = { (uint8_t)((partial_size >> 8) & 0xFF), (uint8_t)(partial_size & 0xFF) };
 
     int status = sh_write_cmd_with_data(&ByteSeq[0], sizeof(ByteSeq),
 								        &data_bytes[0], sizeof(data_bytes),
@@ -1042,9 +1090,9 @@ s32_t sh_set_bootloader_partial_write_size(u32_t partial_size)
 }
 
 
-s32_t sh_set_bootloader_erase(void)
+int32_t sh_set_bootloader_erase(void)
 {
-	u8_t ByteSeq[] = { 0x80, 0x03 };
+	uint8_t ByteSeq[] = { 0x80, 0x03 };
 
     int status = sh_write_cmd_with_data(&ByteSeq[0], sizeof(ByteSeq),
                                         0, 0,
@@ -1055,21 +1103,21 @@ s32_t sh_set_bootloader_erase(void)
 
 
 #ifdef SH_OTA_DATA_STORE_IN_FLASH
-u8_t Fw_data[BL_FLASH_PARTIAL_SIZE];
-s32_t sh_set_bootloader_flashpages(u32_t FwData_addr, u8_t u8_pageSize)
+uint8_t Fw_data[BL_FLASH_PARTIAL_SIZE];
+int32_t sh_set_bootloader_flashpages(uint32_t FwData_addr, uint8_t u8_pageSize)
 {
-	s32_t status = -1;
-    u8_t ByteSeq[] = { 0x80, 0x04};
-    u32_t u32_dataIdx = 0;
-    u32_t u32_pageDataLen = (BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE);
+	int32_t status = -1;
+    uint8_t ByteSeq[] = { 0x80, 0x04};
+    uint32_t u32_dataIdx = 0;
+    uint32_t u32_pageDataLen = (BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE);
 
-	for(u32_t i = 0; i < u8_pageSize; i++)
+	for(uint32_t i = 0; i < u8_pageSize; i++)
 	{
 		u32_dataIdx = BL_ST_PAGE_IDEX + i * u32_pageDataLen;
 
-		for(u32_t j = 0; j < (1+(8000/BL_FLASH_PARTIAL_SIZE)); j++)
+		for(uint32_t j = 0; j < (1+(8000/BL_FLASH_PARTIAL_SIZE)); j++)
 		{
-			u32_t part_index,part_len;
+			uint32_t part_index,part_len;
 
 			part_index = BL_FLASH_PARTIAL_SIZE*j;
 			part_len = BL_FLASH_PARTIAL_SIZE;
@@ -1099,14 +1147,14 @@ s32_t sh_set_bootloader_flashpages(u32_t FwData_addr, u8_t u8_pageSize)
 
 #else
 
-s32_t sh_set_bootloader_flashpages(u8_t *u8p_FwData , u8_t u8_pageSize)
+int32_t sh_set_bootloader_flashpages(uint8_t *u8p_FwData , uint8_t u8_pageSize)
 {
-	s32_t status = -1;
-    u8_t ByteSeq[] = { 0x80, 0x04 };
-    u32_t u32_dataIdx = 0;
-    u32_t u32_pageDataLen = (BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE);
+	int32_t status = -1;
+    uint8_t ByteSeq[] = { 0x80, 0x04 };
+    uint32_t u32_dataIdx = 0;
+    uint32_t u32_pageDataLen = (BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE);
 
-	for(u32_t i = 0; i < u8_pageSize; i++)
+	for(uint32_t i = 0; i < u8_pageSize; i++)
 	{
 		u32_dataIdx = BL_ST_PAGE_IDEX + i * u32_pageDataLen;
 
@@ -1135,30 +1183,30 @@ s32_t sh_set_bootloader_flashpages(u8_t *u8p_FwData , u8_t u8_pageSize)
  *   					   COMMAND INTERFACE for MAX86141    								 	*
  *																								*
  * **********************************************************************************************/
-int SH_Max8614x_set_ppgreg(const u8_t addr, const u32_t val)
+int SH_Max8614x_set_ppgreg(const uint8_t addr, const uint32_t val)
 {
 	int status = sh_set_reg(SH_SENSORIDX_MAX8614X, addr, val, 1);
 	return status;
 }
 
 
-int SH_Max8614x_get_ppgreg(const u8_t addr , u32_t *regVal)
+int SH_Max8614x_get_ppgreg(const uint8_t addr , uint32_t *regVal)
 {
-    int status = sh_get_reg(SH_SENSORIDX_MAX8614X, (u8_t) addr, regVal);
+    int status = sh_get_reg(SH_SENSORIDX_MAX8614X, (uint8_t) addr, regVal);
 	return status;
 }
 
-int sh_set_cfg_wearablesuite_aecenable(const u8_t isAecEnable )
+int sh_set_cfg_wearablesuite_aecenable(const uint8_t isAecEnable )
 {
-	u8_t Temp[1] = { isAecEnable };
+	uint8_t Temp[1] = { isAecEnable };
     int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_AEC_ENABLE, &Temp[0], 1);
 	return status;
 
 }
 
-int sh_get_cfg_wearablesuite_aecenable( u8_t *isAecEnable )
+int sh_get_cfg_wearablesuite_aecenable( uint8_t *isAecEnable )
 {
-	u8_t rxBuff[1+1]; // first byte is status
+	uint8_t rxBuff[1+1]; // first byte is status
 	int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE, SS_CFGIDX_WHRM_WSPO2_SUITE_AEC_ENABLE, &rxBuff[0], sizeof(rxBuff) );
 	*isAecEnable =  rxBuff[1];
 
@@ -1170,9 +1218,9 @@ int sh_get_cfg_wearablesuite_aecenable( u8_t *isAecEnable )
  *
  *
  */
-int sh_get_dhparams( u8_t *response, int response_sz)
+int sh_get_dhparams( uint8_t *response, int response_sz)
 {
-	u8_t cmd_bytes[] = { SS_FAM_R_INITPARAMS , (u8_t) 0x00 };
+	uint8_t cmd_bytes[] = { SS_FAM_R_INITPARAMS , (uint8_t) 0x00 };
 
 	int status = sh_read_cmd(&cmd_bytes[0], sizeof(cmd_bytes),
 								0, 0,
@@ -1181,18 +1229,18 @@ int sh_get_dhparams( u8_t *response, int response_sz)
 	return status;
 }
 
-int sh_set_dhlocalpublic(  u8_t *response , int response_sz)
+int sh_set_dhlocalpublic(  uint8_t *response , int response_sz)
 {
-	u8_t cmd_bytes[] = { SS_FAM_W_DHPUBLICKEY, (u8_t) 0x00 };
+	uint8_t cmd_bytes[] = { SS_FAM_W_DHPUBLICKEY, (uint8_t) 0x00 };
 	int status = sh_write_cmd_with_data(&cmd_bytes[0], sizeof(cmd_bytes),
 								        response, response_sz, SS_DEFAULT_CMD_SLEEP_MS);
 	return status;
 }
 
 
-int sh_get_dhremotepublic( u8_t *response, int response_sz)
+int sh_get_dhremotepublic( uint8_t *response, int response_sz)
 {
-	u8_t cmd_bytes[] = { SS_FAM_R_DHPUBLICKEY , (u8_t) 0x00 };
+	uint8_t cmd_bytes[] = { SS_FAM_R_DHPUBLICKEY , (uint8_t) 0x00 };
 
 	int status = sh_read_cmd(&cmd_bytes[0], sizeof(cmd_bytes),
 											0, 0,
@@ -1201,11 +1249,11 @@ int sh_get_dhremotepublic( u8_t *response, int response_sz)
 	return status;
 }
 
-int sh_get_authentication( u8_t *response, int response_sz)
+int sh_get_authentication( uint8_t *response, int response_sz)
 {
 //	const int auth_cfg_sz = 32; // fixed to 32 bytes
 
-	u8_t cmd_bytes[] = { SS_FAM_R_AUTHSEQUENCE , (u8_t) 0x00 };
+	uint8_t cmd_bytes[] = { SS_FAM_R_AUTHSEQUENCE , (uint8_t) 0x00 };
 
 	int status = sh_read_cmd(&cmd_bytes[0], sizeof(cmd_bytes),
 								   0, 0,
@@ -1216,9 +1264,9 @@ int sh_get_authentication( u8_t *response, int response_sz)
 
 bool sh_init_interface(void)
 {
-	s32_t s32_status;
-	u8_t u8_rxbuf[3] = {0};
-	u8_t mcu_type;
+	int32_t s32_status;
+	uint8_t u8_rxbuf[3] = {0};
+	uint8_t mcu_type;
 
 	sh_init_i2c();
 	sh_init_gpio();
@@ -1233,6 +1281,7 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
+
 		SH_Power_Off();
 		//Set_PPG_Power_Off();
 		return false;
@@ -1248,9 +1297,8 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
 	#endif
-	
+
 		SH_Power_Off();
-		//Set_PPG_Power_Off();
 		return false;
 	}
 	else
@@ -1261,7 +1309,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (u8_rxbuf[1] != 4))
+	if((mcu_type != 1) || (u8_rxbuf[1] < 4))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
@@ -1270,6 +1318,14 @@ bool sh_init_interface(void)
 	#endif
 		NotifyShowStrings((LCD_WIDTH-180)/2, (LCD_HEIGHT-120)/2, 180, 120, NULL, 0, "PPG is upgrading firmware, please wait a few minutes!");
 		SH_OTA_upgrade_process();
+		s32_status = sh_get_hub_fw_version(u8_rxbuf);
+		if(s32_status == SS_SUCCESS)
+		{
+			sprintf(g_ppg_ver, "%d.%d.%d", u8_rxbuf[0], u8_rxbuf[1], u8_rxbuf[2]);
+		#ifdef MAX_DEBUG
+			LOGD("FW version is:%s", g_ppg_ver);
+		#endif
+		}
 		LCD_SleepOut();
 	}
 
@@ -1282,8 +1338,8 @@ bool sh_init_interface(void)
 
 void sh_get_BL_version(void)
 {
-	s32_t s32_status;
-	u8_t u8_rxbuf[3] = {0,0,0};
+	int32_t s32_status;
+	uint8_t u8_rxbuf[3] = {0,0,0};
 
 	SH_rst_to_BL_mode();
 
@@ -1313,7 +1369,7 @@ void sh_get_BL_version(void)
 	#endif
 	}
 
-	u32_t u32_sensorID = 0;
+	uint32_t u32_sensorID = 0;
 	s32_status = sh_get_reg(0x0, 0xFF, &u32_sensorID);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -1328,7 +1384,7 @@ void sh_get_BL_version(void)
 	#endif
 	}
 
-	u32_t u32_accSensorId = 0;
+	uint32_t u32_accSensorId = 0;
 	s32_status = sh_get_reg(SH_SENSORIDX_ACCEL, 0xF, &u32_accSensorId);
 	if (s32_status != SS_SUCCESS)
 	{
@@ -1346,8 +1402,8 @@ void sh_get_BL_version(void)
 
 void sh_get_APP_version(void)
 {
-	s32_t s32_status;
-	u8_t u8_rxbuf[3];
+	int32_t s32_status;
+	uint8_t u8_rxbuf[3];
 
 	SH_rst_to_APP_mode();
 
@@ -1377,7 +1433,7 @@ void sh_get_APP_version(void)
 	#endif
 	}
 
-	u32_t u32_sensorID = 0;
+	uint32_t u32_sensorID = 0;
 	s32_status = sh_get_reg(0x0, 0xFF, &u32_sensorID);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -1392,7 +1448,7 @@ void sh_get_APP_version(void)
 	#endif
 	}
 
-	u32_t u32_accSensorId = 0;
+	uint32_t u32_accSensorId = 0;
 	s32_status = sh_get_reg(SH_SENSORIDX_ACCEL, 0xF, &u32_accSensorId);
 	if (s32_status != SS_SUCCESS)
 	{
@@ -1406,6 +1462,12 @@ void sh_get_APP_version(void)
 		LOGD("acc sensor ID is %x", u32_accSensorId);
 	#endif
 	}
+}
+
+bool sh_clear_bpt_cal_data(void)
+{
+	memset(&sh_bpt_cal, 0x00, CAL_RESULT_SIZE);
+	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
 }
 
 bool sh_check_bpt_cal_data(void)
@@ -1494,7 +1556,7 @@ void sh_req_bpt_cal_data(void)
 	//Set the cal_index, reference systolic, reference diastolic
 	status = sh_set_cfg_bpt_sys_dia(0, global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic);
 #ifdef MAX_DEBUG
-	LOGD("set cal_index sys&dia ret:%d", status);
+	LOGD("set cal_index sys:%d&dia:%d ret:%d", global_settings.bp_calibra.systolic, global_settings.bp_calibra.diastolic, status);
 #endif
 	//set algo submode
 	status = sensorhub_set_algo_submode(SH_OPERATION_WHRM_BPT_MODE, SH_BPT_MODE_CALIBCATION);

@@ -11,8 +11,9 @@
 #include <net/nrf_cloud_agps.h>
 #endif
 #include <stdio.h>
-#include <modem/at_cmd.h>
-#include <modem/at_notif.h>
+#include <random/rand32.h>
+//#include <modem/at_cmd.h>
+//#include <modem/at_notif.h>
 #include "datetime.h"
 #include "lcd.h"
 #include "screen.h"
@@ -56,7 +57,7 @@ K_TIMER_DEFINE(app_send_gps_timer, APP_Send_GPS_Data_timerout, NULL);
 
 static bool gps_is_on = false;
 
-static s64_t gps_start_time=0,gps_fix_time=0,gps_local_time=0;
+static int64_t gps_start_time=0,gps_fix_time=0,gps_local_time=0;
 
 static struct k_work_q *app_work_q;
 static struct k_work send_agps_request_work;
@@ -76,7 +77,7 @@ bool gps_test_start_flag = false;
 bool gps_test_update_flag = false;
 bool gps_send_data_flag = false;
 
-u8_t gps_test_info[256] = {0};
+uint8_t gps_test_info[256] = {0};
 
 static void set_gps_enable(const bool enable);
 
@@ -127,13 +128,13 @@ void APP_Ask_GPS_Data_timerout(struct k_timer *timer)
 
 void APP_Ask_GPS_Data(void)
 {
-	static u8_t time_init = false;
+	static uint8_t time_init = false;
 
 #if 1
 	if(!gps_is_on)
 	{
 		gps_on_flag = true;
-		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), NULL);
+		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), K_NO_WAIT);
 	}
 #else
 	gps_pvt_data.datetime.year = 2020;
@@ -167,6 +168,12 @@ void gps_off(void)
 		return;
 	
 	set_gps_enable(false);
+
+#ifdef NB_SIGNAL_TEST
+	SetModemTurnOff();
+	SetModemNw();
+	nb_reconnect();
+#endif	
 }
 
 bool gps_is_working(void)
@@ -182,6 +189,12 @@ void gps_on(void)
 	if(gps_is_on)
 		return;
 	
+#ifdef NB_SIGNAL_TEST
+	SetModemTurnOff();
+	SetModemGps();	
+	SetModemTurnOn();
+#endif
+
 	set_gps_enable(true);
 }
 
@@ -236,7 +249,7 @@ static void set_gps_enable(const bool enable)
 		gps_start_time = k_uptime_get();
 		memset(&gps_pvt_data, 0, sizeof(gps_pvt_data));
 		
-		gps_control_start(K_NO_WAIT);
+		gps_control_start(0);
 	}
 	else
 	{
@@ -245,7 +258,7 @@ static void set_gps_enable(const bool enable)
 	#endif
 
 		gps_is_on = false;
-		gps_control_stop(K_NO_WAIT);
+		gps_control_stop(0);
 	}
 }
 
@@ -288,7 +301,7 @@ static void send_agps_request(struct k_work *work)
 
 static void gps_handler(struct device *dev, struct gps_event *evt)
 {
-	u8_t tmpbuf[128] = {0};
+	uint8_t tmpbuf[128] = {0};
 	
 	switch (evt->type)
 	{
@@ -320,14 +333,14 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 	#endif	
 		if(test_gps_flag)
 		{
-			u8_t i,tracked;
-			u8_t strbuf[256] = {0};
+			uint8_t i,tracked;
+			uint8_t strbuf[256] = {0};
 
 			memset(gps_test_info, 0x00, sizeof(gps_test_info));
 			
 			for(i=0;i<GPS_PVT_MAX_SV_COUNT;i++)
 			{
-				u8_t buf[128] = {0};
+				uint8_t buf[128] = {0};
 				
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
@@ -377,15 +390,15 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 	#endif
 		if(test_gps_flag)
 		{
-			u8_t i,tracked;
-			u8_t strbuf[128] = {0};
-			s32_t lon,lat;
+			uint8_t i,tracked;
+			uint8_t strbuf[128] = {0};
+			int32_t lon,lat;
 			
 			memset(gps_test_info, 0x00, sizeof(gps_test_info));
 			
 			for(i=0;i<GPS_PVT_MAX_SV_COUNT;i++)
 			{
-				u8_t buf[128] = {0};
+				uint8_t buf[128] = {0};
 				
 				if((evt->pvt.sv[i].sv > 0) && (evt->pvt.sv[i].sv < 32))
 				{
@@ -477,7 +490,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 			if(k_timer_remaining_get(&app_wait_gps_timer) > 0)
 				k_timer_stop(&app_wait_gps_timer);
 
-			k_timer_start(&app_send_gps_timer, K_MSEC(1000), NULL);
+			k_timer_start(&app_send_gps_timer, K_MSEC(1000), K_NO_WAIT);
 		}
 		break;
 		

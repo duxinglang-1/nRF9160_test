@@ -9,11 +9,13 @@
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <drivers/flash.h>
-#include <bsd.h>
-#include <modem/lte_lc.h>
-#include <modem/at_cmd.h>
-#include <modem/at_notif.h>
+#if defined(CONFIG_BSD_LIBRARY)
 #include <modem/bsdlib.h>
+#include <bsd.h>
+#endif /* CONFIG_BSD_LIBRARY */
+#include <modem/lte_lc.h>
+//#include <modem/at_cmd.h>
+//#include <modem/at_notif.h>
 #include <net/download_client.h>
 #include "data_download.h"
 #include "dl_target.h"
@@ -40,7 +42,7 @@ static struct k_work_q *app_work_q;
 static struct k_delayed_work dl_work;
 static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
 
-u8_t g_dl_progress = 0;
+uint8_t g_dl_progress = 0;
 DL_DATA_TYPE g_dl_data_type = DL_DATA_IMG;
 
 static int modem_configure(void)
@@ -79,7 +81,7 @@ static void send_progress(int progress)
 	callback(&evt);
 }
 
-static u32_t rec_len = 0;
+static uint32_t rec_len = 0;
 
 static void dl_target_callback_handler(enum dl_target_evt_id evt)
 {
@@ -279,8 +281,8 @@ int dl_download_start(const char *host, const char *file, int sec_tag)
 /**@brief Start transfer of the file. */
 static void dl_transfer_start(struct k_work *unused)
 {
-	u8_t dl_host[256] = {0};
-	u8_t dl_file[256] = {0};
+	uint8_t dl_host[256] = {0};
+	uint8_t dl_file[256] = {0};
 	int retval;
 	int sec_tag;
 
@@ -300,7 +302,8 @@ static void dl_transfer_start(struct k_work *unused)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
 		else
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
-		strcpy(dl_file, CONFIG_IMG_DATA_DOWNLOAD_FILE);
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_IMG_DATA_DOWNLOAD_FILE);
 		break;
 	#endif
 
@@ -310,7 +313,8 @@ static void dl_transfer_start(struct k_work *unused)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
 		else
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
-		strcpy(dl_file, CONFIG_FONT_DATA_DOWNLOAD_FILE);		
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_FONT_DATA_DOWNLOAD_FILE);		
 		break;
 	#endif
 
@@ -320,7 +324,8 @@ static void dl_transfer_start(struct k_work *unused)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
 		else
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
-		strcpy(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
 		break;
 	#endif		
 	}
@@ -616,9 +621,8 @@ void DlMsgProc(void)
 	
 	if(dl_reboot_flag)
 	{
-		LOGD("download_reboot!");
-		
 		dl_reboot_flag = false;
+		LCD_Clear(BLACK);
 		sys_reboot(0);
 	}
 

@@ -13,6 +13,28 @@
 #include <zephyr.h>
 #include <device.h>
 
+#define PPG_CHECK_HR_TIMELY			1
+#define PPG_CHECK_SPO2_TIMELY		5
+#define PPG_CHECK_BPT_TIMELY		3
+
+#define PPG_HR_MAX		150
+#define PPG_HR_MIN		30
+#define PPG_SPO2_MAX	100
+#define	PPG_SPO2_MIN	80
+#define PPG_BPT_SYS_MAX	180
+#define PPG_BPT_SYS_MIN	30
+#define PPG_BPT_DIA_MAX	180
+#define PPG_BPT_DIA_MIN	30
+
+typedef enum
+{
+	PPG_DATA_HR,
+	PPG_DATA_SPO2,
+	PPG_DATA_BPT,
+	PPG_DATA_ECG,
+	PPG_DATA_MAX
+}PPG_DATA_TYPE;
+
 typedef enum
 {
 	ALG_MODE_HR_SPO2,
@@ -46,87 +68,102 @@ typedef enum
 
 typedef struct
 {
-	u8_t systolic;
-	u8_t diastolic;
+	uint8_t systolic;
+	uint8_t diastolic;
 }bpt_data;
 
-//单词测量
+//单次测量
 typedef struct
 {
-	u16_t year;
-	u8_t month;
-	u8_t day;
-	u8_t hour;
-	u8_t min;
-	u8_t sec;
-	u8_t hr;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+	uint8_t hr;
 }ppg_hr_rec1_data;
 
 typedef struct
 {
-	u16_t year;
-	u8_t month;
-	u8_t day;
-	u8_t hour;
-	u8_t min;
-	u8_t sec;
-	u8_t spo2;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+	uint8_t spo2;
 }ppg_spo2_rec1_data;
 
 typedef struct
 {
-	u16_t year;
-	u8_t month;
-	u8_t day;
-	u8_t hour;
-	u8_t min;
-	u8_t sec;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
 	bpt_data bpt;
 }ppg_bpt_rec1_data;
 
 //整点测量
 typedef struct
 {
-	u16_t year;
-	u8_t month;
-	u8_t day;
-	u8_t hr[24];
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hr[24];
 }ppg_hr_rec2_data;
 
 typedef struct
 {
-	u16_t year;
-	u8_t month;
-	u8_t day;
-	u8_t spo2[24];
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t spo2[24];
 }ppg_spo2_rec2_data;
 
 typedef struct
 {
-	u16_t year;
-	u8_t month;
-	u8_t day;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
 	bpt_data bpt[24];
 }ppg_bpt_rec2_data;
 
-extern u8_t g_ppg_trigger;
-extern u8_t g_ppg_ver[64];
+extern bool get_bpt_ok_flag;
+extern bool get_hr_ok_flag;
+extern bool get_spo2_ok_flag;
+extern bool ppg_bpt_is_calbraed;
+extern bool ppg_bpt_cal_need_update;
 
-extern u16_t g_hr;
-extern u16_t g_spo2;
-extern u16_t g_bp_systolic;		//收缩压
-extern u16_t g_bp_diastolic;	//舒张压
+extern uint8_t g_ppg_trigger;
+extern uint8_t g_ppg_ver[64];
+
+extern uint8_t g_hr;
+extern uint8_t g_hr_timing;
+extern uint8_t g_spo2;
+extern uint8_t g_spo2_timing;
+extern bpt_data g_bpt;
+extern bpt_data g_bpt_timing;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
 /*heart rate*/
-extern void GetCurDayHrRecData(u8_t *databuf);
-extern void GetHeartRate(u8_t *HR);
-extern void APPStartHrSpo2(void);
+extern void SetCurDayBptRecData(bpt_data bpt);
+extern void GetCurDayBptRecData(uint8_t *databuf);
+extern void SetCurDaySpo2RecData(uint8_t spo2);
+extern void GetCurDaySpo2RecData(uint8_t *databuf);
+extern void SetCurDayHrRecData(uint8_t hr);
+extern void GetCurDayHrRecData(uint8_t *databuf);
+extern void GetHeartRate(uint8_t *HR);
+extern void APPStartHr(void);
+extern void APPStartSpo2(void);
 extern void APPStartBpt(void);
 extern void APPStartEcg(void);
-extern void TimerStartHrSpo2(void);
+extern void TimerStartHr(void);
+extern void TimerStartSpo2(void);
 extern void TimerStartBpt(void);
 extern void TimerStartEcg(void);
 

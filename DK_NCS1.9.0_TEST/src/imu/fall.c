@@ -37,7 +37,7 @@ static bool fall_send_flag = false;
 static bool fall_end_flag = false;
 static bool fall_start_gps_flag = false;
 
-u8_t fall_trigger_time[16] = {0};
+uint8_t fall_trigger_time[16] = {0};
 
 static void FallTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(fall_timer, FallTimerOutCallBack, NULL);
@@ -105,8 +105,8 @@ void FallStartGPSCallBack(struct k_timer *timer_id)
 #ifdef CONFIG_WIFI
 void fall_get_wifi_data_reply(wifi_infor wifi_data)
 {
-	u8_t reply[256] = {0};
-	u32_t count=3,i;
+	uint8_t reply[256] = {0};
+	uint32_t count=3,i;
 
 	if(wifi_data.count > 0)
 		count = wifi_data.count;
@@ -128,9 +128,9 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 
 void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
-	u8_t reply[128] = {0};
-	u8_t tmpbuf[8] = {0};
-	u32_t tmp1;
+	uint8_t reply[128] = {0};
+	uint8_t tmpbuf[8] = {0};
+	uint32_t tmp1;
 	double tmp2;
 
 	if(!flag)
@@ -143,7 +143,7 @@ void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 		gps_data.latitude = -gps_data.latitude;
 	}
 
-	tmp1 = (u32_t)(gps_data.latitude);	//经度整数部分
+	tmp1 = (uint32_t)(gps_data.latitude);	//经度整数部分
 	tmp2 = gps_data.latitude - tmp1;		//经度小数部分
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
@@ -151,14 +151,14 @@ void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	//dot
 	strcat(reply, ".");
 	//decimal
-	tmp1 = (u32_t)(tmp2*1000000);
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/10000));
+	tmp1 = (uint32_t)(tmp2*1000000);
+	sprintf(tmpbuf, "%02d", (uint8_t)(tmp1/10000));
 	strcat(reply, tmpbuf);
 	tmp1 = tmp1%10000;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/100));
+	sprintf(tmpbuf, "%02d", (uint8_t)(tmp1/100));
 	strcat(reply, tmpbuf);	
 	tmp1 = tmp1%100;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
+	sprintf(tmpbuf, "%02d", (uint8_t)(tmp1));
 	strcat(reply, tmpbuf);
 
 	//semicolon
@@ -171,7 +171,7 @@ void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 		gps_data.longitude = -gps_data.longitude;
 	}
 
-	tmp1 = (u32_t)(gps_data.longitude);	//经度整数部分
+	tmp1 = (uint32_t)(gps_data.longitude);	//经度整数部分
 	tmp2 = gps_data.longitude - tmp1;	//经度小数部分
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
@@ -179,14 +179,14 @@ void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 	//dot
 	strcat(reply, ".");
 	//decimal
-	tmp1 = (u32_t)(tmp2*1000000);
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/10000));
+	tmp1 = (uint32_t)(tmp2*1000000);
+	sprintf(tmpbuf, "%02d", (uint8_t)(tmp1/10000));
 	strcat(reply, tmpbuf);	
 	tmp1 = tmp1%10000;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1/100));
+	sprintf(tmpbuf, "%02d", (uint8_t)(tmp1/100));
 	strcat(reply, tmpbuf);	
 	tmp1 = tmp1%100;
-	sprintf(tmpbuf, "%02d", (u8_t)(tmp1));
+	sprintf(tmpbuf, "%02d", (uint8_t)(tmp1));
 	strcat(reply, tmpbuf);
 
 	//semicolon
@@ -248,7 +248,7 @@ void FallAlarmStart(void)
 
 void FallAlarmSend(void)
 {
-	u8_t delay;
+	uint8_t delay;
 	
 #ifdef CONFIG_WIFI
 	fall_wait_wifi = true;

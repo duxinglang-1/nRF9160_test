@@ -72,90 +72,90 @@ enum{
 };
 
 typedef struct {
-	s16_t x;
-	s16_t y;
-	s16_t z;
+	int16_t x;
+	int16_t y;
+	int16_t z;
 } accel_mode1_data;
 
 typedef struct {
-	u32_t green1;
-	u32_t ir;
-	u32_t red;
-	u32_t green2;
-	u32_t led5;
-	u32_t led6;
+	uint32_t green1;
+	uint32_t ir;
+	uint32_t red;
+	uint32_t green2;
+	uint32_t led5;
+	uint32_t led6;
 } max8614x_mode1_data;
 
 
 typedef struct __attribute__((packed)){
-	u8_t current_operating_mode; // mode 1 & 2
+	uint8_t current_operating_mode; // mode 1 & 2
 	// WHRM data
-	u16_t hr;         	// mode 1 & 2
-	u8_t hr_conf;     	// mode 1 & 2
-	u16_t rr;         	// mode 1 & 2
-	u8_t rr_conf;		// mode 1 & 2
-	u8_t activity_class; // mode 1 & 2
+	uint16_t hr;         	// mode 1 & 2
+	uint8_t hr_conf;     	// mode 1 & 2
+	uint16_t rr;         	// mode 1 & 2
+	uint8_t rr_conf;		// mode 1 & 2
+	uint8_t activity_class; // mode 1 & 2
 	// WSPO2 data
-	u16_t r;						// mode 1 & 2
-	u8_t spo2_conf;		// mode 1 & 2
-	u16_t spo2;			// mode 1 & 2
-	u8_t percentComplete;		// mode 1 & 2
-	u8_t lowSignalQualityFlag;	// mode 1 & 2
-	u8_t motionFlag;				// mode 1 & 2
-	u8_t lowPiFlag;				// mode 1 & 2
-	u8_t unreliableRFlag;		// mode 1 & 2
-	u8_t spo2State;   			// mode 1 & 2
-	u8_t scd_contact_state;
-	u32_t ibi_offset;
+	uint16_t r;						// mode 1 & 2
+	uint8_t spo2_conf;		// mode 1 & 2
+	uint16_t spo2;			// mode 1 & 2
+	uint8_t percentComplete;		// mode 1 & 2
+	uint8_t lowSignalQualityFlag;	// mode 1 & 2
+	uint8_t motionFlag;				// mode 1 & 2
+	uint8_t lowPiFlag;				// mode 1 & 2
+	uint8_t unreliableRFlag;		// mode 1 & 2
+	uint8_t spo2State;   			// mode 1 & 2
+	uint8_t scd_contact_state;
+	uint32_t ibi_offset;
 } whrm_wspo2_suite_mode1_data;
 
 typedef struct __attribute__((packed)){
-	u8_t current_operating_mode; // mode 1 & 2
+	uint8_t current_operating_mode; // mode 1 & 2
 	// WHRM data
-	u16_t hr;         	// mode 1 & 2
-	u8_t hr_conf;     	// mode 1 & 2
-	u16_t rr;         	// mode 1 & 2
-	u8_t rr_conf;		// mode 1 & 2
-	u8_t activity_class; // mode 1 & 2
+	uint16_t hr;         	// mode 1 & 2
+	uint8_t hr_conf;     	// mode 1 & 2
+	uint16_t rr;         	// mode 1 & 2
+	uint8_t rr_conf;		// mode 1 & 2
+	uint8_t activity_class; // mode 1 & 2
 	// WSPO2 data
-	u16_t r;						// mode 1 & 2
-	u8_t spo2_conf;		// mode 1 & 2
-	u16_t spo2;			// mode 1 & 2
-	u8_t percentComplete;		// mode 1 & 2
-	u8_t lowSignalQualityFlag;	// mode 1 & 2
-	u8_t motionFlag;				// mode 1 & 2
-	u8_t lowPiFlag;				// mode 1 & 2
-	u8_t unreliableRFlag;		// mode 1 & 2
-	u8_t spo2State;   			// mode 1 & 2
-	u8_t scd_contact_state;
+	uint16_t r;						// mode 1 & 2
+	uint8_t spo2_conf;		// mode 1 & 2
+	uint16_t spo2;			// mode 1 & 2
+	uint8_t percentComplete;		// mode 1 & 2
+	uint8_t lowSignalQualityFlag;	// mode 1 & 2
+	uint8_t motionFlag;				// mode 1 & 2
+	uint8_t lowPiFlag;				// mode 1 & 2
+	uint8_t unreliableRFlag;		// mode 1 & 2
+	uint8_t spo2State;   			// mode 1 & 2
+	uint8_t scd_contact_state;
     //Extended Report (mode2)
-	u32_t walk_steps;	// mode 2
-	u32_t run_steps;		// mode 2
-	u32_t kcal;			// mode 2
-	u32_t cadence;		// mode 2
-	u8_t  is_led_cur1_adj;	// mode 2
-	u16_t adj_led_cur1;	// mode 2
-	u8_t is_led_cur2_adj;// mode 2
-	u16_t adj_led_cur2;	// mode 2
-	u8_t is_led_cur3_adj;// mode 2
-	u16_t adj_led_cur3;	// mode 2
-	u8_t is_int_time_adj;	// mode 2
-    u8_t t_int_code;	// mode 2
-	u8_t is_f_smp_adj;	// mode 2
-	u8_t adj_f_smp;		// mode 2
-	u8_t smp_ave;		// mode 2
-	u8_t hrm_afe_state;  // mode 2
-	u8_t is_high_motion;	// mode 2
+	uint32_t walk_steps;	// mode 2
+	uint32_t run_steps;		// mode 2
+	uint32_t kcal;			// mode 2
+	uint32_t cadence;		// mode 2
+	uint8_t  is_led_cur1_adj;	// mode 2
+	uint16_t adj_led_cur1;	// mode 2
+	uint8_t is_led_cur2_adj;// mode 2
+	uint16_t adj_led_cur2;	// mode 2
+	uint8_t is_led_cur3_adj;// mode 2
+	uint16_t adj_led_cur3;	// mode 2
+	uint8_t is_int_time_adj;	// mode 2
+    uint8_t t_int_code;	// mode 2
+	uint8_t is_f_smp_adj;	// mode 2
+	uint8_t adj_f_smp;		// mode 2
+	uint8_t smp_ave;		// mode 2
+	uint8_t hrm_afe_state;  // mode 2
+	uint8_t is_high_motion;	// mode 2
 
 } whrm_wspo2_suite_mode2_data;
 
 
 typedef struct{
-	u8_t   reportPeriod_in40msSteps ;
-	u8_t   algoSuiteOperatingMode   ;
-	u8_t   accelBehavior            ;
-	u32_t  poolPeriod_ms            ;
-	u8_t   isExtendedReport         ;
+	uint8_t   reportPeriod_in40msSteps ;
+	uint8_t   algoSuiteOperatingMode   ;
+	uint8_t   accelBehavior            ;
+	uint32_t  poolPeriod_ms            ;
+	uint8_t   isExtendedReport         ;
 }sshub_meas_init_params_t;
 
 
@@ -171,15 +171,15 @@ enum data_report_mode{
 #define MIN_MACRO(a,b) ((a)<(b)?(a):(b))
 
 struct {
-   u8_t  isScdSmEnabled      ;
-   u8_t  isHubAccelEnabled   ;
-   u8_t  hubAccelSkinoffWUFC ;
-   u8_t  hubAccelSkinoffATH  ;
-   u8_t  dataReportMode      ;
-   u8_t  isScdSmActive       ;
-   u32_t probingLedonPeriod  ;
-   u32_t probingWaitPeriod   ;
-   u32_t skinoffWaitPeriod   ;
+   uint8_t  isScdSmEnabled      ;
+   uint8_t  isHubAccelEnabled   ;
+   uint8_t  hubAccelSkinoffWUFC ;
+   uint8_t  hubAccelSkinoffATH  ;
+   uint8_t  dataReportMode      ;
+   uint8_t  isScdSmActive       ;
+   uint32_t probingLedonPeriod  ;
+   uint32_t probingWaitPeriod   ;
+   uint32_t skinoffWaitPeriod   ;
 
 } scdSmConfigStruct;
 
@@ -189,13 +189,13 @@ typedef enum  {
 } sensorhub_report_mode_t;
 
 void sh_disable_sensor_algo(void);
-int sh_measure_whrm_wspo2(u8_t u8_rptRate, u8_t u8_algoSuiteMode, u8_t u8_dataType);
-int sh_measure_whrm_wspo2_extend(u8_t u8_rptRate, u8_t u8_algoSuiteMode, u8_t u8_dataType);
+int sh_measure_whrm_wspo2(uint8_t u8_rptRate, uint8_t u8_algoSuiteMode, uint8_t u8_dataType);
+int sh_measure_whrm_wspo2_extend(uint8_t u8_rptRate, uint8_t u8_algoSuiteMode, uint8_t u8_dataType);
 int measure_whrm_wspo2_extended_report(void);
 #ifdef SH_OTA_DATA_STORE_IN_FLASH
-s32_t SH_OTA_upgrade_process(void);
+int32_t SH_OTA_upgrade_process(void);
 #else
-s32_t SH_OTA_upgrade_process(u8_t* u8p_FwData);
+int32_t SH_OTA_upgrade_process(uint8_t* u8p_FwData);
 #endif
 int sh_get_PPG_raw(void);
 

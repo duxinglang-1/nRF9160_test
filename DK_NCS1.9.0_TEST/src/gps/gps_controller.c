@@ -150,14 +150,14 @@ bool gps_control_set_active(bool active)
 	return atomic_set(&gps_is_active, active ? 1 : 0);
 }
 
-void gps_control_start(u32_t delay_ms)
+void gps_control_start(uint32_t delay_ms)
 {
-	k_delayed_work_submit_to_queue(app_work_q, &start_work, delay_ms);
+	k_delayed_work_submit_to_queue(app_work_q, &start_work, K_MSEC(delay_ms));
 }
 
-void gps_control_stop(u32_t delay_ms)
+void gps_control_stop(uint32_t delay_ms)
 {
-	k_delayed_work_submit_to_queue(app_work_q, &stop_work, delay_ms);
+	k_delayed_work_submit_to_queue(app_work_q, &stop_work, K_MSEC(delay_ms));
 }
 
 int gps_control_get_gps_reporting_interval(void)

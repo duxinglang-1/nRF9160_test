@@ -34,7 +34,7 @@ typedef enum
 }FALL_STATUS;
 
 extern FALL_STATUS fall_state;
-extern u8_t fall_trigger_time[16];
+extern uint8_t fall_trigger_time[16];
 
 extern void FallStart(void);
 extern void FallAlarmStart(void);

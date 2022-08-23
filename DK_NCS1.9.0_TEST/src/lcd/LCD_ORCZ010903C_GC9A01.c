@@ -34,18 +34,15 @@ void SpiLcd_CS_LOW(void)
 {
 	gpio_pin_set(gpio_lcd, CS, 0);
 }
-
 void SpiLcd_CS_HIGH(void)
 {
 	gpio_pin_set(gpio_lcd, CS, 1);
 }
-
 static void LCD_SPI_Init(void)
 {
 	spi_lcd = device_get_binding(LCD_DEV);
 	if(!spi_lcd) 
 	{
-		printk("Could not get %s device\n", LCD_DEV);
 		return;
 	}
 
@@ -73,7 +70,6 @@ static void LCD_SPI_Transceive(uint8_t *txbuf, uint32_t txbuflen, uint8_t *rxbuf
 	SpiLcd_CS_HIGH();
 	if(err)
 	{
-		printk("SPI error: %d\n", err);
 	}
 
 }
@@ -103,7 +99,7 @@ void Write_Data(uint8_t i)
 //i:寄存器值
 void WriteComm(uint8_t i)
 {
-	gpio_pin_set(gpio_lcd, RS, 0);
+	gpio_pin_set(gpio_lcd, RS, 0); //gpio_pi_write() reworked to gpio_pin_set(), see zephyr release note 2.2.1 (https://docs.zephyrproject.org/latest/releases/release-notes-2.2.html)
 	Write_Data(i);
 }
 
@@ -384,13 +380,10 @@ void LCD_Init(void)
 {
 	int err;
 
-	printk("LCD_Init\n");
-	
   	//端口初始化
   	gpio_lcd = device_get_binding(LCD_PORT);
 	if(!gpio_lcd)
 	{
-		printk("Cannot bind gpio device\n");
 		return;
 	}
 
@@ -632,7 +625,7 @@ void LCD_Init(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
-	//gpio_pin_write(gpio_lcd, LEDK, 0);
+	//gpio_pin_set(gpio_lcd, LEDK, 0);
 	gpio_pin_set(gpio_lcd, LEDA, 1);
 #endif
 

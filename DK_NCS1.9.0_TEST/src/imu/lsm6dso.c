@@ -25,12 +25,13 @@ ULTRA LOW POWER AND INACTIVITY MODE
 //#include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
 #include "logger.h"
 
-//#define IMU_DEBUG
+#define IMU_DEBUG
 
 #define I2C1_NODE DT_NODELABEL(i2c1)
 #if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
@@ -57,257 +58,111 @@ static struct k_work_q *imu_work_q;
 static struct k_work imu_work;
 
 static bool imu_check_ok = false;
-static u8_t whoamI, rst;
+static uint8_t whoamI, rst;
 static struct device *i2c_imu;
-static struct device *gpio_imu;
+static struct device *gpio_imu = NULL;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
 
-u16_t g_last_steps = 0;
-u16_t g_steps = 0;
-u16_t g_calorie = 0;
-u16_t g_distance = 0;
-
-sport_record_t last_sport = {0};
+uint16_t g_last_steps = 0;
+uint16_t g_steps = 0;
+uint16_t g_calorie = 0;
+uint16_t g_distance = 0;
 
 extern bool update_sleep_parameter;
 
-#ifdef XB_TEST
-#define SCL_PIN		12
-#define SDA_PIN		11
-
-void I2C_INIT(void)
+void ClearAllStepRecData(void)
 {
-	if(gpio_imu == NULL)
-		gpio_imu = device_get_binding(IMU_PORT);
+	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
 
-	gpio_pin_configure(gpio_imu, SCL_PIN, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_imu, SDA_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_imu, SCL_PIN, 1);
-	gpio_pin_write(gpio_imu, SDA_PIN, 1);
-}
-
-void I2C_SDA_OUT(void)
-{
-	gpio_pin_configure(gpio_imu, SDA_PIN, GPIO_DIR_OUT);
-}
-
-void I2C_SDA_IN(void)
-{
-	gpio_pin_configure(gpio_imu, SDA_PIN, GPIO_DIR_IN);
-}
-
-void I2C_SDA_H(void)
-{
-	gpio_pin_write(gpio_imu, SDA_PIN, 1);
-}
-
-void I2C_SDA_L(void)
-{
-	gpio_pin_write(gpio_imu, SDA_PIN, 0);
-}
-
-void I2C_SCL_H(void)
-{
-	gpio_pin_write(gpio_imu, SCL_PIN, 1);
-}
-
-void I2C_SCL_L(void)
-{
-	gpio_pin_write(gpio_imu, SCL_PIN, 0);
-}
-
-void Delay_ms(unsigned int dly)
-{
-	k_sleep(dly);
-}
-
-void Delay_us(unsigned int dly)
-{
-	k_usleep(dly);
-}
-
-//产生起始信号
-void I2C_Start(void)
-{
-	I2C_SDA_OUT();
-
-	I2C_SDA_H();
-	I2C_SCL_H();
-	//Delay_us(10);
-	I2C_SDA_L();
-	//Delay_us(10);
-	I2C_SCL_L();
-}
-
-//产生停止信号
-void I2C_Stop(void)
-{
-	I2C_SDA_OUT();
-
-	I2C_SCL_L();
-	I2C_SDA_L();
-	I2C_SCL_H();
-	//Delay_us(10);
-	I2C_SDA_H();
-	//Delay_us(10);
-}
-
-//主机产生应答信号ACK
-void I2C_Ack(void)
-{
-	I2C_SDA_OUT();
-	I2C_SCL_L();
-	I2C_SDA_OUT();
-	I2C_SDA_L();
-	//Delay_us(10);
-	I2C_SCL_H();
-	//Delay_us(10);
-	I2C_SCL_L();
-}
-
-//主机不产生应答信号NACK
-void I2C_NAck(void)
-{
-	I2C_SDA_OUT();
-	I2C_SCL_L();
-
-	I2C_SDA_H();
-	I2C_SCL_H();
-	//Delay_us(10);
-	I2C_SCL_L();
-}
-
-//等待从机应答信号
-//返回值：1 接收应答失败
-//		  0 接收应答成功
-u8_t I2C_Wait_Ack(void)
-{
-	u8_t val,tempTime=0;
-
-	I2C_SDA_IN();
-
-	//I2C_SDA_H();
-	I2C_SCL_H();
-
-	while(1)
-	{
-		gpio_pin_read(gpio_imu, SDA_PIN, &val);
-		if(val == 0)
-			break;
+	g_last_steps = 0;
+	g_steps = 0;
+	g_distance = 0;
+	g_calorie = 0;
 		
-		tempTime++;
-		if(tempTime>10)
-		{
-			I2C_Stop();
-			return 1;
-		}	 
-	}
-
-	I2C_SCL_L();
-	return 0;
+	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
 }
 
-//I2C 发送一个字节
-u8_t I2C_Write_Byte(u8_t txd)
+void SetCurDayStepRecData(uint16_t data)
 {
-	u8_t i=0;
+	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data *p_step = NULL;
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
 
-	I2C_SDA_OUT();
-	I2C_SCL_L();//拉低时钟开始数据传输
+	p_step = tmpbuf+6*sizeof(step_rec2_data);
+	if(((date_time.year > p_step->year)&&(p_step->year != 0xffff && p_step->year != 0x0000))
+		||((date_time.year == p_step->year)&&(date_time.month > p_step->month)&&(p_step->month != 0xff && p_step->month != 0x00))
+		||((date_time.month == p_step->month)&&(date_time.day > p_step->day)&&(p_step->day != 0xff && p_step->day != 0x00)))
+	{//记录存满。整体前挪并把最新的放在最后
+		step_rec2_data tmp_step = {0};
+		
 
-	for(i=0;i<8;i++)
-	{
-		if((txd&0x80)>0) //0x80  1000 0000
-			I2C_SDA_H();
-		else
-			I2C_SDA_L();
-
-		txd<<=1;
-		I2C_SCL_H();
-		I2C_SCL_L();
+	#ifdef IMU_DEBUG
+		LOGD("rec is full! temp:%0.1f", data);
+	#endif
+		tmp_step.year = date_time.year;
+		tmp_step.month = date_time.month;
+		tmp_step.day = date_time.day;
+		tmp_step.steps[date_time.hour] = data;
+		memcpy(&tmpbuf[0], &tmpbuf[sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
+		memcpy(&tmpbuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
 	}
-
-	return I2C_Wait_Ack();
-}
-
-//I2C 读取一个字节
-void I2C_Read_Byte(bool ack, u8_t *data)
-{
-   u8_t i=0,receive=0,val=0;
-
-   I2C_SDA_IN();
-   for(i=0;i<8;i++)
-   {
-   		I2C_SCL_L();
-		I2C_SCL_H();
-
-		receive<<=1;
-		gpio_pin_read(gpio_imu, SDA_PIN, &val);
-		if(val == 1)
-		   receive++;
-   }
-
-   	if(ack == 0)
-	   	I2C_NAck();
 	else
-		I2C_Ack();
-
-	*data = receive;
-}
-
-u8_t I2C_write_data(u8_t addr, u8_t *databuf, u16_t len)
-{
-	u8_t i;
-
-	addr = (addr<<1);
-
-	I2C_Start();
-	if(I2C_Write_Byte(addr))
-		goto err;
-
-	for(i=0;i<len;i++)
 	{
-		if(I2C_Write_Byte(databuf[i]))
-			goto err;
+	#ifdef IMU_DEBUG
+		LOGD("rec not full! temp:%0.1f", data);
+	#endif
+		for(i=0;i<7;i++)
+		{
+			p_step = tmpbuf + i*sizeof(step_rec2_data);
+			if((p_step->year == 0xffff || p_step->year == 0x0000)||(p_step->month == 0xff || p_step->month == 0x00)||(p_step->day == 0xff || p_step->day == 0x00))
+			{
+				p_step->year = date_time.year;
+				p_step->month = date_time.month;
+				p_step->day = date_time.day;
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+			
+			if((p_step->year == date_time.year)&&(p_step->month == date_time.month)&&(p_step->day == date_time.day))
+			{
+				p_step->steps[date_time.hour] = data;
+				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+				break;
+			}
+		}
 	}
-
-	I2C_Stop();
-	return 0;
-	
-err:
-	return -1;
 }
 
-u8_t I2C_read_data(u8_t addr, u8_t *databuf, u16_t len)
+void GetCurDayStepRecData(uint16_t *databuf)
 {
-	u8_t i;
-
-	addr = (addr<<1)|1;
-
-	I2C_Start();
-	if(I2C_Write_Byte(addr))
-		goto err;
-
-	for(i=0;i<len;i++)
-	{
-		I2C_Read_Byte(false, &databuf[i]);
-	}
-	I2C_Stop();
-	return 0;
+	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
+	step_rec2_data step_rec2 = {0};
 	
-err:
-	return -1;
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&step_rec2, &tmpbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
+		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
+			continue;
+		
+		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
+		{
+			memcpy(databuf, step_rec2.steps, sizeof(step_rec2.steps));
+			break;
+		}
+	}
 }
-#endif
 
 static uint8_t init_i2c(void)
 {
-#ifdef XB_TEST
-	I2C_INIT();
-#else
 	i2c_imu = device_get_binding(IMU_DEV);
 	if(!i2c_imu)
 	{
@@ -321,7 +176,6 @@ static uint8_t init_i2c(void)
 		i2c_configure(i2c_imu, I2C_SPEED_SET(I2C_SPEED_FAST));
 		return 0;
 	}
-#endif	
 }
 
 static int32_t platform_write(void *handle, uint8_t reg, uint8_t* bufp, uint16_t len)
@@ -331,11 +185,8 @@ static int32_t platform_write(void *handle, uint8_t reg, uint8_t* bufp, uint16_t
 
 	data[0] = reg;
 	memcpy(&data[1], bufp, len);
-#ifdef XB_TEST
-	rslt = I2C_write_data(LSM6DSO_I2C_ADD, data, len+1);
-#else
 	rslt = i2c_write(i2c_imu, data, len+1, LSM6DSO_I2C_ADD);
-#endif
+
 	return rslt;
 }
 
@@ -343,28 +194,21 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t* bufp, uint16_t 
 {
 	uint32_t rslt = 0;
 
-#ifdef XB_TEST
-	rslt = I2C_write_data(LSM6DSO_I2C_ADD, &reg, 1);
-	if(rslt == 0)
-	{
-		rslt = I2C_read_data(LSM6DSO_I2C_ADD, bufp, len);
-	}
-#else
 	rslt = i2c_write(i2c_imu, &reg, 1, LSM6DSO_I2C_ADD);
 	if(rslt == 0)
 	{
 		rslt = i2c_read(i2c_imu, bufp, len, LSM6DSO_I2C_ADD);
 	}
-#endif
+
 	return rslt;
 }
 
-void interrupt_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
+void interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 	int2_event = true;
 }
 
-void step_event(struct device *interrupt, struct gpio_callback *cb, u32_t pins)
+void step_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 	int1_event = true;
 }
@@ -373,32 +217,32 @@ void init_imu_int1(void)
 {
 	if(gpio_imu == NULL)
 		gpio_imu = device_get_binding(IMU_PORT);
-	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_imu, LSM6DSO_INT1_PIN, 0);
+	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_imu, LSM6DSO_INT1_PIN, 0);
 }
 
 uint8_t init_gpio(void)
 {
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_DOWN|GPIO_INT_HIGH_1|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
-	gpio_imu = device_get_binding(IMU_PORT);
+	if(gpio_imu == NULL)
+		gpio_imu = device_get_binding(IMU_PORT);
+	
+#ifdef CONFIG_STEP_SUPPORT	
 	//steps interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
-	//gpio_pin_disable_callback(gpio_imu, LSM6DSO_INT1_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
+    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, step_event, BIT(LSM6DSO_INT1_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb1);
-	//gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT1_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE);
+    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
+#endif
 
 	//tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT2_PIN, flag);
-	//gpio_pin_disable_callback(gpio_imu, LSM6DSO_INT2_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
+    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, interrupt_event, BIT(LSM6DSO_INT2_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb2);
-	//gpio_pin_enable_callback(gpio_imu, LSM6DSO_INT2_PIN); //this API no longer supported in zephyr version 2.7.0
-        gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE);
+    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	return 0;
 }
@@ -435,14 +279,15 @@ static bool sensor_init(void){
   int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE; 
   lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
+#ifdef CONFIG_STEP_SUPPORT
   /*Step Counter enable*/
   lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
   int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
   lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-
   /* Enable False Positive Rejection. */
   lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
   lsm6dso_steps_reset(&imu_dev_ctx);
+#endif
 
   /* Tilt enable */
   lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
@@ -472,7 +317,7 @@ static bool sensor_init(void){
 */
 void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 {
-	u8_t reg;
+	uint8_t reg;
 
 	lsm6dso_xl_flag_data_ready_get(&imu_dev_ctx, &reg);
 	if(reg)
@@ -512,14 +357,14 @@ void ReSetImuSteps(void)
 	save_cur_sport_to_record(&last_sport);	
 }
 
-void GetImuSteps(u16_t *steps)
+void GetImuSteps(uint16_t *steps)
 {
 	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
 }
 
 void UpdateIMUData(void)
 {
-	u16_t steps;
+	uint16_t steps;
 	
 	GetImuSteps(&steps);
 
@@ -544,9 +389,14 @@ void UpdateIMUData(void)
 	save_cur_sport_to_record(&last_sport);
 	
 	//StepCheckSendLocationData(g_steps);
+	
+	if(date_time.hour == 23)//xb add 2022-05-31 防止23点到0点之间的数据没有被记录到
+	{
+		SetCurDayStepRecData(g_steps);
+	}
 }
 
-void GetSportData(u16_t *steps, u16_t *calorie, u16_t *distance)
+void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 {
 	if(steps != NULL)
 		*steps = g_steps;
@@ -692,10 +542,14 @@ void IMU_init(struct k_work_q *work_q)
 	imu_check_ok = sensor_init();
 	if(!imu_check_ok)
 		return;
-	
+
+#ifdef CONFIG_STEP_SUPPORT
 	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	lsm6dso_sensitivity();
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
 	StartSleepTimeMonitor();
+#endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
@@ -770,10 +624,10 @@ void test_i2c(void)
 	LOGD("67108864 -> 250k");
 	LOGD("104857600 -> 400k");
 #endif
-	for (u8_t i = 0; i < 0x7f; i++)
+	for (uint8_t i = 0; i < 0x7f; i++)
 	{
 		struct i2c_msg msgs[1];
-		u8_t dst = 1;
+		uint8_t dst = 1;
 
 		/* Send the address to read from */
 		msgs[0].buf = &dst;
@@ -806,11 +660,19 @@ void IMURedrawSteps(void)
 
 void IMUMsgProcess(void)
 {
-#ifdef CONFIG_FOTA_DOWNLOAD
-	if(fota_is_running())
+	if(0
+		#ifdef CONFIG_FOTA_DOWNLOAD
+			|| (fota_is_running())
+		#endif
+		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			|| (dl_is_running())
+		#endif
+		)
+	{
 		return;
-#endif
+	}
 
+#ifdef CONFIG_STEP_SUPPORT
 	if(int1_event)	//steps
 	{
 	#ifdef IMU_DEBUG
@@ -818,24 +680,17 @@ void IMUMsgProcess(void)
 	#endif
 		int1_event = false;
 
-		if(!imu_check_ok)
+		if(!imu_check_ok || !is_wearing())
 			return;
 		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-
 	#ifdef IMU_DEBUG	
 		LOGD("steps trigger!");
 	#endif
 		UpdateIMUData();
 		imu_redraw_steps_flag = true;	
 	}
-		
+#endif
+
 	if(int2_event) //tilt
 	{
 	#ifdef IMU_DEBUG
@@ -843,15 +698,7 @@ void IMUMsgProcess(void)
 	#endif
 		int2_event = false;
 
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
+		if(!imu_check_ok || !is_wearing())
 			return;
 
 		is_tilt();
@@ -869,7 +716,8 @@ void IMUMsgProcess(void)
 			}
 		}
 	}
-	
+
+#ifdef CONFIG_STEP_SUPPORT	
 	if(reset_steps)
 	{
 		reset_steps = false;
@@ -890,7 +738,9 @@ void IMUMsgProcess(void)
 		
 		IMURedrawSteps();
 	}
+#endif
 
+#ifdef CONFIG_SLEEP_SUPPORT
 	if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
@@ -898,12 +748,8 @@ void IMUMsgProcess(void)
 		if(!imu_check_ok)
 			return;
 
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
 		UpdateSleepPara();
 	}
+#endif	
 }
 #endif/*CONFIG_IMU_SUPPORT*/

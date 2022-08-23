@@ -14,7 +14,7 @@
 #include <math.h>
 #include "lcd.h"
 #include "settings.h"
-//#include "gps.h"
+#include "gps.h"
 #include "nb.h"
 #include "font.h"
 #include "external_flash.h"
@@ -592,7 +592,7 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 	uint8_t temp,t1,t;
 	uint16_t x0=x,y0=y,w,h;
 	uint8_t cbyte=0;					//行扫描，每个字符每一行占用的字节数
-	uint16_t csize=0;					//得到字体一个字符对应点阵集所占的字节数	
+	uint16_t csize=0;					//得到字体一个字符对应点阵集所占的字节数
 	uint8_t databuf[2*1024] = {0};
 	uint8_t fontbuf[256] = {0};
 	uint32_t i=0,index,font_addr,data_addr=0;
@@ -3424,26 +3424,6 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_in)
 	{
 		LCD_BL_Off();
-		if(charger_is_connected)
-		{
-			uint8_t i;
-			uint8_t tmpbuf[10] = {0};
-			notify_infor infor = {0};
-			uint32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
-			
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_NOTIFY;
-			sprintf(tmpbuf, "%d%%", g_bat_soc);
-			mmi_asc_to_ucs2(infor.text, tmpbuf);
-			for(i=0;i<ARRAY_SIZE(bat_img);i++)
-				infor.img[i] = bat_img[i];
-			infor.img_count = ARRAY_SIZE(bat_img);
-			DisplayPopUp(infor);
-		}
 		LCD_SleepIn();
 		lcd_sleep_in = false;
 	}

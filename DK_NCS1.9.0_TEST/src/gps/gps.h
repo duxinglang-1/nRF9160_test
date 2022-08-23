@@ -19,7 +19,7 @@ extern bool fall_wait_gps;
 extern bool location_wait_gps;
 extern bool test_gps_flag;
 
-extern u8_t gps_test_info[256];
+extern uint8_t gps_test_info[256];
 
 extern void test_gps_on(void);
 extern void GPS_init(struct k_work_q *work_q);

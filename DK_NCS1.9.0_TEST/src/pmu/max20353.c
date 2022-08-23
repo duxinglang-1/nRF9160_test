@@ -14,7 +14,7 @@
 #include "logger.h"
 
 //#define SHOW_LOG_IN_SCREEN
-#define PMU_DEBUG
+//#define PMU_DEBUG
 
 static bool pmu_check_ok = false;
 static uint8_t PMICStatus[4], PMICInts[3];
@@ -293,20 +293,6 @@ bool pmu_interrupt_proc(void)
 			
 			g_chg_status = BAT_CHARGING_PROGRESS;
 			g_bat_level = BAT_LEVEL_NORMAL;
-
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_NOTIFY;
-			sprintf(tmpbuf, "%d%%", g_bat_soc);
-			mmi_asc_to_ucs2(infor.text, tmpbuf);
-			for(i=0;i<ARRAY_SIZE(bat_img);i++)
-				infor.img[i] = bat_img[i];
-			infor.img_count = ARRAY_SIZE(bat_img);
-			DisplayPopUp(infor);
-			
 			lcd_sleep_out = true;
 		}
 		else
@@ -349,11 +335,11 @@ bool pmu_interrupt_proc(void)
 		pmu_redraw_bat_flag = true;
 	}
 
-	val = gpio_pin_get(gpio_pmu, PMU_EINT); ////this API accepts only two arguments
+	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT); ////this API accepts only two arguments
 	if(val == 0)
-		return true;
-	else
 		return false;
+	else
+		return true;
 }
 
 void PmuInterruptHandle(void)
@@ -412,38 +398,12 @@ bool pmu_alert_proc(void)
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			if(!charger_is_connected)
 			{
-				infor.x = 0;
-				infor.y = 0;
-				infor.w = LCD_WIDTH;
-				infor.h = LCD_HEIGHT;
-				infor.align = NOTIFY_ALIGN_CENTER;
-				infor.type = NOTIFY_TYPE_POPUP;
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(infor.text, tmpbuf);
-				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
-				infor.img_count = 1;
-				DisplayPopUp(infor);
-				
 				pmu_battery_low_shutdown();
 			}
 		}
 		else if(g_bat_soc < 10)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
-			if(!charger_is_connected)
-			{
-				infor.x = 0;
-				infor.y = 0;
-				infor.w = LCD_WIDTH;
-				infor.h = LCD_HEIGHT;
-				infor.align = NOTIFY_ALIGN_CENTER;
-				infor.type = NOTIFY_TYPE_POPUP;
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(infor.text, tmpbuf);
-				infor.img[0] = IMG_BAT_LOW_ICON_ADDR;
-				infor.img_count = 1;
-				DisplayPopUp(infor);
-			}
 		}
 		else if(g_bat_soc < 80)
 		{
@@ -521,7 +481,7 @@ bool pmu_alert_proc(void)
 	
 	ret = MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
 	if(ret == MAX20353_ERROR)
-			return false;
+		return false;
 
 	return true;
 #endif	
@@ -640,21 +600,17 @@ void pmu_init(void)
 
 	//charger interrupt
 	gpio_pin_configure(gpio_pmu, PMU_EINT, flag);
-	//gpio_pin_disable_callback(gpio_pmu, PMU_EINT); //this API no longer supported in zephyr version 2.7.0
 	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, PmuInterruptHandle, BIT(PMU_EINT));
 	gpio_add_callback(gpio_pmu, &gpio_cb1);
-	//gpio_pin_enable_callback(gpio_pmu, PMU_EINT); //this API no longer supported in zephyr version 2.7.0
-	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_EINT, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	//alert interrupt
 	gpio_pin_configure(gpio_pmu, PMU_ALRTB, flag);
-	//gpio_pin_disable_callback(gpio_pmu, PMU_ALRTB); //this API no longer supported in zephyr version 2.7.0
 	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, PmuAlertHandle, BIT(PMU_ALRTB));
 	gpio_add_callback(gpio_pmu, &gpio_cb2);
-	//gpio_pin_enable_callback(gpio_pmu, PMU_ALRTB); //this API no longer supported in zephyr version 2.7.0
-	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
+	gpio_pin_interrupt_configure(gpio_pmu, PMU_ALRTB, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 
 	rst = init_i2c();
 	if(!rst)

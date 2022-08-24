@@ -20,7 +20,7 @@
 #include "Max20353.h"
 #include "Alarm.h"
 #include "lcd.h"
-//#include "gps.h"
+#include "gps.h"
 #include "screen.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
@@ -113,7 +113,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 }
 #endif
 
-/*void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
+void sos_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	uint8_t reply[256] = {0};
 	uint8_t tmpbuf[8] = {0};
@@ -130,8 +130,8 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 		gps_data.latitude = -gps_data.latitude;
 	}
 
-	tmp1 = (uint32_t)(gps_data.latitude);	//������������
-	tmp2 = gps_data.latitude - tmp1;		//����С������
+	tmp1 = (uint32_t)(gps_data.latitude);	//经度整数部分
+	tmp2 = gps_data.latitude - tmp1;		//经度小数部分
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
 	strcat(reply, tmpbuf);
@@ -158,8 +158,8 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 		gps_data.longitude = -gps_data.longitude;
 	}
 
-	tmp1 = (uint32_t)(gps_data.longitude);	//������������
-	tmp2 = gps_data.longitude - tmp1;	//����С������
+	tmp1 = (uint32_t)(gps_data.longitude);	//经度整数部分
+	tmp2 = gps_data.longitude - tmp1;	//经度小数部分
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
 	strcat(reply, tmpbuf);
@@ -186,7 +186,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 	strcat(reply, ";");
 	
 	NBSendSosGpsData(reply, strlen(reply));
-}*/
+}
 
 void SOSTrigger(void)
 {
@@ -257,12 +257,12 @@ void SOSMsgProc(void)
 		sos_trigger_flag = false;
 	}
 
-	/*if(sos_start_gps_flag)
+	if(sos_start_gps_flag)
 	{
-		//sos_wait_gps = true; //enable when using GPS
+		sos_wait_gps = true;
 		APP_Ask_GPS_Data();
 		sos_start_gps_flag = false;
-	}*/
+	}
 
 	if(sos_status_change_flag)
 	{

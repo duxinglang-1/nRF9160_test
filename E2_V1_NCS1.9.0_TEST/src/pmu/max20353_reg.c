@@ -214,7 +214,7 @@ int MAX20353_HapticConfig(void)
 void VibrateStart(void)
 {
 #ifdef MOTOR_TYPE_ERM
-	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3F);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿x00ï¿½ï¿½0x7f
+	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3F);	//Õñ·ù¿ØÖÆ£¬´Ó0x00µ½0x7f
 	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x26); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x06
 #else defined(MOTOR_TYPE_LRA)
 	appcmdoutvalue_ = 0xAC;
@@ -264,7 +264,7 @@ int MAX20353_LDO1Config(void)
     int32_t ret = 0;
 
     appcmdoutvalue_ = 0x40;
-    appdatainoutbuffer_[0] = 0x05;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,Ê¹ï¿½ï¿½   LDO1  
+    appdatainoutbuffer_[0] = 0x05;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,Ê¹ÄÜ   LDO1  
     appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
     ret = MAX20353_AppWrite(2);
     
@@ -276,7 +276,7 @@ int MAX20353_LDO1Disable(void)
     int32_t ret = 0;
 
     appcmdoutvalue_ = 0x40;
-    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,Ê¹ï¿½ï¿½   LDO1  
+    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,Ê¹ÄÜ   LDO1  
     appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
     ret = MAX20353_AppWrite(2);
     
@@ -402,7 +402,7 @@ int MAX20353_HardResetConfig(void)
 
 /**************************************************
 *Name:	MAX20353_LED0
-*Function: LED0 ï¿½ï¿½ï¿½ï¿½
+*Function: LED0 ¿ØÖÆ
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
@@ -425,7 +425,7 @@ int MAX20353_LED0(int IStep, int Amplitude, bool flag)
 
 /**************************************************
 *Name:	MAX20353_LED1
-*Function: LED1 ï¿½ï¿½ï¿½ï¿½
+*Function: LED1 ¿ØÖÆ
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
@@ -448,7 +448,7 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 
 /**************************************************
 *Name:	MAX20353_LED2
-*Function: LED2 ï¿½ï¿½ï¿½ï¿½
+*Function: LED2 ¿ØÖÆ
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
@@ -642,7 +642,7 @@ int MAX20353_WriteReg(max20353_reg_t reg, uint8_t value)
 }
 
 /******************************************************************************
-ï¿½ï¿½È¡Ò»ï¿½ï¿½ï¿½Ö½ï¿½
+¶ÁÈ¡Ò»¸ö×Ö½Ú
 */
 int MAX20353_ReadReg(max20353_reg_t reg, uint8_t *value)
 {
@@ -662,7 +662,7 @@ int MAX20353_ReadReg(max20353_reg_t reg, uint8_t *value)
 }
 
 /******************************************************************************
-ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Ö½ï¿
+¶ÁÈ¡¶à¸ö×Ö½Ú
 */
 int MAX20353_ReadRegMulti(max20353_reg_t reg, uint8_t *value, uint8_t len)
 {
@@ -799,7 +799,7 @@ int MAX20353_EnablePMICIntMaskRegisters(unsigned char buf_results[3])
 	return ret;
 }
 
-//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿   
+//³äµçÅäÖÃ    
 int MAX20353_ChargerCfg(void)
 {
 	int32_t ret = 0;
@@ -814,7 +814,7 @@ int MAX20353_ChargerCfg(void)
 	return ret;
 }
 
-//ï¿½ï¿½ï¿½Ê¹ï¿½ï¿
+//³äµçÊ¹ÄÜ
 int MAX20353_ChargerCtrl(void)
 {
 	int32_t ret = 0;
@@ -831,7 +831,7 @@ int MAX20353_InputCurCfg(void)
 	int32_t ret = 0;
 
 	appcmdoutvalue_ = 0x10;
-	appdatainoutbuffer_[0] = 0x1E;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½500ma(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½+ÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½Ç³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½F3ï¿½Äµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Ç°ï¿½ï¿½ï¿½ï¿½Î60ma),ï¿½Ø¶ï¿½Ê±ï¿½ï¿½10ms
+	appdatainoutbuffer_[0] = 0x1E;  //×î´óÊäÈëµçÁ÷500ma(³äµçµçÁ÷+ÏµÍ³¹¤×÷µçÁ÷,²»ÊÇ³äµçµçÁ÷£¬³äµçµçÁ÷ÓÉF3µÄµç×è¾ö¶¨£¬Ä¿Ç°ÉèÖÃÎª160ma),½Ø¶ÏÊ±¼ä10ms
 	ret = MAX20353_AppWrite(1);
 
 	return ret;
@@ -869,7 +869,7 @@ int InitCharger(void)
 	return ret;
 }
 
-//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿    
+//Âí´ïµÄÕð¶¯     
 int MAX20353_MotorCtrl(uint32_t time_num, uint32_t count)
 {
 	int32_t ret = 0;
@@ -911,37 +911,37 @@ bool MAX20353_Init(void)
 	if(HardwareID != MAX20353_HARDWARE_ID)
 		return false;
 	
-	//ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+	//¹©µçµçÑ¹¼°µçÁ÷ÅäÖÃ
 	MAX20353_Buck1Config();		//1.8V 350mA
 	MAX20353_Buck2Config(); 	//3.3V 350mA
 	MAX20353_LDO1Config();		//1.8V 50mA switch mode
-	MAX20353_LDO2Config();		//3.3V 100mA ï¿½ï¿½CTPï¿½ï¿½ï¿½ï¿½
-	MAX20353_BoostConfig();		//5V   Ö»ï¿½ï¿½buck2ï¿½ï¿½3.3Vï¿½Ø±Õ£ï¿½ï¿½ï¿½PPGï¿½Å»ï¿½ï¿½ï¿½
+	MAX20353_LDO2Config();		//3.3V 100mA ¸øCTP¹©µç
+	MAX20353_BoostConfig();		//5V   Ö»ÓÐbuck2µÄ3.3V¹Ø±Õ£¬¼´PPG²Å»áÁÁ
 
-	//ï¿½ï¿½É±Ã¼ï¿½BUCK/BOOSTï¿½ï¿½ï¿½ï¿½
+	//µçºÉ±Ã¼°BUCK/BOOSTÅäÖÃ
 	//MAX20353_ChargePumpConfig();
-	MAX20353_BuckBoostConfig();	//4.0V ï¿½ï¿½ï¿½ï¿½ï¿½â¹©ï¿½ï¿½
+	MAX20353_BuckBoostConfig();	//4.0V ÆÁ±³¹â¹©µç
 
-	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//Âí´ïÇý¶¯
 #ifdef MOTOR_TYPE_ERM
 	MAX20303_HapticConfigDCMotor();
 #elif defined(MOTOR_TYPE_LRA)
-	MAX20353_HapticConfig();	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð³ï¿½Ê¼ï¿½ï¿½  
-	//MAX20353_InitRAM();  		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½
+	MAX20353_HapticConfig();	//ÏßÐÔÂí´ïÇý¶¯²ÎÊý½øÐÐ³õÊ¼»¯  
+	//MAX20353_InitRAM();  		//Âí´ïÕñ¶¯Ä£Ê½
 #endif
 
-	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//µçÁ¿¼Æ
 #ifdef BATTERY_SOC_GAUGE
 	MAX20353_SOCInit();
 #endif
 
-	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+	//³äµçÅäÖÃ
 	MAX20353_ChargerInit();
 
 	return true;
 }
 
-#ifdef BATTERY_SOC_GAUGE	//xb add 2020-11-05 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¹Øµï¿½ï¿½ï¿½ï¿½ÆµÄ´ï¿½ï¿½ï¿½
+#ifdef BATTERY_SOC_GAUGE	//xb add 2020-11-05 Ôö¼ÓÓÐ¹ØµçÁ¿¼ÆµÄ´úÂë
 //******************************************************************************
 int ReadWord(uint8_t reg, uint8_t *MSB, uint8_t *LSB)
 {
@@ -1058,7 +1058,7 @@ void MAX20353_UpdateTemper(void)
 	int16_t temper=25;
 	uint8_t tmpbuf[128] = {0};
 	static uint8_t pre_thm=0;
-	static uint16_t pre_temper=25;	//ï¿½ï¿½Ê¼ï¿½ï¿½Ä¬ï¿½ï¿½25ï¿½ï¿½
+	static uint16_t pre_temper=25;	//³õÊ¼»¯Ä¬ÈÏ25¶È
 	
 	thm = MAX20353_ReadTHM();
 	if(thm == pre_thm)
@@ -1593,7 +1593,7 @@ void MAX20353_SOCInit(void)
 		handle_model(LOAD_MODEL);
 	}
 	
-	//ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½ï¿½Â¶ï¿½25ï¿½È£ï¿½SOCï¿½ä»¯1%ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½4%ï¿½ï¿½ï¿½ï¿½
+	//ÉèÖÃÄ¬ÈÏÎÂ¶È25¶È£¬SOC±ä»¯1%±¨¾¯£¬µçÁ¿Ð¡ÓÚ4%±¨¾¯
 	WriteWord(0x0C, 0x12, 0x5C);
 
 #ifdef BATTERT_NTC_CHECK

@@ -30,7 +30,7 @@
 #include "lsm6dso.h"
 #endif
 #include "Alarm.h"
-//#include "gps.h"
+#include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
 #ifdef CONFIG_AUDIO_SUPPORT
@@ -39,9 +39,9 @@
 #ifdef CONFIG_WATCHDOG
 #include "watchdog.h"
 #endif
-//#ifdef CONFIG_TEMP_SUPPORT
-//#include "temp.h"
-//#endif
+#ifdef CONFIG_TEMP_SUPPORT
+#include "temp.h"
+#endif
 #include "logger.h"
 
 //#define ANALOG_CLOCK
@@ -49,7 +49,7 @@
 #define PI 3.1415926
 
 static bool sys_pwron_completed_flag = false;
-static uint8_t show_pic_count = 0;//Í¼Æ¬ï¿½ï¿½Ê¾Ë³ï¿½ï¿½
+static uint8_t show_pic_count = 0;//Í¼Æ¬ÏÔÊ¾Ë³Ðò
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
@@ -146,12 +146,12 @@ void DrawAnalogMinPic(int hour, int minute)
 
 	if(minute<15)
 	{
-		if((hour%12)<3)							//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½ï¿½Ê¾
+		if((hour%12)<3)							//·ÖÕëÊ±ÕëÓÐÖØµþ£¬Í¸Ã÷ÏÔÊ¾
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
 		}
-		else if((hour%12)==3)		//ï¿½Ù½ï¿½ã£¬ï¿½ï¿½ï¿½ë²»Í¸ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½Ê±ï¿½ï¿
+		else if((hour%12)==3)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
 		{
 			LCD_dis_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],0);
 			DrawAnalogHourPic(hour);
@@ -161,12 +161,12 @@ void DrawAnalogMinPic(int hour, int minute)
 	}
 	else if((minute>=15) && (minute<30))
 	{
-		if(((hour%12)>=3) && ((hour%12)<6))	//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½ï¿½Ê¾
+		if(((hour%12)>=3) && ((hour%12)<6))	//·ÖÕëÊ±ÕëÓÐÖØµþ£¬Í¸Ã÷ÏÔÊ¾
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
 		}
-		else if((hour%12)==6)		//ï¿½Ù½ï¿½ã£¬ï¿½ï¿½ï¿½ë²»Í¸ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½Ê±ï¿½ï¿
+		else if((hour%12)==6)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
 		{
 			LCD_dis_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],90);
 			DrawAnalogHourPic(hour);
@@ -176,12 +176,12 @@ void DrawAnalogMinPic(int hour, int minute)
 	}
 	else if((minute>=30) && (minute<45))
 	{
-		if(((hour%12)>=6) && ((hour%12)<9))	//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½ï¿½Ê¾
+		if(((hour%12)>=6) && ((hour%12)<9))	//·ÖÕëÊ±ÕëÓÐÖØµþ£¬Í¸Ã÷ÏÔÊ¾
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
 		}
-		else if((hour%12)==9)		//ï¿½Ù½ï¿½ã£¬ï¿½ï¿½ï¿½ë²»Í¸ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½Ê±ï¿½ï¿
+		else if((hour%12)==9)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
 		{
 			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],180);
 			DrawAnalogHourPic(hour);
@@ -191,12 +191,12 @@ void DrawAnalogMinPic(int hour, int minute)
 	}
 	else if((minute>=45) && (minute<60))
 	{
-		if((hour%12)>=9)	//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½ï¿½Ê¾
+		if((hour%12)>=9)	//·ÖÕëÊ±ÕëÓÐÖØµþ£¬Í¸Ã÷ÏÔÊ¾
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
 		}
-		else if((hour%12)==0)		//ï¿½Ù½ï¿½ã£¬ï¿½ï¿½ï¿½ë²»Í¸ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½Ê±ï¿½ï¿
+		else if((hour%12)==0)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
 		{
 			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],270);
 			DrawAnalogHourPic(hour);
@@ -208,9 +208,9 @@ void DrawAnalogMinPic(int hour, int minute)
 #endif
 
 /***************************************************************************
-* ï¿½ï¿½  ï¿½ï¿½ : idle_show_digit_clock ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
-* ï¿½ï¿½  ï¿½ï¿½ : ï¿½ï¿½ 
-* ï¿½ï¿½ï¿½ï¿½Öµ : ï¿½ï¿½
+* Ãè  Êö : idle_show_digit_clock ´ý»ú½çÃæÏÔÊ¾Êý×ÖÊ±ÖÓ
+* Èë  ²Î : ÎÞ 
+* ·µ»ØÖµ : ÎÞ
 **************************************************************************/
 void idle_show_digital_clock(void)
 {
@@ -224,26 +224,26 @@ void idle_show_digital_clock(void)
 		if(show_date_time_first)
 			show_date_time_first = false;
 		if((date_time_changed&0x38) != 0)
-			date_time_changed = date_time_changed&0xC7;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú±ä»¯ï¿½ï¿½Ö¾Î
+			date_time_changed = date_time_changed&0xC7;//Çå¿ÕÈÕÆÚ±ä»¯±êÖ¾Î»
 	}
 }
 
 #ifdef ANALOG_CLOCK
 /***************************************************************************
-* ï¿½ï¿½  ï¿½ï¿½ : idle_show_analog_clock ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾Ä£ï¿½ï¿½Ê±ï¿½ï¿½
-* ï¿½ï¿½  ï¿½ï¿½ : ï¿½ï¿½ 
-* ï¿½ï¿½ï¿½ï¿½Öµ : ï¿½ï¿½
+* Ãè  Êö : idle_show_analog_clock ´ý»ú½çÃæÏÔÊ¾Ä£ÄâÊ±ÖÓ
+* Èë  ²Î : ÎÞ 
+* ·µ»ØÖµ : ÎÞ
 **************************************************************************/
 void idle_show_analog_clock(void)
 {
 	uint8_t str_date[20] = {0};
 	uint8_t str_week[20] = {0};
-	uint8_t *week_cn[7] = {"ï¿½ï¿½ï¿½ï¿½", "ï¿½ï¿½Ò»", "ï¿½Ü¶ï¿½", "ï¿½ï¿½ï¿½ï¿½", "ï¿½ï¿½ï¿½ï¿½", "ï¿½ï¿½ï¿½ï¿½", "ï¿½ï¿½ï¿½ï¿½"};
+	uint8_t *week_cn[7] = {"ÖÜÈÕ", "ÖÜÒ»", "ÖÜ¶þ", "ÖÜÈý", "ÖÜËÄ", "ÖÜÎå", "ÖÜÁù"};
 	uint8_t *week_en[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 	uint16_t str_w,str_h;
 
-	POINT_COLOR=WHITE;								//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«
-	BACK_COLOR=BLACK;  								//ï¿½ï¿½ï¿½ï¿½É« 
+	POINT_COLOR=WHITE;								//»­±ÊÑÕÉ«
+	BACK_COLOR=BLACK;  								//±³¾°É« 
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -276,7 +276,7 @@ void idle_show_analog_clock(void)
 			DrawAnalogHourPic(date_time.hour);
 			date_time_changed = date_time_changed&0xFB;
 		}	
-		if((date_time_changed&0x02) != 0)//ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ä»¯
+		if((date_time_changed&0x02) != 0)//·ÖÖÓÓÐ±ä»¯
 		{
 			DrawAnalogHourPic(date_time.hour);
 			DrawAnalogMinPic(date_time.hour, date_time.minute);
@@ -290,7 +290,7 @@ void idle_show_analog_clock(void)
 			LCD_MeasureString(str_date, &str_w, &str_h);
 			LCD_ShowString((LCD_WIDTH-str_w)/2, 33, str_date);
 
-			date_time_changed = date_time_changed&0xC7;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú±ä»¯ï¿½ï¿½Ö¾Î
+			date_time_changed = date_time_changed&0xC7;//Çå¿ÕÈÕÆÚ±ä»¯±êÖ¾Î»
 		}
 	}
 }
@@ -317,9 +317,9 @@ void idle_show_clock_background(void)
 }
 
 /***************************************************************************
-* ï¿½ï¿½  ï¿½ï¿½ : idle_show_time ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾Ê±ï¿½ï¿½
-* ï¿½ï¿½  ï¿½ï¿½ : ï¿½ï¿½ 
-* ï¿½ï¿½ï¿½ï¿½Öµ : ï¿½ï¿½
+* Ãè  Êö : idle_show_time ´ý»ú½çÃæÏÔÊ¾Ê±¼ä
+* Èë  ²Î : ÎÞ 
+* ·µ»ØÖµ : ÎÞ
 **************************************************************************/
 void idle_show_time(void)
 {	
@@ -328,11 +328,11 @@ void idle_show_time(void)
 	#ifdef ANALOG_CLOCK
 		if((date_time_changed&0x02) != 0)
 		{
-			ClearAnalogMinPic(date_time.minute);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½Ä·ï¿½ï¿½ï¿½
+			ClearAnalogMinPic(date_time.minute);//²Á³ýÒÔÇ°µÄ·ÖÖÓ
 		}
 		if((date_time_changed&0x04) != 0)
 		{
-			ClearAnalogHourPic(date_time.hour);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½Ê±ï¿½ï¿½
+			ClearAnalogHourPic(date_time.hour);//²Á³ýÒÔÇ°µÄÊ±ÖÓ
 		}
 
 		idle_show_analog_clock();
@@ -344,17 +344,17 @@ void idle_show_time(void)
 		if((date_time_changed&0x01) != 0)
 		{
 			date_time_changed = date_time_changed&0xFE;
-			BlockWrite((LCD_WIDTH-8*8)/2+6*8,(LCD_HEIGHT-16)/2,2*8,16);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			BlockWrite((LCD_WIDTH-8*8)/2+6*8,(LCD_HEIGHT-16)/2,2*8,16);//²Á³ýÒÔÇ°µÄÃëÖÓ
 		}
 		if((date_time_changed&0x02) != 0)
 		{
 			date_time_changed = date_time_changed&0xFD;
-			BlockWrite((LCD_WIDTH-8*8)/2+3*8,(LCD_HEIGHT-16)/2,2*8,16);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½Ä·ï¿½ï¿½ï¿½
+			BlockWrite((LCD_WIDTH-8*8)/2+3*8,(LCD_HEIGHT-16)/2,2*8,16);//²Á³ýÒÔÇ°µÄ·ÖÖÓ
 		}
 		if((date_time_changed&0x04) != 0)
 		{
 			date_time_changed = date_time_changed&0xFB;
-			BlockWrite((LCD_WIDTH-8*8)/2,(LCD_HEIGHT-16)/2,2*8,16);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½Ê±ï¿½ï¿½
+			BlockWrite((LCD_WIDTH-8*8)/2,(LCD_HEIGHT-16)/2,2*8,16);//²Á³ýÒÔÇ°µÄÊ±ÖÓ
 		}
 		
 		if((date_time_changed&0x38) != 0)
@@ -458,7 +458,7 @@ void test_show_image(void)
 		else
 			i--;
 		
-		k_sleep(K_MSEC(1000));								//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±1000ms
+		k_sleep(K_MSEC(1000));								//Èí¼þÑÓÊ±1000ms
 	}
 }
 
@@ -528,7 +528,7 @@ void test_show_color(void)
 		if(i>=12)
 			i=0;
 		
-		k_sleep(K_MSEC(1000));								//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±1000ms
+		k_sleep(K_MSEC(1000));								//Èí¼þÑÓÊ±1000ms
 	}
 }
 
@@ -544,20 +544,20 @@ void test_show_string(void)
 
 	LCD_Clear(BLACK);
 	
-	POINT_COLOR=WHITE;								//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«
-	BACK_COLOR=BLACK;  								//ï¿½ï¿½ï¿½ï¿½É« 
+	POINT_COLOR=WHITE;								//»­±ÊÑÕÉ«
+	BACK_COLOR=BLACK;  								//±³¾°É« 
 
 #ifdef FONTMAKER_UNICODE_FONT
 #if 0//def FONT_64
-	LCD_SetFontSize(FONT_SIZE_64);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_64);					//ÉèÖÃ×ÖÌå´óÐ¡
 #elif 0//defined(FONT_48)
-	LCD_SetFontSize(FONT_SIZE_48);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_48);					//ÉèÖÃ×ÖÌå´óÐ¡
 #elif 0//defined(FONT_32)
-	LCD_SetFontSize(FONT_SIZE_32);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óÐ¡	
 #elif 0//defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óÐ¡
 #elif defined(FONT_16)
-	LCD_SetFontSize(FONT_SIZE_16);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_16);					//ÉèÖÃ×ÖÌå´óÐ¡
 #endif
 	LCD_MeasureUniString(en_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -576,7 +576,7 @@ void test_show_string(void)
 
 #if 0
 #ifdef FONT_24
-	LCD_SetFontSize(FONT_SIZE_24);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óÐ¡
 #endif
 	LCD_MeasureUniString(cn_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -589,7 +589,7 @@ void test_show_string(void)
 	LCD_ShowUniString(x,y,en_unibuf);
 
 #ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óÐ¡
 #endif
 	LCD_MeasureUniString(cn_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -603,15 +603,15 @@ void test_show_string(void)
 #endif
 #else
 	strcpy(enbuf, "August Shenzhen Digital Ltd");
-	strcpy(cnbuf, "ï¿½ï¿½ï¿½ï¿½ï¿½Ð°Â¿ï¿½Ë¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾");
-	strcpy(jpbuf, "ï¿½î¥»ï¿½ï¿½ï¿½Ð¥ï¿½ï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ»ï¿½ï¿½ï¿½");
+	strcpy(cnbuf, "ÉîÛÚÊÐ°Â¿ÆË¹ÊýÂëÓÐÏÞ¹«Ë¾");
+	strcpy(jpbuf, "Éî¥»¥óÊÐ¥ª©`¥³¥¹¥Ç¥¸¥¿¥ëÓÐÏÞ»áÉç");
 
 #ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óÐ¡	
 #elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óÐ¡
 #elif defined(FONT_16)
-	LCD_SetFontSize(FONT_SIZE_16);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_16);					//ÉèÖÃ×ÖÌå´óÐ¡
 #endif
 
 	LCD_MeasureString(enbuf,&w,&h);
@@ -631,7 +631,7 @@ void test_show_string(void)
 
 #if 0
 #ifdef FONT_24
-	LCD_SetFontSize(FONT_SIZE_24);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óÐ¡
 #endif
 	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -644,7 +644,7 @@ void test_show_string(void)
 	LCD_ShowString(x,y,enbuf);
 
 #ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð
+	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óÐ¡
 #endif
 	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -659,9 +659,33 @@ void test_show_string(void)
 #endif
 }
 
+void test_gpio(void)
+{
+	struct device *gpio_test;
+
+  	gpio_test = device_get_binding("GPIO_0");
+	if(!gpio_test)
+	{
+		return;
+	}
+
+	gpio_pin_configure(gpio_test, 00, GPIO_OUTPUT);
+	gpio_pin_set(gpio_test, 00, 0);
+	gpio_pin_configure(gpio_test, 01, GPIO_OUTPUT);
+	gpio_pin_set(gpio_test, 01, 0);
+	gpio_pin_configure(gpio_test, 11, GPIO_OUTPUT);
+	gpio_pin_set(gpio_test, 11, 0);
+	gpio_pin_configure(gpio_test, 12, GPIO_OUTPUT);
+	gpio_pin_set(gpio_test, 12, 0);
+	gpio_pin_configure(gpio_test, 18, GPIO_OUTPUT);
+	gpio_pin_set(gpio_test, 18, 0);
+	gpio_pin_configure(gpio_test, 19, GPIO_OUTPUT);
+	gpio_pin_set(gpio_test, 19, 0);
+}
+
 void system_init(void)
 {
-	k_sleep(K_MSEC(500));//xb test 2022-03-11 ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ó³ï¿½0.5S,ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½
+	k_sleep(K_MSEC(500));//xb test 2022-03-11 Æô¶¯Ê±ºòÑÓ³Ù0.5S,µÈ´ýÆäËûÍâÉèÍêÈ«Æô¶¯
 	
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_init();
@@ -728,14 +752,15 @@ void system_init_completed(void)
 }
 
 /***************************************************************************
-* ï¿½ï¿½  ï¿½ï¿½ : mainï¿½ï¿½ï¿½ï¿½ 
-* ï¿½ï¿½  ï¿½ï¿½ : ï¿½ï¿½ 
-* ï¿½ï¿½ï¿½ï¿½Öµ : int ï¿½ï¿½ï¿½ï¿½
+* Ãè  Êö : mainº¯Êý 
+* Èë  ²Î : ÎÞ 
+* ·µ»ØÖµ : int ÀàÐÍ
 **************************************************************************/
 int main(void)
 {
 	work_init();
 	system_init();
+//	test_gpio();
 
 //	test_show_string();
 //	test_show_image();

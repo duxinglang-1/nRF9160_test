@@ -22,59 +22,61 @@
 //#define LCD_VGM068A4W01_SH1106G
 //#define LCD_VGM096064A6W01_SP5090
 
-//#define LCD_TYPE_PARALLEL		//����
+//#define LCD_TYPE_PARALLEL		//并口
 //#define LCD_TYPE_I2C			//I2C
 //#define LCD_TYPE_SPI			//SPI
 
-#define IMG_FONT_FROM_FLASH		//ͼƬ���ֿ������ⲿFLASH��
+//#define LCD_SHOW_ROTATE_180		//屏旋转180度显示
 
-#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//��PMU������Ļ����
+#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
-//LCD˯�߻���
+#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
+
+//LCD睡眠唤醒
 extern bool lcd_sleep_in;
 extern bool lcd_sleep_out;
 extern bool lcd_is_sleeping;
 extern bool sleep_out_by_wrist;
 
-//LCD�Ŀ��Ⱥ͸߶�
+//LCD的宽度和高度
 extern uint16_t  LCD_WIDTH;
 extern uint16_t  LCD_HEIGHT;
 
-//LCD�Ļ�����ɫ�ͱ���ɫ	   
-extern uint16_t  POINT_COLOR;//Ĭ�Ϻ�ɫ    
-extern uint16_t  BACK_COLOR; //������ɫ.Ĭ��Ϊ��ɫ
+//LCD的画笔颜色和背景色	   
+extern uint16_t  POINT_COLOR;//默认红色    
+extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
-//ϵͳ�����С
+//系统字体大小
 extern SYSTEM_FONT_SIZE system_font;
 
-//������ɫ
-#define WHITE         	 0xFFFF	//��ɫ
-#define BLACK         	 0x0000	//��ɫ
-#define BLUE         	 0x001F	//��ɫ
-#define GBLUE			 0X07FF	//����ɫ
-#define RED           	 0xF800	//��ɫ
-#define MAGENTA       	 0xF81F	//õ���
-#define GREEN         	 0x07E0	//��ɫ
-#define CYAN          	 0x7FFF	//��ɫ
-#define YELLOW        	 0xFFE0	//��ɫ
-#define BROWN 			 0XBC40 //��ɫ
-#define BRRED 			 0XFC07 //�غ�ɫ
-#define GRAY  			 0X8430 //��ɫ
-//GUI��ɫ
+//画笔颜色
+#define WHITE         	 0xFFFF	//白色
+#define BLACK         	 0x0000	//黑色
+#define BLUE         	 0x001F	//蓝色
+#define GBLUE			 0X07FF	//蓝绿色
+#define RED           	 0xF800	//红色
+#define MAGENTA       	 0xF81F	//玫瑰红
+#define GREEN         	 0x07E0	//绿色
+#define CYAN          	 0x7FFF	//青色
+#define YELLOW        	 0xFFE0	//黄色
+#define BROWN 			 0XBC40 //棕色
+#define BRRED 			 0XFC07 //棕红色
+#define GRAY  			 0X8430 //灰色
+//GUI颜色
 
-#define DARKBLUE      	 0X01CF	//����ɫ
-#define LIGHTBLUE      	 0X7D7C	//ǳ��ɫ  
-#define GRAYBLUE       	 0X5458 //����ɫ
-//������ɫΪPANEL����ɫ 
+#define DARKBLUE      	 0X01CF	//深蓝色
+#define LIGHTBLUE      	 0X7D7C	//浅蓝色  
+#define GRAYBLUE       	 0X5458 //灰蓝色
+//以上三色为PANEL的颜色 
  
-#define LIGHTGREEN     	 0X841F //ǳ��ɫ
-#define LIGHTGRAY        0XEF5B //ǳ��ɫ(PANNEL)
-#define LGRAY 			 0XC618 //ǳ��ɫ(PANNEL),���屳��ɫ
+#define LIGHTGREEN     	 0X841F //浅绿色
+#define LIGHTGRAY        0XEF5B //浅灰色(PANNEL)
+#define LGRAY 			 0XC618 //浅灰色(PANNEL),窗体背景色
 
-#define LGRAYBLUE        0XA651 //ǳ����ɫ(�м����ɫ)
-#define LBBLUE           0X2B12 //ǳ����ɫ(ѡ����Ŀ�ķ�ɫ)
+#define LGRAYBLUE        0XA651 //浅灰蓝色(中间层颜色)
+#define LBBLUE           0X2B12 //浅棕蓝色(选择条目的反色)
 
-#define X_min 0x0043		 //TP���Է�Χ��������
+#define X_min 0x0043		 //TP测试范围常量定义
 #define X_max 0x07AE
 #define Y_min 0x00A1
 #define Y_max 0x0759

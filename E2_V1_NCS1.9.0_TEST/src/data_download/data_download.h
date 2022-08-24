@@ -85,7 +85,7 @@ struct download_evt
 
 typedef void (*dl_callback_t)(const struct download_evt *evt);
 
-extern u8_t g_dl_progress;
+extern uint8_t g_dl_progress;
 extern DL_DATA_TYPE g_dl_data_type;
 
 extern void dl_work_init(struct k_work_q *work_q);

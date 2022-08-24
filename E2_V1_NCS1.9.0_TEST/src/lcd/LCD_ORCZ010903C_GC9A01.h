@@ -3,17 +3,17 @@
 
 #ifdef LCD_ORCZ010903C_GC9A01
 
-//�ӿڶ���
+//接口定义
 //extern xdata unsigned char buffer[512];
 //------------------------------------------------------
-#define COL 240			//��
-#define ROW 240			//��
+#define COL 240			//宽
+#define ROW 240			//高
 
 #define LCD_TYPE_SPI			//SPI
 
-//LCD�Ļ�����ɫ�ͱ���ɫ	   
-extern uint16_t  POINT_COLOR;//Ĭ�Ϻ�ɫ    
-extern uint16_t  BACK_COLOR; //������ɫ.Ĭ��Ϊ��ɫ
+//LCD的画笔颜色和背景色	   
+extern uint16_t  POINT_COLOR;//默认红色    
+extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
 #define LCD_PORT	"GPIO_0"
@@ -26,11 +26,11 @@ extern uint16_t  BACK_COLOR; //������ɫ.Ĭ��Ϊ��ɫ
 #define	SDA		20
 #define VDD		18
 
-//LEDK(LED����)
+//LEDK(LED背光)
 #define LEDK	31
 #define LEDA	14
 
-#define X_min 0x0043		 //TP���Է�Χ��������
+#define X_min 0x0043		 //TP测试范围常量定义
 #define X_max 0x07AE
 #define Y_min 0x00A1
 #define Y_max 0x0759

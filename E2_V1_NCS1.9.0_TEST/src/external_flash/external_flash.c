@@ -46,7 +46,7 @@ static struct spi_cs_control spi_cs_ctr;
 
 void SpiFlash_CS_LOW(void)
 {
-	gpio_pin_set(gpio_flash, FLASH_CS_PIN, 0); //gpio_pi_write() reworked to gpio_pin_set(), see zephyr release note 2.2.1 (https://docs.zephyrproject.org/latest/releases/release-notes-2.2.html)
+	gpio_pin_set(gpio_flash, FLASH_CS_PIN, 0);
 }
 
 void SpiFlash_CS_HIGH(void)

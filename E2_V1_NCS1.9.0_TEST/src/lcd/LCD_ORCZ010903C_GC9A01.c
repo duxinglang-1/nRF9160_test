@@ -74,7 +74,7 @@ static void LCD_SPI_Transceive(uint8_t *txbuf, uint32_t txbuflen, uint8_t *rxbuf
 
 }
 
-//LCDï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
+//LCDÑÓÊ±º¯Êý
 void Delay(unsigned int dly)
 {
 	k_sleep(K_MSEC(dly));
@@ -85,8 +85,8 @@ static void backlight_timer_handler(struct k_timer *timer)
 	lcd_sleep_in = true;
 }
 
-//ï¿½ï¿½ï¿½Ý½Ó¿Úºï¿½ï¿½ï¿½
-//i:8Î»ï¿½ï¿½ï¿½ï¿½
+//Êý¾Ý½Ó¿Úº¯Êý
+//i:8Î»Êý¾Ý
 void Write_Data(uint8_t i) 
 {	
 	lcd_data_buffer[0] = i;
@@ -95,16 +95,16 @@ void Write_Data(uint8_t i)
 }
 
 //----------------------------------------------------------------------
-//Ð´ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-//i:ï¿½Ä´ï¿½ï¿½ï¿½Öµ
+//Ð´¼Ä´æÆ÷º¯Êý
+//i:¼Ä´æÆ÷Öµ
 void WriteComm(uint8_t i)
 {
 	gpio_pin_set(gpio_lcd, RS, 0); //gpio_pi_write() reworked to gpio_pin_set(), see zephyr release note 2.2.1 (https://docs.zephyrproject.org/latest/releases/release-notes-2.2.html)
 	Write_Data(i);
 }
 
-//Ð´LCDï¿½ï¿½ï¿½ï¿½
-//i:ÒªÐ´ï¿½ï¿½ï¿½Ö
+//Ð´LCDÊý¾Ý
+//i:ÒªÐ´ÈëµÄÖµ
 void WriteData(uint8_t i)
 {
 	gpio_pin_set(gpio_lcd, RS, 1);
@@ -121,14 +121,14 @@ void WriteDispData(uint8_t DataH,uint8_t DataL)
 	LCD_SPI_Transceive(lcd_data_buffer, 2, NULL, 0);
 }
 
-//LCDï¿½ï¿½ï¿½ãº¯ï¿½ï¿½
-//color:Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«
+//LCD»­µãº¯Êý
+//color:ÒªÌî³äµÄÑÕÉ«
 void WriteOneDot(unsigned int color)
 { 
 	WriteDispData(color>>8, color);
 }
 
-////////////////////////////////////////////////ï¿½ï¿½ï¿½Ôºï¿½ï¿½ï¿½//////////////////////////////////////////
+////////////////////////////////////////////////²âÊÔº¯Êý//////////////////////////////////////////
 void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
 {
 	x += 0;
@@ -204,7 +204,7 @@ void DispData(uint32_t total, uint8_t *data)
 	}
 }
 
-//ï¿½ï¿½ï¿½Ôºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾RGBï¿½ï¿½ï¿½Æ£ï¿½
+//²âÊÔº¯Êý£¨ÏÔÊ¾RGBÌõÎÆ£©
 void DispBand(void)	 
 {
 	uint32_t i;
@@ -218,7 +218,7 @@ void DispBand(void)
 	DispColor(COL*(ROW%8), color[7]);
 }
 
-//ï¿½ï¿½ï¿½Ôºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¿ï¿½
+//²âÊÔº¯Êý£¨»­±ß¿ò£©
 void DispFrame(void)
 {
 	unsigned int i,j;
@@ -268,16 +268,16 @@ bool LCD_CheckID(void)
 		return false;
 }
 
-//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-//color:Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É
+//ÇåÆÁº¯Êý
+//color:ÒªÇåÆÁµÄÌî³äÉ«
 void LCD_Clear(uint16_t color)
 {
-	BlockWrite(0,0,COL,ROW);//ï¿½ï¿½Î»
+	BlockWrite(0,0,COL,ROW);//¶¨Î»
 
 	DispColor(COL*ROW, color);
 } 
 
-//ï¿½ï¿½ï¿½ï¿½ï¿
+//±³¹â´ò¿ª
 void LCD_BL_On(void)
 {
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
@@ -287,7 +287,7 @@ void LCD_BL_On(void)
 #endif	
 }
 
-//ï¿½ï¿½ï¿½ï¿½Ø±ï¿
+//±³¹â¹Ø±Õ
 void LCD_BL_Off(void)
 {
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
@@ -297,7 +297,7 @@ void LCD_BL_Off(void)
 #endif
 }
 
-//ï¿½ï¿½Ä»Ë¯ï¿½ï¿½
+//ÆÁÄ»Ë¯Ãß
 void LCD_SleepIn(void)
 {
 	if(lcd_is_sleeping)
@@ -307,12 +307,12 @@ void LCD_SleepIn(void)
 
 	WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
-	Delay(120);             //ï¿½ï¿½Ê±120ms
+	Delay(120);             //ÑÓÊ±120ms
 
 	lcd_is_sleeping = true;
 }
 
-//ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½
+//ÆÁÄ»»½ÐÑ
 void LCD_SleepOut(void)
 {
 	if(k_timer_remaining_get(&backlight_timer) > 0)
@@ -325,13 +325,13 @@ void LCD_SleepOut(void)
 		return;
 	
 	WriteComm(0x11);  		//Sleep out	
-	Delay(120);             //ï¿½ï¿½Ê±120ms
+	Delay(120);             //ÑÓÊ±120ms
 	WriteComm(0x29);
 
 	lcd_is_sleeping = false;
 }
 
-//ï¿½ï¿½Ä»ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ï¿½ï¿½ï¿½Ê±
+//ÆÁÄ»ÖØÖÃ±³¹âÑÓÊ±
 void LCD_ResetBL_Timer(void)
 {
 	if(bl_mode == LCD_BL_ALWAYS_ON)
@@ -344,7 +344,7 @@ void LCD_ResetBL_Timer(void)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), K_NO_WAIT);
 }
 
-//ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½
+//ÆÁÄ»±³¹âÄ£Ê½ÉèÖÃ
 void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 {
 	if(bl_mode == mode)
@@ -375,12 +375,12 @@ void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 	bl_mode = mode;
 }
 
-//LCDï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//LCD³õÊ¼»¯º¯Êý
 void LCD_Init(void)
 {
 	int err;
 
-  	//ï¿½Ë¿Ú³ï¿½Ê¼ï¿½ï¿½
+  	//¶Ë¿Ú³õÊ¼»¯
   	gpio_lcd = device_get_binding(LCD_PORT);
 	if(!gpio_lcd)
 	{
@@ -618,10 +618,10 @@ void LCD_Init(void)
 	Delay(20);
 	WriteComm(0x2C);	
 
-	LCD_Clear(BLACK);		//ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½É«
+	LCD_Clear(BLACK);		//ÇåÆÁÎªºÚÉ«
 	Delay(30);
 
-	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//µãÁÁ±³¹â
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else

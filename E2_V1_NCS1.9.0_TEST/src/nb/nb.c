@@ -1045,8 +1045,7 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-					k_timer_stop(&nb_reconnect_timer);
+				k_timer_stop(&nb_reconnect_timer);
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 			}
 		}
@@ -1268,8 +1267,6 @@ void GetModemDateTime(void)
 		sprintf(tmpbuf, "%d", tz_count/4);
 		strcat(g_timezone, tmpbuf);
 
-		
-
 		RedrawSystemTime();
 		SaveSystemDateTime();
 	}
@@ -1327,11 +1324,8 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 			LOGD("begin 004", __func__);
 		#endif
 
-			if(!nb_connecting_flag)
-			{
-				k_timer_stop(&nb_reconnect_timer);
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
-			}
+			k_timer_stop(&nb_reconnect_timer);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
 }
@@ -1860,57 +1854,36 @@ static int configure_low_power(void)
 {
 	int err;
 	uint8_t buf[128] = {0};
-	
-#if defined(CONFIG_LTE_PSM_ENABLE)&&!defined(NB_SIGNAL_TEST)
-	/** Power Saving Mode */
-	err = lte_lc_psm_req(true);
+	bool enable = IS_ENABLED(CONFIG_MODEM_AUTO_REQUEST_POWER_SAVING_FEATURES);
+
+	err = lte_lc_psm_req(enable);
 	if(err)
 	{
 	#ifdef NB_DEBUG
 		LOGD("lte_lc_psm_req, error: %d", err);
 	#endif
+		return err;
 	}
-#else
-	err = lte_lc_psm_req(false);
-	if(err)
-	{
-	#ifdef NB_DEBUG
-		LOGD("lte_lc_psm_req, error: %d", err);
-	#endif
-	}
-#endif
 
-#if defined(CONFIG_LTE_EDRX_ENABLE)&&!defined(NB_SIGNAL_TEST)
-	/** enhanced Discontinuous Reception */
-	err = lte_lc_edrx_req(true);
-	if(err)
+	if(enable)
 	{
 	#ifdef NB_DEBUG
-		LOGD("lte_lc_edrx_req, error: %d", err);
+		LOGD("PSM requested");
 	#endif
 	}
-#else
-	err = lte_lc_edrx_req(false);
-	if(err)
+	else
 	{
 	#ifdef NB_DEBUG
-		LOGD("lte_lc_edrx_req, error: %d", err);
+		LOGD("PSM disabled");
 	#endif
 	}
-#endif
 
-#if defined(CONFIG_LTE_RAI_ENABLE)
-	/** Release Assistance Indication  */
-	err = nrf_modem_at_cmd(buf, sizeof(buf), CMD_SET_RAI);
-	if(err)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CPSMS?") == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("lte_lc_rai_req, error: %d", err);
-	#endif
+		LOGD("PSM:%s", buf);
 	}
-#endif
 
-	return err;
+	return 0;
 }
 
 void GetModemSignal(void)
@@ -1922,7 +1895,6 @@ void GetModemSignal(void)
 	int32_t rsrq=0,rsrp,snr;
 	static int32_t rsrpbk = 0;
 	
-	//if(at_cmd_write(CMD_GET_CESQ, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_CESQ) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -1947,7 +1919,6 @@ void GetModemSignal(void)
 		rsrp = atoi(strbuf);
 	}
 
-	//if(at_cmd_write(CMD_GET_SNR, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SNR) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2238,7 +2209,6 @@ void SetNetWorkApn(uint8_t *imsi_buf)
 		#ifdef NB_DEBUG
 			LOGD("cmdbuf:%s", cmdbuf); 
 		#endif
-			//if(at_cmd_write(cmdbuf, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 			if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), cmdbuf) != 0)
 			{
 			#ifdef NB_DEBUG
@@ -2250,7 +2220,6 @@ void SetNetWorkApn(uint8_t *imsi_buf)
 		}
 	}
 
-	//if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_APN) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2283,7 +2252,6 @@ void GetModemInfor(void)
 {
 	uint8_t tmpbuf[256] = {0};
 
-	//if(at_cmd_write(CMD_GET_MODEM_V, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_V) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2294,7 +2262,6 @@ void GetModemInfor(void)
 	}
 
 #if 0
-	//if(at_cmd_write(CMD_GET_SUPPORT_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SUPPORT_BAND) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2302,7 +2269,6 @@ void GetModemInfor(void)
 	#endif
 	}
 
-	//if(at_cmd_write(CMD_GET_CUR_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_CUR_BAND) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2310,7 +2276,6 @@ void GetModemInfor(void)
 	#endif
 	}
 
-	//if(at_cmd_write(CMD_GET_LOCKED_BAND, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_LOCKED_BAND) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2319,7 +2284,6 @@ void GetModemInfor(void)
 	}
 #endif
 
-	//if(at_cmd_write(CMD_GET_IMEI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMEI) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2328,7 +2292,6 @@ void GetModemInfor(void)
 		strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
 	}
 
-	//if(at_cmd_write(CMD_GET_IMSI, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMSI) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2337,7 +2300,6 @@ void GetModemInfor(void)
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
 	}
 
-	//if(at_cmd_write(CMD_GET_ICCID, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_ICCID) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2354,7 +2316,6 @@ void GetModemStatus(void)
 	uint8_t strbuf[64] = {0};
 	uint8_t tmpbuf[256] = {0};
 
-	//if(at_cmd_write(CMD_GET_MODEM_PARA, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_PARA) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2478,7 +2439,6 @@ void GetModemAPN(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	
-	//if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) == 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_APN) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2491,7 +2451,6 @@ void SetModemAPN(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	
-	//if(at_cmd_write("AT+CGDCONT=0,\"IP\",\"arkessalp.com\"", tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT+CGDCONT=0,\"IP\",\"arkessalp.com\"") != 0)
 	{
 	#ifdef NB_DEBUG
@@ -2499,7 +2458,6 @@ void SetModemAPN(void)
 	#endif
 	}
 
-	//if(at_cmd_write(CMD_GET_APN, tmpbuf, sizeof(tmpbuf), NULL) != 0)
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_APN) != 0)
 	{
 	#ifdef NB_DEBUG
@@ -2516,7 +2474,7 @@ static void modem_init(struct k_work *work)
 {
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
 }
 
 static void nb_link(struct k_work *work)
@@ -2551,25 +2509,25 @@ static void nb_link(struct k_work *work)
 	}
 #endif
 
-	/*if(gps_is_working())
+	if(gps_is_working())
 	{
 	#ifdef NB_DEBUG
 		LOGD("gps is working, continue waiting!");
 	#endif
 	
-		if(retry_count <= 2)		//2娆′互鍐呮瘡1鍒嗛挓閲嶈繛涓�锟
+		if(retry_count <= 2)		//2次以内每1分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-		else if(retry_count <= 4)	//3锟芥锟藉垎閽熼噸杩炰竴锟
+		else if(retry_count <= 4)	//3到4次每5分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-		else if(retry_count <= 6)	//5锟芥锟藉垎閽熼噸杩炰竴锟
+		else if(retry_count <= 6)	//5到6次每10分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-		else if(retry_count <= 8)	//7锟芥锟藉皬鏃堕噸杩炰竴锟
+		else if(retry_count <= 8)	//7到8次每1小时重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-		else						//8娆′互涓婃瘡6灏忔椂閲嶈繛涓�锟
+		else						//8次以上每6小时重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 	}
 	else
-	{*/
+	{
 	#ifdef NB_DEBUG
 		LOGD("linking");
 	#endif
@@ -2590,15 +2548,15 @@ static void nb_link(struct k_work *work)
 			nb_connected = false;
 
 			retry_count++;
-			if(retry_count <= 2)		//2娆′互鍐呮瘡1鍒嗛挓閲嶈繛涓�锟
+			if(retry_count <= 2)		//2次以内每1分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-			else if(retry_count <= 4)	//3锟芥锟藉垎閽熼噸杩炰竴锟
+			else if(retry_count <= 4)	//3到4次每5分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-			else if(retry_count <= 6)	//5锟芥锟藉垎閽熼噸杩炰竴锟
+			else if(retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(retry_count <= 8)	//7锟芥锟藉皬鏃堕噸杩炰竴锟
+			else if(retry_count <= 8)	//7到8次每1小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-			else						//8娆′互涓婃瘡6灏忔椂閲嶈繛涓�锟
+			else						//8次以上每6小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);
 		}
 		else
@@ -2641,14 +2599,13 @@ static void nb_link(struct k_work *work)
 	#endif
 
 		nb_connecting_flag = false;
-	//}
+	}
 }
 
 void GetNBSignal(void)
 {
 	uint8_t str_rsrp[128] = {0};
 
-	//if(at_cmd_write("AT+CFUN?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CFUN?") == 0)
 	{
 	#ifdef NB_DEBUG	
@@ -2656,7 +2613,6 @@ void GetNBSignal(void)
 	#endif
 	}
 
-	//if(at_cmd_write("AT+CPSMS?", str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CPSMS?") == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2664,7 +2620,6 @@ void GetNBSignal(void)
 	#endif
 	}
 	
-	//if(at_cmd_write(CMD_GET_CESQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CESQ) == 0)
 	{
 	#ifdef NB_DEBUG	
@@ -2672,7 +2627,6 @@ void GetNBSignal(void)
 	#endif
 	}
 
-	//if(at_cmd_write(CMD_GET_APN, str_rsrp, sizeof(str_rsrp), NULL) == 0)
     if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_APN) == 0)
 	{
 	#ifdef NB_DEBUG	
@@ -2680,7 +2634,6 @@ void GetNBSignal(void)
 	#endif
 	}
 	
-	//if(at_cmd_write(CMD_GET_CSQ, str_rsrp, sizeof(str_rsrp), NULL) == 0)
 	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CSQ) == 0)
 	{
 	#ifdef NB_DEBUG	
@@ -2808,8 +2761,8 @@ void NBMsgProcess(void)
 	if(nb_reconnect_flag)
 	{
 		nb_reconnect_flag = false;
-		//if(test_gps_flag) \\enable when using GPS
-		//	return;
+		if(test_gps_flag)
+			return;
 
 		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 	}

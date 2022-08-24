@@ -70,8 +70,8 @@ config PEER_VERIFY
 	help
 		Set to 0 for VERIFY_NONE, 1 for VERIFY_OPTIONAL, and 2 for VERIFY_REQUIRED.
 
-config LTE_PSM_ENABLE
-	bool "Enable LTE Power Saving Mode"
+config MODEM_AUTO_REQUEST_POWER_SAVING_FEATURES
+	bool "Auto request power saving features"
 	default y
 
 config LTE_EDRX_ENABLE

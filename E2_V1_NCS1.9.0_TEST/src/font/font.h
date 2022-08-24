@@ -17,8 +17,8 @@
 #define FONT_64
 #define FONT_68
 
-//#define FONTMAKER_MBCS_FONT		//fontmakeï¿½ï¿½ï¿½ï¿½RMï¿½á¹©ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Ö¿ï¿½×ªï¿½ï¿½ï¿½Éµï¿½mbcsï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¿ï¿½ï¿½ï¿½ï¿½ï¿
-#define FONTMAKER_UNICODE_FONT	//fontmakeï¿½ï¿½ï¿½ï¿½RMï¿½á¹©ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Ö¿ï¿½×ªï¿½ï¿½ï¿½Éµï¿½unicodeï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¿ï¿½ï¿½ï¿½ï¿½ï¿
+//#define FONTMAKER_MBCS_FONT		//fontmake¸ù¾ÝRMÌá¹©µÄÊ¸Á¿×Ö¿â×ª»»³ÉµÄmbcs±àÂëµãÕó×Ö¿âÊý¾Ý
+#define FONTMAKER_UNICODE_FONT	//fontmake¸ù¾ÝRMÌá¹©µÄÊ¸Á¿×Ö¿â×ª»»³ÉµÄunicode±àÂëµãÕó×Ö¿âÊý¾Ý
 
 #ifdef FONTMAKER_MBCS_FONT
 #define FONT_MBCS_HEAD_FLAG_0	0x4D
@@ -107,7 +107,7 @@ typedef struct
 }font_uni_infor;
 #endif
 
-//Ó¢ï¿½ï¿½ï¿½Ö¿ï¿½
+//Ó¢ÎÄ×Ö¿â
 #ifdef FONT_16
 extern unsigned char asc2_1608[96][16];
 #ifdef FONTMAKER_MBCS_FONT
@@ -127,7 +127,7 @@ extern unsigned char asc2_4824[96][144];
 extern unsigned char asc2_6432[96][256];
 #endif
 
-//ï¿½ï¿½ï¿½ï¿½ï¿½Ö¿ï¿½
+//ÖÐÎÄ×Ö¿â
 #ifdef FONT_16
 //extern unsigned char chinese_1616[8178][32];
 #ifdef FONTMAKER_MBCS_FONT

@@ -589,12 +589,12 @@ void tp_interrupt_proc(void)
 	uint8_t tp_temp[10]={0};
 	uint16_t x_pos,y_pos;
 	
-	platform_read(TP_REG_GESTURE, &tp_temp[0], 1);//ï¿½ï¿½ï¿½ï¿½
-	platform_read(TP_REG_FINGER_NUM, &tp_temp[1], 1);//ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½
-	platform_read(TP_REG_XPOS_H, &tp_temp[2], 1);//xï¿½ï¿½ï¿½ï¿½ï¿½Î(&0x0f,È¡ï¿½ï¿½4Î»)
-	platform_read(TP_REG_XPOS_L, &tp_temp[3], 1);//xï¿½ï¿½ï¿½ï¿½ï¿½Î
-	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//yï¿½ï¿½ï¿½ï¿½ï¿½Î(&0x0f,È¡ï¿½ï¿½4Î»)
-	platform_read(TP_REG_YPOS_L, &tp_temp[5], 1);//yï¿½ï¿½ï¿½ï¿½ï¿½Î
+	platform_read(TP_REG_GESTURE, &tp_temp[0], 1);//ÊÖÊÆ
+	platform_read(TP_REG_FINGER_NUM, &tp_temp[1], 1);//ÊÖÖ¸¸öÊý
+	platform_read(TP_REG_XPOS_H, &tp_temp[2], 1);//x×ø±ê¸ßÎ» (&0x0f,È¡µÍ4Î»)
+	platform_read(TP_REG_XPOS_L, &tp_temp[3], 1);//x×ø±êµÍÎ»
+	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y×ø±êµÍÎ» (&0x0f,È¡µÍ4Î»)
+	platform_read(TP_REG_YPOS_L, &tp_temp[5], 1);//y×ø±êµÍÎ»
 
 #ifdef TP_DEBUG
 	LOGD("tp_temp=%x,%x,%x,%x,%x,%x",tp_temp[0],tp_temp[1],tp_temp[2],tp_temp[3],tp_temp[4],tp_temp[5]);
@@ -670,7 +670,7 @@ void tp_init(void)
 	uint8_t tp_temp_id=0;
 	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_UP|GPIO_INT_LOW_0|GPIO_INT_DEBOUNCE;
 	
-  	//ï¿½Ë¿Ú³ï¿½Ê¼ï¿½ï¿½
+  	//¶Ë¿Ú³õÊ¼»¯
   	gpio_ctp = device_get_binding(TP_PORT);
 	if(!gpio_ctp)
 	{

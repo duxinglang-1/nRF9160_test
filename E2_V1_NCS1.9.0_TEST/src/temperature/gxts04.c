@@ -27,10 +27,10 @@ static CRC_8 crc_8_CUSTOM = {0x31,0xff,0x00,false,false};
 #endif
 
 static uint32_t measure_count = 0;
-static float t_sensor = 0.0;		//ä¼ æ„Ÿå™¨æ¸©åº¦å€
-static float t_body = 0.0; 			//æ˜¾ç¤ºçš„æ¸©åº¦å€
-static float t_predict = 0.0;		//é¢„æµ‹çš„äººä½“æ¸©åº¦å€
-static float t_temp80 = 0.0;		//é¢„æµ‹çš„äººä½“æ¸©åº¦å€
+static float t_sensor = 0.0;		//´«¸ÐÆ÷ÎÂ¶ÈÖµ
+static float t_body = 0.0; 			//ÏÔÊ¾µÄÎÂ¶ÈÖµ
+static float t_predict = 0.0;		//Ô¤²âµÄÈËÌåÎÂ¶ÈÖµ
+static float t_temp80 = 0.0;		//Ô¤²âµÄÈËÌåÎÂ¶ÈÖµ
 
 
 static uint8_t init_i2c(void)
@@ -155,7 +155,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	LOGD("count:%d, real temp:%d.%d", measure_count, (int16_t)(t_sensor*10)/10, (int16_t)(t_sensor*10)%10);
 #endif
 
-	if(t_sensor > 32)			//å¦‚æžœä¸Šä¸€æ¬¡æµ‹æ¸©å¤§äº2ï¼Œé‚£ä¹ˆå¼€å§‹è®¡æ•
+	if(t_sensor > 32)			//Èç¹ûÉÏÒ»´Î²âÎÂ´óÓÚ32£¬ÄÇÃ´¿ªÊ¼¼ÆÊý
 	{
 		measure_count = measure_count+1;
 	}

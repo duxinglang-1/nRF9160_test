@@ -48,7 +48,7 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 #endif /* WIN32 */
 	va_end(args);
 
-	//����N����100�ĳ���ֱ���˳�����̫�����ܻᵼ������
+	//这里N操作100的长度直接退出，打太长可能会导致重启
 	if(n > LOG_BUFF_SIZE - 4)
 	{
 		return;

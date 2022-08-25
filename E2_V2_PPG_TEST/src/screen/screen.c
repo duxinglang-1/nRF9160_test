@@ -58,6 +58,7 @@ static u8_t scr_index = 0;
 static u8_t bat_charging_index = 0;
 static bool exit_notify_flag = false;
 static bool entry_idle_flag = false;
+static bool entry_setting_bk_flag = false;
 
 static void NotifyTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(notify_timer, NotifyTimerOutCallBack, NULL);
@@ -216,6 +217,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	else if(screen_id == SCREEN_ID_SETTINGS)
 	{
 		ExitSettingsScreen();
+	}
+	else if(screen_id == SCREEN_ID_POWEROFF)
+	{
+		EntryIdleScr();
 	}
 }
 
@@ -777,6 +782,7 @@ void AlarmScreenProcess(void)
 
 void poweroff_confirm(void)
 {
+	k_timer_stop(&mainmenu_timer);
 	ClearAllKeyHandler();
 
 	if(screen_id == SCREEN_ID_POWEROFF)
@@ -790,6 +796,7 @@ void poweroff_confirm(void)
 
 void poweroff_cancel(void)
 {
+	k_timer_stop(&mainmenu_timer);
 	EnterIdleScreen();
 }
 
@@ -817,6 +824,7 @@ void EnterPoweroffScreen(void)
 #endif
 
 	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
@@ -938,7 +946,6 @@ void SettingsUpdateStatus(void)
 	u16_t x,y,w,h;
 	u16_t bg_clor = 0x2124;
 	u16_t green_clor = 0x07e0;
-	static bool flag = true;
 	
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -979,7 +986,7 @@ void SettingsUpdateStatus(void)
 			u16_t *level_str[4] = {level_1_str,level_2_str,level_3_str,level_4_str};
 			u32_t img_addr[2] = {IMG_SET_TEMP_UNIT_C_ICON_ADDR, IMG_SET_TEMP_UNIT_F_ICON_ADDR};
 
-			flag = true;
+			entry_setting_bk_flag = false;
 			
 			LCD_Clear(BLACK);
 			
@@ -1301,9 +1308,9 @@ void SettingsUpdateStatus(void)
 		{
 			u32_t img_addr[4] = {IMG_BKL_LEVEL_1_ADDR,IMG_BKL_LEVEL_2_ADDR,IMG_BKL_LEVEL_3_ADDR,IMG_BKL_LEVEL_4_ADDR};
 
-			if(flag)
+			if(entry_setting_bk_flag == false)
 			{
-				flag = false;
+				entry_setting_bk_flag = true;
 				LCD_Clear(BLACK);
 				LCD_ShowImg_From_Flash(SETTINGS_MENU_BK_DEC_X, SETTINGS_MENU_BK_DEC_Y, IMG_BKL_DEC_ICON_ADDR);
 				LCD_ShowImg_From_Flash(SETTINGS_MENU_BK_INC_X, SETTINGS_MENU_BK_INC_Y, IMG_BKL_INC_ICON_ADDR);
@@ -1650,6 +1657,7 @@ void SettingsShowStatus(void)
 	#endif		
 	}
 
+	entry_setting_bk_flag = false;
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
 }

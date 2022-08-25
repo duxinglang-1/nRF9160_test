@@ -218,6 +218,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		ExitSettingsScreen();
 	}
+	else if(screen_id == SCREEN_ID_POWEROFF)
+	{
+		EntryIdleScr();
+	}
 }
 
 void IdleShowSystemDate(void)
@@ -778,6 +782,7 @@ void AlarmScreenProcess(void)
 
 void poweroff_confirm(void)
 {
+	k_timer_stop(&mainmenu_timer);
 	ClearAllKeyHandler();
 
 	if(screen_id == SCREEN_ID_POWEROFF)
@@ -791,6 +796,7 @@ void poweroff_confirm(void)
 
 void poweroff_cancel(void)
 {
+	k_timer_stop(&mainmenu_timer);
 	EnterIdleScreen();
 }
 
@@ -818,6 +824,7 @@ void EnterPoweroffScreen(void)
 #endif
 
 	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 

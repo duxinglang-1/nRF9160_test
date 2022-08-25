@@ -90,8 +90,8 @@ bool uart_ble_sleep_flag = false;
 bool uart_ble_wake_flag = false;
 bool uart_log_is_waked = true;
 bool uart_ble_is_waked = true;
-#define UART_LOG_WAKE_HOLD_TIME_SEC		(1*60)
-#define UART_LOG_SLEEP_DELAY_TIME_SEC	(1*60)
+
+#define UART_LOG_WAKE_HOLD_TIME_SEC		(10)
 #define UART_BLE_WAKE_HOLD_TIME_SEC		(10)
 #endif
 
@@ -1873,7 +1873,7 @@ void ble_init(void)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	uart_log = device_get_binding("UART_0");
 	if(uart_log)
-		k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(3*CONFIG_LTE_NETWORK_TIMEOUT), NULL);
+		k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), NULL);
 #endif
 
 	uart_ble = device_get_binding(BLE_DEV);

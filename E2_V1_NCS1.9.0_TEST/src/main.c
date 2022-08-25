@@ -659,30 +659,6 @@ void test_show_string(void)
 #endif
 }
 
-void test_gpio(void)
-{
-	struct device *gpio_test;
-
-  	gpio_test = device_get_binding("GPIO_0");
-	if(!gpio_test)
-	{
-		return;
-	}
-
-	gpio_pin_configure(gpio_test, 00, GPIO_OUTPUT);
-	gpio_pin_set(gpio_test, 00, 0);
-	gpio_pin_configure(gpio_test, 01, GPIO_OUTPUT);
-	gpio_pin_set(gpio_test, 01, 0);
-	gpio_pin_configure(gpio_test, 11, GPIO_OUTPUT);
-	gpio_pin_set(gpio_test, 11, 0);
-	gpio_pin_configure(gpio_test, 12, GPIO_OUTPUT);
-	gpio_pin_set(gpio_test, 12, 0);
-	gpio_pin_configure(gpio_test, 18, GPIO_OUTPUT);
-	gpio_pin_set(gpio_test, 18, 0);
-	gpio_pin_configure(gpio_test, 19, GPIO_OUTPUT);
-	gpio_pin_set(gpio_test, 19, 0);
-}
-
 void system_init(void)
 {
 	k_sleep(K_MSEC(500));//xb test 2022-03-11 启动时候延迟0.5S,等待其他外设完全启动
@@ -760,7 +736,6 @@ int main(void)
 {
 	work_init();
 	system_init();
-//	test_gpio();
 
 //	test_show_string();
 //	test_show_image();

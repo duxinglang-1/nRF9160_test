@@ -167,8 +167,8 @@
 	tx-pin = <29>;
 	rx-pin = <28>;
 	rx-pull-up;
-	rts-pin = <27>;
-	cts-pin = <26>;
+	#rts-pin = <27>;
+	#cts-pin = <26>;
 	cts-pull-up;
 };
 

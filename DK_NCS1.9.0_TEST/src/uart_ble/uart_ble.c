@@ -9,6 +9,8 @@
 #include <string.h>
 #include <drivers/uart.h>
 #include <drivers/gpio.h>
+#include <device.h>
+#include <pm/device.h>
 
 #include "logger.h"
 #include "datetime.h"
@@ -28,7 +30,7 @@
 #include "esp8266.h"
 #endif
 
-//#define UART_DEBUG
+#define UART_DEBUG
 
 #define BLE_DEV			"UART_0"
 #define BLE_PORT		"GPIO_0"
@@ -83,7 +85,7 @@
 bool blue_is_on = true;
 bool uart_send_flag = false;
 bool get_ble_info_flag = false;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 bool uart_sleep_flag = false;
 bool uart_wake_flag = false;
 bool uart_is_waked = true;
@@ -127,7 +129,7 @@ ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
 extern bool app_find_device;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static void UartSleepInCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(uart_sleep_in_timer, UartSleepInCallBack, NULL);
 #endif
@@ -1571,7 +1573,7 @@ void uart_send_data_handle(void)
 		break;
 	}
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uart_sleep_out();
 #endif
 
@@ -1599,7 +1601,7 @@ void wifi_send_data_handle(uint8_t *buf, uint32_t len)
 	LOGD("cmd:%s", buf);
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uart_sleep_out();
 #endif
 
@@ -1618,7 +1620,7 @@ static void uart_receive_data(uint8_t data, uint32_t datalen)
 	//LOGD("rece_len:%d, data_len:%d data:%x", rece_len, data_len, data);
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	if(!uart_is_waked)
 		return;
 #endif
@@ -1733,18 +1735,15 @@ static void uart_cb(struct device *x)
 
 void uart_sleep_out(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
 		k_timer_stop(&uart_sleep_in_timer);
-	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
+	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
 
 	if(uart_is_waked)
 		return;
 	
-	device_set_power_state(uart_ble, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	uart_irq_rx_enable(uart_ble);
-	uart_irq_tx_enable(uart_ble);
-	
+	pm_device_action_run(uart_ble, PM_DEVICE_ACTION_RESUME);
 	k_sleep(K_MSEC(10));
 	
 	uart_is_waked = true;
@@ -1757,14 +1756,11 @@ void uart_sleep_out(void)
 
 void uart_sleep_in(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	if(!uart_is_waked)
 		return;
 	
-	uart_irq_rx_disable(uart_ble);
-	uart_irq_tx_disable(uart_ble);
-	device_set_power_state(uart_ble, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
-
+	pm_device_action_run(uart_ble, PM_DEVICE_ACTION_SUSPEND);
 	k_sleep(K_MSEC(10));
 	
 	uart_is_waked = false;
@@ -1775,7 +1771,7 @@ void uart_sleep_in(void)
 #endif
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 #ifdef UART_DEBUG
@@ -1833,13 +1829,13 @@ void ble_init(void)
 	gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 0);
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
 	gpio_pin_interrupt_configure(gpio_ble, BLE_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, ble_interrupt_event, BIT(BLE_INT_PIN));
 	gpio_add_callback(gpio_ble, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ble, BLE_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);	
-	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), NULL);
+	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
 #endif
 
 	k_timer_start(&get_ble_info_timer, K_SECONDS(2), K_NO_WAIT);
@@ -1847,7 +1843,7 @@ void ble_init(void)
 
 void UartMsgProc(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	if(uart_wake_flag)
 	{
 	#ifdef UART_DEBUG

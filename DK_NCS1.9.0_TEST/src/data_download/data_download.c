@@ -9,13 +9,11 @@
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <drivers/flash.h>
-#if defined(CONFIG_BSD_LIBRARY)
-#include <modem/bsdlib.h>
 #include <bsd.h>
-#endif /* CONFIG_BSD_LIBRARY */
 #include <modem/lte_lc.h>
-//#include <modem/at_cmd.h>
-//#include <modem/at_notif.h>
+#include <modem/at_cmd.h>
+#include <modem/at_notif.h>
+#include <modem/bsdlib.h>
 #include <net/download_client.h>
 #include "data_download.h"
 #include "dl_target.h"

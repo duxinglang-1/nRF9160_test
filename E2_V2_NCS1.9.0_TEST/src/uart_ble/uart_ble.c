@@ -30,7 +30,7 @@
 #include "esp8266.h"
 #endif
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 #define BLE_DEV			"UART_2"
 #define BLE_PORT		"GPIO_0"
@@ -1947,7 +1947,7 @@ void UartMsgProc(void)
 		uart_ble_sleep_flag = false;
 		uart_ble_sleep_in();
 	}
-#endif/*CONFIG_DEVICE_POWER_MANAGEMENT*/
+#endif/*CONFIG_PM_DEVICE*/
 
 	if(uart_send_flag)
 	{

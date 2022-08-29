@@ -50,5 +50,5 @@ extern void LCD_SleepIn(void);
 extern void LCD_SleepOut(void);
 extern void LCD_ResetBL_Timer(void);
 extern void LCD_Set_BL_Mode(LCD_BL_MODE mode);
-
+extern LCD_BL_MODE LCD_Get_BL_Mode(void);
 #endif/*LCD_LH096TIG11G_ST7735SV*/

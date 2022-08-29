@@ -2492,12 +2492,9 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 		SetNetWorkParaByPlmn(g_imsi);
 	}
-	else if(strlen(g_imsi) == 0)
+	else
 	{
-		SetModemTurnOn();
-		GetModemInfor();
 		SetModemTurnOff();
-		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(strlen(g_imsi) == 0)
@@ -2554,9 +2551,9 @@ static void nb_link(struct k_work *work)
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
 			else if(retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(retry_count <= 8)	//7到8次每1小时重连一次
+			else if(retry_count <= 8)	//7到8次每0.5小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-			else						//8次以上每6小时重连一次
+			else						//8次以上每0.5小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);
 		}
 		else
@@ -2687,7 +2684,7 @@ void NBMsgProcess(void)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
 			TestNBUpdateINfor();
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_MSEC(1000));
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
 		else if(nb_is_connecting())
 		{
@@ -2761,10 +2758,18 @@ void NBMsgProcess(void)
 	if(nb_reconnect_flag)
 	{
 		nb_reconnect_flag = false;
-		if(test_gps_flag)
+		
+		if(test_gps_flag || nb_connected)
 			return;
-
-		k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+	
+		if(!nb_connecting_flag)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		}
 	}
 	
 	if(nb_connecting_flag)

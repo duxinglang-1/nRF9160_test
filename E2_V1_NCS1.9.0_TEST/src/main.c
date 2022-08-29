@@ -53,7 +53,7 @@ static uint8_t show_pic_count = 0;//Õº∆¨œ‘ æÀ≥–Ú
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
-		      2048);
+		      4096);
 static struct k_work_q nb_work_q;
 
 #ifdef CONFIG_IMU_SUPPORT
@@ -693,7 +693,7 @@ void system_init(void)
 	dl_init();
 #endif
 	NB_init(&nb_work_q);
-	//GPS_init(&gps_work_q);
+	GPS_init(&gps_work_q);
 }
 
 void work_init(void)
@@ -764,7 +764,7 @@ int main(void)
 	#ifdef CONFIG_WIFI	
 		WifiProcess();
 	#endif
-		//GPSMsgProcess();
+		GPSMsgProcess();
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();

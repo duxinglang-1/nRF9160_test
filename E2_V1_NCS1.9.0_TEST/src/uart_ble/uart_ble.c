@@ -1733,9 +1733,9 @@ static void uart_cb(struct device *x)
 	}
 }
 
+#ifdef CONFIG_PM_DEVICE
 void uart_sleep_out(void)
 {
-#ifdef CONFIG_PM_DEVICE
 	if(k_timer_remaining_get(&uart_sleep_in_timer) > 0)
 		k_timer_stop(&uart_sleep_in_timer);
 	k_timer_start(&uart_sleep_in_timer, K_SECONDS(UART_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
@@ -1751,12 +1751,10 @@ void uart_sleep_out(void)
 #ifdef UART_DEBUG
 	LOGD("uart set active success!");
 #endif
-#endif
 }
 
 void uart_sleep_in(void)
 {
-#ifdef CONFIG_PM_DEVICE
 	if(!uart_is_waked)
 		return;
 	
@@ -1768,10 +1766,8 @@ void uart_sleep_in(void)
 #ifdef UART_DEBUG
 	LOGD("uart set low power success!");
 #endif
-#endif
 }
 
-#ifdef CONFIG_PM_DEVICE
 static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 #ifdef UART_DEBUG

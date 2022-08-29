@@ -175,7 +175,9 @@ void system_power_off(uint8_t flag)
 		}
 
 		VibrateStart();
-		k_timer_start(&vib_timer, K_MSEC(100), K_NO_WAIT);
+		k_sleep(K_MSEC(100));
+		VibrateStop();
+
 		k_timer_start(&sys_pwroff, K_MSEC(5*1000), K_NO_WAIT);
 	}
 }
@@ -202,6 +204,55 @@ void pmu_battery_stop_shutdown(void)
 void pmu_battery_low_shutdown(void)
 {
 	k_timer_start(&soc_pwroff, K_MSEC(10*1000), K_NO_WAIT);
+}
+
+void pmu_battery_update(void)
+{
+	uint8_t tmpbuf[8] = {0};
+
+	g_bat_soc = MAX20353_CalculateSOC();
+#ifdef PMU_DEBUG
+	LOGD("SOC:%d", g_bat_soc);
+#endif	
+	if(g_bat_soc>100)
+		g_bat_soc = 100;
+	
+	if(g_bat_soc < 5)
+	{
+		g_bat_level = BAT_LEVEL_VERY_LOW;
+		if(!charger_is_connected)
+		{
+			pmu_battery_low_shutdown();
+		}
+	}
+	else if(g_bat_soc < 10)
+	{
+		g_bat_level = BAT_LEVEL_LOW;
+	}
+	else if(g_bat_soc < 80)
+	{
+		g_bat_level = BAT_LEVEL_NORMAL;
+	}
+	else
+	{
+		g_bat_level = BAT_LEVEL_GOOD;
+	}
+
+	if(charger_is_connected)
+	{
+		g_bat_level = BAT_LEVEL_NORMAL;
+		if(screen_id == SCREEN_ID_NOTIFY)
+		{
+			sprintf(tmpbuf, "%d%%", g_bat_soc);
+			mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
+			
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
+		}
+	}
+
+	if(g_chg_status == BAT_CHARGING_NO)
+		pmu_redraw_bat_flag = true;
 }
 
 bool pmu_interrupt_proc(void)
@@ -328,14 +379,14 @@ bool pmu_interrupt_proc(void)
 			}
 		#endif
 
-			ExitNotifyScreen();
+			ExitNotify();
 			lcd_sleep_out = true;
 		}
 
 		pmu_redraw_bat_flag = true;
 	}
 
-	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT); ////this API accepts only two arguments
+	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT);//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
 	if(val == 0)
 		return false;
 	else
@@ -385,50 +436,11 @@ bool pmu_alert_proc(void)
 	{
 		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
 		MSB = MSB&0xDF;
-
-		g_bat_soc = MAX20353_CalculateSOC();
 	#ifdef PMU_DEBUG
-		LOGD("SOC:%d", g_bat_soc);
-	#endif	
-		if(g_bat_soc>100)
-			g_bat_soc = 100;
-		
-		if(g_bat_soc < 5)
-		{
-			g_bat_level = BAT_LEVEL_VERY_LOW;
-			if(!charger_is_connected)
-			{
-				pmu_battery_low_shutdown();
-			}
-		}
-		else if(g_bat_soc < 10)
-		{
-			g_bat_level = BAT_LEVEL_LOW;
-		}
-		else if(g_bat_soc < 80)
-		{
-			g_bat_level = BAT_LEVEL_NORMAL;
-		}
-		else
-		{
-			g_bat_level = BAT_LEVEL_GOOD;
-		}
+		LOGD("SOC change alert!");
+	#endif
 
-		if(charger_is_connected)
-		{
-			g_bat_level = BAT_LEVEL_NORMAL;
-			if(screen_id == SCREEN_ID_NOTIFY)
-			{
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
-				
-				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
-			}
-		}
-
-		if(g_chg_status == BAT_CHARGING_NO)
-			pmu_redraw_bat_flag = true;
+		pmu_battery_update();
 	}
 	if(MSB&0x10)
 	{
@@ -815,6 +827,15 @@ void PMUMsgProcess(void)
 			VibrateStop();
 		
 		vibrate_stop_flag = false;
+
+		if(g_vib.work_mode == VIB_RHYTHMIC)
+		{
+			k_timer_start(&vib_stop_timer, K_MSEC(g_vib.off_time), NULL);
+		}
+		else
+		{
+			memset(&g_vib, 0, sizeof(g_vib));
+		}
 	}
 
 #ifdef BATTERY_SOC_GAUGE

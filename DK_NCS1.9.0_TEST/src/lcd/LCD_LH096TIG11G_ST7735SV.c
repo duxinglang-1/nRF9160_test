@@ -377,6 +377,24 @@ void LCD_SleepIn(void)
 //屏幕唤醒
 void LCD_SleepOut(void)
 {
+	uint16_t bk_time;
+	
+	if(k_timer_remaining_get(&backlight_timer) > 0)
+		k_timer_stop(&backlight_timer);
+	
+	if(global_settings.backlight_time != 0)
+	{
+		bk_time = global_settings.backlight_time;
+		//xb add 2020-12-31 抬手亮屏5秒后自动息屏
+		if(sleep_out_by_wrist)
+		{
+			sleep_out_by_wrist = false;
+			bk_time = 5;
+		}
+
+		k_timer_start(&backlight_timer, K_SECONDS(bk_time), NULL);
+	}
+
 	if(!lcd_is_sleeping)
 		return;
 	
@@ -398,6 +416,12 @@ void LCD_ResetBL_Timer(void)
 	
 	if(global_settings.backlight_time != 0)
 		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+}
+
+//获取屏幕当前背光模式
+LCD_BL_MODE LCD_Get_BL_Mode(void)
+{
+	return bl_mode;
 }
 
 //屏幕背光模式设置

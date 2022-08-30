@@ -2889,7 +2889,7 @@ void LCD_ShowStrInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,uint8_t *p)
 {
 	uint8_t x0=x;
-	uint16_t phz=0;
+	uint16_t w,phz=0;
 
 	width+=x;
 	height+=y;
@@ -2903,7 +2903,8 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 		{
 		#ifdef IMG_FONT_FROM_FLASH
 		  #ifdef FONTMAKER_UNICODE_FONT
-
+			w = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
+		  	x += w;
 		  #elif defined(FONTMAKER_MBCS_FONT)
 
 		  #else	
@@ -3014,7 +3015,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
 {
 	uint8_t x0=x;
-	uint16_t end=0x000d;
+	uint16_t w,end=0x000a;
 	
 	width+=x;
 	height+=y;
@@ -3025,8 +3026,8 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 		if(y>=height)break;//ÍË³ö
 		if(*p==0x0000)break;//ÍË³ö
 
-		width = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
-		x += width;
+		w = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
+		x += w;
 		p++;
 	}
 }
@@ -3423,22 +3424,31 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
+		lcd_sleep_in = false;
+		
+		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
+			return;
+		
 		LCD_BL_Off();
 		LCD_SleepIn();
-		lcd_sleep_in = false;
 	}
 
 	if(lcd_sleep_out)
 	{	
+		lcd_sleep_out = false;
+		
+		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
+			return;
+		
 		LCD_SleepOut();
-		pmu_alert_proc();
+		pmu_battery_update();
 		if(IsInIdleScreen())
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK|SCREEN_EVENT_UPDATE_SIG|SCREEN_EVENT_UPDATE_NET_MODE|SCREEN_EVENT_UPDATE_BAT;
+			IdleScreenProcess();
 		}
 		
 		LCD_BL_On();
-		lcd_sleep_out = false;
 	}
 }

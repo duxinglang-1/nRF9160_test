@@ -218,6 +218,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		ExitSettingsScreen();
 	}
+	else if(screen_id == SCREEN_ID_POWEROFF)
+	{
+		EntryIdleScr();
+	}
 }
 
 void IdleShowSystemDate(void)
@@ -244,7 +248,7 @@ void IdleShowSystemDate(void)
 										{
 											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
 											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
-											{0x004D,0x00E4,0x0072,0x007A,0x0000},//"Mé‹œz"
+											{0x004D,0x00E4,0x0072,0x007A,0x0000},//"März"
 											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
 											{0x004D,0x0061,0x0069,0x0000,0x0000},//"Mai"
 											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
@@ -778,6 +782,7 @@ void AlarmScreenProcess(void)
 
 void poweroff_confirm(void)
 {
+	k_timer_stop(&mainmenu_timer);
 	ClearAllKeyHandler();
 
 	if(screen_id == SCREEN_ID_POWEROFF)
@@ -791,6 +796,7 @@ void poweroff_confirm(void)
 
 void poweroff_cancel(void)
 {
+	k_timer_stop(&mainmenu_timer);
 	EnterIdleScreen();
 }
 
@@ -818,6 +824,7 @@ void EnterPoweroffScreen(void)
 #endif
 
 	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 
@@ -832,7 +839,7 @@ void EnterPoweroffScreen(void)
 
 void PowerOffUpdateStatus(void)
 {
-	uint32_t *img_anima[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
+	uint32_t img_anima[3] = {IMG_RUNNING_ANI_1_ADDR, IMG_RUNNING_ANI_2_ADDR, IMG_RUNNING_ANI_3_ADDR};
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();

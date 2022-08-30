@@ -22,14 +22,13 @@
 #endif
 #include "Alarm.h"
 #include "lcd.h"
+#include "settings.h"
 #include "logger.h"
 
 //#define KEY_DEBUG
 #define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
 static bool key_trigger_flag = false;
-static bool wear_off_trigger_flag = false;
-
 static uint8_t flag;
 static uint32_t keycode;
 static uint32_t keytype;
@@ -42,6 +41,10 @@ static sys_slist_t button_handlers;
 #ifdef WEAR_CHECK_SUPPORT
 #define WEAR_PORT 	"GPIO_0"
 #define WEAR_PIN	06
+
+static bool wear_int_flag = false;
+static bool wear_off_trigger_flag = false;
+
 static struct device *gpio_wear;
 static struct gpio_callback gpio_wear_cb;
 static void wear_off_timerout(struct k_timer *timer_id);
@@ -208,7 +211,14 @@ void ExecKeyHandler(uint8_t keycode, uint8_t keytype)
 
 bool is_wearing(void)
 {
-	return touch_flag;
+#ifdef WEAR_CHECK_SUPPORT
+	if(global_settings.wrist_off_check)
+		return touch_flag;
+	else
+		return true;
+#else
+	return true;
+#endif
 }
 
 static void key_event_handler(uint8_t key_code, uint8_t key_type)
@@ -583,12 +593,17 @@ static void wear_off_timerout(struct k_timer *timer_id)
 
 void WearInterruptHandle(void)
 {
+	wear_int_flag = true;
+}
+
+void WearMsgProc(void)
+{
 	uint32_t val;
 
-	//if(gpio_pin_get(gpio_wear, WEAR_PIN, &val))
-        if(gpio_pin_get(gpio_wear, WEAR_PIN)) //this API accepts only two arguments
+	if(!global_settings.wrist_off_check)
 		return;
 
+	val = gpio_pin_get_raw(gpio_wear, WEAR_PIN);
 	if(!val)
 	{
 	#ifdef KEY_DEBUG
@@ -622,7 +637,7 @@ void wear_init(void)
     gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN,GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_wear_cb, WearInterruptHandle, BIT(WEAR_PIN));
 	gpio_add_callback(gpio_wear, &gpio_wear_cb);
-    gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_INT_LOW_0);
+    gpio_pin_interrupt_configure(gpio_wear, WEAR_PIN, GPIO_INT_EDGE_BOTH);
 
 	WearInterruptHandle();
 }
@@ -649,23 +664,46 @@ void KeyMsgProcess(void)
 		
 		key_trigger_flag = false;
 	}
+
+#ifdef WEAR_CHECK_SUPPORT
+	if(wear_int_flag)
+	{
+		WearMsgProc();
+		
+		wear_int_flag = false;
+	}
 	
 	if(wear_off_trigger_flag)
 	{
 		if(0
 		#ifdef CONFIG_PPG_SUPPORT
-			|| PPGIsWorking()
+			|| IsInPPGScreen()
 		#endif
 		#ifdef CONFIG_TEMP_SUPPORT
-			|| TempIsWorking()
+			|| IsInTempScreen()
 		#endif
 			)
 		{
 			EnterIdleScreen();
 		}
-	
+
+	#ifdef CONFIG_PPG_SUPPORT
+		if(PPGIsWorking())
+		{
+			PPGStopCheck();
+		}
+	#endif
+
+	#ifdef CONFIG_TEMP_SUPPORT
+		if(TempIsWorking())
+		{
+			TempStop();
+		}
+	#endif
+
 		wear_off_trigger_flag = false;
 	}
+#endif	
 }
 
 void key_init(void)

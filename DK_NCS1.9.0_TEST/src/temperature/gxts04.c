@@ -155,7 +155,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	LOGD("count:%d, real temp:%d.%d", measure_count, (int16_t)(t_sensor*10)/10, (int16_t)(t_sensor*10)%10);
 #endif
 
-	if(t_sensor > 32)			//如果上一次测温大于32，那么开始计数
+	if(t_sensor > 28)			//如果上一次测温大于32，那么开始计数
 	{
 		measure_count = measure_count+1;
 	}
@@ -183,8 +183,8 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 		t_temp80 = t_sensor;
 		if((t_sensor > 36)&&(t_sensor <= 41))
 			t_predict = 36.9 + (t_sensor-36)*4.1/5;
-		else if((t_sensor > 32)&&(t_sensor <= 36))
-			t_predict = 36.1 + (t_sensor-32)*0.8/4; 
+		else if((t_sensor > 28)&&(t_sensor <= 36))
+			t_predict = 36.1 + (t_sensor-28)*0.8/8; 
 		else
 			t_predict = t_sensor;
 	}
@@ -201,8 +201,8 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	{
 		if((t_sensor > 36)&&(t_sensor <= 41))
 			t_body = 36.9 + (t_sensor-36)*4.1/5;
-		else if((t_sensor > 32)&&(t_sensor <= 36))
-			t_body = 36.1 + (t_sensor-32)*0.8/4;
+		else if((t_sensor > 28)&&(t_sensor <= 36))
+			t_body = 36.1 + (t_sensor-28)*0.8/8;
 		else
 			t_body = t_sensor;
 

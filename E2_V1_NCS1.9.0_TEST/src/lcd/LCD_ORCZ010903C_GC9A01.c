@@ -71,7 +71,6 @@ static void LCD_SPI_Transceive(uint8_t *txbuf, uint32_t txbuflen, uint8_t *rxbuf
 	if(err)
 	{
 	}
-
 }
 
 //LCDÑÓÊ±º¯Êý

@@ -1744,8 +1744,6 @@ void uart_sleep_out(void)
 		return;
 	
 	pm_device_action_run(uart_ble, PM_DEVICE_ACTION_RESUME);
-	k_sleep(K_MSEC(10));
-	
 	uart_is_waked = true;
 
 #ifdef UART_DEBUG
@@ -1759,8 +1757,6 @@ void uart_sleep_in(void)
 		return;
 	
 	pm_device_action_run(uart_ble, PM_DEVICE_ACTION_SUSPEND);
-	k_sleep(K_MSEC(10));
-	
 	uart_is_waked = false;
 
 #ifdef UART_DEBUG
@@ -1857,7 +1853,8 @@ void UartMsgProc(void)
 		uart_sleep_flag = false;		
 		uart_sleep_in();
 	}
-#endif	
+#endif/*CONFIG_PM_DEVICE*/
+
 	if(uart_send_flag)
 	{
 		uart_send_data_handle();

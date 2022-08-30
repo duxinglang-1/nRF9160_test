@@ -27,6 +27,21 @@ typedef enum
 	BAT_LEVEL_MAX
 }BAT_LEVEL_STATUS;
 
+typedef enum
+{
+	VIB_ONCE,
+	VIB_CONTINUITY,
+	VIB_RHYTHMIC,
+	VIB_MAX
+}VIBRATE_MODE;
+
+typedef struct
+{
+	VIBRATE_MODE work_mode;
+	uint32_t on_time;
+	uint32_t off_time;
+}vibrate_msg_t;
+
 extern bool pmu_trige_flag;
 extern bool pmu_alert_flag;
 extern bool pmu_check_temp_flag;

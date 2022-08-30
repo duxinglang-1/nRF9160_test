@@ -684,7 +684,7 @@ void tp_init(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	uint8_t tp_temp_id=0;
-	int flag = GPIO_INPUT|GPIO_INT_ENABLE|GPIO_INT_EDGE|GPIO_PULL_UP|GPIO_INT_LOW_0|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 	
   	//¶Ë¿Ú³õÊ¼»¯
   	gpio_ctp = device_get_binding(TP_PORT);
@@ -699,10 +699,10 @@ void tp_init(void)
 	init_i2c();
 
 	gpio_pin_configure(gpio_ctp, TP_EINT, flag);
-	gpio_pin_disable_callback(gpio_ctp, TP_EINT);
+	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, CaptouchInterruptHandle, BIT(TP_EINT));
 	gpio_add_callback(gpio_ctp, &gpio_cb);
-	gpio_pin_enable_callback(gpio_ctp, TP_EINT);
+	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_EDGE_FALLING);
 
 	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ctp, TP_RESET, 0);

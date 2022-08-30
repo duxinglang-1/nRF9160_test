@@ -704,7 +704,7 @@ static void SendDataCallBack(struct k_timer *timer)
 
 static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(100), K_NO_WAIT);
+	k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 }
 
 static void NbSendDataStop(void)
@@ -2552,9 +2552,9 @@ static void nb_link(struct k_work *work)
 			else if(retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
 			else if(retry_count <= 8)	//7到8次每0.5小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), K_NO_WAIT);
 			else						//8次以上每0.5小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), K_NO_WAIT);
 		}
 		else
 		{

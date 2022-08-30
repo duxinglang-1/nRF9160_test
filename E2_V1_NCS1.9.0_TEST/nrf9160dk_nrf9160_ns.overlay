@@ -27,15 +27,13 @@
 	status = "disabled";
 };
 
-&uart0 {
+&uart0{
 	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <29>;
 	rx-pin = <28>;
-	rx-pull-up;
-	rts-pin = <14>;
-	cts-pin = <16>;
-	cts-pull-up;
+	#rts-pin = <14>;
+	#cts-pin = <15>;
 };
 
 &uart1{

@@ -28,8 +28,10 @@ static void pmu_battery_low_shutdown_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(soc_pwroff, pmu_battery_low_shutdown_timerout, NULL);
 static void sys_pwr_off_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(sys_pwroff, sys_pwr_off_timerout, NULL);
-static void vibrate_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(vib_timer, vibrate_timerout, NULL);
+static void vibrate_start_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(vib_start_timer, vibrate_start_timerout, NULL);
+static void vibrate_stop_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(vib_stop_timer, vibrate_stop_timerout, NULL);
 
 bool vibrate_start_flag = false;
 bool vibrate_stop_flag = false;
@@ -49,6 +51,7 @@ uint8_t g_bat_soc = 0;
 
 BAT_CHARGER_STATUS g_chg_status = BAT_CHARGING_NO;
 BAT_LEVEL_STATUS g_bat_level = BAT_LEVEL_NORMAL;
+vibrate_msg_t g_vib = {0};
 
 maxdev_ctx_t pmu_dev_ctx;
 
@@ -70,7 +73,6 @@ static void show_infor2(uint8_t *strbuf)
 	LCD_Fill(30,130,180,70,BLACK);
 	LCD_ShowStringInRect(30,130,180,70,strbuf);
 }
-
 #endif
 
 static bool init_i2c(void)
@@ -157,9 +159,41 @@ void sys_pwr_off_timerout(struct k_timer *timer_id)
 	sys_pwr_off_flag = true;
 }
 
-void vibrate_timerout(struct k_timer *timer_id)
+void vibrate_start_timerout(struct k_timer *timer_id)
 {
 	vibrate_stop_flag = true;
+}
+
+void vibrate_stop_timerout(struct k_timer *timer_id)
+{
+	vibrate_start_flag = true;
+}
+
+void vibrate_off(void)
+{
+	memset(&g_vib, 0, sizeof(g_vib));
+	
+	vibrate_stop_flag = true;
+}
+
+void vibrate_on(VIBRATE_MODE mode, uint32_t mSec1, uint32_t mSec2)
+{
+	g_vib.work_mode = mode;
+	g_vib.on_time = mSec1;
+	g_vib.off_time = mSec2;
+	
+	switch(g_vib.work_mode)
+	{
+	case VIB_ONCE:
+	case VIB_RHYTHMIC:
+		k_timer_start(&vib_start_timer, K_MSEC(g_vib.on_time), K_NO_WAIT);
+		break;
+
+	case VIB_CONTINUITY:
+		break;
+	}
+
+	vibrate_start_flag = true;
 }
 
 void system_power_off(uint8_t flag)
@@ -404,7 +438,6 @@ void PmuInterruptHandle(void)
 bool pmu_alert_proc(void)
 {
 	uint8_t i;
-	uint8_t tmpbuf[128] = {0};
 	notify_infor infor = {0};
 	int ret;
 	uint8_t MSB=0,LSB=0;
@@ -830,7 +863,7 @@ void PMUMsgProcess(void)
 
 		if(g_vib.work_mode == VIB_RHYTHMIC)
 		{
-			k_timer_start(&vib_stop_timer, K_MSEC(g_vib.off_time), NULL);
+			k_timer_start(&vib_stop_timer, K_MSEC(g_vib.off_time), K_NO_WAIT);
 		}
 		else
 		{

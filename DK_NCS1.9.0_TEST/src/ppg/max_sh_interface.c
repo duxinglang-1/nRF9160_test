@@ -106,7 +106,6 @@ void SH_Power_On(void)
 
 void SH_Power_Off(void)
 {
-	//PPG¹©µç¹Ø±Õ
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 0);
 }

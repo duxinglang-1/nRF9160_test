@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "settings.h"
 #include "nb.h"
-//#include "gps.h"
+#include "gps.h"
 #ifdef CONFIG_WIFI
 #include "esp8266.h"
 #endif
@@ -75,7 +75,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
  * RETURNS
  *  Nothing
  *****************************************************************************/
-/*void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
+void location_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
 {
 	uint8_t reply[128] = {0};
 	uint8_t tmpbuf[8] = {0};
@@ -100,8 +100,8 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 		gps_data.latitude = -gps_data.latitude;
 	}
 
-	tmp1 = (uint32_t)(gps_data.latitude);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	tmp2 = gps_data.latitude - tmp1;	//ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	tmp1 = (uint32_t)(gps_data.latitude);	//¾­¶ÈÕûÊý²¿·Ö
+	tmp2 = gps_data.latitude - tmp1;	//¾­¶ÈÐ¡Êý²¿·Ö
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
 	strcat(reply, tmpbuf);
@@ -128,8 +128,8 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 		gps_data.longitude = -gps_data.longitude;
 	}
 
-	tmp1 = (uint32_t)(gps_data.longitude);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	tmp2 = gps_data.longitude - tmp1;	//ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	tmp1 = (uint32_t)(gps_data.longitude);	//¾­¶ÈÕûÊý²¿·Ö
+	tmp2 = gps_data.longitude - tmp1;	//¾­¶ÈÐ¡Êý²¿·Ö
 	//integer
 	sprintf(tmpbuf, "%d", tmp1);
 	strcat(reply, tmpbuf);
@@ -147,7 +147,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
 	strcat(reply, tmpbuf);
 
 	NBSendLocationData(reply, strlen(reply));
-}*/
+}
 
 /*****************************************************************************
  * FUNCTION
@@ -339,8 +339,8 @@ void TimeCheckSendLocationData(void)
 		location_wait_wifi = true;
 		APP_Ask_wifi_data();
 	#else
-		//location_wait_gps = true;
-		//APP_Ask_GPS_Data();
+		location_wait_gps = true;
+		APP_Ask_GPS_Data();
 	#endif
 	}
 }
@@ -370,8 +370,8 @@ void StepCheckSendLocationData(uint16_t steps)
 		location_wait_wifi = true;
 		APP_Ask_wifi_data();
 	#else
-		//location_wait_gps = true;
-		//APP_Ask_GPS_Data();
+		location_wait_gps = true;
+		APP_Ask_GPS_Data();
 	#endif		
 	}
 }
@@ -493,8 +493,8 @@ void SyncSendLocalData(void)
 	location_wait_wifi = true;
 	APP_Ask_wifi_data();
 #else
-	//location_wait_gps = true;
-	//APP_Ask_GPS_Data();
+	location_wait_gps = true;
+	APP_Ask_GPS_Data();
 #endif
 
 }

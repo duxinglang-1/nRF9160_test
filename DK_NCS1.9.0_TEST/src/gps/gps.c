@@ -368,7 +368,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		else
 		{
 		#ifdef GPS_DEBUG
-			s32_t lon,lat;
+			int32_t lon,lat;
 
 			lon = evt->pvt.longitude*1000000;
 			lat = evt->pvt.latitude*1000000;
@@ -451,7 +451,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		else
 		{
 		#ifdef GPS_DEBUG
-			s32_t lon,lat;
+			int32_t lon,lat;
 
 			lon = evt->pvt.longitude*1000000;
 			lat = evt->pvt.latitude*1000000;

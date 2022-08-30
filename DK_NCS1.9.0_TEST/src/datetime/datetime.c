@@ -464,27 +464,65 @@ void UpdateSystemTime(void)
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		)
 		{
-		#ifdef CONFIG_TEMP_SUPPORT
-			if(date_time.minute == 48-TEMP_CHECK_TIMELY)
-			{	
-				TimerStartTemp();
-			}
-		#endif
-		#ifdef CONFIG_PPG_SUPPORT
-			if(date_time.minute == 49-PPG_CHECK_HR_TIMELY)
+			//The sensor needs to be turned on in advance. 
+			//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
+			bool check_flag = false;
+			
+			switch(global_settings.health_interval)
 			{
-				TimerStartHr();
+			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
+				check_flag = true;
+				break;
+			case 120://1/3/5/7/9/11/13/15/17/19/21/23
+				if(date_time.hour%2 == 0)
+				{
+					check_flag = true;
+				}
+				break;
+			case 180://2/5/8/11/14/17/20/23
+				if(date_time.hour%3 == 1)
+				{
+					check_flag = true;
+				}
+				break;
+			case 240://3/7/11/15/19/23
+				if(date_time.hour%4 == 2)
+				{
+					check_flag = true;
+				}
+				break;
+			case 360://5/11/17/23
+				if(date_time.hour%6 == 4)
+				{
+					check_flag = true;
+				}
+				break;
 			}
-			if(date_time.minute == 53-PPG_CHECK_BPT_TIMELY)
-			{
-				TimerStartBpt();
-			}
-			if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
-			{
-				TimerStartSpo2();
-			}
-		#endif/*CONFIG_PPG_SUPPORT*/
 
+			if(check_flag == true)
+			{
+			#ifdef CONFIG_TEMP_SUPPORT
+				if(date_time.minute == 48-TEMP_CHECK_TIMELY)
+				{	
+					TimerStartTemp();
+				}
+			#endif
+			#ifdef CONFIG_PPG_SUPPORT
+				if(date_time.minute == 49-PPG_CHECK_HR_TIMELY)
+				{
+					TimerStartHr();
+				}
+				if(date_time.minute == 53-PPG_CHECK_BPT_TIMELY)
+				{
+					TimerStartBpt();
+				}
+				if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
+				{
+					TimerStartSpo2();
+				}
+			#endif/*CONFIG_PPG_SUPPORT*/
+			}
+			
 			AlarmRemindCheck(date_time);
 			//TimeCheckSendLocationData();
 		}
@@ -505,30 +543,62 @@ void UpdateSystemTime(void)
 			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 			)
 		{
-			static uint32_t health_hour_count = 0;
+			bool send_flag = false;
 
 		#ifdef CONFIG_TEMP_SUPPORT
 			SetCurDayTempRecData(g_temp_timing);
+			g_temp_timing = 0.0;
 		#endif
 		#ifdef CONFIG_PPG_SUPPORT
 			SetCurDayHrRecData(g_hr_timing);
+			g_hr_timing = 0;
 			SetCurDaySpo2RecData(g_spo2_timing);
+			g_spo2_timing = 0;
 			SetCurDayBptRecData(g_bpt_timing);
+			memset(&g_bpt_timing, 0, sizeof(g_bpt_timing));
 		#endif		
 		#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 			if((date_time_changed&0x08) != 0)
 				g_steps = 0;
 			SetCurDayStepRecData(g_steps);
+			g_steps = 0;
 		#endif
+			
+			switch(global_settings.health_interval)
+			{
+			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
+				send_flag = true;
+				break;
+			case 120://1/3/5/7/9/11/13/15/17/19/21/23
+				if(date_time.hour%2 == 1)
+				{
+					send_flag = true;
+				}
+				break;
+			case 180://2/5/8/11/14/17/20/23
+				if(date_time.hour%3 == 2)
+				{
+					send_flag = true;
+				}
+				break;
+			case 240://3/7/11/15/19/23
+				if(date_time.hour%4 == 3)
+				{
+					send_flag = true;
+				}
+				break;
+			case 360://5/11/17/23
+				if(date_time.hour%6 == 5)
+				{
+					send_flag = true;
+				}
+				break;
+			}
 
-			health_hour_count++;
-			if((health_hour_count == global_settings.health_interval/60)
-				||(date_time.hour == 00)	//xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
+			if(send_flag 
+				|| (date_time.hour == 00) //xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
 				)
 			{
-				if(health_hour_count == global_settings.health_interval/60)
-					health_hour_count = 0;
-				
 				TimeCheckSendHealthData();
 			}
 		}

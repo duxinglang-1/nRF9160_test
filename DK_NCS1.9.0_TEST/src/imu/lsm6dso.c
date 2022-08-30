@@ -22,7 +22,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #include "lsm6dso_reg.h"
 #include "algorithm.h"
 #include "lcd.h"
-//#include "gps.h"
+#include "gps.h"
 #include "settings.h"
 #include "screen.h"
 #include "external_flash.h"
@@ -31,7 +31,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #endif
 #include "logger.h"
 
-#define IMU_DEBUG
+//#define IMU_DEBUG
 
 #define I2C1_NODE DT_NODELABEL(i2c1)
 #if DT_NODE_HAS_STATUS(I2C1_NODE, okay)

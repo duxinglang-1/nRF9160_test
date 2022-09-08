@@ -1277,8 +1277,8 @@ bool sh_init_interface(void)
 	#endif
 
 		sh_set_sensorhub_shutdown();
-		SH_Power_Off();
 		//Set_PPG_Power_Off();
+		SH_Power_Off();
 		return false;
 	}
 #ifdef MAX_DEBUG	
@@ -1287,15 +1287,15 @@ bool sh_init_interface(void)
 	mcu_type = u8_rxbuf[0];
 	
 	s32_status = sh_get_hub_fw_version(u8_rxbuf);
-	if (s32_status != SS_SUCCESS)
+	if(s32_status != SS_SUCCESS)
 	{
 	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
 	#endif
 
 		sh_set_sensorhub_shutdown();
-		SH_Power_Off();
 		//Set_PPG_Power_Off();
+		SH_Power_Off();
 		return false;
 	}
 	else
@@ -1327,9 +1327,8 @@ bool sh_init_interface(void)
 	}
 
 	sh_set_sensorhub_shutdown();
-	SH_Power_Off();
 	//Set_PPG_Power_Off();
-	
+	SH_Power_Off();	
 	return true;
 }
 

@@ -239,12 +239,17 @@ void pmu_battery_low_shutdown(void)
 
 void pmu_battery_update(void)
 {
+	u8_t tmp_bat_soc = 0;
 	u8_t tmpbuf[8] = {0};
 
-	g_bat_soc = MAX20353_CalculateSOC();
+	tmp_bat_soc = MAX20353_CalculateSOC();
 #ifdef PMU_DEBUG
-	LOGD("SOC:%d", g_bat_soc);
+	LOGD("tmp_soc:%d soc:%d", tmp_bat_soc, g_bat_soc);
 #endif	
+	if((tmp_bat_soc > g_bat_soc) && !charger_is_connected)
+		return;
+
+	g_bat_soc = tmp_bat_soc;
 	if(g_bat_soc>100)
 		g_bat_soc = 100;
 	

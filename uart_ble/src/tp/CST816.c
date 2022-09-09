@@ -583,7 +583,7 @@ void tp_interrupt_proc(void)
 	platform_read(TP_REG_FINGER_NUM, &tp_temp[1], 1);//手指个数
 	platform_read(TP_REG_XPOS_H, &tp_temp[2], 1);//x坐标高位 (&0x0f,取低4位)
 	platform_read(TP_REG_XPOS_L, &tp_temp[3], 1);//x坐标低位
-	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
+	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标高位 (&0x0f,取低4位)
 	platform_read(TP_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
 #ifdef TP_DEBUG

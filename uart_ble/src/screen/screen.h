@@ -549,7 +549,7 @@ typedef struct
 	u16_t h;
 	u8_t img_count;
 	u32_t img[NOTIFY_IMG_MAX_COUNT];
-	u8_t text[NOTIFY_TEXT_MAX_LEN+1];
+	uint16_t text[NOTIFY_TEXT_MAX_LEN+1];
 }notify_infor;
 
 extern SCREEN_ID_ENUM screen_id;

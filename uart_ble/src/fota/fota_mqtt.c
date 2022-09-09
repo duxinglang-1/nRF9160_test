@@ -136,6 +136,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	int retval;
 	int sec_tag;
 	u8_t host[256] = {0};
+	u8_t file[128] = {0};
 
 #ifdef FOTA_DEBUG
 	LOGD("begin");
@@ -152,10 +153,11 @@ static void app_dfu_transfer_start(struct k_work *unused)
 	else
 		strcpy(host, CONFIG_FOTA_DOWNLOAD_HOST_HK);
 
-	retval = fota_download_start(host,
-				     CONFIG_FOTA_DOWNLOAD_FILE,
-				     sec_tag);
-	if (retval != 0)
+	strcpy(file, g_prj_dir);
+	strcat(file, CONFIG_FOTA_DOWNLOAD_FILE);
+	
+	retval = fota_download_start(host, file, sec_tag);
+	if(retval != 0)
 	{
 	#ifdef FOTA_DEBUG
 		LOGD("fota_download_start() failed, err %d", retval);
@@ -279,6 +281,9 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 		break;
 
 	default:
+	#ifdef FOTA_DEBUG
+		LOGD("Unkown evt_id:%d", evt->id);
+	#endif
 		break;
 	}
 
@@ -422,6 +427,7 @@ void FotaMsgProc(void)
 		LOGD("fota_reboot!");
 	#endif
 		fota_reboot_flag = false;
+		LCD_Clear(BLACK);
 		sys_reboot(0);
 	}
 

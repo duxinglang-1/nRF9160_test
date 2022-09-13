@@ -32,10 +32,8 @@
 	current-speed = <115200>;
 	tx-pin = <7>;
 	rx-pin = <28>;
-	rx-pull-up;
 	#rts-pin = <14>;
 	#cts-pin = <15>;
-	cts-pull-up;
 };
 
 &uart1{

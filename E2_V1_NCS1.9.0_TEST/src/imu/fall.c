@@ -126,7 +126,7 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 }
 #endif
 
-void fall_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
+void fall_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_data)
 {
 	uint8_t reply[128] = {0};
 	uint8_t tmpbuf[8] = {0};

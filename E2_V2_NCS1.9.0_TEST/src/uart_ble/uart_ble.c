@@ -775,7 +775,7 @@ void APP_get_location_data(uint8_t *buf, uint32_t len)
 	APP_Ask_GPS_Data();
 }
 
-void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data)
+void APP_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_data)
 {
 	uint8_t tmpgps;
 	uint8_t reply[128] = {0};

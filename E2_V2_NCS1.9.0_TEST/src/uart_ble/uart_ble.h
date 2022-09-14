@@ -67,7 +67,6 @@ extern uint8_t g_ble_mac_addr[20];
 extern uint8_t g_nrf52810_ver[128];
 
 extern void uart_ble_test(void);
-extern void APP_get_gps_data_reply(bool flag, struct gps_pvt gps_data);
 extern void MCU_get_nrf52810_ver(void);
 extern void MCU_get_ble_mac_address(void);
 extern void MCU_get_ble_status(void);

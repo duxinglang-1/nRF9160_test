@@ -12,7 +12,7 @@
 #include <logger.h>
 #include "assistance.h"
 
-#define AGPS_DEBUG
+//#define AGPS_DEBUG
 
 #define SUPL_SERVER        CONFIG_GNSS_SAMPLE_SUPL_HOSTNAME
 #define SUPL_SERVER_PORT   CONFIG_GNSS_SAMPLE_SUPL_PORT

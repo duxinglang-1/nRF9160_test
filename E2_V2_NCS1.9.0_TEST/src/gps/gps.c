@@ -14,7 +14,7 @@
 #include "screen.h"
 #include "gps.h"
 
-#define GPS_DEBUG
+//#define GPS_DEBUG
 
 #if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE) || defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
 static struct k_work_q gnss_work_q;

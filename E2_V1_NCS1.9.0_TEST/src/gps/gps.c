@@ -847,18 +847,18 @@ static void gps_data_get_work_fn(struct k_work *item)
 						int32_t lon,lat;
 						
 					#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-						strcat(gps_test_info, "\n \n");	//2行没显示满，多换行一行
+						strcat(gps_test_info, "\n");	//2行没显示满，多换行一行
 						if(gps_fix_time > 0)
 						{
 							sprintf(strbuf, "fix:%dS", gps_local_time/1000);
 							strcat(gps_test_info, strbuf);
 						}
 					#else
-						strcat(gps_test_info, "\n \n");
+						strcat(gps_test_info, "\n");
 						
 						lon = last_pvt.longitude*1000000;
 						lat = last_pvt.latitude*1000000;
-						sprintf(strbuf, "Longitude:   %d.%06d\nLatitude:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
+						sprintf(strbuf, "Lon:   %d.%06d\nLat:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 						strcat(gps_test_info, strbuf);
 				
 						if(gps_fix_time > 0)

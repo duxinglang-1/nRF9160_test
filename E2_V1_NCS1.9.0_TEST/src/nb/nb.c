@@ -622,7 +622,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	#ifdef NB_DEBUG
 		LOGD("ERROR: mqtt_connect %d", err);
 	#endif
-		return;
+		goto link_over;
 	}
 
 	err = fds_init(&client);
@@ -631,9 +631,11 @@ static void mqtt_link(struct k_work_q *work_q)
 	#ifdef NB_DEBUG
 		LOGD("ERROR: fds_init %d", err);
 	#endif
-		return;
+		goto link_over;
 	}
 
+	mqtt_connecting_flag = false;
+	
 	while(1)
 	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
@@ -694,6 +696,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
+link_over:
 	mqtt_connecting_flag = false;
 }
 

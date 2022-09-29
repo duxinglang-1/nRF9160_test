@@ -4272,10 +4272,10 @@ void TestGPSUpdateInfor(void)
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
 	mmi_asc_to_ucs2(tmpbuf, gps_test_info);
-	LCD_ShowUniStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, (uint16_t*)tmpbuf);
+	LCD_ShowUniStringInRect((LCD_WIDTH-194)/2, 50, 194, 160, (uint16_t*)tmpbuf);
 #else	
 	LCD_SetFontSize(FONT_SIZE_16);
-	LCD_ShowStringInRect((LCD_WIDTH-192)/2, 50, 192, 160, gps_test_info);
+	LCD_ShowStringInRect((LCD_WIDTH-194)/2, 50, 194, 160, gps_test_info);
 #endif
 }
 

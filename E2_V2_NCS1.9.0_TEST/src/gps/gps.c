@@ -858,7 +858,7 @@ static void gps_data_get_work_fn(struct k_work *item)
 						
 						lon = last_pvt.longitude*1000000;
 						lat = last_pvt.latitude*1000000;
-						sprintf(strbuf, "Longitude:   %d.%06d\nLatitude:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
+						sprintf(strbuf, "Lon:   %d.%06d\nLat:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
 						strcat(gps_test_info, strbuf);
 				
 						if(gps_fix_time > 0)

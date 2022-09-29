@@ -6,7 +6,6 @@
 
 #include <zephyr.h>
 #include <stdio.h>
-#include <drivers/gps.h>
 #include <nrf_modem_gnss.h>
 
 extern bool gps_on_flag;

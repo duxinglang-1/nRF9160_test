@@ -2615,7 +2615,7 @@ void HRShowStatus(void)
 					hr_min = hr[i];
 			}
 
-			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-(hr[i]-30)*15/30, HR_REC_DATA_W, (hr[i]-30)*15/30, RED);
+			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-hr[i]*20/50, HR_REC_DATA_W, hr[i]*20/50, RED);
 		}
 	}
 
@@ -3014,7 +3014,7 @@ void NotifyShow(void)
 	u16_t x,y,w=0,h=0;
 	u16_t offset_w=4,offset_h=4;
 
-	//LCD_DrawRectangle(notify_msg.x, notify_msg.y, notify_msg.w, notify_msg.h);
+	LCD_DrawRectangle(notify_msg.x, notify_msg.y, notify_msg.w, notify_msg.h);
 	LCD_Fill(notify_msg.x+1, notify_msg.y+1, notify_msg.w-2, notify_msg.h-2, BLACK);
 
 	switch(notify_msg.align)

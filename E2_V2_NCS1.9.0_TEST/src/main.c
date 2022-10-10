@@ -58,9 +58,13 @@ static struct k_work_q nb_work_q;
 
 #ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              4096);
+              2048);
 static struct k_work_q imu_work_q;
 #endif
+
+K_THREAD_STACK_DEFINE(gps_stack_area,
+              2048);
+static struct k_work_q gps_work_q;
 
 #if defined(ANALOG_CLOCK)
 static void test_show_analog_clock(void);
@@ -721,7 +725,7 @@ void system_init(void)
 	dl_init();
 #endif
 	NB_init(&nb_work_q);
-	GPS_init();
+	GPS_init(&gps_work_q);
 }
 
 void work_init(void)
@@ -734,6 +738,9 @@ void work_init(void)
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
 					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
 #endif
+	k_work_q_start(&gps_work_q, gps_stack_area,
+					K_THREAD_STACK_SIZEOF(gps_stack_area),
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
 	
 	if(IS_ENABLED(CONFIG_WATCHDOG))
 	{

@@ -1805,6 +1805,15 @@ void ParseData(uint8_t *data, uint32_t datalen)
 
 			flag = true;			
 		}
+		else if(strcmp(strcmd, "S29") == 0)
+		{
+			//后台下发位置信息
+		#ifdef NB_DEBUG
+			LOGD("%s", strdata);
+		#endif
+
+			SOSRecLocatNotify(strdata);
+		}
 
 		SaveSystemSettings();
 

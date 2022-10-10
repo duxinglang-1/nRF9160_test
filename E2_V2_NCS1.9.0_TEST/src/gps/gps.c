@@ -42,6 +42,7 @@ static uint32_t time_to_fix;
 static uint32_t time_blocked;
 #endif
 
+static struct k_work_q *app_work_q;
 static struct k_work gps_data_get_work;
 static void gps_data_get_work_fn(struct k_work *item);
 
@@ -551,17 +552,6 @@ static int gps_work_init(void)
 
 static int gnss_init_and_start(void)
 {
-#if defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE) || defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
-	/* Enable GNSS. */
-	if(lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_GNSS) != 0)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Failed to activate GNSS functional mode");
-	#endif
-		return -1;
-	}
-#endif /* CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE || CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND */
-
 	/* Configure GNSS. */
 	if(nrf_modem_gnss_event_handler_set(gnss_event_handler) != 0)
 	{
@@ -1054,7 +1044,7 @@ void gps_turn_on(void)
 	LOGD("begin");
 #endif
 
-	k_work_submit_to_queue(&gnss_work_q, &gps_data_get_work);
+	k_work_submit_to_queue(app_work_q, &gps_data_get_work);
 }
 
 void gps_on(void)
@@ -1097,8 +1087,9 @@ void test_gps_off(void)
 	EnterIdleScreen();
 }
 
-void GPS_init(void)
+void GPS_init(struct k_work_q *work_q)
 {
+	app_work_q = work_q;
 	gps_work_init();
 }
 

@@ -234,7 +234,7 @@ void SOSRecLocatNotify(uint8_t *strmsg)
 		infor.y = (LCD_HEIGHT-infor.h)/2;
 
 		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_NOTIFY;
+		infor.type = NOTIFY_TYPE_POPUP;
 
 		infor.img_count = 0;
 

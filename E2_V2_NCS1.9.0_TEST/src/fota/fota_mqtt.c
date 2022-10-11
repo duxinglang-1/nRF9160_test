@@ -11,12 +11,9 @@
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <drivers/flash.h>
-//#include <bsd.h>
+#include <sys/reboot.h>
 #include <modem/lte_lc.h>
 #include <modem/nrf_modem_lib.h>
-//#include <modem/at_cmd.h>
-//#include <modem/at_notif.h>
-//#include <modem/bsdlib.h>
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
 #include <dfu/mcuboot.h>
@@ -309,20 +306,20 @@ void fota_init(void)
 	LOGD("begin");
 #endif
 
-err = nrf_modem_lib_get_init_ret();
-
-//bsd library no longer suported by ncs
-
-//#if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
-//	err = bsdlib_init();
-//#else
-//	/* If bsdlib is initialized on post-kernel we should
-//	 * fetch the returned error code instead of bsdlib_init
-//	 */
-//	err = bsdlib_get_init_ret();
-//#endif
+#if !defined(CONFIG_NRF_MODEM_LIB_SYS_INIT)
+	err = nrf_modem_lib_init(NORMAL_MODE);
+#else
+	err = nrf_modem_lib_get_init_ret();
+#endif
 	switch(err)
 	{
+	case 0:
+		/* Initialization successful, no action required. */
+	#ifdef FOTA_DEBUG
+		LOGD("Initialization successful");
+	#endif		
+		break;
+
 	case MODEM_DFU_RESULT_OK:
 	#ifdef FOTA_DEBUG	
 		LOGD("Modem firmware update successful!");
@@ -346,30 +343,14 @@ err = nrf_modem_lib_get_init_ret();
 		LOGD("Fatal error.");
 	#endif
 		break;
-		
-	case -1:
-	#ifdef FOTA_DEBUG
-		LOGD("Could not initialize bsdlib.");
-		LOGD("Fatal error.");
-	#endif
 		return;
 		
 	default:
+	#ifdef FOTA_DEBUG	
+		LOGD("Could not initialize modem library, fatal error: %d", err);
+	#endif
 		break;
 	}
-#ifdef FOTA_DEBUG
-	LOGD("Initialized bsdlib");
-#endif
-
-//#if !defined(CONFIG_BSD_LIBRARY_SYS_INIT)
-//	/* Initialize AT only if bsdlib_init() is manually
-//	 * called by the main application
-//	 */
-//	err = at_notif_init();
-//	__ASSERT(err == 0, "AT Notify could not be initialized.");
-//	err = at_cmd_init();
-//	__ASSERT(err == 0, "AT CMD could not be established.");
-//#endif
 
 	boot_write_img_confirmed();
 
@@ -427,7 +408,7 @@ void FotaMsgProc(void)
 	{
 		fota_reboot_flag = false;
 		LCD_Clear(BLACK);
-		sys_reboot(0);
+		sys_reboot(1);
 	}
 
 	if(fota_run_flag)

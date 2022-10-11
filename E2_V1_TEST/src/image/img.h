@@ -109,7 +109,7 @@ extern unsigned char IMG_FUN_OPT_STEP_ICON[4240];
 extern unsigned char IMG_FUN_OPT_SYNC_ICON[4240];
 extern unsigned char IMG_FUN_OPT_TEMP_ICON[4240];
 //heart rate(6)
-extern unsigned char IMG_HR_BG[33158];
+extern unsigned char IMG_HR_BG[33548];
 extern unsigned char IMG_HR_BPM[1988];
 extern unsigned char IMG_HR_DOWN_ARRAW[548];
 extern unsigned char IMG_HR_ICON_ANI_1[2116];

@@ -195,6 +195,67 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 		MenuStartFOTA();
 	}
 #endif
+#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+	else if(screen_id == SCREEN_ID_DL)
+	{
+		switch(g_dl_data_type)
+		{
+		case DL_DATA_IMG:
+			switch(get_dl_status())
+			{
+			case DL_STATUS_PREPARE:
+				dl_start();
+				break;
+				
+			case DL_STATUS_FINISHED:
+			case DL_STATUS_ERROR:
+				if((strcmp(g_new_font_ver,g_font_ver) > 0) || (strncmp(g_font_ver,"20",2) != 0))
+					dl_font_start();
+			#if defined(CONFIG_PPG_SUPPORT)
+				else if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+					dl_ppg_start();
+			#endif
+				else
+					dl_reboot_confirm();
+				break;
+			}
+			break;
+
+		case DL_DATA_FONT:
+			switch(get_dl_status())
+			{
+			case DL_STATUS_PREPARE:
+				dl_start();
+				break;
+
+			case DL_STATUS_FINISHED:
+			case DL_STATUS_ERROR:
+			#if defined(CONFIG_PPG_SUPPORT)
+				if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+					dl_ppg_start();
+			#endif
+				else
+					dl_reboot_confirm();
+				break;
+			}
+			break;
+			
+		case DL_DATA_PPG:
+			switch(get_dl_status())
+			{
+			case DL_STATUS_PREPARE:
+				dl_start();
+				break;
+
+			case DL_STATUS_FINISHED:
+			case DL_STATUS_ERROR:
+				dl_reboot_confirm();
+				break;
+			}
+			break;
+		}
+	}
+#endif
 #ifdef CONFIG_SYNC_SUPPORT
 	else if(screen_id == SCREEN_ID_SYNC)
 	{
@@ -869,17 +930,7 @@ void PowerOffShowStatus(void)
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
  #else
-  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-   #ifdef CONFIG_PPG_DATA_UPDATE
-  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
-   #elif defined(CONFIG_FONT_DATA_UPDATE)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
-   #elif defined(CONFIG_IMG_DATA_UPDATE)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
-   #endif  
-  #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
-  #endif
  #endif 
 #endif
 }
@@ -1048,17 +1099,7 @@ void SettingsUpdateStatus(void)
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_BG_H, 
 											settings_menu.sel_handler[i+4*(settings_menu.index/4)]);
 			
-			 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-			  #ifdef CONFIG_IMG_DATA_UPDATE
-				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
-			  #elif defined(CONFIG_FONT_DATA_UPDATE)
-				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
-			  #elif defined(CONFIG_PPG_DATA_UPDATE)
-				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
-			  #endif
-			 #else
 				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
-			 #endif
 
 			 #ifdef CONFIG_SYNC_SUPPORT
 				register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
@@ -1711,34 +1752,14 @@ void EnterSettingsScreen(void)
 	scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATING;
 
-#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-  #ifdef CONFIG_IMG_DATA_UPDATE
-	SetLeftKeyUpHandler(dl_img_start);
-  #elif defined(CONFIG_FONT_DATA_UPDATE)
-	SetLeftKeyUpHandler(dl_font_start);
-  #elif defined(CONFIG_PPG_DATA_UPDATE)
-	SetLeftKeyUpHandler(dl_ppg_start);
-  #endif
-#else
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
-#endif
 	SetRightKeyUpHandler(ExitSettingsScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 
- #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-  #ifdef CONFIG_IMG_DATA_UPDATE
-  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
-  #elif defined(CONFIG_FONT_DATA_UPDATE)
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
-  #elif defined(CONFIG_PPG_DATA_UPDATE)
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
-  #endif
- #else
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
- #endif
- 
+ 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+  
  #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -3175,27 +3196,8 @@ void DlShowStatus(void)
 					  DL_NOTIFY_STRING_H, 
 					  "Make sure the battery is more than 80% full or the charger is connected.");
 
-	LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
-	LCD_MeasureString("SOS(Y)", &w, &h);
-	x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
-	y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-	LCD_ShowString(x,y,"SOS(Y)");
-
-	LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
-	LCD_MeasureString("PWR(N)", &w, &h);
-	x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
-	y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
-	LCD_ShowString(x,y,"PWR(N)");
-
-	SetRightKeyUpHandler(dl_start);
-	SetLeftKeyUpHandler(dl_exit);
-#ifdef CONFIG_TOUCH_SUPPORT
-	clear_all_touch_event_handle();
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H, dl_start);
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_NO_X, DL_NOTIFY_NO_X+DL_NOTIFY_NO_W, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_Y+DL_NOTIFY_NO_H, dl_exit);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_exit);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_prev);
-#endif
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 }
 
 void DlUpdateStatus(void)
@@ -3259,7 +3261,10 @@ void DlUpdateStatus(void)
 			sprintf(pro_buf, "%3d%%", g_dl_progress);
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
-			LCD_ShowUniString(pro_str_x, pro_str_y, strbuf);
+			LCD_MeasureUniString(strbuf, &w, &h);
+			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
+			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
+			LCD_ShowUniString(pro_str_x,pro_str_y, strbuf);
 		}
 
 		ClearAllKeyHandler();
@@ -3272,13 +3277,13 @@ void DlUpdateStatus(void)
 		switch(g_dl_data_type)
 		{
 		case DL_DATA_IMG:
-			strcpy(strbuf, "Img upgraded successfully! Do you want to reboot the device immediately?");
+			strcpy(strbuf, "Img upgraded successfully!");
 			break;
 		case DL_DATA_FONT:
-			strcpy(strbuf, "Font upgraded successfully! Do you want to reboot the device immediately?");
+			strcpy(strbuf, "Font upgraded successfully!");
 			break;
 		case DL_DATA_PPG:
-			strcpy(strbuf, "PPG Algo upgraded successfully! Do you want to reboot the device immediately?");
+			strcpy(strbuf, "PPG Algo upgraded successfully!");
 			break;
 		}
 		ShowStringsInRect(DL_NOTIFY_STRING_X,
@@ -3287,28 +3292,8 @@ void DlUpdateStatus(void)
 						  DL_NOTIFY_STRING_H,
 						  strbuf);
 
-		LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
-		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
-		LCD_MeasureUniString(strbuf, &w, &h);
-		x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
-		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-		LCD_ShowUniString(x,y,strbuf);
-
-		LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
-		mmi_asc_to_ucs2(strbuf, "PWR(N)");
-		LCD_MeasureUniString(strbuf, &w, &h);
-		x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
-		y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
-		LCD_ShowUniString(x,y,strbuf);
-
-		SetRightKeyUpHandler(dl_reboot_confirm);
-		SetLeftKeyUpHandler(dl_exit);
-	#ifdef CONFIG_TOUCH_SUPPORT
-		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X-10, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W+10, DL_NOTIFY_YES_Y-10, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H+10, dl_reboot_confirm);
-		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_NO_X-10, DL_NOTIFY_NO_X+DL_NOTIFY_NO_W+10, DL_NOTIFY_NO_Y-10, DL_NOTIFY_NO_Y+DL_NOTIFY_NO_H+10, dl_exit);
-		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_exit);
-		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_prev);
-	#endif	
+		k_timer_stop(&mainmenu_timer);
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 		break;
 		
 	case DL_STATUS_ERROR:
@@ -3333,20 +3318,8 @@ void DlUpdateStatus(void)
 						  DL_NOTIFY_STRING_H,
 						  strbuf);
 
-		LCD_DrawRectangle((LCD_WIDTH-DL_NOTIFY_YES_W)/2, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
-		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
-		LCD_MeasureUniString(strbuf, &w, &h);
-		x = (LCD_WIDTH-DL_NOTIFY_YES_W)/2+(DL_NOTIFY_YES_W-w)/2;
-		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-		LCD_ShowUniString(x,y,strbuf);
-
-		SetLeftKeyUpHandler(dl_exit);
-		SetRightKeyUpHandler(dl_exit);
-	#ifdef CONFIG_TOUCH_SUPPORT
-		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, (LCD_WIDTH-DL_NOTIFY_YES_W)/2-10, (LCD_WIDTH-DL_NOTIFY_YES_W)/2+DL_NOTIFY_YES_W+10, DL_NOTIFY_YES_Y-10, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H+10, dl_exit);
-		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_exit);
-		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_prev);	
-	#endif	
+		k_timer_stop(&mainmenu_timer);
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), NULL);
 		break;
 		
 	case DL_STATUS_MAX:

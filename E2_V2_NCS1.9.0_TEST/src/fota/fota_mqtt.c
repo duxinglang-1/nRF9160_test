@@ -17,7 +17,11 @@
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
 #include <dfu/mcuboot.h>
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif
 #include "nb.h"
+#include "external_flash.h"
 #include "fota_mqtt.h"
 #include "screen.h"
 #include "logger.h"
@@ -241,8 +245,8 @@ void fota_start_confirm(void)
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	DisConnectMqttLink();
-	
+	//DisConnectMqttLink();
+	modem_configure();
 	k_delayed_work_submit_to_queue(app_work_q, &fota_work, K_SECONDS(2));
 }
 
@@ -407,8 +411,26 @@ void FotaMsgProc(void)
 	if(fota_reboot_flag)
 	{
 		fota_reboot_flag = false;
-		LCD_Clear(BLACK);
-		sys_reboot(1);
+		
+		if((strcmp(g_new_ui_ver,g_ui_ver) > 0) || (strncmp(g_ui_ver,"20",2) != 0))
+		{
+			dl_img_start();
+		}
+		else if((strcmp(g_new_font_ver,g_font_ver) > 0) || (strncmp(g_font_ver,"20",2) != 0))
+		{
+			dl_font_start();
+		}
+	#ifdef CONFIG_PPG_SUPPORT
+		else if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+		{
+			dl_ppg_start();
+		}
+	#endif
+		else
+		{
+			LCD_Clear(BLACK);
+			sys_reboot(1);
+		}
 	}
 
 	if(fota_run_flag)

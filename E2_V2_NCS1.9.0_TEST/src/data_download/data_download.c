@@ -9,12 +9,9 @@
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <drivers/flash.h>
-#include <bsd.h>
 #include <modem/lte_lc.h>
-#include <modem/at_cmd.h>
-#include <modem/at_notif.h>
-#include <modem/bsdlib.h>
 #include <net/download_client.h>
+#include "external_flash.h"
 #include "data_download.h"
 #include "dl_target.h"
 #include "screen.h"
@@ -403,14 +400,11 @@ void dl_img_exit(void)
 
 void dl_img_start(void)
 {
-	if(!dl_run_flag)
-	{
-		dl_run_flag = true;
-		g_dl_data_type = DL_DATA_IMG;
-		dl_cur_status = DL_STATUS_PREPARE;
-		
-		EnterDlScreen();
-	}
+	dl_run_flag = true;
+	g_dl_data_type = DL_DATA_IMG;
+	dl_cur_status = DL_STATUS_PREPARE;
+	
+	EnterDlScreen();
 }
 #endif
 #ifdef CONFIG_FONT_DATA_UPDATE
@@ -432,14 +426,11 @@ void dl_font_exit(void)
 
 void dl_font_start(void)
 {
-	if(!dl_run_flag)
-	{
-		dl_run_flag = true;
-		g_dl_data_type = DL_DATA_FONT;
-		dl_cur_status = DL_STATUS_PREPARE;
-		
-		EnterDlScreen();
-	}
+	dl_run_flag = true;
+	g_dl_data_type = DL_DATA_FONT;
+	dl_cur_status = DL_STATUS_PREPARE;
+	
+	EnterDlScreen();
 }
 #endif
 #ifdef CONFIG_PPG_DATA_UPDATE
@@ -461,14 +452,11 @@ void dl_ppg_exit(void)
 
 void dl_ppg_start(void)
 {
-	if(!dl_run_flag)
-	{
-		dl_run_flag = true;
-		g_dl_data_type = DL_DATA_PPG;
-		dl_cur_status = DL_STATUS_PREPARE;
-		
-		EnterDlScreen();
-	}
+	dl_run_flag = true;
+	g_dl_data_type = DL_DATA_PPG;
+	dl_cur_status = DL_STATUS_PREPARE;
+	
+	EnterDlScreen();
 }
 #endif
 
@@ -495,7 +483,6 @@ void dl_prev(void)
 		break;
 	}
 }
-
 
 void dl_exit(void)
 {
@@ -532,7 +519,7 @@ void dl_start_confirm(void)
 	dl_redraw_pro_flag = true;
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	DisConnectMqttLink();
+	//DisConnectMqttLink();
 	
 	k_delayed_work_submit_to_queue(app_work_q, &dl_work, K_SECONDS(2));
 }
@@ -559,6 +546,18 @@ void dl_handler(const struct download_evt *evt)
 		
 	case DOWNLOAD_EVT_FINISHED:
 		LOGD("Received finished!");
+		switch(g_dl_data_type)
+		{
+		case DL_DATA_IMG:
+			SpiFlash_Write(g_new_ui_ver, IMG_VER_ADDR, 16);
+			break;
+		case DL_DATA_FONT:
+			SpiFlash_Write(g_new_font_ver, FONT_VER_ADDR, 16);
+			break;
+		case DL_DATA_PPG:
+			SpiFlash_Write(g_new_ppg_ver, PPG_ALGO_VER_ADDR, 16);
+			break;
+		}
 		dl_cur_status = DL_STATUS_FINISHED;
 		break;
 

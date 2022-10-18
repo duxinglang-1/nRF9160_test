@@ -6,4 +6,4 @@
 
 zephyr_include_directories(.)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gps.c)
-target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/assistance_supl.c)
+target_sources_ifdef(CONFIG_GNSS_SAMPLE_ASSISTANCE_SUPL app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/assistance_supl.c)

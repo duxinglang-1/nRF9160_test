@@ -44,6 +44,10 @@ static struct spi_buf tx_buff,rx_buff;
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
+uint8_t g_ui_ver[16] = {0};
+uint8_t g_font_ver[16] = {0};
+uint8_t g_ppg_algo_ver[16] = {0};
+
 void SpiFlash_CS_LOW(void)
 {
 	gpio_pin_set(gpio_flash, FLASH_CS_PIN, 0);
@@ -426,7 +430,7 @@ uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytes
 		{
 			SpiFlash_Read(SecBuf, (++cur_index)*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
 			SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
-			if(datelen >= SPIFlash_SECTOR_SIZE)
+			if(datelen > SPIFlash_SECTOR_SIZE)
 			{
 				memcpy(SecBuf, &pBuffer[writelen], SPIFlash_SECTOR_SIZE);
 				writelen += SPIFlash_SECTOR_SIZE;
@@ -517,6 +521,26 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
     return true;
 }
 
+/*****************************************************************************
+** 描  述：读取存储在flash当中的几组数据库的版本号
+** 参  数：ui_ver：存放读取到的ui版本的buffer       
+**         font_ver：存放读取到的font版本的buffer       
+**         ppg_ver：存放读取到的ppg版本的buffer       
+** 返回值：
+******************************************************************************/
+void SPIFlash_Read_DataVer(uint8_t *ui_ver, uint8_t *font_ver, uint8_t *ppg_ver)
+{
+	if(ui_ver != NULL)
+		SpiFlash_Read(ui_ver, IMG_VER_ADDR, 16);
+	
+	if(font_ver != NULL)
+		SpiFlash_Read(font_ver, FONT_VER_ADDR, 16);
+	
+#ifdef CONFIG_PPG_SUPPORT
+	if(ppg_ver != NULL)
+		SpiFlash_Read(ppg_ver, PPG_ALGO_VER_ADDR, 16);
+#endif
+}
 
 /*****************************************************************************
 ** 描  述：配置用于驱动W25Q64FW的管脚,特别注意写的过程中CS要一直有效，不能交给SPI自动控制
@@ -558,6 +582,8 @@ void flash_init(void)
 	gpio_pin_set(gpio_flash, FLASH_CS_PIN, 1);
 
 	SPI_Flash_Init();
+
+	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
 }
 
 void test_flash_write_and_read(uint8_t *buf, uint32_t len)
@@ -569,7 +595,7 @@ void test_flash_write_and_read(uint8_t *buf, uint32_t len)
 		
 	LOGD("len:%d", len);
 	
-	addr = IMG_START_ADDR;
+	addr = IMG_DATA_ADDR;
 #if 1
 	cur_index = addr/SPIFlash_SECTOR_SIZE;
 	if(cur_index > last_index)

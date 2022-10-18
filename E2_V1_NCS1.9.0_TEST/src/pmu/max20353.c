@@ -278,14 +278,6 @@ void pmu_battery_update(void)
 	if(charger_is_connected)
 	{
 		g_bat_level = BAT_LEVEL_NORMAL;
-		if(screen_id == SCREEN_ID_NOTIFY)
-		{
-			sprintf(tmpbuf, "%d%%", g_bat_soc);
-			mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
-			
-			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
-		}
 	}
 
 	if(g_chg_status == BAT_CHARGING_NO)
@@ -343,16 +335,6 @@ bool pmu_interrupt_proc(void)
 				g_bat_soc = 100;
 		#endif
 
-			if(screen_id == SCREEN_ID_NOTIFY)
-			{
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
-				notify_msg.img[0] = IMG_BAT_CHRING_ANI_5_ADDR;
-				notify_msg.img_count = 1;
-				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-				scr_msg[screen_id].para = SCREEN_EVENT_UPDATE_POP_STR|SCREEN_EVENT_UPDATE_POP_IMG;
-			}
-			
 			lcd_sleep_out = true;
 			break;
 		}

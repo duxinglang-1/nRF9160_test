@@ -84,9 +84,11 @@ extern uint8_t g_modem[MODEM_MAX_LEN+1];
 
 extern uint8_t g_new_fw_ver[64];
 extern uint8_t g_new_modem_ver[64];
-extern uint8_t g_new_ppg_ver[64];
 extern uint8_t g_new_ble_ver[64];
 extern uint8_t g_new_wifi_ver[64];
+extern uint8_t g_new_ui_ver[16];
+extern uint8_t g_new_font_ver[16];
+extern uint8_t g_new_ppg_ver[16];
 extern uint8_t g_timezone[5];
 extern uint8_t g_prj_dir[128];
 extern uint8_t g_rsrp;

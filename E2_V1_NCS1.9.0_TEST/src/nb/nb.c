@@ -11,7 +11,6 @@
 #include <net/mqtt.h>
 #include <net/socket.h>
 #include <modem/lte_lc.h>
-//#include <modem/at_cmd.h>
 #include <modem/at_cmd_parser.h>
 #include <modem/at_params.h>
 #include <modem/lte_lc.h>
@@ -20,7 +19,6 @@
 #include <modem/nrf_modem_lib.h>
 #include <modem/at_monitor.h>
 #include <nrf_modem_at.h>
-//#include <modem/at_notif.h>
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
 #endif
@@ -131,13 +129,15 @@ uint8_t g_imei[IMEI_MAX_LEN+1] = {0};
 uint8_t g_iccid[ICCID_MAX_LEN+1] = {0};
 uint8_t g_modem[MODEM_MAX_LEN+1] = {0};
 
+uint8_t g_prj_dir[128] = {0};
 uint8_t g_new_fw_ver[64] = {0};
 uint8_t g_new_modem_ver[64] = {0};
-uint8_t g_new_ppg_ver[64] = {0};
 uint8_t g_new_ble_ver[64] = {0};
 uint8_t g_new_wifi_ver[64] = {0};
+uint8_t g_new_ui_ver[16] = {0};
+uint8_t g_new_font_ver[16] = {0};
+uint8_t g_new_ppg_ver[16] = {0};
 uint8_t g_timezone[5] = {0};
-uint8_t g_prj_dir[128] = {0};
 
 uint8_t g_rsrp = 0;
 uint16_t g_tau_time = 0;
@@ -1669,15 +1669,23 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint32_t copylen = 0;
 
 			//后台下发最新版本信息
-			//9160 fw ver
+			//project dir
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
 				return;
-			copylen = (ptr-strdata) < sizeof(g_new_fw_ver) ? (ptr-strdata) : sizeof(g_new_fw_ver);
-			memcpy(g_new_fw_ver, strdata, copylen);
+			copylen = (ptr-strdata) < sizeof(g_prj_dir) ? (ptr-strdata) : sizeof(g_prj_dir);
+			memcpy(g_prj_dir, strdata, copylen);
+
+			//9160 fw ver
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_fw_ver) ? (ptr1-ptr) : sizeof(g_new_fw_ver);
+			memcpy(g_new_fw_ver, ptr, copylen);
 
 			//9160 modem ver
-			ptr++;
+			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
 				return;
@@ -1708,10 +1716,22 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
 			memcpy(g_new_wifi_ver, ptr, copylen);
 
-			//project dir
+			//ui ver
 			ptr = ptr1+1;
-			copylen = (datalen-(ptr-strdata)) < sizeof(g_prj_dir) ? (datalen-(ptr-strdata)) : sizeof(g_prj_dir);
-			memcpy(g_prj_dir, ptr, copylen);
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_ui_ver) ? (ptr1-ptr) : sizeof(g_new_ui_ver);
+			memcpy(g_new_ui_ver, ptr, copylen);
+
+			//font ver
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_font_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_font_ver);
+			else
+				copylen = (ptr1-ptr) < sizeof(g_new_font_ver) ? (ptr1-ptr) : sizeof(g_new_font_ver);
+			memcpy(g_new_font_ver, ptr, copylen);
 		}
 		else if(strcmp(strcmd, "S15") == 0)
 		{
@@ -1804,6 +1824,15 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			}
 
 			flag = true;			
+		}
+		else if(strcmp(strcmd, "S29") == 0)
+		{
+			//后台下发位置信息
+		#ifdef NB_DEBUG
+			LOGD("%s", strdata);
+		#endif
+
+			SOSRecLocatNotify(strdata);
 		}
 
 		SaveSystemSettings();

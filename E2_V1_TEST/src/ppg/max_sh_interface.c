@@ -1306,7 +1306,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (u8_rxbuf[1] < 5) || (u8_rxbuf[2] < 53))
+	if((mcu_type != 1) || (strcmp(g_ppg_ver, g_ppg_algo_ver) != 0))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);

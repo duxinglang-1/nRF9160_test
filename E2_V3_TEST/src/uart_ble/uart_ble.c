@@ -1619,6 +1619,8 @@ void log_send_data_handler(void)
 
 	uart_fifo_fill(uart_log, tx_buf, strlen(tx_buf));
 	uart_irq_tx_enable(uart_log);
+
+	memset(tx_buf, 0, sizeof(tx_buf));
 }
 
 void log_send_data(void)

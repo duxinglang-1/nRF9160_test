@@ -1869,10 +1869,10 @@ void ble_init(void)
 	LOGD("begin");
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uart_log = device_get_binding("UART_0");
 	if(uart_log)
-		k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), NULL);
+		k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
 #endif
 
 	uart_ble = device_get_binding(BLE_DEV);

@@ -209,7 +209,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if((strcmp(g_new_font_ver,g_font_ver) > 0) || (strncmp(g_font_ver,"20",2) != 0))
+				if(strcmp(g_new_font_ver,g_font_ver) != 0)
 					dl_font_start();
 			#if defined(CONFIG_PPG_SUPPORT)
 				else if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
@@ -3678,17 +3678,7 @@ void FOTAScreenProcess(void)
 
 void ExitFOTAScreen(void)
 {
-#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-#ifdef CONFIG_IMG_DATA_UPDATE
-	dl_img_start();
-#elif defined(CONFIG_FONT_DATA_UPDATE)
-	dl_font_start();
-#elif defined(CONFIG_PPG_DATA_UPDATE)
-	dl_ppg_start();
-#endif
-#else
 	EnterPoweroffScreen();
-#endif
 }
 
 void EnterFOTAScreen(void)

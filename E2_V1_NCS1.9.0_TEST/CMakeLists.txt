@@ -6,6 +6,28 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/spm.conf")
+  set(spm_CONF_FILE
+    prj.conf
+    ${CMAKE_CURRENT_LIST_DIR}/spm.conf
+  )
+endif()
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.conf")
+  set(mcuboot_CONF_FILE
+    prj.conf
+    ${CMAKE_CURRENT_LIST_DIR}/mcuboot.conf
+  )
+endif()
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/spm.overlay")
+  set(spm_DTC_OVERLAY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/spm.overlay")
+endif()
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.overlay")
+  set(mcuboot_DTC_OVERLAY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.overlay")
+endif()
+
 #include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(E2)

@@ -32,8 +32,9 @@
 	current-speed = <115200>;
 	tx-pin = <29>;
 	rx-pin = <28>;
-	#rts-pin = <14>;
-	#cts-pin = <15>;
+	/* delete rts-pin&cts-pin to release the related 2 pins for other uses */
+	/delete-property/ rts-pin;
+	/delete-property/ cts-pin;	
 };
 
 &uart1{

@@ -2286,11 +2286,10 @@ void GetModemInfor(void)
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_V) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("MODEM version:%s", &tmpbuf);
-	#endif
-
 		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("MODEM version:%s", g_modem);
+	#endif	
 	}
 
 #if 0
@@ -2318,26 +2317,36 @@ void GetModemInfor(void)
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMEI) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("imei:%s", tmpbuf);
-	#endif
 		strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("imei:%s", g_imei);
+	#endif	
 	}
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMSI) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("imsi:%s", tmpbuf);
-	#endif
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("imsi:%s", g_imsi);
+	#endif
 	}
 
+	//"+CRSM: 144,0,"98684027400217817123"\r\nOK\r\n"
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_ICCID) == 0)
 	{
+		uint8_t i;
+
+		for(i=0;i<ICCID_MAX_LEN;i++)
+		{
+			if(i%2 == 0)
+				g_iccid[i] = tmpbuf[14+(i+1)];
+			else
+				g_iccid[i] = tmpbuf[14+(i-1)];
+		}
+
 	#ifdef NB_DEBUG
-		LOGD("iccid:%s", &tmpbuf[9]);
-	#endif
-		strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
+		LOGD("iccid:%s", g_iccid);
+	#endif	
 	}
 }
 

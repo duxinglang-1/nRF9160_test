@@ -9,7 +9,7 @@
 ******************************************************************************************************/
 #define CMD_GET_IMEI	"AT+CGSN"
 #define CMD_GET_IMSI	"AT+CIMI"
-#define CMD_GET_ICCID	"AT%XICCID"
+#define CMD_GET_ICCID	"AT+CRSM=176,12258,0,0,10"
 #define CMD_GET_MODEM_V "AT+CGMR"
 #define CMD_GET_CESQ	"AT+CESQ"
 #define CMD_GET_SNR		"AT%XSNRSQ?"

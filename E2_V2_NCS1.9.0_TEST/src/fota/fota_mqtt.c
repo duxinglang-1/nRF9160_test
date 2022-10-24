@@ -413,7 +413,7 @@ void FotaMsgProc(void)
 	if(fota_reboot_flag)
 	{
 		fota_reboot_flag = false;
-		
+	#if 1	
 		if(strcmp(g_new_ui_ver,g_ui_ver) != 0)
 		{
 			dl_img_start();
@@ -429,6 +429,7 @@ void FotaMsgProc(void)
 		}
 	#endif
 		else
+	#endif		
 		{
 			LCD_Clear(BLACK);
 			sys_reboot(1);

@@ -550,12 +550,15 @@ void dl_handler(const struct download_evt *evt)
 		{
 		case DL_DATA_IMG:
 			SpiFlash_Write(g_new_ui_ver, IMG_VER_ADDR, 16);
+			strcpy(g_ui_ver, g_new_ui_ver);
 			break;
 		case DL_DATA_FONT:
 			SpiFlash_Write(g_new_font_ver, FONT_VER_ADDR, 16);
+			strcpy(g_font_ver, g_new_font_ver);		
 			break;
 		case DL_DATA_PPG:
 			SpiFlash_Write(g_new_ppg_ver, PPG_ALGO_VER_ADDR, 16);
+			strcpy(g_ppg_algo_ver, g_new_ppg_ver);				
 			break;
 		}
 		dl_cur_status = DL_STATUS_FINISHED;

@@ -167,6 +167,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 		fota_run_flag = false;
 		fota_cur_status = FOTA_STATUS_ERROR;
 		fota_redraw_pro_flag = true;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), K_NO_WAIT);
 	}
 }
 
@@ -264,6 +265,7 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 		LOGD("Received error");
 	#endif
 		fota_cur_status = FOTA_STATUS_ERROR;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), K_NO_WAIT);
 		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:
@@ -411,7 +413,7 @@ void FotaMsgProc(void)
 	if(fota_reboot_flag)
 	{
 		fota_reboot_flag = false;
-		
+	#if 1	
 		if(strcmp(g_new_ui_ver,g_ui_ver) != 0)
 		{
 			dl_img_start();
@@ -427,6 +429,7 @@ void FotaMsgProc(void)
 		}
 	#endif
 		else
+	#endif		
 		{
 			LCD_Clear(BLACK);
 			sys_reboot(1);

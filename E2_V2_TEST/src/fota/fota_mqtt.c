@@ -426,11 +426,11 @@ void FotaMsgProc(void)
 	{
 		fota_reboot_flag = false;
 		
-		if((strcmp(g_new_ui_ver,g_ui_ver) > 0) || (strncmp(g_ui_ver,"20",2) != 0))
+		if(strcmp(g_new_ui_ver,g_ui_ver) != 0)
 		{
 			dl_img_start();
 		}
-		else if((strcmp(g_new_font_ver,g_font_ver) > 0) || (strncmp(g_font_ver,"20",2) != 0))
+		else if(strcmp(g_new_font_ver,g_font_ver) != 0)
 		{
 			dl_font_start();
 		}

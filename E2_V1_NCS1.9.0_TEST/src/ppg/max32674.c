@@ -1373,7 +1373,7 @@ void PPGStartCheck(void)
 		return;
 
 	SH_Power_On();
-	Set_PPG_Power_On();
+	//Set_PPG_Power_On();
 
 	ppg_power_flag = 1;
 
@@ -1433,7 +1433,7 @@ void PPGStopCheck(void)
 	sensorhub_disable_algo();
 
 	sh_set_sensorhub_shutdown();
-	Set_PPG_Power_Off();
+	//Set_PPG_Power_Off();
 	SH_Power_Off();
 
 	ppg_power_flag = 0;

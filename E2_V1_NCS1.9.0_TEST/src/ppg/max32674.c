@@ -1373,7 +1373,7 @@ void PPGStartCheck(void)
 		return;
 
 	SH_Power_On();
-	//Set_PPG_Power_On();
+	Set_PPG_Power_On();
 
 	ppg_power_flag = 1;
 

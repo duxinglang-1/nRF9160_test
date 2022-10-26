@@ -464,7 +464,7 @@ int sh_set_sensorhub_sleep(void)
 
 int sh_set_sensorhub_shutdown(void)
 {
-#if 1
+#if 0
 	uint8_t ByteSeq[] = {0x01,0x00,0x01};
 	int status = sh_write_cmd_without_status_cb(&ByteSeq[0],sizeof(ByteSeq), SS_DEFAULT_CMD_SLEEP_MS);
 	return status;

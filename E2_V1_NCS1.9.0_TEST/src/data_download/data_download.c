@@ -520,7 +520,7 @@ void dl_start_confirm(void)
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	//DisConnectMqttLink();
-	
+	modem_configure();
 	k_delayed_work_submit_to_queue(app_work_q, &dl_work, K_SECONDS(2));
 }
 

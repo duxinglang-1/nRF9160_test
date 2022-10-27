@@ -156,7 +156,7 @@ static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, 
 
 static void sh_init_gpio(void)
 {
-	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
 
 	if(gpio_ppg == NULL)
 		gpio_ppg = device_get_binding(PPG_PORT);
@@ -166,7 +166,7 @@ static void sh_init_gpio(void)
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);

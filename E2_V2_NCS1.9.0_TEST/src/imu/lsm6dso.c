@@ -223,7 +223,7 @@ void init_imu_int1(void)
 
 uint8_t init_gpio(void)
 {
-	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
 
 	if(gpio_imu == NULL)
 		gpio_imu = device_get_binding(IMU_PORT);
@@ -234,7 +234,7 @@ uint8_t init_gpio(void)
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, step_event, BIT(LSM6DSO_INT1_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb1);
-    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
+    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
 #endif
 
 	//tilt interrupt
@@ -242,7 +242,7 @@ uint8_t init_gpio(void)
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, interrupt_event, BIT(LSM6DSO_INT2_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb2);
-    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
+    gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
 
 	return 0;
 }

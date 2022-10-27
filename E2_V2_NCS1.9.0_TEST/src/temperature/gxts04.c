@@ -212,7 +212,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	*body_temp = t_body;
 
 #ifdef TEMP_DEBUG
-	LOGD("flag:%d, t_temp80:%d.%d, t_body:%d.%d", flag, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
+	LOGD("flag:%d, t_temp80:%d.%d, t_body:%d.%d", flag, (int16_t)(t_temp80*10)/10, (int16_t)(t_temp80*10)%10, (int16_t)(t_body*10)/10, (int16_t)(t_body*10)%10);
 #endif
 
 	return flag;

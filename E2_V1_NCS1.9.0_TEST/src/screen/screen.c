@@ -209,10 +209,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if(strcmp(g_new_font_ver,g_font_ver) != 0)
+				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 					dl_font_start();
 			#if defined(CONFIG_PPG_SUPPORT)
-				else if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
 			#endif
 				else
@@ -231,7 +231,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
 			#if defined(CONFIG_PPG_SUPPORT)
-				if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+				if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
 			#endif
 				else
@@ -3504,7 +3504,7 @@ void ExitDlImgScreen(void)
 	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 		dl_font_start();
 #if defined(CONFIG_PPG_SUPPORT)
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strcpy(g_new_ppg_ver) > 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 		dl_ppg_start();
 #endif
 	else
@@ -3515,7 +3515,7 @@ void ExitDlImgScreen(void)
 #ifdef CONFIG_FONT_DATA_UPDATE
 void PrevDlFontScreen(void)
 {
-	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strcpy(g_new_ui_ver) > 0))
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
 		dl_img_start();
 	else
 		EnterSettings();
@@ -3524,7 +3524,7 @@ void PrevDlFontScreen(void)
 void ExitDlFontScreen(void)
 {
 #if defined(CONFIG_PPG_SUPPORT)
-	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strcpy(g_new_ppg_ver) > 0))
+	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 		dl_ppg_start();
 	else
 #endif
@@ -3537,7 +3537,7 @@ void PrevDlPpgScreen(void)
 {
 	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 		dl_font_start();
-	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strcpy(g_new_ui_ver) > 0))
+	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
 		dl_img_start();
 	else
 		EnterSettings();
@@ -3828,7 +3828,7 @@ void ExitFOTAScreen(void)
 		dl_font_start();
 	}
   #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strcpy(g_new_ppg_ver) > 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 	{
 		dl_ppg_start();
 	}

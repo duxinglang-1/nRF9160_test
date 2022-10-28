@@ -131,7 +131,6 @@ bool get_imei(u8_t len, u8_t *str_imei)
 	err = at_cmd_write(GET_IMEI, str_imei, len, &at_state);
 	if(err) 
 	{
-		printk("get imei error, err:%d, at_state:%d", err,at_state);
 		return false;
 	}
 
@@ -200,8 +199,6 @@ void test_imei(void)
 	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 	
-	printk("test_imei\n");
-
 	LCD_ShowString(0,0,"IMEI:");
 	if(get_imei(128, tmpbuf))
 	{

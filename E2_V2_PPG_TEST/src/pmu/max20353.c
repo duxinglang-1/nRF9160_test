@@ -478,12 +478,17 @@ void pmu_battery_low_shutdown(void)
 
 void pmu_battery_update(void)
 {
+	u8_t tmp_bat_soc = 0;
 	u8_t tmpbuf[8] = {0};
 
-	g_bat_soc = MAX20353_CalculateSOC();
+	tmp_bat_soc = MAX20353_CalculateSOC();
 #ifdef PMU_DEBUG
-	LOGD("SOC:%d", g_bat_soc);
+	LOGD("tmp_soc:%d soc:%d", tmp_bat_soc, g_bat_soc);
 #endif	
+	if((tmp_bat_soc > g_bat_soc) && !charger_is_connected)
+		return;
+
+	g_bat_soc = tmp_bat_soc;
 	if(g_bat_soc>100)
 		g_bat_soc = 100;
 	
@@ -511,14 +516,6 @@ void pmu_battery_update(void)
 	if(charger_is_connected)
 	{
 		g_bat_level = BAT_LEVEL_NORMAL;
-		if(screen_id == SCREEN_ID_NOTIFY)
-		{
-			sprintf(tmpbuf, "%d%%", g_bat_soc);
-			mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
-			
-			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_POP_STR;
-		}
 	}
 
 	if(g_chg_status == BAT_CHARGING_NO)
@@ -576,16 +573,6 @@ bool pmu_interrupt_proc(void)
 				g_bat_soc = 100;
 		#endif
 
-			if(screen_id == SCREEN_ID_NOTIFY)
-			{
-				sprintf(tmpbuf, "%d%%", g_bat_soc);
-				mmi_asc_to_ucs2(notify_msg.text, tmpbuf);
-				notify_msg.img[0] = IMG_BAT_CHRING_ANI_5_ADDR;
-				notify_msg.img_count = 1;
-				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-				scr_msg[screen_id].para = SCREEN_EVENT_UPDATE_POP_STR|SCREEN_EVENT_UPDATE_POP_IMG;
-			}
-			
 			lcd_sleep_out = true;
 			break;
 		}

@@ -57,7 +57,7 @@ static int nvs_setup(void)
 	}	
 
 	fs.sector_size = info.size;
-	fs.sector_count = 6U;
+	fs.sector_count = 4U;
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
 	if(err)
 	{

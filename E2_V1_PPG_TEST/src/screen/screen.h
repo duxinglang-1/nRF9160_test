@@ -118,8 +118,8 @@ extern "C" {
 
 //notify
 #define NOTIFY_IMG_MAX_COUNT	10
-#define NOTIFY_TEXT_MAX_LEN		80
-#define NOTIFY_TIMER_INTERVAL	3
+#define NOTIFY_TEXT_MAX_LEN		512
+#define NOTIFY_TIMER_INTERVAL	5
 
 //sport
 #define IMU_SEP_LINE_W				165
@@ -230,20 +230,20 @@ extern "C" {
 #define HR_BG_Y						80
 #define HR_UP_ARRAW_W				14				
 #define HR_UP_ARRAW_H				17
-#define HR_UP_ARRAW_X				50
-#define HR_UP_ARRAW_Y				178
+#define HR_UP_ARRAW_X				43
+#define HR_UP_ARRAW_Y				183
 #define HR_UP_NUM_W					39				
 #define HR_UP_NUM_H					27
-#define HR_UP_NUM_X					67
-#define HR_UP_NUM_Y					173
+#define HR_UP_NUM_X					60
+#define HR_UP_NUM_Y					178
 #define HR_DOWN_ARRAW_W				14
 #define HR_DOWN_ARRAW_H				17
-#define HR_DOWN_ARRAW_X				144
-#define HR_DOWN_ARRAW_Y				177
+#define HR_DOWN_ARRAW_X				131
+#define HR_DOWN_ARRAW_Y				183
 #define HR_DOWN_NUM_W				39				
 #define HR_DOWN_NUM_H				27
-#define HR_DOWN_NUM_X				163
-#define HR_DOWN_NUM_Y				173
+#define HR_DOWN_NUM_X				148
+#define HR_DOWN_NUM_Y				178
 #define HR_REC_DATA_X				20
 #define HR_REC_DATA_Y				146
 #define HR_REC_DATA_W				4

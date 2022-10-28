@@ -160,13 +160,16 @@ u8_t g_imei[IMEI_MAX_LEN+1] = {0};
 u8_t g_iccid[ICCID_MAX_LEN+1] = {0};
 u8_t g_modem[MODEM_MAX_LEN+1] = {0};
 
+u8_t g_prj_dir[128] = {0};
 u8_t g_new_fw_ver[64] = {0};
 u8_t g_new_modem_ver[64] = {0};
-u8_t g_new_ppg_ver[64] = {0};
 u8_t g_new_ble_ver[64] = {0};
 u8_t g_new_wifi_ver[64] = {0};
+u8_t g_new_ui_ver[16] = {0};
+u8_t g_new_font_ver[16] = {0};
+u8_t g_new_ppg_ver[16] = {0};
 u8_t g_timezone[5] = {0};
-u8_t g_prj_dir[128] = {0};
+
 
 u8_t g_rsrp = 0;
 u16_t g_tau_time = 0;
@@ -641,7 +644,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	#ifdef NB_DEBUG
 		LOGD("ERROR: mqtt_connect %d", err);
 	#endif
-		return;
+		goto link_over;
 	}
 
 	err = fds_init(&client);
@@ -650,9 +653,11 @@ static void mqtt_link(struct k_work_q *work_q)
 	#ifdef NB_DEBUG
 		LOGD("ERROR: fds_init %d", err);
 	#endif
-		return;
+		goto link_over;
 	}
 
+	mqtt_connecting_flag = false;
+	
 	while(1)
 	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
@@ -713,6 +718,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
+link_over:
 	mqtt_connecting_flag = false;
 }
 
@@ -1062,8 +1068,7 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-					k_timer_stop(&nb_reconnect_timer);
+				k_timer_stop(&nb_reconnect_timer);
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 			}
 		}
@@ -1339,11 +1344,8 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 			LOGD("begin 004", __func__);
 		#endif
 
-			if(!nb_connecting_flag)
-			{
-				k_timer_stop(&nb_reconnect_timer);
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
-			}
+			k_timer_stop(&nb_reconnect_timer);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 		}
 	}
 }
@@ -1684,15 +1686,23 @@ void ParseData(u8_t *data, u32_t datalen)
 			u32_t copylen = 0;
 
 			//后台下发最新版本信息
-			//9160 fw ver
+			//project dir
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
 				return;
-			copylen = (ptr-strdata) < sizeof(g_new_fw_ver) ? (ptr-strdata) : sizeof(g_new_fw_ver);
-			memcpy(g_new_fw_ver, strdata, copylen);
+			copylen = (ptr-strdata) < sizeof(g_prj_dir) ? (ptr-strdata) : sizeof(g_prj_dir);
+			memcpy(g_prj_dir, strdata, copylen);
+
+			//9160 fw ver
+			ptr++;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_fw_ver) ? (ptr1-ptr) : sizeof(g_new_fw_ver);
+			memcpy(g_new_fw_ver, ptr, copylen);
 
 			//9160 modem ver
-			ptr++;
+			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
 				return;
@@ -1723,10 +1733,22 @@ void ParseData(u8_t *data, u32_t datalen)
 			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
 			memcpy(g_new_wifi_ver, ptr, copylen);
 
-			//project dir
+			//ui ver
 			ptr = ptr1+1;
-			copylen = (datalen-(ptr-strdata)) < sizeof(g_prj_dir) ? (datalen-(ptr-strdata)) : sizeof(g_prj_dir);
-			memcpy(g_prj_dir, ptr, copylen);
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_ui_ver) ? (ptr1-ptr) : sizeof(g_new_ui_ver);
+			memcpy(g_new_ui_ver, ptr, copylen);
+
+			//font ver
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_font_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_font_ver);
+			else
+				copylen = (ptr1-ptr) < sizeof(g_new_font_ver) ? (ptr1-ptr) : sizeof(g_new_font_ver);
+			memcpy(g_new_font_ver, ptr, copylen);
 		}
 		else if(strcmp(strcmd, "S15") == 0)
 		{
@@ -1819,6 +1841,15 @@ void ParseData(u8_t *data, u32_t datalen)
 			}
 
 			flag = true;			
+		}
+		else if(strcmp(strcmd, "S29") == 0)
+		{
+			//后台下发位置信息
+		#ifdef NB_DEBUG
+			LOGD("%s", strdata);
+		#endif
+
+			SOSRecLocatNotify(strdata);
 		}
 
 		SaveSystemSettings();
@@ -2394,6 +2425,7 @@ void SetModemTurnOff(void)
 	#endif
 	}
 
+	mqtt_connected = false;
 	nb_connected = false;
 }
 
@@ -2669,12 +2701,9 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 		SetNetWorkParaByPlmn(g_imsi);
 	}
-	else if(strlen(g_imsi) == 0)
+	else
 	{
-		SetModemTurnOn();
-		GetModemInfor();
 		SetModemTurnOff();
-		SetNetWorkParaByPlmn(g_imsi);
 	}
 
 	if(strlen(g_imsi) == 0)
@@ -2731,10 +2760,10 @@ static void nb_link(struct k_work *work)
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), NULL);
 			else if(retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), NULL);
-			else if(retry_count <= 8)	//7到8次每1小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), NULL);
-			else						//8次以上每6小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), NULL);
+			else if(retry_count <= 8)	//7到8次每0.5小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
+			else						//8次以上每0.5小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), NULL);
 		}
 		else
 		{
@@ -2936,11 +2965,18 @@ void NBMsgProcess(void)
 	if(nb_reconnect_flag)
 	{
 		nb_reconnect_flag = false;
-		if(test_gps_flag)
+		
+		if(test_gps_flag || nb_connected)
 			return;
-
-		if(!nb_connecting_flag&&!nb_connected)
+	
+		if(!nb_connecting_flag)
+		{
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+		}
 	}
 	
 	if(nb_connecting_flag)

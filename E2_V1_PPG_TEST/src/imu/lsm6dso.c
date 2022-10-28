@@ -690,7 +690,7 @@ void IMUMsgProcess(void)
 	#endif
 		int2_event = false;
 
-		if(!imu_check_ok || !is_wearing())
+		if(!imu_check_ok)
 			return;
 
 		is_tilt();

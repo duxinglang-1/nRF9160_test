@@ -508,6 +508,35 @@ void dl_exit(void)
 	}
 }
 
+void dl_flash_erase(void)
+{
+	uint32_t i,begin,end;
+
+	switch(g_dl_data_type)
+	{
+	case DL_DATA_IMG:
+		begin = IMG_START_ADDR;
+		end = IMG_END_ADDR;
+		break;
+
+	case DL_DATA_FONT:
+		begin = FONT_START_ADDR;
+		end = FONT_END_ADDR;
+		break;
+		
+	case DL_DATA_PPG:
+		begin = PPG_ALGO_START_ADDR;
+		end = PPG_ALGO_END_ADDR;
+		break;
+	}
+
+	LOGD("type:%d, begin:%x, end:%x", g_dl_data_type, begin, end);
+	for(i=begin;i<end;i=i+SPIFlash_BLOCK_SIZE)
+	{
+		SPIFlash_Erase_Block(i);
+	}
+}
+
 void dl_start(void)
 {
 	dl_start_flag = true;
@@ -521,6 +550,7 @@ void dl_start_confirm(void)
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	//DisConnectMqttLink();
 	modem_configure();
+	dl_flash_erase();
 	k_delayed_work_submit_to_queue(app_work_q, &dl_work, K_SECONDS(2));
 }
 

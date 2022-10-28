@@ -43,28 +43,7 @@ int dl_target_ppg_write(const void *const buf, size_t len)
 	int32_t cur_index;
 	uint32_t PageByteRemain,addr,datalen=len;
 	
-	addr = PPG_ALGO_FW_ADDR+rece_count;
-	cur_index = addr/SPIFlash_SECTOR_SIZE;
-	if(cur_index > last_index)
-	{
-		last_index = cur_index;
-		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
-	}
-	
-	PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
-	if(PageByteRemain < datalen)
-	{
-		datalen -= PageByteRemain;
-		while(1)
-		{
-			SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
-			if(datalen >= SPIFlash_SECTOR_SIZE)
-				datalen -= SPIFlash_SECTOR_SIZE;
-			else
-				break;
-		}
-	}
-	
+	addr = PPG_ALGO_FW_ADDR+rece_count;	
 	SpiFlash_Write_Buf(buf, addr, len);
 	rece_count += len;
 	return 0;

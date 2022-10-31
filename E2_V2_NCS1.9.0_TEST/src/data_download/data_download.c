@@ -530,7 +530,6 @@ void dl_flash_erase(void)
 		break;
 	}
 
-	LOGD("type:%d, begin:%x, end:%x", g_dl_data_type, begin, end);
 	for(i=begin;i<end;i=i+SPIFlash_BLOCK_SIZE)
 	{
 		SPIFlash_Erase_Block(i);

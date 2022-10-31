@@ -256,6 +256,45 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	//等待W25Q64FW完成操作
 	SpiFlash_Wait_Busy();
 }
+
+/*****************************************************************************
+** 描  述：擦除块区
+** 参  数：[in]SecAddr：块区地址
+** 返回值：无
+******************************************************************************/
+void SPIFlash_Erase_Block(uint32_t BlockAddr)
+{
+	int err;
+
+	//发送写使能命令
+	SpiFlash_Write_Enable();
+
+	//扇区擦除命令
+	spi_tx_buf[0] = SPIFlash_BlockErase;		
+	//24位地址
+	spi_tx_buf[1] = (uint8_t)((BlockAddr&0x00ff0000)>>16);
+	spi_tx_buf[2] = (uint8_t)((BlockAddr&0x0000ff00)>>8);
+	spi_tx_buf[3] = (uint8_t)BlockAddr;
+	
+	tx_buff.buf = spi_tx_buf;
+	tx_buff.len = SPIFLASH_CMD_LENGTH;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+
+	SpiFlash_CS_LOW();
+	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	SpiFlash_CS_HIGH();	
+	if(err)
+	{
+	#ifdef FLASH_DEBUG
+		LOGD("SPI error: %d", err);
+	#endif
+	}
+	
+	//等待W25Q64FW完成操作
+	SpiFlash_Wait_Busy();
+}
+
 /*****************************************************************************
 ** 描  述：全片擦除W25Q64FW，全片擦除所需的时间典型值为：40秒
 ** 参  数：无

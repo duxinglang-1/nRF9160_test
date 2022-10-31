@@ -209,10 +209,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 					dl_font_start();
 			#if defined(CONFIG_PPG_SUPPORT)
-				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 					dl_ppg_start();
 			#endif
 				else
@@ -231,7 +231,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
 			#if defined(CONFIG_PPG_SUPPORT)
-				if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+				if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 					dl_ppg_start();
 			#endif
 				else
@@ -932,18 +932,18 @@ void PowerOffShowStatus(void)
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
-   	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+   	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
   	{
   		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
    	}
 	else
    #endif	
 	{
-		if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+		if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		{
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 		}
-		else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+		else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		{
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
 		}
@@ -1122,16 +1122,16 @@ void SettingsUpdateStatus(void)
 											settings_menu.sel_handler[i+4*(settings_menu.index/4)]);
 			
 			 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-			  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+			  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 				{
 					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
 			  	}
-			  	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+			  	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 			  	{
 					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 			  	}
 			  #ifdef CONFIG_PPG_DATA_UPDATE
-			  	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+			  	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 				{
 					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
 			  	}
@@ -1794,16 +1794,16 @@ void EnterSettingsScreen(void)
 	scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATING;
 
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_img_start);
 	}
-	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_font_start);
 	}
   #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_ppg_start);
 	}
@@ -1820,16 +1820,16 @@ void EnterSettingsScreen(void)
 	clear_all_touch_event_handle();
 
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
 	}
-	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 	}
    #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
 	}
@@ -3351,10 +3351,10 @@ void DlUpdateStatus(void)
 			sprintf(pro_buf, "%3d%%", g_dl_progress);
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
-			LCD_MeasureUniString(strbuf, &w, &h);
+			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
 			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
-			LCD_ShowUniString(pro_str_x,pro_str_y, strbuf);
+			LCD_ShowUniString(pro_str_x,pro_str_y, (uint16_t*)strbuf);
 		}
 		else
 		{
@@ -3364,10 +3364,10 @@ void DlUpdateStatus(void)
 			sprintf(pro_buf, "%3d%%", g_dl_progress);
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
-			LCD_MeasureUniString(strbuf, &w, &h);
+			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
 			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
-			LCD_ShowUniString(pro_str_x,pro_str_y, strbuf);
+			LCD_ShowUniString(pro_str_x,pro_str_y, (uint16_t*)strbuf);
 		}
 
 		ClearAllKeyHandler();
@@ -3397,17 +3397,17 @@ void DlUpdateStatus(void)
 
 		LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
 		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
-		LCD_MeasureUniString(strbuf, &w, &h);
+		LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 		x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
 		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-		LCD_ShowUniString(x,y,strbuf);
+		LCD_ShowUniString(x,y,(uint16_t*)strbuf);
 
 		LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
 		mmi_asc_to_ucs2(strbuf, "PWR(N)");
-		LCD_MeasureUniString(strbuf, &w, &h);
+		LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 		x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
 		y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
-		LCD_ShowUniString(x,y,strbuf);
+		LCD_ShowUniString(x,y,(uint16_t*)strbuf);
 
 		SetRightKeyUpHandler(dl_reboot_confirm);
 		SetLeftKeyUpHandler(dl_exit);
@@ -3446,10 +3446,10 @@ void DlUpdateStatus(void)
 
 		LCD_DrawRectangle((LCD_WIDTH-DL_NOTIFY_YES_W)/2, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
 		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
-		LCD_MeasureUniString(strbuf, &w, &h);
+		LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 		x = (LCD_WIDTH-DL_NOTIFY_YES_W)/2+(DL_NOTIFY_YES_W-w)/2;
 		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
-		LCD_ShowUniString(x,y,strbuf);
+		LCD_ShowUniString(x,y,(uint16_t*)strbuf);
 
 		SetLeftKeyUpHandler(dl_exit);
 		SetRightKeyUpHandler(dl_exit);
@@ -3501,10 +3501,10 @@ void PrevDlImgScreen(void)
 
 void ExitDlImgScreen(void)
 {
-	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_font_start();
 #if defined(CONFIG_PPG_SUPPORT)
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_ppg_start();
 #endif
 	else
@@ -3515,7 +3515,7 @@ void ExitDlImgScreen(void)
 #ifdef CONFIG_FONT_DATA_UPDATE
 void PrevDlFontScreen(void)
 {
-	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_img_start();
 	else
 		EnterSettings();
@@ -3524,7 +3524,7 @@ void PrevDlFontScreen(void)
 void ExitDlFontScreen(void)
 {
 #if defined(CONFIG_PPG_SUPPORT)
-	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_ppg_start();
 	else
 #endif
@@ -3535,9 +3535,9 @@ void ExitDlFontScreen(void)
 #ifdef CONFIG_PPG_DATA_UPDATE
 void PrevDlPpgScreen(void)
 {
-	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_font_start();
-	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_img_start();
 	else
 		EnterSettings();
@@ -3819,16 +3819,16 @@ void FOTAScreenProcess(void)
 void ExitFOTAScreen(void)
 {
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		dl_img_start();
 	}
-	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		dl_font_start();
 	}
   #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		dl_ppg_start();
 	}

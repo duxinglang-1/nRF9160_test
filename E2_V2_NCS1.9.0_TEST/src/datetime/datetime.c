@@ -56,6 +56,9 @@ bool update_date_time = false;
 bool sys_time_count = false;
 bool show_date_time_first = true;
 
+static bool send_timing_data_flag = false;
+static bool save_timing_data_flag = false;
+
 uint8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 uint64_t laststamp = 0;
 
@@ -502,17 +505,17 @@ void UpdateSystemTime(void)
 			if(check_flag == true)
 			{
 			#ifdef CONFIG_TEMP_SUPPORT
-				if(date_time.minute == 48-TEMP_CHECK_TIMELY)
+				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY+1+TEMP_CHECK_TIMELY))
 				{	
 					TimerStartTemp();
 				}
 			#endif
 			#ifdef CONFIG_PPG_SUPPORT
-				if(date_time.minute == 49-PPG_CHECK_HR_TIMELY)
+				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY))
 				{
 					TimerStartHr();
 				}
-				if(date_time.minute == 53-PPG_CHECK_BPT_TIMELY)
+				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY))
 				{
 					TimerStartBpt();
 				}
@@ -547,24 +550,7 @@ void UpdateSystemTime(void)
 		{
 			bool send_flag = false;
 
-		#ifdef CONFIG_TEMP_SUPPORT
-			SetCurDayTempRecData(g_temp_timing);
-			g_temp_timing = 0.0;
-		#endif
-		#ifdef CONFIG_PPG_SUPPORT
-			SetCurDayHrRecData(g_hr_timing);
-			g_hr_timing = 0;
-			SetCurDaySpo2RecData(g_spo2_timing);
-			g_spo2_timing = 0;
-			SetCurDayBptRecData(g_bpt_timing);
-			memset(&g_bpt_timing, 0, sizeof(g_bpt_timing));
-		#endif		
-		#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-			if((date_time_changed&0x08) != 0)
-				g_steps = 0;
-			SetCurDayStepRecData(g_steps);
-			g_steps = 0;
-		#endif
+			save_timing_data_flag = true;
 			
 			switch(global_settings.health_interval)
 			{
@@ -601,7 +587,7 @@ void UpdateSystemTime(void)
 				|| (date_time.hour == 00) //xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
 				)
 			{
-				TimeCheckSendHealthData();
+				send_timing_data_flag = true;
 			}
 		}
 	#endif		
@@ -763,6 +749,35 @@ void TimeMsgProcess(void)
 			
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
+	}
+
+	if(send_timing_data_flag)
+	{
+		TimeCheckSendHealthData();
+		send_timing_data_flag = false;
+	}
+
+	if(save_timing_data_flag)
+	{
+	#ifdef CONFIG_TEMP_SUPPORT
+		SetCurDayTempRecData(g_temp_timing);
+		g_temp_timing = 0.0;
+	#endif
+	#ifdef CONFIG_PPG_SUPPORT
+		SetCurDayHrRecData(g_hr_timing);
+		g_hr_timing = 0;
+		SetCurDaySpo2RecData(g_spo2_timing);
+		g_spo2_timing = 0;
+		SetCurDayBptRecData(g_bpt_timing);
+		memset(&g_bpt_timing, 0, sizeof(g_bpt_timing));
+	#endif		
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+		if((date_time_changed&0x08) != 0)
+			g_steps = 0;
+		SetCurDayStepRecData(g_steps);
+		g_steps = 0;
+	#endif
 		
+		save_timing_data_flag = false;
 	}
 }

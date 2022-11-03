@@ -751,12 +751,6 @@ void TimeMsgProcess(void)
 		}
 	}
 
-	if(send_timing_data_flag)
-	{
-		TimeCheckSendHealthData();
-		send_timing_data_flag = false;
-	}
-
 	if(save_timing_data_flag)
 	{
 	#ifdef CONFIG_TEMP_SUPPORT
@@ -779,5 +773,11 @@ void TimeMsgProcess(void)
 	#endif
 		
 		save_timing_data_flag = false;
+	}
+
+	if(send_timing_data_flag)
+	{
+		TimeCheckSendHealthData();
+		send_timing_data_flag = false;
 	}
 }

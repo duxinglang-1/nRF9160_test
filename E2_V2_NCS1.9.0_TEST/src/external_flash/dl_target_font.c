@@ -44,6 +44,27 @@ int dl_target_font_write(const void *const buf, size_t len)
 	uint32_t PageByteRemain,addr,datalen=len;
 	
 	addr = FONT_DATA_ADDR+rece_count;
+	cur_index = addr/SPIFlash_SECTOR_SIZE;
+	if(cur_index > last_index)
+	{
+		last_index = cur_index;
+		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
+	}
+	
+	PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
+	if(PageByteRemain < datalen)
+	{
+		datalen -= PageByteRemain;
+		while(1)
+		{
+			SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
+			if(datalen > SPIFlash_SECTOR_SIZE)
+				datalen -= SPIFlash_SECTOR_SIZE;
+			else
+				break;
+		}
+	}
+	
 	SpiFlash_Write_Buf(buf, addr, len);
 	rece_count += len;
 	return 0;

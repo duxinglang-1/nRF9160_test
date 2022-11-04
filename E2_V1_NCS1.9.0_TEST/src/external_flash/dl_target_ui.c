@@ -42,8 +42,29 @@ int dl_target_ui_write(const void *const buf, size_t len)
 	static int32_t last_index = -1;
 	int32_t cur_index;
 	uint32_t PageByteRemain,addr,datalen=len;
-	
+
 	addr = IMG_DATA_ADDR+rece_count;
+	cur_index = addr/SPIFlash_SECTOR_SIZE;
+	if(cur_index > last_index)
+	{
+		last_index = cur_index;
+		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
+	}
+	
+	PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
+	if(PageByteRemain < datalen)
+	{
+		datalen -= PageByteRemain;
+		while(1)
+		{
+			SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
+			if(datalen > SPIFlash_SECTOR_SIZE)
+				datalen -= SPIFlash_SECTOR_SIZE;
+			else
+				break;
+		}
+	}
+	
 	SpiFlash_Write_Buf(buf, addr, len);
 	rece_count += len;
 	return 0;

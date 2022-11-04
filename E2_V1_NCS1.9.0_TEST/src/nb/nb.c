@@ -2428,6 +2428,7 @@ void GetModemNw(void)
 	case LTE_LC_SYSTEM_MODE_LTEM:
 	case LTE_LC_SYSTEM_MODE_LTEM_GPS:
 		g_net_mode = NET_MODE_LTE_M;
+		break;
 		
 	case LTE_LC_SYSTEM_MODE_NBIOT:
 	case LTE_LC_SYSTEM_MODE_NBIOT_GPS:

@@ -425,22 +425,22 @@ void FotaMsgProc(void)
 	if(fota_reboot_flag)
 	{
 		fota_reboot_flag = false;
-		
-		if((strcmp(g_new_ui_ver,g_ui_ver) > 0) || (strncmp(g_ui_ver,"20",2) != 0))
+
+		if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
 		{
 			dl_img_start();
 		}
-		else if((strcmp(g_new_font_ver,g_font_ver) > 0) || (strncmp(g_font_ver,"20",2) != 0))
+		else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 		{
 			dl_font_start();
 		}
 	#ifdef CONFIG_PPG_SUPPORT
-		else if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+		else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 		{
 			dl_ppg_start();
 		}
 	#endif
-		else
+		else	
 		{
 			LCD_Clear(BLACK);
 			sys_reboot(0);

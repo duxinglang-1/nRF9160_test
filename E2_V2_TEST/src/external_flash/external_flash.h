@@ -42,15 +42,12 @@
 
 #define	SPIFlash_PAGE_SIZE		256
 #define SPIFlash_PAGE_NUMBER	32768
-
 #define	SPIFlash_SECTOR_SIZE	4096
 #define SPIFlash_SECTOR_NUMBER	2048
-
-#define	SPI_TXRX_MAX_LEN		(1024*4)	//255	(1024*2)
-
-#define SPIFlash_BLOCK_SIZE		64
+#define SPIFlash_BLOCK_SIZE		(64*1024)
 #define	SPIFlash_BLOCK_NUMBLE	128
 
+#define	SPI_TXRX_MAX_LEN		(1024*4)	//255	(1024*2)
 
 /***************************************************img start*********************************************************/
 //IMG在flash里占用4M的空间(0x000000~0x3FFFFF)
@@ -652,6 +649,7 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size);
 uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
 uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum);
 void SPIFlash_Erase_Sector(uint32_t SecAddr);
+void SPIFlash_Erase_Block(uint32_t BlockAddr);
 void SPIFlash_Erase_Chip(void);
 
 extern void test_flash(void);

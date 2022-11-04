@@ -88,7 +88,10 @@ bool gxts04_init(void)
 
 	if(init_i2c() != 0)
 		return;
-	
+
+	gxts04_write_data(CMD_RESET);
+	k_usleep(200);
+
 	gxts04_write_data(CMD_WAKEUP);
 	gxts04_read_data(CMD_READ_ID, &databuf, 2);
 	gxts04_write_data(CMD_SLEEP);

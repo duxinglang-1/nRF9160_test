@@ -932,7 +932,7 @@ void PowerOffShowStatus(void)
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
-   	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+   	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
   	{
   		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
    	}
@@ -1131,7 +1131,7 @@ void SettingsUpdateStatus(void)
 					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 			  	}
 			  #ifdef CONFIG_PPG_DATA_UPDATE
-			  	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+			  	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 				{
 					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
 			  	}
@@ -1803,7 +1803,7 @@ void EnterSettingsScreen(void)
 		SetLeftKeyUpHandler(dl_font_start);
 	}
   #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 	{
 		SetLeftKeyUpHandler(dl_ppg_start);
 	}
@@ -1829,7 +1829,7 @@ void EnterSettingsScreen(void)
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 	}
    #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
 	}
@@ -3832,7 +3832,7 @@ void ExitFOTAScreen(void)
 		dl_font_start();
 	}
   #ifdef CONFIG_PPG_DATA_UPDATE
-	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 	{
 		dl_ppg_start();
 	}

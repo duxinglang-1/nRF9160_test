@@ -11,10 +11,8 @@
 #include <modem/lte_lc.h>
 #include <date_time.h>
 #include <logger.h>
-
 #include "agps.h"
 
-//LOG_MODULE_REGISTER(gnss_sample, CONFIG_GNSS_SAMPLE_LOG_LEVEL);
 #define AGPS_DEBUG
 
 #if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE) || defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
@@ -52,7 +50,8 @@ K_MSGQ_DEFINE(nmea_queue, sizeof(struct nrf_modem_gnss_nmea_data_frame *), 10, 4
 static K_SEM_DEFINE(pvt_data_sem, 0, 1);
 static K_SEM_DEFINE(time_sem, 0, 1);
 
-static struct k_poll_event events[2] = {
+static struct k_poll_event events[2] = 
+{
 	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
 					K_POLL_MODE_NOTIFY_ONLY,
 					&pvt_data_sem, 0),
@@ -80,56 +79,61 @@ static void gnss_event_handler(int event)
 	int retval;
 	struct nrf_modem_gnss_nmea_data_frame *nmea_data;
 
-	switch (event) {
+	switch (event)
+	{
 	case NRF_MODEM_GNSS_EVT_PVT:
 		retval = nrf_modem_gnss_read(&last_pvt, sizeof(last_pvt), NRF_MODEM_GNSS_DATA_PVT);
-		if (retval == 0) {
+		if(retval == 0)
+		{
 			k_sem_give(&pvt_data_sem);
 		}
 		break;
 
-#if defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
+	#if defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
 	case NRF_MODEM_GNSS_EVT_FIX:
 		/* Time to fix is calculated here, but it's printed from a delayed work to avoid
 		 * messing up the NMEA output.
 		 */
 		time_to_fix = (k_uptime_get() - fix_timestamp) / 1000;
 		k_work_schedule_for_queue(&gnss_work_q, &ttff_test_got_fix_work, K_MSEC(100));
-		k_work_schedule_for_queue(&gnss_work_q, &ttff_test_prepare_work,
-					  K_SECONDS(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL));
+		k_work_schedule_for_queue(&gnss_work_q, &ttff_test_prepare_work, K_SECONDS(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL));
 		break;
-#endif /* CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
+	#endif /* CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
 
 	case NRF_MODEM_GNSS_EVT_NMEA:
 		nmea_data = k_malloc(sizeof(struct nrf_modem_gnss_nmea_data_frame));
-		if (nmea_data == NULL) {
-                        #ifdef AGPS_DEBUG
+		if(nmea_data == NULL)
+		{
+		#ifdef AGPS_DEBUG
 			LOGD("Failed to allocate memory for NMEA");
-			#endif
-                        break;
+		#endif
+			break;
 		}
 
 		retval = nrf_modem_gnss_read(nmea_data,
 					     sizeof(struct nrf_modem_gnss_nmea_data_frame),
 					     NRF_MODEM_GNSS_DATA_NMEA);
-		if (retval == 0) {
+		if(retval == 0)
+		{
 			retval = k_msgq_put(&nmea_queue, &nmea_data, K_NO_WAIT);
 		}
 
-		if (retval != 0) {
+		if(retval != 0)
+		{
 			k_free(nmea_data);
 		}
 		break;
 
 	case NRF_MODEM_GNSS_EVT_AGPS_REQ:
-#if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
+	#if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
 		retval = nrf_modem_gnss_read(&last_agps,
 					     sizeof(last_agps),
 					     NRF_MODEM_GNSS_DATA_AGPS_REQ);
-		if (retval == 0) {
+		if(retval == 0)
+		{
 			k_work_submit_to_queue(&gnss_work_q, &agps_data_get_work);
 		}
-#endif /* !CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE */
+	#endif /* !CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE */
 		break;
 
 	default:
@@ -143,13 +147,15 @@ K_SEM_DEFINE(lte_ready, 0, 1);
 
 static void lte_lc_event_handler(const struct lte_lc_evt *const evt)
 {
-	switch (evt->type) {
+	switch(evt->type)
+	{
 	case LTE_LC_EVT_NW_REG_STATUS:
-		if ((evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME) ||
-		    (evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING)) {
-                        #ifdef AGPS_DEBUG
+		if((evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME)
+			|| (evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING))
+		{
+		#ifdef AGPS_DEBUG
 			LOGD("Connected to LTE network");
-                        #endif
+        #endif
 			k_sem_give(&lte_ready);
 		}
 		break;
@@ -163,16 +169,17 @@ void lte_connect(void)
 {
 	int err;
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Connecting to LTE network");
-        #endif
+#endif
 
 	err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_LTE);
-	if (err) {
-                #ifdef AGPS_DEBUG
+	if(err)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to activate LTE, error: %d", err);
-		#endif
-                return;
+	#endif
+		return;
 	}
 
 	k_sem_take(&lte_ready, K_FOREVER);
@@ -186,16 +193,17 @@ void lte_disconnect(void)
 	int err;
 
 	err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_DEACTIVATE_LTE);
-	if (err) {
-                #ifdef AGPS_DEBUG
+	if(err)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to deactivate LTE, error: %d", err);
-		#endif
-                return;
+	#endif
+		return;
 	}
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("LTE disconnected");
-        #endif
+#endif
 }
 #endif /* CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND */
 
@@ -209,47 +217,50 @@ static void agps_data_get_work_fn(struct k_work *item)
 	/* SUPL doesn't usually provide satellite real time integrity information. If GNSS asks
 	 * only for satellite integrity, the request should be ignored.
 	 */
-	if (last_agps.sv_mask_ephe == 0 &&
-	    last_agps.sv_mask_alm == 0 &&
-	    last_agps.data_flags == NRF_MODEM_GNSS_AGPS_INTEGRITY_REQUEST) {
-                #ifdef AGPS_DEBUG
+	if (last_agps.sv_mask_ephe == 0 
+		&& last_agps.sv_mask_alm == 0 
+		&& last_agps.data_flags == NRF_MODEM_GNSS_AGPS_INTEGRITY_REQUEST)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Ignoring assistance request for only satellite integrity");
-		#endif
-                return;
+	#endif
+		return;
 	}
-#endif /* CONFIG_GNSS_SAMPLE_ASSISTANCE_SUPL */
+#endif/* CONFIG_GNSS_SAMPLE_ASSISTANCE_SUPL */
 
 #if defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_MINIMAL)
 	/* With minimal assistance, the request should be ignored if no GPS time or position
 	 * is requested.
 	 */
-	if (!(last_agps.data_flags & NRF_MODEM_GNSS_AGPS_SYS_TIME_AND_SV_TOW_REQUEST) &&
-	    !(last_agps.data_flags & NRF_MODEM_GNSS_AGPS_POSITION_REQUEST)) {
-                #ifdef AGPS_DEBUG
+	if (!(last_agps.data_flags & NRF_MODEM_GNSS_AGPS_SYS_TIME_AND_SV_TOW_REQUEST)
+		&& !(last_agps.data_flags & NRF_MODEM_GNSS_AGPS_POSITION_REQUEST))
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Ignoring assistance request because no GPS time or position is requested");
-		#endif
-                return;
+	#endif
+		return;
 	}
 #endif /* CONFIG_GNSS_SAMPLE_ASSISTANCE_MINIMAL */
 
 	requesting_assistance = true;
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Assistance data needed, ephe 0x%08x, alm 0x%08x, flags 0x%02x",
 		last_agps.sv_mask_ephe,
 		last_agps.sv_mask_alm,
 		last_agps.data_flags);
-        #endif
+#endif
 
 #if defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
 	lte_connect();
 #endif /* CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND */
 
 	err = assistance_request(&last_agps);
-	if (err) {
-                #ifdef AGPS_DEBUG
+	if(err)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to request assistance data");
-                #endif
+	#endif
 	}
 
 #if defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
@@ -263,17 +274,19 @@ static void agps_data_get_work_fn(struct k_work *item)
 #if defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
 static void ttff_test_got_fix_work_fn(struct k_work *item)
 {
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Time to fix: %u", time_to_fix);
-	#endif
-        if (time_blocked > 0) {
-                #ifdef AGPS_DEBUG
+#endif
+	if(time_blocked > 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Time GNSS was blocked by LTE: %u", time_blocked);
-                #endif
+	#endif
 	}
-        #ifdef AGPS_DEBUG
+
+#ifdef AGPS_DEBUG
 	LOGD("Sleeping for %u seconds", CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL);
-        #endif
+#endif
 }
 
 static int ttff_test_force_cold_start(void)
@@ -281,9 +294,9 @@ static int ttff_test_force_cold_start(void)
 	int err;
 	uint32_t delete_mask;
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Deleting GNSS data");
-        #endif
+#endif
 
 	/* Delete everything else except the TCXO offset. */
 	delete_mask = NRF_MODEM_GNSS_DELETE_EPHEMERIDES |
@@ -296,16 +309,18 @@ static int ttff_test_force_cold_start(void)
 		      NRF_MODEM_GNSS_DELETE_GPS_TOW_PRECISION;
 
 	/* With minimal assistance, we want to keep the factory almanac. */
-	if (IS_ENABLED(CONFIG_GNSS_SAMPLE_ASSISTANCE_MINIMAL)) {
+	if(IS_ENABLED(CONFIG_GNSS_SAMPLE_ASSISTANCE_MINIMAL))
+	{
 		delete_mask &= ~NRF_MODEM_GNSS_DELETE_ALMANACS;
 	}
 
 	err = nrf_modem_gnss_nv_data_delete(delete_mask);
-	if (err) {
-                #ifdef AGPS_DEBUG
+	if(err)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to delete GNSS data");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 
 	return 0;
@@ -316,14 +331,17 @@ static void ttff_test_prepare_work_fn(struct k_work *item)
 	/* Make sure GNSS is stopped before next start. */
 	nrf_modem_gnss_stop();
 
-	if (IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_COLD_START)) {
-		if (ttff_test_force_cold_start() != 0) {
+	if(IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_COLD_START))
+	{
+		if(ttff_test_force_cold_start() != 0)
+		{
 			return;
 		}
 	}
 
 #if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
-	if (IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_COLD_START)) {
+	if(IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_COLD_START))
+	{
 		/* All A-GPS data is always requested before GNSS is started. */
 		last_agps.sv_mask_ephe = 0xffffffff;
 		last_agps.sv_mask_alm = 0xffffffff;
@@ -335,7 +353,9 @@ static void ttff_test_prepare_work_fn(struct k_work *item)
 			NRF_MODEM_GNSS_AGPS_INTEGRITY_REQUEST;
 
 		k_work_submit_to_queue(&gnss_work_q, &agps_data_get_work);
-	} else {
+	}
+	else
+	{
 		/* Start and stop GNSS to trigger possible A-GPS data request. If new A-GPS
 		 * data is needed it is fetched before GNSS is started.
 		 */
@@ -349,14 +369,16 @@ static void ttff_test_prepare_work_fn(struct k_work *item)
 
 static void ttff_test_start_work_fn(struct k_work *item)
 {
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Starting GNSS");
+#endif
+
+    if(nrf_modem_gnss_start() != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to start GNSS");
 	#endif
-        if (nrf_modem_gnss_start() != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to start GNSS");
-		#endif
-                return;
+		return;
 	}
 
 	fix_timestamp = k_uptime_get();
@@ -371,49 +393,55 @@ static void date_time_evt_handler(const struct date_time_evt *evt)
 
 static int modem_init(void)
 {
-        uint8_t tmpbuf[256] = {0};
+    uint8_t tmpbuf[256] = {0};
 
-        if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT+CGMR") == 0)
+    if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT+CGMR") == 0)
 	{
 	#ifdef AGPS_DEBUG
-	LOGD("MODEM version:%s", &tmpbuf);
+		LOGD("MODEM version:%s", &tmpbuf);
 	#endif
-        }
+    }
 
-        if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%HWVERSION") == 0)
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%HWVERSION") == 0)
 	{
 	#ifdef AGPS_DEBUG
-	LOGD("Chip version:%s", &tmpbuf);
+		LOGD("Chip version:%s", &tmpbuf);
 	#endif
-        }
+	}
 
-	if (strlen(CONFIG_GNSS_SAMPLE_AT_MAGPIO) > 0) {
-		if (nrf_modem_at_printf("%s", CONFIG_GNSS_SAMPLE_AT_MAGPIO) != 0) {
-			#ifdef AGPS_DEBUG
-                        LOGD("Failed to set MAGPIO configuration");
-			#endif
-                        return -1;
+	if(strlen(CONFIG_GNSS_SAMPLE_AT_MAGPIO) > 0)
+	{
+		if(nrf_modem_at_printf("%s", CONFIG_GNSS_SAMPLE_AT_MAGPIO) != 0)
+		{
+		#ifdef AGPS_DEBUG
+			LOGD("Failed to set MAGPIO configuration");
+		#endif
+			return -1;
 		}
 	}
 
-	if (strlen(CONFIG_GNSS_SAMPLE_AT_COEX0) > 0) {
-		if (nrf_modem_at_printf("%s", CONFIG_GNSS_SAMPLE_AT_COEX0) != 0) {
-			#ifdef AGPS_DEBUG
-                        LOGD("Failed to set COEX0 configuration");
-			#endif
-                        return -1;
+	if(strlen(CONFIG_GNSS_SAMPLE_AT_COEX0) > 0)
+	{
+		if(nrf_modem_at_printf("%s", CONFIG_GNSS_SAMPLE_AT_COEX0) != 0)
+		{
+		#ifdef AGPS_DEBUG
+			LOGD("Failed to set COEX0 configuration");
+		#endif
+			return -1;
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_DATE_TIME)) {
+	if(IS_ENABLED(CONFIG_DATE_TIME))
+	{
 		date_time_register_handler(date_time_evt_handler);
 	}
 
-	if (lte_lc_init() != 0) {
-                #ifdef AGPS_DEBUG
+	if(lte_lc_init() != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to initialize LTE link controller");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 
 #if defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
@@ -421,22 +449,23 @@ static int modem_init(void)
 #elif !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
 	lte_lc_psm_req(true);
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Connecting to LTE network");
-        #endif
+#endif
 
-	if (lte_lc_connect() != 0) {
-                #ifdef AGPS_DEBUG
+	if(lte_lc_connect() != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to connect to LTE network");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Connected to LTE network");
-        #endif
+#endif
 
-        uint8_t str[128] = {0};
+	uint8_t str[128] = {0};
 
 	if(nrf_modem_at_cmd(str, sizeof(str), "AT%%XSYSTEMMODE?") == 0)
 	{
@@ -445,18 +474,20 @@ static int modem_init(void)
 	#endif
 	}
 
-	if (IS_ENABLED(CONFIG_DATE_TIME)) {
-                #ifdef AGPS_DEBUG
+	if(IS_ENABLED(CONFIG_DATE_TIME))
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Waiting for current time");
-                #endif
+	#endif
 
 		/* Wait for an event from the Date Time library. */
 		k_sem_take(&time_sem, K_MINUTES(10));
 
-		if (!date_time_is_valid()) {
-                        #ifdef AGPS_DEBUG
+		if(!date_time_is_valid())
+		{
+		#ifdef AGPS_DEBUG
 			LOGD("Failed to get current time, continuing anyway");
-                        #endif
+		#endif
 		}
 	}
 #endif
@@ -501,20 +532,22 @@ static int gnss_init_and_start(void)
 {
 #if defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE) || defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
 	/* Enable GNSS. */
-	if (lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_GNSS) != 0) {
-                #ifdef AGPS_DEBUG
+	if(lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_GNSS) != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to activate GNSS functional mode");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 #endif /* CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE || CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND */
 
 	/* Configure GNSS. */
-	if (nrf_modem_gnss_event_handler_set(gnss_event_handler) != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to set GNSS event handler");
-		#endif
-                return -1;
+	if(nrf_modem_gnss_event_handler_set(gnss_event_handler) != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to set GNSS event handler");
+	#endif
+		return -1;
 	}
 
 	/* Enable all supported NMEA messages. */
@@ -524,42 +557,47 @@ static int gnss_init_and_start(void)
 			     NRF_MODEM_GNSS_NMEA_GSA_MASK |
 			     NRF_MODEM_GNSS_NMEA_GSV_MASK;
 
-	if (nrf_modem_gnss_nmea_mask_set(nmea_mask) != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to set GNSS NMEA mask");
-		#endif
-                return -1;
+	if(nrf_modem_gnss_nmea_mask_set(nmea_mask) != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to set GNSS NMEA mask");
+	#endif
+		return -1;
 	}
 
 	/* This use case flag should always be set. */
 	uint8_t use_case = NRF_MODEM_GNSS_USE_CASE_MULTIPLE_HOT_START;
 
-	if (IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_PERIODIC) &&
-	    !IS_ENABLED(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)) {
+	if(IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_PERIODIC) 
+		&& !IS_ENABLED(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE))
+	{
 		/* Disable GNSS scheduled downloads when assistance is used. */
 		use_case |= NRF_MODEM_GNSS_USE_CASE_SCHED_DOWNLOAD_DISABLE;
 	}
 
-	if (IS_ENABLED(CONFIG_GNSS_SAMPLE_LOW_ACCURACY)) {
+	if(IS_ENABLED(CONFIG_GNSS_SAMPLE_LOW_ACCURACY))
+	{
 		use_case |= NRF_MODEM_GNSS_USE_CASE_LOW_ACCURACY;
 	}
 
-	if (nrf_modem_gnss_use_case_set(use_case) != 0) {
-                #ifdef AGPS_DEBUG
+	if(nrf_modem_gnss_use_case_set(use_case) != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to set GNSS use case");
-                #endif
+	#endif
 	}
 
 #if defined(CONFIG_NRF_CLOUD_AGPS_ELEVATION_MASK)
-	if (nrf_modem_gnss_elevation_threshold_set(CONFIG_NRF_CLOUD_AGPS_ELEVATION_MASK) != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to set elevation threshold");
-		#endif
-                return -1;
+	if(nrf_modem_gnss_elevation_threshold_set(CONFIG_NRF_CLOUD_AGPS_ELEVATION_MASK) != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to set elevation threshold");
+	#endif
+		return -1;
 	}
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Set elevation threshold to %u", CONFIG_NRF_CLOUD_AGPS_ELEVATION_MASK);
-        #endif
+#endif
 #endif
 
 #if defined(CONFIG_GNSS_SAMPLE_MODE_CONTINUOUS)
@@ -572,11 +610,12 @@ static int gnss_init_and_start(void)
 	power_mode = NRF_MODEM_GNSS_PSM_DUTY_CYCLING_POWER;
 #endif
 
-	if (nrf_modem_gnss_power_mode_set(power_mode) != 0) {
-                #ifdef AGPS_DEBUG
+	if(nrf_modem_gnss_power_mode_set(power_mode) != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to set GNSS power saving mode");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 #endif /* CONFIG_GNSS_SAMPLE_MODE_CONTINUOUS */
 
@@ -593,28 +632,31 @@ static int gnss_init_and_start(void)
 	fix_interval = 0;
 #endif
 
-	if (nrf_modem_gnss_fix_retry_set(fix_retry) != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to set GNSS fix retry");
-		#endif
-                return -1;
+	if(nrf_modem_gnss_fix_retry_set(fix_retry) != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to set GNSS fix retry");
+	#endif
+		return -1;
 	}
 
-	if (nrf_modem_gnss_fix_interval_set(fix_interval) != 0) {
-                #ifdef AGPS_DEBUG
+	if(nrf_modem_gnss_fix_interval_set(fix_interval) != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to set GNSS fix interval");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 
 #if defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
 	k_work_schedule_for_queue(&gnss_work_q, &ttff_test_prepare_work, K_NO_WAIT);
 #else /* !CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
-	if (nrf_modem_gnss_start() != 0) {
-                #ifdef AGPS_DEBUG
+	if(nrf_modem_gnss_start() != 0)
+	{
+	#ifdef AGPS_DEBUG
 		LOGD("Failed to start GNSS");
-		#endif
-                return -1;
+	#endif
+		return -1;
 	}
 #endif
 
@@ -636,34 +678,38 @@ static void print_satellite_stats(struct nrf_modem_gnss_pvt_data_frame *pvt_data
 	uint8_t in_fix    = 0;
 	uint8_t unhealthy = 0;
 
-	for (int i = 0; i < NRF_MODEM_GNSS_MAX_SATELLITES; ++i) {
-		if (pvt_data->sv[i].sv > 0) {
+	for(int i = 0; i < NRF_MODEM_GNSS_MAX_SATELLITES; ++i)
+	{
+		if(pvt_data->sv[i].sv > 0)
+		{
 			tracked++;
 
-			if (pvt_data->sv[i].flags & NRF_MODEM_GNSS_SV_FLAG_USED_IN_FIX) {
+			if(pvt_data->sv[i].flags & NRF_MODEM_GNSS_SV_FLAG_USED_IN_FIX)
+			{
 				in_fix++;
 			}
 
-			if (pvt_data->sv[i].flags & NRF_MODEM_GNSS_SV_FLAG_UNHEALTHY) {
+			if(pvt_data->sv[i].flags & NRF_MODEM_GNSS_SV_FLAG_UNHEALTHY)
+			{
 				unhealthy++;
 			}
 		}
 	}
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Tracking: %2d Using: %2d Unhealthy: %d\n", tracked, in_fix, unhealthy);
-        #endif
+#endif
 }
 
 static void print_fix_data(struct nrf_modem_gnss_pvt_data_frame *pvt_data)
 {
     uint8_t tmpbuf[256] = {0};
-    #ifdef AGPS_DEBUG
-        int32_t lon, lat;
+#ifdef AGPS_DEBUG
+    int32_t lon, lat;
 
-        lon = pvt_data->longitude*1000000;
-        lat = pvt_data->latitude*1000000;
-        sprintf(tmpbuf, "Longitude:%d.%06d, Latitude:%d.%06d", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
-        LOGD("%s",tmpbuf);
+    lon = pvt_data->longitude*1000000;
+    lat = pvt_data->latitude*1000000;
+    sprintf(tmpbuf, "Longitude:%d.%06d, Latitude:%d.%06d", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
+    LOGD("%s",tmpbuf);
 
 	//LOGD("Latitude:       %.06f\n", pvt_data->latitude);
 	//LOGD("Longitude:      %.06f\n", pvt_data->longitude);
@@ -685,7 +731,7 @@ static void print_fix_data(struct nrf_modem_gnss_pvt_data_frame *pvt_data)
 	//LOGD("HDOP:           %.01f\n", pvt_data->hdop);
 	//LOGD("VDOP:           %.01f\n", pvt_data->vdop);
 	//LOGD("TDOP:           %.01f\n", pvt_data->tdop);
-    #endif
+#endif
 }
 
 //int main(void)
@@ -694,100 +740,115 @@ void agps_test(void)
 	uint8_t cnt = 0;
 	struct nrf_modem_gnss_nmea_data_frame *nmea_data;
 
-        #ifdef AGPS_DEBUG
+#ifdef AGPS_DEBUG
 	LOGD("Starting GNSS sample");
-        #endif
+#endif
 
-	if (modem_init() != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to initialize modem");
-		#endif
-                //return -1;
+	if(modem_init() != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to initialize modem");
+	#endif
+		//return -1;
 	}
 
-	if (sample_init() != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to initialize sample");
-		#endif
-                //return -1;
+	if(sample_init() != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to initialize sample");
+	#endif
+		//return -1;
 	}
 
-	if (gnss_init_and_start() != 0) {
-		#ifdef AGPS_DEBUG
-                LOGD("Failed to initialize and start GNSS");
-		#endif
-                //return -1;
+	if(gnss_init_and_start() != 0)
+	{
+	#ifdef AGPS_DEBUG
+		LOGD("Failed to initialize and start GNSS");
+	#endif
+		//return -1;
 	}
 
 	fix_timestamp = k_uptime_get();
 
-	for (;;) {
+	for(;;)
+	{
 		(void)k_poll(events, 2, K_FOREVER);
 
-		if (events[0].state == K_POLL_STATE_SEM_AVAILABLE &&
-		    k_sem_take(events[0].sem, K_NO_WAIT) == 0) {
+		if(events[0].state == K_POLL_STATE_SEM_AVAILABLE 
+			&& k_sem_take(events[0].sem, K_NO_WAIT) == 0)
+		{
 			/* New PVT data available */
 
-			if (!IS_ENABLED(CONFIG_GNSS_SAMPLE_NMEA_ONLY) &&
-			    !output_paused()) {
-                                #ifdef AGPS_DEBUG
+			if(!IS_ENABLED(CONFIG_GNSS_SAMPLE_NMEA_ONLY) && !output_paused())
+			{
+			#ifdef AGPS_DEBUG
 				LOGD("\033[1;1H");
 				LOGD("\033[2J");
-                                #endif
+			#endif
 				print_satellite_stats(&last_pvt);
 
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED) {
-					#ifdef AGPS_DEBUG
-                                        LOGD("GNSS operation blocked by LTE\n");
-                                        #endif
+				if(last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED)
+				{
+				#ifdef AGPS_DEBUG
+					LOGD("GNSS operation blocked by LTE");
+				#endif
 				}
-				if (last_pvt.flags &
-				    NRF_MODEM_GNSS_PVT_FLAG_NOT_ENOUGH_WINDOW_TIME) {
-                                        #ifdef AGPS_DEBUG
-					LOGD("Insufficient GNSS time windows\n");
-                                        #endif
+				
+				if(last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_NOT_ENOUGH_WINDOW_TIME)
+				{
+				#ifdef AGPS_DEBUG
+					LOGD("Insufficient GNSS time windows");
+				#endif
 				}
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_SLEEP_BETWEEN_PVT) {
-					#ifdef AGPS_DEBUG
-                                        LOGD("Sleep period(s) between PVT notifications\n");
-                                        #endif
+				
+				if(last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_SLEEP_BETWEEN_PVT)
+				{
+				#ifdef AGPS_DEBUG
+					LOGD("Sleep period(s) between PVT notifications");
+				#endif
 				}
-				printk("-----------------------------------\n");
 
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
+				if(last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID)
+				{
 					fix_timestamp = k_uptime_get();
 					print_fix_data(&last_pvt);
-				} else {
-                                        #ifdef AGPS_DEBUG
-					("Seconds since last fix: %lld\n",
-					       (k_uptime_get() - fix_timestamp) / 1000);
-					#endif
-                                        cnt++;
-                                        #ifdef AGPS_DEBUG
-					LOGD("Searching [%c]\n", update_indicator[cnt%4]);
-                                        #endif
 				}
-                                #ifdef AGPS_DEBUG
-				LOGD("\nNMEA strings:\n\n");
-                                #endif
+				else
+				{
+				#ifdef AGPS_DEBUG
+					LOGD("Seconds since last fix: %lld", (k_uptime_get() - fix_timestamp) / 1000);
+				#endif
+					cnt++;
+				#ifdef AGPS_DEBUG
+					LOGD("Searching [%c]", update_indicator[cnt%4]);
+				#endif
+				}
+				
+			#ifdef AGPS_DEBUG
+				LOGD("NMEA strings:");
+			#endif
 			}
-#if defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
-			else {
+		#if defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
+			else
+			{
 				/* Calculate the time GNSS has been blocked by LTE. */
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED) {
+				if(last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED)
+				{
 					time_blocked++;
 				}
 			}
-#endif /* CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
+		#endif /* CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
 		}
-		if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE &&
-		    k_msgq_get(events[1].msgq, &nmea_data, K_NO_WAIT) == 0) {
+		if(events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE 
+			&& k_msgq_get(events[1].msgq, &nmea_data, K_NO_WAIT) == 0)
+		{
 			/* New NMEA data available */
 
-			if (!output_paused()) {
-                                #ifdef AGPS_DEBUG
+			if(!output_paused())
+			{
+			#ifdef AGPS_DEBUG
 				LOGD("%s", nmea_data->nmea_str);
-                                #endif
+			#endif
 			}
 			k_free(nmea_data);
 		}

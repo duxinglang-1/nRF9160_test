@@ -4314,7 +4314,7 @@ void TestGPSScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
-		TestGPSUpdateInfor();
+		//TestGPSUpdateInfor();
 		break;
 	}
 	

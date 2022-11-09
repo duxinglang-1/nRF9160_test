@@ -2506,7 +2506,7 @@ static void nb_link(struct k_work *work)
 	}
 #endif
 
-	if(gps_is_working())
+	if(0)//(gps_is_working())
 	{
 	#ifdef NB_DEBUG
 		LOGD("gps is working, continue waiting!");

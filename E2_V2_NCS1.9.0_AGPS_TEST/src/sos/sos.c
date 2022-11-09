@@ -257,12 +257,14 @@ void SOSMsgProc(void)
 		sos_trigger_flag = false;
 	}
 
-	/*if(sos_start_gps_flag)
+	if(sos_start_gps_flag)
 	{
-		sos_wait_gps = true;
-		APP_Ask_GPS_Data();
+		//sos_wait_gps = true;
+		//APP_Ask_GPS_Data();
+
+		agps_test();
 		sos_start_gps_flag = false;
-	}*/
+	}
 
 	if(sos_status_change_flag)
 	{

@@ -725,7 +725,7 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
-	//NB_init(&nb_work_q);
+	NB_init(&nb_work_q);
 	//GPS_init(&gps_work_q);
 }
 
@@ -767,10 +767,10 @@ void system_init_completed(void)
 **************************************************************************/
 int main(void)
 {
-	//work_init();
+	work_init();
 	system_init();
 
-        agps_test();
+//	agps_test();
 
 //	test_show_string();
 //	test_show_image();
@@ -792,7 +792,7 @@ int main(void)
 //	test_bat_soc();
 //	test_notify();
 
-	/*while(1)
+	while(1)
 	{
 		KeyMsgProcess();
 		TimeMsgProcess();
@@ -800,7 +800,7 @@ int main(void)
 	#ifdef CONFIG_WIFI	
 		WifiProcess();
 	#endif
-		GPSMsgProcess();
+		//GPSMsgProcess();
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
@@ -840,5 +840,5 @@ int main(void)
 	#endif
 		system_init_completed();
 		k_cpu_idle();
-	}*/
+	}
 }

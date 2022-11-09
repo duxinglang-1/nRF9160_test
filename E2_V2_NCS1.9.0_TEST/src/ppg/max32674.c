@@ -30,22 +30,25 @@
 //#define PPG_DEBUG
 
 bool ppg_int_event = false;
-bool ppg_fw_upgrade_flag = false;
-bool ppg_delay_start_flag = false;
-bool ppg_start_flag = false;
-bool ppg_test_flag = false;
-bool ppg_stop_flag = false;
-bool ppg_get_data_flag = false;
-bool ppg_redraw_data_flag = false;
-bool ppg_get_cal_flag = false;
 bool ppg_bpt_is_calbraed = false;
 bool ppg_bpt_cal_need_update = false;
 bool get_bpt_ok_flag = false;
 bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
-bool menu_start_hr = false;
-bool menu_start_spo2 = false;
-bool menu_start_bpt = false;
+
+static bool ppg_appmode_init_flag = false;
+
+static bool ppg_fw_upgrade_flag = false;
+static bool ppg_delay_start_flag = false;
+static bool ppg_start_flag = false;
+static bool ppg_test_flag = false;
+static bool ppg_stop_flag = false;
+static bool ppg_get_data_flag = false;
+static bool ppg_redraw_data_flag = false;
+static bool ppg_get_cal_flag = false;
+static bool menu_start_hr = false;
+static bool menu_start_spo2 = false;
+static bool menu_start_bpt = false;
 
 uint8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static uint8_t whoamI=0, rst=0;
@@ -63,7 +66,8 @@ uint8_t g_spo2_timing = 0;
 bpt_data g_bpt = {0};
 bpt_data g_bpt_timing = {0};
 
-
+static void ppg_set_appmode_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(ppg_appmode_timer, ppg_set_appmode_timerout, NULL);
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
 static void ppg_get_data_timerout(struct k_timer *timer_id);
@@ -415,14 +419,17 @@ void ppg_get_data_timerout(struct k_timer *timer_id)
 	ppg_get_data_flag = true;
 }
 
-bool StartSensorhub(void)
+static void ppg_set_appmode_timerout(struct k_timer *timer_id)
+{
+	ppg_appmode_init_flag = true;
+}
+
+bool PPGSenSorSet(void)
 {
 	int status = -1;
 	uint8_t hubMode = 0x00;
 	uint8_t period = 0;
-	
-	SH_rst_to_APP_mode();
-	
+
 	status = sh_get_sensorhub_operating_mode(&hubMode);
 	if((hubMode != 0x00) && (status != SS_SUCCESS))
 	{
@@ -494,7 +501,7 @@ bool StartSensorhub(void)
 		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
-		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500));		
+		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500)); 	
 	}
 	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{
@@ -523,6 +530,57 @@ bool StartSensorhub(void)
 	}
 	
 	return true;
+}
+
+void StartSensorhubCallBack(void)
+{
+	bool ret = false;
+	
+	ret = PPGSenSorSet();
+	if(ret)
+	{
+		if(ppg_power_flag == 0)
+		{
+		#ifdef PPG_DEBUG
+			LOGD("ppg hr has been stop!");
+		#endif
+			k_timer_stop(&ppg_get_hr_timer);
+			return;
+		}
+	#ifdef PPG_DEBUG	
+		LOGD("ppg hr start success!");
+	#endif
+		ppg_power_flag = 2;
+
+		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+			{
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_HR_TIMELY*60*1000), K_NO_WAIT);
+			}
+			else if(g_ppg_data == PPG_DATA_SPO2)
+			{
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_SPO2_TIMELY*60*1000), K_NO_WAIT);
+			}
+			else if(g_ppg_data == PPG_DATA_BPT)
+			{
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), K_NO_WAIT);
+			}
+		}
+	}
+	else
+	{
+	#ifdef PPG_DEBUG
+		LOGD("ppg hr start false!");
+	#endif
+		ppg_power_flag = 0;
+	}
+}
+
+void StartSensorhub(void)
+{
+	SH_set_to_APP_mode();
+	k_timer_start(&ppg_appmode_timer, K_MSEC(2000), K_NO_WAIT);
 }
 
 void PPGGetSensorHubData(void)
@@ -766,6 +824,9 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_hr_ok_flag = true;
+						#ifdef PPG_DEBUG
+							LOGD("get hr success! hr:%d", g_hr);
+						#endif	
 							PPGStopCheck();
 						}
 					}
@@ -787,6 +848,9 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_spo2_ok_flag = true;
+						#ifdef PPG_DEBUG
+							LOGD("get spo2 success! hr:%d", g_spo2);
+						#endif	
 							PPGStopCheck();
 						}
 					}
@@ -1367,8 +1431,6 @@ void MenuStopPPG(void)
 
 void PPGStartCheck(void)
 {
-	bool ret = false;
-
 #ifdef PPG_DEBUG
 	LOGD("ppg_power_flag:%d", ppg_power_flag);
 #endif
@@ -1382,45 +1444,7 @@ void PPGStartCheck(void)
 	
 	ppg_power_flag = 1;
 
-	ret = StartSensorhub();
-	if(ret)
-	{
-		if(ppg_power_flag == 0)
-		{
-		#ifdef PPG_DEBUG
-			LOGD("ppg hr has been stop!");
-		#endif
-			k_timer_stop(&ppg_get_hr_timer);
-			return;
-		}
-	#ifdef PPG_DEBUG	
-		LOGD("ppg hr start success!");
-	#endif
-		ppg_power_flag = 2;
-
-		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-		{
-			if(g_ppg_data == PPG_DATA_HR)
-			{
-				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_HR_TIMELY*60*1000), K_NO_WAIT);
-			}
-			else if(g_ppg_data == PPG_DATA_SPO2)
-			{
-				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_SPO2_TIMELY*60*1000), K_NO_WAIT);
-			}
-			else if(g_ppg_data == PPG_DATA_BPT)
-			{
-				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), K_NO_WAIT);
-			}
-		}
-	}
-	else
-	{
-	#ifdef PPG_DEBUG
-		LOGD("ppg hr start false!");
-	#endif
-		ppg_power_flag = 0;
-	}
+	StartSensorhub();
 }
 
 void PPGStopCheck(void)
@@ -1432,6 +1456,7 @@ void PPGStopCheck(void)
 	if(ppg_power_flag == 0)
 		return;
 
+	k_timer_stop(&ppg_appmode_timer);
 	k_timer_stop(&ppg_get_hr_timer);
 
 	sensorhub_disable_sensor();
@@ -1442,6 +1467,10 @@ void PPGStopCheck(void)
 	PPG_Disable();
 
 	ppg_power_flag = 0;
+
+#ifdef PPG_DEBUG
+	LOGD("001 g_ppg_trigger:%d,g_ppg_data:%d", g_ppg_trigger,g_ppg_data);
+#endif
 
 	if((g_ppg_trigger&TRIGGER_BY_APP_ONE_KEY) != 0)
 	{
@@ -1496,6 +1525,10 @@ void PPGStopCheck(void)
 		last_health.diastolic = g_bpt.diastolic;
 	}
 	save_cur_health_to_record(&last_health);
+
+#ifdef PPG_DEBUG
+	LOGD("002 g_ppg_trigger:%d,g_ppg_data:%d", g_ppg_trigger,g_ppg_data);
+#endif	
 }
 
 void ppg_auto_stop_timerout(struct k_timer *timer_id)
@@ -1611,6 +1644,12 @@ void PPGMsgProcess(void)
 		}
 
 		ppg_delay_start_flag = false;
+	}
+
+	if(ppg_appmode_init_flag)
+	{
+		StartSensorhubCallBack();
+		ppg_appmode_init_flag = false;
 	}
 }
 

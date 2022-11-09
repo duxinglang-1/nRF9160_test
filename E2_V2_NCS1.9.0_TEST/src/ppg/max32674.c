@@ -1468,10 +1468,6 @@ void PPGStopCheck(void)
 
 	ppg_power_flag = 0;
 
-#ifdef PPG_DEBUG
-	LOGD("001 g_ppg_trigger:%d,g_ppg_data:%d", g_ppg_trigger,g_ppg_data);
-#endif
-
 	if((g_ppg_trigger&TRIGGER_BY_APP_ONE_KEY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_APP_ONE_KEY);
@@ -1525,10 +1521,6 @@ void PPGStopCheck(void)
 		last_health.diastolic = g_bpt.diastolic;
 	}
 	save_cur_health_to_record(&last_health);
-
-#ifdef PPG_DEBUG
-	LOGD("002 g_ppg_trigger:%d,g_ppg_data:%d", g_ppg_trigger,g_ppg_data);
-#endif	
 }
 
 void ppg_auto_stop_timerout(struct k_timer *timer_id)

@@ -196,6 +196,22 @@ void SH_rst_to_BL_mode(void)
 #endif
 }
 
+void SH_set_to_APP_mode(void)
+{
+	//set rst low and mfio high
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 0);
+	gpio_pin_set(gpio_ppg, PPG_MFIO_PIN, 1);
+	wait_ms(10);
+
+	//set rst high
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 1);
+	wait_ms(50);
+	
+	//enter application mode end delay for initialization finishes
+	//Delay 2000ms by timer to prevent the system from crashing due to sleep.
+	//wait_ms(2000);
+}
+
 void SH_rst_to_APP_mode(void)
 {
 	//set rst low and mfio high
@@ -211,7 +227,7 @@ void SH_rst_to_APP_mode(void)
 	wait_ms(2000);
 
 #ifdef MAX_DEBUG	
-	LOGD("set app mode success!");
+	LOGD("rst app mode success!");
 #endif
 }
 

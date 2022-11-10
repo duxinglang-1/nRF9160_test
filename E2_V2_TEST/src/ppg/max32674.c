@@ -693,7 +693,10 @@ void PPGGetSensorHubData(void)
 							ppg_bpt_cal_need_update = false;
 
 							PPGStopCheck();
-							
+
+							g_ppg_trigger |= TRIGGER_BY_HOURLY;
+							g_ppg_alg_mode = ALG_MODE_BPT;
+							g_ppg_data = PPG_DATA_BPT;
 							g_ppg_bpt_status = BPT_STATUS_GET_EST;
 							PPGStartCheck();
 						}
@@ -1465,9 +1468,12 @@ void PPGStopCheck(void)
 		{
 			g_spo2_timing = g_spo2;
 		}
-		else if(g_ppg_data == PPG_DATA_BPT)
+		else if((g_ppg_data == PPG_DATA_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
 		{
 			memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
+		#ifdef PPG_DEBUG
+			LOGD("g_bpt_timing:%d,%d", g_bpt_timing.systolic, g_bpt_timing.diastolic);
+		#endif
 		}
 	}
 
@@ -1483,7 +1489,7 @@ void PPGStopCheck(void)
 		last_health.hr = g_hr;
 		last_health.spo2 = g_spo2;
 	}
-	else if(g_ppg_alg_mode == ALG_MODE_BPT)
+	else if((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
 	{
 		last_health.systolic = g_bpt.systolic;
 		last_health.diastolic = g_bpt.diastolic;

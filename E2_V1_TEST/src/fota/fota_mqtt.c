@@ -169,6 +169,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 		fota_run_flag = false;
 		fota_cur_status = FOTA_STATUS_ERROR;
 		fota_redraw_pro_flag = true;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);
 	}
 }
 
@@ -266,6 +267,7 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 		LOGD("Received error");
 	#endif
 		fota_cur_status = FOTA_STATUS_ERROR;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);
 		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:

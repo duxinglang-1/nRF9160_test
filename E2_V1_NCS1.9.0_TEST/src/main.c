@@ -480,7 +480,7 @@ void test_show_color(void)
 {
 	uint8_t i=0;
 
-	LOGD("test_show_image");
+	LOGD("test_show_color");
 	
 	while(1)
 	{

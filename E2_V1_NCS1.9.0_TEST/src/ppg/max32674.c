@@ -501,7 +501,7 @@ bool PPGSenSorSet(void)
 		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
-		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500)); 	
+		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500));
 	}
 	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{

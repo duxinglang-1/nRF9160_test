@@ -212,7 +212,7 @@ void system_power_off(uint8_t flag)
 		k_sleep(K_MSEC(100));
 		VibrateStop();
 
-		k_timer_start(&sys_pwroff, K_MSEC(5*1000), K_NO_WAIT);
+		k_timer_start(&sys_pwroff, K_MSEC(5*1000), K_MSEC(5*1000));
 	}
 }
 

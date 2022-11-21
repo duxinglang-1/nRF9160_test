@@ -28,6 +28,8 @@ bool dl_target_ppg_identify(const void *const buf)
 int dl_target_ppg_init(size_t file_size, dl_target_callback_t cb)
 {
 	rece_count = 0;
+	g_ppg_algo_ver.flag = 0;
+	SpiFlash_Write((uint8_t*)&g_ppg_algo_ver, PPG_ALGO_VER_ADDR, 16);	
 	return 0;
 }
 

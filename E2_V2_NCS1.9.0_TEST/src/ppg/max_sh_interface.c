@@ -1359,7 +1359,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (strcmp(g_ppg_ver, g_ppg_algo_ver) != 0))
+	if((mcu_type != 1) || ((strcmp(g_ppg_ver, g_ppg_algo_ver.str_ver) != 0)&&(g_ppg_algo_ver.flag == 1)))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);

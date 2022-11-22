@@ -2506,7 +2506,7 @@ static void modem_init(struct k_work *work)
 {
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
 }
 
 static void nb_link(struct k_work *work)
@@ -2516,7 +2516,6 @@ static void nb_link(struct k_work *work)
 	static uint32_t retry_count = 0;
 	static bool frist_flag = false;
 
-#ifndef NB_SIGNAL_TEST
 	if(!frist_flag)
 	{
 		frist_flag = true;
@@ -2529,6 +2528,7 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 	}
 
+#ifndef NB_SIGNAL_TEST
 	if(strlen(g_imsi) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2826,9 +2826,5 @@ void NB_init(struct k_work_q *work_q)
 	dl_work_init(work_q);
 #endif
 
-#ifdef NB_SIGNAL_TEST
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
-#else
-	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
-#endif
+	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(2));
 }

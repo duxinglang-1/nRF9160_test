@@ -928,7 +928,7 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 
  #ifdef NB_SIGNAL_TEST
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
    #ifdef CONFIG_PPG_DATA_UPDATE
@@ -1793,7 +1793,8 @@ void EnterSettingsScreen(void)
 	scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATING;
 
-#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+#ifndef NB_SIGNAL_TEST
+ #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
   	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_img_start);
@@ -1809,6 +1810,7 @@ void EnterSettingsScreen(void)
 	}
   #endif
   	else
+ #endif
 #endif
   	{
   		SetLeftKeyUpHandler(EnterPoweroffScreen);
@@ -1819,7 +1821,8 @@ void EnterSettingsScreen(void)
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 
- #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+ #ifndef NB_SIGNAL_TEST
+  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
@@ -1835,25 +1838,30 @@ void EnterSettingsScreen(void)
 	}
    #endif
 	else
- #endif
+  #endif
+ #endif 
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  	}
- 
- #ifdef CONFIG_SYNC_SUPPORT
+
+ #ifndef NB_SIGNAL_TEST
+  #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
- #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
    #elif defined(CONFIG_STEP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
    #endif
- #elif defined(CONFIG_PPG_SUPPORT)
+  #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
- #elif defined(CONFIG_TEMP_SUPPORT)
+  #elif defined(CONFIG_TEMP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
- #else
+  #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+  #endif
+ #else
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
  #endif
 #endif
 }
@@ -3369,8 +3377,6 @@ void DlUpdateStatus(void)
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
 			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
-			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
 			LCD_ShowUniString(pro_str_x,pro_str_y, (uint16_t*)strbuf);
 		}
 
@@ -3733,8 +3739,6 @@ void FOTAUpdateStatus(void)
 			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
 			mmi_asc_to_ucs2(tmpbuf, pro_buf);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
-			pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
-			pro_str_y = FOTA_PRO_NUM_Y+(FOTA_PRO_NUM_H-h)/2;
 			LCD_ShowUniString(pro_str_x, pro_str_y, tmpbuf);
 		}		
 
@@ -4489,7 +4493,7 @@ void EnterGPSTestScreen(void)
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }

@@ -28,6 +28,8 @@ bool dl_target_ui_identify(const void *const buf)
 int dl_target_ui_init(size_t file_size, dl_target_callback_t cb)
 {
 	rece_count = 0;
+	memset(g_ui_ver, 0, sizeof(g_ui_ver));
+	SpiFlash_Write(g_ui_ver, IMG_VER_ADDR, 16);
 	return 0;
 }
 

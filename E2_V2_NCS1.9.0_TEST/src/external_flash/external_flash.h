@@ -642,15 +642,10 @@
 #define DATA_END_ADDR						0x7fffff
 /****************************************************date end********************************************************/
 
-typedef struct
-{
-	uint8_t str_ver[15];
-	uint8_t flag;
-}flash_data_infor;
 
-extern flash_data_infor g_ui_ver;
-extern flash_data_infor g_font_ver;
-extern flash_data_infor g_ppg_algo_ver;
+extern uint8_t g_ui_ver[16];
+extern uint8_t g_font_ver[16];
+extern uint8_t g_ppg_algo_ver[16];
 
 void SPI_Flash_Init(void);
 uint16_t SpiFlash_ReadID(void);

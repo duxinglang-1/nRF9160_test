@@ -44,9 +44,9 @@ static struct spi_buf tx_buff,rx_buff;
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
-flash_data_infor g_ui_ver = {0};
-flash_data_infor g_font_ver = {0};
-flash_data_infor g_ppg_algo_ver = {0};
+uint8_t g_ui_ver[16] = {0};
+uint8_t g_font_ver[16] = {0};
+uint8_t g_ppg_algo_ver[16] = {0};
 
 void SpiFlash_CS_LOW(void)
 {
@@ -656,7 +656,7 @@ void flash_init(void)
 
 	SPI_Flash_Init();
 
-	SPIFlash_Read_DataVer((uint8_t*)&g_ui_ver, (uint8_t*)&g_font_ver, (uint8_t*)&g_ppg_algo_ver);
+	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
 }
 
 void test_flash_write_and_read(uint8_t *buf, uint32_t len)

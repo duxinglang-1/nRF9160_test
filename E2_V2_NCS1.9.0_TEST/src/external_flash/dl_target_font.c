@@ -28,8 +28,8 @@ bool dl_target_font_identify(const void *const buf)
 int dl_target_font_init(size_t file_size, dl_target_callback_t cb)
 {
 	rece_count = 0;
-	g_font_ver.flag = 0;
-	SpiFlash_Write((uint8_t*)&g_font_ver, FONT_VER_ADDR, 16);	
+	memset(g_font_ver, 0, sizeof(g_font_ver));
+	SpiFlash_Write(g_font_ver, FONT_VER_ADDR, 16);	
 	return 0;
 }
 

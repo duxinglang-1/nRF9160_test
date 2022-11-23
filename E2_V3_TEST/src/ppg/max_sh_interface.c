@@ -156,7 +156,7 @@ static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, 
 
 static void sh_init_gpio(void)
 {
-	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
 
 	if(gpio_ppg == NULL)
 		gpio_ppg = device_get_binding(PPG_PORT);
@@ -166,7 +166,7 @@ static void sh_init_gpio(void)
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
 
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
@@ -228,6 +228,22 @@ void SH_rst_to_BL_mode(void)
 #endif
 }
 
+void SH_set_to_APP_mode(void)
+{
+	//set rst low and mfio high
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 0);
+	gpio_pin_set(gpio_ppg, PPG_MFIO_PIN, 1);
+	wait_ms(10);
+
+	//set rst high
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 1);
+	wait_ms(50);
+	
+	//enter application mode end delay for initialization finishes
+	//Delay 2000ms by timer to prevent the system from crashing due to sleep.
+	//wait_ms(2000);
+}
+
 void SH_rst_to_APP_mode(void)
 {
 	//set rst low and mfio high
@@ -243,7 +259,7 @@ void SH_rst_to_APP_mode(void)
 	wait_ms(2000);
 
 #ifdef MAX_DEBUG	
-	LOGD("set app mode success!");
+	LOGD("rst app mode success!");
 #endif
 }
 
@@ -1343,7 +1359,7 @@ bool sh_init_interface(void)
 	#endif
 	}
 
-	if((mcu_type != 1) || (strcmp(g_ppg_ver, g_ppg_algo_ver) != 0))
+	if((mcu_type != 1) || ((strcmp(g_ppg_ver, g_ppg_algo_ver) != 0)&&(strlen(g_ppg_algo_ver) > 0)))
 	{
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);

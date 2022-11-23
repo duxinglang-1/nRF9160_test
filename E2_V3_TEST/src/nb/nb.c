@@ -2286,11 +2286,10 @@ void GetModemInfor(void)
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_V) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("MODEM version:%s", &tmpbuf);
-	#endif
-
 		strncpy(g_modem, &tmpbuf, MODEM_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("MODEM version:%s", g_modem);
+	#endif	
 	}
 
 #if 0
@@ -2318,26 +2317,26 @@ void GetModemInfor(void)
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMEI) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("imei:%s", tmpbuf);
-	#endif
 		strncpy(g_imei, tmpbuf, IMEI_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("imei:%s", g_imei);
+	#endif	
 	}
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMSI) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("imsi:%s", tmpbuf);
-	#endif
 		strncpy(g_imsi, tmpbuf, IMSI_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("imsi:%s", g_imsi);
+	#endif
 	}
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_ICCID) == 0)
 	{
-	#ifdef NB_DEBUG
-		LOGD("iccid:%s", &tmpbuf[9]);
-	#endif
 		strncpy(g_iccid, &tmpbuf[9], ICCID_MAX_LEN);
+	#ifdef NB_DEBUG
+		LOGD("iccid:%s", g_iccid);
+	#endif
 	}
 }
 
@@ -2429,6 +2428,7 @@ void GetModemNw(void)
 	case LTE_LC_SYSTEM_MODE_LTEM:
 	case LTE_LC_SYSTEM_MODE_LTEM_GPS:
 		g_net_mode = NET_MODE_LTE_M;
+		break;
 		
 	case LTE_LC_SYSTEM_MODE_NBIOT:
 	case LTE_LC_SYSTEM_MODE_NBIOT_GPS:
@@ -2506,7 +2506,7 @@ static void modem_init(struct k_work *work)
 {
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
 }
 
 static void nb_link(struct k_work *work)
@@ -2516,7 +2516,6 @@ static void nb_link(struct k_work *work)
 	static uint32_t retry_count = 0;
 	static bool frist_flag = false;
 
-#ifndef NB_SIGNAL_TEST
 	if(!frist_flag)
 	{
 		frist_flag = true;
@@ -2529,6 +2528,7 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 	}
 
+#ifndef NB_SIGNAL_TEST
 	if(strlen(g_imsi) == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2583,10 +2583,10 @@ static void nb_link(struct k_work *work)
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
 			else if(retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(retry_count <= 8)	//7到8次每0.5小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), K_NO_WAIT);
-			else						//8次以上每0.5小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(1800), K_NO_WAIT);
+			else if(retry_count <= 8)	//7到8次每1小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
+			else						//8次以上每6小时重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 		}
 		else
 		{
@@ -2826,9 +2826,5 @@ void NB_init(struct k_work_q *work_q)
 	dl_work_init(work_q);
 #endif
 
-#ifdef NB_SIGNAL_TEST
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
-#else
-	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(5));
-#endif
+	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(2));
 }

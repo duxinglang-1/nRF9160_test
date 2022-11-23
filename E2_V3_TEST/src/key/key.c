@@ -76,7 +76,6 @@ extern bool ppg_fw_upgrade_flag;
 extern bool ppg_start_flag;
 extern bool ppg_stop_flag;
 extern bool get_modem_info_flag;
-extern uint8_t g_ppg_trigger;
 
 static key_event_msg key_msg = {0};
 

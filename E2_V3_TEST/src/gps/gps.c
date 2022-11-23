@@ -163,71 +163,6 @@ static void gnss_event_handler(int event)
 }
 
 #if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
-#if defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
-K_SEM_DEFINE(lte_ready, 0, 1);
-
-static void lte_lc_event_handler(const struct lte_lc_evt *const evt)
-{
-	switch(evt->type)
-	{
-	case LTE_LC_EVT_NW_REG_STATUS:
-		if((evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME)
-			|| (evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING))
-		{
-		#ifdef GPS_DEBUG
-			LOGD("Connected to LTE network");
-        #endif
-			k_sem_give(&lte_ready);
-		}
-		break;
-
-	default:
-		break;
-	}
-}
-
-void lte_connect(void)
-{
-	int err;
-
-#ifdef GPS_DEBUG
-	LOGD("Connecting to LTE network");
-#endif
-
-	err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_LTE);
-	if(err)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Failed to activate LTE, error: %d", err);
-	#endif
-		return;
-	}
-
-	k_sem_take(&lte_ready, K_FOREVER);
-
-	/* Wait for a while, because with IPv4v6 PDN the IPv6 activation takes a bit more time. */
-	k_sleep(K_SECONDS(1));
-}
-
-void lte_disconnect(void)
-{
-	int err;
-
-	err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_DEACTIVATE_LTE);
-	if(err)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Failed to deactivate LTE, error: %d", err);
-	#endif
-		return;
-	}
-
-#ifdef GPS_DEBUG
-	LOGD("LTE disconnected");
-#endif
-}
-#endif /* CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND */
-
 static void agps_data_get_work_fn(struct k_work *item)
 {
 	ARG_UNUSED(item);
@@ -416,21 +351,7 @@ static int modem_init(void)
 {
     uint8_t tmpbuf[256] = {0};
 
-    if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT+CGMR") == 0)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("MODEM version:%s", &tmpbuf);
-	#endif
-    }
-
-	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%HWVERSION") == 0)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Chip version:%s", &tmpbuf);
-	#endif
-	}
-
-	if(strlen(CONFIG_GNSS_SAMPLE_AT_MAGPIO) > 0)
+ 	if(strlen(CONFIG_GNSS_SAMPLE_AT_MAGPIO) > 0)
 	{
 		if(nrf_modem_at_printf("%s", CONFIG_GNSS_SAMPLE_AT_MAGPIO) != 0)
 		{
@@ -451,67 +372,6 @@ static int modem_init(void)
 			return -1;
 		}
 	}
-
-	if(IS_ENABLED(CONFIG_DATE_TIME))
-	{
-		date_time_register_handler(date_time_evt_handler);
-	}
-
-	if(lte_lc_init() != 0)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Failed to initialize LTE link controller");
-	#endif
-		return -1;
-	}
-
-#if defined(CONFIG_GNSS_SAMPLE_LTE_ON_DEMAND)
-	lte_lc_register_handler(lte_lc_event_handler);
-#elif !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
-	lte_lc_psm_req(true);
-
-#ifdef GPS_DEBUG
-	LOGD("Connecting to LTE network");
-#endif
-
-	if(lte_lc_connect() != 0)
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Failed to connect to LTE network");
-	#endif
-		return -1;
-	}
-
-#ifdef GPS_DEBUG
-	LOGD("Connected to LTE network");
-#endif
-
-	uint8_t str[128] = {0};
-
-	if(nrf_modem_at_cmd(str, sizeof(str), "AT%%XSYSTEMMODE?") == 0)
-	{
-	#ifdef GPS_DEBUG	
-		LOGD("XSYSTEMMODE:%s", str);
-	#endif
-	}
-
-	if(IS_ENABLED(CONFIG_DATE_TIME))
-	{
-	#ifdef GPS_DEBUG
-		LOGD("Waiting for current time");
-	#endif
-
-		/* Wait for an event from the Date Time library. */
-		k_sem_take(&time_sem, K_MINUTES(10));
-
-		if(!date_time_is_valid())
-		{
-		#ifdef GPS_DEBUG
-			LOGD("Failed to get current time, continuing anyway");
-		#endif
-		}
-	}
-#endif
 
 	return 0;
 }

@@ -209,10 +209,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if((strcmp(g_new_font_ver,g_font_ver) > 0) || (strncmp(g_font_ver,"20",2) != 0))
+				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 					dl_font_start();
 			#if defined(CONFIG_PPG_SUPPORT)
-				else if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
 			#endif
 				else
@@ -231,7 +231,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
 			#if defined(CONFIG_PPG_SUPPORT)
-				if(strcmp(g_new_ppg_ver,g_ppg_ver) != 0)
+				if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
 			#endif
 				else
@@ -928,9 +928,31 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 
  #ifdef NB_SIGNAL_TEST
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
- #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+ #else
+  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+   #ifdef CONFIG_PPG_DATA_UPDATE
+   	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+  	{
+  		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+   	}
+	else
+   #endif	
+	{
+		if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+		}
+		else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+		}
+		else
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+		}
+	} 
+  #endif
  #endif 
 #endif
 }
@@ -1099,7 +1121,26 @@ void SettingsUpdateStatus(void)
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_BG_H, 
 											settings_menu.sel_handler[i+4*(settings_menu.index/4)]);
 			
-				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+			 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+			  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+				{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+			  	}
+			  	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+			  	{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+			  	}
+			  #ifdef CONFIG_PPG_DATA_UPDATE
+			  	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+				{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+			  	}
+			  #endif
+			  	else
+			 #endif
+			  	{
+			  		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+			  	}
 
 			 #ifdef CONFIG_SYNC_SUPPORT
 				register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
@@ -1752,28 +1793,75 @@ void EnterSettingsScreen(void)
 	scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATING;
 
-	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#ifndef NB_SIGNAL_TEST
+ #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		SetLeftKeyUpHandler(dl_img_start);
+	}
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		SetLeftKeyUpHandler(dl_font_start);
+	}
+  #ifdef CONFIG_PPG_DATA_UPDATE
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	{
+		SetLeftKeyUpHandler(dl_ppg_start);
+	}
+  #endif
+  	else
+ #endif
+#endif
+  	{
+  		SetLeftKeyUpHandler(EnterPoweroffScreen);
+  	}
+
 	SetRightKeyUpHandler(ExitSettingsScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 
- 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
-  
- #ifdef CONFIG_SYNC_SUPPORT
+ #ifndef NB_SIGNAL_TEST
+  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+	}
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+	}
+   #ifdef CONFIG_PPG_DATA_UPDATE
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	{
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+	}
+   #endif
+	else
+  #endif
+ #endif 
+	{
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+ 	}
+
+ #ifndef NB_SIGNAL_TEST
+  #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
- #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
    #elif defined(CONFIG_STEP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
    #endif
- #elif defined(CONFIG_PPG_SUPPORT)
+  #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
- #elif defined(CONFIG_TEMP_SUPPORT)
+  #elif defined(CONFIG_TEMP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
- #else
+  #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+  #endif
+ #else
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
  #endif
 #endif
 }
@@ -3035,7 +3123,12 @@ void NotifyShow(void)
 	uint16_t x,y,w=0,h=0;
 	uint16_t offset_w=4,offset_h=4;
 
-	LCD_DrawRectangle(notify_msg.x, notify_msg.y, notify_msg.w, notify_msg.h);
+	if(((notify_msg.img == NULL) || (notify_msg.img_count == 0)) 
+		&& ((notify_msg.x != 0)&&(notify_msg.y != 0)&&((notify_msg.w != LCD_WIDTH))&&(notify_msg.h != LCD_HEIGHT)))
+	{
+		LCD_DrawRectangle(notify_msg.x, notify_msg.y, notify_msg.w, notify_msg.h);
+	}
+
 	LCD_Fill(notify_msg.x+1, notify_msg.y+1, notify_msg.w-2, notify_msg.h-2, BLACK);
 
 	switch(notify_msg.align)
@@ -3196,6 +3289,28 @@ void DlShowStatus(void)
 					  DL_NOTIFY_STRING_H, 
 					  "Make sure the battery is more than 80% full or the charger is connected.");
 
+	LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
+	LCD_MeasureString("SOS(Y)", &w, &h);
+	x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
+	y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
+	LCD_ShowString(x,y,"SOS(Y)");
+
+	LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
+	LCD_MeasureString("PWR(N)", &w, &h);
+	x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
+	y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
+	LCD_ShowString(x,y,"PWR(N)");
+
+	SetRightKeyUpHandler(dl_start);
+	SetLeftKeyUpHandler(dl_exit);
+#ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H, dl_start);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_NO_X, DL_NOTIFY_NO_X+DL_NOTIFY_NO_W, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_Y+DL_NOTIFY_NO_H, dl_exit);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_exit);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_prev);
+#endif
+
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 }
@@ -3245,26 +3360,24 @@ void DlUpdateStatus(void)
 			LCD_DrawRectangle(DL_NOTIFY_PRO_X, DL_NOTIFY_PRO_Y, DL_NOTIFY_PRO_W, DL_NOTIFY_PRO_H);
 			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, DL_NOTIFY_PRO_W-1, DL_NOTIFY_PRO_H-1, BLACK);
 
-			sprintf(pro_buf, "%3d%%", g_dl_progress);
+			sprintf(pro_buf, "%d%%", g_dl_progress);
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
-			LCD_MeasureUniString(strbuf, &w, &h);
+			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
 			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
-			LCD_ShowUniString(pro_str_x,pro_str_y, strbuf);
+			LCD_ShowUniString(pro_str_x,pro_str_y, (uint16_t*)strbuf);
 		}
 		else
 		{
 			pro_len = (g_dl_progress*DL_NOTIFY_PRO_W)/100;
 			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, pro_len, DL_NOTIFY_PRO_H-1, WHITE);
 
-			sprintf(pro_buf, "%3d%%", g_dl_progress);
+			sprintf(pro_buf, "%d%%", g_dl_progress);
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
-			LCD_MeasureUniString(strbuf, &w, &h);
-			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
-			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
-			LCD_ShowUniString(pro_str_x,pro_str_y, strbuf);
+			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
+			LCD_ShowUniString(pro_str_x,pro_str_y, (uint16_t*)strbuf);
 		}
 
 		ClearAllKeyHandler();
@@ -3292,6 +3405,29 @@ void DlUpdateStatus(void)
 						  DL_NOTIFY_STRING_H,
 						  strbuf);
 
+		LCD_DrawRectangle(DL_NOTIFY_YES_X, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
+		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
+		LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
+		x = DL_NOTIFY_YES_X+(DL_NOTIFY_YES_W-w)/2;
+		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
+		LCD_ShowUniString(x,y,(uint16_t*)strbuf);
+
+		LCD_DrawRectangle(DL_NOTIFY_NO_X, DL_NOTIFY_NO_Y, DL_NOTIFY_NO_W, DL_NOTIFY_NO_H);
+		mmi_asc_to_ucs2(strbuf, "PWR(N)");
+		LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
+		x = DL_NOTIFY_NO_X+(DL_NOTIFY_NO_W-w)/2;
+		y = DL_NOTIFY_NO_Y+(DL_NOTIFY_NO_H-h)/2;	
+		LCD_ShowUniString(x,y,(uint16_t*)strbuf);
+
+		SetRightKeyUpHandler(dl_reboot_confirm);
+		SetLeftKeyUpHandler(dl_exit);
+	#ifdef CONFIG_TOUCH_SUPPORT
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_YES_X-10, DL_NOTIFY_YES_X+DL_NOTIFY_YES_W+10, DL_NOTIFY_YES_Y-10, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H+10, dl_reboot_confirm);
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, DL_NOTIFY_NO_X-10, DL_NOTIFY_NO_X+DL_NOTIFY_NO_W+10, DL_NOTIFY_NO_Y-10, DL_NOTIFY_NO_Y+DL_NOTIFY_NO_H+10, dl_exit);
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_exit);
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_prev);
+	#endif	
+
 		k_timer_stop(&mainmenu_timer);
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -3317,6 +3453,21 @@ void DlUpdateStatus(void)
 						  DL_NOTIFY_STRING_W,
 						  DL_NOTIFY_STRING_H,
 						  strbuf);
+
+		LCD_DrawRectangle((LCD_WIDTH-DL_NOTIFY_YES_W)/2, DL_NOTIFY_YES_Y, DL_NOTIFY_YES_W, DL_NOTIFY_YES_H);
+		mmi_asc_to_ucs2(strbuf, "SOS(Y)");
+		LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
+		x = (LCD_WIDTH-DL_NOTIFY_YES_W)/2+(DL_NOTIFY_YES_W-w)/2;
+		y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
+		LCD_ShowUniString(x,y,(uint16_t*)strbuf);
+
+		SetLeftKeyUpHandler(dl_exit);
+		SetRightKeyUpHandler(dl_exit);
+	#ifdef CONFIG_TOUCH_SUPPORT
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, (LCD_WIDTH-DL_NOTIFY_YES_W)/2-10, (LCD_WIDTH-DL_NOTIFY_YES_W)/2+DL_NOTIFY_YES_W+10, DL_NOTIFY_YES_Y-10, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H+10, dl_exit);
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_exit);
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_prev);	
+	#endif	
 
 		k_timer_stop(&mainmenu_timer);
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
@@ -3360,47 +3511,46 @@ void PrevDlImgScreen(void)
 
 void ExitDlImgScreen(void)
 {
-#ifdef CONFIG_FONT_DATA_UPDATE
-	dl_font_start();
-#elif defined(CONFIG_PPG_DATA_UPDATE)
-	dl_ppg_start();
-#else
-	EnterPoweroffScreen();
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+		dl_font_start();
+#if defined(CONFIG_PPG_SUPPORT)
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+		dl_ppg_start();
 #endif
+	else
+		EnterPoweroffScreen();
 }
 #endif
 
 #ifdef CONFIG_FONT_DATA_UPDATE
 void PrevDlFontScreen(void)
 {
-#ifdef CONFIG_IMG_DATA_UPDATE
-	dl_img_start();
-#else
-	EnterSettings();
-#endif
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+		dl_img_start();
+	else
+		EnterSettings();
 }
 
 void ExitDlFontScreen(void)
 {
-#ifdef CONFIG_PPG_DATA_UPDATE
-	dl_ppg_start();
-#else
-	EnterPoweroffScreen();
+#if defined(CONFIG_PPG_SUPPORT)
+	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+		dl_ppg_start();
+	else
 #endif
+	EnterPoweroffScreen();
 }
 #endif
 
 #ifdef CONFIG_PPG_DATA_UPDATE
 void PrevDlPpgScreen(void)
 {
-#ifdef CONFIG_FONT_DATA_UPDATE
-	dl_font_start();
-#elif defined(CONFIG_IMG_DATA_UPDATE)
-	dl_img_start();
-#else
-	EnterSettings();
-#endif
-
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+		dl_font_start();
+	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+		dl_img_start();
+	else
+		EnterSettings();
 }
 
 void ExitDlPpgScreen(void)
@@ -3567,7 +3717,7 @@ void FOTAUpdateStatus(void)
 			LCD_DrawRectangle(FOTA_PROGRESS_X, FOTA_PROGRESS_Y, FOTA_PROGRESS_W, FOTA_PROGRESS_H);
 			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, FOTA_PROGRESS_W-1, FOTA_PROGRESS_H-1, BLACK);
 			
-			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			sprintf(pro_buf, "%d%%", g_fota_progress);
 		#ifdef FONTMAKER_UNICODE_FONT
 			LCD_SetFontSize(FONT_SIZE_20);
 		#else	
@@ -3585,9 +3735,10 @@ void FOTAUpdateStatus(void)
 			pro_len = (g_fota_progress*FOTA_PROGRESS_W)/100;
 			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, pro_len, FOTA_PROGRESS_H-1, WHITE);
 			
-			sprintf(pro_buf, "%3d%%", g_fota_progress);
+			sprintf(pro_buf, "%d%%", g_fota_progress);
 			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
 			mmi_asc_to_ucs2(tmpbuf, pro_buf);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
 			LCD_ShowUniString(pro_str_x, pro_str_y, tmpbuf);
 		}		
 
@@ -3679,16 +3830,25 @@ void FOTAScreenProcess(void)
 void ExitFOTAScreen(void)
 {
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-#ifdef CONFIG_IMG_DATA_UPDATE
-	dl_img_start();
-#elif defined(CONFIG_FONT_DATA_UPDATE)
-	dl_font_start();
-#elif defined(CONFIG_PPG_DATA_UPDATE)
-	dl_ppg_start();
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		dl_img_start();
+	}
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		dl_font_start();
+	}
+  #ifdef CONFIG_PPG_DATA_UPDATE
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+	{
+		dl_ppg_start();
+	}
+  #endif
+	else
 #endif
-#else
-	EnterPoweroffScreen();
-#endif
+	{
+		EnterPoweroffScreen();
+	}
 }
 
 void EnterFOTAScreen(void)
@@ -4333,7 +4493,7 @@ void EnterGPSTestScreen(void)
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }

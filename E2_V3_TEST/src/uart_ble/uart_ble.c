@@ -11,7 +11,6 @@
 #include <drivers/gpio.h>
 #include <device.h>
 #include <pm/device.h>
-
 #include "logger.h"
 #include "datetime.h"
 #include "Settings.h"
@@ -30,7 +29,7 @@
 #include "esp8266.h"
 #endif
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 #define BLE_DEV			"UART_2"
 #define BLE_PORT		"GPIO_0"
@@ -84,23 +83,16 @@
 
 bool blue_is_on = true;
 bool uart_send_flag = false;
-bool uart_log_flag = false;
 bool get_ble_info_flag = false;
 #ifdef CONFIG_PM_DEVICE
-bool uart_log_sleep_flag = false;
-bool uart_log_wake_flag = false;
 bool uart_ble_sleep_flag = false;
 bool uart_ble_wake_flag = false;
-bool uart_log_is_waked = true;
 bool uart_ble_is_waked = true;
-
-#define UART_LOG_WAKE_HOLD_TIME_SEC		(10)
 #define UART_BLE_WAKE_HOLD_TIME_SEC		(10)
 #endif
 
 static bool redraw_blt_status_flag = false;
 
-static ENUM_DATA_TYPE uart_data_type=DATA_TYPE_BLE;
 static ENUM_BLE_WORK_MODE ble_work_mode=BLE_WORK_NORMAL;
 
 static uint32_t rece_len=0;
@@ -108,22 +100,21 @@ static uint32_t send_len=0;
 static uint8_t rx_buf[BUF_MAXSIZE]={0};
 static uint8_t tx_buf[BUF_MAXSIZE]={0};
 
-static struct device *uart_ble = NULL;
-static struct device *uart_log = NULL;
-static struct device *gpio_ble = NULL;
-static struct gpio_callback gpio_cb;
-
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
 
-static sys_date_timer_t refresh_time = {0};
+static struct device *uart_ble = NULL;
+static struct device *gpio_ble = NULL;
+static struct gpio_callback gpio_cb;
 
-struct uart_data_t
+static struct uart_data_t
 {
 	void  *fifo_reserved;
 	uint8_t    data[BUF_MAXSIZE];
 	uint16_t   len;
 };
+
+static sys_date_timer_t refresh_time = {0};
 
 bool g_ble_connected = false;
 
@@ -136,8 +127,6 @@ ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 extern bool app_find_device;
 
 #ifdef CONFIG_PM_DEVICE
-static void UartLogSleepInCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(uart_log_sleep_in_timer, UartLogSleepInCallBack, NULL);
 static void UartBleSleepInCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(uart_ble_sleep_in_timer, UartBleSleepInCallBack, NULL);
 #endif
@@ -1565,25 +1554,10 @@ void ble_wakeup_nrf52810(void)
 //xb add 2021-11-01 唤醒52810的串口需要时间，不能直接在接收的中断里延时等待，防止重启
 void uart_send_data_handle(void)
 {
-	switch(uart_data_type)
-	{
-	case DATA_TYPE_BLE:
-		ble_wakeup_nrf52810();
-	#ifdef CONFIG_WIFI
-		switch_to_ble();
-	#endif	
-		break;
-
-	case DATA_TYPE_WIFI:
-	#ifdef CONFIG_WIFI
-		switch_to_ble();
-	#endif	
-		
-		break;
-	}
+	ble_wakeup_nrf52810();
 
 #ifdef CONFIG_PM_DEVICE
-	uart_sleep_out(UART_PERIPHERAL);
+	uart_ble_sleep_out();
 #endif
 
 	uart_fifo_fill(uart_ble, tx_buf, send_len);
@@ -1599,53 +1573,8 @@ void ble_send_date_handle(uint8_t *buf, uint32_t len)
 	send_len = len;
 	memcpy(tx_buf, buf, len);
 	
-	uart_data_type = DATA_TYPE_BLE;
 	uart_send_flag = true;
 }
-
-void log_send_data_handler(void)
-{
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-	
-#ifdef CONFIG_PM_DEVICE
-	uart_sleep_out(UART_MODEM);
-#endif
-
-#ifdef UART_DEBUG
-	LOGD("tx_buf:%s", tx_buf);
-#endif
-
-	uart_fifo_fill(uart_log, tx_buf, strlen(tx_buf));
-	uart_irq_tx_enable(uart_log);
-
-	memset(tx_buf, 0, sizeof(tx_buf));
-}
-
-void log_send_data(void)
-{
-	sprintf(tx_buf, "%04d/%02d/%02d %02d:%02d:%02d->Hello!\r\n", date_time.year,date_time.month,date_time.day,date_time.hour,date_time.minute,date_time.second);
-	uart_log_flag = true;
-}
-
-#ifdef CONFIG_WIFI
-void wifi_send_data_handle(uint8_t *buf, uint32_t len)
-{
-#ifdef UART_DEBUG
-	LOGD("cmd:%s", buf);
-#endif
-
-#ifdef CONFIG_PM_DEVICE
-	uart_sleep_out(UART_PERIPHERAL);
-#endif
-
-	switch_to_wifi();
-
-	uart_fifo_fill(uart_ble, buf, len);
-	uart_irq_tx_enable(uart_ble);
-}
-#endif
 
 static void uart_receive_data(uint8_t data, uint32_t datalen)
 {
@@ -1660,113 +1589,32 @@ static void uart_receive_data(uint8_t data, uint32_t datalen)
 		return;
 #endif
 
-    if(blue_is_on)
-    {
-    	if((rece_len == 0) && (data != PACKET_HEAD))
-			return;
-		
-        rx_buf[rece_len++] = data;
-		if(rece_len == 3)
-			data_len = (256*rx_buf[1]+rx_buf[2]+3);
-		
-        if(rece_len == data_len)	
-        {
-            ble_receive_data_handle(rx_buf, rece_len);
-            
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-			data_len = 0;
-        }
-		else if((rece_len >= data_len)&&(data == PACKET_END))
-        {
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-			data_len = 0;
-        }
-		else if(rece_len >= BUF_MAXSIZE)
-		{
-			memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-			data_len = 0;
-		}		
-    }
-#ifdef CONFIG_WIFI	
-    else if(wifi_is_on)
-    {
-        rx_buf[rece_len++] = data;
-
-        if((rx_buf[rece_len-2] == 0x4F) && (rx_buf[rece_len-1] == 0x4B))	//"OK"
-        {
-        	wifi_receive_data_handle(rx_buf, rece_len);
-			
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-        }
-		else if(rece_len == BUF_MAXSIZE)
-		{
-			memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-		}
-   }
-#endif	
-}
-
-void uart_send_data(void)
-{
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-
-	uart_fifo_fill(uart_ble, "Hello World!", strlen("Hello World!"));
-	uart_irq_tx_enable(uart_ble); 
-}
-
-static void uart0_cb(struct device *x)
-{
-	uint8_t tmpbyte = 0;
-	uint32_t len=0;
-
-	uart_irq_update(x);
-
-	if(uart_irq_rx_ready(x)) 
-	{
-		while(uart_fifo_read(x, &tx_buf[len++], 1));
-		len = 0;
-		log_send_data_handler();
-		//uart_receive_data(tmpbyte, 1);
-	}
+	if((rece_len == 0) && (data != PACKET_HEAD))
+		return;
 	
-	if(uart_irq_tx_ready(x))
+    rx_buf[rece_len++] = data;
+	if(rece_len == 3)
+		data_len = (256*rx_buf[1]+rx_buf[2]+3);
+	
+    if(rece_len == data_len)	
+    {
+        ble_receive_data_handle(rx_buf, rece_len);
+        
+        memset(rx_buf, 0, sizeof(rx_buf));
+        rece_len = 0;
+		data_len = 0;
+    }
+	else if((rece_len >= data_len)&&(data == PACKET_END))
+    {
+        memset(rx_buf, 0, sizeof(rx_buf));
+        rece_len = 0;
+		data_len = 0;
+    }
+	else if(rece_len >= BUF_MAXSIZE)
 	{
-		struct uart_data_t *buf;
-		uint16_t written = 0;
-
-		buf = k_fifo_get(&fifo_uart_tx_data, K_NO_WAIT);
-		/* Nothing in the FIFO, nothing to send */
-		if(!buf)
-		{
-			uart_irq_tx_disable(x);
-			return;
-		}
-
-		while(buf->len > written)
-		{
-			written += uart_fifo_fill(x, &buf->data[written], buf->len - written);
-		}
-
-		while (!uart_irq_tx_complete(x))
-		{
-			/* Wait for the last byte to get
-			* shifted out of the module
-			*/
-		}
-
-		if (k_fifo_is_empty(&fifo_uart_tx_data))
-		{
-			uart_irq_tx_disable(x);
-		}
-
-		k_free(buf);
+		memset(rx_buf, 0, sizeof(rx_buf));
+        rece_len = 0;
+		data_len = 0;
 	}
 }
 
@@ -1818,36 +1666,6 @@ static void uart_cb(struct device *x)
 }
 
 #ifdef CONFIG_PM_DEVICE
-void uart_log_sleep_out(void)
-{
-	if(k_timer_remaining_get(&uart_log_sleep_in_timer) > 0)
-		k_timer_stop(&uart_log_sleep_in_timer);
-	k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
-
-	if(uart_log_is_waked)
-		return;
-
-	pm_device_action_run(uart_log, PM_DEVICE_ACTION_RESUME);
-	uart_log_is_waked = true;
-
-#ifdef UART_DEBUG
-	LOGD("uart log set active success!");
-#endif
-}
-
-void uart_log_sleep_in(void)
-{	
-	if(!uart_log_is_waked)
-		return;
-
-	pm_device_action_run(uart_log, PM_DEVICE_ACTION_SUSPEND);
-	uart_log_is_waked = false;
-
-#ifdef UART_DEBUG
-	LOGD("uart log set low power success!");
-#endif
-}
-
 void uart_ble_sleep_out(void)
 {
 	if(k_timer_remaining_get(&uart_ble_sleep_in_timer) > 0)
@@ -1878,49 +1696,12 @@ void uart_ble_sleep_in(void)
 #endif
 }
 
-void uart_sleep_out(ENUM_UART_TYPE flag)
-{
-	switch(flag)
-	{
-	case UART_MODEM:
-		uart_log_sleep_out();
-		break;
-
-	case UART_PERIPHERAL:
-		uart_ble_sleep_out();
-		break;
-	}
-}
-
-void uart_sleep_in(ENUM_UART_TYPE flag)
-{
-	switch(flag)
-	{
-	case UART_MODEM:
-		uart_log_sleep_in();
-		break;
-
-	case UART_PERIPHERAL:
-		uart_ble_sleep_in();
-		break;
-	}
-}
-
 static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
 	uart_ble_wake_flag = true;
-}
-
-
-static void UartLogSleepInCallBack(struct k_timer *timer_id)
-{
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-	uart_log_sleep_flag = true;
 }
 
 static void UartBleSleepInCallBack(struct k_timer *timer_id)
@@ -1945,22 +1726,6 @@ void ble_init(void)
 	LOGD("begin");
 #endif
 
-#ifdef CONFIG_PM_DEVICE
-	uart_log = device_get_binding("UART_0");
-	if(!uart_log)
-	{
-	#ifdef UART_DEBUG
-		LOGD("Could not get %s device", "UART_0");
-	#endif
-		return;
-	}
-
-	uart_irq_callback_set(uart_log, uart0_cb);
-	uart_irq_rx_enable(uart_log);
-
-	k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
-#endif
-
 	uart_ble = device_get_binding(BLE_DEV);
 	if(!uart_ble)
 	{
@@ -1972,11 +1737,6 @@ void ble_init(void)
 
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
-
-#ifdef CONFIG_WIFI
-	wifi_disable();
-	switch_to_ble();
-#endif
 
 	gpio_ble = device_get_binding(BLE_PORT);
 	if(!gpio_ble)
@@ -2004,24 +1764,6 @@ void ble_init(void)
 void UartMsgProc(void)
 {
 #ifdef CONFIG_PM_DEVICE
-	if(uart_log_wake_flag)
-	{
-	#ifdef UART_DEBUG
-		LOGD("uart_wake!");
-	#endif
-		uart_log_wake_flag = false;
-		uart_log_sleep_out();
-	}
-
-	if(uart_log_sleep_flag)
-	{
-	#ifdef UART_DEBUG
-		LOGD("uart_sleep!");
-	#endif
-		uart_log_sleep_flag = false;
-		uart_log_sleep_in();
-	}
-
 	if(uart_ble_wake_flag)
 	{
 		uart_ble_wake_flag = false;
@@ -2039,11 +1781,6 @@ void UartMsgProc(void)
 	{
 		uart_send_data_handle();
 		uart_send_flag = false;
-	}
-	if(uart_log_flag)
-	{
-		log_send_data_handler();
-		uart_log_flag = false;
 	}
 	if(redraw_blt_status_flag)
 	{

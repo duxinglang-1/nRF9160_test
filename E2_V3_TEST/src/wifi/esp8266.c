@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
-#include <string.h>
 #include <drivers/uart.h>
+#include <string.h>
+#include <pm/device.h>
 #include <dk_buttons_and_leds.h>
 #include "esp8266.h"
 #include "uart_ble.h"
@@ -21,15 +22,33 @@
 
 #define WIFI_DEBUG
 
-#define UART_CTRL_PIN 	1	//拉低切换到WIFI，拉高切换到BLE
-#define WIFI_EN_PIN		11	//WIFI EN，使用WIFI需要拉低此脚
-#define CTRL_GPIO		"GPIO_0"
+#define WIFI_EN_PIN		4	//WIFI EN，使用WIFI需要拉低此脚
+#define WIFI_RST_PIN	3
+
+#define WIFI_DEV		"UART_0"
+#define WIFI_PORT		"GPIO_0"
 
 #define WIFI_RETRY_COUNT_MAX	5
 #define BUF_MAXSIZE	1024
 
-static u8_t retry = 0;
-static struct device *ctrl_switch = NULL;
+static uint8_t retry = 0;
+static uint32_t rece_len=0;
+static uint32_t send_len=0;
+static uint8_t rx_buf[BUF_MAXSIZE]={0};
+static uint8_t tx_buf[BUF_MAXSIZE]={0};
+
+static K_FIFO_DEFINE(fifo_uart_tx_data);
+static K_FIFO_DEFINE(fifo_uart_rx_data);
+
+static struct device *uart_wifi = NULL;
+static struct device *gpio_wifi = NULL;
+
+static struct uart_data_t
+{
+	void  *fifo_reserved;
+	uint8_t    data[BUF_MAXSIZE];
+	uint16_t   len;
+};
 
 bool sos_wait_wifi = false;
 bool fall_wait_wifi = false;
@@ -46,9 +65,18 @@ static bool wifi_wait_timerout_flag = false;
 static bool wifi_off_retry_flag = false;
 static bool wifi_off_ok_flag = false;
 
+#ifdef CONFIG_PM_DEVICE
+bool uart_wifi_sleep_flag = false;
+bool uart_wifi_wake_flag = false;
+bool uart_wifi_is_waked = true;
+#define UART_WIFI_WAKE_HOLD_TIME_SEC		(10)
+
+static void UartWifiSleepInCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_wifi_sleep_in_timer, UartWifiSleepInCallBack, NULL);
+#endif
 static wifi_infor wifi_data = {0};
 
-u8_t wifi_test_info[256] = {0};
+uint8_t wifi_test_info[256] = {0};
 
 static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_scan_timer, APP_Ask_wifi_Data_timerout, NULL);
@@ -79,7 +107,7 @@ void wifi_scanned_wait_timerout(void)
 	{
 		wifi_rescanning_flag = true;
 		memset(&wifi_data, 0, sizeof(wifi_data));
-		k_timer_start(&wifi_scan_timer, K_MSEC(5000), NULL);	
+		k_timer_start(&wifi_scan_timer, K_MSEC(5000), K_NO_WAIT);	
 	}
 	else
 	{
@@ -92,7 +120,7 @@ void wifi_scanned_wait_timerout(void)
 			sos_get_wifi_data_reply(wifi_data);	
 			sos_wait_wifi = false;
 		}
-	#ifdef CONFIG_IMU_SUPPORT
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_FALL_DETECT_SUPPORT)
 		if(fall_wait_wifi)
 		{
 			fall_get_wifi_data_reply(wifi_data);	
@@ -148,7 +176,7 @@ void APP_Ask_wifi_data(void)
 		memset(&wifi_data, 0, sizeof(wifi_data));
 		
 		wifi_turn_on_and_scanning();
-		k_timer_start(&wifi_scan_timer, K_MSEC(5*1000), NULL);	
+		k_timer_start(&wifi_scan_timer, K_MSEC(5*1000), K_NO_WAIT);	
 	}
 }
 
@@ -160,75 +188,11 @@ void APP_Ask_wifi_data(void)
 * Return         : None
 * CALL           : 可被外部调用
 ==============================================================================*/
-void Send_Cmd_To_Esp8285(u8_t *cmd, u32_t WaitTime)
+void Send_Cmd_To_Esp8285(uint8_t *cmd, uint32_t WaitTime)
 {
 	wifi_send_data_handle(cmd, strlen(cmd));//发送命令
 	if(WaitTime > 0)
 		delay_ms(WaitTime);
-}
-
-/*============================================================================
-* Function Name  : switch_to_ble
-* Description    : switch turn on to ble
-* Input          : None
-* Output         : None
-* Return         : None
-* CALL           : 可被外部调用
-==============================================================================*/
-void switch_to_ble(void)
-{
-	if(blue_is_on)
-		return;
-	
-	if(ctrl_switch == NULL)
-	{
-		ctrl_switch = device_get_binding(CTRL_GPIO);
-		if(!ctrl_switch)
-		{
-		#ifdef WIFI_DEBUG
-			LOGD("Could not get %s device", CTRL_GPIO);
-		#endif
-			return;
-		}
-	}
-	
-    gpio_pin_configure(ctrl_switch, UART_CTRL_PIN, GPIO_DIR_OUT);
-    gpio_pin_write(ctrl_switch, UART_CTRL_PIN, 1);
-
-	wifi_is_on = false;
-    blue_is_on = true;
-}
-
-/*============================================================================
-* Function Name  : wifi_turn_ON
-* Description    : wifi on
-* Input          : None
-* Output         : None
-* Return         : None
-* CALL           : 可被外部调用
-==============================================================================*/
-void switch_to_wifi(void)
-{
-	if(wifi_is_on)
-		return;
-	
-	if(ctrl_switch == NULL)
-	{
-		ctrl_switch = device_get_binding(CTRL_GPIO);
-		if(!ctrl_switch)
-		{
-		#ifdef WIFI_DEBUG
-			LOGD("Could not get %s device", CTRL_GPIO);
-		#endif
-			return;
-		}
-	}
-	
-	gpio_pin_configure(ctrl_switch, UART_CTRL_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(ctrl_switch, UART_CTRL_PIN, 0);
-
-	blue_is_on = false;
-	wifi_is_on = true;
 }
 
 /*============================================================================
@@ -265,22 +229,10 @@ bool wifi_is_working(void)
 ==============================================================================*/
 void wifi_enable(void)
 {
-	if(ctrl_switch == NULL)
-	{
-		ctrl_switch = device_get_binding(CTRL_GPIO);
-		if(!ctrl_switch)
-		{
-		#ifdef WIFI_DEBUG
-			LOGD("Could not get %s device", CTRL_GPIO);
-		#endif
-			return;
-		}
-	}
-
-	gpio_pin_configure(ctrl_switch, WIFI_EN_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 1);
+	gpio_pin_configure(gpio_wifi, WIFI_EN_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 1);
 	k_sleep(K_MSEC(100));
-	gpio_pin_write(ctrl_switch, WIFI_EN_PIN, 0);
+	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
 }
 
 /*============================================================================
@@ -324,7 +276,8 @@ void wifi_start_scanning(void)
 ==============================================================================*/
 void wifi_turn_on_and_scanning(void)
 {
-	switch_to_wifi();
+	wifi_is_on = true;
+
 	wifi_enable();
 	wifi_start_scanning();
 }
@@ -337,8 +290,9 @@ void wifi_turn_off_success(void)
 
 	wifi_off_retry_flag = false;
 	k_timer_stop(&wifi_off_retry_timer);
-	
-	switch_to_ble();
+
+	wifi_is_on = false;
+	uart_wifi_sleep_flag = true;
 }
 
 void wifi_turn_off(void)
@@ -347,7 +301,7 @@ void wifi_turn_off(void)
 	LOGD("begin");
 #endif
 	wifi_disable();
-	k_timer_start(&wifi_off_retry_timer, K_MSEC(1000), NULL);
+	k_timer_start(&wifi_off_retry_timer, K_MSEC(1000), K_NO_WAIT);
 }
 
 void wifi_rescanning(void)
@@ -368,13 +322,13 @@ void wifi_rescanning(void)
 * Return         : None
 * CALL           : 可被外部调用
 ==============================================================================*/
-void wifi_receive_data_handle(u8_t *buf, u32_t len)
+void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 {
-	u8_t count = 0;
-	u8_t tmpbuf[256] = {0};
-	u8_t *ptr = buf;
-	u8_t *ptr1 = NULL;
-	u8_t *ptr2 = NULL;
+	uint8_t count = 0;
+	uint8_t tmpbuf[256] = {0};
+	uint8_t *ptr = buf;
+	uint8_t *ptr1 = NULL;
+	uint8_t *ptr2 = NULL;
 	bool flag = false;
 
 #ifdef WIFI_DEBUG	
@@ -389,9 +343,9 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 	
 	while(1)
 	{
-		u8_t len;
-	    u8_t str_rssi[8]={0};
-		u8_t str_mac[32]={0};
+		uint8_t len;
+	    uint8_t str_rssi[8]={0};
+		uint8_t str_mac[32]={0};
 
 		//head
 		ptr1 = strstr(ptr,WIFI_DATA_HEAD);
@@ -452,7 +406,7 @@ void wifi_receive_data_handle(u8_t *buf, u32_t len)
 		
 		if(test_wifi_flag)
 		{
-			u8_t buf[128] = {0};
+			uint8_t buf[128] = {0};
 
 			count++;
 		#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
@@ -521,8 +475,158 @@ void wifi_test_update(void)
 	}
 }
 
+#ifdef CONFIG_PM_DEVICE
+static void UartWifiSleepInCallBack(struct k_timer *timer_id)
+{
+#ifdef WIFI_DEBUG
+	LOGD("begin");
+#endif
+	uart_wifi_sleep_flag = true;
+}
+
+void uart_wifi_sleep_out(void)
+{
+	if(k_timer_remaining_get(&uart_wifi_sleep_in_timer) > 0)
+		k_timer_stop(&uart_wifi_sleep_in_timer);
+	k_timer_start(&uart_wifi_sleep_in_timer, K_SECONDS(UART_WIFI_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
+
+	if(uart_wifi_is_waked)
+		return;
+
+	pm_device_action_run(uart_wifi, PM_DEVICE_ACTION_RESUME);
+	uart_wifi_is_waked = true;
+
+#ifdef WIFI_DEBUG
+	LOGD("uart wifi set active success!");
+#endif
+}
+
+void uart_wifi_sleep_in(void)
+{	
+	if(!uart_wifi_is_waked)
+		return;
+
+	pm_device_action_run(uart_wifi, PM_DEVICE_ACTION_SUSPEND);
+	uart_wifi_is_waked = false;
+
+#ifdef WIFI_DEBUG
+	LOGD("uart wifi set low power success!");
+#endif
+}
+#endif
+
+void wifi_send_data_handle(uint8_t *buf, uint32_t len)
+{
+#ifdef WIFI_DEBUG
+	LOGD("cmd:%s", buf);
+#endif
+
+#ifdef CONFIG_PM_DEVICE
+	uart_wifi_sleep_out();
+#endif
+
+	uart_fifo_fill(uart_wifi, buf, len);
+	uart_irq_tx_enable(uart_wifi);
+}
+
+static void uart_receive_data(uint8_t data, uint32_t datalen)
+{
+	static uint32_t data_len = 0;
+
+#ifdef WIFI_DEBUG
+	//LOGD("rece_len:%d, data_len:%d data:%x", rece_len, data_len, data);
+#endif
+
+#ifdef CONFIG_PM_DEVICE
+	if(!uart_wifi_is_waked)
+		return;
+#endif
+
+	rx_buf[rece_len++] = data;
+
+	if((rx_buf[rece_len-2] == 0x4F) && (rx_buf[rece_len-1] == 0x4B))	//"OK"
+	{
+		wifi_receive_data_handle(rx_buf, rece_len);
+
+		memset(rx_buf, 0, sizeof(rx_buf));
+		rece_len = 0;
+	}
+	else if(rece_len == BUF_MAXSIZE)
+	{
+		memset(rx_buf, 0, sizeof(rx_buf));
+		rece_len = 0;
+	}
+}
+
+static void uart_cb(struct device *x)
+{
+	uint8_t tmpbyte = 0;
+	uint32_t len=0;
+
+	uart_irq_update(x);
+
+	if(uart_irq_rx_ready(x)) 
+	{
+		while((len = uart_fifo_read(x, &tmpbyte, 1)) > 0)
+			uart_receive_data(tmpbyte, 1);
+	}
+	
+	if(uart_irq_tx_ready(x))
+	{
+		struct uart_data_t *buf;
+		uint16_t written = 0;
+
+		buf = k_fifo_get(&fifo_uart_tx_data, K_NO_WAIT);
+		/* Nothing in the FIFO, nothing to send */
+		if(!buf)
+		{
+			uart_irq_tx_disable(x);
+			return;
+		}
+
+		while(buf->len > written)
+		{
+			written += uart_fifo_fill(x, &buf->data[written], buf->len - written);
+		}
+
+		while (!uart_irq_tx_complete(x))
+		{
+			/* Wait for the last byte to get
+			* shifted out of the module
+			*/
+		}
+
+		if (k_fifo_is_empty(&fifo_uart_tx_data))
+		{
+			uart_irq_tx_disable(x);
+		}
+
+		k_free(buf);
+	}
+}
+
 void WifiProcess(void)
 {
+#ifdef CONFIG_PM_DEVICE
+	if(uart_wifi_wake_flag)
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("uart_wake!");
+	#endif
+		uart_wifi_wake_flag = false;
+		uart_wifi_sleep_out();
+	}
+
+	if(uart_wifi_sleep_flag)
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("uart_sleep!");
+	#endif
+		uart_wifi_sleep_flag = false;
+		uart_wifi_sleep_in();
+	}
+#endif
+
 	if(wifi_on_flag)
 	{
 		wifi_on_flag = false;
@@ -573,4 +677,42 @@ void WifiProcess(void)
 		wifi_test_update_flag = false;
 		wifi_test_update();
 	}	
+}
+
+void wifi_init(void)
+{
+#ifdef WIFI_DEBUG
+	LOGD("begin");
+#endif
+
+	uart_wifi = device_get_binding(WIFI_DEV);
+	if(!uart_wifi)
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("Could not get %s device", WIFI_DEV);
+	#endif
+		return;
+	}
+
+	uart_irq_callback_set(uart_wifi, uart_cb);
+	uart_irq_rx_enable(uart_wifi);
+
+	gpio_wifi = device_get_binding(WIFI_PORT);
+	if(!gpio_wifi)
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("Could not get %s port", WIFI_PORT);
+	#endif
+		return;
+	}
+	
+	gpio_pin_configure(gpio_wifi, WIFI_EN_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
+	
+	gpio_pin_configure(gpio_wifi, WIFI_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_wifi, WIFI_RST_PIN, 0);
+
+#ifdef CONFIG_PM_DEVICE
+	k_timer_start(&uart_wifi_sleep_in_timer, K_SECONDS(UART_WIFI_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
+#endif	
 }

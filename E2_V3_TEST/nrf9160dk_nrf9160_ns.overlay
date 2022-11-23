@@ -30,8 +30,8 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <11>;
-	rx-pin = <12>;
+	tx-pin = <12>;
+	rx-pin = <11>;
 	/* delete rts-pin&cts-pin to release the related 2 pins for other uses */
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;	

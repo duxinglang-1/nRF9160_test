@@ -88,7 +88,10 @@ bool gxts04_init(void)
 
 	if(init_i2c() != 0)
 		return;
-	
+
+	gxts04_write_data(CMD_RESET);
+	k_usleep(200);
+
 	gxts04_write_data(CMD_WAKEUP);
 	gxts04_read_data(CMD_READ_ID, &databuf, 2);
 	gxts04_write_data(CMD_SLEEP);
@@ -212,7 +215,7 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	*body_temp = t_body;
 
 #ifdef TEMP_DEBUG
-	LOGD("flag:%d, t_temp80:%d.%d, t_body:%d.%d", flag, (s16_t)(t_temp80*10)/10, (s16_t)(t_temp80*10)%10, (s16_t)(t_body*10)/10, (s16_t)(t_body*10)%10);
+	LOGD("flag:%d, t_temp80:%d.%d, t_body:%d.%d", flag, (int16_t)(t_temp80*10)/10, (int16_t)(t_temp80*10)%10, (int16_t)(t_body*10)/10, (int16_t)(t_body*10)%10);
 #endif
 
 	return flag;

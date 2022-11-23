@@ -256,6 +256,45 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	//等待W25Q64FW完成操作
 	SpiFlash_Wait_Busy();
 }
+
+/*****************************************************************************
+** 描  述：擦除块区
+** 参  数：[in]SecAddr：块区地址
+** 返回值：无
+******************************************************************************/
+void SPIFlash_Erase_Block(uint32_t BlockAddr)
+{
+	int err;
+
+	//发送写使能命令
+	SpiFlash_Write_Enable();
+
+	//扇区擦除命令
+	spi_tx_buf[0] = SPIFlash_BlockErase;		
+	//24位地址
+	spi_tx_buf[1] = (uint8_t)((BlockAddr&0x00ff0000)>>16);
+	spi_tx_buf[2] = (uint8_t)((BlockAddr&0x0000ff00)>>8);
+	spi_tx_buf[3] = (uint8_t)BlockAddr;
+	
+	tx_buff.buf = spi_tx_buf;
+	tx_buff.len = SPIFLASH_CMD_LENGTH;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+
+	SpiFlash_CS_LOW();
+	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	SpiFlash_CS_HIGH();	
+	if(err)
+	{
+	#ifdef FLASH_DEBUG
+		LOGD("SPI error: %d", err);
+	#endif
+	}
+	
+	//等待W25Q64FW完成操作
+	SpiFlash_Wait_Busy();
+}
+
 /*****************************************************************************
 ** 描  述：全片擦除W25Q64FW，全片擦除所需的时间典型值为：40秒
 ** 参  数：无
@@ -363,7 +402,8 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 ******************************************************************************/
 uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 {
-    uint32_t PageByteRemain = 0;
+    uint32_t cur_index,PageByteRemain = 0;
+	uint8_t PageBuf[SPIFlash_PAGE_SIZE] = {0};
 	
 	//计算起始地址所处页面的剩余空间
     PageByteRemain = SPIFlash_PAGE_SIZE - WriteAddr%SPIFlash_PAGE_SIZE;
@@ -375,8 +415,41 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	//分次编程，直到所有的数据编程完成
     while(true)
     {
-        //编程PageByteRemain个字节
+    	uint8_t ret = 0;
+		uint8_t retry = 5;
+
+		//编程PageByteRemain个字节
 		SpiFlash_Write_Page(pBuffer,WriteAddr,PageByteRemain);
+		SpiFlash_Read(PageBuf,WriteAddr,PageByteRemain);
+		if(memcmp(pBuffer,PageBuf,PageByteRemain) != 0)
+		{
+			while(true)
+			{
+				uint8_t i;
+				
+				cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
+				SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+				SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+				memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], pBuffer, PageByteRemain);
+
+				for(i=0;i<(SPIFlash_SECTOR_SIZE/SPIFlash_PAGE_SIZE);i++)
+				{
+					SpiFlash_Write_Page(&SecBuf[i*SPIFlash_PAGE_SIZE],cur_index*SPIFlash_SECTOR_SIZE+i*SPIFlash_PAGE_SIZE,SPIFlash_PAGE_SIZE);
+				}
+
+				SpiFlash_Read(PageBuf,WriteAddr,PageByteRemain);
+				ret = memcmp(pBuffer,PageBuf,PageByteRemain);
+				if(ret == 0 || retry == 0)
+				{
+					break;
+				}
+				else
+				{
+					retry--;
+				}
+			}
+		}
+		
 		//如果编程完成，退出循环
         if(size == PageByteRemain)
         {

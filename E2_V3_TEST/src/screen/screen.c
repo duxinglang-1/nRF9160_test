@@ -1479,7 +1479,11 @@ void SettingsUpdateStatus(void)
 			LCD_Clear(BLACK);
 				
 			mmi_asc_to_ucs2((uint8_t*)ble_str, g_ble_mac_addr);
+		#ifdef CONFIG_WIFI
+			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_mac_addr);
+		#else
 			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
+		#endif
 			mmi_asc_to_ucs2((uint8_t*)imei_str, g_imei);
 			menu_sle_str[0] = ble_str;
 			menu_sle_str[1] = wifi_str;

@@ -44,6 +44,10 @@ static struct spi_buf tx_buff,rx_buff;
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
 
+uint8_t g_ui_ver[16] = {0};
+uint8_t g_font_ver[16] = {0};
+uint8_t g_ppg_algo_ver[16] = {0};
+
 void SpiFlash_CS_LOW(void)
 {
 	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 0);
@@ -252,6 +256,45 @@ void SPIFlash_Erase_Sector(uint32_t SecAddr)
 	//等待W25Q64FW完成操作
 	SpiFlash_Wait_Busy();
 }
+
+/*****************************************************************************
+** 描  述：擦除块区
+** 参  数：[in]SecAddr：块区地址
+** 返回值：无
+******************************************************************************/
+void SPIFlash_Erase_Block(uint32_t BlockAddr)
+{
+	int err;
+
+	//发送写使能命令
+	SpiFlash_Write_Enable();
+
+	//扇区擦除命令
+	spi_tx_buf[0] = SPIFlash_BlockErase;		
+	//24位地址
+	spi_tx_buf[1] = (uint8_t)((BlockAddr&0x00ff0000)>>16);
+	spi_tx_buf[2] = (uint8_t)((BlockAddr&0x0000ff00)>>8);
+	spi_tx_buf[3] = (uint8_t)BlockAddr;
+	
+	tx_buff.buf = spi_tx_buf;
+	tx_buff.len = SPIFLASH_CMD_LENGTH;
+	tx_bufs.buffers = &tx_buff;
+	tx_bufs.count = 1;
+
+	SpiFlash_CS_LOW();
+	err = spi_transceive(spi_flash, &spi_cfg, &tx_bufs, NULL);
+	SpiFlash_CS_HIGH();	
+	if(err)
+	{
+	#ifdef FLASH_DEBUG
+		LOGD("SPI error: %d", err);
+	#endif
+	}
+	
+	//等待W25Q64FW完成操作
+	SpiFlash_Wait_Busy();
+}
+
 /*****************************************************************************
 ** 描  述：全片擦除W25Q64FW，全片擦除所需的时间典型值为：40秒
 ** 参  数：无
@@ -359,7 +402,8 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 ******************************************************************************/
 uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 {
-    uint32_t PageByteRemain = 0;
+    uint32_t cur_index,PageByteRemain = 0;
+	uint8_t PageBuf[SPIFlash_PAGE_SIZE] = {0};
 	
 	//计算起始地址所处页面的剩余空间
     PageByteRemain = SPIFlash_PAGE_SIZE - WriteAddr%SPIFlash_PAGE_SIZE;
@@ -371,8 +415,48 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	//分次编程，直到所有的数据编程完成
     while(true)
     {
-        //编程PageByteRemain个字节
+    	uint8_t ret = 0;
+		uint8_t retry = 5;
+
+		//编程PageByteRemain个字节
 		SpiFlash_Write_Page(pBuffer,WriteAddr,PageByteRemain);
+		SpiFlash_Read(PageBuf,WriteAddr,PageByteRemain);
+		if(memcmp(pBuffer,PageBuf,PageByteRemain) != 0)
+		{
+			LOGD("error w_buf:%x,%x,%x,%x,%x,%x,%x,%x, r_buf:%x,%x,%x,%x,%x,%x,%x,%x", 
+						pBuffer[0],pBuffer[1],pBuffer[2],pBuffer[3],pBuffer[4],pBuffer[5],pBuffer[6],pBuffer[7],
+						PageBuf[0],PageBuf[1],PageBuf[2],PageBuf[3],PageBuf[4],PageBuf[5],PageBuf[6],PageBuf[7]);
+			while(true)
+			{
+				uint8_t i;
+				
+				cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
+				SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+				SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+				memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], pBuffer, PageByteRemain);
+
+				for(i=0;i<(SPIFlash_SECTOR_SIZE/SPIFlash_PAGE_SIZE);i++)
+				{
+					SpiFlash_Write_Page(&SecBuf[i*SPIFlash_PAGE_SIZE],cur_index*SPIFlash_SECTOR_SIZE+i*SPIFlash_PAGE_SIZE,SPIFlash_PAGE_SIZE);
+				}
+
+				SpiFlash_Read(PageBuf,WriteAddr,PageByteRemain);
+				ret = memcmp(pBuffer,PageBuf,PageByteRemain);
+				if(ret == 0 || retry == 0)
+				{
+					LOGD("break, ret:%d, retry:%d", ret, retry);
+					break;
+				}
+				else
+				{
+					LOGD("retry:%d, w_buf:%x,%x,%x,%x,%x,%x,%x,%x, r_buf:%x,%x,%x,%x,%x,%x,%x,%x", retry,
+						pBuffer[0],pBuffer[1],pBuffer[2],pBuffer[3],pBuffer[4],pBuffer[5],pBuffer[6],pBuffer[7],
+						PageBuf[0],PageBuf[1],PageBuf[2],PageBuf[3],PageBuf[4],PageBuf[5],PageBuf[6],PageBuf[7]);
+					retry--;
+				}
+			}
+		}
+		
 		//如果编程完成，退出循环
         if(size == PageByteRemain)
         {
@@ -409,8 +493,8 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 ******************************************************************************/
 uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytesNum)
 {
-	u32_t cur_index,writelen=0,datelen=WriteBytesNum;
-	u32_t PageByteRemain;
+	uint32_t cur_index,writelen=0,datelen=WriteBytesNum;
+	uint32_t PageByteRemain;
 	
 	cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
 	SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
@@ -426,7 +510,7 @@ uint8_t SpiFlash_Write(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t WriteBytes
 		{
 			SpiFlash_Read(SecBuf, (++cur_index)*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
 			SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
-			if(datelen >= SPIFlash_SECTOR_SIZE)
+			if(datelen > SPIFlash_SECTOR_SIZE)
 			{
 				memcpy(SecBuf, &pBuffer[writelen], SPIFlash_SECTOR_SIZE);
 				writelen += SPIFlash_SECTOR_SIZE;
@@ -517,6 +601,28 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
     return true;
 }
 
+/*****************************************************************************
+** 描  述：读取存储在flash当中的几组数据库的版本号
+** 参  数：ui_ver：存放读取到的ui版本的buffer       
+**         font_ver：存放读取到的font版本的buffer       
+**         ppg_ver：存放读取到的ppg版本的buffer       
+** 返回值：
+******************************************************************************/
+void SPIFlash_Read_DataVer(uint8_t *ui_ver, uint8_t *font_ver, uint8_t *ppg_ver)
+{
+	if(ui_ver != NULL)
+		SpiFlash_Read(ui_ver, IMG_VER_ADDR, 16);
+	
+	if(font_ver != NULL)
+		SpiFlash_Read(font_ver, FONT_VER_ADDR, 16);
+	
+#ifdef CONFIG_PPG_SUPPORT
+	if(ppg_ver != NULL)
+		SpiFlash_Read(ppg_ver, PPG_ALGO_VER_ADDR, 16);
+#endif
+
+	LOGD("ui_ver:%s, font_ver:%s, ppg_ver:%s", ui_ver, font_ver, ppg_ver);
+}
 
 /*****************************************************************************
 ** 描  述：配置用于驱动W25Q64FW的管脚,特别注意写的过程中CS要一直有效，不能交给SPI自动控制
@@ -558,6 +664,8 @@ void flash_init(void)
 	gpio_pin_write(gpio_flash, FLASH_CS_PIN, 1);
 
 	SPI_Flash_Init();
+
+	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
 }
 
 void test_flash_write_and_read(u8_t *buf, u32_t len)
@@ -569,8 +677,7 @@ void test_flash_write_and_read(u8_t *buf, u32_t len)
 		
 	LOGD("len:%d", len);
 	
-	addr = IMG_START_ADDR;
-#if 1
+	addr = IMG_DATA_ADDR;
 	cur_index = addr/SPIFlash_SECTOR_SIZE;
 	if(cur_index > last_index)
 	{
@@ -590,7 +697,6 @@ void test_flash_write_and_read(u8_t *buf, u32_t len)
 			}
 		}
 	}
-#endif
 }
 
 void test_flash(void)

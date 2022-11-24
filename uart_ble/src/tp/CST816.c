@@ -21,7 +21,7 @@
 #include "logger.h"
 
 #define TP_DEBUG
-//#define TP_TEST
+#define TP_TEST
 
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -684,14 +684,14 @@ void tp_init(void)
 	switch(tp_chip_id)
 	{
 	case TP_CST816S:
-		//if(tp_fw_ver < 0x02)
+		if(tp_fw_ver < 0x02)
 		{
 			ctp_hynitron_update();
 		}
 		break;
 
 	case TP_CST816T:
-		//if(tp_fw_ver < 0x04)
+		if(tp_fw_ver < 0x04)
 		{
 			ctp_hynitron_update();
 		}
@@ -707,13 +707,18 @@ void test_tp(void)
 	u16_t w,h;
 	u8_t tmpbuf[128] = {0};
 
-	sprintf(tmpbuf, "TP_TEST");
-	
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf, "TP_TEST");
 	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2,20,tmpbuf);
+#else
+	sprintf(tmpbuf, "TP_TEST");
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
-
-	tp_init();
+#endif	
+	//tp_init();
 }
 
 void tp_show_infor(void)

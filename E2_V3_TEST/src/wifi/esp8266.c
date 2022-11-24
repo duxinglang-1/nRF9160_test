@@ -31,6 +31,10 @@
 #define WIFI_RETRY_COUNT_MAX	5
 #define BUF_MAXSIZE	1024
 
+#define WIFI_AUTO_OFF_TIME_SEC	(5)
+
+uint8_t g_wifi_mac_addr[20] = {0};
+
 static uint8_t retry = 0;
 static uint32_t rece_len=0;
 static uint32_t send_len=0;
@@ -74,6 +78,10 @@ bool uart_wifi_is_waked = true;
 static void UartWifiSleepInCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(uart_wifi_sleep_in_timer, UartWifiSleepInCallBack, NULL);
 #endif
+
+static void WifiTurnOffCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_turn_off_timer, WifiTurnOffCallBack, NULL);
+
 static wifi_infor wifi_data = {0};
 
 uint8_t wifi_test_info[256] = {0};
@@ -149,7 +157,7 @@ void wifi_get_scanned_data(void)
 		sos_wait_wifi = false;
 	}
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_FALL_DETECT_SUPPORT)
 	if(fall_wait_wifi)
 	{
 		fall_get_wifi_data_reply(wifi_data);	
@@ -221,7 +229,7 @@ bool wifi_is_working(void)
 
 /*============================================================================
 * Function Name  : wifi_enable
-* Description    : Esp8285_EN使能，低电平有效
+* Description    : Esp8285_EN使能，高电平有效
 * Input          : None
 * Output         : None
 * Return         : None
@@ -232,7 +240,6 @@ void wifi_enable(void)
 	gpio_pin_configure(gpio_wifi, WIFI_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 1);
 	k_sleep(K_MSEC(100));
-	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
 }
 
 /*============================================================================
@@ -278,6 +285,10 @@ void wifi_turn_on_and_scanning(void)
 {
 	wifi_is_on = true;
 
+#ifdef WIFI_DEBUG	
+	LOGD("begin");
+#endif
+
 	wifi_enable();
 	wifi_start_scanning();
 }
@@ -310,7 +321,8 @@ void wifi_rescanning(void)
 		return;
 
 	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
-	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
+	//Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",30);
+	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,14\r\n",30);
 	Send_Cmd_To_Esp8285("AT+CWLAP\r\n", 0);
 }
 
@@ -338,6 +350,21 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 	if(strstr(ptr, WIFI_SLEEP_REPLY))
 	{
 		wifi_off_ok_flag = true;
+		return;
+	}
+
+	if(strstr(ptr, WIFI_GET_MAC_REPLY))
+	{
+		ptr1 = strstr(ptr, WIFI_DATA_BRACKET_BEIN);
+		if(ptr1)
+		{
+			ptr1++;
+			ptr2 = strstr(ptr, WIFI_DATA_BRACKET_END);
+			if(ptr2)
+			{
+				memcpy(g_wifi_mac_addr, ptr1, ptr2-ptr1);
+			}
+		}
 		return;
 	}
 	
@@ -406,7 +433,7 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 		
 		if(test_wifi_flag)
 		{
-			uint8_t buf[128] = {0};
+			uint8_t buf[256] = {0};
 
 			count++;
 		#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
@@ -475,6 +502,16 @@ void wifi_test_update(void)
 	}
 }
 
+void test_wifi(void)
+{
+	MenuStartWifi();
+}
+
+static void WifiTurnOffCallBack(struct k_timer *timer_id)
+{
+	wifi_off_flag = true;
+}
+
 #ifdef CONFIG_PM_DEVICE
 static void UartWifiSleepInCallBack(struct k_timer *timer_id)
 {
@@ -486,9 +523,7 @@ static void UartWifiSleepInCallBack(struct k_timer *timer_id)
 
 void uart_wifi_sleep_out(void)
 {
-	if(k_timer_remaining_get(&uart_wifi_sleep_in_timer) > 0)
-		k_timer_stop(&uart_wifi_sleep_in_timer);
-	k_timer_start(&uart_wifi_sleep_in_timer, K_SECONDS(UART_WIFI_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
+	k_timer_stop(&uart_wifi_sleep_in_timer);
 
 	if(uart_wifi_is_waked)
 		return;
@@ -605,7 +640,7 @@ static void uart_cb(struct device *x)
 	}
 }
 
-void WifiProcess(void)
+void WifiMsgProcess(void)
 {
 #ifdef CONFIG_PM_DEVICE
 	if(uart_wifi_wake_flag)
@@ -679,6 +714,12 @@ void WifiProcess(void)
 	}	
 }
 
+void wifi_get_infor(void)
+{
+	Send_Cmd_To_Esp8285(WIFI_GET_MAC_CMD,30);
+	k_timer_start(&wifi_turn_off_timer, K_SECONDS(WIFI_AUTO_OFF_TIME_SEC), K_NO_WAIT);
+}
+
 void wifi_init(void)
 {
 #ifdef WIFI_DEBUG
@@ -705,12 +746,18 @@ void wifi_init(void)
 	#endif
 		return;
 	}
-	
-	gpio_pin_configure(gpio_wifi, WIFI_EN_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
-	
+
 	gpio_pin_configure(gpio_wifi, WIFI_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_wifi, WIFI_EN_PIN, GPIO_OUTPUT);
+
+	gpio_pin_set(gpio_wifi, WIFI_RST_PIN, 1);
+	k_sleep(K_MSEC(20));
 	gpio_pin_set(gpio_wifi, WIFI_RST_PIN, 0);
+	
+	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
+	k_sleep(K_MSEC(100));
+
+	//wifi_get_infor();
 
 #ifdef CONFIG_PM_DEVICE
 	k_timer_start(&uart_wifi_sleep_in_timer, K_SECONDS(UART_WIFI_WAKE_HOLD_TIME_SEC), K_NO_WAIT);

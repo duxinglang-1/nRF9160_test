@@ -712,6 +712,9 @@ void system_init(void)
 	audio_init();
 #endif
 	ble_init();
+#ifdef CONFIG_WIFI
+	wifi_init();
+#endif
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
 #endif
@@ -788,15 +791,13 @@ int main(void)
 //	test_i2c();
 //	test_bat_soc();
 //	test_notify();
+//	test_wifi();
 
 	while(1)
 	{
 		KeyMsgProcess();
 		TimeMsgProcess();
 		NBMsgProcess();
-	#ifdef CONFIG_WIFI	
-		WifiProcess();
-	#endif
 		GPSMsgProcess();
 		PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
@@ -815,6 +816,9 @@ int main(void)
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
+	#ifdef CONFIG_WIFI
+		WifiMsgProcess();
+	#endif
 		UartMsgProc();
 	#ifdef CONFIG_ANIMATION_SUPPORT
 		AnimaMsgProcess();

@@ -15,8 +15,12 @@
 #define WIFI_DATA_RSSI_END		","
 #define WIFI_DATA_MAC_BEGIN		"\""
 #define WIFI_DATA_MAC_END		"\")"
+#define WIFI_DATA_BRACKET_BEIN	"<"
+#define WIFI_DATA_BRACKET_END	">"
 #define WIFI_SLEEP_CMD			"AT+GSLP=0\r\n"
 #define WIFI_SLEEP_REPLY		"AT+GSLP=0\r\n\r\nOK"
+#define WIFI_GET_MAC_CMD		"AT+CIPAPMAC_DEF?\r\n"
+#define WIFI_GET_MAC_REPLY		"AT+CIPAPMAC_DEF"
 
 typedef struct
 {
@@ -41,6 +45,7 @@ extern bool uart_wifi_wake_flag;
 extern bool uart_wifi_is_waked;
 #endif
 
+extern uint8_t g_wifi_mac_addr[20];
 extern uint8_t wifi_test_info[256];
 
 extern bool wifi_is_working(void);

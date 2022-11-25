@@ -42,6 +42,9 @@
 #ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
 #endif
+#ifdef CONFIG_WIFI_SUPPORT
+#include "esp8266.h"
+#endif/*CONFIG_WIFI_SUPPORT*/
 #include "logger.h"
 
 //#define ANALOG_CLOCK
@@ -712,7 +715,7 @@ void system_init(void)
 	audio_init();
 #endif
 	ble_init();
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 	wifi_init();
 #endif
 #ifdef CONFIG_PPG_SUPPORT	
@@ -816,7 +819,7 @@ int main(void)
 		AlarmMsgProcess();
 		SettingsMsgPorcess();
 		SOSMsgProc();
-	#ifdef CONFIG_WIFI
+	#ifdef CONFIG_WIFI_SUPPORT
 		WifiMsgProcess();
 	#endif
 		UartMsgProc();

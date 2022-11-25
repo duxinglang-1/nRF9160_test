@@ -15,7 +15,7 @@
 #include "settings.h"
 #include "nb.h"
 #include "gps.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 #include "datetime.h"
@@ -30,7 +30,7 @@
 
 extern uint16_t g_last_steps;
 
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 /*****************************************************************************
  * FUNCTION
  *  location_get_wifi_data_reply
@@ -84,7 +84,7 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 
 	if(!flag)
 	{
-	#ifdef CONFIG_WIFI
+	#ifdef CONFIG_WIFI_SUPPORT
 		location_wait_wifi = true;
 		APP_Ask_wifi_data();
 	#endif
@@ -335,7 +335,7 @@ void TimeCheckSendLocationData(void)
 	if(flag)
 	{
 		loc_hour_count = 0;
-	#ifdef CONFIG_WIFI
+	#ifdef CONFIG_WIFI_SUPPORT
 		location_wait_wifi = true;
 		APP_Ask_wifi_data();
 	#else
@@ -366,7 +366,7 @@ void StepCheckSendLocationData(uint16_t steps)
 	{
 		step_count = steps;
 
-	#ifdef CONFIG_WIFI
+	#ifdef CONFIG_WIFI_SUPPORT
 		location_wait_wifi = true;
 		APP_Ask_wifi_data();
 	#else
@@ -489,7 +489,7 @@ void SyncSendHealthData(void)
  *****************************************************************************/
 void SyncSendLocalData(void)
 {
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 	location_wait_wifi = true;
 	APP_Ask_wifi_data();
 #else

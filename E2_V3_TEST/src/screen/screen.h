@@ -560,6 +560,9 @@ extern void ShowBootUpLogo(void);
 extern void EnterIdleScreen(void);
 extern void EnterAlarmScreen(void);
 extern void EnterFindDeviceScreen(void);
+#ifdef CONFIG_WIFI_SUPPORT
+extern void EnterWifiTestScreen(void);
+#endif
 extern void EnterGPSTestScreen(void);
 extern void EnterNBTestScreen(void);
 extern void GoBackHistoryScreen(void);

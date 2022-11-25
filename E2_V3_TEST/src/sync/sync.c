@@ -18,7 +18,7 @@
 #include <nrfx.h>
 #include "lcd.h"
 #include "sync.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 #include "screen.h"

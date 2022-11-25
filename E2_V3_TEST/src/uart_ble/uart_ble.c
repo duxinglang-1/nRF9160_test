@@ -25,7 +25,7 @@
 #endif
 #include "screen.h"
 #include "inner_flash.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 

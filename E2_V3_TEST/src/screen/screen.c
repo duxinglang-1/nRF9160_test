@@ -1587,7 +1587,11 @@ void SettingsUpdateStatus(void)
 			LCD_Clear(BLACK);
 			
 			mmi_asc_to_ucs2((uint8_t*)mcu_str, g_fw_version);
+		#ifdef CONFIG_WIFI_SUPPORT
+			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_ver);
+		#else
 			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
+		#endif
 			mmi_asc_to_ucs2((uint8_t*)ble_str, &g_nrf52810_ver[15]);
 		#ifdef CONFIG_PPG_SUPPORT	
 			mmi_asc_to_ucs2((uint8_t*)ppg_str, g_ppg_ver);

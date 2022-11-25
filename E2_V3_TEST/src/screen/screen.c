@@ -4505,10 +4505,10 @@ void EnterWifiTestScreen(void)
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	SetLeftKeyUpHandler(EnterSettingsScreen);
+	SetLeftKeyUpHandler(EnterSettings);
 	SetRightKeyUpHandler(ExitWifiTestScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
 #endif	
 }
@@ -4616,7 +4616,7 @@ void EnterGPSTestScreen(void)
 #ifdef CONFIG_WIFI_SUPPORT
 	SetLeftKeyUpHandler(EnterWifiTestScreen);
 #else
-	SetLeftKeyUpHandler(EnterSettingsScreen);
+	SetLeftKeyUpHandler(EnterSettings);
 #endif
 	SetRightKeyUpHandler(ExitGPSTestScreen);
 
@@ -4624,7 +4624,7 @@ void EnterGPSTestScreen(void)
   #ifdef CONFIG_WIFI_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterWifiTestScreen);
   #else
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
   #endif
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	

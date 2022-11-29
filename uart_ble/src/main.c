@@ -673,7 +673,7 @@ void system_init(void)
 	flash_init();
 	LCD_Init();
 	
-	ShowBootUpLogo();
+	//ShowBootUpLogo();
 
 	key_init();
 #ifdef CONFIG_AUDIO_SUPPORT	
@@ -692,7 +692,7 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
-	//tp_init();
+	tp_init();
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 }

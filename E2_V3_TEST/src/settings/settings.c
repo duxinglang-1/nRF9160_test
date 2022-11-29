@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.0.0_20221128";
+uint8_t g_fw_version[64] = "V3.0.0_20221129";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -56,8 +56,8 @@ static void SettingsMenuReset1Proc(void);
 static void SettingsMenuReset2Proc(void);
 static void SettingsMenuOTAProc(void);
 static void SettingsMenuBrightness1Proc(void);
-static void	SettingsMenuBrightness2Proc(void);
-static void	SettingsMenuBrightness3Proc(void);
+static void SettingsMenuBrightness2Proc(void);
+static void SettingsMenuBrightness3Proc(void);
 static void SettingsMenuTemp1Proc(void);
 static void SettingsMenuTemp2Proc(void);
 static void SettingsMenuPgUpProc(void);

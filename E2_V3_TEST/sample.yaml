@@ -1,5 +1,5 @@
 sample:
-  name: e2_v2_project
+  name: e2_v3_project
 tests:
   samples.nrf9160.E2_project.nRF9160:
     build_only: true

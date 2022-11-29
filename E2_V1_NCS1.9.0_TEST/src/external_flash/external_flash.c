@@ -669,7 +669,6 @@ void test_flash_write_and_read(uint8_t *buf, uint32_t len)
 	LOGD("len:%d", len);
 	
 	addr = IMG_DATA_ADDR;
-#if 1
 	cur_index = addr/SPIFlash_SECTOR_SIZE;
 	if(cur_index > last_index)
 	{
@@ -689,7 +688,6 @@ void test_flash_write_and_read(uint8_t *buf, uint32_t len)
 			}
 		}
 	}
-#endif
 }
 
 void test_flash(void)

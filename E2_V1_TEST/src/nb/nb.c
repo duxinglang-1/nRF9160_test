@@ -1068,8 +1068,8 @@ void NBRedrawSignal(void)
 				g_nw_registered = false;
 				nb_connected = false;
 				
-				k_timer_stop(&nb_reconnect_timer);
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
+				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), NULL);
 			}
 		}
 	}

@@ -402,7 +402,8 @@ uint8_t SpiFlash_Write_Page(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 ******************************************************************************/
 uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 {
-    uint32_t PageByteRemain = 0;
+    uint32_t cur_index,PageByteRemain = 0;
+	uint8_t PageBuf[SPIFlash_PAGE_SIZE] = {0};
 	
 	//计算起始地址所处页面的剩余空间
     PageByteRemain = SPIFlash_PAGE_SIZE - WriteAddr%SPIFlash_PAGE_SIZE;
@@ -414,8 +415,41 @@ uint8_t SpiFlash_Write_Buf(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t size)
 	//分次编程，直到所有的数据编程完成
     while(true)
     {
-        //编程PageByteRemain个字节
+    	uint8_t ret = 0;
+		uint8_t retry = 5;
+
+		//编程PageByteRemain个字节
 		SpiFlash_Write_Page(pBuffer,WriteAddr,PageByteRemain);
+		SpiFlash_Read(PageBuf,WriteAddr,PageByteRemain);
+		if(memcmp(pBuffer,PageBuf,PageByteRemain) != 0)
+		{
+			while(true)
+			{
+				uint8_t i;
+				
+				cur_index = WriteAddr/SPIFlash_SECTOR_SIZE;
+				SpiFlash_Read(SecBuf, cur_index*SPIFlash_SECTOR_SIZE, SPIFlash_SECTOR_SIZE);
+				SPIFlash_Erase_Sector(cur_index*SPIFlash_SECTOR_SIZE);
+				memcpy(&SecBuf[WriteAddr%SPIFlash_SECTOR_SIZE], pBuffer, PageByteRemain);
+
+				for(i=0;i<(SPIFlash_SECTOR_SIZE/SPIFlash_PAGE_SIZE);i++)
+				{
+					SpiFlash_Write_Page(&SecBuf[i*SPIFlash_PAGE_SIZE],cur_index*SPIFlash_SECTOR_SIZE+i*SPIFlash_PAGE_SIZE,SPIFlash_PAGE_SIZE);
+				}
+
+				SpiFlash_Read(PageBuf,WriteAddr,PageByteRemain);
+				ret = memcmp(pBuffer,PageBuf,PageByteRemain);
+				if(ret == 0 || retry == 0)
+				{
+					break;
+				}
+				else
+				{
+					retry--;
+				}
+			}
+		}
+		
 		//如果编程完成，退出循环
         if(size == PageByteRemain)
         {

@@ -691,7 +691,7 @@ void tp_init(void)
 		break;
 
 	case TP_CST816T:
-		if(tp_fw_ver < 0x04)
+		if(tp_fw_ver < 0x05)
 		{
 			ctp_hynitron_update();
 		}

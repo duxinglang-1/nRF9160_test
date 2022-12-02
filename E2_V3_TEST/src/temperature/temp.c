@@ -93,7 +93,10 @@ void SetCurDayTempRecData(float data)
 		)
 	{
 		//直接覆盖写在第一条
-		memcpy(p_temp, &tmp_temp, sizeof(temp_rec2_data));
+		p_temp->year = date_time.year;
+		p_temp->month = date_time.month;
+		p_temp->day = date_time.day;
+		p_temp->deca_temp[date_time.hour] = deca_temp;
 		SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	}
 	else if((date_time.year < p_temp->year)
@@ -122,7 +125,11 @@ void SetCurDayTempRecData(float data)
 				||((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day == date_time.day))
 				)
 			{
-				memcpy(p_temp, &tmp_temp, sizeof(temp_rec2_data));
+				//直接覆盖写
+				p_temp->year = date_time.year;
+				p_temp->month = date_time.month;
+				p_temp->day = date_time.day;
+				p_temp->deca_temp[date_time.hour] = deca_temp;
 				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 				return;
 			}

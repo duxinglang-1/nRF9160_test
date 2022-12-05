@@ -377,7 +377,7 @@ void SetCurDayHrRecData(uint8_t hr)
 		//直接覆盖写在第一条
 		p_hr->year = date_time.year;
 		p_hr->month = date_time.month;
-		p_hr->day == date_time.day;
+		p_hr->day = date_time.day;
 		p_hr->hr[date_time.hour] = hr;
 		SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 	}
@@ -410,7 +410,7 @@ void SetCurDayHrRecData(uint8_t hr)
 				//直接覆盖写
 				p_hr->year = date_time.year;
 				p_hr->month = date_time.month;
-				p_hr->day == date_time.day;
+				p_hr->day = date_time.day;
 				p_hr->hr[date_time.hour] = hr;
 				SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 				return;

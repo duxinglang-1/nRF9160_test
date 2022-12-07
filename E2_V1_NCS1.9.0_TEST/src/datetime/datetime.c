@@ -531,7 +531,7 @@ void UpdateSystemTime(void)
 		}
 	#endif
 
-		pmu_battery_update();
+		pmu_alert_flag = true;
 	}
 
 	if((date_time_changed&0x04) != 0)

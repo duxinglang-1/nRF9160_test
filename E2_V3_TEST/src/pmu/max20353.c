@@ -483,6 +483,9 @@ void pmu_battery_update(void)
 {
 	uint8_t tmpbuf[8] = {0};
 
+	if(!pmu_check_ok)
+		return;
+
 	g_bat_soc = MAX20353_CalculateSOC();
 #ifdef PMU_DEBUG
 	LOGD("SOC:%d", g_bat_soc);

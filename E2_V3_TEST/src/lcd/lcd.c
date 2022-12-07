@@ -3445,7 +3445,6 @@ void LCDMsgProcess(void)
 			return;
 		
 		LCD_SleepOut();
-		pmu_battery_update();
 		if(IsInIdleScreen())
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;

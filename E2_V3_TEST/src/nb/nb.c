@@ -1912,7 +1912,9 @@ static int configure_low_power(void)
 
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CPSMS?") == 0)
 	{
+	#ifdef NB_DEBUG
 		LOGD("PSM:%s", buf);
+	#endif
 	}
 
 	return 0;

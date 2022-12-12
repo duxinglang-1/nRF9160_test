@@ -50,6 +50,8 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 
 void SOSStatusUpdate(void)
 {
+	k_timer_stop(&sos_timer);
+
 	if(screen_id == SCREEN_ID_SOS)
 	{
 		switch(sos_state)
@@ -213,6 +215,9 @@ void SOSRecLocatNotify(uint8_t *strmsg)
 	uint8_t strtmp[512] = {0};
 	notify_infor infor = {0};
 
+	sos_state = SOS_STATUS_RECEIVED;
+	SOSStatusUpdate();
+	
 	if(IsInIdleScreen())
 	{
 		mmi_chset_convert(

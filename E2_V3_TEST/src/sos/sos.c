@@ -52,41 +52,50 @@ void SOSStatusUpdate(void)
 {
 	k_timer_stop(&sos_timer);
 
-	if(screen_id == SCREEN_ID_SOS)
+	switch(sos_state)
 	{
-		switch(sos_state)
-		{
-		case SOS_STATUS_IDLE:
-			break;
-			
-		case SOS_STATUS_SENDING:
-			sos_state = SOS_STATUS_SENT;
-			break;
+	case SOS_STATUS_IDLE:
+		break;
 		
-		case SOS_STATUS_SENT:
+	case SOS_STATUS_SENDING:
+		sos_state = SOS_STATUS_SENT;
+		break;
+	
+	case SOS_STATUS_SENT:
+		if(screen_id == SCREEN_ID_SOS)
+		{
 		#ifdef CONFIG_ANIMATION_SUPPORT	
 			AnimaStopShow();
-		#endif	
-			sos_state = SOS_STATUS_RECEIVED;
-			break;
-		
-		case SOS_STATUS_RECEIVED:
-			sos_state = SOS_STATUS_IDLE;
-			EnterIdleScreen();
-			break;
-		
-		case SOS_STATUS_CANCEL:
-			sos_state = SOS_STATUS_IDLE;
-			EnterIdleScreen();
-			break;
+		#endif			
 		}
-		
+		sos_state = SOS_STATUS_RECEIVED;
+		break;
+	
+	case SOS_STATUS_RECEIVED:
+		sos_state = SOS_STATUS_IDLE;
+		if(screen_id == SCREEN_ID_SOS)
+		{
+			EnterIdleScreen();
+		}
+		break;
+	
+	case SOS_STATUS_CANCEL:
+		sos_state = SOS_STATUS_IDLE;
+		if(screen_id == SCREEN_ID_SOS)
+		{
+			EnterIdleScreen();
+		}
+		break;
+	}
+	
+	if(screen_id == SCREEN_ID_SOS)
+	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SOS;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-
-		if(sos_state != SOS_STATUS_IDLE)
-			k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), K_NO_WAIT);
 	}
+	
+	if(sos_state != SOS_STATUS_IDLE)
+		k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), K_NO_WAIT);
 }
 
 void SOSStartGPSCallBack(struct k_timer *timer_id)

@@ -1590,6 +1590,8 @@ void PPGStopCheck(void)
 
 	k_timer_stop(&ppg_appmode_timer);
 	k_timer_stop(&ppg_get_hr_timer);
+	k_timer_stop(&ppg_delay_start_timer);
+	k_timer_stop(&ppg_stop_timer);
 
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();

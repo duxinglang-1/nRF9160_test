@@ -46,6 +46,7 @@ static bool ppg_stop_flag = false;
 static bool ppg_get_data_flag = false;
 static bool ppg_redraw_data_flag = false;
 static bool ppg_get_cal_flag = false;
+static bool ppg_stop_cal_flag = false;
 static bool menu_start_hr = false;
 static bool menu_start_spo2 = false;
 static bool menu_start_bpt = false;
@@ -74,6 +75,8 @@ static void ppg_get_data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 static void ppg_delay_start_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_delay_start_timer, ppg_delay_start_timerout, NULL);
+static void ppg_bpt_est_start_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(ppg_bpt_est_start_timer, ppg_bpt_est_start_timerout, NULL);
 
 void ClearAllBptRecData(void)
 {
@@ -715,6 +718,25 @@ void StartSensorhub(void)
 	k_timer_start(&ppg_appmode_timer, K_MSEC(2000), K_NO_WAIT);
 }
 
+static void ppg_bpt_est_start_timerout(struct k_timer *timer_id)
+{
+#ifdef PPG_DEBUG	
+	LOGD("begin");
+#endif
+
+	g_ppg_trigger |= TRIGGER_BY_HOURLY;
+	g_ppg_alg_mode = ALG_MODE_BPT;
+	g_ppg_data = PPG_DATA_BPT;
+	g_ppg_bpt_status = BPT_STATUS_GET_EST;
+
+	ppg_start_flag = true;
+}
+
+void PPGRestartToBpt(void)
+{
+	k_timer_start(&ppg_bpt_est_start_timer, K_MSEC(500), K_NO_WAIT);
+}
+
 void PPGGetSensorHubData(void)
 {
 	int ret = 0;
@@ -883,13 +905,8 @@ void PPGGetSensorHubData(void)
 							sh_get_bpt_cal_data();
 							ppg_bpt_cal_need_update = false;
 
-							PPGStopCheck();
-
-							g_ppg_trigger |= TRIGGER_BY_HOURLY;
-							g_ppg_alg_mode = ALG_MODE_BPT;
-							g_ppg_data = PPG_DATA_BPT;
-							g_ppg_bpt_status = BPT_STATUS_GET_EST;
-							PPGStartCheck();
+							ppg_stop_cal_flag = true;
+							PPGRestartToBpt();
 						}
 						
 						return;
@@ -907,7 +924,7 @@ void PPGGetSensorHubData(void)
 						#endif
 
 							get_bpt_ok_flag = true;
-							PPGStopCheck();
+							ppg_stop_flag = true;
 						}
 					}
 				}
@@ -956,10 +973,10 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_hr_ok_flag = true;
+							ppg_stop_flag = true;
 						#ifdef PPG_DEBUG
 							LOGD("get hr success! hr:%d", g_hr);
-						#endif	
-							PPGStopCheck();
+						#endif
 						}
 					}
 					else
@@ -980,10 +997,10 @@ void PPGGetSensorHubData(void)
 						{
 							count = 0;
 							get_spo2_ok_flag = true;
+							ppg_stop_flag = true;
 						#ifdef PPG_DEBUG
 							LOGD("get spo2 success! hr:%d", g_spo2);
-						#endif	
-							PPGStopCheck();
+						#endif
 						}
 					}
 					else
@@ -1585,13 +1602,14 @@ void PPGStopCheck(void)
 #ifdef PPG_DEBUG
 	LOGD("ppg_power_flag:%d", ppg_power_flag);
 #endif
-	if(ppg_power_flag == 0)
-		return;
-
 	k_timer_stop(&ppg_appmode_timer);
+	k_timer_stop(&ppg_stop_timer);
 	k_timer_stop(&ppg_get_hr_timer);
 	k_timer_stop(&ppg_delay_start_timer);
-	k_timer_stop(&ppg_stop_timer);
+	k_timer_stop(&ppg_bpt_est_start_timer);
+
+	if(ppg_power_flag == 0)
+		return;
 
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();
@@ -1657,7 +1675,21 @@ void PPGStopCheck(void)
 	save_cur_health_to_record(&last_health);
 }
 
-void ppg_auto_stop_timerout(struct k_timer *timer_id)
+void PPGStopBptCal(void)
+{
+	k_timer_stop(&ppg_get_hr_timer);
+	
+	sensorhub_disable_sensor();
+	sensorhub_disable_algo();
+
+	PPG_i2c_off();
+	PPG_Power_Off();
+	PPG_Disable();
+
+	ppg_power_flag = 0;
+}
+
+static void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
 	if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 		ppg_stop_flag = true;
@@ -1733,6 +1765,15 @@ void PPGMsgProcess(void)
 	#endif
 		PPGStopCheck();
 		ppg_stop_flag = false;
+	}
+
+	if(ppg_stop_cal_flag)
+	{
+	#ifdef PPG_DEBUG	
+		LOGD("bpt cal stop");
+	#endif
+		PPGStopBptCal();
+		ppg_stop_cal_flag = false;
 	}
 	
 	if(ppg_get_cal_flag)

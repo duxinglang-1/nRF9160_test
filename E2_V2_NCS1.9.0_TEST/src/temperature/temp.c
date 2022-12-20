@@ -73,55 +73,99 @@ void ClearAllTempRecData(void)
 void SetCurDayTempRecData(float data)
 {
 	uint8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
-	temp_rec2_data *p_temp = NULL;
 	uint16_t deca_temp = data*10;
+	temp_rec2_data *p_temp,tmp_temp = {0};
 
 	if((deca_temp > TEMP_MAX) || (deca_temp < TEMP_MIN))
 		deca_temp = 0;
+
+	tmp_temp.year = date_time.year;
+	tmp_temp.month = date_time.month;
+	tmp_temp.day = date_time.day;
+	tmp_temp.deca_temp[date_time.hour] = deca_temp;
 	
 	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	p_temp = tmpbuf+6*sizeof(temp_rec2_data);
-	if(((date_time.year > p_temp->year)&&(p_temp->year != 0xffff && p_temp->year != 0x0000))
-		||((date_time.year == p_temp->year)&&(date_time.month > p_temp->month)&&(p_temp->month != 0xff && p_temp->month != 0x00))
-		||((date_time.month == p_temp->month)&&(date_time.day > p_temp->day)&&(p_temp->day != 0xff && p_temp->day != 0x00)))
-	{//记录存满。整体前挪并把最新的放在最后
-		temp_rec2_data tmp_temp = {0};
-
-	#ifdef TEMP_DEBUG
-		LOGD("rec is full! temp:%0.1f", data);
-	#endif
-		tmp_temp.year = date_time.year;
-		tmp_temp.month = date_time.month;
-		tmp_temp.day = date_time.day;
-		tmp_temp.deca_temp[date_time.hour] = deca_temp;
-		memcpy(&tmpbuf[0], &tmpbuf[sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
-		memcpy(&tmpbuf[6*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
+	p_temp = tmpbuf;
+	if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+		||(p_temp->month == 0xff || p_temp->month == 0x00)
+		||(p_temp->day == 0xff || p_temp->day == 0x00)
+		||((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day == date_time.day))
+		)
+	{
+		//直接覆盖写在第一条
+		p_temp->year = date_time.year;
+		p_temp->month = date_time.month;
+		p_temp->day = date_time.day;
+		p_temp->deca_temp[date_time.hour] = deca_temp;
 		SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	}
+	else if((date_time.year < p_temp->year)
+			||((date_time.year == p_temp->year)&&(date_time.month < p_temp->month))
+			||((date_time.year == p_temp->year)&&(date_time.month == p_temp->month)&&(date_time.day < p_temp->day))
+			)
+	{
+		uint8_t databuf[TEMP_REC2_DATA_SIZE] = {0};
+		
+		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
+		memcpy(&databuf[0*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
+		memcpy(&databuf[1*sizeof(temp_rec2_data)], &tmpbuf[0*sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
+		SpiFlash_Write(databuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	}
 	else
 	{
-	#ifdef TEMP_DEBUG
-		LOGD("rec not full! temp:%0.1f", data);
-	#endif
+		uint8_t databuf[TEMP_REC2_DATA_SIZE] = {0};
+		
+		//寻找合适的插入位置
 		for(i=0;i<7;i++)
 		{
-			p_temp = tmpbuf + i*sizeof(temp_rec2_data);
-			if((p_temp->year == 0xffff || p_temp->year == 0x0000)||(p_temp->month == 0xff || p_temp->month == 0x00)||(p_temp->day == 0xff || p_temp->day == 0x00))
+			p_temp = tmpbuf+i*sizeof(temp_rec2_data);
+			if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+				||(p_temp->month == 0xff || p_temp->month == 0x00)
+				||(p_temp->day == 0xff || p_temp->day == 0x00)
+				||((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day == date_time.day))
+				)
 			{
+				//直接覆盖写
 				p_temp->year = date_time.year;
 				p_temp->month = date_time.month;
 				p_temp->day = date_time.day;
 				p_temp->deca_temp[date_time.hour] = deca_temp;
 				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-				break;
+				return;
 			}
-			
-			if((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day == date_time.day))
+			else if((date_time.year > p_temp->year)
+				||((date_time.year == p_temp->year)&&(date_time.month > p_temp->month))
+				||((date_time.year == p_temp->year)&&(date_time.month == p_temp->month)&&(date_time.day > p_temp->day))
+				)
 			{
-				p_temp->deca_temp[date_time.hour] = deca_temp;
-				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-				break;
+				if(i < 6)
+				{
+					p_temp++;
+					if((date_time.year < p_temp->year)
+						||((date_time.year == p_temp->year)&&(date_time.month < p_temp->month))
+						||((date_time.year == p_temp->year)&&(date_time.month == p_temp->month)&&(date_time.day < p_temp->day))
+						)
+					{
+						break;
+					}
+				}
 			}
+		}
+
+		if(i<6)
+		{
+			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
+			memcpy(&databuf[0*sizeof(temp_rec2_data)], &tmpbuf[0*sizeof(temp_rec2_data)], (i+1)*sizeof(temp_rec2_data));
+			memcpy(&databuf[(i+1)*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
+			memcpy(&databuf[(i+2)*sizeof(temp_rec2_data)], &tmpbuf[(i+1)*sizeof(temp_rec2_data)], (7-(i+2))*sizeof(temp_rec2_data));
+			SpiFlash_Write(databuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+		}
+		else
+		{
+			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
+			memcpy(&databuf[0*sizeof(temp_rec2_data)], &tmpbuf[1*sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
+			memcpy(&databuf[6*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
+			SpiFlash_Write(databuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 		}
 	}
 }

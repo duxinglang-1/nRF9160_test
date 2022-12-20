@@ -280,6 +280,12 @@ config TOUCH_SUPPORT
 	default n
 endmenu #TOUCH
 
+menu "WIFI"
+config WIFI_SUPPORT
+	bool "wifi support"
+	default n
+endmenu #WIFI
+
 menu "PPG"
 config PPG_SUPPORT
 	bool "ppg support"

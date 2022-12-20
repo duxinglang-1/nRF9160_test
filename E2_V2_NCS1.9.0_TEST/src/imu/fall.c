@@ -25,7 +25,7 @@
 #include "gps.h"
 #include "screen.h"
 #include "fall.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 #include "logger.h"
@@ -102,7 +102,7 @@ void FallStartGPSCallBack(struct k_timer *timer_id)
 	fall_start_gps_flag = true;
 }
 
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 void fall_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	uint8_t reply[256] = {0};
@@ -250,7 +250,7 @@ void FallAlarmSend(void)
 {
 	uint8_t delay;
 	
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 	fall_wait_wifi = true;
 	APP_Ask_wifi_data();
 #endif

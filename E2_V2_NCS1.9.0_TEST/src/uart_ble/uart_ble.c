@@ -11,7 +11,6 @@
 #include <drivers/gpio.h>
 #include <device.h>
 #include <pm/device.h>
-
 #include "logger.h"
 #include "datetime.h"
 #include "Settings.h"
@@ -26,7 +25,7 @@
 #endif
 #include "screen.h"
 #include "inner_flash.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 
@@ -1568,13 +1567,13 @@ void uart_send_data_handle(void)
 	{
 	case DATA_TYPE_BLE:
 		ble_wakeup_nrf52810();
-	#ifdef CONFIG_WIFI
+	#ifdef CONFIG_WIFI_SUPPORT
 		switch_to_ble();
 	#endif	
 		break;
 
 	case DATA_TYPE_WIFI:
-	#ifdef CONFIG_WIFI
+	#ifdef CONFIG_WIFI_SUPPORT
 		switch_to_ble();
 	#endif	
 		
@@ -1602,7 +1601,7 @@ void ble_send_date_handle(uint8_t *buf, uint32_t len)
 	uart_send_flag = true;
 }
 
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 void wifi_send_data_handle(uint8_t *buf, uint32_t len)
 {
 #ifdef UART_DEBUG
@@ -1663,7 +1662,7 @@ static void uart_receive_data(uint8_t data, uint32_t datalen)
 			data_len = 0;
 		}		
     }
-#ifdef CONFIG_WIFI	
+#ifdef CONFIG_WIFI_SUPPORT	
     else if(wifi_is_on)
     {
         rx_buf[rece_len++] = data;
@@ -1887,9 +1886,8 @@ void ble_init(void)
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
 
-#ifdef CONFIG_WIFI
-	wifi_disable();
-	switch_to_ble();
+#ifdef CONFIG_WIFI_SUPPORT
+	wifi_init();
 #endif
 
 	gpio_ble = device_get_binding(BLE_PORT);

@@ -24,7 +24,7 @@
 #include "settings.h"
 #include "gps.h"
 #include "screen.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 #include "codetrans.h"
@@ -50,41 +50,52 @@ void SOSTimerOutCallBack(struct k_timer *timer_id)
 
 void SOSStatusUpdate(void)
 {
-	if(screen_id == SCREEN_ID_SOS)
+	k_timer_stop(&sos_timer);
+
+	switch(sos_state)
 	{
-		switch(sos_state)
-		{
-		case SOS_STATUS_IDLE:
-			break;
-			
-		case SOS_STATUS_SENDING:
-			sos_state = SOS_STATUS_SENT;
-			break;
+	case SOS_STATUS_IDLE:
+		break;
 		
-		case SOS_STATUS_SENT:
+	case SOS_STATUS_SENDING:
+		sos_state = SOS_STATUS_SENT;
+		break;
+	
+	case SOS_STATUS_SENT:
+		if(screen_id == SCREEN_ID_SOS)
+		{
 		#ifdef CONFIG_ANIMATION_SUPPORT	
 			AnimaStopShow();
-		#endif	
-			sos_state = SOS_STATUS_RECEIVED;
-			break;
-		
-		case SOS_STATUS_RECEIVED:
-			sos_state = SOS_STATUS_IDLE;
-			EnterIdleScreen();
-			break;
-		
-		case SOS_STATUS_CANCEL:
-			sos_state = SOS_STATUS_IDLE;
-			EnterIdleScreen();
-			break;
+		#endif			
 		}
-		
+		sos_state = SOS_STATUS_RECEIVED;
+		break;
+	
+	case SOS_STATUS_RECEIVED:
+		sos_state = SOS_STATUS_IDLE;
+		if(screen_id == SCREEN_ID_SOS)
+		{
+			EnterIdleScreen();
+		}
+		break;
+	
+	case SOS_STATUS_CANCEL:
+		sos_state = SOS_STATUS_IDLE;
+		if(screen_id == SCREEN_ID_SOS)
+		{
+			EnterIdleScreen();
+		}
+		break;
+	}
+	
+	if(screen_id == SCREEN_ID_SOS)
+	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SOS;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-
-		if(sos_state != SOS_STATUS_IDLE)
-			k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), K_NO_WAIT);
 	}
+	
+	if(sos_state != SOS_STATUS_IDLE)
+		k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), K_NO_WAIT);
 }
 
 void SOSStartGPSCallBack(struct k_timer *timer_id)
@@ -92,7 +103,7 @@ void SOSStartGPSCallBack(struct k_timer *timer_id)
 	sos_start_gps_flag = true;
 }
 
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 void sos_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	uint8_t reply[256] = {0};
@@ -213,6 +224,9 @@ void SOSRecLocatNotify(uint8_t *strmsg)
 	uint8_t strtmp[512] = {0};
 	notify_infor infor = {0};
 
+	sos_state = SOS_STATUS_RECEIVED;
+	SOSStatusUpdate();
+	
 	if(IsInIdleScreen())
 	{
 		mmi_chset_convert(
@@ -289,7 +303,7 @@ void SOSStart(void)
 
 	GetSystemTimeSecString(sos_trigger_time);
 
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 	sos_wait_wifi = true;
 	APP_Ask_wifi_data();
 #else

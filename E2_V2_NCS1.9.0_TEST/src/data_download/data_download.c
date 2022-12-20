@@ -593,7 +593,6 @@ void dl_application(dl_callback_t client_callback)
 void dl_init(void)
 {
 	dl_application(dl_handler);
-	LOGD("done");
 }
 
 void DlRedrawProgress(void)

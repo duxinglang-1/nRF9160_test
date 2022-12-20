@@ -15,18 +15,26 @@
 #define WIFI_DATA_RSSI_END		","
 #define WIFI_DATA_MAC_BEGIN		"\""
 #define WIFI_DATA_MAC_END		"\")"
+#define WIFI_DATA_BRACKET_BEIN	"<"
+#define WIFI_DATA_BRACKET_END	">"
+#define WIFI_DATA_SEP_COLON		":"
 #define WIFI_SLEEP_CMD			"AT+GSLP=0\r\n"
 #define WIFI_SLEEP_REPLY		"AT+GSLP=0\r\n\r\nOK"
+#define WIFI_GET_VER			"AT+GMR\r\n"
+#define WIFI_GET_MAC_CMD		"AT+CIPAPMAC_DEF?\r\n"
+#define WIFI_GET_MAC_REPLY		"+CIPAPMAC_DEF"
+#define WIFI_DATA_VER_BIN		"Bin version"
+#define WIFI_DATA_END			"\r\n"
 
 typedef struct
 {
-    u8_t rssi[8];
-	u8_t mac[32];
+	uint8_t rssi[8];
+	uint8_t mac[32];
 }wifi_node_infor;
 
 typedef struct
 {
-	u8_t count;
+	uint8_t count;
 	wifi_node_infor node[WIFI_NODE_MAX];
 }wifi_infor;
 
@@ -35,9 +43,11 @@ extern bool sos_wait_wifi;
 extern bool fall_wait_wifi;
 extern bool location_wait_wifi;
 
-extern u8_t wifi_test_info[256];
+extern uint8_t g_wifi_mac_addr[20];
+extern uint8_t g_wifi_ver[20];
+extern uint8_t wifi_test_info[256];
 
 extern bool wifi_is_working(void);
 extern void ble_turn_on(void);
-extern void wifi_receive_data_handle(u8_t *buf, u32_t len);
+extern void wifi_receive_data_handle(uint8_t *buf, uint32_t len);
 #endif/*__ESP8266_H__*/

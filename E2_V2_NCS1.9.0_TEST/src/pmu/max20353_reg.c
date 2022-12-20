@@ -420,7 +420,7 @@ int MAX20353_HardResetConfig(void)
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
-*			Amplitude:0-31
+*			Amplitude:(0x00~0x18)
 *return: 
 ***************************************************/
 int MAX20353_LED0(int IStep, int Amplitude, bool flag)
@@ -430,7 +430,7 @@ int MAX20353_LED0(int IStep, int Amplitude, bool flag)
 	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
-	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*(Amplitude+1),(0.6mA/1.0mA/1.2mA ~ 15mA/25mA/30mA)
 	if(flag)
 		ret |= MAX20353_WriteReg(REG_LED0_DIRECT,  0x20|(Amplitude&0x1F)); 
 	else
@@ -443,7 +443,7 @@ int MAX20353_LED0(int IStep, int Amplitude, bool flag)
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
-*			Amplitude:0-31
+*			Amplitude:(0x00~0x18)
 *return: 
 ***************************************************/
 int MAX20353_LED1(int IStep, int Amplitude, bool flag)
@@ -453,7 +453,7 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
-	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude(0x00~0x18), LED current=IStep*(Amplitude+1),(0.6mA/1.0mA/1.2mA ~ 15mA/25mA/30mA)
 	if(flag)
 		ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x20|(Amplitude&0x1F)); 
 	else
@@ -466,7 +466,7 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
-*			Amplitude:0-31
+*			Amplitude:(0x00~0x18)
 *return: 
 ***************************************************/
 int MAX20353_LED2(int IStep, int Amplitude, bool flag)
@@ -476,9 +476,9 @@ int MAX20353_LED2(int IStep, int Amplitude, bool flag)
 	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
-	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*(Amplitude+1),(0.6mA/1.0mA/1.2mA ~ 15mA/25mA/30mA)
 	if(flag)
-		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x20|(Amplitude&0x1F)); 
+		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x20|(Amplitude&0x1F));
 	else
 		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x00); 
 }

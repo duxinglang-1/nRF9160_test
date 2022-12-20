@@ -26,7 +26,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #include "settings.h"
 #include "screen.h"
 #include "external_flash.h"
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 #include "logger.h"

@@ -43,9 +43,9 @@
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 #include "data_download.h"
 #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
-#ifdef CONFIG_WIFI
+#ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
-#endif/*CONFIG_WIFI*/
+#endif/*CONFIG_WIFI_SUPPORT*/
 #ifdef CONFIG_SYNC_SUPPORT
 #include "sync.h"
 #endif/*CONFIG_SYNC_SUPPORT*/
@@ -183,7 +183,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 	{
 		
 	}
-#ifdef CONFIG_WIFI	
+#ifdef CONFIG_WIFI_SUPPORT	
 	else if(screen_id == SCREEN_ID_WIFI_TEST)
 	{
 		MenuStartWifi();
@@ -1479,7 +1479,11 @@ void SettingsUpdateStatus(void)
 			LCD_Clear(BLACK);
 				
 			mmi_asc_to_ucs2((uint8_t*)ble_str, g_ble_mac_addr);
+		#ifdef CONFIG_WIFI_SUPPORT
+			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_mac_addr);
+		#else
 			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
+		#endif
 			mmi_asc_to_ucs2((uint8_t*)imei_str, g_imei);
 			menu_sle_str[0] = ble_str;
 			menu_sle_str[1] = wifi_str;
@@ -1583,7 +1587,11 @@ void SettingsUpdateStatus(void)
 			LCD_Clear(BLACK);
 			
 			mmi_asc_to_ucs2((uint8_t*)mcu_str, g_fw_version);
+		#ifdef CONFIG_WIFI_SUPPORT
+			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_ver);
+		#else
 			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
+		#endif
 			mmi_asc_to_ucs2((uint8_t*)ble_str, &g_nrf52810_ver[15]);
 		#ifdef CONFIG_PPG_SUPPORT	
 			mmi_asc_to_ucs2((uint8_t*)ppg_str, g_ppg_ver);
@@ -1783,6 +1791,11 @@ void EnterSettingsScreen(void)
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
+#ifdef CONFIG_WIFI_SUPPORT
+	if(wifi_is_working())
+		MenuStopWifi();
+#endif
+
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
 	history_screen_id = screen_id;
@@ -1861,7 +1874,11 @@ void EnterSettingsScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
   #endif
  #else
+  #ifdef CONFIG_WIFI_SUPPORT
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterWifiTestScreen);
+  #else
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+  #endif
  #endif
 #endif
 }
@@ -4396,6 +4413,111 @@ void EnterFindDeviceScreen(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
 }
 
+#ifdef CONFIG_WIFI_SUPPORT
+void TestWifiUpdateInfor(void)
+{
+	uint8_t tmpbuf[512] = {0};
+	
+	LCD_Fill((LCD_WIDTH-180)/2, 50, 180, 180, BLACK);
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+	mmi_asc_to_ucs2(tmpbuf, wifi_test_info);
+	LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 50, 180, 180, (uint16_t*)tmpbuf);
+#else	
+	LCD_SetFontSize(FONT_SIZE_16);
+	LCD_ShowStringInRect((LCD_WIDTH-180)/2, 50, 180, 180, wifi_test_info);
+#endif
+}
+
+void TestWifiShowInfor(void)
+{
+	uint16_t x,y,w,h;
+	uint8_t strbuf[512] = {0};
+	
+	LCD_Clear(BLACK);
+	
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+	mmi_asc_to_ucs2(strbuf, "WIFI TESTING");
+	LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 20, (uint16_t*)strbuf);
+	mmi_asc_to_ucs2(strbuf, "Wifi Starting...");
+	LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 50, 180, 180, (uint16_t*)strbuf);
+#else	
+	LCD_SetFontSize(FONT_SIZE_16);
+	strcpy(strbuf, "WIFI TESTING");
+	LCD_MeasureString(strbuf, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 20, strbuf);
+	LCD_ShowStringInRect((LCD_WIDTH-180)/2, 50, 180, 180, "Wifi Starting...");
+#endif
+}
+
+void TestWifiScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_WIFI_TEST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_WIFI_TEST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_WIFI_TEST].status = SCREEN_STATUS_CREATED;
+
+		TestWifiShowInfor();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		TestWifiUpdateInfor();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_WIFI_TEST].act = SCREEN_ACTION_NO;
+}
+
+void ExitWifiTestScreen(void)
+{
+	k_timer_stop(&mainmenu_timer);
+	
+	if(wifi_is_working())
+		MenuStopWifi();
+
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
+	EnterIdleScreen();
+}
+
+void EnterWifiTestScreen(void)
+{
+	if(screen_id == SCREEN_ID_WIFI_TEST)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_WIFI_TEST;	
+	scr_msg[SCREEN_ID_WIFI_TEST].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_WIFI_TEST].status = SCREEN_STATUS_CREATING;
+
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
+
+#ifdef CONFIG_PPG_SUPPORT
+	PPGStopCheck();
+#endif
+
+	if(gps_is_working())
+		MenuStopGPS();
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	SetLeftKeyUpHandler(EnterSettings);
+	SetRightKeyUpHandler(ExitWifiTestScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+#endif	
+}
+#endif
+
 void TestGPSUpdateInfor(void)
 {
 	uint8_t tmpbuf[512] = {0};
@@ -4486,14 +4608,28 @@ void EnterGPSTestScreen(void)
 	PPGStopCheck();
 #endif
 
+#ifdef CONFIG_WIFI_SUPPORT
+	if(wifi_is_working())
+		MenuStopWifi();
+#endif
+
 	MenuStopNB();
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#ifdef CONFIG_WIFI_SUPPORT
+	SetLeftKeyUpHandler(EnterWifiTestScreen);
+#else
+	SetLeftKeyUpHandler(EnterSettings);
+#endif
 	SetRightKeyUpHandler(ExitGPSTestScreen);
+
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettingsScreen);
+  #ifdef CONFIG_WIFI_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterWifiTestScreen);
+  #else
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+  #endif
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
 #endif	
 }
@@ -4815,6 +4951,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_SETTINGS:
 			SettingsScreenProcess();
 			break;
+	#ifdef CONFIG_WIFI_SUPPORT
+		case SCREEN_ID_WIFI_TEST:
+			TestWifiScreenProcess();
+			break;
+	#endif
 		case SCREEN_ID_GPS_TEST:
 			TestGPSScreenProcess();
 			break;

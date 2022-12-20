@@ -371,26 +371,24 @@ void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED0(0, (24*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (24*level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	//MAX20353_BuckBoostConfig();
+	ret = MAX20353_LED0(0, (24*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (24*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
 
-	//MAX20353_BuckBoostDisable();
-	ret = MAX20353_LED0(2, 0, false);
-	ret = MAX20353_LED1(2, 0, false);
+	ret = MAX20353_LED0(0, 0, false);
+	ret = MAX20353_LED1(0, 0, false);
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)
@@ -482,6 +480,9 @@ void pmu_battery_low_shutdown(void)
 void pmu_battery_update(void)
 {
 	uint8_t tmpbuf[8] = {0};
+
+	if(!pmu_check_ok)
+		return;
 
 	g_bat_soc = MAX20353_CalculateSOC();
 #ifdef PMU_DEBUG

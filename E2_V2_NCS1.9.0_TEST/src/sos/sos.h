@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 #define SOS_IDLE_TIMEOUT	2
-#define SOS_SENDING_TIMEOUT 4
+#define SOS_SENDING_TIMEOUT 2
 #define SOS_SENT_TIMEOUT	2
 
 #define SOS_ICON_W			156

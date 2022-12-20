@@ -3050,26 +3050,27 @@ void LCD_ShowImg(uint16_t x, uint16_t y, unsigned char *color)
 //*p:字符串起始地址	
 void LCD_ShowStrInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t *p)
 {
-	uint8_t x0=x;
+	uint16_t str_x=x,str_y=y,str_w,str_h;
 	uint16_t phz=0;
 	uint8_t y_offset = (system_font/8);
 	
-	width+=x;
+	str_w = width+x;
+	str_h = height+y;
 
 	while(*p)
 	{       
-		if(x>=width){x=x0;y+=y_offset;}
-		if(*p=='\n'){x=x0;y+=y_offset;p++;}
-		if(y>=height)break;//退出
+		if(str_x>=str_w){str_x=x;str_y+=y_offset;}
+		if(*p=='\n'){str_x=x;str_y+=y_offset;p++;}
+		if(str_y>=str_h)break;//退出
 		if(*p==0x00)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
-			LCD_ShowEn_from_flash(x,y,*p);
+			LCD_ShowEn_from_flash(str_x,str_y,*p);
 		#else
-			LCD_ShowEn(x,y,*p);
+			LCD_ShowEn(str_x,str_y,*p);
 		#endif
-			x+=system_font/2;
+			str_x+=system_font/2;
 			p++;
 		}
 		else if(*(p+1))
@@ -3077,11 +3078,11 @@ void LCD_ShowStrInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 			phz = *p<<8;
 			phz += *(p+1);
 		#ifdef IMG_FONT_FROM_FLASH
-			LCD_ShowCn_from_flash(x,y,phz);
+			LCD_ShowCn_from_flash(str_x,str_y,phz);
 		#else
-			LCD_ShowCn(x,y,phz);
+			LCD_ShowCn(str_x,str_y,phz);
 		#endif
-			x+=system_font;
+			str_x+=system_font;
 			p+=2;
 		}        
 	}
@@ -3095,32 +3096,32 @@ void LCD_ShowStrInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 //*p:字符串起始地址	
 void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,uint8_t *p)
 {
-	uint8_t x0=x;
+	uint16_t str_x=x,str_y=y,str_w,str_h;
 	uint16_t w,phz=0;
 
-	width+=x;
-	height+=y;
+	str_w = width+x;
+	str_h = height+y;
 	while(*p)
 	{       
-		if(x>=width){x=x0;y+=system_font;}
-		if(*p=='\n'){x=x0;y+=system_font;p++;}
-		if(y>=height)break;//退出
+		if(str_x>=width){str_x=x;str_y+=system_font;}
+		if(*p=='\n'){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=height)break;//退出
 		if(*p==0x00)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
 		  #ifdef FONTMAKER_UNICODE_FONT
-			w = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
-		  	x += w;
+			w = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		  	str_x += w;
 		  #elif defined(FONTMAKER_MBCS_FONT)
 
 		  #else	
-			LCD_ShowChar_from_flash(x,y,*p,0);
+			LCD_ShowChar_from_flash(str_x,str_y,*p,0);
 		  #endif
 		#else
-			LCD_ShowChar(x,y,*p,0);
+			LCD_ShowChar(str_x,str_y,*p,0);
 		#endif
-			x+=system_font/2;
+			str_x+=system_font/2;
 			p++;
 		}
 		else if(*(p+1))
@@ -3133,12 +3134,12 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 		  #elif defined(FONTMAKER_MBCS_FONT)
 
 		  #else
-			LCD_ShowChineseChar_from_flash(x,y,phz,0);
+			LCD_ShowChineseChar_from_flash(str_x,str_y,phz,0);
 		  #endif
 		#else
-			LCD_ShowChineseChar(x,y,phz,0);
+			LCD_ShowChineseChar(str_x,str_y,phz,0);
 		#endif
-			x+=system_font;
+			str_x+=system_font;
 			p+=2;
 		}        
 	}
@@ -3149,41 +3150,42 @@ void LCD_ShowStringInRect(uint16_t x,uint16_t y,uint16_t width,uint16_t height,u
 //*p:字符串起始地址	
 void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 {
+	uint16_t str_x=x,str_y=y,str_w,str_h;
 	uint8_t x0=x;
 	uint16_t width,phz=0;
 
 	while(*p)
 	{       
-		if(x>=LCD_WIDTH)break;//退出
-		if(y>=LCD_HEIGHT)break;//退出
+		if(str_x>=LCD_WIDTH)break;//退出
+		if(str_y>=LCD_HEIGHT)break;//退出
 		if(*p<0x80)
 		{
 		#ifdef IMG_FONT_FROM_FLASH
 		  #ifdef FONTMAKER_UNICODE_FONT
-		  	width = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
-		  	x += width;
+		  	width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		  	str_x += width;
 		  #elif defined(FONTMAKER_MBCS_FONT)
-			width = LCD_Show_Mbcs_Char_from_flash(x,y,*p,0);
-		  	x += width;
+			width = LCD_Show_Mbcs_Char_from_flash(str_x,str_y,*p,0);
+		  	str_x += width;
 		  #else
 		   #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-			LCD_ShowEn_from_flash(x,y,*p);
+			LCD_ShowEn_from_flash(str_x,str_y,*p);
 		   #else
-			LCD_ShowChar_from_flash(x,y,*p,0);
+			LCD_ShowChar_from_flash(str_x,str_y,*p,0);
 		   #endif
-		  	x += system_font/2;
+		  	str_x += system_font/2;
 		  #endif
 		#else
 		  #ifdef FONTMAKER_MBCS_FONT
-			width = LCD_Show_Mbcs_Char(x,y,*p,0);
-		  	x += width;
+			width = LCD_Show_Mbcs_Char(str_x,str_y,*p,0);
+		  	str_x += width;
 		  #else
 		   #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-			LCD_ShowEn(x,y,*p);
+			LCD_ShowEn(str_x,str_y,*p);
 		   #else
-			LCD_ShowChar(x,y,*p,0);
+			LCD_ShowChar(str_x,str_y,*p,0);
 		   #endif
-		  	x += system_font/2;
+		  	str_x += system_font/2;
 		  #endif
 		#endif
 			
@@ -3197,22 +3199,22 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 		  #ifdef FONTMAKER_UNICODE_FONT
 		  
 		  #elif defined(FONTMAKER_MBCS_FONT)
-			LCD_Show_Mbcs_CJK_Char_from_flash(x,y,phz,0);
+			LCD_Show_Mbcs_CJK_Char_from_flash(str_x,str_y,phz,0);
 		  #else
 		   #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-			LCD_ShowCn_from_flash(x,y,phz);
+			LCD_ShowCn_from_flash(str_x,str_y,phz);
 		   #else
-			LCD_ShowChineseChar_from_flash(x,y,phz,0);
+			LCD_ShowChineseChar_from_flash(str_x,str_y,phz,0);
 		   #endif
 		  #endif
 		#else
 		  #if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-			LCD_ShowCn(x,y,phz);
+			LCD_ShowCn(str_x,str_y,phz);
 		  #else
-			LCD_ShowChineseChar(x,y,phz,0);
+			LCD_ShowChineseChar(str_x,str_y,phz,0);
 		  #endif
 		#endif
-			x+=system_font;
+			str_x+=system_font;
 			p+=2;
 		}        
 	}
@@ -3221,21 +3223,22 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 #ifdef FONTMAKER_UNICODE_FONT
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
 {
-	uint8_t x0=x;
-	uint16_t w,end=0x000a;
+	uint16_t str_x=x,str_y=y,str_w,str_h;
+	uint8_t w=0;
+	uint16_t end=0x000a;
 	
-	width+=x;
-	height+=y;
+	str_w = width+x;
+	str_h = height+y;
 	while(*p)
 	{       
 		w = LCD_Measure_Uni_Byte(*p);
-		if((x+w)>=width){x=x0;y+=system_font;}
-		if(*p==end){x=x0;y+=system_font;p++;}
-		if(y>=height)break;//退出
+		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
 		if(*p==0x0000)break;//退出
 
-		w = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
-		x += w;
+		w = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		str_x += w;
 		p++;
 	}
 }
@@ -3245,16 +3248,16 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 //*p:字符串起始地址	
 void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 {
-	uint8_t x0=x;
+	uint16_t str_x=x,str_y=y;
 	uint8_t width;
 
 	while(*p)
 	{       
-		if(x>=LCD_WIDTH)break;//退出
-		if(y>=LCD_HEIGHT)break;//退出
+		if(str_x>=LCD_WIDTH)break;//退出
+		if(str_y>=LCD_HEIGHT)break;//退出
 
-		width = LCD_Show_Uni_Char_from_flash(x,y,*p,0);
-		x += width;
+		width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		str_x += width;
 		p++;
 	}
 }
@@ -3442,7 +3445,6 @@ void LCDMsgProcess(void)
 			return;
 		
 		LCD_SleepOut();
-		pmu_battery_update();
 		if(IsInIdleScreen())
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;

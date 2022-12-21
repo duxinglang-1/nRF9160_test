@@ -586,17 +586,7 @@ void SendSosAlarmData(void)
 	uint8_t reply[256] = {0};
 	uint32_t i,count=1;
 
-	strcat(reply, "3,");
-	for(i=0;i<count;i++)
-	{
-		strcat(reply, "");
-		strcat(reply, "&");
-		strcat(reply, "");
-		strcat(reply, "&");
-		if(i < (count-1))
-			strcat(reply, "|");
-	}
-
-	NBSendSosWifiData(reply, strlen(reply));
+	strcat(reply, "1");
+	NBSendSosAlarmData(reply, strlen(reply));
 }
 

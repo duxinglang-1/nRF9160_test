@@ -819,7 +819,7 @@ void APP_Ask_GPS_Data(void)
 	if(!gps_is_on)
 	{
 		gps_on_flag = true;
-		k_timer_start(&app_wait_gps_timer, K_MSEC(5*60*1000), K_NO_WAIT);
+		k_timer_start(&app_wait_gps_timer, K_SECONDS(APP_WAIT_GPS_TIMEOUT), K_NO_WAIT);
 	}
 #else
 	last_pvt.datetime.year = 2020;

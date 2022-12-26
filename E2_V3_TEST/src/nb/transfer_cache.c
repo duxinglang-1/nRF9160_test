@@ -24,6 +24,18 @@ static DataNode *send_tail = NULL;
 static DataNode *rece_head = NULL;
 static DataNode *rece_tail = NULL;
 
+bool send_cache_is_empty(void)
+{
+	if(g_nb_send_cache.cache == NULL || g_nb_send_cache.count == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool add_data_into_send_cache(uint8_t *data, uint32_t len)
 {
 	DataNode *pnew;

@@ -2812,7 +2812,21 @@ void NBMsgProcess(void)
 	
 	if(mqtt_disconnect_flag)
 	{
-		MqttDisConnect();
+		if(send_cache_is_empty())
+		{
+		#ifdef NB_DEBUG
+			LOGD("001");
+		#endif
+			MqttDisConnect();
+		}
+		else
+		{
+		#ifdef NB_DEBUG
+			LOGD("002");
+		#endif
+			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5), K_NO_WAIT);
+		}
+		
 		mqtt_disconnect_flag = false;
 	}
 

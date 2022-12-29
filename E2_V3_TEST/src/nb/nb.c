@@ -970,7 +970,12 @@ void NBGetNetMode(uint8_t *at_mode_set)
 
 void NBRedrawNetMode(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_NET_MODE;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
@@ -1135,7 +1140,12 @@ void NBRedrawSignal(void)
 		g_nb_sig = NB_SIG_LEVEL_0;
 	}
 
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SIG;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;

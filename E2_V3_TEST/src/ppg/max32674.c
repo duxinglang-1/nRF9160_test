@@ -1620,7 +1620,6 @@ void PPGStartCheck(void)
 		return;
 
 	PPG_Enable();
-	k_sleep(K_MSEC(10));
 	PPG_Power_On();
 	PPG_i2c_on();
 	

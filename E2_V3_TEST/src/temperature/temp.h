@@ -29,7 +29,7 @@
 #define TEMP_MAX			420
 #define TEMP_MIN			320
 
-#define TEMP_DEBUG
+//#define TEMP_DEBUG
 
 typedef enum
 {

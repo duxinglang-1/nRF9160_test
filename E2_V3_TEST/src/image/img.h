@@ -220,9 +220,9 @@ extern unsigned char IMG_SYNC_FINISH[42128];
 extern unsigned char IMG_SYNC_LOGO[36458];
 //temperature(4)
 extern unsigned char IMG_TEMP_ICON_C[2568];
-extern unsigned char IMG_TEMP_BIG_ICON_C[10538];
+extern unsigned char IMG_TEMP_BIG_ICON_C[10832];
 extern unsigned char IMG_TEMP_ICON_F[2864];
-extern unsigned char IMG_TEMP_BIG_ICON_F[10538];
+extern unsigned char IMG_TEMP_BIG_ICON_F[10832];
 extern unsigned char IMG_TEMP_UNIT_C[1756];
 extern unsigned char IMG_TEMP_UNIT_F[1756];
 extern unsigned char IMG_TEMP_C_BG[31968];

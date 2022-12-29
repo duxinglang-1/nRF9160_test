@@ -132,6 +132,12 @@ void PPG_Disable(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_MFIO_PIN, 0);
 }
 
 static void sh_init_i2c(void)

@@ -13,6 +13,10 @@
 #include <zephyr.h>
 #include <device.h>
 
+#define PPG_CHECK_HR_MENU			30
+#define PPG_CHECK_SPO2_MENU			60
+#define PPG_CHECK_BPT_MENU			90
+
 #define PPG_CHECK_HR_TIMELY			1
 #define PPG_CHECK_SPO2_TIMELY		2
 #define PPG_CHECK_BPT_TIMELY		3
@@ -42,6 +46,16 @@ typedef enum
 	ALG_MODE_ECG,
 	ALG_MODE_MAX
 }PPG_ALG_MODE;
+
+typedef enum
+{
+	PPG_STATUS_PREPARE,
+	PPG_STATUS_MEASURING,
+	PPG_STATUS_MEASURE_FAIL,
+	PPG_STATUS_MEASURE_OK,
+	PPG_STATUS_NOTIFY,
+	PPG_STATUS_MAX
+}PPG_WORK_STATUS;
 
 typedef enum
 {
@@ -142,10 +156,15 @@ extern uint8_t g_ppg_ver[64];
 
 extern uint8_t g_hr;
 extern uint8_t g_hr_timing;
+extern uint8_t g_hr_menu;
 extern uint8_t g_spo2;
 extern uint8_t g_spo2_timing;
+extern uint8_t g_spo2_menu;
 extern bpt_data g_bpt;
 extern bpt_data g_bpt_timing;
+extern bpt_data g_bpt_menu;
+
+extern PPG_WORK_STATUS g_ppg_status;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);

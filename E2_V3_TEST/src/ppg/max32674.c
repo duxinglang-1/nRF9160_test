@@ -27,7 +27,7 @@
 #include "external_flash.h"
 #include "logger.h"
 
-//#define PPG_DEBUG
+#define PPG_DEBUG
 
 bool ppg_int_event = false;
 bool ppg_bpt_is_calbraed = false;
@@ -35,6 +35,8 @@ bool ppg_bpt_cal_need_update = false;
 bool get_bpt_ok_flag = false;
 bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
+
+PPG_WORK_STATUS g_ppg_status = PPG_STATUS_PREPARE;
 
 static bool ppg_appmode_init_flag = false;
 
@@ -62,15 +64,20 @@ uint8_t g_ppg_ver[64] = {0};
 
 uint8_t g_hr = 0;
 uint8_t g_hr_timing = 0;
+uint8_t g_hr_menu = 0;
 uint8_t g_spo2 = 0;
 uint8_t g_spo2_timing = 0;
+uint8_t g_spo2_menu = 0;
 bpt_data g_bpt = {0};
 bpt_data g_bpt_timing = {0};
+bpt_data g_bpt_menu = {0};
 
 static void ppg_set_appmode_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_appmode_timer, ppg_set_appmode_timerout, NULL);
 static void ppg_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
+static void ppg_menu_stop_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(ppg_menu_stop_timer, ppg_menu_stop_timerout, NULL);
 static void ppg_get_data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
 static void ppg_delay_start_timerout(struct k_timer *timer_id);
@@ -84,6 +91,7 @@ void ClearAllBptRecData(void)
 
 	memset(&g_bpt, 0, sizeof(bpt_data));
 	memset(&g_bpt_timing, 0, sizeof(bpt_data));
+	memset(&g_bpt_menu, 0, sizeof(bpt_data));	
 	
 	SpiFlash_Write(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 }
@@ -220,6 +228,7 @@ void ClearAllSpo2RecData(void)
 
 	g_spo2 = 0;
 	g_spo2_timing = 0;
+	g_spo2_menu = 0;
 
 	SpiFlash_Write(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
 }
@@ -352,6 +361,7 @@ void ClearAllHrRecData(void)
 
 	g_hr = 0;
 	g_hr_timing = 0;
+	g_hr_menu = 0;
 
 	SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 }
@@ -545,6 +555,13 @@ void PPGRedrawData(void)
 	}
 	else if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
 	{
+		if(screen_id == SCREEN_ID_HR)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		else if(screen_id == SCREEN_ID_SPO2)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
+		else if(screen_id == SCREEN_ID_BP)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BP;
+		
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
@@ -687,7 +704,7 @@ void StartSensorhubCallBack(void)
 	#endif
 		ppg_power_flag = 2;
 
-		if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
+		if((g_ppg_trigger&TRIGGER_BY_HOURLY) == TRIGGER_BY_HOURLY)
 		{
 			if(g_ppg_data == PPG_DATA_HR)
 			{
@@ -700,6 +717,21 @@ void StartSensorhubCallBack(void)
 			else if(g_ppg_data == PPG_DATA_BPT)
 			{
 				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), K_NO_WAIT);
+			}
+		}
+		else if((g_ppg_trigger&TRIGGER_BY_MENU) == TRIGGER_BY_MENU)
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+			{
+				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_HR_MENU), K_NO_WAIT);
+			}
+			else if(g_ppg_data == PPG_DATA_SPO2)
+			{
+				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_SPO2_MENU), K_NO_WAIT);
+			}
+			else if(g_ppg_data == PPG_DATA_BPT)
+			{
+				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_BPT_MENU), K_NO_WAIT);
 			}
 		}
 	}
@@ -1051,6 +1083,7 @@ void TimerStartHr(void)
 {
 	g_hr = 0;
 	g_hr_timing = 0;
+	g_hr_menu = 0;
 	get_hr_ok_flag = false;
 	
 	if(is_wearing())
@@ -1197,6 +1230,7 @@ void TimerStartSpo2(void)
 {
 	g_spo2 = 0;
 	g_spo2_timing = 0;
+	g_spo2_menu = 0;
 	get_spo2_ok_flag = false;
 	
 	if(is_wearing())
@@ -1341,10 +1375,9 @@ void MenuStopSpo2(void)
 
 void TimerStartBpt(void)
 {
-	g_bpt.diastolic = 0;
-	g_bpt.systolic = 0;
-	g_bpt_timing.diastolic = 0;
-	g_bpt_timing.systolic = 0;
+	memset(&g_bpt, 0, sizeof(bpt_data));
+	memset(&g_bpt_timing, 0, sizeof(bpt_data));
+	memset(&g_bpt_menu, 0, sizeof(bpt_data));
 	get_bpt_ok_flag = false;
 
 	if(is_wearing())
@@ -1604,6 +1637,7 @@ void PPGStopCheck(void)
 #endif
 	k_timer_stop(&ppg_appmode_timer);
 	k_timer_stop(&ppg_stop_timer);
+	k_timer_stop(&ppg_menu_stop_timer);
 	k_timer_stop(&ppg_get_hr_timer);
 	k_timer_stop(&ppg_delay_start_timer);
 	k_timer_stop(&ppg_bpt_est_start_timer);
@@ -1633,6 +1667,21 @@ void PPGStopCheck(void)
 	if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
+		if(g_ppg_data == PPG_DATA_HR)
+		{
+			g_hr_menu = g_hr;
+		}
+		else if(g_ppg_data == PPG_DATA_SPO2)
+		{
+			g_spo2_menu = g_spo2;
+		}
+		else if((g_ppg_data == PPG_DATA_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
+		{
+			memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+		#ifdef PPG_DEBUG
+			LOGD("g_bpt_menu:%d,%d", g_bpt_menu.systolic, g_bpt_menu.diastolic);
+		#endif
+		}
 	}
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
@@ -1693,6 +1742,26 @@ static void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
 	if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 		ppg_stop_flag = true;
+}
+
+static void ppg_menu_stop_timerout(struct k_timer *timer_id)
+{
+	if((screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		)
+	{
+		g_ppg_status = PPG_STATUS_MEASURE_FAIL;
+
+		if(screen_id == SCREEN_ID_HR)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		else if(screen_id == SCREEN_ID_SPO2)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
+		else if(screen_id == SCREEN_ID_BP)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BP;
+		
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void PPG_init(void)

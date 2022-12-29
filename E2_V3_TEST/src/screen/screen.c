@@ -2963,9 +2963,9 @@ void HRUpdateStatus(void)
 		MenuStopHr();
 		LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_BIG_ICON_2_ADDR);
 	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 	#else	
-		LCD_SetFontSize(FONT_SIZE_32);
+		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
 		mmi_asc_to_ucs2(tmpbuf, "Inconclusive");

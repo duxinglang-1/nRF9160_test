@@ -444,22 +444,22 @@ void SyncSendHealthData(void)
 #ifdef CONFIG_PPG_SUPPORT	
 	//systolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bpt.systolic);
+	sprintf(tmpbuf, "%d,", g_bpt_menu.systolic);
 	strcat(databuf, tmpbuf);
 	
 	//diastolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bpt.diastolic); 	
+	sprintf(tmpbuf, "%d,", g_bpt_menu.diastolic); 	
 	strcat(databuf, tmpbuf);
 	
 	//heart rate
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_hr);		
+	sprintf(tmpbuf, "%d,", g_hr_menu);		
 	strcat(databuf, tmpbuf);
 	
 	//SPO2
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_spo2); 	
+	sprintf(tmpbuf, "%d,", g_spo2_menu); 	
 	strcat(databuf, tmpbuf);
 #else
 	strcat(databuf, "0,0,0,0,");
@@ -468,7 +468,7 @@ void SyncSendHealthData(void)
 #ifdef CONFIG_TEMP_SUPPORT
 	//body temp
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%0.1f", g_temp_body); 	
+	sprintf(tmpbuf, "%0.1f", g_temp_menu); 	
 	strcat(databuf, tmpbuf);
 #else
 	strcat(databuf, "0.0");

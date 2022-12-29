@@ -742,11 +742,16 @@ void TimeMsgProcess(void)
 		if(lcd_is_sleeping)
 			return;
 		
-		if(screen_id == SCREEN_ID_IDLE)
+		if((screen_id == SCREEN_ID_IDLE)
+			||(screen_id == SCREEN_ID_HR)
+			||(screen_id == SCREEN_ID_SPO2)
+			||(screen_id == SCREEN_ID_BP)
+			||(screen_id == SCREEN_ID_TEMP)
+			)
 		{
 			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))
 				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
-			
+
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
 	}

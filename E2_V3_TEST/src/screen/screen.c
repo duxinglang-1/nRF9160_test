@@ -1980,7 +1980,8 @@ void SyncScreenProcess(void)
 #endif/*CONFIG_SYNC_SUPPORT*/
 
 #ifdef CONFIG_TEMP_SUPPORT
-static bool img_flag = false;
+static uint8_t img_flag = 0;
+static uint8_t temp_retry_left = 2;
 
 static void TempStatusTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -2003,9 +2004,17 @@ static void TempStatusTimerOutCallBack(struct k_timer *timer_id)
 			break;
 			
 		case TEMP_STATUS_MEASURE_FAIL:
-			g_temp_status = TEMP_STATUS_NOTIFY;
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
-			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			if(temp_retry_left > 0)
+			{
+				g_temp_status = TEMP_STATUS_NOTIFY;
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			}
+			else
+			{
+				g_temp_status = TEMP_STATUS_MAX;
+				EntryIdleScr();
+			}
 			break;
 
 		case TEMP_STATUS_MEASURE_OK:
@@ -2027,6 +2036,8 @@ void TempUpdateStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t tmpbuf[64] = {0};
 	uint8_t strbuf[64] = {0};
+	uint32_t img_c[3] = {IMG_TEMP_BIG_ICON_C_1_ADDR,IMG_TEMP_BIG_ICON_C_2_ADDR,IMG_TEMP_BIG_ICON_C_3_ADDR};
+	uint32_t img_f[3] = {IMG_TEMP_BIG_ICON_F_1_ADDR,IMG_TEMP_BIG_ICON_F_2_ADDR,IMG_TEMP_BIG_ICON_F_3_ADDR};
 
 	switch(g_temp_status)
 	{
@@ -2049,18 +2060,14 @@ void TempUpdateStatus(void)
 		break;
 		
 	case TEMP_STATUS_MEASURING:
-		img_flag = !img_flag;
-		if(img_flag)
-		{
-			if(global_settings.temp_unit == TEMP_UINT_C)
-				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_ADDR);
-			else
-				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_ADDR);
-		}
+		img_flag++;
+		if(img_flag >= 3)
+			img_flag = 0;
+
+		if(global_settings.temp_unit == TEMP_UINT_C)
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, img_c[img_flag]);
 		else
-		{
-			LCD_Fill(TEMP_ICON_X, TEMP_ICON_Y, TEMP_ICON_W, TEMP_ICON_H, BLACK);
-		}
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, img_f[img_flag]);
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_36);
@@ -2072,9 +2079,9 @@ void TempUpdateStatus(void)
 		{
 			LCD_Fill(TEMP_NOTIFY_X, TEMP_NOTIFY_Y, TEMP_NOTIFY_W, TEMP_NOTIFY_H, BLACK);
 			if(global_settings.temp_unit == TEMP_UINT_C)
-				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_ADDR);
+				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
 			else
-				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_ADDR);
+				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
 			
 			if(global_settings.temp_unit == TEMP_UINT_C)
 				sprintf(tmpbuf, "%0.1f", g_temp_body);
@@ -2101,9 +2108,9 @@ void TempUpdateStatus(void)
 		
 	case TEMP_STATUS_MEASURE_OK:
 		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
 		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
 		
 		k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
@@ -2113,9 +2120,9 @@ void TempUpdateStatus(void)
 
 		LCD_Fill(TEMP_NOTIFY_X, TEMP_NOTIFY_Y, TEMP_NOTIFY_W, TEMP_NOTIFY_H, BLACK);
 		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
 		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
 		
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);
@@ -2128,14 +2135,24 @@ void TempUpdateStatus(void)
 		x = TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
 		y = TEMP_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
+
+		temp_retry_left--;
+		if(temp_retry_left == 0)
+		{
+			y += (h+2);
+			mmi_asc_to_ucs2(tmpbuf, "Retry later");
+			LCD_MeasureUniString(tmpbuf,&w,&h);
+			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+			LCD_ShowUniString(x, y, tmpbuf);
+		}
 		k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
 	case TEMP_STATUS_NOTIFY:
 		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
 		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);
@@ -2163,9 +2180,9 @@ void TempShowStatus(void)
 	uint16_t color = 0x05DF;
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
-		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
 	else
-		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_36);
@@ -2266,7 +2283,8 @@ void EnterTempScreen(void)
 
 	get_temp_ok_flag = false;
 	g_temp_status = TEMP_STATUS_PREPARE;
-	img_flag = false;
+	img_flag = 0;
+	temp_retry_left = 2;
 
 #ifdef CONFIG_PPG_SUPPORT
 	SetLeftKeyUpHandler(EnterSPO2Screen);
@@ -2311,6 +2329,7 @@ void EnterTempScreen(void)
 
 #ifdef CONFIG_PPG_SUPPORT
 static uint8_t img_index = 0;
+static uint8_t ppg_retry_left = 2;
 
 static void PPGStatusTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -2333,9 +2352,17 @@ static void PPGStatusTimerOutCallBack(struct k_timer *timer_id)
 			break;
 			
 		case PPG_STATUS_MEASURE_FAIL:
-			g_ppg_status = PPG_STATUS_NOTIFY;
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
-			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			if(ppg_retry_left > 0)
+			{
+				g_ppg_status = PPG_STATUS_NOTIFY;
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			}
+			else
+			{
+				g_ppg_status = PPG_STATUS_MAX;
+				EntryIdleScr();
+			}
 			break;
 
 		case PPG_STATUS_MEASURE_OK:
@@ -2441,7 +2468,7 @@ void BPUpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		mmi_asc_to_ucs2(tmpbuf, "Body Pressure");
+		mmi_asc_to_ucs2(tmpbuf, "Blood Pressure");
 		LCD_MeasureUniString(tmpbuf,&w,&h);
 		x = BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
 		y = BP_NOTIFY_Y;
@@ -2467,7 +2494,7 @@ void BPUpdateStatus(void)
 			LCD_Fill(BP_NOTIFY_X, BP_NOTIFY_Y, BP_NOTIFY_W, BP_NOTIFY_H, BLACK);
 			LCD_ShowImg_From_Flash(BP_UNIT_X, BP_UNIT_Y, IMG_BP_UNIT_ADDR);
 			
-			sprintf(tmpbuf, " %03d/%03d ", g_bpt.systolic, g_bpt.diastolic);
+			sprintf(tmpbuf, " %d/%d ", g_bpt.systolic, g_bpt.diastolic);
 			mmi_asc_to_ucs2(strbuf, tmpbuf);
 			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 			x = BP_NUM_X+(BP_NUM_W-w)/2;
@@ -2476,7 +2503,7 @@ void BPUpdateStatus(void)
 
 			MenuStopBpt();
 			SyncSendHealthData();
-			memset(g_bpt_menu, 0x00, sizeof(g_bpt_menu));
+			memset(&g_bpt_menu, 0x00, sizeof(bpt_data));
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		break;
@@ -2502,6 +2529,16 @@ void BPUpdateStatus(void)
 		x = BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
 		y = BP_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
+		
+		ppg_retry_left--;
+		if(ppg_retry_left == 0)
+		{
+			y += (h+2);
+			mmi_asc_to_ucs2(tmpbuf, "Retry later");
+			LCD_MeasureUniString(tmpbuf,&w,&h);
+			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+			LCD_ShowUniString(x, y, tmpbuf);
+		}
 		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -2532,9 +2569,9 @@ void BPShowStatus(void)
 	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, IMG_BP_BIG_ICON_3_ADDR);
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 #else	
-	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_SetFontSize(FONT_SIZE_24);
 #endif
 
 	mmi_asc_to_ucs2(tmpbuf, "Stay still");
@@ -2557,7 +2594,7 @@ void BPScreenProcess(void)
 		LCD_Clear(BLACK);
 		IdleShowSignal();
 		IdleShowNetMode();
-		IdleUpdateBatSoc();
+		IdleShowBatSoc();
 		BPShowStatus();
 		break;
 		
@@ -2637,6 +2674,7 @@ void EnterBPScreen(void)
 	get_bpt_ok_flag = false;
 	g_ppg_status = PPG_STATUS_PREPARE;
 	img_index = 0;
+	ppg_retry_left = 2;
 
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
   #ifdef CONFIG_STEP_SUPPORT
@@ -2687,7 +2725,7 @@ void SPO2UpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		mmi_asc_to_ucs2(tmpbuf, "Blood Oxcygen");
+		mmi_asc_to_ucs2(tmpbuf, "Blood Oxygen");
 		LCD_MeasureUniString(tmpbuf,&w,&h);
 		x = SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
 		y = SPO2_NOTIFY_Y;
@@ -2745,6 +2783,16 @@ void SPO2UpdateStatus(void)
 		x = SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
 		y = SPO2_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
+
+		ppg_retry_left--;
+		if(ppg_retry_left == 0)
+		{
+			y += (h+2);
+			mmi_asc_to_ucs2(tmpbuf, "Retry later");
+			LCD_MeasureUniString(tmpbuf,&w,&h);
+			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+			LCD_ShowUniString(x, y, tmpbuf);
+		}
 		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -2776,9 +2824,9 @@ void SPO2ShowStatus(void)
 	LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, IMG_SPO2_BIG_ICON_3_ADDR);
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 #else	
-	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_SetFontSize(FONT_SIZE_24);
 #endif
 
 	mmi_asc_to_ucs2(tmpbuf, "Stay still");
@@ -2801,7 +2849,7 @@ void SPO2ScreenProcess(void)
 		LCD_Clear(BLACK);
 		IdleShowSignal();
 		IdleShowNetMode();
-		IdleUpdateBatSoc();
+		IdleShowBatSoc();
 		SPO2ShowStatus();
 		break;
 		
@@ -2883,6 +2931,7 @@ void EnterSPO2Screen(void)
 	get_spo2_ok_flag = false;
 	g_ppg_status = PPG_STATUS_PREPARE;
 	img_index = 0;
+	ppg_retry_left = 2;
 	
 	SetLeftKeyUpHandler(EnterBPScreen);
 	SetRightKeyUpHandler(ExitSPO2Screen);
@@ -2938,15 +2987,16 @@ void HRUpdateStatus(void)
 		if(get_hr_ok_flag)
 		{
 			LCD_Fill(HR_NOTIFY_X, HR_NOTIFY_Y, HR_NOTIFY_W, HR_NOTIFY_H, BLACK);
-			LCD_ShowImg_From_Flash(HR_UNIT_X, HR_UNIT_Y, IMG_HR_BPM_ADDR);
 			
-			sprintf(tmpbuf, "%03d", g_hr);
+			sprintf(tmpbuf, "%d", g_hr);
 			mmi_asc_to_ucs2(strbuf, tmpbuf);
 			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
 			x = HR_NUM_X+(HR_NUM_W-w)/2;
 			y = HR_NUM_Y+(HR_NUM_H-h)/2;
 			LCD_ShowUniString(x, y, strbuf);
 
+			LCD_ShowImg_From_Flash(x+w+5, HR_UNIT_Y, IMG_HR_BPM_ADDR);
+			
 			MenuStopHr();
 			SyncSendHealthData();
 			g_hr_menu = 0;
@@ -2973,6 +3023,16 @@ void HRUpdateStatus(void)
 		x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 		y = HR_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
+		
+		ppg_retry_left--;
+		if(ppg_retry_left == 0)
+		{
+			y += (h+2);
+			mmi_asc_to_ucs2(tmpbuf, "Retry later");
+			LCD_MeasureUniString(tmpbuf,&w,&h);
+			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+			LCD_ShowUniString(x, y, tmpbuf);
+		}
 		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -2980,8 +3040,8 @@ void HRUpdateStatus(void)
 		LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_BIG_ICON_2_ADDR);
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);
-	#else	
-		LCD_SetFontSize(FONT_SIZE_32);
+	#else
+		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
 		mmi_asc_to_ucs2(tmpbuf, "Keep still and retry");
@@ -3004,9 +3064,9 @@ void HRShowStatus(void)
 	LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_BIG_ICON_1_ADDR);
 
 #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 #else	
-	LCD_SetFontSize(FONT_SIZE_32);
+	LCD_SetFontSize(FONT_SIZE_24);
 #endif
 
 	mmi_asc_to_ucs2(tmpbuf, "Stay still");
@@ -3029,7 +3089,7 @@ void HRScreenProcess(void)
 		LCD_Clear(BLACK);
 		IdleShowSignal();
 		IdleShowNetMode();
-		IdleUpdateBatSoc();
+		IdleShowBatSoc();
 		HRShowStatus();
 		break;
 		
@@ -3113,6 +3173,7 @@ void EnterHRScreen(void)
 	get_hr_ok_flag = false;
 	g_ppg_status = PPG_STATUS_PREPARE;
 	img_index = 0;
+	ppg_retry_left = 2;
 
 #ifdef CONFIG_TEMP_SUPPORT
 	SetLeftKeyUpHandler(EnterTempScreen);

@@ -212,14 +212,14 @@ extern "C" {
 #define SLEEP_DEEP_STR_Y			171
 
 //heart rate
-#define HR_ICON_W					88
-#define HR_ICON_H					80
-#define HR_ICON_X					76
-#define HR_ICON_Y					68
+#define HR_ICON_W					66
+#define HR_ICON_H					60
+#define HR_ICON_X					((LCD_WIDTH-HR_ICON_W)/2)
+#define HR_ICON_Y					((LCD_HEIGHT-HR_ICON_H)/2)
 #define HR_NOTIFY_W					LCD_WIDTH
 #define HR_NOTIFY_H					60
 #define HR_NOTIFY_X					((LCD_WIDTH-HR_NOTIFY_W)/2)
-#define HR_NOTIFY_Y					175
+#define HR_NOTIFY_Y					165
 #define HR_NUM_W					85
 #define HR_NUM_H					48
 #define HR_NUM_X					((LCD_WIDTH-HR_NUM_W)/2)
@@ -234,14 +234,14 @@ extern "C" {
 #define HR_BG_Y						60
 
 //spo2
-#define SPO2_ICON_W					58
-#define SPO2_ICON_H					80
-#define SPO2_ICON_X					91
-#define SPO2_ICON_Y					68
+#define SPO2_ICON_W					44
+#define SPO2_ICON_H					60
+#define SPO2_ICON_X					((LCD_WIDTH-SPO2_ICON_W)/2)
+#define SPO2_ICON_Y					((LCD_HEIGHT-SPO2_ICON_H)/2)
 #define SPO2_NOTIFY_W				LCD_WIDTH
 #define SPO2_NOTIFY_H				60
 #define SPO2_NOTIFY_X				((LCD_WIDTH-HR_NOTIFY_W)/2)
-#define SPO2_NOTIFY_Y				175
+#define SPO2_NOTIFY_Y				165
 #define SPO2_NUM_W					85
 #define SPO2_NUM_H					48
 #define SPO2_NUM_X					((LCD_WIDTH-HR_NUM_W)/2)
@@ -256,14 +256,14 @@ extern "C" {
 #define SPO2_BG_Y					80
 
 //blood pressure
-#define BP_ICON_W					44
-#define BP_ICON_H					80
-#define BP_ICON_X					98
-#define BP_ICON_Y					68
+#define BP_ICON_W					33
+#define BP_ICON_H					60
+#define BP_ICON_X					((LCD_WIDTH-BP_ICON_W)/2)
+#define BP_ICON_Y					((LCD_HEIGHT-BP_ICON_H)/2)
 #define BP_NOTIFY_W					LCD_WIDTH
 #define BP_NOTIFY_H					60
 #define BP_NOTIFY_X					((LCD_WIDTH-HR_NOTIFY_W)/2)
-#define BP_NOTIFY_Y					175
+#define BP_NOTIFY_Y					165
 #define BP_NUM_W					178
 #define BP_NUM_H					48
 #define BP_NUM_X					((LCD_WIDTH-BP_NUM_W)/2)
@@ -278,14 +278,14 @@ extern "C" {
 #define BP_BG_Y						80
 
 //temperature
-#define TEMP_ICON_W					66
-#define TEMP_ICON_H					82
-#define TEMP_ICON_X					88
-#define TEMP_ICON_Y					68
+#define TEMP_ICON_W					49
+#define TEMP_ICON_H					60
+#define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
+#define TEMP_ICON_Y					((LCD_HEIGHT-TEMP_ICON_H)/2)
 #define TEMP_NOTIFY_W				LCD_WIDTH
 #define TEMP_NOTIFY_H				60
 #define TEMP_NOTIFY_X				((LCD_WIDTH-HR_NOTIFY_W)/2)
-#define TEMP_NOTIFY_Y				175
+#define TEMP_NOTIFY_Y				165
 #define TEMP_NUM_W					178
 #define TEMP_NUM_H					48
 #define TEMP_NUM_X					((LCD_WIDTH-TEMP_NUM_W)/2)

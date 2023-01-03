@@ -220,7 +220,7 @@ extern "C" {
 #define HR_NOTIFY_H					60
 #define HR_NOTIFY_X					((LCD_WIDTH-HR_NOTIFY_W)/2)
 #define HR_NOTIFY_Y					165
-#define HR_NUM_W					85
+#define HR_NUM_W					100
 #define HR_NUM_H					48
 #define HR_NUM_X					((LCD_WIDTH-HR_NUM_W)/2)
 #define HR_NUM_Y					160

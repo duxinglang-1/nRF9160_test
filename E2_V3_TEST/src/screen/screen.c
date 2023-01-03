@@ -2991,7 +2991,7 @@ void HRUpdateStatus(void)
 			sprintf(tmpbuf, "%d", g_hr);
 			mmi_asc_to_ucs2(strbuf, tmpbuf);
 			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			x = HR_NUM_X+(HR_NUM_W-w)/2;
+			x = HR_NUM_X+(HR_NUM_W-w-HR_UNIT_W-5)/2;
 			y = HR_NUM_Y+(HR_NUM_H-h)/2;
 			LCD_ShowUniString(x, y, strbuf);
 

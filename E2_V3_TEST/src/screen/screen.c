@@ -2145,7 +2145,7 @@ void TempUpdateStatus(void)
 			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 			LCD_ShowUniString(x, y, tmpbuf);
 		}
-		k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
+		k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 		
 	case TEMP_STATUS_NOTIFY:
@@ -2539,7 +2539,7 @@ void BPUpdateStatus(void)
 			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 			LCD_ShowUniString(x, y, tmpbuf);
 		}
-		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
+		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 		
 	case PPG_STATUS_NOTIFY:
@@ -2793,7 +2793,7 @@ void SPO2UpdateStatus(void)
 			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 			LCD_ShowUniString(x, y, tmpbuf);
 		}
-		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
+		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 		
 	case PPG_STATUS_NOTIFY:
@@ -3033,7 +3033,7 @@ void HRUpdateStatus(void)
 			x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 			LCD_ShowUniString(x, y, tmpbuf);
 		}
-		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
+		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 		
 	case PPG_STATUS_NOTIFY:

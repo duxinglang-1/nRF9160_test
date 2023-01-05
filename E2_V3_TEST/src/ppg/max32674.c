@@ -29,6 +29,11 @@
 
 //#define PPG_DEBUG
 
+#define PPG_HR_COUNT_MAX		15
+#define PPG_HR_DEL_MIN_NUM		5
+#define PPG_SPO2_COUNT_MAX		15
+#define PPG_SPO2_DEL_MIN_NUM	5
+
 bool ppg_int_event = false;
 bool ppg_bpt_is_calbraed = false;
 bool ppg_bpt_cal_need_update = false;
@@ -71,6 +76,11 @@ uint8_t g_spo2_menu = 0;
 bpt_data g_bpt = {0};
 bpt_data g_bpt_timing = {0};
 bpt_data g_bpt_menu = {0};
+
+static uint8_t temp_hr_count = 0;
+static uint8_t temp_spo2_count = 0;
+static uint8_t temp_hr[PPG_HR_COUNT_MAX] = {0};
+static uint8_t temp_spo2[PPG_SPO2_COUNT_MAX] = {0};
 
 static void ppg_set_appmode_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_appmode_timer, ppg_set_appmode_timerout, NULL);
@@ -835,7 +845,7 @@ void PPGGetSensorHubData(void)
 		ret = sh_read_fifo_data(u32_sampleCnt, num_bytes_to_read, databuf, sizeof(databuf));
 		if(ret == SS_SUCCESS)
 		{
-			uint16_t heart_rate=0,spo2=0;
+			uint16_t heart_rate=0,blood_oxy=0;
 			uint32_t i,j,index = 0;
 
 			for(i=0,j=0;i<u32_sampleCnt;i++)
@@ -973,7 +983,7 @@ void PPGGetSensorHubData(void)
 					if(sensorhub_out.scd_contact_state == 3)	//Skin contact state:0: Undetected 1: Off skin 2: On some subject 3: On skin
 					{
 						heart_rate += sensorhub_out.hr;
-						spo2 += sensorhub_out.spo2;
+						blood_oxy += sensorhub_out.spo2;
 						j++;
 					}
 				}
@@ -981,29 +991,66 @@ void PPGGetSensorHubData(void)
 
 			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
-				static uint8_t count = 0;
-				
 				if(j > 0)
 				{
 					heart_rate = heart_rate/j;
-					spo2 = spo2/j;
+					blood_oxy = blood_oxy/j;
 				}
 
 			#ifdef PPG_DEBUG
-				LOGD("avra hr:%d, spo2:%d", heart_rate, spo2);
+				LOGD("avra hr:%d, spo2:%d", heart_rate, blood_oxy);
 			#endif
 				if(g_ppg_data == PPG_DATA_HR)
 				{
-					g_hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
+					uint8_t hr = 0;
+					
+					hr = heart_rate/10 + ((heart_rate%10 > 4) ? 1 : 0);
 				#ifdef PPG_DEBUG
-					LOGD("g_hr:%d", g_hr);
+					LOGD("hr:%d", hr);
 				#endif
-					if(g_hr > 0)
+					if(hr > 0)
 					{
-						count++;
-						if(count > 10)
+						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
 						{
-							count = 0;
+							uint8_t k;
+							
+							if(temp_hr[i] == 0)
+							{
+								temp_hr[i] = hr;
+								break;
+							}
+							else if(temp_hr[i] >= hr)
+							{
+								for(k=sizeof(temp_hr)/sizeof(temp_hr[0])-1;k>=i+1;k--)
+								{
+									temp_hr[k] = temp_hr[k-1];
+								}
+								temp_hr[i] = hr;
+								break;
+							}
+						}
+
+					#ifdef PPG_DEBUG
+						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
+						{		
+							LOGD("temp_hr:%d", temp_hr[i]);
+						}
+						LOGD("temp_hr_count:%d", temp_hr_count);
+					#endif
+
+						temp_hr_count++;
+						if(temp_hr_count >= sizeof(temp_hr)/sizeof(temp_hr[0]))
+						{
+							uint16_t hr_data = 0;
+							
+							for(i=PPG_HR_DEL_MIN_NUM;i<temp_hr_count;i++)
+							{
+								hr_data += temp_hr[i];
+							}
+
+							g_hr = hr_data/(temp_hr_count-PPG_HR_DEL_MIN_NUM);
+							temp_hr_count = 0;
+							
 							get_hr_ok_flag = true;
 							ppg_stop_flag = true;
 						#ifdef PPG_DEBUG
@@ -1011,33 +1058,64 @@ void PPGGetSensorHubData(void)
 						#endif
 						}
 					}
-					else
-					{
-						count = 0;
-					}
 				}
 				else if(g_ppg_data == PPG_DATA_SPO2)
 				{
-					g_spo2 = spo2/10 + ((spo2%10 > 4) ? 1 : 0);
+					uint8_t spo2 = 0;
+					
+					spo2 = blood_oxy/10 + ((blood_oxy%10 > 4) ? 1 : 0);
 				#ifdef PPG_DEBUG
-					LOGD("g_spo2:%d", g_spo2);
+					LOGD("spo2:%d", spo2);
 				#endif
-					if(g_spo2 > 0)
+					if(spo2 > 0)
 					{
-						count++;
-						if(count > 10)
+						for(i=0;i<sizeof(temp_spo2)/sizeof(temp_spo2[0]);i++)
 						{
-							count = 0;
+							uint8_t k;
+							
+							if(temp_spo2[i] == 0)
+							{
+								temp_spo2[i] = spo2;
+								break;
+							}
+							else if(temp_spo2[i] >= spo2)
+							{
+								for(k=sizeof(temp_spo2)/sizeof(temp_spo2[0])-1;k>=i+1;k--)
+								{
+									temp_spo2[k] = temp_spo2[k-1];
+								}
+								temp_spo2[i] = spo2;
+								break;
+							}
+						}
+
+					#ifdef PPG_DEBUG
+						for(i=0;i<sizeof(temp_spo2)/sizeof(temp_spo2[0]);i++)
+						{		
+							LOGD("temp_spo2:%d", temp_spo2[i]);
+						}
+						LOGD("temp_spo2_count:%d", temp_spo2_count);
+					#endif
+
+						temp_spo2_count++;
+						if(temp_spo2_count >= sizeof(temp_spo2)/sizeof(temp_spo2[0]))
+						{
+							uint16_t spo2_data = 0;
+							
+							for(i=PPG_SPO2_DEL_MIN_NUM;i<temp_spo2_count;i++)
+							{
+								spo2_data += temp_spo2[i];
+							}
+							
+							g_spo2 = spo2_data/(temp_spo2_count-PPG_SPO2_DEL_MIN_NUM);
+							temp_spo2_count = 0;
+
 							get_spo2_ok_flag = true;
 							ppg_stop_flag = true;
 						#ifdef PPG_DEBUG
-							LOGD("get spo2 success! hr:%d", g_spo2);
+							LOGD("get spo2 success! spo2:%d", g_spo2);
 						#endif
 						}
-					}
-					else
-					{
-						count = 0;
 					}
 				}
 			}
@@ -1083,7 +1161,8 @@ void TimerStartHr(void)
 {
 	g_hr = 0;
 	g_hr_timing = 0;
-	g_hr_menu = 0;
+	temp_hr_count = 0;
+	memset(&temp_hr, 0x00, sizeof(temp_hr));	
 	get_hr_ok_flag = false;
 	
 	if(is_wearing())
@@ -1135,6 +1214,8 @@ void TimerStartHr(void)
 void APPStartHr(void)
 {
 	g_hr = 0;
+	temp_hr_count = 0;
+	memset(&temp_hr, 0x00, sizeof(temp_hr));
 	get_hr_ok_flag = false;
 
 	if(is_wearing())
@@ -1208,7 +1289,11 @@ void MenuTriggerHr(void)
 	}
 
 	g_hr = 0;
+	g_hr_menu = 0;
+	temp_hr_count = 0;
+	memset(&temp_hr, 0x00, sizeof(temp_hr));
 	get_hr_ok_flag = false;
+	
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_HR;
@@ -1230,7 +1315,8 @@ void TimerStartSpo2(void)
 {
 	g_spo2 = 0;
 	g_spo2_timing = 0;
-	g_spo2_menu = 0;
+	temp_spo2_count	= 0;
+	memset(&temp_spo2, 0x00, sizeof(temp_spo2));
 	get_spo2_ok_flag = false;
 	
 	if(is_wearing())
@@ -1283,6 +1369,8 @@ void TimerStartSpo2(void)
 void APPStartSpo2(void)
 {
 	g_spo2 = 0;
+	temp_spo2_count	= 0;
+	memset(&temp_spo2, 0x00, sizeof(temp_spo2));	
 	get_spo2_ok_flag = false;
 
 	if(is_wearing())
@@ -1355,7 +1443,11 @@ void MenuTriggerSpo2(void)
 	}
 
 	g_spo2 = 0;
+	g_spo2_menu = 0;
+	temp_spo2_count	= 0;
+	memset(&temp_spo2, 0x00, sizeof(temp_spo2));	
 	get_spo2_ok_flag = false;
+
 	g_ppg_trigger |= TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 	g_ppg_data = PPG_DATA_SPO2;
@@ -1429,10 +1521,9 @@ void TimerStartBpt(void)
 
 void APPStartBpt(void)
 {
+	memset(&g_bpt, 0x00, sizeof(bpt_data));
+
 	get_bpt_ok_flag = false;
-	
-	g_bpt.diastolic = 0;
-	g_bpt.systolic = 0;
 	
 	if(is_wearing())
 	{
@@ -1503,8 +1594,7 @@ void MenuTriggerBpt(void)
 		return;
 	}
 
-	g_bpt.diastolic = 0;
-	g_bpt.systolic = 0;
+	memset(&g_bpt, 0x00, sizeof(bpt_data));
 	get_bpt_ok_flag = false;
 	g_ppg_trigger |=TRIGGER_BY_MENU;
 	g_ppg_alg_mode = ALG_MODE_BPT;
@@ -1739,8 +1829,7 @@ void PPGStopBptCal(void)
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
-	if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
-		ppg_stop_flag = true;
+	ppg_stop_flag = true;
 }
 
 static void ppg_menu_stop_timerout(struct k_timer *timer_id)

@@ -2036,8 +2036,7 @@ void TempUpdateStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t tmpbuf[64] = {0};
 	uint8_t strbuf[64] = {0};
-	uint32_t img_c[3] = {IMG_TEMP_BIG_ICON_C_1_ADDR,IMG_TEMP_BIG_ICON_C_2_ADDR,IMG_TEMP_BIG_ICON_C_3_ADDR};
-	uint32_t img_f[3] = {IMG_TEMP_BIG_ICON_F_1_ADDR,IMG_TEMP_BIG_ICON_F_2_ADDR,IMG_TEMP_BIG_ICON_F_3_ADDR};
+	uint32_t img_anima[3] = {IMG_TEMP_BIG_ICON_1_ADDR,IMG_TEMP_BIG_ICON_2_ADDR,IMG_TEMP_BIG_ICON_3_ADDR};
 
 	switch(g_temp_status)
 	{
@@ -2063,11 +2062,7 @@ void TempUpdateStatus(void)
 		img_flag++;
 		if(img_flag >= 3)
 			img_flag = 0;
-
-		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, img_c[img_flag]);
-		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, img_f[img_flag]);
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, img_anima[img_flag]);
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_36);
@@ -2078,10 +2073,7 @@ void TempUpdateStatus(void)
 		if(get_temp_ok_flag)
 		{
 			LCD_Fill(TEMP_NOTIFY_X, TEMP_NOTIFY_Y, TEMP_NOTIFY_W, TEMP_NOTIFY_H, BLACK);
-			if(global_settings.temp_unit == TEMP_UINT_C)
-				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
-			else
-				LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
+			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
 			
 			if(global_settings.temp_unit == TEMP_UINT_C)
 				sprintf(tmpbuf, "%0.1f", g_temp_body);
@@ -2107,11 +2099,7 @@ void TempUpdateStatus(void)
 		break;
 		
 	case TEMP_STATUS_MEASURE_OK:
-		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
-		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
-		
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
 		k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -2119,10 +2107,7 @@ void TempUpdateStatus(void)
 		MenuStopTemp();
 
 		LCD_Fill(TEMP_NOTIFY_X, TEMP_NOTIFY_Y, TEMP_NOTIFY_W, TEMP_NOTIFY_H, BLACK);
-		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
-		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
 		
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);
@@ -2149,10 +2134,7 @@ void TempUpdateStatus(void)
 		break;
 		
 	case TEMP_STATUS_NOTIFY:
-		if(global_settings.temp_unit == TEMP_UINT_C)
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
-		else
-			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
+		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);
@@ -2179,10 +2161,7 @@ void TempShowStatus(void)
 	uint16_t temp[24] = {0};
 	uint16_t color = 0x05DF;
 
-	if(global_settings.temp_unit == TEMP_UINT_C)
-		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_C_3_ADDR);
-	else
-		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_F_3_ADDR);
+	LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_36);
@@ -2209,7 +2188,7 @@ void TempScreenProcess(void)
 		LCD_Clear(BLACK);
 		IdleShowSignal();
 		IdleShowNetMode();
-		IdleUpdateBatSoc();
+		IdleShowBatSoc();
 		TempShowStatus();
 		break;
 		
@@ -2771,6 +2750,8 @@ void SPO2UpdateStatus(void)
 		
 	case PPG_STATUS_MEASURE_FAIL:
 		MenuStopSpo2();
+
+		LCD_Fill(SPO2_NOTIFY_X, SPO2_NOTIFY_Y, SPO2_NOTIFY_W, SPO2_NOTIFY_H, BLACK);
 		LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, IMG_SPO2_BIG_ICON_3_ADDR);
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);
@@ -3011,6 +2992,8 @@ void HRUpdateStatus(void)
 		
 	case PPG_STATUS_MEASURE_FAIL:
 		MenuStopHr();
+		
+		LCD_Fill(HR_NOTIFY_X, HR_NOTIFY_Y, HR_NOTIFY_W, HR_NOTIFY_H, BLACK);
 		LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_BIG_ICON_2_ADDR);
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_28);

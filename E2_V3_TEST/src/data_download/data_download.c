@@ -542,6 +542,22 @@ void dl_start(void)
 
 void dl_start_confirm(void)
 {
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking()&&!TempIsWorkingTiming())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+		MenuStopPPG();
+#endif
+#ifdef CONFIG_WIFI_SUPPORT
+	if(wifi_is_working())
+		MenuStopWifi();
+#endif
+
 	dl_cur_status = DL_STATUS_LINKING;
 	dl_redraw_pro_flag = true;
 

@@ -243,6 +243,22 @@ void fota_start(void)
 
 void fota_start_confirm(void)
 {
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking()&&!TempIsWorkingTiming())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+		MenuStopPPG();
+#endif
+#ifdef CONFIG_WIFI_SUPPORT
+	if(wifi_is_working())
+		MenuStopWifi();
+#endif
+
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);

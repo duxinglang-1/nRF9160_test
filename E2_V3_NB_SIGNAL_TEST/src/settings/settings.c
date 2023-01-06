@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.0.1_20221212";
+uint8_t g_fw_version[64] = "V3.0.2_20221230";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -87,6 +87,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	false,					//blood oxygen turn on		
 	true,					//wake screen by wrist
 	false,					//wrist off check
+	3,						//location type: 1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	0,						//target steps
 	60,						//health interval
 	TEMP_UINT_C,			//Centigrade
@@ -557,8 +558,10 @@ void InitSystemSettings(void)
 
 	ReadSettingsFromInnerFlash(&global_settings);
 
-	if(!global_settings.init)
+	if(!global_settings.init || (global_settings.location_type < 1 || global_settings.location_type > 4))
 	{
+		ResetInnerFlash();
+
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
 	}

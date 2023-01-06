@@ -38,13 +38,18 @@ static bool menu_start_temp = false;
 
 bool get_temp_ok_flag = false;
 
+TEMP_WORK_STATUS g_temp_status = TEMP_STATUS_PREPARE;
+
 uint8_t g_temp_trigger = 0;
 float g_temp_skin = 0.0;
 float g_temp_body = 0.0;
 float g_temp_timing = 0.0;
+float g_temp_menu = 0.0;
 
 static void temp_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_stop_timer, temp_auto_stop_timerout, NULL);
+static void temp_menu_stop_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(temp_menu_stop_timer, temp_menu_stop_timerout, NULL);
 static void temp_get_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_check_timer, temp_get_timerout, NULL);
 
@@ -52,6 +57,17 @@ static void temp_auto_stop_timerout(struct k_timer *timer_id)
 {
 	if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)
 		temp_stop_flag = true;
+}
+
+static void temp_menu_stop_timerout(struct k_timer *timer_id)
+{
+	if(screen_id == SCREEN_ID_TEMP)
+	{
+		g_temp_status = TEMP_STATUS_MEASURE_FAIL;
+		
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 static void temp_get_timerout(struct k_timer *timer_id)
@@ -66,6 +82,7 @@ void ClearAllTempRecData(void)
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
 	g_temp_timing = 0.0;
+	g_temp_menu = 0.0;
 
 	SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 }
@@ -228,13 +245,11 @@ void TempStop(void)
 
 void TempRedrawData(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_TEMP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-	else if(screen_id == SCREEN_ID_TEMP)
-	{
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
@@ -244,6 +259,7 @@ void TimerStartTemp(void)
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
 	g_temp_timing = 0.0;
+	g_temp_menu = 0.0;
 	get_temp_ok_flag = false;
 
 	if(is_wearing())
@@ -368,8 +384,14 @@ void TempMsgProcess(void)
 	
 		k_timer_start(&temp_check_timer, K_MSEC(1*1000), K_MSEC(1*1000));
 
-		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == 0)
+		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) == TEMP_TRIGGER_BY_HOURLY)
+		{
 			k_timer_start(&temp_stop_timer, K_MSEC(TEMP_CHECK_TIMELY*60*1000), K_NO_WAIT);
+		}
+		else if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == TEMP_TRIGGER_BY_MENU)
+		{
+			k_timer_start(&temp_menu_stop_timer, K_SECONDS(TEMP_CHECK_MENU), K_NO_WAIT);
+		}
 	}
 
 	if(temp_stop_flag)
@@ -385,6 +407,7 @@ void TempMsgProcess(void)
 		temp_power_flag = false;
 		k_timer_stop(&temp_check_timer);
 		k_timer_stop(&temp_stop_timer);
+		k_timer_stop(&temp_menu_stop_timer);
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_APP) != 0)
 		{
@@ -393,6 +416,7 @@ void TempMsgProcess(void)
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_MENU);
+			g_temp_menu = g_temp_body;
 		}
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{

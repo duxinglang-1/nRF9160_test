@@ -52,7 +52,7 @@
 //#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
-#define MQTT_CONNECTED_KEEP_TIME	(1*60)
+#define MQTT_CONNECTED_KEEP_TIME	(30)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -970,7 +970,12 @@ void NBGetNetMode(uint8_t *at_mode_set)
 
 void NBRedrawNetMode(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_NET_MODE;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
@@ -1135,7 +1140,12 @@ void NBRedrawSignal(void)
 		g_nb_sig = NB_SIG_LEVEL_0;
 	}
 
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SIG;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
@@ -1352,16 +1362,37 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+void NBSendSosAlarmData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T0:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG	
+	LOGD("sos alarm data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
 void NBSendSosWifiData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T1:");
 	strcat(buf, data);
 	strcat(buf, ",");
-	strcat(buf, sos_trigger_time);
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
 	LOGD("sos wifi data:%s", buf);
@@ -1597,7 +1628,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		
 		if(strcmp(strcmd, "S7") == 0)
 		{
-			uint8_t *ptr;
+			uint8_t *ptr,*ptr1;
 			uint8_t strtmp[128] = {0};
 
 			//后台下发定位上报间隔
@@ -1608,9 +1639,21 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				global_settings.dot_interval.time = atoi(strtmp);
 
 				ptr++;
-				memset(strtmp, 0, sizeof(strtmp));
-				strcpy(strtmp, ptr);
-				global_settings.dot_interval.steps = atoi(strtmp);
+				ptr1 = strstr(ptr, ",");
+				if(ptr1 != NULL)
+				{
+					memset(strtmp, 0, sizeof(strtmp));
+					memcpy(strtmp, ptr, ptr1-ptr);
+					global_settings.dot_interval.steps = atoi(strtmp);
+
+					ptr = ptr1+1;
+					memset(strtmp, 0, sizeof(strtmp));
+					strcpy(strtmp, ptr);
+					global_settings.location_type = atoi(strtmp);
+				}
+			#ifdef NB_DEBUG
+				LOGD("time:%d, steps:%d, location_type:%d", global_settings.dot_interval.time,global_settings.dot_interval.steps,global_settings.location_type);
+			#endif	
 			}
 
 			flag = true;
@@ -2619,7 +2662,7 @@ static void nb_link(struct k_work *work)
 
 		GetModemStatus();
 
-	#if 1//ndef NB_SIGNAL_TEST
+	#ifndef NB_SIGNAL_TEST
 		if(!nb_connected)
 			SetModemTurnOff();
 		
@@ -2779,7 +2822,21 @@ void NBMsgProcess(void)
 	
 	if(mqtt_disconnect_flag)
 	{
-		MqttDisConnect();
+		if(send_cache_is_empty())
+		{
+		#ifdef NB_DEBUG
+			LOGD("001");
+		#endif
+			MqttDisConnect();
+		}
+		else
+		{
+		#ifdef NB_DEBUG
+			LOGD("002");
+		#endif
+			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5), K_NO_WAIT);
+		}
+		
 		mqtt_disconnect_flag = false;
 	}
 

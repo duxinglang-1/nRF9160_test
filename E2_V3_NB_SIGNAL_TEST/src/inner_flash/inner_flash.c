@@ -109,6 +109,22 @@ void ReadSettingsFromInnerFlash(global_settings_t *settings)
 	}
 }
 
+void ResetInnerFlash(void)
+{
+	int err;
+	
+	nvs_clear(&fs);
+
+	err = nvs_setup();
+	if(err)
+	{
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("Flash Init failed, return!");
+	#endif
+		return;
+	}
+}
+
 void SaveSettingsToInnerFlash(global_settings_t settings)
 {
 	nvs_write(&fs, SETTINGS_ID, &settings, sizeof(global_settings_t));

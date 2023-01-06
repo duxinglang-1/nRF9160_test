@@ -90,6 +90,9 @@ extern unsigned char IMG_BKL_LEVEL_3[35648];
 extern unsigned char IMG_BKL_LEVEL_4[35648];
 //blood pressure(7)
 extern unsigned char IMG_BP_BG[33158];
+extern unsigned char IMG_BP_BIG_ICON_1[3968];
+extern unsigned char IMG_BP_BIG_ICON_2[3968];
+extern unsigned char IMG_BP_BIG_ICON_3[3968];
 extern unsigned char IMG_BP_DOWN_ARRAW[392];
 extern unsigned char IMG_BP_ICON_ANI_1[1768];
 extern unsigned char IMG_BP_ICON_ANI_2[1768];
@@ -110,6 +113,8 @@ extern unsigned char IMG_FUN_OPT_SYNC_ICON[4240];
 extern unsigned char IMG_FUN_OPT_TEMP_ICON[4240];
 //heart rate(6)
 extern unsigned char IMG_HR_BG[33548];
+extern unsigned char IMG_HR_BIG_ICON_1[7928];
+extern unsigned char IMG_HR_BIG_ICON_2[7928];
 extern unsigned char IMG_HR_BPM[1988];
 extern unsigned char IMG_HR_DOWN_ARRAW[548];
 extern unsigned char IMG_HR_ICON_ANI_1[2116];
@@ -193,6 +198,9 @@ extern unsigned char IMG_SPO2_ANI_1[2328];
 extern unsigned char IMG_SPO2_ANI_2[2328];
 extern unsigned char IMG_SPO2_ANI_3[2328];
 extern unsigned char IMG_SPO2_BG[33158];
+extern unsigned char IMG_SPO2_BIG_ICON_1[5288];
+extern unsigned char IMG_SPO2_BIG_ICON_2[5288];
+extern unsigned char IMG_SPO2_BIG_ICON_3[5288];
 extern unsigned char IMG_SPO2_DOWN_ARRAW[484];
 extern unsigned char IMG_SPO2_UP_ARRAW[484];
 //sport achieve(4)
@@ -211,6 +219,9 @@ extern unsigned char IMG_SYNC_ERR[42128];
 extern unsigned char IMG_SYNC_FINISH[42128];
 extern unsigned char IMG_SYNC_LOGO[36458];
 //temperature(4)
+extern unsigned char IMG_TEMP_BIG_ICON_1[5888];
+extern unsigned char IMG_TEMP_BIG_ICON_2[5888];
+extern unsigned char IMG_TEMP_BIG_ICON_3[5888];
 extern unsigned char IMG_TEMP_ICON_C[2568];
 extern unsigned char IMG_TEMP_ICON_F[2864];
 extern unsigned char IMG_TEMP_UNIT_C[1756];

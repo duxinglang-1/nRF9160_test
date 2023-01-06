@@ -236,8 +236,16 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 			sleep_out_by_wrist = false;
 			lcd_sleep_out = true;
 		}
-		
-		return;
+
+		if((key_code == KEY_SOFT_LEFT)&&(key_type == KEY_EVENT_LONG_PRESS))
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	LCD_ResetBL_Timer();

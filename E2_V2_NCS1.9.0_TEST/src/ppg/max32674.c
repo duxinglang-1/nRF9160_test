@@ -1691,7 +1691,6 @@ void PPGStopBptCal(void)
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id)
 {
-	if((g_ppg_trigger&TRIGGER_BY_MENU) == 0)
 		ppg_stop_flag = true;
 }
 

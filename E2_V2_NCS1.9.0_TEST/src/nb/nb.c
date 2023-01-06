@@ -52,7 +52,7 @@
 //#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
-#define MQTT_CONNECTED_KEEP_TIME	(1*60)
+#define MQTT_CONNECTED_KEEP_TIME	(30)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -2779,7 +2779,21 @@ void NBMsgProcess(void)
 	
 	if(mqtt_disconnect_flag)
 	{
-		MqttDisConnect();
+		if(send_cache_is_empty())
+		{
+		#ifdef NB_DEBUG
+			LOGD("001");
+		#endif
+			MqttDisConnect();
+		}
+		else
+		{
+		#ifdef NB_DEBUG
+			LOGD("002");
+		#endif
+			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5), K_NO_WAIT);
+		}
+		
 		mqtt_disconnect_flag = false;
 	}
 

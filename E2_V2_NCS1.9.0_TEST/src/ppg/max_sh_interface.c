@@ -1328,11 +1328,12 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
-
-		PPG_i2c_off();
-		PPG_Power_Off();
-		PPG_Disable();
-		return false;
+		goto need_update;
+	
+		//PPG_i2c_off();
+		//PPG_Power_Off();
+		//PPG_Disable();
+		//return false;
 	}
 #ifdef MAX_DEBUG	
 	LOGD("MCU type = %d", u8_rxbuf[0]);
@@ -1345,11 +1346,12 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
 	#endif
+		goto need_update;
 	
-		PPG_i2c_off();
-		PPG_Power_Off();
-		PPG_Disable();
-		return false;
+		//PPG_i2c_off();
+		//PPG_Power_Off();
+		//PPG_Disable();
+		//return false;
 	}
 	else
 	{
@@ -1361,6 +1363,7 @@ bool sh_init_interface(void)
 
 	if((mcu_type != 1) || ((strcmp(g_ppg_ver, g_ppg_algo_ver) != 0)&&(strlen(g_ppg_algo_ver) > 0)))
 	{
+need_update:
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
 	#else	

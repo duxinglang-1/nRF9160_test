@@ -20,13 +20,14 @@
 
 #define TLS_SEC_TAG 42
 #define DL_SOCKET_RETRIES 2
+#define DL_BUF_LEN	4096
 
 static bool dl_start_flag = false;
 static bool dl_run_flag = false;
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
 
-static uint8_t databuf[4096] = {0};
+static uint8_t databuf[DL_BUF_LEN] = {0};
 static uint32_t datalen = 0;
 
 static dl_callback_t callback;
@@ -154,7 +155,7 @@ static int download_client_callback(const struct download_client_evt *event)
 		memcpy(&databuf[datalen], event->fragment.buf, event->fragment.len);
 		datalen += event->fragment.len;
 		LOGD("FRAGMENT datalen:%d", datalen);
-		if(datalen >= 4096)
+		if(datalen >= DL_BUF_LEN)
 		{
 			err = dl_target_write(databuf, datalen);
 			datalen = 0;

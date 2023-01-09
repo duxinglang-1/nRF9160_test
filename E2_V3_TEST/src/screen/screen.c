@@ -2375,9 +2375,17 @@ static void PPGStatusTimerOutCallBack(struct k_timer *timer_id)
 			break;
 			
 		case PPG_STATUS_MEASURE_FAIL:
-			g_ppg_status = PPG_STATUS_NOTIFY;
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
-			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			if(ppg_retry_left > 0)
+			{
+				g_ppg_status = PPG_STATUS_NOTIFY;
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			}
+			else
+			{
+				g_ppg_status = PPG_STATUS_MAX;
+				EntryIdleScr();
+			}
 			break;
 
 		case PPG_STATUS_MEASURE_OK:
@@ -2411,9 +2419,17 @@ static void PPGStatusTimerOutCallBack(struct k_timer *timer_id)
 			break;
 			
 		case PPG_STATUS_MEASURE_FAIL:
-			g_ppg_status = PPG_STATUS_NOTIFY;
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BP;
-			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			if(ppg_retry_left > 0)
+			{
+				g_ppg_status = PPG_STATUS_NOTIFY;
+				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BP;
+				scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+			}
+			else
+			{
+				g_ppg_status = PPG_STATUS_MAX;
+				EntryIdleScr();
+			}
 			break;
 
 		case PPG_STATUS_MEASURE_OK:

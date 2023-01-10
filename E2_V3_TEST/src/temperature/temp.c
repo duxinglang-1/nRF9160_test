@@ -417,6 +417,9 @@ void TempMsgProcess(void)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_MENU);
 			g_temp_menu = g_temp_body;
+
+			SyncSendHealthData();
+			g_temp_menu = 0;
 		}
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{

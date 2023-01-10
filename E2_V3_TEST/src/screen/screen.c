@@ -2091,9 +2091,6 @@ void TempUpdateStatus(void)
 				LCD_ShowImg_From_Flash(x+w+5, TEMP_UNIT_Y, IMG_TEMP_UNIT_F_ADDR);
 
 			MenuStopTemp();
-			SyncSendHealthData();
-			g_temp_menu = 0;
-			
 			k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		break;
@@ -2497,8 +2494,6 @@ void BPUpdateStatus(void)
 			LCD_ShowUniString(x, y, strbuf);
 
 			MenuStopBpt();
-			SyncSendHealthData();
-			memset(&g_bpt_menu, 0x00, sizeof(bpt_data));
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		break;
@@ -2753,8 +2748,6 @@ void SPO2UpdateStatus(void)
 			LCD_ShowUniString(x, y, strbuf);
 
 			MenuStopSpo2();
-			SyncSendHealthData();
-			g_spo2_menu = 0;
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		break;
@@ -2995,8 +2988,6 @@ void HRUpdateStatus(void)
 			LCD_ShowImg_From_Flash(x+w+5, HR_UNIT_Y, IMG_HR_BPM_ADDR);
 			
 			MenuStopHr();
-			SyncSendHealthData();
-			g_hr_menu = 0;
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		break;

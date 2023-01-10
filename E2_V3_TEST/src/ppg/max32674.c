@@ -1307,7 +1307,6 @@ void MenuStartHr(void)
 
 void MenuStopHr(void)
 {
-	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
 }
 
@@ -1461,7 +1460,6 @@ void MenuStartSpo2(void)
 
 void MenuStopSpo2(void)
 {
-	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
 }
 
@@ -1609,7 +1607,6 @@ void MenuStartBpt(void)
 
 void MenuStopBpt(void)
 {
-	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
 }
 
@@ -1683,7 +1680,6 @@ void MenuStartEcg(void)
 
 void MenuStopEcg(void)
 {
-	g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
 	ppg_stop_flag = true;
 }
 
@@ -1771,6 +1767,11 @@ void PPGStopCheck(void)
 			LOGD("g_bpt_menu:%d,%d", g_bpt_menu.systolic, g_bpt_menu.diastolic);
 		#endif
 		}
+
+		SyncSendHealthData();
+		g_hr_menu = 0;
+		g_spo2_menu = 0;
+		memset(&g_bpt_menu, 0x00, sizeof(bpt_data));
 	}
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{

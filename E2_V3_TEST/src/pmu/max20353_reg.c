@@ -1635,8 +1635,8 @@ void MAX20353_SOCInit(void)
 		handle_model(LOAD_MODEL);
 	}
 	
-	//设置默认温度25度，SOC变化1%报警，电量小于4%报警
-	WriteWord(0x0C, 0x12, 0x5C);
+	//设置默认温度20度，SOC变化1%报警，电量小于4%报警
+	WriteWord(0x0C, RCOMP0, 0x5C);
 
 #ifdef BATTERT_NTC_CHECK
 	MAX20353_StartCheckTemper();

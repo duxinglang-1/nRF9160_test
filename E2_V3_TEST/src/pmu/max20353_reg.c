@@ -820,8 +820,8 @@ int MAX20353_ChargerCfg(void)
 
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
-	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
-	appdatainoutbuffer_[2] = 0xD6; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0110:4.35V 
+	appdatainoutbuffer_[1] = 0x60; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.05IFChg 
+	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0111:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
 

@@ -729,6 +729,7 @@ void StartSensorhubCallBack(void)
 				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), K_NO_WAIT);
 			}
 		}
+	#ifndef UI_STYLE_HEALTH_BAR	
 		else if((g_ppg_trigger&TRIGGER_BY_MENU) == TRIGGER_BY_MENU)
 		{
 			if(g_ppg_data == PPG_DATA_HR)
@@ -744,6 +745,7 @@ void StartSensorhubCallBack(void)
 				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_BPT_MENU), K_NO_WAIT);
 			}
 		}
+	#endif
 	}
 	else
 	{

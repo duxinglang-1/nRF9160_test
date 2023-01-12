@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+//#define UI_STYLE_HEALTH_BAR
+
 //pwron
 #define PWRON_STR_W		198
 #define PWRON_STR_H		25
@@ -211,6 +213,153 @@ extern "C" {
 #define SLEEP_DEEP_STR_X			35
 #define SLEEP_DEEP_STR_Y			171
 
+#ifdef UI_STYLE_HEALTH_BAR
+//heart rate
+#define HR_ICON_W					34
+#define HR_ICON_H					31
+#define HR_ICON_X					42
+#define HR_ICON_Y					35
+#define HR_UNIT_W					45
+#define HR_UNIT_H					22
+#define HR_UNIT_X					151
+#define HR_UNIT_Y					42
+#define HR_NUM_W					65
+#define HR_NUM_H					42
+#define HR_NUM_X					84
+#define HR_NUM_Y					30
+#define HR_BG_W						201
+#define HR_BG_H						87
+#define HR_BG_X						((LCD_WIDTH-HR_BG_W)/2)
+#define HR_BG_Y						80
+#define HR_UP_ARRAW_W				14				
+#define HR_UP_ARRAW_H				17
+#define HR_UP_ARRAW_X				43
+#define HR_UP_ARRAW_Y				183
+#define HR_UP_NUM_W					39				
+#define HR_UP_NUM_H					27
+#define HR_UP_NUM_X					60
+#define HR_UP_NUM_Y					178
+#define HR_DOWN_ARRAW_W				14
+#define HR_DOWN_ARRAW_H				17
+#define HR_DOWN_ARRAW_X				131
+#define HR_DOWN_ARRAW_Y				183
+#define HR_DOWN_NUM_W				39				
+#define HR_DOWN_NUM_H				27
+#define HR_DOWN_NUM_X				148
+#define HR_DOWN_NUM_Y				178
+#define HR_REC_DATA_X				20
+#define HR_REC_DATA_Y				146
+#define HR_REC_DATA_W				4
+#define HR_REC_DATA_H				66
+#define HR_REC_DATA_OFFSET_X		7
+//spo2
+#define SPO2_ICON_W					29
+#define SPO2_ICON_H					46
+#define SPO2_ICON_X					63
+#define SPO2_ICON_Y					30
+#define SPO2_NUM_W					76
+#define SPO2_NUM_H					42
+#define SPO2_NUM_X					102
+#define SPO2_NUM_Y					30
+#define SPO2_BG_W					192
+#define SPO2_BG_H					87
+#define SPO2_BG_X					((LCD_WIDTH-SPO2_BG_W)/2)
+#define SPO2_BG_Y					80
+#define SPO2_UP_ARRAW_W				14
+#define SPO2_UP_ARRAW_H				17
+#define SPO2_UP_ARRAW_X				43
+#define SPO2_UP_ARRAW_Y				183
+#define SPO2_UP_NUM_W				49
+#define SPO2_UP_NUM_H				27
+#define SPO2_UP_NUM_X				60
+#define SPO2_UP_NUM_Y				178
+#define SPO2_DOWN_ARRAW_W			14
+#define SPO2_DOWN_ARRAW_H			17
+#define SPO2_DOWN_ARRAW_X			131
+#define SPO2_DOWN_ARRAW_Y			183
+#define SPO2_DOWN_NUM_W				49
+#define SPO2_DOWN_NUM_H				27
+#define SPO2_DOWN_NUM_X				148
+#define SPO2_DOWN_NUM_Y				178
+#define SPO2_REC_DATA_X				25
+#define SPO2_REC_DATA_Y				146
+#define SPO2_REC_DATA_W				4
+#define SPO2_REC_DATA_H				58
+#define SPO2_REC_DATA_OFFSET_X		7
+//blood pressure
+#define BP_ICON_W					22
+#define BP_ICON_H					40
+#define BP_ICON_X					54
+#define BP_ICON_Y					31
+#define BP_NUM_W					92
+#define BP_NUM_H					31
+#define BP_NUM_X					75
+#define BP_NUM_Y					40
+#define BP_UNIT_X					166
+#define BP_UNIT_Y					51
+#define BP_BG_W						208
+#define BP_BG_H						87
+#define BP_BG_X						((LCD_WIDTH-BP_BG_W)/2)
+#define BP_BG_Y						80
+#define BP_UP_ARRAW_W				17
+#define BP_UP_ARRAW_H				17
+#define BP_UP_ARRAW_X				43
+#define BP_UP_ARRAW_Y				183
+#define BP_UP_NUM_W					51
+#define BP_UP_NUM_H					17
+#define BP_UP_NUM_X					63
+#define BP_UP_NUM_Y					183
+#define BP_DOWN_ARRAW_W				12
+#define BP_DOWN_ARRAW_H				16
+#define BP_DOWN_ARRAW_X				133
+#define BP_DOWN_ARRAW_Y				183
+#define BP_DOWN_NUM_W				49
+#define BP_DOWN_NUM_H				17
+#define BP_DOWN_NUM_X				148
+#define BP_DOWN_NUM_Y				183
+#define BP_REC_DATA_X				17
+#define BP_REC_DATA_Y				146
+#define BP_REC_DATA_W				4
+#define BP_REC_DATA_H				58
+#define BP_REC_DATA_OFFSET_X		7
+
+//temperature
+#define TEMP_ICON_W					34
+#define TEMP_ICON_H					42
+#define TEMP_ICON_X					55
+#define TEMP_ICON_Y					31
+#define TEMP_NUM_W					73
+#define TEMP_NUM_H					31
+#define TEMP_NUM_X					97
+#define TEMP_NUM_Y					36
+#define TEMP_UINT_X					180
+#define TEMP_UINT_Y					40
+#define TEMP_BG_W					192
+#define TEMP_BG_H					85
+#define TEMP_BG_X					((LCD_WIDTH-TEMP_BG_W)/2)
+#define TEMP_BG_Y					80
+#define TEMP_UP_ARRAW_W				14
+#define TEMP_UP_ARRAW_H				17
+#define TEMP_UP_ARRAW_X				43
+#define TEMP_UP_ARRAW_Y				183
+#define TEMP_UP_NUM_W				51
+#define TEMP_UP_NUM_H				17
+#define TEMP_UP_NUM_X				60
+#define TEMP_UP_NUM_Y				183
+#define TEMP_DOWN_ARRAW_W			14
+#define TEMP_DOWN_ARRAW_H			17
+#define TEMP_DOWN_ARRAW_X			133
+#define TEMP_DOWN_ARRAW_Y			183
+#define TEMP_DOWN_NUM_W				49
+#define TEMP_DOWN_NUM_H				17
+#define TEMP_DOWN_NUM_X				148
+#define TEMP_DOWN_NUM_Y				183
+#define TEMP_REC_DATA_X				25
+#define TEMP_REC_DATA_Y				146
+#define TEMP_REC_DATA_W				4
+#define TEMP_REC_DATA_H				58
+#define TEMP_REC_DATA_OFFSET_X		7
+#else/*UI_STYLE_HEALTH_BAR*/
 //heart rate
 #define HR_ICON_W					66
 #define HR_ICON_H					60
@@ -298,6 +447,7 @@ extern "C" {
 #define TEMP_BG_H					85
 #define TEMP_BG_X					((LCD_WIDTH-TEMP_BG_W)/2)
 #define TEMP_BG_Y					80
+#endif/*UI_STYLE_HEALTH_BAR*/
 
 //settings
 #define SETTINGS_MAIN_MENU_MAX_PER_PG	4

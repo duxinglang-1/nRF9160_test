@@ -388,10 +388,12 @@ void TempMsgProcess(void)
 		{
 			k_timer_start(&temp_stop_timer, K_MSEC(TEMP_CHECK_TIMELY*60*1000), K_NO_WAIT);
 		}
+	#ifndef UI_STYLE_HEALTH_BAR	
 		else if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == TEMP_TRIGGER_BY_MENU)
 		{
 			k_timer_start(&temp_menu_stop_timer, K_SECONDS(TEMP_CHECK_MENU), K_NO_WAIT);
 		}
+	#endif
 	}
 
 	if(temp_stop_flag)

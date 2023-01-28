@@ -19,22 +19,6 @@ extern "C" {
 
 extern struct device *max20353_I2C;
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define PMU_DEV	DT_LABEL(I2C1_NODE)
-#else
-/* A build error here means your board does not have I2C enabled. */
-#error "i2c1 devicetree node is disabled"
-#define PMU_DEV	""
-#endif
-
-#define PMU_PORT "GPIO_0"
-
-#define PMU_ALRTB		7
-#define PMU_EINT		8
-#define PMU_SCL			31
-#define PMU_SDA			30
-
 #define MAX20353_HARDWARE_ID	0x03
 #define MAX20353_FIRMWARE_ID	0x02
 

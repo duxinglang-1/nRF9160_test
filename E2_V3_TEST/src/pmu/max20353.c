@@ -16,6 +16,30 @@
 //#define SHOW_LOG_IN_SCREEN
 //#define PMU_DEBUG
 
+#ifdef GPIO_ACT_I2C
+#define PMU_SCL		0
+#define PMU_SDA		1
+
+#else/*GPIO_ACT_I2C*/
+
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define PMU_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define PMU_DEV	""
+#endif
+
+#define PMU_SCL			31
+#define PMU_SDA			30
+
+#endif/*GPIO_ACT_I2C*/
+
+#define PMU_PORT 		"GPIO_0"
+#define PMU_ALRTB		7
+#define PMU_EINT		8
+
 static bool pmu_check_ok = false;
 static uint8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
@@ -76,48 +100,45 @@ static void show_infor2(uint8_t *strbuf)
 #endif
 
 #ifdef GPIO_ACT_I2C
-#define SCL_PIN		0
-#define SDA_PIN		1
-
 void I2C_INIT(void)
 {
 	if(gpio_pmu == NULL)
 		gpio_pmu = device_get_binding(PMU_PORT);
 
-	gpio_pin_configure(gpio_pmu, SCL_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_pmu, SCL_PIN, 1);
-	gpio_pin_set(gpio_pmu, SDA_PIN, 1);
+	gpio_pin_configure(gpio_pmu, PMU_SCL, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 1);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 1);
 }
 
 void I2C_SDA_OUT(void)
 {
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
 }
 
 void I2C_SDA_IN(void)
 {
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_INPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_INPUT);
 }
 
 void I2C_SDA_H(void)
 {
-	gpio_pin_set(gpio_pmu, SDA_PIN, 1);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 1);
 }
 
 void I2C_SDA_L(void)
 {
-	gpio_pin_set(gpio_pmu, SDA_PIN, 0);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 0);
 }
 
 void I2C_SCL_H(void)
 {
-	gpio_pin_set(gpio_pmu, SCL_PIN, 1);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 1);
 }
 
 void I2C_SCL_L(void)
 {
-	gpio_pin_set(gpio_pmu, SCL_PIN, 0);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 0);
 }
 
 void Delay_ms(unsigned int dly)
@@ -190,7 +211,7 @@ uint8_t I2C_Wait_Ack(void)
 
 	while(1)
 	{
-		val = gpio_pin_get_raw(gpio_pmu, SDA_PIN);
+		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 0)
 			break;
 		
@@ -241,7 +262,7 @@ void I2C_Read_Byte(bool ack, uint8_t *data)
 		I2C_SCL_H();
 
 		receive<<=1;
-		val = gpio_pin_get_raw(gpio_pmu, SDA_PIN);
+		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 1)
 		   receive++;
    }

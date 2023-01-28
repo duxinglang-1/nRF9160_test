@@ -3501,7 +3501,8 @@ void HRShowStatus(void)
 	LCD_ShowUniString(x, y, tmpbuf);
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
-#endif/*UI_STYLE_HEALTH_BAR*/
+
+#endif/*UI_STYLE_HEALTH_BAR*/
 }
 
 void HRScreenProcess(void)

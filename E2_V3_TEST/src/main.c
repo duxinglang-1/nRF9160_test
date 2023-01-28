@@ -701,9 +701,12 @@ void system_init(void)
 
 	InitSystemSettings();
 
+#ifdef CONFIG_IMU_SUPPORT
 	init_imu_int1();//xb add 2022-05-27
+#endif
+#ifdef CONFIG_PPG_SUPPORT
 	PPG_i2c_off();
-	
+#endif
 	pmu_init();
 	flash_init();
 	LCD_Init();

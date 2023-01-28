@@ -200,8 +200,8 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 			#if defined(CONFIG_PPG_SUPPORT)
 				if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
-			#endif
 				else
+			#endif		
 					dl_reboot_confirm();
 				break;
 			}

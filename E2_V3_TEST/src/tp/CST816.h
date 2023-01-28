@@ -14,21 +14,6 @@
 #include <device.h>
 #include <stdio.h>
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define TP_DEV	DT_LABEL(I2C1_NODE)
-#else
-/* A build error here means your board does not have I2C enabled. */
-#error "i2c1 devicetree node is disabled"
-#define TP_DEV	""
-#endif
-#define TP_PORT 	"GPIO_0"
-
-#define TP_RESET		16
-#define TP_EINT			25
-#define TP_SCL			1
-#define TP_SDA			0
-
 #define TP_I2C_ADDRESS			0x15
 #define TP_UPDATE_I2C_ADDRESS	0x6A
 #define TP_CST816S_ID			0xB4
@@ -133,7 +118,9 @@ extern bool tp_redraw_flag;
 
 extern tp_message tp_msg;
 
+#if defined(TP_TEST)||defined(TP_DEBUG)
 extern void tp_init(void);
+#endif
 extern void tp_interrupt_proc(void);
 extern void TPMsgProcess(void);
 extern void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t x_stop, uint16_t y_start, uint16_t y_stop, tp_handler_t touch_handler);

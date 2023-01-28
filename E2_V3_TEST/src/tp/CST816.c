@@ -23,6 +23,23 @@
 //#define TP_DEBUG
 //#define TP_TEST
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define TP_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define TP_DEV	""
+#endif
+#define TP_PORT 	"GPIO_0"
+
+#define TP_RESET		16
+#define TP_EINT			25
+#define TP_SCL			1
+#define TP_SDA			0
+#endif
+
 bool tp_int_flag = false;
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -40,6 +57,7 @@ static struct gpio_callback gpio_cb;
 static TPInfo tp_event_info = {0};
 static TpEventNode *tp_event_tail = NULL;
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
 static uint8_t init_i2c(void)
 {
 	i2c_ctp = device_get_binding(TP_DEV);
@@ -269,6 +287,7 @@ bool ctp_hynitron_update(void)
 	}
 	return false;
 }
+#endif
 
 void clear_all_touch_event_handle(void)
 {
@@ -594,6 +613,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	tp_trige_flag = true;
 }
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
 void CaptouchInterruptHandle(void)
 {
 	tp_int_flag = true;
@@ -745,6 +765,7 @@ void test_tp(void)
 
 	tp_init();
 }
+#endif
 
 void tp_show_infor(void)
 {
@@ -791,12 +812,13 @@ void tp_show_infor(void)
 
 void TPMsgProcess(void)
 {
+#if defined(TP_DEBUG)||defined(TP_TEST)
 	if(tp_int_flag)
 	{
 		tp_int_flag = false;
 		tp_interrupt_proc();
 	}
-
+#endif
 	if(tp_trige_flag)
 	{
 		tp_trige_flag = false;

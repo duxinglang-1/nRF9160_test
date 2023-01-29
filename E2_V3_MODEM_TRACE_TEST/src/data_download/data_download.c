@@ -341,7 +341,7 @@ static void dl_transfer_start(struct k_work *unused)
 		break;
 	#endif
 
-	#ifdef CONFIG_PPG_DATA_UPDATE
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
 		if(strncmp(g_imsi, "460", strlen("460")) == 0)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
@@ -461,7 +461,8 @@ void dl_font_start(void)
 	EnterDlScreen();
 }
 #endif
-#ifdef CONFIG_PPG_DATA_UPDATE
+
+#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 void dl_ppg_prev(void)
 {
 	dl_run_flag = false;
@@ -492,23 +493,23 @@ void dl_prev(void)
 {
 	switch(g_dl_data_type)
 	{
-	case DL_DATA_IMG:
 	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		dl_img_prev();
-	#endif
 		break;
+	#endif
 
-	case DL_DATA_FONT:
 	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		dl_font_prev();
+		break;
 	#endif
-		break;
-		
+
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
-	#ifdef CONFIG_PPG_DATA_UPDATE
 		dl_ppg_prev();
-	#endif 
 		break;
+	#endif 
 	}
 }
 
@@ -516,23 +517,23 @@ void dl_exit(void)
 {
 	switch(g_dl_data_type)
 	{
-	case DL_DATA_IMG:
 	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		dl_img_exit();
-	#endif
 		break;
+	#endif
 
-	case DL_DATA_FONT:
 	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		dl_font_exit();
+		break;
 	#endif
-		break;
-		
+
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
-	#ifdef CONFIG_PPG_DATA_UPDATE
 		dl_ppg_exit();
-	#endif 
 		break;
+	#endif
 	}
 }
 

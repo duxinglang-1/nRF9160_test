@@ -100,7 +100,7 @@ extern void dl_font_prev(void);
 extern void dl_font_exit(void);
 extern void dl_font_start(void);
 #endif
-#ifdef CONFIG_PPG_DATA_UPDATE
+#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 extern void dl_ppg_prev(void);
 extern void dl_ppg_exit(void);
 extern void dl_ppg_start(void);

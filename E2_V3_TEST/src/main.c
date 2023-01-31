@@ -790,7 +790,7 @@ int main(void)
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
-//	test_imei();
+//	test_imei_for_qr();
 //	test_tp();
 //	test_gps_on();
 //	test_nb();

@@ -292,7 +292,6 @@ config PPG_SUPPORT
 	default n
 endmenu #PPG
 
-
 menu "IMU"
 config IMU_SUPPORT
 	bool "imu support"
@@ -391,6 +390,18 @@ config USE_HTTPS
 	prompt "Use HTTPS for download"
 	depends on DOWNLOAD_CLIENT_TLS
 endmenu #FOTA_MQTT
+
+menu "BAT CODE"
+config BARCODE_SUPPORT
+	bool "bar code support"
+	default n
+endmenu #BAT CODE
+
+menu "QR CODE"
+config QRCODE_SUPPORT
+	bool "qr code support"
+	default n
+endmenu #QR CODE
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"

@@ -11,10 +11,11 @@
 #include <modem/lte_lc.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
-#include "imei.h"
+#include "bar_encode.h"
+#include "QR_Encode.h"
 
-#define GET_IMEI	"AT+CGSN=1"
-#define RES_IMEI_HEAD	"+CGSN: "	//+CGSN: "352656100158792"
+#define GET_IMEI			"AT+CGSN=1"
+#define RES_IMEI_HEAD		"+CGSN: "	//+CGSN: "352656100158792"
 
 #define BAR_CODE_SATRT_A	"bbsbssssbss"
 #define BAR_CODE_SATRT_B	"bbsbssbssss"
@@ -25,8 +26,7 @@
 #define BAR_CODE_X			0
 #define BAR_CODE_Y			(LCD_HEIGHT-BAR_CODE_HEIGHT)/2
 
-
-uint8_t imei_buf[IMEI_LEN+1] = {0};
+static uint8_t imei_buf[IMEI_LEN+1] = {0};
 
 static bar_code128_t code128[95] = 
 {
@@ -140,11 +140,6 @@ bool get_imei(uint8_t len, uint8_t *str_imei)
 	return true;
 }
 
-void show_QR_code(uint32_t datalen, uint8_t *data)
-{
-
-}
-
 void show_bar_code(uint32_t datalen, uint8_t *data)
 {
 	uint8_t str_error[128] = "The data is invalid!";
@@ -194,22 +189,21 @@ void show_bar_code(uint32_t datalen, uint8_t *data)
 		//else
 		//	LCD_Fill(x+i*BAR_CODE_WIDTH,BAR_CODE_Y,BAR_CODE_WIDTH,BAR_CODE_HEIGHT,WHITE);
 	}
+
+	LCD_MeasureString(data, &w, &h);
+	LCD_ShowString((LCD_WIDTH-w)/2, 180, data);
 }
 
-void test_imei(void)
+void test_imei_for_bar(void)
 {
 	int err;
 	uint16_t w,h;
 	uint8_t tmpbuf[128] = {0};
 	
-	LCD_ShowString(0,0,"IMEI:");
 	if(get_imei(128, tmpbuf))
 	{
 		memcpy(imei_buf, &tmpbuf[1+strlen(RES_IMEI_HEAD)], IMEI_LEN);
 
 		show_bar_code(15,imei_buf);
-		
-		LCD_MeasureString(imei_buf, &w, &h);
-		LCD_ShowString((LCD_WIDTH-w)/2, 180, imei_buf);
 	}
 }

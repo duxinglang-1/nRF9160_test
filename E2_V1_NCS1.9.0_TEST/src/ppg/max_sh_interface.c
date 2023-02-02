@@ -77,7 +77,7 @@
 #define SS_TX_BUF_SIZE		(BL_MAX_PAGE_SIZE+BL_AES_AUTH_SIZE+BL_FLASH_CMD_LEN)
 
 static struct device *i2c_ppg;
-static struct device *gpio_ppg;
+static struct device *gpio_ppg = NULL;
 static struct gpio_callback gpio_cb;
 
 uint8_t sh_write_buf[SS_TX_BUF_SIZE]={0};
@@ -134,7 +134,8 @@ static void sh_init_gpio(void)
 {
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
-	gpio_ppg = device_get_binding(PPG_PORT);
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
 	
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
@@ -149,6 +150,15 @@ static void sh_init_gpio(void)
 	//PPGÄ£Ê½Ñ¡Ôñ(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_OUTPUT);
+}
+
+void ppg_pre_init(void)
+{
+	if(gpio_ppg == NULL)
+			gpio_ppg = device_get_binding(PPG_PORT);
+
+	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 }
 
 void SH_mfio_to_low_and_keep(int waitDurationInUs)

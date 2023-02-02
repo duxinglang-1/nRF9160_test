@@ -95,7 +95,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_10_SEC,		//backlight time
-	BACKLIGHT_LEVEL_2,		//backlight level
+	BACKLIGHT_LEVEL_1,		//backlight level
 	{true,1},				//PHD
 	{500,60},				//position interval
 	{120,75},				//pb calibration

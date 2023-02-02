@@ -132,16 +132,19 @@ void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+	LOGD("level:%d", level);
+
+	ret = MAX20353_LED0(1, (24*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(1, (24*level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	LOGD("backlight_level:%d", global_settings.backlight_level);
+	ret = MAX20353_LED0(1, (24*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(1, (24*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 	MAX20353_BuckBoostConfig();
 }
 
@@ -150,8 +153,8 @@ void Set_Screen_Backlight_Off(void)
 	int ret = 0;
 
 	MAX20353_BuckBoostDisable();
-	ret = MAX20353_LED0(2, 0, false);
-	ret = MAX20353_LED1(2, 0, false);
+	ret = MAX20353_LED0(1, 0, false);
+	ret = MAX20353_LED1(1, 0, false);
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)

@@ -697,7 +697,11 @@ void system_init(void)
 #endif
 
 	InitSystemSettings();
-	
+
+#ifdef CONFIG_PPG_SUPPORT
+	ppg_pre_init();
+#endif
+
 	pmu_init();
 	flash_init();
 	LCD_Init();

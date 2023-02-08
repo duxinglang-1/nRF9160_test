@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define UI_STYLE_HEALTH_BAR
+//#define UI_STYLE_HEALTH_BAR
 
 //pwron
 #define PWRON_STR_W		198
@@ -33,20 +33,29 @@ extern "C" {
 #define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
-#define IDLE_TIME_X	43
-#define IDLE_TIME_Y	52
-#define IDLE_DATE_MON_X	149
-#define IDLE_DATE_MON_Y	120
-#define IDLE_DATE_MON_W	65
-#define IDLE_DATE_MON_H	36
-#define IDLE_DATE_DAY_X	110
-#define IDLE_DATE_DAY_Y	120
-#define IDLE_DATE_DAY_W	28
-#define IDLE_DATE_DAY_H	36
-#define IDLE_WEEK_X	45
-#define IDLE_WEEK_Y	120
-#define IDLE_WEEK_W	60
-#define IDLE_WEEK_H	36
+#define IDLE_TIME_W		153
+#define IDLE_TIME_H		60
+#define IDLE_TIME_X		((LCD_WIDTH-IDLE_TIME_W)/2)
+#define IDLE_TIME_Y		54
+#define IDLE_TIME_NUM_W		34
+#define IDLE_TIME_NUM_H		60
+#define IDLE_TIME_COLON_W	17
+#define IDLE_TIME_COLON_H	60
+#define IDLE_DATE_MON_W		36
+#define IDLE_DATE_MON_H		20
+#define IDLE_DATE_MON_X		149
+#define IDLE_DATE_MON_Y		110
+#define IDLE_DATE_DAY_W		22
+#define IDLE_DATE_DAY_H		20
+#define IDLE_DATE_DAY_X		117
+#define IDLE_DATE_DAY_Y		114
+#define IDLE_DATE_NUM_W		12
+#define IDLE_DATE_NUM_H		20
+
+#define IDLE_WEEK_W			42
+#define IDLE_WEEK_H			20
+#define IDLE_WEEK_X			55
+#define IDLE_WEEK_Y			110
 
 //ble
 #define IDLE_BLE_X		45
@@ -80,43 +89,62 @@ extern "C" {
 #define IDLE_SIGNAL_X		45
 #define IDLE_SIGNAL_Y		36
 
-//step
-#define IDLE_STEPS_BG_W		176
-#define IDLE_STEPS_BG_H		57
-#define IDLE_STEPS_BG_X		32
-#define IDLE_STEPS_BG_Y		183
-#define IDLE_STEPS_NUM_W	18
-#define IDLE_STEPS_NUM_H	36
-#define IDLE_STEPS_NUM_X	91
-#define IDLE_STEPS_NUM_Y	192
+//idle circle bg
+#define IDLE_CIRCLE_BG_W	192
+#define IDLE_CIRCLE_BG_H	95
+#define IDLE_CIRCLE_BG_X	24
+#define IDLE_CIRCLE_BG_Y	140
 
 //idle hr
-#define IDLE_HR_BG_W		60
-#define IDLE_HR_BG_H		60
-#define IDLE_HR_BG_X		45
-#define IDLE_HR_BG_Y		158
-#define IDLE_HR_ICON_W	27
-#define IDLE_HR_ICON_H	24
-#define IDLE_HR_ICON_X	62
-#define IDLE_HR_ICON_Y	165
-#define IDLE_HR_NUM_W	33
-#define IDLE_HR_NUM_H	20
-#define IDLE_HR_NUM_X	59
-#define IDLE_HR_NUM_Y	188
+#define IDLE_HR_BG_W		66
+#define IDLE_HR_BG_H		66
+#define IDLE_HR_BG_X		24
+#define IDLE_HR_BG_Y		138
+#define IDLE_HR_ICON_W		22
+#define IDLE_HR_ICON_H		20
+#define IDLE_HR_ICON_X		45
+#define IDLE_HR_ICON_Y		148
+#define IDLE_HR_STR_W		50
+#define IDLE_HR_STR_H		20
+#define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
+#define IDLE_HR_STR_Y		171
+#define IDLE_HR_NUM_W		12
+#define IDLE_HR_NUM_H		20
+
+//idle step
+#define IDLE_STEPS_BG_W		66
+#define IDLE_STEPS_BG_H		66
+#define IDLE_STEPS_BG_X		87
+#define IDLE_STEPS_BG_Y		169
+#define IDLE_STEPS_ICON_W	14
+#define IDLE_STEPS_ICON_H	20
+#define IDLE_STEPS_ICON_X	113
+#define IDLE_STEPS_ICON_Y	173
+#define IDLE_STEPS_STR_W	56
+#define IDLE_STEPS_STR_H	20
+#define IDLE_STEPS_STR_X	(IDLE_STEPS_BG_X+(IDLE_STEPS_BG_W-IDLE_STEPS_STR_W)/2)
+#define IDLE_STEPS_STR_Y	194
+#define IDLE_STEPS_NUM_W	12
+#define IDLE_STEPS_NUM_H	20
 
 //idle temp
-#define IDLE_TEMP_BG_W		60
-#define IDLE_TEMP_BG_H		60
-#define IDLE_TEMP_BG_X		135
-#define IDLE_TEMP_BG_Y		158
-#define IDLE_TEMP_ICON_W	20
-#define IDLE_TEMP_ICON_H	24
-#define IDLE_TEMP_ICON_X	155
-#define IDLE_TEMP_ICON_Y	165
-#define IDLE_TEMP_NUM_W		40
+#define IDLE_TEMP_BG_W		66
+#define IDLE_TEMP_BG_H		66
+#define IDLE_TEMP_BG_X		150
+#define IDLE_TEMP_BG_Y		138
+#define IDLE_TEMP_ICON_W	17
+#define IDLE_TEMP_ICON_H	20
+#define IDLE_TEMP_ICON_X	174
+#define IDLE_TEMP_ICON_Y	148
+#define IDLE_TEMP_STR_W		50
+#define IDLE_TEMP_STR_H		20
+#define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
+#define IDLE_TEMP_STR_Y		171
+#define IDLE_TEMP_NUM_W		12
 #define IDLE_TEMP_NUM_H		20
-#define IDLE_TEMP_NUM_X		145
-#define IDLE_TEMP_NUM_Y		188
+#define IDLE_TEMP_DOT_W		6
+#define IDLE_TEMP_DOT_H		20
+
 
 //notify
 #define NOTIFY_IMG_MAX_COUNT	10
@@ -124,94 +152,121 @@ extern "C" {
 #define NOTIFY_TIMER_INTERVAL	5
 
 //sport
-#define IMU_SEP_LINE_W				165
-#define IMU_SEP_LINE_H				2
+#define IMU_SEP_LINE_W				99
+#define IMU_SEP_LINE_H				1
 #define IMU_SEP_LINE_X				((LCD_WIDTH-IMU_SEP_LINE_W)/2)
-#define IMU_SEP_LINE_Y				119
+#define IMU_SEP_LINE_Y				140
+#define IMU_NUM_W					22
+#define IMU_NUM_H					38
 //steps
-#define IMU_STEP_ICON_W				38
-#define IMU_STEP_ICON_H				53
-#define IMU_STEP_ICON_X				((LCD_WIDTH-IMU_STEP_ICON_W)/2)
-#define IMU_STEP_ICON_Y				15
-#define IMU_STEP_UNIT_W				49
-#define IMU_STEP_UNIT_H				22
-#define IMU_STEP_UNIT_X				151
-#define IMU_STEP_UNIT_Y				89
-#define IMU_STEP_STR_W				106
-#define IMU_STEP_STR_H				30
-#define IMU_STEP_STR_X				((LCD_WIDTH-IMU_STEP_STR_W)/2)
-#define IMU_STEP_STR_Y				82
+#define IMU_STEP_ICON_W				28
+#define IMU_STEP_ICON_H				38
+#define IMU_STEP_ICON_X				45
+#define IMU_STEP_ICON_Y				83
+#define IMU_STEP_UNIT_W				35
+#define IMU_STEP_UNIT_H				15
+#define IMU_STEP_UNIT_X				191
+#define IMU_STEP_UNIT_Y				102
+#define IMU_STEP_STR_W				105
+#define IMU_STEP_STR_H				38
+#define IMU_STEP_STR_X				83
+#define IMU_STEP_STR_Y				83
 //calorie
 #define IMU_CAL_ICON_W				28
-#define IMU_CAL_ICON_H				36
-#define IMU_CAL_ICON_X				57
-#define IMU_CAL_ICON_Y				130
-#define IMU_CAL_UNIT_W				25
+#define IMU_CAL_ICON_H				38
+#define IMU_CAL_ICON_X				45
+#define IMU_CAL_ICON_Y				144
+#define IMU_CAL_UNIT_W				29
 #define IMU_CAL_UNIT_H				14
-#define IMU_CAL_UNIT_X				85
-#define IMU_CAL_UNIT_Y				182
-#define IMU_CAL_STR_W				55
-#define IMU_CAL_STR_H				27
-#define IMU_CAL_STR_X				27
-#define IMU_CAL_STR_Y				171
+#define IMU_CAL_UNIT_X				170
+#define IMU_CAL_UNIT_Y				165
+#define IMU_CAL_STR_W				84
+#define IMU_CAL_STR_H				38
+#define IMU_CAL_STR_X				83
+#define IMU_CAL_STR_Y				144
 //distance
-#define IMU_DIS_ICON_W				29
-#define IMU_DIS_ICON_H				36
-#define IMU_DIS_ICON_X				153
-#define IMU_DIS_ICON_Y				130
-#define IMU_DIS_UNIT_W				17
+#define IMU_DIS_ICON_W				22
+#define IMU_DIS_ICON_H				28
+#define IMU_DIS_ICON_X				148
+#define IMU_DIS_ICON_Y				145
+#define IMU_DIS_UNIT_W				21
 #define IMU_DIS_UNIT_H				14
-#define IMU_DIS_UNIT_X				189
-#define IMU_DIS_UNIT_Y				183
-#define IMU_DIS_STR_W				62
-#define IMU_DIS_STR_H				27
-#define IMU_DIS_STR_X				125
-#define IMU_DIS_STR_Y				171
+#define IMU_DIS_UNIT_X				182
+#define IMU_DIS_UNIT_Y				186
+#define IMU_DIS_STR_W				56
+#define IMU_DIS_STR_H				28
+#define IMU_DIS_STR_X				126
+#define IMU_DIS_STR_Y				178
 
 //sleep
 //total
-#define SLEEP_SEP_LINE_W			176
-#define SLEEP_SEP_LINE_H			2
+#define SLEEP_SEP_LINE_W			123
+#define SLEEP_SEP_LINE_H			1
 #define SLEEP_SEP_LINE_X			((LCD_WIDTH-SLEEP_SEP_LINE_W)/2)
-#define SLEEP_SEP_LINE_Y			119
-#define SLEEP_TOTAL_ICON_W			46
-#define SLEEP_TOTAL_ICON_H			50
+#define SLEEP_SEP_LINE_Y			140
+#define SLEEP_TOTAL_ICON_W			37
+#define SLEEP_TOTAL_ICON_H			40
 #define SLEEP_TOTAL_ICON_X			((LCD_WIDTH-SLEEP_TOTAL_ICON_W)/2)
-#define SLEEP_TOTAL_ICON_Y			20
-#define SLEEP_TOTAL_UNIT_HR_W		19
-#define SLEEP_TOTAL_UNIT_HR_H		22
-#define SLEEP_TOTAL_UNIT_HR_X		93
-#define SLEEP_TOTAL_UNIT_HR_Y		91
-#define SLEEP_TOTAL_UNIT_MIN_W		33
-#define SLEEP_TOTAL_UNIT_MIN_H		22
-#define SLEEP_TOTAL_UNIT_MIN_X		162
-#define SLEEP_TOTAL_UNIT_MIN_Y		91
+#define SLEEP_TOTAL_ICON_Y			56
+#define SLEEP_TOTAL_UNIT_HR_W		13
+#define SLEEP_TOTAL_UNIT_HR_H		20
+#define SLEEP_TOTAL_UNIT_HR_X		104
+#define SLEEP_TOTAL_UNIT_HR_Y		114
+#define SLEEP_TOTAL_UNIT_MIN_W		19
+#define SLEEP_TOTAL_UNIT_MIN_H		20
+#define SLEEP_TOTAL_UNIT_MIN_X		163
+#define SLEEP_TOTAL_UNIT_MIN_Y		114
 #define SLEEP_TOTAL_STR_HR_W		43
-#define SLEEP_TOTAL_STR_HR_H		42
-#define SLEEP_TOTAL_STR_HR_X		55
-#define SLEEP_TOTAL_STR_HR_Y		82
+#define SLEEP_TOTAL_STR_HR_H		38
+#define SLEEP_TOTAL_STR_HR_X		66
+#define SLEEP_TOTAL_STR_HR_Y		104
 #define SLEEP_TOTAL_STR_MIN_W		43		
-#define SLEEP_TOTAL_STR_MIN_H		42
+#define SLEEP_TOTAL_STR_MIN_H		38
 #define SLEEP_TOTAL_STR_MIN_X		125
-#define SLEEP_TOTAL_STR_MIN_Y		82
+#define SLEEP_TOTAL_STR_MIN_Y		104
 //light sleep
-#define SLEEP_LIGHT_ICON_W			36
-#define SLEEP_LIGHT_ICON_H			36
-#define SLEEP_LIGHT_ICON_X			156
-#define SLEEP_LIGHT_ICON_Y			130
-#define SLEEP_LIGHT_STR_W			62		
-#define SLEEP_LIGHT_STR_H			27
-#define SLEEP_LIGHT_STR_X			143
-#define SLEEP_LIGHT_STR_Y			171
+#define SLEEP_LIGHT_ICON_W			28
+#define SLEEP_LIGHT_ICON_H			28
+#define SLEEP_LIGHT_ICON_X			151
+#define SLEEP_LIGHT_ICON_Y			145
+#define SLEEP_LIGHT_UNIT_HR_W		9
+#define SLEEP_LIGHT_UNIT_HR_H		14
+#define SLEEP_LIGHT_UNIT_HR_X		154
+#define SLEEP_LIGHT_UNIT_HR_Y		187
+#define SLEEP_LIGHT_UNIT_MIN_W		13
+#define SLEEP_LIGHT_UNIT_MIN_H		14
+#define SLEEP_LIGHT_UNIT_MIN_X		189
+#define SLEEP_LIGHT_UNIT_MIN_Y		187
+#define SLEEP_LIGHT_STR_HR_W		27
+#define SLEEP_LIGHT_STR_HR_H		24
+#define SLEEP_LIGHT_STR_HR_X		127
+#define SLEEP_LIGHT_STR_HR_Y		178
+#define SLEEP_LIGHT_STR_MIN_W		27		
+#define SLEEP_LIGHT_STR_MIN_H		24
+#define SLEEP_LIGHT_STR_MIN_X		162
+#define SLEEP_LIGHT_STR_MIN_Y		178
 //deep sleep
-#define SLEEP_DEEP_ICON_W			36
-#define SLEEP_DEEP_ICON_H			36
-#define SLEEP_DEEP_ICON_X			48
-#define SLEEP_DEEP_ICON_Y			130
-#define SLEEP_DEEP_STR_W			62		
-#define SLEEP_DEEP_STR_H			27
-#define SLEEP_DEEP_STR_X			35
-#define SLEEP_DEEP_STR_Y			171
+#define SLEEP_DEEP_ICON_W			28
+#define SLEEP_DEEP_ICON_H			28
+#define SLEEP_DEEP_ICON_X			61
+#define SLEEP_DEEP_ICON_Y			145
+#define SLEEP_DEEP_UNIT_HR_W		9
+#define SLEEP_DEEP_UNIT_HR_H		14
+#define SLEEP_DEEP_UNIT_HR_X		65
+#define SLEEP_DEEP_UNIT_HR_Y		187
+#define SLEEP_DEEP_UNIT_MIN_W		13
+#define SLEEP_DEEP_UNIT_MIN_H		14
+#define SLEEP_DEEP_UNIT_MIN_X		100
+#define SLEEP_DEEP_UNIT_MIN_Y		187
+#define SLEEP_DEEP_STR_HR_W			27
+#define SLEEP_DEEP_STR_HR_H			24
+#define SLEEP_DEEP_STR_HR_X			38
+#define SLEEP_DEEP_STR_HR_Y			178
+#define SLEEP_DEEP_STR_MIN_W		27		
+#define SLEEP_DEEP_STR_MIN_H		24
+#define SLEEP_DEEP_STR_MIN_X		73
+#define SLEEP_DEEP_STR_MIN_Y		178
+
 
 #ifdef UI_STYLE_HEALTH_BAR
 //heart rate
@@ -364,11 +419,11 @@ extern "C" {
 #define HR_ICON_W					66
 #define HR_ICON_H					60
 #define HR_ICON_X					((LCD_WIDTH-HR_ICON_W)/2)
-#define HR_ICON_Y					((LCD_HEIGHT-HR_ICON_H)/2)
+#define HR_ICON_Y					75
 #define HR_NOTIFY_W					LCD_WIDTH
-#define HR_NOTIFY_H					60
+#define HR_NOTIFY_H					30
 #define HR_NOTIFY_X					((LCD_WIDTH-HR_NOTIFY_W)/2)
-#define HR_NOTIFY_Y					165
+#define HR_NOTIFY_Y					140
 #define HR_NUM_W					100
 #define HR_NUM_H					48
 #define HR_NUM_X					((LCD_WIDTH-HR_NUM_W)/2)
@@ -381,16 +436,32 @@ extern "C" {
 #define HR_BG_H						180
 #define HR_BG_X						((LCD_WIDTH-HR_BG_W)/2)
 #define HR_BG_Y						60
+#define HR_UP_ARRAW_W				14				
+#define HR_UP_ARRAW_H				17
+#define HR_UP_ARRAW_X				43
+#define HR_UP_ARRAW_Y				183
+#define HR_UP_NUM_W					39				
+#define HR_UP_NUM_H					27
+#define HR_UP_NUM_X					60
+#define HR_UP_NUM_Y					178
+#define HR_DOWN_ARRAW_W				14
+#define HR_DOWN_ARRAW_H				17
+#define HR_DOWN_ARRAW_X				131
+#define HR_DOWN_ARRAW_Y				183
+#define HR_DOWN_NUM_W				39				
+#define HR_DOWN_NUM_H				27
+#define HR_DOWN_NUM_X				148
+#define HR_DOWN_NUM_Y				178
 
 //spo2
 #define SPO2_ICON_W					44
 #define SPO2_ICON_H					60
 #define SPO2_ICON_X					((LCD_WIDTH-SPO2_ICON_W)/2)
-#define SPO2_ICON_Y					((LCD_HEIGHT-SPO2_ICON_H)/2)
+#define SPO2_ICON_Y					75
 #define SPO2_NOTIFY_W				LCD_WIDTH
-#define SPO2_NOTIFY_H				60
+#define SPO2_NOTIFY_H				30
 #define SPO2_NOTIFY_X				((LCD_WIDTH-SPO2_NOTIFY_W)/2)
-#define SPO2_NOTIFY_Y				165
+#define SPO2_NOTIFY_Y				140
 #define SPO2_NUM_W					85
 #define SPO2_NUM_H					48
 #define SPO2_NUM_X					((LCD_WIDTH-SPO2_NUM_W)/2)
@@ -403,16 +474,32 @@ extern "C" {
 #define SPO2_BG_H					87
 #define SPO2_BG_X					((LCD_WIDTH-SPO2_BG_W)/2)
 #define SPO2_BG_Y					80
+#define SPO2_UP_ARRAW_W				14
+#define SPO2_UP_ARRAW_H				17
+#define SPO2_UP_ARRAW_X				43
+#define SPO2_UP_ARRAW_Y				183
+#define SPO2_UP_NUM_W				49
+#define SPO2_UP_NUM_H				27
+#define SPO2_UP_NUM_X				60
+#define SPO2_UP_NUM_Y				178
+#define SPO2_DOWN_ARRAW_W			14
+#define SPO2_DOWN_ARRAW_H			17
+#define SPO2_DOWN_ARRAW_X			131
+#define SPO2_DOWN_ARRAW_Y			183
+#define SPO2_DOWN_NUM_W				49
+#define SPO2_DOWN_NUM_H				27
+#define SPO2_DOWN_NUM_X				148
+#define SPO2_DOWN_NUM_Y				178
 
 //blood pressure
 #define BP_ICON_W					33
 #define BP_ICON_H					60
 #define BP_ICON_X					((LCD_WIDTH-BP_ICON_W)/2)
-#define BP_ICON_Y					((LCD_HEIGHT-BP_ICON_H)/2)
+#define BP_ICON_Y					75
 #define BP_NOTIFY_W					LCD_WIDTH
-#define BP_NOTIFY_H					60
+#define BP_NOTIFY_H					30
 #define BP_NOTIFY_X					((LCD_WIDTH-BP_NOTIFY_W)/2)
-#define BP_NOTIFY_Y					165
+#define BP_NOTIFY_Y					140
 #define BP_NUM_W					178
 #define BP_NUM_H					48
 #define BP_NUM_X					((LCD_WIDTH-BP_NUM_W)/2)
@@ -425,16 +512,32 @@ extern "C" {
 #define BP_BG_H						87
 #define BP_BG_X						((LCD_WIDTH-BP_BG_W)/2)
 #define BP_BG_Y						80
+#define BP_UP_ARRAW_W				17
+#define BP_UP_ARRAW_H				17
+#define BP_UP_ARRAW_X				43
+#define BP_UP_ARRAW_Y				183
+#define BP_UP_NUM_W					51
+#define BP_UP_NUM_H					17
+#define BP_UP_NUM_X					63
+#define BP_UP_NUM_Y					183
+#define BP_DOWN_ARRAW_W				12
+#define BP_DOWN_ARRAW_H				16
+#define BP_DOWN_ARRAW_X				133
+#define BP_DOWN_ARRAW_Y				183
+#define BP_DOWN_NUM_W				49
+#define BP_DOWN_NUM_H				17
+#define BP_DOWN_NUM_X				148
+#define BP_DOWN_NUM_Y				183
 
 //temperature
 #define TEMP_ICON_W					49
 #define TEMP_ICON_H					60
 #define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
-#define TEMP_ICON_Y					((LCD_HEIGHT-TEMP_ICON_H)/2)
+#define TEMP_ICON_Y					75
 #define TEMP_NOTIFY_W				LCD_WIDTH
-#define TEMP_NOTIFY_H				60
+#define TEMP_NOTIFY_H				30
 #define TEMP_NOTIFY_X				((LCD_WIDTH-TEMP_NOTIFY_W)/2)
-#define TEMP_NOTIFY_Y				165
+#define TEMP_NOTIFY_Y				140
 #define TEMP_NUM_W					178
 #define TEMP_NUM_H					48
 #define TEMP_NUM_X					((LCD_WIDTH-TEMP_NUM_W)/2)
@@ -447,6 +550,23 @@ extern "C" {
 #define TEMP_BG_H					85
 #define TEMP_BG_X					((LCD_WIDTH-TEMP_BG_W)/2)
 #define TEMP_BG_Y					80
+#define TEMP_UP_ARRAW_W				14
+#define TEMP_UP_ARRAW_H				17
+#define TEMP_UP_ARRAW_X				43
+#define TEMP_UP_ARRAW_Y				183
+#define TEMP_UP_NUM_W				51
+#define TEMP_UP_NUM_H				17
+#define TEMP_UP_NUM_X				60
+#define TEMP_UP_NUM_Y				183
+#define TEMP_DOWN_ARRAW_W			14
+#define TEMP_DOWN_ARRAW_H			17
+#define TEMP_DOWN_ARRAW_X			133
+#define TEMP_DOWN_ARRAW_Y			183
+#define TEMP_DOWN_NUM_W				49
+#define TEMP_DOWN_NUM_H				17
+#define TEMP_DOWN_NUM_X				148
+#define TEMP_DOWN_NUM_Y				183
+
 #endif/*UI_STYLE_HEALTH_BAR*/
 
 //settings

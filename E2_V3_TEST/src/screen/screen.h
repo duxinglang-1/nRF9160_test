@@ -243,7 +243,7 @@ extern "C" {
 #define SLEEP_LIGHT_STR_HR_Y		178
 #define SLEEP_LIGHT_STR_MIN_W		27		
 #define SLEEP_LIGHT_STR_MIN_H		24
-#define SLEEP_LIGHT_STR_MIN_X		162
+#define SLEEP_LIGHT_STR_MIN_X		164
 #define SLEEP_LIGHT_STR_MIN_Y		178
 //deep sleep
 #define SLEEP_DEEP_ICON_W			28
@@ -264,7 +264,7 @@ extern "C" {
 #define SLEEP_DEEP_STR_HR_Y			178
 #define SLEEP_DEEP_STR_MIN_W		27		
 #define SLEEP_DEEP_STR_MIN_H		24
-#define SLEEP_DEEP_STR_MIN_X		73
+#define SLEEP_DEEP_STR_MIN_X		75
 #define SLEEP_DEEP_STR_MIN_Y		178
 
 

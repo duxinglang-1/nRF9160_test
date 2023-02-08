@@ -608,8 +608,6 @@ bool pmu_interrupt_proc(void)
 		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
-			uint32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
-
 		#ifdef PMU_DEBUG
 			LOGD("charger push in!");
 		#endif	

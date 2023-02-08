@@ -757,21 +757,33 @@ void IdleUpdateTempData(void)
 
 	x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-count*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
 	y = IDLE_TEMP_STR_Y;
-	
-	for(i=0;i<(count+1);i++)
+
+	if(count == 1)
 	{
-		if(i == count-1)
+		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+		x += IDLE_TEMP_NUM_W;
+		LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
+		x += IDLE_TEMP_DOT_W;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+	}
+	else
+	{
+		for(i=0;i<(count+1);i++)
 		{
-			LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
-			x += IDLE_TEMP_DOT_W;
-		}
-		else
-		{
-			LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
-			temp_body = temp_body%divisor;
-			divisor = divisor/10;
-			x += IDLE_TEMP_NUM_W;
-		}
+			if(i == count-1)
+			{
+				LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
+				x += IDLE_TEMP_DOT_W;
+			}
+			else
+			{
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
+				temp_body = temp_body%divisor;
+				divisor = divisor/10;
+				x += IDLE_TEMP_NUM_W;
+			}
+		}	
 	}
 }
 
@@ -812,20 +824,32 @@ void IdleShowTempData(void)
 
 	x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-count*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
 	y = IDLE_TEMP_STR_Y;
-	
-	for(i=0;i<(count+1);i++)
+
+	if(count == 1)
 	{
-		if(i == count-1)
+		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+		x += IDLE_TEMP_NUM_W;
+		LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
+		x += IDLE_TEMP_DOT_W;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+	}
+	else
+	{
+		for(i=0;i<(count+1);i++)
 		{
-			LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
-			x += IDLE_TEMP_DOT_W;
-		}
-		else
-		{
-			LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
-			temp_body = temp_body%divisor;
-			divisor = divisor/10;
-			x += IDLE_TEMP_NUM_W;
+			if(i == count-1)
+			{
+				LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
+				x += IDLE_TEMP_DOT_W;
+			}
+			else
+			{
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
+				temp_body = temp_body%divisor;
+				divisor = divisor/10;
+				x += IDLE_TEMP_NUM_W;
+			}
 		}
 	}
 }

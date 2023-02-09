@@ -628,6 +628,7 @@ void IdleShowSportData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_STEPS_ICON_X, IDLE_STEPS_ICON_Y, IMG_IDLE_STEP_ICON_ADDR, bg_color);
 
 	while(1)
@@ -694,6 +695,7 @@ void IdleShowHrData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	LCD_ShowImg_From_Flash(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_IDLE_HR_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, IMG_IDLE_HR_ICON_ADDR, bg_color);
 
 	while(1)
@@ -797,6 +799,7 @@ void IdleShowTempData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	LCD_ShowImg_From_Flash(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_IDLE_TEMP_BG_ADDR);
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
@@ -875,7 +878,7 @@ void IdleScreenProcess(void)
 		IdleShowBatSoc();
 		IdleShowDateTime();
 
-		IdleShowBgImg();
+		//IdleShowBgImg();
 	#ifdef CONFIG_PPG_SUPPORT
 		IdleShowHrData();
 	#endif
@@ -2236,6 +2239,12 @@ void TempUpdateStatus(void)
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 	}
 #else/*UI_STYLE_HEALTH_BAR*/
+	uint8_t i,count=1;
+	uint16_t temp_body;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
+							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
+
 	switch(g_temp_status)
 	{
 	case TEMP_STATUS_PREPARE:
@@ -2272,22 +2281,67 @@ void TempUpdateStatus(void)
 		{
 			LCD_Fill(TEMP_NOTIFY_X, TEMP_NOTIFY_Y, TEMP_NOTIFY_W, TEMP_NOTIFY_H, BLACK);
 			LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
-			
-			if(global_settings.temp_unit == TEMP_UINT_C)
-				sprintf(tmpbuf, "%0.1f", g_temp_body);
-			else
-				sprintf(tmpbuf, "%0.1f", g_temp_body*1.8+32);
-			mmi_asc_to_ucs2(strbuf, tmpbuf);
-			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			x = TEMP_NUM_X+(TEMP_NUM_W-w)/2;
-			y = TEMP_NUM_Y+(TEMP_NUM_H-h)/2;
-			LCD_ShowUniString(x, y, strbuf);
-			
-			if(global_settings.temp_unit == TEMP_UINT_C)
-				LCD_ShowImg_From_Flash(x+w+5, TEMP_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
-			else
-				LCD_ShowImg_From_Flash(x+w+5, TEMP_UNIT_Y, IMG_TEMP_UNIT_F_ADDR);
 
+			if(global_settings.temp_unit == TEMP_UINT_C)
+			{
+				temp_body = (uint16_t)(g_temp_body*10);
+			}
+			else
+			{
+				temp_body = (uint16_t)((32+1.8*g_temp_body)*10);
+			}
+		
+			while(1)
+			{
+				if(temp_body/divisor > 0)
+				{
+					count++;
+					divisor = divisor*10;
+				}
+				else
+				{
+					divisor = divisor/10;
+					break;
+				}
+			}
+		
+			x = TEMP_STR_X+(TEMP_STR_W-count*TEMP_NUM_W-TEMP_DOT_W)/2;
+			y = TEMP_STR_Y;
+		
+			if(count == 1)
+			{
+				x = TEMP_STR_X+(TEMP_STR_W-2*TEMP_NUM_W-TEMP_DOT_W)/2;
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+				x += TEMP_NUM_W;
+				LCD_ShowImg_From_Flash(x, y, IMG_FONT_42_DOT_ADDR);
+				x += TEMP_DOT_W;
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+				x += TEMP_NUM_W;
+			}
+			else
+			{
+				for(i=0;i<(count+1);i++)
+				{
+					if(i == count-1)
+					{
+						LCD_ShowImg_From_Flash(x, y, IMG_FONT_42_DOT_ADDR);
+						x += TEMP_DOT_W;
+					}
+					else
+					{
+						LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
+						temp_body = temp_body%divisor;
+						divisor = divisor/10;
+						x += TEMP_NUM_W;
+					}
+				}
+			}
+			
+			if(global_settings.temp_unit == TEMP_UINT_C)
+				LCD_ShowImg_From_Flash(x, TEMP_UNIT_Y, IMG_TEMP_UNIT_C_ADDR);
+			else
+				LCD_ShowImg_From_Flash(x, TEMP_UNIT_Y, IMG_TEMP_UNIT_F_ADDR);
+		
 			MenuStopTemp();
 			k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
@@ -2431,6 +2485,11 @@ void TempShowStatus(void)
 	LCD_ShowString(x,y,tmpbuf);
 
 #else/*UI_STYLE_HEALTH_BAR*/
+	uint8_t count=1;
+	uint16_t temp_body;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
 
 	LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
 	LCD_ShowImg_From_Flash(TEMP_UP_ARRAW_X, TEMP_UP_ARRAW_Y, IMG_TEMP_UP_ARRAW_ADDR);
@@ -2468,29 +2527,113 @@ void TempShowStatus(void)
 		}
 	}
 
-  #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_28);
-  #else		
-	LCD_SetFontSize(FONT_SIZE_24);
-  #endif
-
 	if(global_settings.temp_unit == TEMP_UINT_C)
-		sprintf(tmpbuf, "%0.1f", temp_max);
+	{
+		temp_body = (uint16_t)(temp_max*10);
+	}
 	else
-		sprintf(tmpbuf, "%0.1f", temp_max*1.8+32);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = TEMP_UP_NUM_X+(TEMP_UP_NUM_W-w)/2;
-	y = TEMP_UP_NUM_Y+(TEMP_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	{
+		temp_body = (uint16_t)((32+1.8*temp_max)*10);
+	}
 
-	if(global_settings.temp_unit == TEMP_UINT_C)
-		sprintf(tmpbuf, "%0.1f", temp_min);
+	while(1)
+	{
+		if(temp_body/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	x = TEMP_UP_STR_X;
+	y = TEMP_UP_STR_Y;
+	if(count == 1)
+	{
+		x = TEMP_UP_STR_X+(TEMP_UP_STR_W-2*TEMP_UP_NUM_W-TEMP_UP_DOT_W)/2;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+		x += TEMP_UP_NUM_W;
+		LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
+		x += TEMP_UP_DOT_W;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+	}
 	else
-		sprintf(tmpbuf, "%0.1f", temp_min*1.8+32);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = TEMP_DOWN_NUM_X+(TEMP_DOWN_NUM_W-w)/2;
-	y = TEMP_DOWN_NUM_Y+(TEMP_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	{
+		for(i=0;i<(count+1);i++)
+		{
+			if(i == count-1)
+			{
+				LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
+				x += TEMP_UP_DOT_W;
+			}
+			else
+			{
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
+				temp_body = temp_body%divisor;
+				divisor = divisor/10;
+				x += TEMP_UP_NUM_W;
+			}
+		}
+	}
+	
+	if(global_settings.temp_unit == TEMP_UINT_C)
+	{
+		temp_body = (uint16_t)(temp_min*10);
+	}
+	else
+	{
+		temp_body = (uint16_t)((32+1.8*temp_min)*10);
+	}
+
+	count = 1;
+	divisor = 10;
+	while(1)
+	{
+		if(temp_body/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	x = TEMP_DOWN_STR_X;
+	y = TEMP_DOWN_STR_Y;
+	if(count == 1)
+	{
+		x = TEMP_DOWN_STR_X+(TEMP_DOWN_STR_W-2*TEMP_DOWN_NUM_W-TEMP_DOWN_DOT_W)/2;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+		x += TEMP_DOWN_NUM_W;
+		LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
+		x += TEMP_DOWN_DOT_W;
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+	}
+	else
+	{
+		for(i=0;i<(count+1);i++)
+		{
+			if(i == count-1)
+			{
+				LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
+				x += TEMP_DOWN_DOT_W;
+			}
+			else
+			{
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
+				temp_body = temp_body%divisor;
+				divisor = divisor/10;
+				x += TEMP_DOWN_NUM_W;
+			}
+		}
+	}
 
 	k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -2804,6 +2947,12 @@ void BPUpdateStatus(void)
 
 #else/*UI_STYLE_HEALTH_BAR*/
 
+	uint8_t i,count1=1,count2=1;
+	bpt_data bpt = {0};
+	uint32_t divisor1=10,divisor2=10;
+	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
+							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
+
 	switch(g_ppg_status)
 	{
 	case PPG_STATUS_PREPARE:
@@ -2838,14 +2987,62 @@ void BPUpdateStatus(void)
 		if(get_bpt_ok_flag)
 		{
 			LCD_Fill(BP_NOTIFY_X, BP_NOTIFY_Y, BP_NOTIFY_W, BP_NOTIFY_H, BLACK);
-			LCD_ShowImg_From_Flash(BP_UNIT_X, BP_UNIT_Y, IMG_BP_UNIT_ADDR);
+
+			memcpy(&bpt, &g_bpt, sizeof(bpt_data));
+
+			while(1)
+			{
+				if(bpt.systolic/divisor1 > 0)
+				{
+					count1++;
+					divisor1 = divisor1*10;
+				}
+				else
+				{
+					divisor1 = divisor1/10;
+					break;
+				}
+			}
 			
-			sprintf(tmpbuf, " %d/%d ", g_bpt.systolic, g_bpt.diastolic);
-			mmi_asc_to_ucs2(strbuf, tmpbuf);
-			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			x = BP_NUM_X+(BP_NUM_W-w)/2;
-			y = BP_NUM_Y+(BP_NUM_H-h)/2;
-			LCD_ShowUniString(x, y, strbuf);
+			while(1)
+			{
+				if(bpt.diastolic/divisor2 > 0)
+				{
+					count2++;
+					divisor2 = divisor2*10;
+				}
+				else
+				{
+					divisor2 = divisor2/10;
+					break;
+				}
+			}
+
+			x = BP_STR_X+(BP_STR_W-(count1+count2)*BP_NUM_W-BP_SLASH_W)/2;
+			y = HR_STR_Y;
+			
+			for(i=0;i<(count1+count2+1);i++)
+			{
+				if(i < count1)
+				{
+					LCD_ShowImg_From_Flash(x, y, img_num[bpt.systolic/divisor1]);
+					x += BP_NUM_W;
+					bpt.systolic = bpt.systolic%divisor1;
+					divisor1 = divisor1/10;
+				}
+				else if(i == count1)
+				{
+					LCD_ShowImg_From_Flash(x, y, IMG_FONT_42_SLASH_ADDR);
+					x += BP_SLASH_W;
+				}
+				else
+				{
+					LCD_ShowImg_From_Flash(x, y, img_num[bpt.diastolic/divisor2]);
+					x += BP_NUM_W;
+					bpt.diastolic = bpt.diastolic%divisor2;
+					divisor2 = divisor2/10;
+				}
+			}
 
 			MenuStopBpt();
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -2969,6 +3166,10 @@ void BPShowStatus(void)
 	LCD_ShowString(x,y,tmpbuf);
 
 #else/*UI_STYLE_HEALTH_BAR*/
+	uint8_t count1=1,count2=1;
+	uint32_t divisor1=10,divisor2=10;
+	uint32_t img_num[10] = {IMG_FONT_16_NUM_0_ADDR,IMG_FONT_16_NUM_1_ADDR,IMG_FONT_16_NUM_2_ADDR,IMG_FONT_16_NUM_3_ADDR,IMG_FONT_16_NUM_4_ADDR,
+							IMG_FONT_16_NUM_5_ADDR,IMG_FONT_16_NUM_6_ADDR,IMG_FONT_16_NUM_7_ADDR,IMG_FONT_16_NUM_8_ADDR,IMG_FONT_16_NUM_9_ADDR};
 
 	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, IMG_BP_BIG_ICON_3_ADDR);
 	LCD_ShowImg_From_Flash(BP_UP_ARRAW_X, BP_UP_ARRAW_Y, IMG_BP_UP_ARRAW_ADDR);
@@ -3009,22 +3210,113 @@ void BPShowStatus(void)
 		}		
 	}
 
-  #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_20);
-  #else
-	LCD_SetFontSize(FONT_SIZE_16);
-  #endif
-	sprintf(tmpbuf, "%d/%d", bpt_max.systolic, bpt_max.diastolic);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
-	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	while(1)
+	{
+		if(bpt_max.systolic/divisor1 > 0)
+		{
+			count1++;
+			divisor1 = divisor1*10;
+		}
+		else
+		{
+			divisor1 = divisor1/10;
+			break;
+		}
+	}
+	while(1)
+	{
+		if(bpt_max.diastolic/divisor2 > 0)
+		{
+			count2++;
+			divisor2 = divisor2*10;
+		}
+		else
+		{
+			divisor2 = divisor2/10;
+			break;
+		}
+	}
 
-	sprintf(tmpbuf, "%d/%d", bpt_min.systolic, bpt_min.diastolic);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
-	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	x = BP_UP_STR_X;
+	y = BP_UP_STR_Y;
+	for(i=0;i<(count1+count2+1);i++)
+	{
+		if(i < count1)
+		{
+			LCD_ShowImg_From_Flash(x, y, img_num[bpt_max.systolic/divisor1]);
+			x += BP_UP_NUM_W;
+			bpt_max.systolic = bpt_max.systolic%divisor1;
+			divisor1 = divisor1/10;
+		}
+		else if(i == count1)
+		{
+			LCD_ShowImg_From_Flash(x, y, IMG_FONT_16_SLASH_ADDR);
+			x += BP_UP_SLASH_W;
+		}
+		else
+		{
+			LCD_ShowImg_From_Flash(x, y, img_num[bpt_max.diastolic/divisor2]);
+			x += BP_UP_NUM_W;
+			bpt_max.diastolic = bpt_max.diastolic%divisor2;
+			divisor2 = divisor2/10;
+		}
+	}
+
+	count1 = 1;
+	count2 = 1;
+	divisor1 = 10;
+	divisor2 = 10;
+	while(1)
+	{
+		if(bpt_min.systolic/divisor1 > 0)
+		{
+			count1++;
+			divisor1 = divisor1*10;
+		}
+		else
+		{
+			divisor1 = divisor1/10;
+			break;
+		}
+	}
+	while(1)
+	{
+		if(bpt_min.diastolic/divisor2 > 0)
+		{
+			count2++;
+			divisor2 = divisor2*10;
+		}
+		else
+		{
+			divisor2 = divisor2/10;
+			break;
+		}
+	}
+
+	x = BP_DOWN_STR_X;
+	y = BP_DOWN_STR_Y;
+	for(i=0;i<(count1+count2+1);i++)
+	{
+		if(i < count1)
+		{
+			LCD_ShowImg_From_Flash(x, y, img_num[bpt_min.systolic/divisor1]);
+			x += BP_DOWN_NUM_W;
+			bpt_min.systolic = bpt_min.systolic%divisor1;
+			divisor1 = divisor1/10;
+		}
+		else if(i == count1)
+		{
+			LCD_ShowImg_From_Flash(x, y, IMG_FONT_16_SLASH_ADDR);
+			x += BP_DOWN_SLASH_W;
+		}
+		else
+		{
+			LCD_ShowImg_From_Flash(x, y, img_num[bpt_min.diastolic/divisor2]);
+			x += BP_DOWN_NUM_W;
+			bpt_min.diastolic = bpt_min.diastolic%divisor2;
+			divisor2 = divisor2/10;
+		}
+	}
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -3187,6 +3479,10 @@ void SPO2UpdateStatus(void)
 	}
 
 #else/*UI_STYLE_HEALTH_BAR*/
+	uint8_t i,spo2=g_spo2,count=1;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
+							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
 
 	switch(g_ppg_status)
 	{
@@ -3222,14 +3518,29 @@ void SPO2UpdateStatus(void)
 		if(get_spo2_ok_flag)
 		{
 			LCD_Fill(SPO2_NOTIFY_X, SPO2_NOTIFY_Y, SPO2_NOTIFY_W, SPO2_NOTIFY_H, BLACK);
-			
-			sprintf(tmpbuf, " %d%% ", g_spo2);
-			mmi_asc_to_ucs2(strbuf, tmpbuf);
-			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			x = SPO2_NUM_X+(SPO2_NUM_W-w)/2;
-			y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
-			LCD_ShowUniString(x, y, strbuf);
 
+			while(1)
+			{
+				if(spo2/divisor > 0)
+				{
+					count++;
+					divisor = divisor*10;
+				}
+				else
+				{
+					divisor = divisor/10;
+					break;
+				}
+			}
+
+			for(i=0;i<count;i++)
+			{
+				LCD_ShowImg_From_Flash(SPO2_STR_X+(SPO2_STR_W-count*SPO2_NUM_W-SPO2_PERC_W)/2+i*SPO2_NUM_W, SPO2_STR_Y, img_num[spo2/divisor]);
+				spo2 = spo2%divisor;
+				divisor = divisor/10;
+			}
+			LCD_ShowImg_From_Flash(SPO2_STR_X+(SPO2_STR_W-count*SPO2_NUM_W-SPO2_PERC_W)/2+i*SPO2_NUM_W, SPO2_STR_Y, IMG_FONT_42_PERC_ADDR);
+		
 			MenuStopSpo2();
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
@@ -3344,6 +3655,11 @@ void SPO2ShowStatus(void)
 
 #else/*UI_STYLE_HEALTH_BAR*/
 
+	uint8_t count=1;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+
 	LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, IMG_SPO2_BIG_ICON_3_ADDR);
 	LCD_ShowImg_From_Flash(SPO2_UP_ARRAW_X, SPO2_UP_ARRAW_Y, IMG_SPO2_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(SPO2_DOWN_ARRAW_X, SPO2_DOWN_ARRAW_Y, IMG_SPO2_DOWN_ARRAW_ADDR);
@@ -3380,24 +3696,52 @@ void SPO2ShowStatus(void)
 		}
 	}
 
-  #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
-  #else
-	LCD_SetFontSize(FONT_SIZE_32);
-  #endif
+	while(1)
+	{
+		if(spo2_max/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
 
-	sprintf(tmpbuf, "%d", spo2_max);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2;
-	y = SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(SPO2_UP_STR_X+i*SPO2_UP_NUM_W, SPO2_UP_STR_Y, img_num[spo2_max/divisor]);
+		spo2_max = spo2_max%divisor;
+		divisor = divisor/10;
+	}
+	LCD_ShowImg_From_Flash(SPO2_UP_STR_X+i*SPO2_UP_NUM_W, SPO2_UP_STR_Y, IMG_FONT_24_PERC_ADDR);
+	
+	count = 1;
+	divisor = 10;
+	while(1)
+	{
+		if(spo2_min/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
 
-	sprintf(tmpbuf, "%d", spo2_min);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2;
-	y = SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
-
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(SPO2_DOWN_STR_X+i*SPO2_DOWN_NUM_W, SPO2_DOWN_STR_Y, img_num[spo2_min/divisor]);
+		spo2_min = spo2_min%divisor;
+		divisor = divisor/10;
+	}
+	LCD_ShowImg_From_Flash(SPO2_DOWN_STR_X+i*SPO2_DOWN_NUM_W, SPO2_DOWN_STR_Y, IMG_FONT_24_PERC_ADDR);
+	
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
 }
@@ -3533,6 +3877,8 @@ void HRUpdateStatus(void)
 	unsigned char *img_anima[2] = {IMG_HR_BIG_ICON_1_ADDR, IMG_HR_BIG_ICON_2_ADDR};
 #endif
 
+	LOGD("status:%d, retry_left:%d", g_ppg_status,ppg_retry_left);
+
 #ifdef UI_STYLE_HEALTH_BAR
 	img_index++;
 	if(img_index >= 2)
@@ -3557,6 +3903,10 @@ void HRUpdateStatus(void)
 	}
 	
 #else/*UI_STYLE_HEALTH_BAR*/
+	uint8_t i,hr=g_hr,count=1;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
+							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
 
 	switch(g_ppg_status)
 	{
@@ -3592,16 +3942,29 @@ void HRUpdateStatus(void)
 		if(get_hr_ok_flag)
 		{
 			LCD_Fill(HR_NOTIFY_X, HR_NOTIFY_Y, HR_NOTIFY_W, HR_NOTIFY_H, BLACK);
-			
-			sprintf(tmpbuf, "%d", g_hr);
-			mmi_asc_to_ucs2(strbuf, tmpbuf);
-			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			x = HR_NUM_X+(HR_NUM_W-w-HR_UNIT_W-5)/2;
-			y = HR_NUM_Y+(HR_NUM_H-h)/2;
-			LCD_ShowUniString(x, y, strbuf);
 
-			LCD_ShowImg_From_Flash(x+w+5, HR_UNIT_Y, IMG_HR_BPM_ADDR);
-			
+			while(1)
+			{
+				if(hr/divisor > 0)
+				{
+					count++;
+					divisor = divisor*10;
+				}
+				else
+				{
+					divisor = divisor/10;
+					break;
+				}
+			}
+
+			for(i=0;i<count;i++)
+			{
+				LCD_ShowImg_From_Flash(HR_STR_X+(HR_STR_W-count*HR_NUM_W)/2+i*HR_NUM_W, HR_STR_Y, img_num[hr/divisor]);
+				hr = hr%divisor;
+				divisor = divisor/10;
+			}
+			LCD_ShowImg_From_Flash(HR_STR_X+(HR_STR_W-count*HR_NUM_W)/2+i*HR_NUM_W, HR_UNIT_Y, IMG_HR_BPM_ADDR);
+		
 			MenuStopHr();
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
@@ -3717,6 +4080,11 @@ void HRShowStatus(void)
 	
 #else/*UI_STYLE_HEALTH_BAR*/
 
+	uint8_t count=1;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+
 	LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_BIG_ICON_1_ADDR);
 	LCD_ShowImg_From_Flash(HR_UP_ARRAW_X, HR_UP_ARRAW_Y, IMG_HR_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(HR_DOWN_ARRAW_X, HR_DOWN_ARRAW_Y, IMG_HR_DOWN_ARRAW_ADDR);
@@ -3753,22 +4121,49 @@ void HRShowStatus(void)
 		}
 	}
 
-  #ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
-  #else	
-	LCD_SetFontSize(FONT_SIZE_32);
-  #endif
-	sprintf(tmpbuf, "%d", hr_max);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
-	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	while(1)
+	{
+		if(hr_max/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
 
-	sprintf(tmpbuf, "%d", hr_min);
-	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
-	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(HR_UP_STR_X+i*HR_UP_NUM_W, HR_UP_STR_Y, img_num[hr_max/divisor]);
+		hr_max = hr_max%divisor;
+		divisor = divisor/10;
+	}
+
+	count = 1;
+	divisor = 10;
+	while(1)
+	{
+		if(hr_min/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(HR_DOWN_STR_X+i*HR_DOWN_NUM_W, HR_DOWN_STR_Y, img_num[hr_min/divisor]);
+		hr_min = hr_min%divisor;
+		divisor = divisor/10;
+	}
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 
@@ -5014,44 +5409,40 @@ void FallScreenProcess(void)
 #ifdef CONFIG_SLEEP_SUPPORT
 void SleepUpdateStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint16_t deep_sleep,light_sleep;
-	uint8_t tmpbuf[64] = {0};
+	uint16_t total_sleep,deep_sleep,light_sleep;
+	uint32_t img_big_num[10] = {IMG_FONT_38_NUM_0_ADDR,IMG_FONT_38_NUM_1_ADDR,IMG_FONT_38_NUM_2_ADDR,IMG_FONT_38_NUM_3_ADDR,IMG_FONT_38_NUM_4_ADDR,
+								IMG_FONT_38_NUM_5_ADDR,IMG_FONT_38_NUM_6_ADDR,IMG_FONT_38_NUM_7_ADDR,IMG_FONT_38_NUM_8_ADDR,IMG_FONT_38_NUM_9_ADDR};
+	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+				
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
-	
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
-#else	
-	LCD_SetFontSize(FONT_SIZE_32);
-#endif
-	sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)/60);
-	LCD_ShowString(SLEEP_TOTAL_STR_HR_X, SLEEP_TOTAL_STR_HR_Y, tmpbuf);
-	sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)%60);
-	LCD_ShowString(SLEEP_TOTAL_STR_MIN_X, SLEEP_TOTAL_STR_MIN_Y, tmpbuf);
+	total_sleep = deep_sleep+light_sleep;
 
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_28);
-#else
-	LCD_SetFontSize(FONT_SIZE_24);
-#endif
-	sprintf(tmpbuf, "%02d", deep_sleep/60);
-	LCD_ShowString(SLEEP_DEEP_STR_HR_X, SLEEP_DEEP_STR_HR_Y, tmpbuf);
-	sprintf(tmpbuf, "%02d", deep_sleep%60);
-	LCD_ShowString(SLEEP_DEEP_STR_MIN_X, SLEEP_DEEP_STR_MIN_Y, tmpbuf);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_HR_X+0*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_HR_Y, img_big_num[(total_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_HR_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_HR_Y, img_big_num[(total_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_MIN_X+0*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_MIN_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)/10]);
 
-	sprintf(tmpbuf, "%02d", light_sleep/60);
-	LCD_ShowString(SLEEP_LIGHT_STR_HR_X, SLEEP_LIGHT_STR_HR_Y, tmpbuf);
-	sprintf(tmpbuf, "%02d", light_sleep%60);
-	LCD_ShowString(SLEEP_LIGHT_STR_MIN_X, SLEEP_LIGHT_STR_MIN_Y, tmpbuf);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_MIN_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_MIN_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
+
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_MIN_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_MIN_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
 }
 
 void SleepShowStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint16_t deep_sleep,light_sleep;
-	uint8_t tmpbuf[64] = {0};
-		
+	uint16_t total_sleep,deep_sleep,light_sleep;
+	uint32_t img_big_num[10] = {IMG_FONT_38_NUM_0_ADDR,IMG_FONT_38_NUM_1_ADDR,IMG_FONT_38_NUM_2_ADDR,IMG_FONT_38_NUM_3_ADDR,IMG_FONT_38_NUM_4_ADDR,
+							IMG_FONT_38_NUM_5_ADDR,IMG_FONT_38_NUM_6_ADDR,IMG_FONT_38_NUM_7_ADDR,IMG_FONT_38_NUM_8_ADDR,IMG_FONT_38_NUM_9_ADDR};
+	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+				
 	LCD_ShowImg_From_Flash(SLEEP_TOTAL_ICON_X, SLEEP_TOTAL_ICON_Y, IMG_SLEEP_ANI_3_ADDR);
 	LCD_ShowImg_From_Flash(SLEEP_TOTAL_UNIT_HR_X, SLEEP_TOTAL_UNIT_HR_Y, IMG_SLEEP_BIG_H_ADDR);
 	LCD_ShowImg_From_Flash(SLEEP_TOTAL_UNIT_MIN_X, SLEEP_TOTAL_UNIT_MIN_Y, IMG_SLEEP_BIG_M_ADDR);
@@ -5064,31 +5455,22 @@ void SleepShowStatus(void)
 	LCD_ShowImg_From_Flash(SLEEP_LIGHT_UNIT_MIN_X, SLEEP_LIGHT_UNIT_MIN_Y, IMG_SLEEP_M_ADDR);
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
+	total_sleep = deep_sleep+light_sleep;
 
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_36);
-#else	
-	LCD_SetFontSize(FONT_SIZE_32);
-#endif
-	sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)/60);
-	LCD_ShowString(SLEEP_TOTAL_STR_HR_X, SLEEP_TOTAL_STR_HR_Y, tmpbuf);
-	sprintf(tmpbuf, "%02d", (deep_sleep+light_sleep)%60);
-	LCD_ShowString(SLEEP_TOTAL_STR_MIN_X, SLEEP_TOTAL_STR_MIN_Y, tmpbuf);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_HR_X+0*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_HR_Y, img_big_num[(total_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_HR_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_HR_Y, img_big_num[(total_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_MIN_X+0*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_MIN_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)/10]);
 
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_28);
-#else
-	LCD_SetFontSize(FONT_SIZE_24);
-#endif
-	sprintf(tmpbuf, "%02d", deep_sleep/60);
-	LCD_ShowString(SLEEP_DEEP_STR_HR_X, SLEEP_DEEP_STR_HR_Y, tmpbuf);
-	sprintf(tmpbuf, "%02d", deep_sleep%60);
-	LCD_ShowString(SLEEP_DEEP_STR_MIN_X, SLEEP_DEEP_STR_MIN_Y, tmpbuf);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_MIN_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_MIN_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
 
-	sprintf(tmpbuf, "%02d", light_sleep/60);
-	LCD_ShowString(SLEEP_LIGHT_STR_HR_X, SLEEP_LIGHT_STR_HR_Y, tmpbuf);
-	sprintf(tmpbuf, "%02d", light_sleep%60);
-	LCD_ShowString(SLEEP_LIGHT_STR_MIN_X, SLEEP_LIGHT_STR_MIN_Y, tmpbuf);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_MIN_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_MIN_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
 }
 
 void SleepScreenProcess(void)
@@ -5213,7 +5595,6 @@ void StepUpdateStatus(void)
 
 	GetSportData(&steps, &calorie, &distance);
 
-#if 1
 	divisor = 10000;
 	for(i=0;i<5;i++)
 	{
@@ -5232,54 +5613,6 @@ void StepUpdateStatus(void)
 	}
 
 	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-4*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, IMG_STEP_KCAL_ADDR);
-#else
-	while(1)
-	{
-		if(steps/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(IMU_STEP_STR_X+(IMU_STEP_STR_W-count*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_STEP_STR_Y, img_num[steps/divisor]);
-		steps = steps%divisor;
-		divisor = divisor/10;
-	}
-
-	count = 1;
-	divisor = 10;
-	
-	while(1)
-	{
-		if(calorie/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-count*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_STR_Y, img_num[calorie/divisor]);
-		calorie = calorie%divisor;
-		divisor = divisor/10;
-	}
-
-	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-count*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, IMG_STEP_KCAL_ADDR);
-#endif	
 }
 
 void StepShowStatus(void)
@@ -5293,9 +5626,8 @@ void StepShowStatus(void)
 	LCD_ShowImg_From_Flash(IMU_STEP_ICON_X, IMU_STEP_ICON_Y, IMG_STEP_ICON_ADDR);
 	LCD_ShowImg_From_Flash(IMU_CAL_ICON_X, IMU_CAL_ICON_Y, IMG_CAL_ICON_ADDR);
 
-	//GetSportData(&steps, &calorie, &distance);
+	GetSportData(&steps, &calorie, &distance);
 
-#if 1
 	divisor = 10000;
 	for(i=0;i<5;i++)
 	{
@@ -5314,55 +5646,6 @@ void StepShowStatus(void)
 	}
 
 	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-4*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, IMG_STEP_KCAL_ADDR);
-
-#else
-	while(1)
-	{
-		if(steps/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(IMU_STEP_STR_X+(IMU_STEP_STR_W-count*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_STEP_STR_Y, img_num[steps/divisor]);
-		steps = steps%divisor;
-		divisor = divisor/10;
-	}
-
-	count = 1;
-	divisor = 10;
-	
-	while(1)
-	{
-		if(calorie/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-count*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_STR_Y, img_num[calorie/divisor]);
-		calorie = calorie%divisor;
-		divisor = divisor/10;
-	}
-
-	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-count*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, IMG_STEP_KCAL_ADDR);
-#endif
 }
 
 void StepsScreenProcess(void)

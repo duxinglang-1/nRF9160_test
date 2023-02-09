@@ -231,6 +231,7 @@ extern unsigned char IMG_FONT_16_NUM_8[296];
 extern unsigned char IMG_FONT_16_NUM_9[296];
 extern unsigned char IMG_FONT_16_COLON[136];
 extern unsigned char IMG_FONT_16_DOT[168];
+extern unsigned char IMG_FONT_16_PERC[488];
 extern unsigned char IMG_FONT_16_SLASH[246];
 //font_20_num
 extern unsigned char IMG_FONT_20_NUM_0[488];
@@ -245,6 +246,7 @@ extern unsigned char IMG_FONT_20_NUM_8[488];
 extern unsigned char IMG_FONT_20_NUM_9[488];
 extern unsigned char IMG_FONT_20_COLON[248];
 extern unsigned char IMG_FONT_20_DOT[248];
+extern unsigned char IMG_FONT_20_PERC[768];
 extern unsigned char IMG_FONT_20_SLASH[360];
 //font_24_num
 extern unsigned char IMG_FONT_24_NUM_0[680];
@@ -259,6 +261,7 @@ extern unsigned char IMG_FONT_24_NUM_8[680];
 extern unsigned char IMG_FONT_24_NUM_9[680];
 extern unsigned char IMG_FONT_24_COLON[344];
 extern unsigned char IMG_FONT_24_DOT[344];
+extern unsigned char IMG_FONT_24_PERC[1112];
 extern unsigned char IMG_FONT_24_SLASH[528];
 //font_28_num
 extern unsigned char IMG_FONT_28_NUM_0[904];
@@ -273,6 +276,7 @@ extern unsigned char IMG_FONT_28_NUM_8[904];
 extern unsigned char IMG_FONT_28_NUM_9[904];
 extern unsigned char IMG_FONT_28_COLON[456];
 extern unsigned char IMG_FONT_28_DOT[456];
+extern unsigned char IMG_FONT_28_PERC[1464];
 extern unsigned char IMG_FONT_28_SLASH[690];
 //font_38_num
 extern unsigned char IMG_FONT_38_NUM_0[1680];
@@ -287,6 +291,7 @@ extern unsigned char IMG_FONT_38_NUM_8[1680];
 extern unsigned char IMG_FONT_38_NUM_9[1680];
 extern unsigned char IMG_FONT_38_COLON[844];
 extern unsigned char IMG_FONT_38_DOT[844];
+extern unsigned char IMG_FONT_38_PERC[2668];
 extern unsigned char IMG_FONT_38_SLASH[1208];
 //font_42_num
 extern unsigned char IMG_FONT_42_NUM_0[2024];
@@ -301,6 +306,7 @@ extern unsigned char IMG_FONT_42_NUM_8[2024];
 extern unsigned char IMG_FONT_42_NUM_9[2024];
 extern unsigned char IMG_FONT_42_COLON[1016];
 extern unsigned char IMG_FONT_42_DOT[1016];
+extern unsigned char IMG_FONT_42_PERC[3284];
 extern unsigned char IMG_FONT_42_SLASH[1538];
 //font_60_num
 extern unsigned char IMG_FONT_60_NUM_0[4088];
@@ -315,6 +321,7 @@ extern unsigned char IMG_FONT_60_NUM_8[4088];
 extern unsigned char IMG_FONT_60_NUM_9[4088];
 extern unsigned char IMG_FONT_60_COLON[2048];
 extern unsigned char IMG_FONT_60_DOT[2048];
+extern unsigned char IMG_FONT_60_PERC[6728];
 extern unsigned char IMG_FONT_60_SLASH[3080];
 #endif
 #endif/*__FONT_H__*/

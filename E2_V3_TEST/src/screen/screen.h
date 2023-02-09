@@ -48,7 +48,7 @@ extern "C" {
 #define IDLE_DATE_DAY_W		22
 #define IDLE_DATE_DAY_H		20
 #define IDLE_DATE_DAY_X		117
-#define IDLE_DATE_DAY_Y		111
+#define IDLE_DATE_DAY_Y		109
 #define IDLE_DATE_NUM_W		12
 #define IDLE_DATE_NUM_H		20
 

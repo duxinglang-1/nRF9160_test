@@ -206,7 +206,7 @@ void Send_Cmd_To_Esp8285(uint8_t *cmd, uint32_t WaitTime)
 * Description    : 处于wifi测试界面
 * Input          : None
 * Output         : None
-* Return         : None
+* Return         : bool
 * CALL           : 可被外部调用
 ==============================================================================*/
 bool IsInWifiScreen(void)

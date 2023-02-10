@@ -586,20 +586,25 @@ void IdleShowNetMode(void)
 }
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+static uint16_t idle_steps = 0;
+
 void IdleUpdateSportData(void)
 {
 	uint16_t bg_color = 0x00c3;
 	uint8_t i,count=1;
-	uint16_t steps=g_steps;
+	uint16_t steps_show;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
+
+	idle_steps = g_steps;
+	steps_show = idle_steps;
 
 	LCD_Fill(IDLE_STEPS_STR_X, IDLE_STEPS_STR_Y, IDLE_STEPS_STR_W, IDLE_STEPS_STR_H, bg_color);
 
 	while(1)
 	{
-		if(steps/divisor > 0)
+		if(steps_show/divisor > 0)
 		{
 			count++;
 			divisor = divisor*10;
@@ -613,8 +618,8 @@ void IdleUpdateSportData(void)
 
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_STEPS_STR_X+(IDLE_STEPS_STR_W-count*IDLE_STEPS_NUM_W)/2+i*IDLE_STEPS_NUM_W, IDLE_STEPS_STR_Y, img_num[steps/divisor]);
-		steps = steps%divisor;
+		LCD_ShowImg_From_Flash(IDLE_STEPS_STR_X+(IDLE_STEPS_STR_W-count*IDLE_STEPS_NUM_W)/2+i*IDLE_STEPS_NUM_W, IDLE_STEPS_STR_Y, img_num[steps_show/divisor]);
+		steps_show = steps_show%divisor;
 		divisor = divisor/10;
 	}
 }
@@ -623,17 +628,20 @@ void IdleShowSportData(void)
 {
 	uint16_t bg_color = 0x00c3;
 	uint8_t i,count=1;
-	uint16_t steps=g_steps;
+	uint16_t steps_show;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	idle_steps = g_steps;
+	steps_show = idle_steps;
+	
 	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_STEPS_ICON_X, IDLE_STEPS_ICON_Y, IMG_IDLE_STEP_ICON_ADDR, bg_color);
 
 	while(1)
 	{
-		if(steps/divisor > 0)
+		if(steps_show/divisor > 0)
 		{
 			count++;
 			divisor = divisor*10;
@@ -647,27 +655,33 @@ void IdleShowSportData(void)
 
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_STEPS_STR_X+(IDLE_STEPS_STR_W-count*IDLE_STEPS_NUM_W)/2+i*IDLE_STEPS_NUM_W, IDLE_STEPS_STR_Y, img_num[steps/divisor]);
-		steps = steps%divisor;
+		LCD_ShowImg_From_Flash(IDLE_STEPS_STR_X+(IDLE_STEPS_STR_W-count*IDLE_STEPS_NUM_W)/2+i*IDLE_STEPS_NUM_W, IDLE_STEPS_STR_Y, img_num[steps_show/divisor]);
+		steps_show = steps_show%divisor;
 		divisor = divisor/10;
 	}
 }
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
+static uint8_t idle_hr = 0;
+
 void IdleUpdateHrData(void)
 {
 	uint16_t bg_color = 0x1820;
-	uint8_t i,hr=g_hr,count=1;
+	uint8_t i,hr_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	if(g_hr > 0)
+		idle_hr = g_hr;
+	hr_show = idle_hr;
+	
 	LCD_Fill(IDLE_HR_STR_X, IDLE_HR_STR_Y, IDLE_HR_STR_W, IDLE_HR_STR_H, bg_color);
 
 	while(1)
 	{
-		if(hr/divisor > 0)
+		if(hr_show/divisor > 0)
 		{
 			count++;
 			divisor = divisor*10;
@@ -681,8 +695,8 @@ void IdleUpdateHrData(void)
 
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_HR_STR_X+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2+i*IDLE_HR_NUM_W, IDLE_HR_STR_Y, img_num[hr/divisor]);
-		hr = hr%divisor;
+		LCD_ShowImg_From_Flash(IDLE_HR_STR_X+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2+i*IDLE_HR_NUM_W, IDLE_HR_STR_Y, img_num[hr_show/divisor]);
+		hr_show = hr_show%divisor;
 		divisor = divisor/10;
 	}
 }
@@ -690,17 +704,21 @@ void IdleUpdateHrData(void)
 void IdleShowHrData(void)
 {
 	uint16_t bg_color = 0x1820;
-	uint8_t i,hr=g_hr,count=1;
+	uint8_t i,hr_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
+
+	if(g_hr > 0)
+		idle_hr = g_hr;
+	hr_show = idle_hr;
 
 	LCD_ShowImg_From_Flash(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_IDLE_HR_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, IMG_IDLE_HR_ICON_ADDR, bg_color);
 
 	while(1)
 	{
-		if(hr/divisor > 0)
+		if(hr_show/divisor > 0)
 		{
 			count++;
 			divisor = divisor*10;
@@ -714,38 +732,43 @@ void IdleShowHrData(void)
 
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_HR_STR_X+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2+i*IDLE_HR_NUM_W, IDLE_HR_STR_Y, img_num[hr/divisor]);
-		hr = hr%divisor;
+		LCD_ShowImg_From_Flash(IDLE_HR_STR_X+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2+i*IDLE_HR_NUM_W, IDLE_HR_STR_Y, img_num[hr_show/divisor]);
+		hr_show = hr_show%divisor;
 		divisor = divisor/10;
 	}
 }
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT
+static float idle_temp = 0.0;
+
 void IdleUpdateTempData(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x00c3;
 	uint8_t i,count=1;
-	uint16_t temp_body;
+	uint16_t temp_show;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	if(g_temp_body > 0.0)
+		idle_temp = g_temp_body;
+	
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
-		temp_body = (uint16_t)(g_temp_body*10);
+		temp_show = (uint16_t)(idle_temp*10);
 	}
 	else
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
-		temp_body = (uint16_t)((32+1.8*g_temp_body)*10);
+		temp_show = (uint16_t)((32+1.8*idle_temp)*10);
 	}
 
 	while(1)
 	{
-		if(temp_body/divisor > 0)
+		if(temp_show/divisor > 0)
 		{
 			count++;
 			divisor = divisor*10;
@@ -763,11 +786,11 @@ void IdleUpdateTempData(void)
 	if(count == 1)
 	{
 		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_show/10]);
 		x += IDLE_TEMP_NUM_W;
 		LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
 		x += IDLE_TEMP_DOT_W;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_show%10]);
 	}
 	else
 	{
@@ -780,8 +803,8 @@ void IdleUpdateTempData(void)
 			}
 			else
 			{
-				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
-				temp_body = temp_body%divisor;
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_show/divisor]);
+				temp_show = temp_show%divisor;
 				divisor = divisor/10;
 				x += IDLE_TEMP_NUM_W;
 			}
@@ -794,26 +817,29 @@ void IdleShowTempData(void)
 	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x00c3;
 	uint8_t i,count=1;
-	uint16_t temp_body;
+	uint16_t temp_show;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
+
+	if(g_temp_body > 0.0)
+		idle_temp = g_temp_body;
 
 	LCD_ShowImg_From_Flash(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_IDLE_TEMP_BG_ADDR);
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
-		temp_body = (uint16_t)(g_temp_body*10);
+		temp_show = (uint16_t)(idle_temp*10);
 	}
 	else
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
-		temp_body = (uint16_t)((32+1.8*g_temp_body)*10);
+		temp_show = (uint16_t)((32+1.8*idle_temp)*10);
 	}
 
 	while(1)
 	{
-		if(temp_body/divisor > 0)
+		if(temp_show/divisor > 0)
 		{
 			count++;
 			divisor = divisor*10;
@@ -831,11 +857,11 @@ void IdleShowTempData(void)
 	if(count == 1)
 	{
 		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_show/10]);
 		x += IDLE_TEMP_NUM_W;
 		LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
 		x += IDLE_TEMP_DOT_W;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
+		LCD_ShowImg_From_Flash(x, y, img_num[temp_show%10]);
 	}
 	else
 	{
@@ -848,8 +874,8 @@ void IdleShowTempData(void)
 			}
 			else
 			{
-				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
-				temp_body = temp_body%divisor;
+				LCD_ShowImg_From_Flash(x, y, img_num[temp_show/divisor]);
+				temp_show = temp_show%divisor;
 				divisor = divisor/10;
 				x += IDLE_TEMP_NUM_W;
 			}
@@ -862,7 +888,6 @@ void IdleShowBgImg(void)
 {
 	LCD_ShowImg_From_Flash(IDLE_CIRCLE_BG_X, IDLE_CIRCLE_BG_Y, IMG_IDLE_CIRCLE_BG_ADDR);
 }
-
 
 void IdleScreenProcess(void)
 {
@@ -1944,7 +1969,7 @@ void EnterSettingsScreen(void)
 		MenuStopPPG();
 #endif
 #ifdef CONFIG_WIFI_SUPPORT
-	if(wifi_is_working())
+	if(IsInWifiScreen()&&wifi_is_working())
 		MenuStopWifi();
 #endif
 
@@ -5525,14 +5550,7 @@ void EnterSleepScreen(void)
 	if(screen_id == SCREEN_ID_SLEEP)
 		return;
 
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_SLEEP;	
-	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
-
+	k_timer_stop(&mainmenu_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStopShow();
 #endif
@@ -5544,9 +5562,15 @@ void EnterSleepScreen(void)
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
 #endif
-
-	k_timer_stop(&mainmenu_timer);
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_SLEEP;	
+	scr_msg[SCREEN_ID_SLEEP].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_SLEEP].status = SCREEN_STATUS_CREATING;
 
 #if defined(CONFIG_PPG_SUPPORT)
 	SetLeftKeyUpHandler(EnterHRScreen);
@@ -6013,6 +6037,15 @@ void EnterWifiTestScreen(void)
 	if(screen_id == SCREEN_ID_WIFI_TEST)
 		return;
 
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
+#ifdef CONFIG_PPG_SUPPORT
+	PPGStopCheck();
+#endif
+	if(gps_is_working())
+		MenuStopGPS();
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
@@ -6020,18 +6053,6 @@ void EnterWifiTestScreen(void)
 	screen_id = SCREEN_ID_WIFI_TEST;	
 	scr_msg[SCREEN_ID_WIFI_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_WIFI_TEST].status = SCREEN_STATUS_CREATING;
-
-	k_timer_stop(&mainmenu_timer);
-	k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
-
-#ifdef CONFIG_PPG_SUPPORT
-	PPGStopCheck();
-#endif
-
-	if(gps_is_working())
-		MenuStopGPS();
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	SetLeftKeyUpHandler(EnterSettings);
 	SetRightKeyUpHandler(ExitWifiTestScreen);
@@ -6117,29 +6138,25 @@ void EnterGPSTestScreen(void)
 	if(screen_id == SCREEN_ID_GPS_TEST)
 		return;
 
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_GPS_TEST;	
-	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;
-
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
-
 #ifdef CONFIG_PPG_SUPPORT
 	PPGStopCheck();
 #endif
-
 #ifdef CONFIG_WIFI_SUPPORT
 	if(wifi_is_working())
 		MenuStopWifi();
 #endif
-
 	MenuStopNB();
-
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_GPS_TEST; 
+	scr_msg[SCREEN_ID_GPS_TEST].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_GPS_TEST].status = SCREEN_STATUS_CREATING;
 
 #ifdef CONFIG_WIFI_SUPPORT
 	SetLeftKeyUpHandler(EnterWifiTestScreen);

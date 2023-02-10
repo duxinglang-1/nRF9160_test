@@ -1837,6 +1837,8 @@ static void ppg_auto_stop_timerout(struct k_timer *timer_id)
 
 static void ppg_menu_stop_timerout(struct k_timer *timer_id)
 {
+	ppg_stop_flag = true;
+	
 	if((screen_id == SCREEN_ID_HR)
 		||(screen_id == SCREEN_ID_SPO2)
 		||(screen_id == SCREEN_ID_BP)

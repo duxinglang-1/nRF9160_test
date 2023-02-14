@@ -43,17 +43,17 @@ extern "C" {
 #define IDLE_TIME_COLON_H	60
 #define IDLE_DATE_MON_W		36
 #define IDLE_DATE_MON_H		20
-#define IDLE_DATE_MON_X		149
+#define IDLE_DATE_MON_X		141
 #define IDLE_DATE_MON_Y		105
 #define IDLE_DATE_DAY_W		22
 #define IDLE_DATE_DAY_H		20
-#define IDLE_DATE_DAY_X		117
+#define IDLE_DATE_DAY_X		112
 #define IDLE_DATE_DAY_Y		109
 #define IDLE_DATE_NUM_W		12
 #define IDLE_DATE_NUM_H		20
 #define IDLE_WEEK_W			42
 #define IDLE_WEEK_H			20
-#define IDLE_WEEK_X			55
+#define IDLE_WEEK_X			63
 #define IDLE_WEEK_Y			105
 
 //ble

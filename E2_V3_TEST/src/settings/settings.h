@@ -155,6 +155,7 @@ typedef struct{
 	location_interval_t dot_interval;
 	bp_calibra_t bp_calibra;
 	alarm_infor_t alarm[ALARM_MAX];
+	bool soc_init;	//pmu gauge init flag
 }global_settings_t;
 
 extern bool need_save_time;

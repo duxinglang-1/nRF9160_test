@@ -700,72 +700,78 @@ bool pmu_alert_proc(void)
 #endif
 	if(MSB&0x40)
 	{
+	#ifdef PMU_DEBUG
+		LOGD("enable voltage reset alert!");
+	#endif
 		//EnVr (enable voltage reset alert)
 		MSB = MSB&0xBF;
-	#ifdef PMU_DEBUG
-		LOGD("voltage reset alert!");
-	#endif
 	}
 	if(MSB&0x20)
 	{
-		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
-		MSB = MSB&0xDF;
 	#ifdef PMU_DEBUG
 		LOGD("SOC change alert!");
 	#endif
+		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
+		MSB = MSB&0xDF;
 
 		pmu_battery_update();
 	}
 	if(MSB&0x10)
 	{
-		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
-		MSB = MSB&0xEF;
 	#ifdef PMU_DEBUG
 		LOGD("SOC low alert!");
 	#endif
+		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
+		MSB = MSB&0xEF;
 	}
 	if(MSB&0x08)
 	{
-		//VR (voltage reset) is set after the device has been reset if EnVr is set.
-		MSB = MSB&0xF7;
 	#ifdef PMU_DEBUG
 		LOGD("voltage reset alert!");
 	#endif
+		//VR (voltage reset) is set after the device has been reset if EnVr is set.
+		MSB = MSB&0xF7;
 	}
 	if(MSB&0x04)
 	{
-		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
-		MSB = MSB&0xFB;
 	#ifdef PMU_DEBUG
 		LOGD("voltage low alert!");
 	#endif
+		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
+		MSB = MSB&0xFB;
 	}
 	if(MSB&0x02)
 	{
-		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
-		MSB = MSB&0xFD;
 	#ifdef PMU_DEBUG
 		LOGD("voltage high alert!");
 	#endif
+		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
+		MSB = MSB&0xFD;
 	}
 	if(MSB&0x01)
 	{
+	#ifdef PMU_DEBUG
+		LOGD("reset indicator alert!");
+	#endif
 		//RI (reset indicator) is set when the device powers up.
 		//Any time this bit is set, the IC is not configured, so the
 		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
-	#ifdef PMU_DEBUG
-		LOGD("reset indicator alert!");
-	#endif
-
+		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+		
+		handle_model(LOAD_MODEL);
 		MAX20353_QuickStart();
+		delay_ms(150);
+
+		goto SOC_RESET;
 	}
 
 	ret = MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 	if(ret == MAX20353_ERROR)
 		return false;
-	
-	ret = MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+
+SOC_RESET:	
+	ret = MAX20353_SOCWriteReg(0x0C, RCOMP0, 0x5C);
 	if(ret == MAX20353_ERROR)
 		return false;
 

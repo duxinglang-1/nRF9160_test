@@ -13,26 +13,11 @@
 #include "max20353_reg.h"
 #include "max20353.h"
 #include "NTC_table.h"
+#include "settings.h"
 #include "lcd.h"
 #include "logger.h"
 
 #ifdef BATTERY_SOC_GAUGE
-#define VERIFY_AND_FIX 1
-#define LOAD_MODEL !(VERIFY_AND_FIX)
-#define EMPTY_ADJUSTMENT		0
-#define FULL_ADJUSTMENT			100
-#define RCOMP0					59
-#define TEMP_COUP				(-1.96875)
-#define TEMP_CODOWN				(-7.875)
-#define TEMP_CODOWNN10			(-3.90625)
-#define OCVTEST					58032
-#define SOCCHECKA				113
-#define SOCCHECKB				115
-#define BITS					18
-#define RCOMPSEG				0x0100
-#define INI_OCVTEST_HIGH_BYTE 	(OCVTEST>>8)
-#define INI_OCVTEST_LOW_BYTE	(OCVTEST&0x00ff)
-
 static uint8_t SOC_1, SOC_2;
 static uint8_t original_OCV_1, original_OCV_2;
 static uint16_t SOC;
@@ -873,7 +858,7 @@ int InitCharger(void)
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
 	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
-	appdatainoutbuffer_[2] = 0xD6; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0110:4.35V 
+	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0110:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
 	
@@ -1354,12 +1339,12 @@ void load_model(void)
 		// Fill in your model data here from the INI file
 		// 0x##, 0x##, ..., 0x##
 		0x40,
-		0xB3,0x80,0xB6,0x30,0xB8,0xE0,0xBA,0x30,0xBB,0xA0,
-		0xBC,0x70,0xBD,0x60,0xBE,0x70,0xBF,0xB0,0xC2,0x80,
-		0xC5,0x50,0xC8,0x70,0xCB,0x90,0xCE,0x90,0xD1,0x90,
-		0xD8,0xB0,0x08,0xE0,0x09,0x20,0x12,0x00,0x10,0x20,
-		0x1F,0x00,0x1C,0x00,0x16,0xF0,0x15,0xF0,0x0A,0x10,
-		0x09,0xD0,0x09,0x10,0x08,0xD0,0x08,0x10,0x07,0xD0,
+		0x97,0xC0,0xB3,0x80,0xB7,0x00,0xB9,0x80,0xBB,0x80,
+		0xBC,0xE0,0xBE,0x10,0xBE,0x40,0xBF,0xF0,0xC1,0x80,
+		0xC5,0x40,0xC6,0xC0,0xC9,0x60,0xCC,0x30,0xD0,0xD0,
+		0xD8,0x80,0x00,0x20,0x07,0x00,0x0D,0x00,0x0F,0x10,
+		0x1E,0x00,0x19,0x00,0x21,0x70,0x11,0xD0,0x0D,0xF0,
+		0x07,0xF0,0x0D,0xF0,0x07,0xF0,0x07,0xF0,0x08,0xD0,
 		0x05,0xF0,0x05,0xF0
 	};
 	uint8_t RCOMP_data[33] = // 1+16*2, first byte is the memory address
@@ -1622,17 +1607,20 @@ void MAX20353_SOCInit(void)
 	uint8_t MSB,LSB;
 
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
-	if(MSB&0x01)
+	if((MSB&0x01) || (!global_settings.soc_init))
 	{
 		//RI (reset indicator) is set when the device powers up.
 		//Any time this bit is set, the IC is not configured, so the
 		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
 		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+
+		handle_model(LOAD_MODEL);
 		MAX20353_QuickStart();
 		delay_ms(150);
-		
-		handle_model(LOAD_MODEL);
+
+		global_settings.soc_init = true;
+		SaveSystemSettings();
 	}
 	
 	//设置默认温度20度，SOC变化1%报警，电量小于4%报警

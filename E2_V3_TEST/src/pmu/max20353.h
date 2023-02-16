@@ -12,6 +12,24 @@
 
 #define GPIO_ACT_I2C
 
+#ifdef BATTERY_SOC_GAUGE
+#define VERIFY_AND_FIX 1
+#define LOAD_MODEL !(VERIFY_AND_FIX)
+#define EMPTY_ADJUSTMENT		0
+#define FULL_ADJUSTMENT			100
+#define RCOMP0					64
+#define TEMP_COUP				(-1.96875)
+#define TEMP_CODOWN				(-7.875)
+#define TEMP_CODOWNN10			(-3.90625)
+#define OCVTEST					57984
+#define SOCCHECKA				113
+#define SOCCHECKB				115
+#define BITS					18
+#define RCOMPSEG				0x0100
+#define INI_OCVTEST_HIGH_BYTE 	(OCVTEST>>8)
+#define INI_OCVTEST_LOW_BYTE	(OCVTEST&0x00ff)
+#endif
+
 typedef enum
 {
 	BAT_CHARGING_NO,

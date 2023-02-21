@@ -108,5 +108,4 @@ void SetCodeWordPattern(void);
 void SetMaskingPattern(int nPatternNo);
 void SetFormatInfoPattern(int nPatternNo);
 int CountPenalty(void);
-
 #endif

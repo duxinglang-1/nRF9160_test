@@ -17,11 +17,15 @@
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#include "ft_main.h"
+#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
 #include "Alarm.h"
 #include "lcd.h"
+#include "screen.h"
 #include "settings.h"
 #include "logger.h"
 
@@ -78,6 +82,235 @@ extern bool ppg_stop_flag;
 extern bool get_modem_info_flag;
 
 static key_event_msg key_msg = {0};
+
+#ifdef CONFIG_FAST_KEY_SUPPORT
+
+#ifdef CONFIG_QRCODE_SUPPORT
+#define FAST_KEY_HANDLER_TOTAL	2
+#else
+#define FAST_KEY_HANDLER_TOTAL	1
+#endif
+
+static uint8_t key_index = 0;
+static uint8_t fast_key_timer_flag = false;
+
+typedef void (*FastKeyFunc) (void);
+
+static void FastKeyTimeOut(struct k_timer *timer_id);
+K_TIMER_DEFINE(fast_key_timer, FastKeyTimeOut, NULL);
+
+typedef struct
+{
+	uint8_t checkflag;
+	uint8_t key_code;
+	uint8_t key_type_begin;
+	uint8_t key_type_end;
+}fast_key_struct;
+
+typedef struct
+{
+	fast_key_struct fast_key[4];
+	FastKeyFunc func;
+}fast_key_handler_struct;
+
+fast_key_struct tmp_key[20] = {0};
+
+fast_key_struct fast_key_to_test[] = 
+{
+	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+};
+
+#ifdef CONFIG_QRCODE_SUPPORT
+fast_key_struct fast_key_to_device[] = 
+{
+	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+};
+extern void EnterDeviceInfor(void);
+#endif/*CONFIG_QRCODE_SUPPORT*/
+
+fast_key_struct *fast_key_sum[] = {
+										fast_key_to_test,
+									#ifdef CONFIG_QRCODE_SUPPORT
+										fast_key_to_device,
+									#endif/*CONFIG_QRCODE_SUPPORT*/
+								};
+
+FastKeyFunc fast_key_fun_sum[] = {
+										EnterFactoryTest,
+									#ifdef CONFIG_QRCODE_SUPPORT
+										EnterDeviceScreen,
+									#endif/*CONFIG_QRCODE_SUPPORT*/
+								};
+
+fast_key_handler_struct fast_key_handler[FAST_KEY_HANDLER_TOTAL] = {0};
+
+void fast_key_init(void)
+{
+	uint8_t i,total;
+
+	for(i=0;i<FAST_KEY_HANDLER_TOTAL;i++)
+	{
+		memcpy(fast_key_handler[i].fast_key, fast_key_sum[i], 4*sizeof(fast_key_struct));
+		fast_key_handler[i].func = fast_key_fun_sum[i];
+	}
+}
+
+static void FastKeyTimeProcess(void)
+{
+	uint8_t i;
+	uint8_t total = sizeof(tmp_key)/sizeof(fast_key_struct);
+
+#ifdef KEY_DEBUG
+	LOGD("begin");
+#endif
+
+	k_timer_stop(&fast_key_timer);
+
+	for(i=0;i<total;i++)
+	{
+		tmp_key[i].checkflag = 0;
+		tmp_key[i].key_code = 0;
+		tmp_key[i].key_type_begin = 0;
+		tmp_key[i].key_type_end == 0;
+	}
+
+	key_index = 0;
+}
+
+static void FastKeyTimeOut(struct k_timer *timer_id)
+{
+	fast_key_timer_flag = true;
+}
+
+bool fast_key_check_handler(uint8_t key_code, uint8_t key_type)
+{
+	uint8_t i,j,k;
+	uint8_t keycode,keytype=key_type;
+	static uint8_t total = sizeof(tmp_key)/sizeof(fast_key_struct);
+
+	for(i=0;i<KEY_MAX;i++)
+	{
+		if(BIT(i) == key_code)
+			break;
+	}
+
+	if(i >= KEY_MAX)
+		return false;
+
+	keycode = i;
+
+	if(tmp_key[key_index].checkflag == 0)
+	{
+		if(key_index == 0)
+		{
+		#ifdef KEY_DEBUG
+			LOGD("001 begin");
+		#endif
+			
+			tmp_key[key_index].checkflag = 1;
+			tmp_key[key_index].key_code = keycode;
+			tmp_key[key_index].key_type_begin = keytype;
+			
+			if(k_timer_remaining_get(&fast_key_timer) == 0)
+				k_timer_start(&fast_key_timer, K_SECONDS(3), K_NO_WAIT);
+
+			return false;
+		}
+		else if(k_timer_remaining_get(&fast_key_timer) > 0)
+		{
+		#ifdef KEY_DEBUG
+			LOGD("001 continue");
+		#endif
+		
+			tmp_key[key_index].checkflag = 1;
+			tmp_key[key_index].key_code = keycode;
+			tmp_key[key_index].key_type_begin = keytype;
+
+			return false;
+		}
+		else
+		{
+		#ifdef KEY_DEBUG
+			LOGD("001 timeout");
+		#endif
+			
+			FastKeyTimeProcess();
+			return false;
+		}
+	}
+	else if(tmp_key[key_index].checkflag == 1)
+	{
+		if(k_timer_remaining_get(&fast_key_timer) > 0)
+		{
+			tmp_key[key_index].checkflag = 2;
+			tmp_key[key_index].key_code = keycode;
+			tmp_key[key_index].key_type_end = keytype;
+			key_index++;
+
+			for(j=0;j<FAST_KEY_HANDLER_TOTAL;j++)
+			{
+				uint8_t total_key = sizeof(fast_key_handler[j].fast_key)/sizeof(fast_key_struct);
+
+				if(key_index == total_key)
+				{
+					for(k=0;k<total_key;k++)
+					{
+						if((fast_key_handler[j].fast_key[k].key_code != tmp_key[k].key_code)
+							|| (fast_key_handler[j].fast_key[k].key_type_begin != tmp_key[k].key_type_begin)
+							|| (fast_key_handler[j].fast_key[k].key_type_end != tmp_key[k].key_type_end)
+							)
+						{
+							break;
+						}
+					}
+
+					if(k == total_key)
+					{//check ok
+					#ifdef KEY_DEBUG
+						LOGD("002 check ok!total_key:%d, j:%d", total_key, j);
+					#endif
+						fast_key_handler[j].func();
+
+						FastKeyTimeProcess();
+						return true;
+					}
+				}
+			}
+			
+			if(key_index == total)
+			{
+			#ifdef KEY_DEBUG
+				LOGD("002 check key full");
+			#endif
+				FastKeyTimeProcess();
+				return false;	
+			}
+			else
+			{
+			#ifdef KEY_DEBUG
+				LOGD("002 continue");
+			#endif
+				return false;
+			}	
+		}
+		else
+		{
+		#ifdef KEY_DEBUG
+			LOGD("002 timeout");
+		#endif
+			FastKeyTimeProcess();
+			return false;		
+		}
+	}
+}
+#endif/*CONFIG_FAST_KEY_SUPPORT*/
+
 
 void ClearAllKeyHandler(void)
 {
@@ -228,6 +461,13 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 
 	if(!system_is_completed())
 		return;
+
+#ifdef CONFIG_FAST_KEY_SUPPORT
+	if(fast_key_check_handler(key_code, key_type))
+	{
+		return;
+	}
+#endif/*CONFIG_FAST_KEY_SUPPORT*/
 
 	if(lcd_is_sleeping)
 	{
@@ -711,6 +951,14 @@ void KeyMsgProcess(void)
 		wear_off_trigger_flag = false;
 	}
 #endif	
+
+#ifdef CONFIG_FAST_KEY_SUPPORT
+	if(fast_key_timer_flag)
+	{
+		FastKeyTimeProcess();
+		fast_key_timer_flag = false;
+	}
+#endif
 }
 
 void key_init(void)
@@ -728,5 +976,8 @@ void key_init(void)
 
 #ifdef WEAR_CHECK_SUPPORT
 	wear_init();
-#endif	
+#endif
+#ifdef CONFIG_FAST_KEY_SUPPORT
+	fast_key_init();
+#endif
 }

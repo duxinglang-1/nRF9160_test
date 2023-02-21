@@ -7,8 +7,13 @@ choice LOG_MODE
 	default LOG_MODE_IMMEDIATE
 endchoice
 
-menu "GNSS"
+menu "GPS"
+config GPS_SUPPORT
+	bool "gps support"
+	default n
+endmenu #GPS
 
+menu "GNSS"
 choice
 	default GNSS_SAMPLE_MODE_CONTINUOUS
 	prompt "Select GNSS operation mode"
@@ -22,18 +27,15 @@ config GNSS_SAMPLE_MODE_PERIODIC
 config GNSS_SAMPLE_MODE_TTFF_TEST
 	bool "Time-to-first-fix (TTFF) test mode"
 	select GNSS_SAMPLE_NMEA_ONLY
-
 endchoice
 
 if GNSS_SAMPLE_MODE_PERIODIC
-
 config GNSS_SAMPLE_PERIODIC_INTERVAL
 	int "Fix interval for periodic fixes"
 	range 10 65535
 	default 120
 	help
 	  Fix interval (in seconds) for periodic fixes.
-
 config GNSS_SAMPLE_PERIODIC_TIMEOUT
 	int "Fix timeout for periodic fixes"
 	range 0 65535
@@ -41,21 +43,17 @@ config GNSS_SAMPLE_PERIODIC_TIMEOUT
 	help
 	  Fix timeout (in seconds) for periodic fixes.
 	  If set to zero, GNSS is allowed to run indefinitely until a valid PVT estimate is produced.
-
 endif # GNSS_SAMPLE_MODE_PERIODIC
 
 if GNSS_SAMPLE_MODE_TTFF_TEST
-
 config GNSS_SAMPLE_MODE_TTFF_TEST_COLD_START
 	bool "Delete GNSS data before each start (cold start)"
 	help
 	  When enabled, deletes all stored data from GNSS to force a cold start every time GNSS is started.
-
 config GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL
 	int "Time to wait between TTFF tests in seconds"
 	range 1 604800
 	default 120
-
 endif # GNSS_SAMPLE_MODE_TTFF_TEST
 
 config GNSS_SAMPLE_NMEA_ONLY
@@ -72,7 +70,6 @@ config GNSS_SAMPLE_ANTENNA_ONBOARD
 
 config GNSS_SAMPLE_ANTENNA_EXTERNAL
 	bool "Use external antenna"
-
 endchoice
 
 config GNSS_SAMPLE_AT_MAGPIO
@@ -93,7 +90,7 @@ config GNSS_SAMPLE_AT_COEX0
 	  Defines the AT%XCOEX0 command to be sent to GNSS module. Leave
 	  empty if this command should not be sent.
 
-endmenu
+endmenu #GNSS
 
 choice
 	default GNSS_SAMPLE_ASSISTANCE_NONE
@@ -121,11 +118,9 @@ config GNSS_SAMPLE_ASSISTANCE_MINIMAL
 	select FCB
 	select FLASH
 	select FLASH_MAP
-
 endchoice
 
 if !GNSS_SAMPLE_ASSISTANCE_NONE
-
 config GNSS_SAMPLE_LTE_ON_DEMAND
 	bool "LTE is activated only when needed to fetch A-GPS data"
 	depends on !NRF_CLOUD_PGPS
@@ -136,7 +131,6 @@ config GNSS_SAMPLE_LTE_ON_DEMAND
 endif # !GNSS_SAMPLE_ASSISTANCE_NONE
 
 if GNSS_SAMPLE_ASSISTANCE_SUPL
-
 config GNSS_SAMPLE_SUPL_HOSTNAME
 	string "SUPL server hostname"
 	default "supl.google.com"
@@ -149,11 +143,9 @@ config GNSS_SAMPLE_SUPL_PORT
 	default 7276
 	help
 	  SUPL server port number.
-
 endif # GNSS_SAMPLE_ASSISTANCE_SUPL
 
 if GNSS_SAMPLE_MODE_CONTINUOUS
-
 choice
 	default GNSS_SAMPLE_POWER_SAVING_DISABLED
 	prompt "Select GNSS power saving mode (duty-cycling)"
@@ -166,9 +158,7 @@ config GNSS_SAMPLE_POWER_SAVING_MODERATE
 
 config GNSS_SAMPLE_POWER_SAVING_HIGH
 	bool "Power saving with acceptable performance degradation"
-
 endchoice
-
 endif # GNSS_SAMPLE_MODE_CONTINUOUS
 
 config GNSS_SAMPLE_LOW_ACCURACY
@@ -177,7 +167,6 @@ config GNSS_SAMPLE_LOW_ACCURACY
 	  Allows fixes with lower accuracy.
 
 if GNSS_SAMPLE_ASSISTANCE_MINIMAL && GNSS_SAMPLE_LOW_ACCURACY
-
 config GNSS_SAMPLE_ASSISTANCE_REFERENCE_ALT
 	int "Reference altitude for 3-sat first fix in meters"
 	range -32767 32767
@@ -185,7 +174,6 @@ config GNSS_SAMPLE_ASSISTANCE_REFERENCE_ALT
 	help
 	  Reference altitude for 3-sat first fix in meters above the reference ellipsoid surface.
 	  The default value -32767 implies that reference altitude is not injected.
-
 endif # GNSS_SAMPLE_ASSISTANCE_MINIMAL && GNSS_SAMPLE_LOW_ACCURACY
 
 menu "MQTT simple sample"
@@ -274,6 +262,12 @@ config ANIMATION_SUPPORT
 	default n
 endmenu #ANIMATION
 
+menu "ANIMATION"
+config ANIMATION_SUPPORT
+	bool "animation support"
+	default n
+endmenu #ANIMATION
+
 menu "TOUCH"
 config TOUCH_SUPPORT
 	bool "touch support"
@@ -312,6 +306,12 @@ config AUDIO_SUPPORT
 	bool "ppg support"
 	default n
 endmenu #AUDIO
+
+menu "BLE"
+config BLE_SUPPORT
+	bool "ble support"
+	default n
+endmenu #BLE
 
 menu "SYNC"
 config SYNC_SUPPORT
@@ -402,6 +402,18 @@ config QRCODE_SUPPORT
 	bool "qr code support"
 	default n
 endmenu #QR CODE
+
+menu "FACTORY_TEST"
+config FACTORY_TEST_SUPPORT
+	bool "factory test support"
+	default n
+endmenu #FACTORY_TEST_SUPPORT
+
+menu "FAST_KEY"
+config FAST_KEY_SUPPORT
+	bool "fast key support"
+	default n
+endmenu #FAST_KEY_SUPPORT
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"

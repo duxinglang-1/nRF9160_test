@@ -11,16 +11,10 @@
 #include "string.h"
 #include "QR_Encode.h"
 #include "LCD.h"
+#include "nb.h"
 
 #define QR_CODE_DOT_PIXEL	3
 #define QR_CODE_BG_SHADE	4
-
-#define GET_IMEI			"AT+CGSN=1"
-#define RES_IMEI_HEAD		"+CGSN: "	//+CGSN: "352656100158792"
-
-#define IMEI_LEN	15
-
-static uint8_t imei_buf[IMEI_LEN+1] = {0};
 
 //P28 表9 QR码符号各版本的纠错特效
 const QR_VERSIONINFO QR_VersonInfo[] = {{0}, // Ver.0
@@ -1837,7 +1831,7 @@ void show_QR_code(uint32_t datalen, uint8_t *data)
 {
 	uint8_t i,j;
 	
-	EncodeData("IMEI:351358811149654\nIMSI:460049299701696\nICCID:89860472042071181696\nMCU:V3.0.2_20230129\nWIFI:1.6.2\nWIFI MAC:FF:FF:FF:FF:FF:FF\nBLE:V1.0.2_20221124\nBLE MAC:D7:F3:AC:5F:CF:BE\nPPG:50.5.57\nMODEM:1.3.2\n");
+	EncodeData(data);
 
 	LCD_Fill((LCD_WIDTH-QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE))/2, (LCD_HEIGHT-QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE))/2, QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE), QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE), WHITE);
 	for(i=0;i<m_nSymbleSize;i++)
@@ -1854,15 +1848,5 @@ void show_QR_code(uint32_t datalen, uint8_t *data)
 
 void test_imei_for_qr(void)
 {
-	int err;
-	uint16_t w,h;
-	uint8_t tmpbuf[128] = {0};
-	
-	if(get_imei(128, tmpbuf))
-	{
-		memcpy(imei_buf, &tmpbuf[1+strlen(RES_IMEI_HEAD)], IMEI_LEN);
-
-		show_QR_code(15,imei_buf);
-	}
+	show_QR_code(15,g_imei);
 }
-

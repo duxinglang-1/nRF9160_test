@@ -756,6 +756,7 @@ typedef enum
 	SCREEN_ID_SYNC,
 	SCREEN_ID_FOTA,
 	SCREEN_ID_DL,
+	SCREEN_ID_FACTORY_TEST,
 	SCREEN_ID_MAX
 }SCREEN_ID_ENUM;
 
@@ -812,6 +813,8 @@ typedef struct
 }notify_infor;
 
 extern SCREEN_ID_ENUM screen_id;
+extern SCREEN_ID_ENUM history_screen_id;
+
 extern screen_msg scr_msg[SCREEN_ID_MAX];
 extern notify_infor notify_msg;
 
@@ -824,6 +827,7 @@ extern void EnterWifiTestScreen(void);
 #endif
 extern void EnterGPSTestScreen(void);
 extern void EnterNBTestScreen(void);
+extern void EnterPoweroffScreen(void);
 extern void GoBackHistoryScreen(void);
 extern void ScreenMsgProcess(void);
 extern void ExitNotify(void);

@@ -842,6 +842,9 @@ int main(void)
 	#ifdef CONFIG_TEMP_SUPPORT
 		TempMsgProcess();
 	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FactoryTestProccess();
+	#endif
 		system_init_completed();
 		k_cpu_idle();
 	}

@@ -173,7 +173,7 @@ static void FTMenukeyUpdate(void)
 
 	if(i == ARRAY_SIZE(ft_key))
 	{
-		LCD_Fill(FT_KEY_RET_STR_X-2, FT_KEY_RET_STR_Y-2, FT_KEY_RET_STR_W+2, FT_KEY_RET_STR_H+2, GRAY);
+		LCD_Fill(FT_KEY_RET_STR_X-2, FT_KEY_RET_STR_Y-2, FT_KEY_RET_STR_W+4, FT_KEY_RET_STR_H+4, GRAY);
 		LCD_Fill(FT_KEY_RET_STR_X, FT_KEY_RET_STR_Y, FT_KEY_RET_STR_W, FT_KEY_RET_STR_H, GREEN);
 
 		LCD_SetFontColor(BRRED);
@@ -208,6 +208,11 @@ static void FTMenuKeyShow(void)
 												};
 	
 	LCD_Clear(BLACK);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
+#endif
+
 	LCD_SetFontSize(FONT_SIZE_36);
 
 	if(global_settings.language == LANGUAGE_CHN)
@@ -255,7 +260,6 @@ static void FTMenuKeyShow(void)
 	SetKeyHandler(FTMenuKeySosUpProc, KEY_SOS, KEY_EVENT_UP);
 	
 #ifdef CONFIG_TOUCH_SUPPORT
-	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE1_STR_X, FT_KEY_SLE1_STR_X+FT_KEY_SLE1_STR_W, FT_KEY_SLE1_STR_Y, FT_KEY_SLE1_STR_Y+FT_KEY_SLE1_STR_H, FTMenuKeySle1Hander);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE2_STR_X, FT_KEY_SLE2_STR_X+FT_KEY_SLE2_STR_W, FT_KEY_SLE2_STR_Y, FT_KEY_SLE2_STR_Y+FT_KEY_SLE2_STR_H, FTMenuKeySle2Hander);
 #endif		

@@ -344,6 +344,10 @@ static void FactoryTestMainShow(void)
 	LCD_SetFontSize(FONT_SIZE_20);
 	LCD_SetFontBgColor(bg_clor);
 
+#ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
+#endif
+
 	if(global_settings.language == LANGUAGE_CHN)
 		language = 1;
 	else

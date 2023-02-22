@@ -73,12 +73,12 @@ static void FallTimerOutCallBack(struct k_timer *timer_id)
 			fall_state = FALL_STATUS_SENDING;
 			fall_send_flag = true;
 			ClearAllKeyHandler();
-			k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), NULL);
+			k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), K_NO_WAIT);
 			break;
 		
 		case FALL_STATUS_SENDING:
 			fall_state = FALL_STATUS_SENT;
-			k_timer_start(&fall_timer, K_SECONDS(FALL_SEND_OK_TIMEOUT), NULL);
+			k_timer_start(&fall_timer, K_SECONDS(FALL_SEND_OK_TIMEOUT), K_NO_WAIT);
 			break;
 			
 		case FALL_STATUS_SENT:
@@ -212,7 +212,7 @@ void FallAlarmCancel(void)
 		FallStopAlarm();
 	#endif
 		fall_state = FALL_STATUS_CANCEL;
-		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), NULL);
+		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), K_NO_WAIT);
 
 		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_UPDATE;
 	}
@@ -243,7 +243,7 @@ void FallAlarmStart(void)
 
 	SetLeftKeyUpHandler(FallAlarmCancel);
 
-	k_timer_start(&fall_timer, K_SECONDS(FALL_NOTIFY_TIMEOUT), NULL);
+	k_timer_start(&fall_timer, K_SECONDS(FALL_NOTIFY_TIMEOUT), K_NO_WAIT);
 }
 
 void FallAlarmSend(void)
@@ -260,7 +260,7 @@ void FallAlarmSend(void)
 	else
 		delay = 90;
 
-	k_timer_start(&fall_gps_timer, K_SECONDS(delay), NULL);
+	k_timer_start(&fall_gps_timer, K_SECONDS(delay), K_NO_WAIT);
 }
 
 bool FallIsRunning(void)

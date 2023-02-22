@@ -613,7 +613,6 @@ extern "C" {
 #define TEMP_DOWN_STR_H				17
 #define TEMP_DOWN_STR_X				145
 #define TEMP_DOWN_STR_Y				184
-
 #endif/*UI_STYLE_HEALTH_BAR*/
 
 //settings
@@ -704,7 +703,11 @@ extern "C" {
 #define NOTIFY_RECT_X		((LCD_WIDTH-NOTIFY_RECT_W)/2)
 #define NOTIFY_RECT_Y		((LCD_HEIGHT-NOTIFY_RECT_H)/2)
 
-
+//fall
+#define FALL_NOTIFY_STR_W	160
+#define FALL_NOTIFY_STR_H	80
+#define FALL_NOTIFY_STR_X	((LCD_WIDTH-FALL_NOTIFY_STR_W)/2)
+#define FALL_NOTIFY_STR_Y	((LCD_HEIGHT-FALL_NOTIFY_STR_H)/2)
 
 //idle screen update event
 #define SCREEN_EVENT_UPDATE_NO			0x00000000
@@ -837,7 +840,7 @@ extern void DisplayPopUp(notify_infor infor);
 #ifdef CONFIG_QRCODE_SUPPORT
 extern void EnterDeviceScreen(void);
 #endif
-
+extern void EnterFallScreen(void);
 
 #ifdef __cplusplus
 }

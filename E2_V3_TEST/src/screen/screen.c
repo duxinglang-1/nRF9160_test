@@ -5374,12 +5374,25 @@ void EnterFOTAScreen(void)
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 void FallShowStatus(void)
 {
-	uint16_t x,y;
+	uint16_t x,y,w,h;
 	uint32_t img_addr;
-	uint8_t *img;
+	uint16_t ret_str[20] = {0x0046,0x0041,0x004C,0x004C,0x0021,0x0000};//FALL!
 
 	LCD_Clear(BLACK);
 
+	LCD_Fill(FALL_NOTIFY_STR_X-2, FALL_NOTIFY_STR_Y-2, FALL_NOTIFY_STR_W+4, FALL_NOTIFY_STR_H+4, GRAY);
+	LCD_Fill(FALL_NOTIFY_STR_X, FALL_NOTIFY_STR_Y, FALL_NOTIFY_STR_W, FALL_NOTIFY_STR_H, RED);
+
+	LCD_SetFontColor(WHITE);
+	LCD_SetFontBgColor(RED);
+
+	LCD_SetFontSize(FONT_SIZE_52);
+	LCD_MeasureUniString(ret_str, &w, &h);
+	LCD_ShowUniString(FALL_NOTIFY_STR_X+(FALL_NOTIFY_STR_W-w)/2, FALL_NOTIFY_STR_Y+(FALL_NOTIFY_STR_H-h)/2, ret_str);
+
+	LCD_ReSetFontBgColor();
+	LCD_ReSetFontColor();
+#if 0
 	switch(global_settings.language)
 	{
 	case LANGUAGE_EN:
@@ -5409,6 +5422,7 @@ void FallShowStatus(void)
 #else
 	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON);
 	LCD_ShowImg(x, y, img);
+#endif
 #endif
 }
 
@@ -5914,7 +5928,7 @@ void EnterIdleScreen(void)
  #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_STEP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFallScreen);
    #elif defined(CONFIG_SLEEP_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
    #endif

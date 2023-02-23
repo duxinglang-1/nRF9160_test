@@ -172,13 +172,16 @@ static void sh_init_gpio(void)
 	if(gpio_ppg == NULL)
 		gpio_ppg = device_get_binding(PPG_PORT);
 
+#if 0
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
-
+#else
+	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
+#endif	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	k_sleep(K_MSEC(10));

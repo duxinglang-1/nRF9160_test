@@ -758,11 +758,11 @@ bool pmu_alert_proc(void)
 		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
 		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
-		
+	#if 0	
 		handle_model(LOAD_MODEL);
 		MAX20353_QuickStart();
 		delay_ms(150);
-
+	#endif
 		goto SOC_RESET;
 	}
 

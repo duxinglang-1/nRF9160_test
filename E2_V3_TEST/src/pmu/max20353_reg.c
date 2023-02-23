@@ -858,7 +858,7 @@ int InitCharger(void)
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
 	appdatainoutbuffer_[1] = 0x60; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.05IFChg 
-	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0110:4.40V 
+	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0111:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
 	
@@ -1604,17 +1604,9 @@ int MAX20353_SOCWriteReg(uint8_t reg, uint8_t MSB, uint8_t LSB)
 
 void MAX20353_SOCInit(void)
 {
-	uint8_t MSB,LSB;
-
-	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
-	if((MSB&0x01) || (!global_settings.soc_init))
+	LOGD("soc_init:%d", global_settings.soc_init);
+	if(!global_settings.soc_init)
 	{
-		//RI (reset indicator) is set when the device powers up.
-		//Any time this bit is set, the IC is not configured, so the
-		//model should be loaded and the bit should be cleared
-		MSB = MSB&0xFE;
-		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
-
 		handle_model(LOAD_MODEL);
 		MAX20353_QuickStart();
 		delay_ms(150);

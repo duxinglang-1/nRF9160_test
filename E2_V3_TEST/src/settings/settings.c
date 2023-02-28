@@ -110,7 +110,6 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 		{false,0,0,0},
 		{false,0,0,0},
 	},
-	false,
 };
 
 const settings_menu_t SETTING_MAIN_MENU = 

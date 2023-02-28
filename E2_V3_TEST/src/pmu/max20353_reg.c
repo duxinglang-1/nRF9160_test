@@ -1643,25 +1643,16 @@ void MAX20353_SOCInit(void)
 	uint8_t MSB=0,LSB=0;
 	
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
-	if((MSB&0x01) || (!global_settings.soc_init))
+	if(MSB&0x01)
 	{
+		MSB = MSB&0xFE;
+		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
+		
 		handle_model(LOAD_MODEL);
 		MAX20353_QuickStart();
 		delay_ms(150);
-
-		if(MSB&0x01)
-		{
-			MSB = MSB&0xFE;
-			MAX20353_SOCWriteReg(0x1A, MSB, LSB);
-		}
-		
-		if(!global_settings.soc_init)
-		{
-			global_settings.soc_init = true;
-			SaveSystemSettings();
-		}
 	}
-	
+
 	//设置默认温度20度，SOC变化1%报警，电量小于4%报警
 	WriteWord(0x0C, RCOMP0, 0x5C);
 

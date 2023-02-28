@@ -79,7 +79,6 @@ extern bool get_temp_ok_flag;
 
 extern float g_temp_skin;
 extern float g_temp_body;
-extern float g_temp_timing;
 extern float g_temp_menu;
 
 extern TEMP_WORK_STATUS g_temp_status;

@@ -68,13 +68,10 @@ uint8_t g_ppg_bpt_status = BPT_STATUS_GET_EST;
 uint8_t g_ppg_ver[64] = {0};
 
 uint8_t g_hr = 0;
-uint8_t g_hr_timing = 0;
 uint8_t g_hr_menu = 0;
 uint8_t g_spo2 = 0;
-uint8_t g_spo2_timing = 0;
 uint8_t g_spo2_menu = 0;
 bpt_data g_bpt = {0};
-bpt_data g_bpt_timing = {0};
 bpt_data g_bpt_menu = {0};
 
 static uint8_t temp_hr_count = 0;
@@ -100,7 +97,6 @@ void ClearAllBptRecData(void)
 	uint8_t tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0xff};
 
 	memset(&g_bpt, 0, sizeof(bpt_data));
-	memset(&g_bpt_timing, 0, sizeof(bpt_data));
 	memset(&g_bpt_menu, 0, sizeof(bpt_data));	
 	
 	SpiFlash_Write(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
@@ -110,6 +106,7 @@ void SetCurDayBptRecData(bpt_data bpt)
 {
 	uint8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data *p_bpt,tmp_bpt = {0};
+	sys_date_timer_t temp_date = {0};
 
 	if((bpt.systolic > PPG_BPT_SYS_MAX) || (bpt.systolic < PPG_BPT_SYS_MIN) 
 		|| (bpt.diastolic > PPG_BPT_DIA_MAX) || (bpt.diastolic < PPG_BPT_DIA_MIN)
@@ -118,29 +115,33 @@ void SetCurDayBptRecData(bpt_data bpt)
 		memset(&bpt, 0, sizeof(bpt_data));
 	}
 
-	tmp_bpt.year = date_time.year;
-	tmp_bpt.month = date_time.month;
-	tmp_bpt.day = date_time.day;
-	memcpy(&tmp_bpt.bpt[date_time.hour], &bpt, sizeof(bpt_data));
+	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	TimeIncrease(&temp_date, 60);
+	
+	tmp_bpt.year = temp_date.year;
+	tmp_bpt.month = temp_date.month;
+	tmp_bpt.day = temp_date.day;
+	memcpy(&tmp_bpt.bpt[temp_date.hour], &bpt, sizeof(bpt_data));
 	
 	SpiFlash_Read(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 	p_bpt = tmpbuf;
 	if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
 		||(p_bpt->month == 0xff || p_bpt->month == 0x00)
 		||(p_bpt->day == 0xff || p_bpt->day == 0x00)
-		||((p_bpt->year == date_time.year)&&(p_bpt->month == date_time.month)&&(p_bpt->day == date_time.day))
+		||((p_bpt->year == temp_date.year)&&(p_bpt->month == temp_date.month)&&(p_bpt->day == temp_date.day))
 		)
 	{
 		//直接覆盖写在第一条
-		p_bpt->year = date_time.year;
-		p_bpt->month = date_time.month;
-		p_bpt->day = date_time.day;
-		memcpy(&p_bpt->bpt[date_time.hour], &bpt, sizeof(bpt_data));
+		p_bpt->year = temp_date.year;
+		p_bpt->month = temp_date.month;
+		p_bpt->day = temp_date.day;
+		memcpy(&p_bpt->bpt[temp_date.hour], &bpt, sizeof(bpt_data));
 		SpiFlash_Write(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 	}
-	else if((date_time.year < p_bpt->year)
-			||((date_time.year == p_bpt->year)&&(date_time.month < p_bpt->month))
-			||((date_time.year == p_bpt->year)&&(date_time.month == p_bpt->month)&&(date_time.day < p_bpt->day))
+	else if((temp_date.year < p_bpt->year)
+			||((temp_date.year == p_bpt->year)&&(temp_date.month < p_bpt->month))
+			||((temp_date.year == p_bpt->year)&&(temp_date.month == p_bpt->month)&&(temp_date.day < p_bpt->day))
 			)
 	{
 		uint8_t databuf[PPG_BPT_REC2_DATA_SIZE] = {0};
@@ -161,28 +162,28 @@ void SetCurDayBptRecData(bpt_data bpt)
 			if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
 				||(p_bpt->month == 0xff || p_bpt->month == 0x00)
 				||(p_bpt->day == 0xff || p_bpt->day == 0x00)
-				||((p_bpt->year == date_time.year)&&(p_bpt->month == date_time.month)&&(p_bpt->day == date_time.day))
+				||((p_bpt->year == temp_date.year)&&(p_bpt->month == temp_date.month)&&(p_bpt->day == temp_date.day))
 				)
 			{
 				//直接覆盖写
-				p_bpt->year = date_time.year;
-				p_bpt->month = date_time.month;
-				p_bpt->day = date_time.day;
-				memcpy(&p_bpt->bpt[date_time.hour], &bpt, sizeof(bpt_data));
+				p_bpt->year = temp_date.year;
+				p_bpt->month = temp_date.month;
+				p_bpt->day = temp_date.day;
+				memcpy(&p_bpt->bpt[temp_date.hour], &bpt, sizeof(bpt_data));
 				SpiFlash_Write(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 				return;
 			}
-			else if((date_time.year > p_bpt->year)
-				||((date_time.year == p_bpt->year)&&(date_time.month > p_bpt->month))
-				||((date_time.year == p_bpt->year)&&(date_time.month == p_bpt->month)&&(date_time.day > p_bpt->day))
+			else if((temp_date.year > p_bpt->year)
+				||((temp_date.year == p_bpt->year)&&(temp_date.month > p_bpt->month))
+				||((temp_date.year == p_bpt->year)&&(temp_date.month == p_bpt->month)&&(temp_date.day > p_bpt->day))
 				)
 			{
 				if(i < 6)
 				{
 					p_bpt++;
-					if((date_time.year < p_bpt->year)
-						||((date_time.year == p_bpt->year)&&(date_time.month < p_bpt->month))
-						||((date_time.year == p_bpt->year)&&(date_time.month == p_bpt->month)&&(date_time.day < p_bpt->day))
+					if((temp_date.year < p_bpt->year)
+						||((temp_date.year == p_bpt->year)&&(temp_date.month < p_bpt->month))
+						||((temp_date.year == p_bpt->year)&&(temp_date.month == p_bpt->month)&&(temp_date.day < p_bpt->day))
 						)
 					{
 						break;
@@ -237,7 +238,6 @@ void ClearAllSpo2RecData(void)
 	uint8_t tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0xff};
 
 	g_spo2 = 0;
-	g_spo2_timing = 0;
 	g_spo2_menu = 0;
 
 	SpiFlash_Write(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
@@ -247,33 +247,38 @@ void SetCurDaySpo2RecData(uint8_t spo2)
 {
 	uint8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	ppg_spo2_rec2_data *p_spo2,tmp_spo2 = {0};
-
+	sys_date_timer_t temp_date = {0};
+	
 	if((spo2 > PPG_SPO2_MAX) || (spo2 < PPG_SPO2_MIN))
 		spo2 = 0;
 
-	tmp_spo2.year = date_time.year;
-	tmp_spo2.month = date_time.month;
-	tmp_spo2.day = date_time.day;
-	tmp_spo2.spo2[date_time.hour] = spo2;
+	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	TimeIncrease(&temp_date, 60);
+
+	tmp_spo2.year = temp_date.year;
+	tmp_spo2.month = temp_date.month;
+	tmp_spo2.day = temp_date.day;
+	tmp_spo2.spo2[temp_date.hour] = spo2;
 
 	SpiFlash_Read(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
 	p_spo2 = tmpbuf;
 	if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
 		||(p_spo2->month == 0xff || p_spo2->month == 0x00)
 		||(p_spo2->day == 0xff || p_spo2->day == 0x00)
-		||((p_spo2->year == date_time.year)&&(p_spo2->month == date_time.month)&&(p_spo2->day == date_time.day))
+		||((p_spo2->year == temp_date.year)&&(p_spo2->month == temp_date.month)&&(p_spo2->day == temp_date.day))
 		)
 	{
 		//直接覆盖写在第一条
-		p_spo2->year = date_time.year;
-		p_spo2->month = date_time.month;
-		p_spo2->day = date_time.day;
-		p_spo2->spo2[date_time.hour] = spo2;
+		p_spo2->year = temp_date.year;
+		p_spo2->month = temp_date.month;
+		p_spo2->day = temp_date.day;
+		p_spo2->spo2[temp_date.hour] = spo2;
 		SpiFlash_Write(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
 	}
-	else if((date_time.year < p_spo2->year)
-			||((date_time.year == p_spo2->year)&&(date_time.month < p_spo2->month))
-			||((date_time.year == p_spo2->year)&&(date_time.month == p_spo2->month)&&(date_time.day < p_spo2->day))
+	else if((temp_date.year < p_spo2->year)
+			||((temp_date.year == p_spo2->year)&&(temp_date.month < p_spo2->month))
+			||((temp_date.year == p_spo2->year)&&(temp_date.month == p_spo2->month)&&(temp_date.day < p_spo2->day))
 			)
 	{
 		uint8_t databuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
@@ -294,28 +299,28 @@ void SetCurDaySpo2RecData(uint8_t spo2)
 			if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
 				||(p_spo2->month == 0xff || p_spo2->month == 0x00)
 				||(p_spo2->day == 0xff || p_spo2->day == 0x00)
-				||((p_spo2->year == date_time.year)&&(p_spo2->month == date_time.month)&&(p_spo2->day == date_time.day))
+				||((p_spo2->year == temp_date.year)&&(p_spo2->month == temp_date.month)&&(p_spo2->day == temp_date.day))
 				)
 			{
 				//直接覆盖写
-				p_spo2->year = date_time.year;
-				p_spo2->month = date_time.month;
-				p_spo2->day = date_time.day;
-				p_spo2->spo2[date_time.hour] = spo2;
+				p_spo2->year = temp_date.year;
+				p_spo2->month = temp_date.month;
+				p_spo2->day = temp_date.day;
+				p_spo2->spo2[temp_date.hour] = spo2;
 				SpiFlash_Write(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
 				return;
 			}
-			else if((date_time.year > p_spo2->year)
-				||((date_time.year == p_spo2->year)&&(date_time.month > p_spo2->month))
-				||((date_time.year == p_spo2->year)&&(date_time.month == p_spo2->month)&&(date_time.day > p_spo2->day))
+			else if((temp_date.year > p_spo2->year)
+				||((temp_date.year == p_spo2->year)&&(temp_date.month > p_spo2->month))
+				||((temp_date.year == p_spo2->year)&&(temp_date.month == p_spo2->month)&&(temp_date.day > p_spo2->day))
 				)
 			{
 				if(i < 6)
 				{
 					p_spo2++;
-					if((date_time.year < p_spo2->year)
-						||((date_time.year == p_spo2->year)&&(date_time.month < p_spo2->month))
-						||((date_time.year == p_spo2->year)&&(date_time.month == p_spo2->month)&&(date_time.day < p_spo2->day))
+					if((temp_date.year < p_spo2->year)
+						||((temp_date.year == p_spo2->year)&&(temp_date.month < p_spo2->month))
+						||((temp_date.year == p_spo2->year)&&(temp_date.month == p_spo2->month)&&(temp_date.day < p_spo2->day))
 						)
 					{
 						break;
@@ -370,7 +375,6 @@ void ClearAllHrRecData(void)
 	uint8_t tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0xff};
 
 	g_hr = 0;
-	g_hr_timing = 0;
 	g_hr_menu = 0;
 
 	SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
@@ -380,33 +384,38 @@ void SetCurDayHrRecData(uint8_t hr)
 {
 	uint8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	ppg_hr_rec2_data *p_hr,tmp_hr = {0};
-
+	sys_date_timer_t temp_date = {0};
+	
 	if((hr > PPG_HR_MAX) || (hr < PPG_HR_MIN))
 		hr = 0;
 
-	tmp_hr.year = date_time.year;
-	tmp_hr.month = date_time.month;
-	tmp_hr.day = date_time.day;
-	tmp_hr.hr[date_time.hour] = hr;
+	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	TimeIncrease(&temp_date, 60);
+
+	tmp_hr.year = temp_date.year;
+	tmp_hr.month = temp_date.month;
+	tmp_hr.day = temp_date.day;
+	tmp_hr.hr[temp_date.hour] = hr;
 	
 	SpiFlash_Read(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 	p_hr = tmpbuf;
 	if((p_hr->year == 0xffff || p_hr->year == 0x0000)
 		||(p_hr->month == 0xff || p_hr->month == 0x00)
 		||(p_hr->day == 0xff || p_hr->day == 0x00)
-		||((p_hr->year == date_time.year)&&(p_hr->month == date_time.month)&&(p_hr->day == date_time.day))
+		||((p_hr->year == temp_date.year)&&(p_hr->month == temp_date.month)&&(p_hr->day == temp_date.day))
 		)
 	{
 		//直接覆盖写在第一条
-		p_hr->year = date_time.year;
-		p_hr->month = date_time.month;
-		p_hr->day = date_time.day;
-		p_hr->hr[date_time.hour] = hr;
+		p_hr->year = temp_date.year;
+		p_hr->month = temp_date.month;
+		p_hr->day = temp_date.day;
+		p_hr->hr[temp_date.hour] = hr;
 		SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 	}
-	else if((date_time.year < p_hr->year)
-			||((date_time.year == p_hr->year)&&(date_time.month < p_hr->month))
-			||((date_time.year == p_hr->year)&&(date_time.month == p_hr->month)&&(date_time.day < p_hr->day))
+	else if((temp_date.year < p_hr->year)
+			||((temp_date.year == p_hr->year)&&(temp_date.month < p_hr->month))
+			||((temp_date.year == p_hr->year)&&(temp_date.month == p_hr->month)&&(temp_date.day < p_hr->day))
 			)
 	{
 		uint8_t databuf[PPG_HR_REC2_DATA_SIZE] = {0};
@@ -427,28 +436,28 @@ void SetCurDayHrRecData(uint8_t hr)
 			if((p_hr->year == 0xffff || p_hr->year == 0x0000)
 				||(p_hr->month == 0xff || p_hr->month == 0x00)
 				||(p_hr->day == 0xff || p_hr->day == 0x00)
-				||((p_hr->year == date_time.year)&&(p_hr->month == date_time.month)&&(p_hr->day == date_time.day))
+				||((p_hr->year == temp_date.year)&&(p_hr->month == temp_date.month)&&(p_hr->day == temp_date.day))
 				)
 			{
 				//直接覆盖写
-				p_hr->year = date_time.year;
-				p_hr->month = date_time.month;
-				p_hr->day = date_time.day;
-				p_hr->hr[date_time.hour] = hr;
+				p_hr->year = temp_date.year;
+				p_hr->month = temp_date.month;
+				p_hr->day = temp_date.day;
+				p_hr->hr[temp_date.hour] = hr;
 				SpiFlash_Write(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
 				return;
 			}
-			else if((date_time.year > p_hr->year)
-				||((date_time.year == p_hr->year)&&(date_time.month > p_hr->month))
-				||((date_time.year == p_hr->year)&&(date_time.month == p_hr->month)&&(date_time.day > p_hr->day))
+			else if((temp_date.year > p_hr->year)
+				||((temp_date.year == p_hr->year)&&(temp_date.month > p_hr->month))
+				||((temp_date.year == p_hr->year)&&(temp_date.month == p_hr->month)&&(temp_date.day > p_hr->day))
 				)
 			{
 				if(i < 6)
 				{
 					p_hr++;
-					if((date_time.year < p_hr->year)
-						||((date_time.year == p_hr->year)&&(date_time.month < p_hr->month))
-						||((date_time.year == p_hr->year)&&(date_time.month == p_hr->month)&&(date_time.day < p_hr->day))
+					if((temp_date.year < p_hr->year)
+						||((temp_date.year == p_hr->year)&&(temp_date.month < p_hr->month))
+						||((temp_date.year == p_hr->year)&&(temp_date.month == p_hr->month)&&(temp_date.day < p_hr->day))
 						)
 					{
 						break;
@@ -1162,7 +1171,6 @@ void ppg_delay_start_timerout(struct k_timer *timer_id)
 void TimerStartHr(void)
 {
 	g_hr = 0;
-	g_hr_timing = 0;
 	temp_hr_count = 0;
 	memset(&temp_hr, 0x00, sizeof(temp_hr));	
 	get_hr_ok_flag = false;
@@ -1315,7 +1323,6 @@ void MenuStopHr(void)
 void TimerStartSpo2(void)
 {
 	g_spo2 = 0;
-	g_spo2_timing = 0;
 	temp_spo2_count	= 0;
 	memset(&temp_spo2, 0x00, sizeof(temp_spo2));
 	get_spo2_ok_flag = false;
@@ -1468,7 +1475,6 @@ void MenuStopSpo2(void)
 void TimerStartBpt(void)
 {
 	memset(&g_bpt, 0, sizeof(bpt_data));
-	memset(&g_bpt_timing, 0, sizeof(bpt_data));
 	memset(&g_bpt_menu, 0, sizeof(bpt_data));
 	get_bpt_ok_flag = false;
 
@@ -1765,9 +1771,6 @@ void PPGStopCheck(void)
 		else if((g_ppg_data == PPG_DATA_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
 		{
 			memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
-		#ifdef PPG_DEBUG
-			LOGD("g_bpt_menu:%d,%d", g_bpt_menu.systolic, g_bpt_menu.diastolic);
-		#endif
 		}
 
 		SyncSendHealthData();
@@ -1781,18 +1784,15 @@ void PPGStopCheck(void)
 
 		if(g_ppg_data == PPG_DATA_HR)
 		{
-			g_hr_timing = g_hr;
+			SetCurDayHrRecData(g_hr);
 		}
 		else if(g_ppg_data == PPG_DATA_SPO2)
 		{
-			g_spo2_timing = g_spo2;
+			SetCurDaySpo2RecData(g_spo2);
 		}
 		else if((g_ppg_data == PPG_DATA_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
 		{
-			memcpy(&g_bpt_timing, &g_bpt, sizeof(bpt_data));
-		#ifdef PPG_DEBUG
-			LOGD("g_bpt_timing:%d,%d", g_bpt_timing.systolic, g_bpt_timing.diastolic);
-		#endif
+			SetCurDayBptRecData(g_bpt);
 		}
 	}
 

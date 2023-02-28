@@ -155,13 +155,10 @@ extern uint8_t g_ppg_trigger;
 extern uint8_t g_ppg_ver[64];
 
 extern uint8_t g_hr;
-extern uint8_t g_hr_timing;
 extern uint8_t g_hr_menu;
 extern uint8_t g_spo2;
-extern uint8_t g_spo2_timing;
 extern uint8_t g_spo2_menu;
 extern bpt_data g_bpt;
-extern bpt_data g_bpt_timing;
 extern bpt_data g_bpt_menu;
 
 extern PPG_WORK_STATUS g_ppg_status;

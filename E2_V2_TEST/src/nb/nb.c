@@ -46,7 +46,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
@@ -2313,7 +2313,7 @@ void SetNwtWorkMqttBroker(u8_t *imsi_buf)
 
 void SetNetWorkParaByPlmn(u8_t *imsi)
 {
-	SetNetWorkApn(imsi);
+	//SetNetWorkApn(imsi);
 	SetNwtWorkMqttBroker(imsi);
 }
 

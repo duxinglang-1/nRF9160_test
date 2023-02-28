@@ -49,7 +49,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(30)

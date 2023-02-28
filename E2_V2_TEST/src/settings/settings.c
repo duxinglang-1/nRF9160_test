@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-u8_t g_fw_version[64] = "V2.0.6_20221129";
+u8_t g_fw_version[64] = "V3.0.2_20221230";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 

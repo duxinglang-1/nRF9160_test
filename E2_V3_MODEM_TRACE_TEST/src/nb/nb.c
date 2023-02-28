@@ -49,7 +49,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(30)
@@ -2337,7 +2337,21 @@ void GetModemInfor(void)
 	#endif	
 	}
 
-#if 0
+#if 1
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_HWVER) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("hardware version:%s", tmpbuf);
+	#endif	
+	}
+
+	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SWVER) == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("software version:%s", tmpbuf);
+	#endif	
+	}
+#else
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SUPPORT_BAND) == 0)
 	{
 	#ifdef NB_DEBUG

@@ -231,17 +231,45 @@ void VibrateStop(void)
 #endif
 }
 
+int MAX20353_Buck1Disable(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x35;
+    appdatainoutbuffer_[0] = 0x00;  	//
+    appdatainoutbuffer_[1] = 0x2C;  	//0x28    	0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
+    appdatainoutbuffer_[2] = 0x1F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x00;  	//Disable
+    ret = MAX20353_AppWrite(4);
+	
+    return ret;
+}
+
 int MAX20353_Buck1Config(void) 
 {
     int32_t ret = 0;
 	
     appcmdoutvalue_ = 0x35;
     appdatainoutbuffer_[0] = 0x00;  	//
-    appdatainoutbuffer_[1] = 0x2C;  	//0x28    0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
+    appdatainoutbuffer_[1] = 0x2C;  	//0x28    	0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
     appdatainoutbuffer_[2] = 0x1F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
-    appdatainoutbuffer_[3] = 0x01;  	// Enable
+    appdatainoutbuffer_[3] = 0x01;  	//Enable
     ret = MAX20353_AppWrite(4);
 	
+    return ret;
+}
+
+int MAX20353_Buck2Disable(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x3A;
+    appdatainoutbuffer_[0] = 0x01;      //
+    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x00;		//Disnable
+    ret = MAX20353_AppWrite(4);
+
     return ret;
 }
 
@@ -252,10 +280,22 @@ int MAX20353_Buck2Config(void)
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
     appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
-    appdatainoutbuffer_[2] = 0x3F;		//  0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
-    appdatainoutbuffer_[3] = 0x01;		// Enable
+    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x01;		//Enable
     ret = MAX20353_AppWrite(4);
 
+    return ret;
+}
+
+int MAX20353_LDO1Disable(void)
+{
+    int32_t ret = 0;
+
+    appcmdoutvalue_ = 0x40;
+    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,½ûÖ¹LDO1  
+    appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
+    ret = MAX20353_AppWrite(2);
+    
     return ret;
 }
 
@@ -271,15 +311,15 @@ int MAX20353_LDO1Config(void)
     return ret;
 }
 
-int MAX20353_LDO1Disable(void)
+int MAX20353_LDO2Disbale(void)
 {
     int32_t ret = 0;
-
-    appcmdoutvalue_ = 0x40;
-    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,Ê¹ÄÜ   LDO1  
-    appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
+	
+    appcmdoutvalue_ = 0x42;
+    appdatainoutbuffer_[0] = 0x00;
+    appdatainoutbuffer_[1] = 0x18;     // 0.9V + (0.1V * number)   =  3.3V 
     ret = MAX20353_AppWrite(2);
-    
+
     return ret;
 }
 
@@ -293,20 +333,6 @@ int MAX20353_LDO2Config(void)
     ret = MAX20353_AppWrite(2);
 
     return ret;
-}
-
-int MAX20353_BoostConfig(void) 
-{
-	int32_t ret = 0;
-	
-	appcmdoutvalue_ = 0x30;
-	appdatainoutbuffer_[0] = 0x01;
-	appdatainoutbuffer_[1] = 0x00;
-	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
-	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
-	ret = MAX20353_AppWrite(4);
-
-	return ret;
 }
 
 int MAX20353_BoostDisable(void)
@@ -323,19 +349,20 @@ int MAX20353_BoostDisable(void)
 	return ret;
 }
 
-int MAX20353_ChargePumpConfig(void)
+int MAX20353_BoostConfig(void) 
 {
-    int32_t ret = 0;
-    appcmdoutvalue_ = 0x46;
-    appdatainoutbuffer_[0] = 0x01;	// Boost Enabled
-    appdatainoutbuffer_[1] = 0x03;	// 00 : 6.5V, 01: 5V
-    ret = MAX20353_AppWrite(2);
+	int32_t ret = 0;
+	
+	appcmdoutvalue_ = 0x30;
+	appdatainoutbuffer_[0] = 0x01;
+	appdatainoutbuffer_[1] = 0x00;
+	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
+	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	ret = MAX20353_AppWrite(4);
 
-    return ret;
+	return ret;
 }
 
-/// @brief BuckBoost to 5.0V output rail **/
-//******************************************************************************
 int MAX20353_BuckBoostDisable(void) 
 {
     int32_t ret = 0;
@@ -349,8 +376,6 @@ int MAX20353_BuckBoostDisable(void)
     return ret;
 }
 
-/// @brief BuckBoost to 4.0V output rail **/
-//******************************************************************************
 int MAX20353_BuckBoostConfig(void) 
 {
     int32_t ret = 0;
@@ -360,6 +385,17 @@ int MAX20353_BuckBoostConfig(void)
     appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 4.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
+
+    return ret;
+}
+
+int MAX20353_ChargePumpConfig(void)
+{
+    int32_t ret = 0;
+    appcmdoutvalue_ = 0x46;
+    appdatainoutbuffer_[0] = 0x01;	// Boost Enabled
+    appdatainoutbuffer_[1] = 0x03;	// 00 : 6.5V, 01: 5V
+    ret = MAX20353_AppWrite(2);
 
     return ret;
 }

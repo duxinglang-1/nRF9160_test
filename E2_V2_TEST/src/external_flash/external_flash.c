@@ -693,7 +693,7 @@ void test_flash_write_and_read(u8_t *buf, u32_t len)
 void test_flash(void)
 {
 	uint16_t flash_id;
-	uint16_t len;
+	uint32_t i,len;
 	u8_t tmpbuf[128] = {0};
 	u32_t addr;
 	
@@ -713,6 +713,12 @@ void test_flash(void)
 	LCD_ShowString(0,60,"FLASH擦除成功!");
 #endif
 
+#if 1
+	LCD_ShowString(0,40,"FLASH开始擦除块...");
+	for(addr=FONT_START_ADDR;addr<PPG_ALGO_START_ADDR;addr+=SPIFlash_BLOCK_SIZE)
+		SPIFlash_Erase_Block(addr);
+	LCD_ShowString(0,60,"FLASH擦除块成功!");
+#endif
 #if 0	
 	//写入数据
 	//LCD_ShowString(0,80,"FLASH写入图片1数据...");

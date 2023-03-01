@@ -5449,6 +5449,29 @@ void EnterFallScreen(void)
 	if(screen_id == SCREEN_ID_FALL)
 		return;
 
+	k_timer_stop(&notify_timer);
+	k_timer_stop(&mainmenu_timer);
+
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaStopShow();
+#endif
+#ifdef NB_SIGNAL_TEST
+	if(gps_is_working())
+		MenuStopGPS();
+#endif	
+#ifdef CONFIG_PPG_SUPPORT
+	if(PPGIsWorking())
+		PPGStopCheck();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_SYNC_SUPPORT
+	if(SyncIsRunning())
+		SyncDataStop();
+#endif
+
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;

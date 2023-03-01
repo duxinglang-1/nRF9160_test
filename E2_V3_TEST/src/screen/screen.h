@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define UI_STYLE_HEALTH_BAR
+//#define UI_STYLE_HEALTH_BAR
 
 //pwron
 #define PWRON_STR_W		198

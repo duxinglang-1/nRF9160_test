@@ -383,9 +383,9 @@ void FallAlarmStart(void)
 	if(FallIsRunning())
 		return;
 
-	lcd_sleep_out = true;
 	fall_state = FALL_STATUS_NOTIFY;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	EnterFallScreen();
 
 	FallVibOn();

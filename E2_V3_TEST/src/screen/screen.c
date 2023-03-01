@@ -5443,6 +5443,24 @@ void FallScreenProcess(void)
 	
 	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_NO;
 }
+
+void EnterFallScreen(void)
+{
+	if(screen_id == SCREEN_ID_FALL)
+		return;
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FALL;	
+	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;
+
+	ClearAllKeyHandler();
+	//k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), K_NO_WAIT);
+}
+
 #endif/*CONFIG_FALL_DETECT_SUPPORT*/
 
 #ifdef CONFIG_SLEEP_SUPPORT
@@ -6520,22 +6538,6 @@ void EnterSOSScreen(void)
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
 
 	ClearAllKeyHandler();
-}
-
-void EnterFallScreen(void)
-{
-	if(screen_id == SCREEN_ID_FALL)
-		return;
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_FALL;	
-	scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;
-
-	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), K_NO_WAIT);
 }
 
 void ExitWristScreen(void)

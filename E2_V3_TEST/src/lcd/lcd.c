@@ -3430,9 +3430,6 @@ void LCDMsgProcess(void)
 	{
 		lcd_sleep_in = false;
 		
-		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
-			return;
-		
 		LCD_BL_Off();
 		LCD_SleepIn();
 	}
@@ -3440,10 +3437,7 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_out)
 	{	
 		lcd_sleep_out = false;
-		
-		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
-			return;
-		
+	
 		LCD_SleepOut();
 		if(IsInIdleScreen())
 		{
@@ -3451,7 +3445,6 @@ void LCDMsgProcess(void)
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK|SCREEN_EVENT_UPDATE_SIG|SCREEN_EVENT_UPDATE_NET_MODE|SCREEN_EVENT_UPDATE_BAT;
 			IdleScreenProcess();
 		}
-		
 		LCD_BL_On();
 	}
 }

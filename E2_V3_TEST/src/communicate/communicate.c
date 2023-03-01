@@ -587,6 +587,25 @@ void SendSosAlarmData(void)
 	uint32_t i,count=1;
 
 	strcat(reply, "1");
-	NBSendSosAlarmData(reply, strlen(reply));
+	NBSendAlarmData(reply, strlen(reply));
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendFallAlarmData
+ * DESCRIPTION
+ *  发送Fall报警包(无地址信息)
+ * PARAMETERS
+ *	
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendFallAlarmData(void)
+{
+	uint8_t reply[256] = {0};
+	uint32_t i,count=1;
+
+	strcat(reply, "2");
+	NBSendAlarmData(reply, strlen(reply));
 }
 

@@ -732,12 +732,16 @@ static void NbSendData(void)
 	ret = get_data_from_send_cache(&p_data, &data_len);
 	if(ret)
 	{
+		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
+		
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
 			delete_data_from_send_cache();
 		}
-
+		
 		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 	}
 }
@@ -1358,7 +1362,7 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendSosAlarmData(uint8_t *data, uint32_t datalen)
+void NBSendAlarmData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1372,7 +1376,7 @@ void NBSendSosAlarmData(uint8_t *data, uint32_t datalen)
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
-	LOGD("sos alarm data:%s", buf);
+	LOGD("alarm data:%s", buf);
 #endif
 	MqttSendData(buf, strlen(buf));
 }
@@ -1418,13 +1422,15 @@ void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
 void NBSendFallWifiData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T3:");
 	strcat(buf, data);
 	strcat(buf, ",");
-	strcat(buf, fall_trigger_time);
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
 	LOGD("fall wifi data:%s", buf);
@@ -1870,8 +1876,24 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		#ifdef NB_DEBUG
 			LOGD("%s", strdata);
 		#endif
-
-			SOSRecLocatNotify(strdata);
+			uint8_t *ptr,*ptr1;
+			uint8_t strtmp[128] = {0};
+		
+			//后台下发定位上报间隔
+			ptr = strstr(strdata, ",");
+			if(ptr != NULL)
+			{
+				memcpy(strtmp, strdata, (ptr-strdata));
+				switch(atoi(strtmp))
+				{
+				case 1://SOS Alarm
+					SOSRecLocatNotify(ptr+1);
+					break;
+				case 2://Fall Alarm
+					FallRecLocatNotify(ptr+1);
+					break;
+				}
+			}
 		}
 
 		SaveSystemSettings();

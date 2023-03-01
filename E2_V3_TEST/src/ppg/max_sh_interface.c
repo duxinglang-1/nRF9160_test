@@ -172,7 +172,7 @@ static void sh_init_gpio(void)
 	if(gpio_ppg == NULL)
 		gpio_ppg = device_get_binding(PPG_PORT);
 
-#if 0
+#if 0	//xb add 20230228 Set the PPG interrupt pin as input to prevent leakage.
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);

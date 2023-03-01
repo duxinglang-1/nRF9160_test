@@ -1108,6 +1108,15 @@ void PMUMsgProcess(void)
 			VibrateStart();
 		
 		vibrate_start_flag = false;
+
+		if(g_vib.work_mode == VIB_RHYTHMIC)
+		{
+			k_timer_start(&vib_start_timer, K_MSEC(g_vib.on_time), K_NO_WAIT);
+		}
+		else
+		{
+			memset(&g_vib, 0, sizeof(g_vib));
+		}
 	}
 	
 	if(vibrate_stop_flag)

@@ -429,6 +429,8 @@ void vibrate_stop_timerout(struct k_timer *timer_id)
 
 void vibrate_off(void)
 {
+	k_timer_stop(&vib_start_timer);
+	k_timer_stop(&vib_start_timer);
 	memset(&g_vib, 0, sizeof(g_vib));
 	
 	vibrate_stop_flag = true;

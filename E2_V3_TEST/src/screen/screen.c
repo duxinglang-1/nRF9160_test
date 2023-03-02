@@ -5372,14 +5372,43 @@ void EnterFOTAScreen(void)
 
 #ifdef CONFIG_IMU_SUPPORT
 #ifdef CONFIG_FALL_DETECT_SUPPORT
+void FallUpdateStatus(void)
+{
+	switch(fall_state)
+	{
+	case FALL_STATUS_IDLE:
+		break;
+		
+	case FALL_STATUS_SENDING:
+		break;
+	
+	case FALL_STATUS_SENT:
+	#ifdef CONFIG_ANIMATION_SUPPORT	
+		AnimaStopShow();
+	#endif
+
+		LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_SOS_ANI_4_ADDR);
+		fall_state = FALL_STATUS_RECEIVED;
+		break;
+	
+	case FALL_STATUS_RECEIVED:
+		break;
+	
+	case FALL_STATUS_CANCEL:
+		break;
+	}
+}
+
 void FallShowStatus(void)
 {
 	uint16_t x,y,w,h;
 	uint32_t img_addr;
 	uint16_t ret_str[20] = {0x0046,0x0041,0x004C,0x004C,0x0021,0x0000};//FALL!
+	uint32_t img_anima[4] = {IMG_SOS_ANI_1_ADDR,IMG_SOS_ANI_2_ADDR,IMG_SOS_ANI_3_ADDR,IMG_SOS_ANI_4_ADDR};
 
 	LCD_Clear(BLACK);
 
+#if 0
 	LCD_Fill(FALL_NOTIFY_STR_X-2, FALL_NOTIFY_STR_Y-2, FALL_NOTIFY_STR_W+4, FALL_NOTIFY_STR_H+4, GRAY);
 	LCD_Fill(FALL_NOTIFY_STR_X, FALL_NOTIFY_STR_Y, FALL_NOTIFY_STR_W, FALL_NOTIFY_STR_H, RED);
 
@@ -5392,37 +5421,13 @@ void FallShowStatus(void)
 
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
-#if 0
-	switch(global_settings.language)
-	{
-	case LANGUAGE_EN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_addr = IMG_FALL_EN_ADDR;
-	#else
-		img = IMG_FALL_EN;
-	#endif
-		x = FALL_EN_TEXT_X;
-		y = FALL_CN_TEXT_Y;
-		break;
-		
-	case LANGUAGE_CHN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_addr = IMG_FALL_CN_ADDR;
-	#else
-		img = IMG_FALL_CN;
-	#endif
-		x = FALL_CN_TEXT_X;
-		y = FALL_CN_TEXT_Y;	
-		break;
-	}
 
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON_ADDR);
-	LCD_ShowImg_From_Flash(x, y, img_addr);
 #else
-	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON);
-	LCD_ShowImg(x, y, img);
+#ifdef CONFIG_ANIMATION_SUPPORT
+	AnimaShow(FALL_ICON_X, FALL_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
 #endif
+
+	FallChangrStatus();
 #endif
 }
 
@@ -5438,6 +5443,7 @@ void FallScreenProcess(void)
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
+		FallUpdateStatus();
 		break;
 	}
 	
@@ -5481,7 +5487,6 @@ void EnterFallScreen(void)
 	scr_msg[SCREEN_ID_FALL].status = SCREEN_STATUS_CREATING;
 
 	ClearAllKeyHandler();
-	//k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), K_NO_WAIT);
 }
 
 #endif/*CONFIG_FALL_DETECT_SUPPORT*/
@@ -6497,7 +6502,7 @@ void SOSShowStatus(void)
 	AnimaShow(SOS_ICON_X, SOS_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
 #endif
 
-	SOSSChangrStatus();
+	SOSChangrStatus();
 }
 
 void SOSScreenProcess(void)

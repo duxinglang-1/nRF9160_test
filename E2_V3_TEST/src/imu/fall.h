@@ -16,10 +16,21 @@
 extern "C" {
 #endif
 
+#define FALL_ICON_W			156
+#define FALL_ICON_H			131
+#define FALL_ICON_X			((LCD_WIDTH-FALL_ICON_W)/2)
+#define FALL_ICON_Y			((LCD_HEIGHT-FALL_ICON_H)/2)
+
+#define FALL_NOTIFY_RECT_W	180
+#define FALL_NOTIFY_RECT_H	120
+#define FALL_NOTIFY_RECT_X	((LCD_WIDTH-FALL_NOTIFY_RECT_W)/2)
+#define FALL_NOTIFY_RECT_Y	((LCD_HEIGHT-FALL_NOTIFY_RECT_H)/2)
+
 #define FALL_NOTIFY_TIMEOUT 	10
-#define FALL_SENDING_TIMEOUT 	5
-#define FALL_SEND_OK_TIMEOUT	2
+#define FALL_SENDING_TIMEOUT 	2
+#define FALL_SENT_TIMEOUT		2
 #define FALL_CANCEL_TIMEOUT 	2
+#define FALL_IDLE_TIMEOUT		2
 
 
 typedef enum
@@ -37,7 +48,7 @@ typedef enum
 extern FALL_STATUS fall_state;
 extern uint8_t fall_trigger_time[16];
 
-extern void FallStart(void);
+extern void FallTrigger(void);
 extern void FallAlarmStart(void);
 extern void FallAlarmCancel(void);
 extern bool FallIsRunning(void);

@@ -64,7 +64,6 @@ bool fall_wait_gps = false;
 #endif
 bool location_wait_gps = false;
 bool test_gps_flag = false;
-bool gps_test_start_flag = false;
 bool gps_test_update_flag = false;
 bool gps_send_data_flag = false;
 
@@ -933,20 +932,6 @@ void MenuStopGPS(void)
 	gps_off_flag = true;
 }
 
-void test_gps_on(void)
-{
-	test_gps_flag = true;
-	EnterGPSTestScreen();
-	gps_on();
-}
-
-void test_gps_off(void)
-{
-	test_gps_flag = false;
-	gps_off();
-	EnterIdleScreen();
-}
-
 void GPS_init(struct k_work_q *work_q)
 {
 	app_work_q = work_q;
@@ -955,11 +940,6 @@ void GPS_init(struct k_work_q *work_q)
 
 void GPSMsgProcess(void)
 {
-	if(gps_test_start_flag)
-	{
-		gps_test_start_flag = false;
-		test_gps_on();
-	}
 	if(gps_on_flag)
 	{
 		gps_on_flag = false;

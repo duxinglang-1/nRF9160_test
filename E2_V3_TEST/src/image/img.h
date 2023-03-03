@@ -323,5 +323,11 @@ extern unsigned char IMG_FONT_60_COLON[2048];
 extern unsigned char IMG_FONT_60_DOT[2048];
 extern unsigned char IMG_FONT_60_PERC[6728];
 extern unsigned char IMG_FONT_60_SLASH[3080];
+//fall
+extern unsigned char IMG_FALL_ICON[20808];
+extern unsigned char IMG_FALL_YES[7208];
+extern unsigned char IMG_FALL_NO[7208];
+extern unsigned char IMG_FALL_CONFIRM[7208];
+extern unsigned char IMG_FALL_CANCEL[7208];
 #endif
 #endif/*__FONT_H__*/

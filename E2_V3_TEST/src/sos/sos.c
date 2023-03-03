@@ -332,7 +332,7 @@ bool SOSIsRunning(void)
 	}
 }
 
-void SOSSChangrStatus(void)
+void SOSChangrStatus(void)
 {
 	k_timer_start(&sos_timer, K_SECONDS(SOS_SENDING_TIMEOUT), K_NO_WAIT);
 }

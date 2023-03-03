@@ -980,6 +980,7 @@ bool IsInIdleScreen(void)
 		return false;
 }
 
+#if 0
 void AlarmScreenProcess(void)
 {
 	uint16_t rect_x,rect_y,rect_w=180,rect_h=80;
@@ -1017,6 +1018,7 @@ void AlarmScreenProcess(void)
 	
 	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
 }
+#endif
 
 void poweroff_confirm(void)
 {
@@ -5374,61 +5376,26 @@ void EnterFOTAScreen(void)
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 void FallUpdateStatus(void)
 {
-	switch(fall_state)
-	{
-	case FALL_STATUS_IDLE:
-		break;
-		
-	case FALL_STATUS_SENDING:
-		break;
-	
-	case FALL_STATUS_SENT:
-	#ifdef CONFIG_ANIMATION_SUPPORT	
-		AnimaStopShow();
-	#endif
-
-		LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_SOS_ANI_4_ADDR);
-		fall_state = FALL_STATUS_RECEIVED;
-		break;
-	
-	case FALL_STATUS_RECEIVED:
-		break;
-	
-	case FALL_STATUS_CANCEL:
-		break;
-	}
 }
 
 void FallShowStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint32_t img_addr;
-	uint16_t ret_str[20] = {0x0046,0x0041,0x004C,0x004C,0x0021,0x0000};//FALL!
-	uint32_t img_anima[4] = {IMG_SOS_ANI_1_ADDR,IMG_SOS_ANI_2_ADDR,IMG_SOS_ANI_3_ADDR,IMG_SOS_ANI_4_ADDR};
-
 	LCD_Clear(BLACK);
 
-#if 0
-	LCD_Fill(FALL_NOTIFY_STR_X-2, FALL_NOTIFY_STR_Y-2, FALL_NOTIFY_STR_W+4, FALL_NOTIFY_STR_H+4, GRAY);
-	LCD_Fill(FALL_NOTIFY_STR_X, FALL_NOTIFY_STR_Y, FALL_NOTIFY_STR_W, FALL_NOTIFY_STR_H, RED);
-
-	LCD_SetFontColor(WHITE);
-	LCD_SetFontBgColor(RED);
-
-	LCD_SetFontSize(FONT_SIZE_52);
-	LCD_MeasureUniString(ret_str, &w, &h);
-	LCD_ShowUniString(FALL_NOTIFY_STR_X+(FALL_NOTIFY_STR_W-w)/2, FALL_NOTIFY_STR_Y+(FALL_NOTIFY_STR_H-h)/2, ret_str);
-
-	LCD_ReSetFontBgColor();
-	LCD_ReSetFontColor();
-
-#else
-#ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaShow(FALL_ICON_X, FALL_ICON_Y, img_anima, ARRAY_SIZE(img_anima), 500, true, NULL);
-#endif
+	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON_ADDR);
+	LCD_ShowImg_From_Flash(FALL_YES_X, FALL_YES_Y, IMG_FALL_YES_ADDR);
+	LCD_ShowImg_From_Flash(FALL_NO_X, FALL_NO_Y, IMG_FALL_NO_ADDR);
 
 	FallChangrStatus();
+
+	//SetLeftKeyUpHandler(FallAlarmConfirm);
+	//SetRightKeyUpHandler(FallAlarmCancel);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FALL_YES_X, FALL_YES_X+FALL_YES_W, FALL_YES_Y, FALL_YES_Y+FALL_YES_H, FallAlarmConfirm);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FALL_NO_X, FALL_NO_X+FALL_NO_W, FALL_NO_Y, FALL_NO_Y+FALL_NO_H, FallAlarmCancel);
 #endif
+
 }
 
 void FallScreenProcess(void)
@@ -5840,66 +5807,6 @@ void EnterStepsScreen(void)
 #endif/*CONFIG_STEP_SUPPORT*/
 #endif/*CONFIG_IMU_SUPPORT*/
 
-void WristShowStatus(void)
-{
-#if 0
-	uint16_t x,y;
-	uint32_t img_addr;
-	uint8_t *img;
-
-	LCD_Clear(BLACK);
-
-	switch(global_settings.language)
-	{
-	case LANGUAGE_EN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_addr = IMG_WRIST_EN_ADDR;
-	#else
-		img = IMG_WRIST_EN;
-	#endif
-		x = WRIST_EN_TEXT_X;
-		y = WRIST_EN_TEXT_Y;
-		break;
-		
-	case LANGUAGE_CHN:
-	#ifdef IMG_FONT_FROM_FLASH
-		img_addr = IMG_WRIST_CN_ADDR;
-	#else
-		img = IMG_WRIST_CN;
-	#endif
-		x = WRIST_CN_TEXT_X;
-		y = WRIST_CN_TEXT_Y;	
-		break;
-	}
-
-#ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON_ADDR);
-	LCD_ShowImg_From_Flash(x, y, img_addr);
-#else
-	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
-	LCD_ShowImg(x, y, img);
-#endif
-#endif
-}
-
-void WristScreenProcess(void)
-{
-	switch(scr_msg[SCREEN_ID_WRIST].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATED;
-
-		WristShowStatus();
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
-}
-
 void EntryIdleScr(void)
 {
 	entry_idle_flag = true;
@@ -6261,6 +6168,7 @@ void EnterDeviceScreen(void)
 }
 #endif
 
+#ifdef NB_SIGNAL_TEST
 void TestGPSUpdateInfor(void)
 {
 	uint8_t tmpbuf[512] = {0};
@@ -6464,6 +6372,7 @@ void EnterNBTestScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 #endif
 }
+#endif
 
 void SOSUpdateStatus(void)
 {
@@ -6568,6 +6477,65 @@ void EnterSOSScreen(void)
 	ClearAllKeyHandler();
 }
 
+#if 0
+void WristShowStatus(void)
+{
+	uint16_t x,y;
+	uint32_t img_addr;
+	uint8_t *img;
+
+	LCD_Clear(BLACK);
+
+	switch(global_settings.language)
+	{
+	case LANGUAGE_EN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_WRIST_EN_ADDR;
+	#else
+		img = IMG_WRIST_EN;
+	#endif
+		x = WRIST_EN_TEXT_X;
+		y = WRIST_EN_TEXT_Y;
+		break;
+		
+	case LANGUAGE_CHN:
+	#ifdef IMG_FONT_FROM_FLASH
+		img_addr = IMG_WRIST_CN_ADDR;
+	#else
+		img = IMG_WRIST_CN;
+	#endif
+		x = WRIST_CN_TEXT_X;
+		y = WRIST_CN_TEXT_Y;	
+		break;
+	}
+
+#ifdef IMG_FONT_FROM_FLASH
+	LCD_ShowImg_From_Flash(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON_ADDR);
+	LCD_ShowImg_From_Flash(x, y, img_addr);
+#else
+	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);
+	LCD_ShowImg(x, y, img);
+#endif
+}
+
+void WristScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_WRIST].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_WRIST].status = SCREEN_STATUS_CREATED;
+
+		WristShowStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_WRIST].act = SCREEN_ACTION_NO;
+}
+
 void ExitWristScreen(void)
 {
 	if(screen_id == SCREEN_ID_WRIST)
@@ -6591,12 +6559,7 @@ void EnterWristScreen(void)
 
 	k_timer_start(&notify_timer, K_SECONDS(NOTIFY_TIMER_INTERVAL), K_NO_WAIT);
 }
-
-void UpdataTestGPSInfo(void)
-{
-	if(screen_id == SCREEN_ID_GPS_TEST)
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-}
+#endif
 
 void GoBackHistoryScreen(void)
 {
@@ -6629,9 +6592,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_IDLE:
 			IdleScreenProcess();
 			break;
+	#if 0		
 		case SCREEN_ID_ALARM:
 			AlarmScreenProcess();
 			break;
+	#endif
 		case SCREEN_ID_FIND_DEVICE:
 			FindDeviceScreenProcess();
 			break;
@@ -6668,9 +6633,11 @@ void ScreenMsgProcess(void)
 			break;
 	  #endif
 	#endif
+	#if 0
 		case SCREEN_ID_WRIST:
 			WristScreenProcess();
-			break;				
+			break;
+	#endif
 		case SCREEN_ID_SETTINGS:
 			SettingsScreenProcess();
 			break;
@@ -6679,12 +6646,14 @@ void ScreenMsgProcess(void)
 			TestWifiScreenProcess();
 			break;
 	#endif
+	#ifdef NB_SIGNAL_TEST
 		case SCREEN_ID_GPS_TEST:
 			TestGPSScreenProcess();
 			break;
 		case SCREEN_ID_NB_TEST:
 			TestNBScreenProcess();
 			break;
+	#endif
 		case SCREEN_ID_POWEROFF:
 			PowerOffScreenProcess();
 			break;

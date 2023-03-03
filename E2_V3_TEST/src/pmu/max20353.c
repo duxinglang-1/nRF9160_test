@@ -1108,7 +1108,7 @@ void PMUMsgProcess(void)
 	{
 		if(pmu_check_ok)
 			VibrateStart();
-		
+
 		vibrate_start_flag = false;
 
 		if(g_vib.work_mode == VIB_RHYTHMIC)
@@ -1125,7 +1125,7 @@ void PMUMsgProcess(void)
 	{
 		if(pmu_check_ok)
 			VibrateStop();
-		
+
 		vibrate_stop_flag = false;
 
 		if(g_vib.work_mode == VIB_RHYTHMIC)

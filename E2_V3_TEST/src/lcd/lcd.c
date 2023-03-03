@@ -3263,6 +3263,7 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 }
 #endif/*FONTMAKER_UNICODE_FONT*/
 
+#if 0
 //m^n函数
 //返回值:m^n次方.
 uint32_t LCD_Pow(uint8_t m,uint8_t n)
@@ -3355,6 +3356,7 @@ void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
 	#endif
 	}
 } 
+#endif
 
 //根据字体测量字符串的长度和高度
 //p:字符串指针

@@ -49,7 +49,7 @@
 #endif
 #include "logger.h"
 
-#define NB_DEBUG
+//#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(30)
@@ -912,12 +912,14 @@ static void modem_configure(void)
 	#ifdef NB_DEBUG
 		LOGD("LTE Link Connected!");
 	#endif
+	#ifdef NB_SIGNAL_TEST
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
 			TestNBUpdateINfor();
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
+	#endif
 	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
 #endif /* defined(CONFIG_LTE_LINK_CONTROL) */
@@ -1890,7 +1892,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 					SOSRecLocatNotify(ptr+1);
 					break;
 				case 2://Fall Alarm
-					FallRecLocatNotify(ptr+1);
+					//FallRecLocatNotify(ptr+1);
 					break;
 				}
 			}
@@ -2796,6 +2798,7 @@ void nb_test_update(void)
 
 void NBMsgProcess(void)
 {
+#ifdef NB_SIGNAL_TEST
 	if(test_nb_on)
 	{
 		test_nb_on = false;
@@ -2826,6 +2829,7 @@ void NBMsgProcess(void)
 			modem_configure();
 		}
 	}
+#endif
 
 	if(get_modem_info_flag)
 	{	

@@ -90,7 +90,6 @@ static void FallTimerOutCallBack(struct k_timer *timer_id)
 
 static void FallStatusUpdate(void)
 {
-#if 1 //xb add 2023-03-02 按照SOS的流程走
 #ifdef FALL_DEBUG
 	LOGD("fall_state:%d", fall_state);
 #endif
@@ -101,7 +100,24 @@ static void FallStatusUpdate(void)
 	{
 	case FALL_STATUS_IDLE:
 		break;
-		
+
+	case FALL_STATUS_NOTIFY:
+	#ifdef CONFIG_ANIMATION_SUPPORT
+		AnimaStopShow();
+	#endif
+	#ifdef CONFIG_AUDIO_SUPPORT
+		FallStopAlarm();
+	#endif
+		FallVibOff();
+
+		fall_send_flag = true;
+		fall_state = FALL_STATUS_IDLE;
+		if(screen_id == SCREEN_ID_FALL)
+		{
+			EnterIdleScreen();
+		}
+		break;
+
 	case FALL_STATUS_SENDING:
 		fall_state = FALL_STATUS_SENT;
 		break;
@@ -127,6 +143,14 @@ static void FallStatusUpdate(void)
 		break;
 
 	case FALL_STATUS_CANCEL:
+	#ifdef CONFIG_ANIMATION_SUPPORT
+		AnimaStopShow();
+	#endif
+	#ifdef CONFIG_AUDIO_SUPPORT
+		FallStopAlarm();
+	#endif
+		FallVibOff();
+	
 		fall_state = FALL_STATUS_IDLE;
 		if(screen_id == SCREEN_ID_FALL)
 		{
@@ -143,63 +167,6 @@ static void FallStatusUpdate(void)
 	if(fall_state != FALL_STATUS_IDLE)
 		k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), K_NO_WAIT);
 
-#else
-	switch(fall_state)
-	{
-	case FALL_STATUS_IDLE:
-		break;
-		
-	case FALL_STATUS_NOTIFY:
-		fall_state = FALL_STATUS_SENDING;
-		fall_send_flag = true;
-
-		FallVibOff();
-		ClearAllKeyHandler();
-
-		if(screen_id == SCREEN_ID_FALL)
-		{
-			EnterIdleScreen();
-		}
-		
-		k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), K_NO_WAIT);
-		break;
-	
-	case FALL_STATUS_SENDING:
-		fall_state = FALL_STATUS_SENT;
-		k_timer_start(&fall_timer, K_SECONDS(FALL_SENT_TIMEOUT), K_NO_WAIT);
-		break;
-		
-	case FALL_STATUS_SENT:
-		if(screen_id == SCREEN_ID_FALL)
-		{
-		#ifdef CONFIG_ANIMATION_SUPPORT	
-			AnimaStopShow();
-		#endif			
-		}
-
-		FallVibOff();
-		sos_state = FALL_STATUS_RECEIVED;
-		fall_end_flag = true;
-		break;
-
-	case FALL_STATUS_RECEIVED:
-		fall_state = FALL_STATUS_IDLE;
-		EnterIdleScreen();
-		break;
-		
-	case FALL_STATUS_CANCEL:
-		fall_end_flag = true;
-		break;
-
-	case FALL_STATUS_CANCELED:
-		break;
-	}
-
-	if(screen_id == SCREEN_ID_FALL)
-	{
-		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_UPDATE;
-	}
-#endif	
 }
 
 void FallStartGPSCallBack(struct k_timer *timer_id)
@@ -414,28 +381,26 @@ void FallRecLocatNotify(uint8_t *strmsg)
 	}
 }
 
+void FallAlarmConfirm(void)
+{
+	if(fall_state == FALL_STATUS_NOTIFY)
+	{
+		FallStatusUpdate();
+	}
+}
+
 void FallAlarmCancel(void)
 {
 	if(fall_state == FALL_STATUS_NOTIFY)
 	{
-	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaStopShow();
-	#endif
-	#ifdef CONFIG_AUDIO_SUPPORT
-		FallStopAlarm();
-	#endif
-		FallVibOff();
-
 		fall_state = FALL_STATUS_CANCEL;
-		k_timer_start(&fall_timer, K_SECONDS(FALL_CANCEL_TIMEOUT), K_NO_WAIT);
-
-		scr_msg[SCREEN_ID_FALL].act = SCREEN_ACTION_UPDATE;
+		FallStatusUpdate();
 	}
 }
 
 void FallChangrStatus(void)
 {
-	k_timer_start(&fall_timer, K_SECONDS(FALL_SENDING_TIMEOUT), K_NO_WAIT);
+	k_timer_start(&fall_timer, K_SECONDS(FALL_NOTIFY_TIMEOUT), K_NO_WAIT);
 }
 
 void FallTrigger(void)
@@ -452,9 +417,7 @@ void FallAlarmStart(void)
 	if(FallIsRunning())
 		return;
 
-	FallAlarmSend();
-	
-	fall_state = FALL_STATUS_SENDING;
+	fall_state = FALL_STATUS_NOTIFY;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	
 	EnterFallScreen();

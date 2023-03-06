@@ -24,7 +24,7 @@
 #endif
 #include "logger.h"
 
-//#define IMU_DEBUG
+#define IMU_DEBUG
 
 #define I2C1_NODE DT_NODELABEL(i2c1)
 #if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
@@ -365,30 +365,6 @@ void sensor_reset(void)
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 }
 
-void is_tilt(void)
-{
-	lsm6dso_all_sources_t status;
-	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
-	if(status.fsm_status_a.is_fsm1)
-	{ 
-		wrist_tilt = true;
-	}
-}
-
-void is_falltrigger(void)
-{
-	lsm6dso_all_sources_t status;
-	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
-	if(status.tap_src.single_tap)
-	{
-		//tap detected
-		fall_trigger = true;
-	#ifdef IMU_DEBUG
-		LOGD("Tap Detected");
-	#endif
-	}
-}
-
 /*@brief Get real time X/Y/Z reading in mg
 *
 */
@@ -409,6 +385,31 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 	*sensor_x = acceleration_mg[0];
 	*sensor_y = acceleration_mg[1];
 	*sensor_z = acceleration_mg[2];
+}
+
+void is_tilt(void)
+{
+	lsm6dso_all_sources_t status;
+	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
+	if(status.fsm_status_a.is_fsm1)
+	{ 
+		wrist_tilt = true;
+	}
+}
+
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+void is_falltrigger(void)
+{
+	lsm6dso_all_sources_t status;
+	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
+	if(status.tap_src.single_tap)
+	{
+		//tap detected
+		fall_trigger = true;
+	#ifdef IMU_DEBUG
+		LOGD("Tap Detected");
+	#endif
+	}
 }
 
 void historic_buffer(void)
@@ -904,6 +905,7 @@ static void fall_check(struct k_work *work)
 {
 	fall_detection();
 }
+#endif
 
 void ReSetImuSteps(void)
 {
@@ -1009,8 +1011,10 @@ void IMU_init(struct k_work_q *work_q)
 	}
 
 	imu_work_q = work_q;
+#ifdef CONFIG_FALL_DETECT_SUPPORT	
 	k_work_init(&fall_work, fall_check);
-	
+#endif
+
 	if(init_i2c() != 0)
 		return;
 	
@@ -1152,6 +1156,7 @@ void IMUMsgProcess(void)
 	}
 #endif
 
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 	if(int2_event) //fall
 	{
 	#ifdef IMU_DEBUG
@@ -1173,6 +1178,7 @@ void IMUMsgProcess(void)
 			k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
 		}
 	}
+#endif
 
 #ifdef CONFIG_STEP_SUPPORT	
 	if(reset_steps)

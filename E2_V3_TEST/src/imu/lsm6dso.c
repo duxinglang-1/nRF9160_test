@@ -93,7 +93,6 @@ void SetCurDayStepRecData(uint16_t data)
 		||((date_time.month == p_step->month)&&(date_time.day > p_step->day)&&(p_step->day != 0xff && p_step->day != 0x00)))
 	{//记录存满。整体前挪并把最新的放在最后
 		step_rec2_data tmp_step = {0};
-		
 
 	#ifdef IMU_DEBUG
 		LOGD("rec is full! temp:%0.1f", data);
@@ -961,11 +960,7 @@ void UpdateIMUData(void)
 	save_cur_sport_to_record(&last_sport);
 	
 	//StepCheckSendLocationData(g_steps);
-	
-	if(date_time.hour == 23)//xb add 2022-05-31 防止23点到0点之间的数据没有被记录到
-	{
-		SetCurDayStepRecData(g_steps);
-	}
+	SetCurDayStepRecData(g_steps);
 }
 
 void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)

@@ -3431,9 +3431,12 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_in)
 	{
 		lcd_sleep_in = false;
-		
-		LCD_BL_Off();
-		LCD_SleepIn();
+
+		if(LCD_Get_BL_Mode() != LCD_BL_ALWAYS_ON)
+		{
+			LCD_BL_Off();
+			LCD_SleepIn();
+		}
 	}
 
 	if(lcd_sleep_out)

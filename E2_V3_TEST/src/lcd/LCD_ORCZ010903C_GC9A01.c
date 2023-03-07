@@ -6,7 +6,6 @@
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 #include "Max20353.h"
 #endif
-
 #ifdef LCD_ORCZ010903C_GC9A01
 #include "LCD_ORCZ010903C_GC9A01.h"
 
@@ -324,8 +323,6 @@ void LCD_SleepIn(void)
 	if(lcd_is_sleeping)
 		return;
 
-
-
 	WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
 	Delay(120);             //ÑÓÊ±120ms
@@ -340,7 +337,7 @@ void LCD_SleepOut(void)
 
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
-	
+
 	if(global_settings.backlight_time != 0)
 	{
 		bk_time = global_settings.backlight_time;
@@ -351,7 +348,16 @@ void LCD_SleepOut(void)
 			bk_time = 5;
 		}
 
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_NO_WAIT);
+		switch(bl_mode)
+		{
+		case LCD_BL_ALWAYS_ON:
+		case LCD_BL_OFF:
+			break;
+
+		case LCD_BL_AUTO:
+			k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_NO_WAIT);
+			break;
+		}
 	}
 
 	if(!lcd_is_sleeping)

@@ -327,7 +327,16 @@ void LCD_SleepOut(void)
 			bk_time = 5;
 		}
 
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), NULL);
+		switch(bl_mode)
+		{
+		case LCD_BL_ALWAYS_ON:
+		case LCD_BL_OFF:
+			break;
+
+		case LCD_BL_AUTO:
+			k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_NO_WAIT);
+			break;
+		}
 	}
 
 	if(!lcd_is_sleeping)

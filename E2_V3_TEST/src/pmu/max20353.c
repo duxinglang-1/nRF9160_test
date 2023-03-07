@@ -1033,6 +1033,8 @@ void PMURedrawBatStatus(void)
 		||(screen_id == SCREEN_ID_SPO2)
 		||(screen_id == SCREEN_ID_BP)
 		||(screen_id == SCREEN_ID_TEMP)
+		||(screen_id == SCREEN_ID_STEPS)
+		||(screen_id == SCREEN_ID_SLEEP)
 		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;

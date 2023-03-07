@@ -97,7 +97,7 @@ extern "C" {
 //idle hr
 #define IDLE_HR_BG_W		66
 #define IDLE_HR_BG_H		66
-#define IDLE_HR_BG_X		22
+#define IDLE_HR_BG_X		21
 #define IDLE_HR_BG_Y		134
 #define IDLE_HR_ICON_W		22
 #define IDLE_HR_ICON_H		20

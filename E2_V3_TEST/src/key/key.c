@@ -115,6 +115,17 @@ typedef struct
 
 fast_key_struct tmp_key[20] = {0};
 
+static void EnterDumpTest(void){};
+
+fast_key_struct fast_key_to_dump[] = 
+{
+	{0, KEY_MAX, 	KEY_EVENT_MAX, KEY_EVENT_MAX},
+	{0, KEY_MAX, 	KEY_EVENT_MAX, KEY_EVENT_MAX},
+	{0, KEY_MAX, 	KEY_EVENT_MAX, KEY_EVENT_MAX},
+	{0, KEY_MAX, 	KEY_EVENT_MAX, KEY_EVENT_MAX},
+};
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
 fast_key_struct fast_key_to_test[] = 
 {
 	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
@@ -122,6 +133,7 @@ fast_key_struct fast_key_to_test[] =
 	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
 	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
 };
+#endif
 
 #ifdef CONFIG_QRCODE_SUPPORT
 fast_key_struct fast_key_to_device[] = 
@@ -135,14 +147,20 @@ extern void EnterDeviceInfor(void);
 #endif/*CONFIG_QRCODE_SUPPORT*/
 
 fast_key_struct *fast_key_sum[] = {
+										fast_key_to_dump,
+									#ifdef CONFIG_FACTORY_TEST_SUPPORT
 										fast_key_to_test,
+									#endif	
 									#ifdef CONFIG_QRCODE_SUPPORT
 										fast_key_to_device,
 									#endif/*CONFIG_QRCODE_SUPPORT*/
 								};
 
 FastKeyFunc fast_key_fun_sum[] = {
+										EnterDumpTest,
+									#ifdef CONFIG_FACTORY_TEST_SUPPORT
 										EnterFactoryTest,
+									#endif	
 									#ifdef CONFIG_QRCODE_SUPPORT
 										EnterDeviceScreen,
 									#endif/*CONFIG_QRCODE_SUPPORT*/

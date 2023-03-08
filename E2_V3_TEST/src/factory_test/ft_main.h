@@ -10,8 +10,8 @@
 #define __FT_MAIN_H__
 
 #define FT_MENU_LANGUAGE	2
-#define FT_MENU_MAX_COUNT	20
-#define FT_MENU_NAME_MAX	20
+#define FT_MENU_MAX_COUNT	4
+#define FT_MENU_NAME_MAX	50
 
 typedef void(*ft_menu_handler)(void);
 
@@ -34,12 +34,6 @@ typedef enum
 	FT_WIFI,
 	FT_MAX
 }FT_MENU_ID;
-
-typedef struct
-{
-	uint16_t en[FT_MENU_MAX_COUNT][FT_MENU_NAME_MAX];
-	uint16_t chn[FT_MENU_MAX_COUNT][FT_MENU_NAME_MAX];
-}ft_menu_name_t;
 
 typedef struct
 {

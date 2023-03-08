@@ -206,20 +206,17 @@ static void FTMenuKeyShow(void)
 														{0x9000,0x51FA,0x0000},//ÍË³ö
 													},
 												};
-	
-	LCD_Clear(BLACK);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 #endif
-
+	
+	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_36);
-
 	if(global_settings.language == LANGUAGE_CHN)
 		language = 1;
 	else
 		language = 0;
-
 	LCD_MeasureUniString(title_str[language], &w, &h);
 	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str[language]);
 
@@ -240,13 +237,11 @@ static void FTMenuKeyShow(void)
 	}
 
 	LCD_SetFontSize(FONT_SIZE_28);
-	
 	LCD_MeasureUniString(sle_str[language][0], &w, &h);
 	x = FT_KEY_SLE1_STR_X+(FT_KEY_SLE1_STR_W-w)/2;
 	y = FT_KEY_SLE1_STR_Y+(FT_KEY_SLE1_STR_H-h)/2;
 	LCD_DrawRectangle(FT_KEY_SLE1_STR_X, FT_KEY_SLE1_STR_Y, FT_KEY_SLE1_STR_W, FT_KEY_SLE1_STR_H);
 	LCD_ShowUniString(x, y, sle_str[language][0]);
-	
 	LCD_MeasureUniString(sle_str[language][1], &w, &h);
 	x = FT_KEY_SLE2_STR_X+(FT_KEY_SLE2_STR_W-w)/2;
 	y = FT_KEY_SLE2_STR_Y+(FT_KEY_SLE2_STR_H-h)/2;

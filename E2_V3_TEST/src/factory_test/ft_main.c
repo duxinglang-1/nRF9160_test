@@ -67,6 +67,7 @@ static void FTMainMenu2Proc(void)
 static void FTMainMenu3Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuLcd();
 }
 
 static void FTMainMenu4Proc(void)
@@ -479,6 +480,7 @@ void FactoryTestProccess(void)
 	case FT_FLASH:
 		break;
 	case FT_LCD:
+		FTMenuLcdProcess();
 		break;
 	case FT_KEY:
 		FTMenuKeyProcess();

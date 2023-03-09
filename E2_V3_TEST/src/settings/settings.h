@@ -97,13 +97,6 @@ typedef enum
 
 typedef struct
 {
-	uint16_t en[MENU_MAX_COUNT][MENU_NAME_MAX];
-	uint16_t chn[MENU_MAX_COUNT][MENU_NAME_MAX];
-	uint16_t deu[MENU_MAX_COUNT][MENU_NAME_MAX];
-}menu_name_t;
-
-typedef struct
-{
 	MENU_ID id;
 	uint8_t index;
 	uint8_t count;

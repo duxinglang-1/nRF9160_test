@@ -196,7 +196,7 @@ static void FTMenuKeyShow(void)
 													{0x004B,0x0045,0x0059,0x0020,0x0054,0x0045,0x0053,0x0054,0x0000},//KEY TEST
 													{0x6309,0x952E,0x6D4B,0x8BD5,0x0000},//按键测试
 												};
-	uint16_t sle_str[FT_MENU_LANGUAGE][3][20] = {
+	uint16_t sle_str[FT_MENU_LANGUAGE][2][20] = {
 													{
 														{0x004E,0x0045,0x0058,0x0054,0x0000},//NEXT
 														{0x0045,0x0058,0x0049,0x0054,0x0000},//EXIT
@@ -302,3 +302,168 @@ void EnterFTMenuKey(void)
 	scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATING;
 }
 
+static void FTMenuWristDumpProc(void){}
+
+const ft_menu_t FT_MENU_WRIST = 
+{
+	FT_WRIST,
+	0,
+	0,
+	{
+		{
+			{0x0000},
+		},
+		{
+			{0x0000},
+		},
+	},	
+	{
+		FTMenuWristDumpProc,
+		FTMenuWristDumpProc,
+	},
+	{	
+		//page proc func
+		FTMenuWristDumpProc,
+		FTMenuWristDumpProc,
+		FTMenuWristDumpProc,
+		FTMenuWristDumpProc,
+	},
+};
+
+static void FTMenuWristUpdate(void)
+{
+	uint8_t i,language;
+	uint16_t x,y,w,h;
+	uint16_t status_str[FT_MENU_LANGUAGE][2][20] = {
+														{
+															{0x0057,0x0072,0x0069,0x0073,0x0074,0x0020,0x004F,0x0066,0x0066,0x0000},//Wrist Off
+															{0x0057,0x0072,0x0069,0x0073,0x0074,0x0020,0x004F,0x006E,0x0000},//Wrist On
+														},
+														{
+															{0x8131,0x4E0B,0x0000},//脱下
+															{0x6234,0x4E0A,0x0000},//戴上
+														},
+													};
+
+	LCD_SetFontSize(FONT_SIZE_28);
+
+	if(global_settings.language == LANGUAGE_CHN)
+		language = 1;
+	else
+		language = 0;
+
+	LCD_Fill(FT_KEY_MENU_STR_X, FT_KEY_MENU_STR_Y, FT_KEY_MENU_STR_W, FT_KEY_MENU_STR_H, BLACK);
+	LCD_MeasureUniString(status_str[language][touch_flag], &w, &h);
+	LCD_ShowUniString(FT_KEY_MENU_STR_X+(FT_KEY_MENU_STR_W-w)/2, FT_KEY_MENU_STR_Y, status_str[language][touch_flag]);
+}
+
+static void FTMenuWristShow(void)
+{
+	uint8_t i,language;
+	uint16_t x,y,w,h;
+	uint16_t title_str[FT_MENU_LANGUAGE][20] = {
+													{0x0057,0x0052,0x0049,0x0053,0x0054,0x0020,0x0054,0x0045,0x0053,0x0054,0x0000},//WRIST TEST
+													{0x8131,0x8155,0x6D4B,0x8BD5,0x0000},//脱腕测试
+												};
+	uint16_t sle_str[FT_MENU_LANGUAGE][2][20] = {
+													{
+														{0x004E,0x0045,0x0058,0x0054,0x0000},//NEXT
+														{0x0045,0x0058,0x0049,0x0054,0x0000},//EXIT
+													},
+													{
+														{0x4E0B,0x4E00,0x9879,0x0000},//下一项
+														{0x9000,0x51FA,0x0000},//退出
+													},
+												};
+	uint16_t status_str[FT_MENU_LANGUAGE][2][20] = {
+														{
+															{0x0057,0x0072,0x0069,0x0073,0x0074,0x0020,0x004F,0x0066,0x0066,0x0000},//Wrist Off
+															{0x0057,0x0072,0x0069,0x0073,0x0074,0x0020,0x004F,0x006E,0x0000},//Wrist On
+														},
+														{
+															{0x8131,0x4E0B,0x0000},//脱下
+															{0x6234,0x4E0A,0x0000},//戴上
+														},
+													};
+
+#ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
+#endif
+	
+	LCD_Clear(BLACK);
+	LCD_SetFontSize(FONT_SIZE_36);
+	if(global_settings.language == LANGUAGE_CHN)
+		language = 1;
+	else
+		language = 0;
+	LCD_MeasureUniString(title_str[language], &w, &h);
+	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str[language]);
+
+	LCD_SetFontSize(FONT_SIZE_28);
+	LCD_MeasureUniString(status_str[language][touch_flag], &w, &h);
+	LCD_ShowUniString(FT_KEY_MENU_STR_X+(FT_KEY_MENU_STR_W-w)/2, FT_KEY_MENU_STR_Y, status_str[language][touch_flag]);
+
+	LCD_SetFontSize(FONT_SIZE_28);
+	LCD_MeasureUniString(sle_str[language][0], &w, &h);
+	x = FT_KEY_SLE1_STR_X+(FT_KEY_SLE1_STR_W-w)/2;
+	y = FT_KEY_SLE1_STR_Y+(FT_KEY_SLE1_STR_H-h)/2;
+	LCD_DrawRectangle(FT_KEY_SLE1_STR_X, FT_KEY_SLE1_STR_Y, FT_KEY_SLE1_STR_W, FT_KEY_SLE1_STR_H);
+	LCD_ShowUniString(x, y, sle_str[language][0]);
+	LCD_MeasureUniString(sle_str[language][1], &w, &h);
+	x = FT_KEY_SLE2_STR_X+(FT_KEY_SLE2_STR_W-w)/2;
+	y = FT_KEY_SLE2_STR_Y+(FT_KEY_SLE2_STR_H-h)/2;
+	LCD_DrawRectangle(FT_KEY_SLE2_STR_X, FT_KEY_SLE2_STR_Y, FT_KEY_SLE2_STR_W, FT_KEY_SLE2_STR_H);
+	LCD_ShowUniString(x, y, sle_str[language][1]);
+
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE1_STR_X, FT_KEY_SLE1_STR_X+FT_KEY_SLE1_STR_W, FT_KEY_SLE1_STR_Y, FT_KEY_SLE1_STR_Y+FT_KEY_SLE1_STR_H, FTMenuKeySle1Hander);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE2_STR_X, FT_KEY_SLE2_STR_X+FT_KEY_SLE2_STR_W, FT_KEY_SLE2_STR_Y, FT_KEY_SLE2_STR_Y+FT_KEY_SLE2_STR_H, FTMenuKeySle2Hander);
+#endif		
+}
+
+void FTMenuWristProcess(void)
+{
+	if(scr_msg[SCREEN_ID_FACTORY_TEST].act != SCREEN_ACTION_NO)
+	{
+		if(scr_msg[SCREEN_ID_FACTORY_TEST].status != SCREEN_STATUS_CREATED)
+			scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_ENTER;
+
+		switch(scr_msg[SCREEN_ID_FACTORY_TEST].act)
+		{
+		case SCREEN_ACTION_ENTER:
+			scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATED;
+			FTMenuWristShow();
+			break;
+			
+		case SCREEN_ACTION_UPDATE:
+			FTMenuWristUpdate();
+			break;
+		}
+	
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_NO;
+	}
+}
+
+void FTWristStatusUpdate(void)
+{
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_WRIST))
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+}
+
+void ExitFTMenuWrist(void)
+{
+	ReturnFTMainMenu();
+}
+
+void EnterFTMenuWrist(void)
+{
+	memcpy(&ft_menu, &FT_MENU_WRIST, sizeof(ft_menu_t));
+	
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FACTORY_TEST;	
+	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATING;
+}

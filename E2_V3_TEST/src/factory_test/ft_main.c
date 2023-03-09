@@ -83,6 +83,7 @@ static void FTMainMenu5Proc(void)
 static void FTMainMenu6Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuWrist();
 }
 
 static void FTMainMenu7Proc(void)
@@ -486,6 +487,7 @@ void FactoryTestProccess(void)
 		FTMenuKeyProcess();
 		break;
 	case FT_WRIST:
+		FTMenuWristProcess();
 		break;
 	case FT_VIABRATE:
 		break;

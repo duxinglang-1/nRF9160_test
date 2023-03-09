@@ -10,7 +10,7 @@
 #define __FT_MAIN_H__
 
 #define FT_MENU_LANGUAGE	2
-#define FT_MENU_MAX_COUNT	4
+#define FT_MENU_MAX_COUNT	20
 #define FT_MENU_NAME_MAX	50
 
 typedef void(*ft_menu_handler)(void);

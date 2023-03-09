@@ -30,7 +30,6 @@
 #include "logger.h"
 
 //#define KEY_DEBUG
-#define WEAR_CHECK_SUPPORT	//ÍÑÍó¼ì²â¹¦ÄÜ
 
 static bool key_trigger_flag = false;
 static uint8_t flag;
@@ -42,7 +41,7 @@ static button_handler_t button_handler_cb;
 static atomic_t my_buttons;
 static sys_slist_t button_handlers;
 
-#ifdef WEAR_CHECK_SUPPORT
+#ifdef CONFIG_WRIST_CHECK_SUPPORT
 #define WEAR_PORT 	"GPIO_0"
 #define WEAR_PIN	06
 
@@ -71,8 +70,7 @@ static struct k_delayed_work buttons_scan;
 static struct k_mutex button_handler_mut;
 static struct k_timer g_long_press_timer_id;
 
-static bool touch_flag = false;
-
+bool touch_flag = false;
 bool key_pwroff_flag = false;
 
 extern bool gps_on_flag;
@@ -115,7 +113,7 @@ typedef struct
 
 fast_key_struct tmp_key[20] = {0};
 
-static void EnterDumpTest(void){};
+static void EnterDumpTest(void){}
 
 fast_key_struct fast_key_to_dump[] = 
 {
@@ -461,7 +459,7 @@ void ExecKeyHandler(uint8_t keycode, uint8_t keytype)
 
 bool is_wearing(void)
 {
-#ifdef WEAR_CHECK_SUPPORT
+#ifdef CONFIG_WRIST_CHECK_SUPPORT
 	if(global_settings.wrist_off_check)
 		return touch_flag;
 	else
@@ -846,7 +844,7 @@ static int buttons_init(button_handler_t button_handler)
 	return 0;
 }
 
-#ifdef WEAR_CHECK_SUPPORT
+#ifdef CONFIG_WRIST_CHECK_SUPPORT
 static void wear_off_timerout(struct k_timer *timer_id)
 {
 #ifdef KEY_DEBUG
@@ -865,9 +863,6 @@ void WearMsgProc(void)
 {
 	uint32_t val;
 
-	if(!global_settings.wrist_off_check)
-		return;
-
 	val = gpio_pin_get_raw(gpio_wear, WEAR_PIN);
 	if(!val)
 	{
@@ -875,7 +870,9 @@ void WearMsgProc(void)
 		LOGD("wear on!");
 	#endif
 		touch_flag = true;
-		k_timer_stop(&wear_off_timer);
+
+		if(global_settings.wrist_off_check)
+			k_timer_stop(&wear_off_timer);
 	}
 	else
 	{
@@ -883,8 +880,14 @@ void WearMsgProc(void)
 		LOGD("wear off!");
 	#endif
 		touch_flag = false;
-		k_timer_start(&wear_off_timer, K_MSEC(2000), K_NO_WAIT);
+
+		if(global_settings.wrist_off_check)
+			k_timer_start(&wear_off_timer, K_MSEC(2000), K_NO_WAIT);
 	}
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	FTWristStatusUpdate();
+#endif
 }
 
 void wear_init(void)
@@ -930,7 +933,7 @@ void KeyMsgProcess(void)
 		key_trigger_flag = false;
 	}
 
-#ifdef WEAR_CHECK_SUPPORT
+#ifdef CONFIG_WRIST_CHECK_SUPPORT
 	if(wear_int_flag)
 	{
 		WearMsgProc();
@@ -992,7 +995,7 @@ void key_init(void)
 
 	k_timer_init(&g_long_press_timer_id, long_press_timer_handler, NULL);
 
-#ifdef WEAR_CHECK_SUPPORT
+#ifdef CONFIG_WRIST_CHECK_SUPPORT
 	wear_init();
 #endif
 #ifdef CONFIG_FAST_KEY_SUPPORT

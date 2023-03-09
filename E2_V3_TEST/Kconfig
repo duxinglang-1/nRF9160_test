@@ -403,6 +403,12 @@ config QRCODE_SUPPORT
 	default n
 endmenu #QR CODE
 
+menu "WRIST CHECK"
+config WRIST_CHECK_SUPPORT
+	bool "wrist check support"
+	default n
+endmenu #WRIST CHECK
+
 menu "FACTORY_TEST"
 config FACTORY_TEST_SUPPORT
 	bool "factory test support"

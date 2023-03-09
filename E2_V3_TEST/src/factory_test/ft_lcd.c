@@ -57,15 +57,9 @@ const ft_menu_t FT_MENU_LCD =
 	0,
 	2,
 	{
-		{
-			{0x0050,0x0072,0x0065,0x0073,0x0073,0x0020,0x0061,0x006E,0x0079,0x0020,0x006B,0x0065,0x0079,0x0020,0x0074,0x006F,0x0020,0x0073,0x0074,0x0061,0x0072,0x0074,0x0000},//Press any key to start
-			{0x0050,0x0072,0x0065,0x0073,0x0073,0x0020,0x0061,0x006E,0x0079,0x0020,0x006B,0x0065,0x0079,0x0020,0x0074,0x006F,0x0020,0x0065,0x0078,0x0069,0x0074,0x0020,0x0069,0x006E,0x0020,0x0074,0x0065,0x0073,0x0074,0x0069,0x006E,0x0067,0x0000},//Press any key to exit in testing
-		},
-		{
-			{0x6309,0x4EFB,0x610F,0x952E,0x542F,0x52A8,0x6D4B,0x8BD5,0x0000},//按任意键启动
-			{0x6D4B,0x8BD5,0x65F6,0x6309,0x4EFB,0x610F,0x952E,0x9000,0x51FA,0x0000},//测试时按任意键退出
-		}
-	},	
+		{0x6309,0x4EFB,0x610F,0x952E,0x542F,0x52A8,0x6D4B,0x8BD5,0x0000},		//按任意键启动
+		{0x6D4B,0x8BD5,0x65F6,0x6309,0x4EFB,0x610F,0x952E,0x9000,0x51FA,0x0000},//测试时按任意键退出
+	},
 	{
 		FTMenuLcdDumpProc,
 		FTMenuLcdDumpProc,
@@ -81,7 +75,7 @@ const ft_menu_t FT_MENU_LCD =
 
 static void FTMenuLcdSle1Hander(void)
 {
-	
+	FTMainMenu4Proc();
 }
 
 static void FTMenuLcdSle2Hander(void)
@@ -115,24 +109,14 @@ static void FTMenuLcdStartTest(void)
 static void FTMenuLcdUpdate(void)
 {
 	static bool flag = false;
-	uint8_t i,language;
+	uint8_t i;
 	uint16_t x,y,w,h;
-	uint16_t title_str[FT_MENU_LANGUAGE][10] = {
-													{0x004C,0x0043,0x0044,0x0020,0x0054,0x0045,0x0053,0x0054,0x0000},//LCD TEST
-													{0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000},//屏幕测试
-												};
-	uint16_t sle_str[FT_MENU_LANGUAGE][2][20] = {
-													{
-														{0x004E,0x0045,0x0058,0x0054,0x0000},//NEXT
-														{0x0045,0x0058,0x0049,0x0054,0x0000},//EXIT
-													},
-													{
-														{0x4E0B,0x4E00,0x9879,0x0000},//下一项
-														{0x9000,0x51FA,0x0000},//退出
-													},
-												};
-
-	uint16_t ret_str[2][20] = {
+	uint16_t title_str[10] = {0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000};//屏幕测试
+	uint16_t sle_str[2][5] = {
+ 								{0x4E0B,0x4E00,0x9879,0x0000},//下一项
+ 								{0x9000,0x51FA,0x0000},//退出
+ 							 };
+	uint16_t ret_str[2][5] = {
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
 							  };
@@ -177,13 +161,9 @@ static void FTMenuLcdUpdate(void)
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_36);
 
-		if(global_settings.language == LANGUAGE_CHN)
-			language = 1;
-		else
-			language = 0;
 		//title
-		LCD_MeasureUniString(title_str[language], &w, &h);
-		LCD_ShowUniString(FT_LCD_TITLE_X+(FT_LCD_TITLE_W-w)/2, FT_LCD_TITLE_Y, title_str[language]);
+		LCD_MeasureUniString(title_str, &w, &h);
+		LCD_ShowUniString(FT_LCD_TITLE_X+(FT_LCD_TITLE_W-w)/2, FT_LCD_TITLE_Y, title_str);
 		//pass
 		LCD_SetFontSize(FONT_SIZE_52);
 		LCD_SetFontColor(BRRED);
@@ -194,17 +174,21 @@ static void FTMenuLcdUpdate(void)
 		LCD_ReSetFontColor();
 		//leftsoft key and rightsoft key
 		LCD_SetFontSize(FONT_SIZE_28);
-		LCD_MeasureUniString(sle_str[language][0], &w, &h);
+		LCD_MeasureUniString(sle_str[0], &w, &h);
 		x = FT_LCD_SLE1_STR_X+(FT_LCD_SLE1_STR_W-w)/2;
 		y = FT_LCD_SLE1_STR_Y+(FT_LCD_SLE1_STR_H-h)/2;
 		LCD_DrawRectangle(FT_LCD_SLE1_STR_X, FT_LCD_SLE1_STR_Y, FT_LCD_SLE1_STR_W, FT_LCD_SLE1_STR_H);
-		LCD_ShowUniString(x, y, sle_str[language][0]);
-		LCD_MeasureUniString(sle_str[language][1], &w, &h);
+		LCD_ShowUniString(x, y, sle_str[0]);
+		LCD_MeasureUniString(sle_str[1], &w, &h);
 		x = FT_LCD_SLE2_STR_X+(FT_LCD_SLE2_STR_W-w)/2;
 		y = FT_LCD_SLE2_STR_Y+(FT_LCD_SLE2_STR_H-h)/2;
 		LCD_DrawRectangle(FT_LCD_SLE2_STR_X, FT_LCD_SLE2_STR_Y, FT_LCD_SLE2_STR_W, FT_LCD_SLE2_STR_H);
-		LCD_ShowUniString(x, y, sle_str[language][1]);
+		LCD_ShowUniString(x, y, sle_str[1]);
 
+		ClearAllKeyHandler();
+		SetLeftKeyUpHandler(FTMenuLcdSle1Hander);
+		SetRightKeyUpHandler(FTMenuLcdSle2Hander);
+			
 	#ifdef CONFIG_TOUCH_SUPPORT
 		clear_all_touch_event_handle();
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_LCD_SLE1_STR_X, FT_LCD_SLE1_STR_X+FT_LCD_SLE1_STR_W, FT_LCD_SLE1_STR_Y, FT_LCD_SLE1_STR_Y+FT_LCD_SLE1_STR_H, FTMenuLcdSle1Hander);
@@ -215,22 +199,13 @@ static void FTMenuLcdUpdate(void)
 
 static void FTMenuLcdShow(void)
 {
-	uint8_t i,language;
+	uint8_t i;
 	uint16_t x,y,w,h;
-	uint16_t title_str[FT_MENU_LANGUAGE][10] = {
-													{0x004C,0x0043,0x0044,0x0020,0x0054,0x0045,0x0053,0x0054,0x0000},//LCD TEST
-													{0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000},//屏幕测试
-												};
-	uint16_t sle_str[FT_MENU_LANGUAGE][2][20] = {
-													{
-														{0x004E,0x0045,0x0058,0x0054,0x0000},//NEXT
-														{0x0045,0x0058,0x0049,0x0054,0x0000},//EXIT
-													},
-													{
-														{0x4E0B,0x4E00,0x9879,0x0000},//下一项
-														{0x9000,0x51FA,0x0000},//退出
-													},
-												};
+	uint16_t title_str[5] = {0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000};//屏幕测试
+	uint16_t sle_str[2][5] = {
+ 								{0x4E0B,0x4E00,0x9879,0x0000},//下一项
+ 								{0x9000,0x51FA,0x0000},//退出
+ 							  };
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
@@ -238,20 +213,14 @@ static void FTMenuLcdShow(void)
 
 	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_36);
-
-	if(global_settings.language == LANGUAGE_CHN)
-		language = 1;
-	else
-		language = 0;
-
-	LCD_MeasureUniString(title_str[language], &w, &h);
-	LCD_ShowUniString(FT_LCD_TITLE_X+(FT_LCD_TITLE_W-w)/2, FT_LCD_TITLE_Y, title_str[language]);
+	LCD_MeasureUniString(title_str, &w, &h);
+	LCD_ShowUniString(FT_LCD_TITLE_X+(FT_LCD_TITLE_W-w)/2, FT_LCD_TITLE_Y, title_str);
 
 	LCD_SetFontSize(FONT_SIZE_20);
 	for(i=0;i<ft_menu.count;i++)
 	{
-		LCD_MeasureUniString(ft_menu.name[language][i], &w, &h);
-		LCD_ShowUniString(FT_LCD_MENU_STR_X+(FT_LCD_MENU_STR_W-w)/2, FT_LCD_MENU_STR_Y+i*(FT_LCD_MENU_STR_H+FT_LCD_MENU_STR_OFFSET_Y), ft_menu.name[language][i]);
+		LCD_MeasureUniString(ft_menu.name[i], &w, &h);
+		LCD_ShowUniString(FT_LCD_MENU_STR_X+(FT_LCD_MENU_STR_W-w)/2, FT_LCD_MENU_STR_Y+i*(FT_LCD_MENU_STR_H+FT_LCD_MENU_STR_OFFSET_Y), ft_menu.name[i]);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -264,18 +233,16 @@ static void FTMenuLcdShow(void)
 	}
 
 	LCD_SetFontSize(FONT_SIZE_28);
-	
-	LCD_MeasureUniString(sle_str[language][0], &w, &h);
+	LCD_MeasureUniString(sle_str[0], &w, &h);
 	x = FT_LCD_SLE1_STR_X+(FT_LCD_SLE1_STR_W-w)/2;
 	y = FT_LCD_SLE1_STR_Y+(FT_LCD_SLE1_STR_H-h)/2;
 	LCD_DrawRectangle(FT_LCD_SLE1_STR_X, FT_LCD_SLE1_STR_Y, FT_LCD_SLE1_STR_W, FT_LCD_SLE1_STR_H);
-	LCD_ShowUniString(x, y, sle_str[language][0]);
-	
-	LCD_MeasureUniString(sle_str[language][1], &w, &h);
+	LCD_ShowUniString(x, y, sle_str[0]);
+	LCD_MeasureUniString(sle_str[1], &w, &h);
 	x = FT_LCD_SLE2_STR_X+(FT_LCD_SLE2_STR_W-w)/2;
 	y = FT_LCD_SLE2_STR_Y+(FT_LCD_SLE2_STR_H-h)/2;
 	LCD_DrawRectangle(FT_LCD_SLE2_STR_X, FT_LCD_SLE2_STR_Y, FT_LCD_SLE2_STR_W, FT_LCD_SLE2_STR_H);
-	LCD_ShowUniString(x, y, sle_str[language][1]);
+	LCD_ShowUniString(x, y, sle_str[1]);
 
 	ClearAllKeyHandler();
 	SetKeyHandler(FTMenuLcdStartTest, KEY_POWER, KEY_EVENT_UP);

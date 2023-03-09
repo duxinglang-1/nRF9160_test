@@ -1,11 +1,14 @@
 /****************************************Copyright (c)************************************************
-** File Name:			    ft_imu.h
-** Descriptions:			Factory test imu module head file
+** File Name:			    ft_lcd.h
+** Descriptions:			Factory test lcd module head file
 ** Created By:				xie biao
 ** Created Date:			2023-02-17
 ** Modified Date:      		2023-02-17 
 ** Version:			    	V1.0
 ******************************************************************************************************/
+#ifndef __FT_IMU_H__
+#define __FT_IMU_H__
+
 typedef enum
 {
 	LCD_COLOR_BEGIN,
@@ -16,3 +19,5 @@ typedef enum
 	LCD_COLOR_BLUE,
 	LCD_COLOR_MAX
 }FT_LCD_COLOR;
+
+#endif/*__FT_IMU_H__*/

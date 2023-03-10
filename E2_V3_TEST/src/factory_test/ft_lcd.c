@@ -132,7 +132,7 @@ static void FTMenuLcdUpdate(void)
 			
 			ClearAllKeyHandler();
 			SetLeftKeyUpHandler(FTMenuLcdStopTest);
-			SetLeftKeyUpHandler(FTMenuLcdStopTest);
+			SetRightKeyUpHandler(FTMenuLcdStopTest);
 		}
 		
 		switch(ft_color)
@@ -246,7 +246,7 @@ static void FTMenuLcdShow(void)
 
 	ClearAllKeyHandler();
 	SetLeftKeyUpHandler(FTMenuLcdStartTest);
-	SetLeftKeyUpHandler(FTMenuLcdStartTest);
+	SetRightKeyUpHandler(FTMenuLcdStartTest);
 	
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_LCD_SLE1_STR_X, FT_LCD_SLE1_STR_X+FT_LCD_SLE1_STR_W, FT_LCD_SLE1_STR_Y, FT_LCD_SLE1_STR_Y+FT_LCD_SLE1_STR_H, FTMenuLcdSle1Hander);

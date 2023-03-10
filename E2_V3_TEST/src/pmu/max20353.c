@@ -1121,6 +1121,9 @@ void PMUMsgProcess(void)
 		{
 			memset(&g_vib, 0, sizeof(g_vib));
 		}
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTVibrateStatusUpdate(true);
+	#endif
 	}
 	
 	if(vibrate_stop_flag)
@@ -1138,6 +1141,9 @@ void PMUMsgProcess(void)
 		{
 			memset(&g_vib, 0, sizeof(g_vib));
 		}
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTVibrateStatusUpdate(false);
+	#endif
 	}
 
 #ifdef BATTERY_SOC_GAUGE

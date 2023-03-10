@@ -1147,7 +1147,11 @@ void IMUMsgProcess(void)
 		#endif
 			UpdateIMUData();
 			imu_redraw_steps_flag = true;
-		}	
+		}
+
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTIMUStatusUpdate();
+	#endif
 	}
 #endif
 

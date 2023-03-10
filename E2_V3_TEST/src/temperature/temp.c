@@ -35,6 +35,7 @@ static bool temp_stop_flag = false;
 static bool temp_redraw_data_flag = false;
 static bool temp_power_flag = false;
 static bool menu_start_temp = false;
+static bool ft_start_temp = false;
 
 bool get_temp_ok_flag = false;
 
@@ -324,6 +325,26 @@ void MenuStopTemp(void)
 	temp_stop_flag = true;
 }
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void FTStartTemp(void)
+{
+	g_temp_trigger |= TEMP_TRIGGER_BY_FT;
+	
+	if(!TempIsWorking())
+	{
+		g_temp_skin = 0.0;
+		g_temp_body = 0.0;
+		get_temp_ok_flag = false;
+		temp_start_flag = true;
+	}
+}
+
+void FTStopTemp(void)
+{
+	temp_stop_flag = true;
+}
+#endif
+
 void temp_init(void)
 {
 	get_cur_health_from_record(&last_health);
@@ -366,6 +387,9 @@ void TempMsgProcess(void)
 			temp_stop_flag = true;
 			get_temp_ok_flag = true;
 		}
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTTempStatusUpdate();
+	#endif
 	}
 
 	if(menu_start_temp)
@@ -431,7 +455,14 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
 			SetCurDayTempRecData(g_temp_body);
 		}
-
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		if((g_temp_trigger&TEMP_TRIGGER_BY_FT) != 0)
+		{
+			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_FT);
+			return;
+		}
+	#endif
+	
 		last_health.timestamp.year = date_time.year;
 		last_health.timestamp.month = date_time.month; 
 		last_health.timestamp.day = date_time.day;

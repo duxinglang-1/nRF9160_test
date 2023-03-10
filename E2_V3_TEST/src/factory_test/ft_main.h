@@ -21,7 +21,7 @@ typedef enum
 	FT_LCD,
 	FT_KEY,
 	FT_WRIST,
-	FT_VIABRATE,
+	FT_VIBRATE,
 	FT_NET,
 	FT_AUDIO,
 	FT_BLE,

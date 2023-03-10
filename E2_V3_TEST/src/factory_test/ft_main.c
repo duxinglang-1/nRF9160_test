@@ -79,6 +79,7 @@ void FTMainMenu4Proc(void)
 void FTMainMenu5Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuTemp();
 }
 
 void FTMainMenu6Proc(void)
@@ -135,6 +136,7 @@ void FTMainMenu15Proc(void)
 void FTMainMenu16Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuVibrate();
 }
 
 static void FTMainMenuProcess(void)
@@ -319,6 +321,8 @@ static void FactoryTestMainShow(void)
 	uint16_t green_clor = 0x07e0;
 	
 	LCD_Clear(BLACK);
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
 	LCD_SetFontSize(FONT_SIZE_20);
 	LCD_SetFontBgColor(bg_clor);
 
@@ -344,6 +348,9 @@ static void FactoryTestMainShow(void)
 	#endif
 	}
 
+	SetLeftKeyUpHandler(FTMainMenuProcess);
+	SetRightKeyUpHandler(FactoryTestExit);
+	
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[0]);
 	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[1]);
@@ -415,9 +422,6 @@ void EnterFactoryTestScreen(void)
 	screen_id = SCREEN_ID_FACTORY_TEST;	
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATING;
-
-	SetLeftKeyUpHandler(FTMainMenuProcess);
-	SetRightKeyUpHandler(FactoryTestExit);
 }
 
 void ReturnFTMainMenu(void)
@@ -461,7 +465,8 @@ void FactoryTestProccess(void)
 	case FT_WRIST:
 		FTMenuWristProcess();
 		break;
-	case FT_VIABRATE:
+	case FT_VIBRATE:
+		FTMenuVibrateProcess();
 		break;
 	case FT_NET:
 		break;
@@ -476,6 +481,7 @@ void FactoryTestProccess(void)
 	case FT_PPG:
 		break;
 	case FT_TEMP:
+		FTMenuTempProcess();
 		break;
 	case FT_TOUCH:
 		FTMenuTouchProcess();

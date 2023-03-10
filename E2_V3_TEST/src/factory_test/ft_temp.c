@@ -44,9 +44,9 @@
 #define FT_TEMP_RET_STR_X			((LCD_WIDTH-FT_TEMP_RET_STR_W)/2)
 #define FT_TEMP_RET_STR_Y			((LCD_HEIGHT-FT_TEMP_RET_STR_H)/2)
 #define FT_TEMP_NUM_W				150
-#define FT_TEMP_NUM_H				50
+#define FT_TEMP_NUM_H				40
 #define FT_TEMP_NUM_X				((LCD_WIDTH-FT_TEMP_NUM_W)/2)
-#define FT_TEMP_NUM_Y				90
+#define FT_TEMP_NUM_Y				100
 
 #define FT_TEMP_TEST_TIMEROUT	30
 

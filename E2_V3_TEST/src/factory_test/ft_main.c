@@ -97,6 +97,7 @@ void FTMainMenu7Proc(void)
 void FTMainMenu8Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuFlash();
 }
 
 void FTMainMenu9Proc(void)
@@ -456,6 +457,7 @@ void FactoryTestProccess(void)
 		FactoryTestMainProcess();
 		break;
 	case FT_FLASH:
+		FTMenuFlashProcess();
 		break;
 	case FT_LCD:
 		FTMenuLcdProcess();

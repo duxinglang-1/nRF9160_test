@@ -291,6 +291,7 @@ void FTTempStatusUpdate(void)
 
 void ExitFTMenuTemp(void)
 {
+	k_timer_stop(&Temp_test_timer);
 	ReturnFTMainMenu();
 }
 

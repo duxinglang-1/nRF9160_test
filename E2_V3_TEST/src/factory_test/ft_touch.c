@@ -348,8 +348,8 @@ static void FTMenuTouchShow(void)
 	LCD_ShowUniString(x, y, sle_str[1]);
 
 	ClearAllKeyHandler();
-	SetKeyHandler(FTMenuTouchStartTest, KEY_POWER, KEY_EVENT_UP);
-	SetKeyHandler(FTMenuTouchStartTest, KEY_SOS, KEY_EVENT_UP);
+	SetLeftKeyUpHandler(FTMenuTouchStartTest);
+	SetRightKeyUpHandler(FTMenuTouchStartTest);
 
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_TP_SLE1_STR_X, FT_TP_SLE1_STR_X+FT_TP_SLE1_STR_W, FT_TP_SLE1_STR_Y, FT_TP_SLE1_STR_Y+FT_TP_SLE1_STR_H, FTMenuTouchSle1Hander);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_TP_SLE2_STR_X, FT_TP_SLE2_STR_X+FT_TP_SLE2_STR_W, FT_TP_SLE2_STR_Y, FT_TP_SLE2_STR_Y+FT_TP_SLE2_STR_H, FTMenuTouchSle2Hander);

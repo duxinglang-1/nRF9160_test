@@ -301,15 +301,9 @@ const ft_menu_t FT_MENU_WRIST =
 	0,
 	0,
 	{
-		{
-			{0x0000},
-		},
-		{
-			{0x0000},
-		},
+		{0x0000},
 	},	
 	{
-		FTMenuWristDumpProc,
 		FTMenuWristDumpProc,
 	},
 	{	

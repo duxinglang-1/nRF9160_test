@@ -64,7 +64,6 @@ const ft_menu_t FT_MENU_VIB =
 	},
 	{
 		FTMenuVibDumpProc,
-		FTMenuVibDumpProc,
 	},
 	{	
 		//page proc func

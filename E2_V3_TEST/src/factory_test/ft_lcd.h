@@ -6,8 +6,8 @@
 ** Modified Date:      		2023-02-17 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#ifndef __FT_IMU_H__
-#define __FT_IMU_H__
+#ifndef __FT_LCD_H__
+#define __FT_LCD_H__
 
 typedef enum
 {
@@ -20,4 +20,4 @@ typedef enum
 	LCD_COLOR_MAX
 }FT_LCD_COLOR;
 
-#endif/*__FT_IMU_H__*/
+#endif/*__FT_LCD_H__*/

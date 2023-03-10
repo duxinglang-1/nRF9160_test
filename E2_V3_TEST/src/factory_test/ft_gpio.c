@@ -341,9 +341,8 @@ static void FTMenuWristUpdate(void)
 								};
 
 	LCD_SetFontSize(FONT_SIZE_36);
-	LCD_Fill(FT_WRIST_STATUS_STR_X, FT_WRIST_STATUS_STR_Y, FT_WRIST_STATUS_STR_W, FT_WRIST_STATUS_STR_H, BLACK);
 	LCD_MeasureUniString(status_str[touch_flag], &w, &h);
-	LCD_ShowUniString(FT_WRIST_STATUS_STR_X+(FT_WRIST_STATUS_STR_W-w)/2, FT_WRIST_STATUS_STR_Y, status_str[touch_flag]);
+	LCD_ShowUniString(FT_WRIST_STATUS_STR_X+(FT_WRIST_STATUS_STR_W-w)/2, FT_WRIST_STATUS_STR_Y+(FT_WRIST_STATUS_STR_H-h)/2, status_str[touch_flag]);
 }
 
 static void FTMenuWristShow(void)
@@ -369,9 +368,8 @@ static void FTMenuWristShow(void)
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str);
 
-	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(status_str[touch_flag], &w, &h);
-	LCD_ShowUniString(FT_WRIST_STATUS_STR_X+(FT_WRIST_STATUS_STR_W-w)/2, FT_WRIST_STATUS_STR_Y, status_str[touch_flag]);
+	LCD_ShowUniString(FT_WRIST_STATUS_STR_X+(FT_WRIST_STATUS_STR_W-w)/2, FT_WRIST_STATUS_STR_Y+(FT_WRIST_STATUS_STR_H-h)/2, status_str[touch_flag]);
 
 	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(sle_str[0], &w, &h);

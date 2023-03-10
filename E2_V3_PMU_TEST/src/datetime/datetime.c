@@ -600,6 +600,11 @@ void UpdateSystemTime(void)
 		reset_steps = true;
 	#endif
 	}
+
+	if(date_time.second%15 == 0)
+	{
+		pmu_battery_update();
+	}
 }
 
 static void clock_timer_handler(struct k_timer *timer)

@@ -321,6 +321,16 @@ const ft_menu_t FT_MENU_WRIST =
 	},
 };
 
+static void FTMenuWristSle1Hander(void)
+{
+	FTMainMenu7Proc();
+}
+
+static void FTMenuWristSle2Hander(void)
+{
+	ExitFTMenuKey();
+}
+
 static void FTMenuWristUpdate(void)
 {
 	uint8_t i;
@@ -375,9 +385,13 @@ static void FTMenuWristShow(void)
 	LCD_DrawRectangle(FT_KEY_SLE2_STR_X, FT_KEY_SLE2_STR_Y, FT_KEY_SLE2_STR_W, FT_KEY_SLE2_STR_H);
 	LCD_ShowUniString(x, y, sle_str[1]);
 
+	ClearAllKeyHandler();
+	SetLeftKeyUpHandler(FTMenuWristSle1Hander);
+	SetRightKeyUpHandler(FTMenuWristSle2Hander);
+		
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE1_STR_X, FT_KEY_SLE1_STR_X+FT_KEY_SLE1_STR_W, FT_KEY_SLE1_STR_Y, FT_KEY_SLE1_STR_Y+FT_KEY_SLE1_STR_H, FTMenuKeySle1Hander);
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE2_STR_X, FT_KEY_SLE2_STR_X+FT_KEY_SLE2_STR_W, FT_KEY_SLE2_STR_Y, FT_KEY_SLE2_STR_Y+FT_KEY_SLE2_STR_H, FTMenuKeySle2Hander);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE1_STR_X, FT_KEY_SLE1_STR_X+FT_KEY_SLE1_STR_W, FT_KEY_SLE1_STR_Y, FT_KEY_SLE1_STR_Y+FT_KEY_SLE1_STR_H, FTMenuWristSle1Hander);
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_KEY_SLE2_STR_X, FT_KEY_SLE2_STR_X+FT_KEY_SLE2_STR_W, FT_KEY_SLE2_STR_Y, FT_KEY_SLE2_STR_Y+FT_KEY_SLE2_STR_H, FTMenuWristSle2Hander);
 #endif		
 }
 

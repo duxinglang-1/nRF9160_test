@@ -78,11 +78,6 @@ static void FTMenuIMUSle2Hander(void)
 	ExitFTMenuIMU();
 }
 
-static void IMUTestTimerOutCallBack(struct k_timer *timer_id)
-{
-	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
-}
-
 static void FTMenuIMUUpdate(void)
 {
 	uint16_t x,y,w,h;

@@ -27,6 +27,7 @@ typedef enum
 	FT_BLE,
 	FT_GPS,
 	FT_IMU,
+	FT_PMU,
 	FT_PPG,
 	FT_TEMP,
 	FT_TOUCH,

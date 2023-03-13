@@ -133,6 +133,7 @@ void FTMainMenu14Proc(void)
 void FTMainMenu15Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuPMU();
 }
 
 void FTMainMenu16Proc(void)
@@ -482,6 +483,9 @@ void FactoryTestProccess(void)
 	case FT_IMU:
 		FTMenuIMUProcess();
 		break;
+	case FT_PMU:
+		FTMenuPMUProcess();
+		break;	
 	case FT_PPG:
 		break;
 	case FT_TEMP:

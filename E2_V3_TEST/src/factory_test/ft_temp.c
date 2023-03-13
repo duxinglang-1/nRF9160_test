@@ -216,7 +216,7 @@ static void FTMenuTempShow(void)
 	for(i=0;i<ft_menu.count;i++)
 	{
 		LCD_MeasureUniString(ft_menu.name[i], &w, &h);
-		LCD_ShowUniString(FT_TEMP_MENU_STR_X+(FT_TEMP_MENU_STR_W-w)/2, FT_TEMP_MENU_STR_Y+i*(FT_TEMP_MENU_STR_H+FT_TEMP_MENU_STR_OFFSET_Y), ft_menu.name[i]);
+		LCD_ShowUniString(FT_TEMP_MENU_STR_X+(FT_TEMP_MENU_STR_W-w)/2, FT_TEMP_MENU_STR_Y+(FT_TEMP_MENU_STR_H-h)/2+i*(FT_TEMP_MENU_STR_H+FT_TEMP_MENU_STR_OFFSET_Y), ft_menu.name[i]);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 

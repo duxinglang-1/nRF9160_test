@@ -56,6 +56,7 @@ void FTMainDumpProc(void)
 void FTMainMenu1Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuCur();
 }
 
 void FTMainMenu2Proc(void)
@@ -456,6 +457,9 @@ void FactoryTestProccess(void)
 	{
 	case FT_MAIN:
 		FactoryTestMainProcess();
+		break;
+	case FT_CURRENT:
+		FTMenuCurProcess();
 		break;
 	case FT_FLASH:
 		FTMenuFlashProcess();

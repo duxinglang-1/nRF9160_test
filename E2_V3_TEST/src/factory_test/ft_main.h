@@ -17,6 +17,7 @@ typedef void(*ft_menu_handler)(void);
 typedef enum
 {
 	FT_MAIN,
+	FT_CURRENT,
 	FT_FLASH,
 	FT_LCD,
 	FT_KEY,

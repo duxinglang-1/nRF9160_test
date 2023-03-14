@@ -498,6 +498,13 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 			sleep_out_by_wrist = false;
 			lcd_sleep_out = true;
 		}
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		else if(IsFTCurrentTest())
+		{
+			sleep_out_by_wrist = false;
+			lcd_sleep_out = true;
+		}
+	#endif
 		else
 		{
 			return;

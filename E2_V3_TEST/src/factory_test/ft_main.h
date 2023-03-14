@@ -30,6 +30,7 @@ typedef enum
 	FT_IMU,
 	FT_PMU,
 	FT_PPG,
+	FT_SIM,
 	FT_TEMP,
 	FT_TOUCH,
 	FT_WIFI,

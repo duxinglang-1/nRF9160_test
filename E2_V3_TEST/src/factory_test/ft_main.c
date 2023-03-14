@@ -104,6 +104,7 @@ void FTMainMenu8Proc(void)
 void FTMainMenu9Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuSIM();
 }
 
 void FTMainMenu10Proc(void)
@@ -491,6 +492,9 @@ void FactoryTestProccess(void)
 		FTMenuPMUProcess();
 		break;	
 	case FT_PPG:
+		break;
+	case FT_SIM:
+		FTMenuSIMProcess();
 		break;
 	case FT_TEMP:
 		FTMenuTempProcess();

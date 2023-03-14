@@ -542,6 +542,10 @@ void pmu_battery_update(void)
 
 	if(g_chg_status == BAT_CHARGING_NO)
 		pmu_redraw_bat_flag = true;
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	FTPMUStatusUpdate(1);
+#endif	
 }
 
 bool pmu_interrupt_proc(void)
@@ -661,6 +665,10 @@ bool pmu_interrupt_proc(void)
 		}
 
 		pmu_redraw_bat_flag = true;
+		
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTPMUStatusUpdate(2);
+	#endif
 	}
 
 	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT);//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低

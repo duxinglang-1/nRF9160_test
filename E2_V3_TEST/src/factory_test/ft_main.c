@@ -56,25 +56,25 @@ void FTMainDumpProc(void)
 void FTMainMenu1Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuCur();
+	//EnterFTMenuCur();
 }
 
 void FTMainMenu2Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuKey();
+	//EnterFTMenuKey();
 }
 
 void FTMainMenu3Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuLcd();
+	//EnterFTMenuLcd();
 }
 
 void FTMainMenu4Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuTouch();
+	//EnterFTMenuTouch();
 }
 
 void FTMainMenu5Proc(void)
@@ -110,6 +110,7 @@ void FTMainMenu9Proc(void)
 void FTMainMenu10Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuBle();
 }
 
 void FTMainMenu11Proc(void)
@@ -482,6 +483,7 @@ void FactoryTestProccess(void)
 	case FT_AUDIO:
 		break;
 	case FT_BLE:
+		FTMenuBleProcess();
 		break;
 	case FT_GPS:
 		break;

@@ -189,9 +189,11 @@ void FTMenuVibrateProcess(void)
 
 void FTVibrateStatusUpdate(bool flag)
 {
-	ft_vib_working = flag;
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_VIBRATE))
+	{
+		ft_vib_working = flag;
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void ExitFTMenuVibrate(void)

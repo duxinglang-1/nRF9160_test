@@ -232,10 +232,11 @@ void FTMenuPMUProcess(void)
 
 void FTPMUStatusUpdate(uint8_t flag)
 {
-	ft_pmu_change_flag = flag;//1:soc change 2:charge insert or outsert
-	
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_PMU))
+	{
+		ft_pmu_change_flag = flag;//1:soc change 2:charge insert or outsert
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void ExitFTMenuPMU(void)

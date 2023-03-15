@@ -91,7 +91,10 @@ static void FTMenuBleSle2Hander(void)
 static void BleTestTimerOutCallBack(struct k_timer *timer_id)
 {
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_BLE))
+	{
+		ft_ble_checking = false;
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 static void FTMenuBleUpdate(void)

@@ -89,12 +89,6 @@ static void FTMenuWifiSle2Hander(void)
 	ExitFTMenuWifi();
 }
 
-static void WifiTestTimerOutCallBack(struct k_timer *timer_id)
-{
-	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_WIFI))
-		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
-}
-
 static void FTMenuWifiStopTest(void)
 {
 	ft_wifi_checking = false;
@@ -109,6 +103,11 @@ static void FTMenuWifiStartTest(void)
 	FTStartWifi();
 	k_timer_start(&wifi_test_timer, K_SECONDS(FT_WIFI_TEST_TIMEROUT), K_NO_WAIT);
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+}
+
+static void WifiTestTimerOutCallBack(struct k_timer *timer_id)
+{
+	FTMenuWifiStopTest();
 }
 
 static void FTMenuWifiUpdate(void)
@@ -225,17 +224,19 @@ void FTWifiStatusUpdate(uint8_t node_count)
 {
 	static uint8_t count = 0;
 
-	ft_wifi_scaned_count = node_count;
-	
-	count++;
-	if(count > 1)
-	{
-		ft_wifi_check_ok = true;
-		FTMenuWifiStopTest();
-	}
-	
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_WIFI))
+	{
+		ft_wifi_scaned_count = node_count;
+		count++;
+		if(count > 1)
+		{
+			count = 0;
+			ft_wifi_check_ok = true;
+			FTMenuWifiStopTest();
+		}
+
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void ExitFTMenuWifi(void)

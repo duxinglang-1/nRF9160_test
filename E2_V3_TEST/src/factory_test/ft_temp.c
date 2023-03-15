@@ -90,7 +90,11 @@ static void FTMenuTempSle2Hander(void)
 
 static void TempTestTimerOutCallBack(struct k_timer *timer_id)
 {
-	ft_temp_checking = false;
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_TEMP))
+	{
+		ft_temp_checking = false;
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 static void FTMenuTempStopTest(void)
@@ -223,16 +227,18 @@ void FTTempStatusUpdate(void)
 {
 	static uint8_t count;
 
-	count++;
-	if(count > 5)
-	{
-		count = 0;
-		ft_temp_check_ok = true;
-		FTMenuTempStopTest();
-	}
-	
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_TEMP))
+	{
+		count++;
+		if(count > 5)
+		{
+			count = 0;
+			ft_temp_check_ok = true;
+			FTMenuTempStopTest();
+		}
+	
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void ExitFTMenuTemp(void)

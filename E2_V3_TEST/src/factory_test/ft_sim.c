@@ -275,7 +275,7 @@ void EnterFTMenuSIM(void)
 	if((strlen(g_imsi) == 0)||(strlen(g_iccid) == 0))
 	{
 		ft_sim_status = 1;
-		SetModemTurnOn();
+		AppSetModemOn();
 	}
 	else
 	{

@@ -518,6 +518,10 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 			sprintf(wifi_test_info, "%d\n", count);
 			strcat(wifi_test_info, tmpbuf);
 			wifi_test_update_flag = true;
+
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			FTWifiStatusUpdate(count);
+		#endif
 		}
 	}
 	else
@@ -541,6 +545,20 @@ void MenuStopWifi(void)
 	wifi_off_flag = true;
 	test_wifi_flag = false;	
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void FTStartWifi(void)
+{
+	wifi_on_flag = true;
+	test_wifi_flag = true;
+}
+
+void FTStopWifi(void)
+{
+	wifi_off_flag = true;
+	test_wifi_flag = false;	
+}
+#endif
 
 void wifi_test_update(void)
 {

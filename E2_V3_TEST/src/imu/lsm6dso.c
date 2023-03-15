@@ -95,7 +95,7 @@ void SetCurDayStepRecData(uint16_t data)
 		step_rec2_data tmp_step = {0};
 
 	#ifdef IMU_DEBUG
-		LOGD("rec is full! temp:%0.1f", data);
+		LOGD("rec is full! step:%d", data);
 	#endif
 		tmp_step.year = date_time.year;
 		tmp_step.month = date_time.month;
@@ -108,7 +108,7 @@ void SetCurDayStepRecData(uint16_t data)
 	else
 	{
 	#ifdef IMU_DEBUG
-		LOGD("rec not full! temp:%0.1f", data);
+		LOGD("rec not full! step:%d", data);
 	#endif
 		for(i=0;i<7;i++)
 		{

@@ -317,6 +317,8 @@ static void FTMenuTouchShow(void)
 	clear_all_touch_event_handle();
 	
 	LCD_Clear(BLACK);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_TP_TITLE_X+(FT_TP_TITLE_W-w)/2, FT_TP_TITLE_Y, title_str);

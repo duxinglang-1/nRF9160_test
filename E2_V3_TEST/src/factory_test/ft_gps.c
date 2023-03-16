@@ -141,7 +141,6 @@ static void FTMenuGPSUpdate(void)
 		flag = false;
 		
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
-		LCD_SetFontSize(FONT_SIZE_36);
 
 		//pass or fail
 		LCD_SetFontSize(FONT_SIZE_52);

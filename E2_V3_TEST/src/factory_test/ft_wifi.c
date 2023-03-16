@@ -52,7 +52,6 @@
 		
 static bool ft_wifi_check_ok = false;
 static bool ft_wifi_checking = false;
-static uint8_t ft_wifi_scaned_count = 0;
 
 static void WifiTestTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_test_timer, WifiTestTimerOutCallBack, NULL);
@@ -112,8 +111,8 @@ static void WifiTestTimerOutCallBack(struct k_timer *timer_id)
 
 static void FTMenuWifiUpdate(void)
 {
+	static bool flag = false;
 	uint16_t x,y,w,h;
-	uint16_t note_str[10] = {0x626B,0x63CF,0x5230,0x70ED,0x70B9,0x003A,0x0000};	//É¨Ãèµ½ÈÈµã:
 	uint16_t ret_str[2][5] = {
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
@@ -121,24 +120,23 @@ static void FTMenuWifiUpdate(void)
 
 	if(ft_wifi_checking)
 	{
-		uint8_t tmpbuf[10] = {0};
-		uint8_t numbuf[10] = {0};
+		uint8_t tmpbuf[512] = {0};
 		
-		LCD_SetFontSize(FONT_SIZE_36);
-		//wifi node num
-		sprintf(tmpbuf, "%d", ft_wifi_scaned_count);
-		mmi_asc_to_ucs2(numbuf, tmpbuf);
-		mmi_ucs2cat((uint8_t*)note_str,numbuf);
-		LCD_MeasureUniString(note_str,&w,&h);
-		x = FT_WIFI_NOTIFY_X+(FT_WIFI_NOTIFY_W-w)/2;
-		y = FT_WIFI_NOTIFY_Y+(FT_WIFI_NOTIFY_H-h)/2;
-		LCD_Fill(FT_WIFI_NOTIFY_X, FT_WIFI_NOTIFY_Y, FT_WIFI_NOTIFY_W, FT_WIFI_NOTIFY_H, BLACK);
-		LCD_ShowUniString(x, y, note_str);
+		if(!flag)
+		{
+			flag = true;
+			LCD_Fill(FT_WIFI_NOTIFY_X, FT_WIFI_NOTIFY_Y, FT_WIFI_NOTIFY_W, FT_WIFI_NOTIFY_H, BLACK);
+			LCD_SetFontSize(FONT_SIZE_20);
+		}
+
+		LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+		mmi_asc_to_ucs2(tmpbuf, wifi_test_info);
+		LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
 	}
 	else
 	{
+		flag = false;
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
-		LCD_SetFontSize(FONT_SIZE_36);
 
 		//pass or fail
 		LCD_SetFontSize(FONT_SIZE_52);
@@ -226,13 +224,15 @@ void FTWifiStatusUpdate(uint8_t node_count)
 
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_WIFI))
 	{
-		ft_wifi_scaned_count = node_count;
-		count++;
-		if(count > 1)
+		if(node_count > 0)
 		{
-			count = 0;
-			ft_wifi_check_ok = true;
-			FTMenuWifiStopTest();
+			count++;
+			if(count > 1)
+			{
+				count = 0;
+				ft_wifi_check_ok = true;
+				FTMenuWifiStopTest();
+			}
 		}
 
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;

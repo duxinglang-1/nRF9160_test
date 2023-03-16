@@ -46,7 +46,6 @@
 #define FT_PMU_STR_X				((LCD_WIDTH-FT_PMU_STR_W)/2)
 #define FT_PMU_STR_Y				100
 
-static uint8_t ft_pmu_check_count = 0;
 static uint8_t ft_pmu_change_flag = 0;
 static uint8_t ft_pmu_checked = false;
 
@@ -84,8 +83,8 @@ static void FTMenuPMUSle2Hander(void)
 
 static void FTMenuPMUUpdate(void)
 {
-	uint16_t x,y,w,h;
 	static uint8_t check_count = 0;
+	uint16_t x,y,w,h;
 	uint8_t tmpbuf[16] = {0};
 	uint16_t unibuf[16] = {0};
 	uint16_t soc_str[10] = {0x5F53,0x524D,0x7535,0x91CF,0x003A,0x0000};//当前电量:
@@ -165,6 +164,8 @@ static void FTMenuPMUShow(void)
 #endif
 	
 	LCD_Clear(BLACK);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_PMU_TITLE_X+(FT_PMU_TITLE_W-w)/2, FT_PMU_TITLE_Y, title_str);

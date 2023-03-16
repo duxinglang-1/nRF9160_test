@@ -167,6 +167,8 @@ static void FTMenukeyUpdate(void)
 
 	if(i == ARRAY_SIZE(ft_key))
 	{
+		LCD_Set_BL_Mode(LCD_BL_AUTO);
+		
 		LCD_Fill(FT_KEY_RET_STR_X-2, FT_KEY_RET_STR_Y-2, FT_KEY_RET_STR_W+4, FT_KEY_RET_STR_H+4, GRAY);
 		LCD_Fill(FT_KEY_RET_STR_X, FT_KEY_RET_STR_Y, FT_KEY_RET_STR_W, FT_KEY_RET_STR_H, GREEN);
 
@@ -201,6 +203,8 @@ static void FTMenuKeyShow(void)
 #endif
 	
 	LCD_Clear(BLACK);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str);
@@ -292,6 +296,12 @@ void EnterFTMenuKey(void)
 #define FT_WRIST_STATUS_STR_H			40
 #define FT_WRIST_STATUS_STR_X			((LCD_WIDTH-FT_KEY_MENU_STR_W)/2)
 #define FT_WRIST_STATUS_STR_Y			100
+#define FT_WRIST_RET_STR_W				120
+#define FT_WRIST_RET_STR_H				60
+#define FT_WRIST_RET_STR_X				((LCD_WIDTH-FT_KEY_RET_STR_W)/2)
+#define FT_WRIST_RET_STR_Y				((LCD_HEIGHT-FT_KEY_RET_STR_H)/2)
+
+static uint8_t ft_wrist_checked = false;
 
 static void FTMenuWristDumpProc(void){}
 
@@ -327,16 +337,41 @@ static void FTMenuWristSle2Hander(void)
 
 static void FTMenuWristUpdate(void)
 {
-	uint8_t i;
+	static uint8_t check_count = 0;
 	uint16_t x,y,w,h;
 	uint16_t status_str[2][4] = {
 									{0x8131,0x4E0B,0x0000},//ÍÑÏÂ
 									{0x6234,0x4E0A,0x0000},//´÷ÉÏ
 								};
+	uint16_t ret_str[2][5] = {
+								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
+								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
+							  };	
+	if(!ft_wrist_checked)
+	{
+		LCD_SetFontSize(FONT_SIZE_36);
 
-	LCD_SetFontSize(FONT_SIZE_36);
-	LCD_MeasureUniString(status_str[touch_flag], &w, &h);
-	LCD_ShowUniString(FT_WRIST_STATUS_STR_X+(FT_WRIST_STATUS_STR_W-w)/2, FT_WRIST_STATUS_STR_Y+(FT_WRIST_STATUS_STR_H-h)/2, status_str[touch_flag]);
+		check_count++;
+		if(check_count > 2)
+		{
+			check_count = 0;
+			ft_wrist_checked = true;
+			
+			LCD_Set_BL_Mode(LCD_BL_AUTO);
+			LCD_SetFontSize(FONT_SIZE_52);
+			LCD_SetFontColor(BRRED);
+			LCD_SetFontBgColor(GREEN);
+			LCD_MeasureUniString(ret_str[0], &w, &h);
+			LCD_ShowUniString(FT_WRIST_RET_STR_X+(FT_WRIST_RET_STR_W-w)/2, FT_WRIST_RET_STR_Y+(FT_WRIST_RET_STR_H-h)/2, ret_str[0]);
+			LCD_ReSetFontBgColor();
+			LCD_ReSetFontColor();
+		}
+		else
+		{
+			LCD_MeasureUniString(status_str[touch_flag], &w, &h);
+			LCD_ShowUniString(FT_WRIST_STATUS_STR_X+(FT_WRIST_STATUS_STR_W-w)/2, FT_WRIST_STATUS_STR_Y+(FT_WRIST_STATUS_STR_H-h)/2, status_str[touch_flag]);
+		}
+	}
 }
 
 static void FTMenuWristShow(void)
@@ -358,6 +393,8 @@ static void FTMenuWristShow(void)
 #endif
 	
 	LCD_Clear(BLACK);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str);
@@ -423,6 +460,7 @@ void ExitFTMenuWrist(void)
 
 void EnterFTMenuWrist(void)
 {
+	ft_wrist_checked = false;
 	memcpy(&ft_menu, &FT_MENU_WRIST, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

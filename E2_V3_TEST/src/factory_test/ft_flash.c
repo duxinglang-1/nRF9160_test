@@ -119,7 +119,8 @@ static void FTMenuFlashUpdate(void)
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 							  };
 
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+
 	LCD_Fill(FT_FLASH_STR_X, FT_FLASH_STR_Y, FT_FLASH_STR_W, FT_FLASH_STR_H, BLACK);
 	
 	LCD_SetFontSize(FONT_SIZE_52);
@@ -147,6 +148,8 @@ static void FTMenuFlashShow(void)
 #endif
 	
 	LCD_Clear(BLACK);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_FLASH_TITLE_X+(FT_FLASH_TITLE_W-w)/2, FT_FLASH_TITLE_Y, title_str);

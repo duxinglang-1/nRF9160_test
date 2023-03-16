@@ -55,73 +55,73 @@ void FTMainDumpProc(void)
 void FTMainMenu1Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuCur();
+	EnterFTMenuCur();
 }
 
 void FTMainMenu2Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuKey();
+	EnterFTMenuKey();
 }
 
 void FTMainMenu3Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuLcd();
+	EnterFTMenuLcd();
 }
 
 void FTMainMenu4Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuTouch();
+	EnterFTMenuTouch();
 }
 
 void FTMainMenu5Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuTemp();
+	EnterFTMenuTemp();
 }
 
 void FTMainMenu6Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuWrist();
+	EnterFTMenuWrist();
 }
 
 void FTMainMenu7Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuIMU();
+	EnterFTMenuIMU();
 }
 
 void FTMainMenu8Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuFlash();
+	EnterFTMenuFlash();
 }
 
 void FTMainMenu9Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuSIM();
+	EnterFTMenuSIM();
 }
 
 void FTMainMenu10Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuBle();
+	EnterFTMenuBle();
 }
 
 void FTMainMenu11Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuWifi();
+	EnterFTMenuWifi();
 }
 
 void FTMainMenu12Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuGPS();
+	EnterFTMenuGPS();
 }
 
 void FTMainMenu13Proc(void)
@@ -138,13 +138,13 @@ void FTMainMenu14Proc(void)
 void FTMainMenu15Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuPMU();
+	EnterFTMenuPMU();
 }
 
 void FTMainMenu16Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	//EnterFTMenuVibrate();
+	EnterFTMenuVibrate();
 }
 
 static void FTMainMenuProcess(void)

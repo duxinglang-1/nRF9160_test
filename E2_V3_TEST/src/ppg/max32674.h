@@ -14,8 +14,8 @@
 #include <device.h>
 
 #define PPG_CHECK_HR_MENU			60
-#define PPG_CHECK_SPO2_MENU			120
-#define PPG_CHECK_BPT_MENU			120
+#define PPG_CHECK_SPO2_MENU			150
+#define PPG_CHECK_BPT_MENU			150
 
 #define PPG_CHECK_HR_TIMELY			1
 #define PPG_CHECK_SPO2_TIMELY		2

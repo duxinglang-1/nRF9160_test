@@ -348,7 +348,7 @@ static void date_time_evt_handler(const struct date_time_evt *evt)
 
 static int modem_init(void)
 {
-    uint8_t tmpbuf[256] = {0};
+    uint8_t tmpbuf[128] = {0};
 
  	if(strlen(CONFIG_GNSS_SAMPLE_AT_MAGPIO) > 0)
 	{
@@ -610,15 +610,15 @@ static void gps_data_get_work_fn(struct k_work *item)
 
 				if(test_gps_flag)
 				{
-					uint8_t i,tracked = 0;
-					uint8_t strbuf[128] = {0};
+					uint8_t i,tracked = 0,flag = 0;
+					uint8_t strbuf[256] = {0};
 					int32_t lon,lat;
 					
 					memset(gps_test_info, 0x00, sizeof(gps_test_info));
 					
 					for(i=0;i<NRF_MODEM_GNSS_MAX_SATELLITES;i++)
 					{
-						uint8_t buf[128] = {0};
+						uint8_t buf[256] = {0};
 						
 						if(last_pvt.sv[i].sv > 0)
 						{
@@ -626,11 +626,45 @@ static void gps_data_get_work_fn(struct k_work *item)
 						#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
 							if(tracked<8)
 							{
-								sprintf(buf, "%02d|", last_pvt.sv[i].cn0/10);
+								if(flag == 0)
+								{
+									flag = 1;
+									sprintf(buf, "%02d", last_pvt.sv[i].cn0/10);
+								}
+								else
+								{
+									sprintf(buf, "|%02d", last_pvt.sv[i].cn0/10);
+								}
+								
 								strcat(strbuf, buf);
 							}
 						#else
-							sprintf(buf, "%02d|%02d;", last_pvt.sv[i].sv, last_pvt.sv[i].cn0/10);
+						  #ifdef CONFIG_FACTORY_TEST_SUPPORT
+							if(IsFTGPSTesting())
+							{
+								if(flag == 0)
+								{
+									flag = 1;
+									sprintf(buf, "%02d", last_pvt.sv[i].cn0/10);
+								}
+								else
+								{
+									sprintf(buf, "|%02d", last_pvt.sv[i].cn0/10);
+								}
+							}
+							else
+						  #endif
+							{
+								if(flag == 0)
+								{
+									flag = 1;
+									sprintf(buf, "%02d|%02d", last_pvt.sv[i].sv, last_pvt.sv[i].cn0/10);
+								}
+								else
+								{
+									sprintf(buf, ";%02d|%02d", last_pvt.sv[i].sv, last_pvt.sv[i].cn0/10);
+								}
+						  	}
 							strcat(strbuf, buf);
 						#endif
 						}
@@ -642,6 +676,11 @@ static void gps_data_get_work_fn(struct k_work *item)
 					sprintf(gps_test_info, "%02d\n", tracked);
 				#endif
 					strcat(gps_test_info, strbuf);
+
+				#ifdef CONFIG_FACTORY_TEST_SUPPORT
+					FTGPSStatusUpdate(false);
+				#endif
+
 					gps_test_update_flag = true;
 				}
 
@@ -692,7 +731,7 @@ static void gps_data_get_work_fn(struct k_work *item)
 					}
 					else
 					{
-						uint8_t strbuf[128] = {0};
+						uint8_t strbuf[256] = {0};
 						int32_t lon,lat;
 						
 					#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
@@ -707,16 +746,29 @@ static void gps_data_get_work_fn(struct k_work *item)
 						
 						lon = last_pvt.longitude*1000000;
 						lat = last_pvt.latitude*1000000;
-						sprintf(strbuf, "Lon:   %d.%06d\nLat:    %d.%06d\n", lon/1000000, lon%1000000, lat/1000000, lat%1000000);
+						sprintf(strbuf, "Lon:   %d.%06d\nLat:    %d.%06d\n", lon/1000000, abs(lon)%1000000, lat/1000000, abs(lat)%1000000);
 						strcat(gps_test_info, strbuf);
-				
-						if(gps_fix_time > 0)
+
+					#ifdef CONFIG_FACTORY_TEST_SUPPORT
+						if(IsFTGPSTesting())
 						{
-							sprintf(strbuf, "fix time:    %dS", gps_local_time/1000);
-							strcat(gps_test_info, strbuf);
+							//xb add 2023-03-15 ft gps test don't need show fix time
+						}
+						else
+					#endif
+						{
+							if(gps_fix_time > 0)
+							{
+								sprintf(strbuf, "fix time:    %dS", gps_local_time/1000);
+								strcat(gps_test_info, strbuf);
+							}
 						}
 					#endif
-					
+
+					#ifdef CONFIG_FACTORY_TEST_SUPPORT
+						FTGPSStatusUpdate(true);
+					#endif
+
 						gps_test_update_flag = true;
 					}
 					
@@ -872,7 +924,7 @@ void gps_off(void)
 	gps_turn_off();
 }
 
-void gps_turn_on(void)
+bool gps_turn_on(void)
 {
 	uint8_t cnt = 0;
 	struct nrf_modem_gnss_nmea_data_frame *nmea_data;
@@ -882,7 +934,7 @@ void gps_turn_on(void)
 	#ifdef GPS_DEBUG
 		LOGD("Failed to initialize modem");
 	#endif
-		return;
+		return false;
 	}
 
 	if(gnss_init_and_start() != 0)
@@ -890,7 +942,7 @@ void gps_turn_on(void)
 	#ifdef GPS_DEBUG
 		LOGD("Failed to initialize and start GNSS");
 	#endif
-		return;
+		return false;
 	}
 
 	gps_is_on = true;
@@ -904,14 +956,24 @@ void gps_turn_on(void)
 #endif
 
 	k_work_submit_to_queue(app_work_q, &gps_data_get_work);
+
+	return true;
 }
 
 void gps_on(void)
 {
+	bool ret = false;
+	
 	if(gps_is_on)
 		return;
 	
-	gps_turn_on();
+	ret = gps_turn_on();
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(!ret)
+	{
+		FTGPSStartFail();
+	}
+#endif
 }
 
 void gps_test_update(void)
@@ -931,6 +993,20 @@ void MenuStopGPS(void)
 	test_gps_flag = false;
 	gps_off_flag = true;
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void FTStartGPS(void)
+{
+	test_gps_flag = true;
+	gps_on_flag = true;
+}
+
+void FTStopGPS(void)
+{
+	test_gps_flag = false;
+	gps_off_flag = true;
+}
+#endif
 
 void GPS_init(struct k_work_q *work_q)
 {

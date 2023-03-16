@@ -85,7 +85,7 @@ static void FTMenuSIMSle1Hander(void)
 
 static void FTMenuSIMSle2Hander(void)
 {
-	ExitFTMenuTemp();
+	ExitFTMenuSIM();
 }
 
 static void SIMTestTimerOutCallBack(struct k_timer *timer_id)
@@ -123,7 +123,7 @@ static void FTMenuSIMUpdate(void)
 			break;
 		case 3:
 			ft_sim_checking = false;
-			AppSetModemOff();
+			SetModemTurnOff();
 			LCD_SetFontSize(FONT_SIZE_28);
 
 			LCD_Fill(FT_SIM_NOTIFY_X, FT_SIM_NOTIFY_Y, FT_SIM_NOTIFY_W, FT_SIM_NOTIFY_H, BLACK);
@@ -253,7 +253,7 @@ void ExitFTMenuSIM(void)
 	ft_sim_checking = false;
 	ft_sim_check_ok = false;
 	k_timer_stop(&sim_test_timer);
-	AppSetModemOff();
+	SetModemTurnOff();
 	ReturnFTMainMenu();
 }
 
@@ -275,7 +275,7 @@ void EnterFTMenuSIM(void)
 	if((strlen(g_imsi) == 0)||(strlen(g_iccid) == 0))
 	{
 		ft_sim_status = 1;
-		AppSetModemOn();
+		SetModemTurnOn();
 	}
 	else
 	{

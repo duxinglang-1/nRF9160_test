@@ -123,7 +123,6 @@ static void FTMenuBleUpdate(void)
 			break;
 		case 2:
 			ft_ble_checking = false;
-			AppSetModemOff();
 			LCD_SetFontSize(FONT_SIZE_28);
 
 			LCD_Fill(FT_BLE_NOTIFY_X, FT_BLE_NOTIFY_Y, FT_BLE_NOTIFY_W, FT_BLE_NOTIFY_H, BLACK);

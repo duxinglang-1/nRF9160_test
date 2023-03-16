@@ -49,7 +49,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(30)
@@ -1204,6 +1204,11 @@ void GetModemDateTime(void)
 	#ifdef NB_DEBUG
 		LOGD("Get CCLK fail!");
 	#endif
+	
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	  if(FactryTestActived())
+	  	return;
+	#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
 	#ifndef NB_SIGNAL_TEST
 		if(nb_connected && (retry > 0))
@@ -2428,6 +2433,30 @@ void GetModemStatus(void)
 void SetModemTurnOn(void)
 {
 	uint8_t buf[128] = {0};
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN?") == 0)
+	{
+		uint8_t *ptr,ret,tmpbuf[10] = {0};
+
+	#ifdef NB_DEBUG
+		LOGD("modem status:%s", buf);
+	#endif
+
+		ptr = strstr(buf, "+CFUN: ");
+		if(ptr)
+		{
+			ptr += strlen("+CFUN: ");
+			memcpy(tmpbuf, ptr, 1);
+			ret = atoi(tmpbuf);
+			if(ret == 1)
+			{
+			#ifdef NB_DEBUG
+				LOGD("modem has been turn on, return!");
+			#endif
+				return;
+			}
+		}
+	}
 	
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=1") == 0)
 	{
@@ -2447,12 +2476,37 @@ void SetModemTurnOff(void)
 {
 	uint8_t buf[128] = {0};
 
-	DisConnectMqttLink();
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN?") == 0)
+	{
+		uint8_t *ptr,ret,tmpbuf[10] = {0};
+
+	#ifdef NB_DEBUG
+		LOGD("modem status:%s", buf);
+	#endif
+
+		ptr = strstr(buf, "+CFUN: ");
+		if(ptr)
+		{
+			ptr += strlen("+CFUN: ");
+			memcpy(tmpbuf, ptr, 1);
+			ret = atoi(tmpbuf);
+			if(ret == 0)
+			{
+			#ifdef NB_DEBUG
+				LOGD("modem has been turn off, return!");
+			#endif
+				return;
+			}
+		}
+	}
+	
+	if(mqtt_connected)
+		DisConnectMqttLink();
 
 	nb_connected = false;
 	mqtt_connected = false;
 
-	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=4") == 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=0") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("turn off modem success!");
@@ -2598,11 +2652,19 @@ static void modem_init(struct k_work *work)
 
 static void modem_on(struct k_work *work)
 {
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
+
 	SetModemTurnOn();
 }
 
 static void modem_off(struct k_work *work)
 {
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
+
 	SetModemTurnOff();
 }
 
@@ -2662,7 +2724,12 @@ static void nb_link(struct k_work *work)
 	#ifdef NB_DEBUG
 		LOGD("linking");
 	#endif
-	
+
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		if(FactryTestActived())
+			return;
+	#endif
+
 		nb_connecting_flag = true;
 		configure_low_power();
 		err = lte_lc_init_and_connect();

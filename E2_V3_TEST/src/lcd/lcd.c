@@ -3231,12 +3231,13 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 	str_h = height+y;
 	while(*p)
 	{       
-		w = LCD_Measure_Uni_Byte(*p);
-		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(str_x>=str_w){str_x=x;str_y+=system_font;}
 		if(*p==end){str_x=x;str_y+=system_font;p++;}
 		if(str_y>=str_h)break;//ÍË³ö
 		if(*p==0x0000)break;//ÍË³ö
-
+		w = LCD_Measure_Uni_Byte(*p);
+		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(str_y>=str_h)break;//ÍË³ö
 		w = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
 		str_x += w;
 		p++;

@@ -52,6 +52,9 @@
 #ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
 #endif/*CONFIG_TEMP_SUPPORT*/
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#include "ft_main.h"
+#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 #include "logger.h"
 
 static uint8_t scr_index = 0;
@@ -103,6 +106,27 @@ static char *logo_img[] =
 	IMG_PWRON_ANI_1_ADDR
 };
 #endif
+
+static uint16_t still_str[LANGUAGE_MAX][13] = {
+												{0x0053,0x0074,0x0061,0x0079,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0000},//Stay still
+												{0x0042,0x006C,0x0065,0x0069,0x0062,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0000},//Bleib still
+												{0x4FDD,0x6301,0x9759,0x6B62,0x0000},//保持静止
+											  };
+static uint16_t Incon_1_str[LANGUAGE_MAX][38] = {
+													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x0065,0x0020,0x0072,0x0065,0x0074,0x0072,0x0079,0x0020,0x006C,0x0061,0x0074,0x0065,0x0072,0x0000},//Inconclusive retry later
+													{0x0055,0x006E,0x0073,0x0063,0x0068,0x006C,0x00FC,0x0073,0x0073,0x0069,0x0067,0x0065,0x0072,0x0020,0x0065,0x0072,0x006E,0x0065,0x0075,0x0074,0x0065,0x0072,0x0020,0x0056,0x0065,0x0072,0x0073,0x0075,0x0063,0x0068,0x0020,0x0073,0x0070,0x00E4,0x0074,0x0065,0x0072,0x0000},//Unschlüssiger erneuter Versuch sp?ter
+													{0x6D4B,0x91CF,0x5931,0x8D25,0xFF0C,0x8BF7,0x7A0D,0x540E,0x91CD,0x8BD5,0x0000},//测量失败，请稍后重试
+												};
+static uint16_t Incon_2_str[LANGUAGE_MAX][13] = {
+													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x0065,0x0000},//Inconclusive
+													{0x0055,0x006E,0x0073,0x0063,0x0068,0x006C,0x00FC,0x0073,0x0073,0x0069,0x0067,0x0000},//Unschlüssig
+													{0x6D4B,0x91CF,0x5931,0x8D25,0x0000},//测量失败
+												};
+static uint16_t still_retry_str[LANGUAGE_MAX][47] = {
+														{0x004B,0x0065,0x0065,0x0070,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0020,0x0061,0x006E,0x0064,0x0020,0x0072,0x0065,0x0074,0x0072,0x0079,0x0000},//Keep still and retry
+														{0x0042,0x006C,0x0065,0x0069,0x0062,0x0065,0x006E,0x0020,0x0053,0x0069,0x0065,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0020,0x0075,0x006E,0x0064,0x0020,0x0076,0x0065,0x0072,0x0073,0x0075,0x0063,0x0068,0x0065,0x006E,0x0020,0x0053,0x0069,0x0065,0x0020,0x0065,0x0073,0x0020,0x0065,0x0072,0x006E,0x0065,0x0075,0x0074,0x002E,0x0000},//Bleiben Sie still und versuchen Sie es erneut.
+														{0x4FDD,0x6301,0x9759,0x6B62,0xFF0C,0x91CD,0x65B0,0x6D4B,0x91CF,0x0000},//保持静止，重新测量
+													};
 
 void EnterSettingsScreen(void);
 void EnterSyncDataScreen(void);
@@ -301,46 +325,46 @@ void IdleShowSystemDate(void)
 #ifdef FONTMAKER_UNICODE_FONT	
 	uint16_t str_mon[LANGUAGE_MAX][12][5] = {
 										{
-											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
-											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
-											{0x004D,0x0061,0x0072,0x0000,0x0000},//"Mar"
-											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
-											{0x004D,0x0061,0x0079,0x0000,0x0000},//"May"
-											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
-											{0x004A,0x0075,0x006C,0x0000,0x0000},//"Jul"
-											{0x0041,0x0075,0x0067,0x0000,0x0000},//"Aug"
-											{0x0053,0x0065,0x0070,0x0074,0x0000},//"Sept"
-											{0x004F,0x0063,0x0074,0x0000,0x0000},//"Oct"
-											{0x004E,0x006F,0x0076,0x0000,0x0000},//"Nov"
-											{0x0044,0x0065,0x0063,0x0000,0x0000} //"Dec"
+											{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
+											{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
+											{0x004D,0x0061,0x0072,0x0000,0x0000},//Mar
+											{0x0041,0x0070,0x0072,0x0000,0x0000},//Apr
+											{0x004D,0x0061,0x0079,0x0000,0x0000},//May
+											{0x004A,0x0075,0x006E,0x0000,0x0000},//Jun
+											{0x004A,0x0075,0x006C,0x0000,0x0000},//Jul
+											{0x0041,0x0075,0x0067,0x0000,0x0000},//Aug
+											{0x0053,0x0065,0x0070,0x0074,0x0000},//Sept
+											{0x004F,0x0063,0x0074,0x0000,0x0000},//Oct
+											{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
+											{0x0044,0x0065,0x0063,0x0000,0x0000},//Dec
 										},
 										{
-											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
-											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
-											{0x004D,0x00E4,0x0072,0x007A,0x0000},//"M鋜z"
-											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
-											{0x004D,0x0061,0x0069,0x0000,0x0000},//"Mai"
-											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
-											{0x004A,0x0075,0x006C,0x0000,0x0000},//"Jul"
-											{0x0041,0x0075,0x0067,0x0000,0x0000},//"Aug"
-											{0x0053,0x0065,0x0070,0x0074,0x0000},//"Sept"
-											{0x004F,0x006B,0x0074,0x0000,0x0000},//"Okt"
-											{0x004E,0x006F,0x0076,0x0000,0x0000},//"Nov"
-											{0x0044,0x0065,0x007A,0x0000,0x0000} //"Dez"
+											{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
+											{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
+											{0x004D,0x00E4,0x0072,0x007A,0x0000},//M鋜z
+											{0x0041,0x0070,0x0072,0x0000,0x0000},//Apr
+											{0x004D,0x0061,0x0069,0x0000,0x0000},//Mai
+											{0x004A,0x0075,0x006E,0x0000,0x0000},//Jun
+											{0x004A,0x0075,0x006C,0x0000,0x0000},//Jul
+											{0x0041,0x0075,0x0067,0x0000,0x0000},//Aug
+											{0x0053,0x0065,0x0070,0x0074,0x0000},//Sept
+											{0x004F,0x006B,0x0074,0x0000,0x0000},//Okt
+											{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
+											{0x0044,0x0065,0x007A,0x0000,0x0000},//Dez
 										},
 										{
-											{0x004A,0x0061,0x006E,0x0000,0x0000},//"Jan"
-											{0x0046,0x0065,0x0062,0x0000,0x0000},//"Feb"
-											{0x004D,0x0061,0x0072,0x0000,0x0000},//"Mar"
-											{0x0041,0x0070,0x0072,0x0000,0x0000},//"Apr"
-											{0x004D,0x0061,0x0079,0x0000,0x0000},//"May"
-											{0x004A,0x0075,0x006E,0x0000,0x0000},//"Jun"
-											{0x004A,0x0075,0x006C,0x0000,0x0000},//"Jul"
-											{0x0041,0x0075,0x0067,0x0000,0x0000},//"Aug"
-											{0x0053,0x0065,0x0070,0x0074,0x0000},//"Sept"
-											{0x004F,0x0063,0x0074,0x0000,0x0000},//"Oct"
-											{0x004E,0x006F,0x0076,0x0000,0x0000},//"Nov"
-											{0x0044,0x0065,0x0063,0x0000,0x0000} //"Dec"
+											{0x4E00,0x6708,0x0000,0x0000,0x0000},//一月
+											{0x4E8C,0x6708,0x0000,0x0000,0x0000},//二月
+											{0x4E09,0x6708,0x0000,0x0000,0x0000},//三月
+											{0x56DB,0x6708,0x0000,0x0000,0x0000},//四月
+											{0x4E94,0x6708,0x0000,0x0000,0x0000},//五月
+											{0x516D,0x6708,0x0000,0x0000,0x0000},//六月
+											{0x4E03,0x6708,0x0000,0x0000,0x0000},//七月
+											{0x516B,0x6708,0x0000,0x0000,0x0000},//八月
+											{0x4E5D,0x6708,0x0000,0x0000,0x0000},//九月
+											{0x5341,0x6708,0x0000,0x0000,0x0000},//十月
+											{0x5341,0x4E00,0x6708,0x0000,0x0000},//十一月
+											{0x5341,0x4E8C,0x6708,0x0000,0x0000},//十二月
 										},
 									};
 #else	
@@ -411,13 +435,13 @@ void IdleShowSystemWeek(void)
 #ifdef FONTMAKER_UNICODE_FONT	
 	uint16_t str_week[LANGUAGE_MAX][7][4] = {
 										{
-											{0x0053,0x0075,0x006E,0x0000},//"Sun"
-											{0x004D,0x006F,0x006E,0x0000},//"Mon"
-											{0x0054,0x0075,0x0065,0x0000},//"Tue"
-											{0x0057,0x0065,0x0064,0x0000},//"Wed"
-											{0x0054,0x0068,0x0075,0x0000},//"Thu"
-											{0x0046,0x0072,0x0069,0x0000},//"Fri"
-											{0x0053,0x0061,0x0074,0x0000} //"Sat"
+											{0x0053,0x0075,0x006E,0x0000},//Sun
+											{0x004D,0x006F,0x006E,0x0000},//Mon
+											{0x0054,0x0075,0x0065,0x0000},//Tue
+											{0x0057,0x0065,0x0064,0x0000},//Wed
+											{0x0054,0x0068,0x0075,0x0000},//Thu
+											{0x0046,0x0072,0x0069,0x0000},//Fri
+											{0x0053,0x0061,0x0074,0x0000},//Sat
 										},
 										{
 											{0x0053,0x006F,0x0000},//So
@@ -426,16 +450,16 @@ void IdleShowSystemWeek(void)
 											{0x004D,0x0049,0x0000},//MI
 											{0x0044,0x006F,0x0000},//Do
 											{0x0046,0x0072,0x0000},//Fr
-											{0x0053,0x0061,0x0000} //Sa
+											{0x0053,0x0061,0x0000},//Sa
 										},
 										{
-		 									{0x65E5,0x0000},//"日"
-											{0x4E00,0x0000},//"一"
-											{0x4E8C,0x0000},//"二"
-											{0x4E09,0x0000},//"三"
-											{0x56DB,0x0000},//"四"
-											{0x4E94,0x0000},//"五"
-											{0x516D,0x0000} //"六"
+		 									{0x5468,0x65E5,0x0000},//周日
+											{0x5468,0x4E00,0x0000},//周一
+											{0x5468,0x4E8C,0x0000},//周二
+											{0x5468,0x4E09,0x0000},//周三
+											{0x5468,0x56DB,0x0000},//周四
+											{0x5468,0x4E94,0x0000},//周五
+											{0x5468,0x516D,0x0000},//周六
 										},
 									};
 #else
@@ -2282,11 +2306,11 @@ void TempUpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		mmi_asc_to_ucs2(tmpbuf, "Stay still");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
+
+		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
+		x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
 		y = TEMP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_str[global_settings.language]);
 		
 		MenuStartTemp();
 		g_temp_status = TEMP_STATUS_MEASURING;
@@ -2393,12 +2417,11 @@ void TempUpdateStatus(void)
 
 		temp_retry_left--;
 		if(temp_retry_left == 0)
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive retry later");
+			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
 		else
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive");
-
+			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
 		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
+		x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
 		y = TEMP_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);		
 
@@ -2414,11 +2437,10 @@ void TempUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_asc_to_ucs2(tmpbuf, "Keep still and retry");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
+		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
+		x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
 		y = TEMP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_retry_str[global_settings.language]);
 
 		k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -2433,6 +2455,11 @@ void TempShowStatus(void)
 	float temp_max = 0.0, temp_min = 0.0;
 	uint16_t temp[24] = {0};
 	uint16_t color = 0x05DF;
+	uint16_t title_str[LANGUAGE_MAX][19] = {
+												{0x0042,0x006F,0x0064,0x0079,0x0020,0x0054,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0065,0x0000},//Body Temperature
+												{0x004B,0x00F6,0x0072,0x0070,0x0065,0x0072,0x0074,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0000},//K?rpertemperatur
+												{0x4F53,0x6E29,0x0000},//体温
+											};
 
 #ifdef UI_STYLE_HEALTH_BAR
 	if(global_settings.temp_unit == TEMP_UINT_C)
@@ -2528,11 +2555,10 @@ void TempShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	mmi_asc_to_ucs2(tmpbuf, "Body Temperature");
-	LCD_MeasureUniString(tmpbuf,&w,&h);
-	x = TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
+	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
+	x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
 	y = TEMP_NOTIFY_Y;
-	LCD_ShowUniString(x, y, tmpbuf);
+	LCD_ShowUniString(x, y, title_str[global_settings.language]);
 
 	GetCurDayTempRecData(temp);
 	for(i=0;i<24;i++)
@@ -2990,11 +3016,10 @@ void BPUpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		mmi_asc_to_ucs2(tmpbuf, "Stay still");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
+		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
+		x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
 		y = BP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_str[global_settings.language]);
 		
 		MenuStartBpt();
 		g_ppg_status = PPG_STATUS_MEASURING;
@@ -3094,12 +3119,11 @@ void BPUpdateStatus(void)
 
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive retry later");
+			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
 		else
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive");
-		
+			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
 		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
+		x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
 		y = BP_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -3113,9 +3137,8 @@ void BPUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_asc_to_ucs2(tmpbuf, "Keep still and retry");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
+		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
+		x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
 		y = BP_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
 
@@ -3130,6 +3153,11 @@ void BPShowStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t i,tmpbuf[64] = {0};
 	bpt_data bpt_max={0},bpt_min={0},bpt[24] = {0};
+	uint16_t title_str[LANGUAGE_MAX][15] = {
+													{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x0050,0x0072,0x0065,0x0073,0x0073,0x0075,0x0072,0x0065,0x0000},//Blood Pressure
+													{0x0042,0x006C,0x0075,0x0074,0x0064,0x0072,0x0075,0x0063,0x006B,0x0000},//Blutdruck
+													{0x8840,0x538B,0x0000},//血压
+												};
 
 #ifdef UI_STYLE_HEALTH_BAR
 	LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, IMG_BP_ICON_ANI_2_ADDR);
@@ -3208,11 +3236,10 @@ void BPShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	mmi_asc_to_ucs2(tmpbuf, "Blood Pressure");
-	LCD_MeasureUniString(tmpbuf,&w,&h);
-	x = BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
+	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
+	x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
 	y = BP_NOTIFY_Y;
-	LCD_ShowUniString(x, y, tmpbuf);
+	LCD_ShowUniString(x, y, title_str[global_settings.language]);
 
 	GetCurDayBptRecData(bpt);
 	for(i=0;i<24;i++)
@@ -3521,11 +3548,11 @@ void SPO2UpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		mmi_asc_to_ucs2(tmpbuf, "Stay still");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
+
+		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
+		x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
 		y = SPO2_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_str[global_settings.language]);
 		
 		MenuStartSpo2();
 		g_ppg_status = PPG_STATUS_MEASURING;
@@ -3591,12 +3618,11 @@ void SPO2UpdateStatus(void)
 
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive retry later");
+			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
 		else
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive");
-
+			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
 		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
+		x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
 		y = SPO2_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
 		
@@ -3611,11 +3637,10 @@ void SPO2UpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_asc_to_ucs2(tmpbuf, "Keep still and retry");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
+		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
+		x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
 		y = SPO2_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_retry_str[global_settings.language]);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -3628,6 +3653,11 @@ void SPO2ShowStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t i,tmpbuf[64] = {0};
 	uint8_t spo2_max=0,spo2_min=0,spo2[24] = {0};
+	uint16_t title_str[LANGUAGE_MAX][19] = {
+												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x004F,0x0078,0x0079,0x0067,0x0065,0x006E,0x0000},//Blood Oxygen
+												{0x0053,0x0061,0x0075,0x0065,0x0072,0x0073,0x0074,0x006F,0x0066,0x0066,0x0020,0x0069,0x006D,0x0020,0x0042,0x006C,0x0075,0x0074,0x0000},//Sauerstoff im Blut
+												{0x8840,0x6C27,0x0000},//血氧
+							 				};
 
 #ifdef UI_STYLE_HEALTH_BAR
 	LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, IMG_SPO2_ANI_2_ADDR);
@@ -3697,11 +3727,10 @@ void SPO2ShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	mmi_asc_to_ucs2(tmpbuf, "Blood Oxygen");
-	LCD_MeasureUniString(tmpbuf,&w,&h);
-	x = SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
+	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
+	x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
 	y = SPO2_NOTIFY_Y;
-	LCD_ShowUniString(x, y, tmpbuf);
+	LCD_ShowUniString(x, y, title_str[global_settings.language]);
 
 	GetCurDaySpo2RecData(spo2);
 	for(i=0;i<24;i++)
@@ -3898,13 +3927,12 @@ void HRUpdateStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t tmpbuf[64] = {0};
 	uint8_t strbuf[64] = {0};
+	
 #ifdef UI_STYLE_HEALTH_BAR
 	unsigned char *img_anima[2] = {IMG_HR_ICON_ANI_1_ADDR, IMG_HR_ICON_ANI_2_ADDR};
 #else
 	unsigned char *img_anima[2] = {IMG_HR_BIG_ICON_1_ADDR, IMG_HR_BIG_ICON_2_ADDR};
 #endif
-
-	LOGD("status:%d, retry_left:%d", g_ppg_status,ppg_retry_left);
 
 #ifdef UI_STYLE_HEALTH_BAR
 	img_index++;
@@ -3945,11 +3973,11 @@ void HRUpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		mmi_asc_to_ucs2(tmpbuf, "Stay still");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+
+		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
+		x = (w > HR_NOTIFY_W) ? HR_NOTIFY_X : HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 		y = HR_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_str[global_settings.language]);
 		
 		MenuStartHr();
 		g_ppg_status = PPG_STATUS_MEASURING;
@@ -4015,12 +4043,11 @@ void HRUpdateStatus(void)
 
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive retry later");
+			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
 		else
-			mmi_asc_to_ucs2(tmpbuf, "Inconclusive");
-
+			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
 		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+		x = (w > HR_NOTIFY_W) ? HR_NOTIFY_X : HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 		y = HR_NOTIFY_Y;
 		LCD_ShowUniString(x, y, tmpbuf);
 			
@@ -4035,11 +4062,10 @@ void HRUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_asc_to_ucs2(tmpbuf, "Keep still and retry");
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
+		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
+		x = (w > HR_NOTIFY_W) ? HR_NOTIFY_X : HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 		y = HR_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(x, y, still_retry_str[global_settings.language]);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -4052,6 +4078,11 @@ void HRShowStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t i,tmpbuf[64] = {0};
 	uint8_t hr_max=0,hr_min=0,hr[24] = {0};
+	uint16_t title_str[LANGUAGE_MAX][13] = {
+												{0x0048,0x0065,0x0061,0x0072,0x0074,0x0020,0x0052,0x0061,0x0074,0x0065,0x0000},//Heart Rate
+												{0x0048,0x0065,0x0072,0x007A,0x0066,0x0072,0x0065,0x0071,0x0075,0x0065,0x006E,0x007A,0x0000},//Herzfrequenz
+												{0x5FC3,0x7387,0x0000},//心率
+							 				};
 
 #ifdef UI_STYLE_HEALTH_BAR
 	LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_ICON_ANI_2_ADDR);
@@ -4122,11 +4153,10 @@ void HRShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	mmi_asc_to_ucs2(tmpbuf, "Heart Rate");
-	LCD_MeasureUniString(tmpbuf,&w,&h);
+	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
 	x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
 	y = HR_NOTIFY_Y;
-	LCD_ShowUniString(x, y, tmpbuf);
+	LCD_ShowUniString(x, y, title_str[global_settings.language]);
 
 	GetCurDayHrRecData(hr);
 	for(i=0;i<24;i++)

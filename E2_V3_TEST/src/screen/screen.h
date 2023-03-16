@@ -41,8 +41,8 @@ extern "C" {
 #define IDLE_TIME_NUM_H		60
 #define IDLE_TIME_COLON_W	17
 #define IDLE_TIME_COLON_H	60
-#define IDLE_DATE_MON_W		36
-#define IDLE_DATE_MON_H		20
+#define IDLE_DATE_MON_W		90
+#define IDLE_DATE_MON_H		25
 #define IDLE_DATE_MON_X		141
 #define IDLE_DATE_MON_Y		105
 #define IDLE_DATE_DAY_W		22

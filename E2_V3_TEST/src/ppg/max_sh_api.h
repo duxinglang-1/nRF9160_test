@@ -58,7 +58,9 @@
 
 #define SS_EXTEND_PACKAGE_SIZE                  (SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE2_DATASIZE)
 
-#define READ_SAMPLE_COUNT_MAX                    5
+#define READ_SAMPLE_COUNT_MAX                   15
+
+#define SSRAW_ECG_DATASIZE                      48
 
 typedef enum
 {
@@ -251,6 +253,5 @@ int sensorhub_get_result(sensorhub_output *  p_result);
 int sensorhub_get_version(uint8_t algoVersion[3]);
 
 int sensorhub_reset_sensor_configuration();
-
 
 #endif /* ALGOHUB_SENSORHUB_API_H_ */

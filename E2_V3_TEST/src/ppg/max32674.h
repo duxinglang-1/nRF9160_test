@@ -71,6 +71,7 @@ typedef enum
 	TRIGGER_BY_APP_ONE_KEY	=	0x02,
 	TRIGGER_BY_APP			=	0x04,
 	TRIGGER_BY_HOURLY		=	0x08,
+	TRIGGER_BY_FT			=	0x10,
 }PPG_TARGGER_SOUCE;
 
 typedef enum
@@ -153,6 +154,7 @@ extern bool ppg_bpt_cal_need_update;
 
 extern uint8_t g_ppg_trigger;
 extern uint8_t g_ppg_ver[64];
+extern uint8_t ppg_test_info[256];
 
 extern uint8_t g_hr;
 extern uint8_t g_hr_menu;

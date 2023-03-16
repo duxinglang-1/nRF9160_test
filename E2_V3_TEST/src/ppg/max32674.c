@@ -57,6 +57,11 @@ static bool ppg_stop_cal_flag = false;
 static bool menu_start_hr = false;
 static bool menu_start_spo2 = false;
 static bool menu_start_bpt = false;
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+static bool ft_start_hr = false;
+#endif
+
+uint8_t ppg_test_info[256] = {0};
 
 uint8_t ppg_power_flag = 0;	//0:关闭 1:正在启动 2:启动成功
 static uint8_t whoamI=0, rst=0;
@@ -984,7 +989,11 @@ void PPGGetSensorHubData(void)
 				else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 				{
 					//accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
-					//max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
+				#ifdef CONFIG_FACTORY_TEST_SUPPORT
+					if(IsFTPPGTesting())
+						max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
+				#endif	
+					
 					whrm_wspo2_suite_data_rx_mode1(&sensorhub_out, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE]);
 					
 				#ifdef PPG_DEBUG
@@ -999,6 +1008,25 @@ void PPGGetSensorHubData(void)
 					}
 				}
 			}
+
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			if(IsFTPPGTesting())
+			{
+				uint8_t ft_hr,ft_spo2;
+
+				ft_hr = sensorhub_out.hr/10 + ((sensorhub_out.hr%10 > 4) ? 1 : 0);
+				ft_spo2 = sensorhub_out.spo2/10 + ((sensorhub_out.spo2%10 > 4) ? 1 : 0);
+				sprintf(ppg_test_info, "Green: %d, %d\nIR:           %d, %d\nRed:       %d, %d\nSkin:      %d\nHR:          %d   SPO2:      %d", 
+																				max86176.led1,max86176.led2,
+																				max86176.led3,max86176.led4,
+																				max86176.led5,max86176.led6,
+																				sensorhub_out.scd_contact_state,
+																				ft_hr,ft_spo2);
+
+				FTPPGStatusUpdate(ft_hr, ft_spo2);
+				return;
+			}
+		#endif
 
 			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
@@ -1019,6 +1047,7 @@ void PPGGetSensorHubData(void)
 				#ifdef PPG_DEBUG
 					LOGD("hr:%d", hr);
 				#endif
+
 					if(hr > 0)
 					{
 						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
@@ -1167,6 +1196,26 @@ void ppg_delay_start_timerout(struct k_timer *timer_id)
 {
 	ppg_delay_start_flag = true;
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void FTTrigger(void)
+{
+	g_ppg_trigger = TRIGGER_BY_FT;
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+	g_ppg_data = PPG_DATA_HR;
+	ppg_start_flag = true;
+}
+
+void FTStartPPG(void)
+{
+	ft_start_hr = true;
+}
+
+void FTStopPPG(void)
+{
+	ppg_stop_flag = true;
+}
+#endif
 
 void TimerStartHr(void)
 {
@@ -1796,6 +1845,14 @@ void PPGStopCheck(void)
 		}
 	}
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if((g_ppg_trigger&TRIGGER_BY_FT) != 0)
+	{
+		FTPPGStatusUpdate(0, 0);
+		return;
+	}
+#endif
+
 	last_health.timestamp.year = date_time.year;
 	last_health.timestamp.month = date_time.month; 
 	last_health.timestamp.day = date_time.day;
@@ -1892,7 +1949,15 @@ void PPGMsgProcess(void)
 		SH_OTA_upgrade_process();
 		ppg_fw_upgrade_flag = false;
 	}
-	
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(ft_start_hr)
+	{
+		FTTrigger();
+		ft_start_hr = false;
+	}
+#endif
+
 	if(menu_start_hr)
 	{
 		MenuTriggerHr();

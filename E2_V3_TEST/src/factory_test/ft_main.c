@@ -121,7 +121,7 @@ void FTMainMenu11Proc(void)
 void FTMainMenu12Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuGPS();
+	//EnterFTMenuGPS();
 }
 
 void FTMainMenu13Proc(void)
@@ -132,6 +132,7 @@ void FTMainMenu13Proc(void)
 void FTMainMenu14Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuPPG();
 }
 
 void FTMainMenu15Proc(void)
@@ -497,6 +498,7 @@ void FactoryTestProccess(void)
 		FTMenuPMUProcess();
 		break;	
 	case FT_PPG:
+		FTMenuPPGProcess();
 		break;
 	case FT_SIM:
 		FTMenuSIMProcess();

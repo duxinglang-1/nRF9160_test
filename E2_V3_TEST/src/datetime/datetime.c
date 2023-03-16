@@ -527,8 +527,10 @@ void UpdateSystemTime(void)
 				}
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}
-			
+
+		#ifdef CONFIG_ALARM_SUPPORT	
 			AlarmRemindCheck(date_time);
+		#endif
 			//TimeCheckSendLocationData();
 		}
 	#endif

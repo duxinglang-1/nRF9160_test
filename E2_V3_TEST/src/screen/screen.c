@@ -31,7 +31,9 @@
 #include "ucs2.h"
 #include "nb.h"
 #include "sos.h"
+#ifdef CONFIG_ALARM_SUPPORT
 #include "alarm.h"
+#endif
 #include "gps.h"
 #include "uart_ble.h"
 #ifdef CONFIG_TOUCH_SUPPORT
@@ -1004,46 +1006,6 @@ bool IsInIdleScreen(void)
 		return false;
 }
 
-#if 0
-void AlarmScreenProcess(void)
-{
-	uint16_t rect_x,rect_y,rect_w=180,rect_h=80;
-	uint16_t x,y,w,h;
-	uint8_t notify[128] = "Alarm Notify!";
-
-	switch(scr_msg[SCREEN_ID_ALARM].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATED;
-				
-		rect_x = (LCD_WIDTH-rect_w)/2;
-		rect_y = (LCD_HEIGHT-rect_h)/2;
-		
-		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
-		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_28);
-	#else
-		LCD_SetFontSize(FONT_SIZE_24);
-	#endif
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > rect_w)? 0 : (rect_w-w)/2;
-		y = (h > rect_h)? 0 : (rect_h-h)/2;
-		x += rect_x;
-		y += rect_y;
-		LCD_ShowString(x,y,notify);
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
-}
-#endif
-
 void poweroff_confirm(void)
 {
 	k_timer_stop(&mainmenu_timer);
@@ -1176,44 +1138,6 @@ void PowerOffScreenProcess(void)
 	}
 	
 	scr_msg[SCREEN_ID_POWEROFF].act = SCREEN_ACTION_NO;
-}
-
-void FindDeviceScreenProcess(void)
-{
-	uint16_t rect_x,rect_y,rect_w=180,rect_h=80;
-	uint16_t x,y,w,h;
-	uint8_t notify[128] = "Find Device!";
-
-	switch(scr_msg[SCREEN_ID_FIND_DEVICE].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATED;
-				
-		rect_x = (LCD_WIDTH-rect_w)/2;
-		rect_y = (LCD_HEIGHT-rect_h)/2;
-		
-		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
-		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_28);
-	#else	
-		LCD_SetFontSize(FONT_SIZE_24);
-	#endif
-		LCD_MeasureString(notify,&w,&h);
-		x = (w > rect_w)? 0 : (rect_w-w)/2;
-		y = (h > rect_h)? 0 : (rect_h-h)/2;
-		x += rect_x;
-		y += rect_y;
-		LCD_ShowString(x,y,notify);
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 }
 
 void SettingsUpdateStatus(void)
@@ -5930,6 +5854,45 @@ void EnterIdleScreen(void)
 #endif	
 }
 
+#ifdef CONFIG_ALARM_SUPPORT
+void AlarmScreenProcess(void)
+{
+	uint16_t rect_x,rect_y,rect_w=180,rect_h=80;
+	uint16_t x,y,w,h;
+	uint8_t notify[128] = "Alarm Notify!";
+
+	switch(scr_msg[SCREEN_ID_ALARM].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATED;
+				
+		rect_x = (LCD_WIDTH-rect_w)/2;
+		rect_y = (LCD_HEIGHT-rect_h)/2;
+		
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_28);
+	#else
+		LCD_SetFontSize(FONT_SIZE_24);
+	#endif
+		LCD_MeasureString(notify,&w,&h);
+		x = (w > rect_w)? 0 : (rect_w-w)/2;
+		y = (h > rect_h)? 0 : (rect_h-h)/2;
+		x += rect_x;
+		y += rect_y;
+		LCD_ShowString(x,y,notify);
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_NO;
+}
+
 void EnterAlarmScreen(void)
 {
 	if(screen_id == SCREEN_ID_ALARM)
@@ -5942,6 +5905,44 @@ void EnterAlarmScreen(void)
 	screen_id = SCREEN_ID_ALARM;	
 	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATING;	
+}
+
+void FindDeviceScreenProcess(void)
+{
+	uint16_t rect_x,rect_y,rect_w=180,rect_h=80;
+	uint16_t x,y,w,h;
+	uint8_t notify[128] = "Find Device!";
+
+	switch(scr_msg[SCREEN_ID_FIND_DEVICE].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATED;
+				
+		rect_x = (LCD_WIDTH-rect_w)/2;
+		rect_y = (LCD_HEIGHT-rect_h)/2;
+		
+		LCD_DrawRectangle(rect_x, rect_y, rect_w, rect_h);
+		LCD_Fill(rect_x+1, rect_y+1, rect_w-2, rect_h-2, BLACK);
+
+	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_28);
+	#else	
+		LCD_SetFontSize(FONT_SIZE_24);
+	#endif
+		LCD_MeasureString(notify,&w,&h);
+		x = (w > rect_w)? 0 : (rect_w-w)/2;
+		y = (h > rect_h)? 0 : (rect_h-h)/2;
+		x += rect_x;
+		y += rect_y;
+		LCD_ShowString(x,y,notify);
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_NO;
 }
 
 void EnterFindDeviceScreen(void)
@@ -5957,6 +5958,7 @@ void EnterFindDeviceScreen(void)
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
 }
+#endif
 
 #ifdef CONFIG_WIFI_SUPPORT
 void TestWifiUpdateInfor(void)
@@ -6622,14 +6624,14 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_IDLE:
 			IdleScreenProcess();
 			break;
-	#if 0		
+	#ifdef CONFIG_ALARM_SUPPORT	
 		case SCREEN_ID_ALARM:
 			AlarmScreenProcess();
 			break;
-	#endif
 		case SCREEN_ID_FIND_DEVICE:
 			FindDeviceScreenProcess();
 			break;
+	#endif		
 	#ifdef CONFIG_PPG_SUPPORT	
 		case SCREEN_ID_HR:
 			HRScreenProcess();

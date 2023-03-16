@@ -9,7 +9,9 @@
 #include "screen.h"
 #include "settings.h"
 #include "datetime.h"
+#ifdef CONFIG_ALARM_SUPPORT
 #include "alarm.h"
+#endif
 #include "lcd.h"
 #include "codetrans.h"
 #include "inner_flash.h"
@@ -20,7 +22,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.0.3_20230307";
+uint8_t g_fw_version[64] = "V3.0.3_20230313";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -567,8 +569,9 @@ void InitSystemSettings(void)
 	}
 
 	InitSystemDateTime();
+#ifdef CONFIG_ALARM_SUPPORT	
 	AlarmRemindInit();
-
+#endif
 	mmi_chset_init();
 }
 

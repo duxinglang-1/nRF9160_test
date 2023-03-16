@@ -421,6 +421,12 @@ config FAST_KEY_SUPPORT
 	default n
 endmenu #FAST_KEY_SUPPORT
 
+menu "ALARM_SUPPORT"
+config ALARM_SUPPORT
+	bool "alarm support"
+	default n
+endmenu #ALARM_SUPPORT
+
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

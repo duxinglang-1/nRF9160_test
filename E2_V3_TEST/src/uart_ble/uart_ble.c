@@ -199,6 +199,7 @@ void CTP_notify_handle(uint8_t *buf, uint32_t len)
 }
 #endif
 
+#ifdef CONFIG_ALARM_SUPPORT
 void APP_set_find_device(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
@@ -232,6 +233,7 @@ void APP_set_find_device(uint8_t *buf, uint32_t len)
 
 	app_find_device = true;	
 }
+#endif
 
 void APP_set_language(uint8_t *buf, uint32_t len)
 {
@@ -432,6 +434,7 @@ void APP_set_date_time(uint8_t *buf, uint32_t len)
 	ble_send_date_handle(reply, reply_len);	
 }
 
+#ifdef CONFIG_ALARM_SUPPORT
 void APP_set_alarm(uint8_t *buf, uint32_t len)
 {
 	uint8_t result=0,reply[128] = {0};
@@ -480,6 +483,7 @@ void APP_set_alarm(uint8_t *buf, uint32_t len)
 
 	ble_send_date_handle(reply, reply_len);	
 }
+#endif
 
 void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 {
@@ -1449,14 +1453,18 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 		break;
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
+	#ifdef CONFIG_ALARM_SUPPORT	
 	case FIND_DEVICE_ID:		//查找手环
 		APP_set_find_device(buf, len);
 		break;
+	#endif	
 	case SMART_NOTIFY_ID:		//智能提醒
 		break;
+	#ifdef CONFIG_ALARM_SUPPORT	
 	case ALARM_SETTING_ID:		//闹钟设置
 		APP_set_alarm(buf, len);
 		break;
+	#endif	
 	case USER_INFOR_ID:			//用户信息
 		break;
 	case SEDENTARY_ID:			//久坐提醒

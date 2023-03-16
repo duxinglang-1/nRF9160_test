@@ -23,7 +23,9 @@
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
+#ifdef CONFIG_ALARM_SUPPORT
 #include "Alarm.h"
+#endif
 #include "lcd.h"
 #include "screen.h"
 #include "settings.h"
@@ -515,6 +517,7 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 
 	ExecKeyHandler(key_code, key_type);
 
+#ifdef CONFIG_ALARM_SUPPORT
 	if(alarm_is_running)
 	{
 		AlarmRemindStop();
@@ -524,6 +527,7 @@ static void key_event_handler(uint8_t key_code, uint8_t key_type)
 	{
 		FindDeviceStop();
 	}
+#endif	
 }
 
 static void button_handler(uint32_t button_state, uint32_t has_changed)

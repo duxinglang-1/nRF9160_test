@@ -18,7 +18,9 @@
 #include <nrfx.h>
 #include "sos.h"
 #include "Max20353.h"
+#ifdef CONFIG_ALARM_SUPPORT
 #include "Alarm.h"
+#endif
 #include "lcd.h"
 #include "screen.h"
 #include "settings.h"

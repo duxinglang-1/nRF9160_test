@@ -464,6 +464,9 @@ void UpdateSystemTime(void)
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+		  #ifdef CONFIG_FACTORY_TEST_SUPPORT
+			&& (!FactryTestActived())
+		  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 		)
 		{
 			//The sensor needs to be turned on in advance. 
@@ -545,6 +548,9 @@ void UpdateSystemTime(void)
 			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 				&& (!dl_is_running())
 			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			  	&& (!FactryTestActived())
+			#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 			)
 		{
 			bool send_flag = false;

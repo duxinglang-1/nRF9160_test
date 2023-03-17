@@ -48,7 +48,7 @@
 		
 #define FT_BLE_TEST_TIMEROUT	1
 	
-static uint8_t ft_ble_status = 0;//1:get the imsi/iccic 2:got the imsi/iccid
+static uint8_t ft_ble_status = 0;//1:ready get the imsi/iccic 2:getting the imsi/iccid 3:got the imsi/iccid
 static bool ft_ble_check_ok = false;
 static bool ft_ble_checking = false;
 
@@ -92,7 +92,23 @@ static void BleTestTimerOutCallBack(struct k_timer *timer_id)
 {
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_BLE))
 	{
-		ft_ble_checking = false;
+		switch(ft_ble_status)
+		{
+		case 1:
+			ft_ble_checking = true;
+			break;
+			
+		case 2:
+			ft_ble_checking = false;
+			if((strlen(g_ble_mac_addr) > 0)&&(strlen(g_nrf52810_ver) > 0))
+				ft_ble_check_ok = true;
+			break;
+			
+		case 3:
+			ft_ble_checking = false;
+			ft_ble_check_ok = true;
+			break;
+		}
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 	}
 }
@@ -139,7 +155,7 @@ static void FTMenuBleUpdate(void)
 				mmi_asc_to_ucs2(tmpbuf, g_ble_mac_addr);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
 				LCD_ShowUniString(FT_BLE_MENU_STR_X, FT_BLE_MENU_STR_Y+(FT_BLE_MENU_STR_H-h)/2+1*FT_BLE_MENU_STR_H, tmpbuf);
-				mmi_asc_to_ucs2(tmpbuf, g_nrf52810_ver);
+				mmi_asc_to_ucs2(tmpbuf, &g_nrf52810_ver[15]);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
 				LCD_ShowUniString(FT_BLE_MENU_STR_X, FT_BLE_MENU_STR_Y+(FT_BLE_MENU_STR_H-h)/2+3*FT_BLE_MENU_STR_H, tmpbuf);
 			}
@@ -182,6 +198,8 @@ static void FTMenuBleShow(void)
 	uint8_t i;
 	uint16_t x,y,w,h;
 	uint16_t title_str[8] = {0x0042,0x004C,0x0045,0x6D4B,0x8BD5,0x0000};//BLE测试
+	uint16_t addr_str[8] = {0x004D,0x0061,0x0063,0x5730,0x5740,0x003A,0x0000}; 	//Mac地址:
+	uint16_t ver_str[8] = {0x56FA,0x4EF6,0x7248,0x672C,0x003A,0x0000}; 			//固件版本:
 	uint16_t sle_str[2][5] = {
 								{0x4E0B,0x4E00,0x9879,0x0000},//下一项
 								{0x9000,0x51FA,0x0000},//退出
@@ -198,8 +216,30 @@ static void FTMenuBleShow(void)
 	LCD_SetFontSize(FONT_SIZE_36);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_BLE_TITLE_X+(FT_BLE_TITLE_W-w)/2, FT_BLE_TITLE_Y, title_str);
-	LCD_MeasureUniString(notify_str, &w, &h);
-	LCD_ShowUniString(FT_BLE_NOTIFY_X+(FT_BLE_NOTIFY_W-w)/2, FT_BLE_NOTIFY_Y+(FT_BLE_NOTIFY_H-h)/2, notify_str);
+
+	if((strlen(g_ble_mac_addr) > 0)&&(strlen(g_nrf52810_ver) > 0))
+	{
+		uint8_t tmpbuf[256] = {0};
+
+		LCD_SetFontSize(FONT_SIZE_28);
+		LCD_MeasureUniString(addr_str, &w, &h);
+		LCD_ShowUniString(FT_BLE_MENU_STR_X, FT_BLE_MENU_STR_Y+(FT_BLE_MENU_STR_H-h)/2+0*FT_BLE_MENU_STR_H, addr_str);
+		LCD_MeasureUniString(ver_str, &w, &h);
+		LCD_ShowUniString(FT_BLE_MENU_STR_X, FT_BLE_MENU_STR_Y+(FT_BLE_MENU_STR_H-h)/2+2*FT_BLE_MENU_STR_H, ver_str);
+
+		LCD_SetFontSize(FONT_SIZE_20);
+		mmi_asc_to_ucs2(tmpbuf, g_ble_mac_addr);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(FT_BLE_MENU_STR_X, FT_BLE_MENU_STR_Y+(FT_BLE_MENU_STR_H-h)/2+1*FT_BLE_MENU_STR_H, tmpbuf);
+		mmi_asc_to_ucs2(tmpbuf, &g_nrf52810_ver[15]);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(FT_BLE_MENU_STR_X, FT_BLE_MENU_STR_Y+(FT_BLE_MENU_STR_H-h)/2+3*FT_BLE_MENU_STR_H, tmpbuf);
+	}
+	else
+	{
+		LCD_MeasureUniString(notify_str, &w, &h);
+		LCD_ShowUniString(FT_BLE_NOTIFY_X+(FT_BLE_NOTIFY_W-w)/2, FT_BLE_NOTIFY_Y+(FT_BLE_NOTIFY_H-h)/2, notify_str);
+	}
 
 	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(sle_str[0], &w, &h);
@@ -276,7 +316,7 @@ void EnterFTMenuBle(void)
 	}
 	else
 	{
-		ft_ble_status = 2;
+		ft_ble_status = 3;
 	}
 	
 	k_timer_start(&ble_test_timer, K_SECONDS(FT_BLE_TEST_TIMEROUT), K_NO_WAIT);

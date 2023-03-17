@@ -107,7 +107,6 @@ static void FTMenuPPGStartTest(void)
 
 static void PPGTestTimerOutCallBack(struct k_timer *timer_id)
 {
-	LOGD("begin");
 	FTMenuPPGStopTest();
 }
 
@@ -120,8 +119,6 @@ static void FTMenuPPGUpdate(void)
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 							  };
 
-	LOGD("check:%d", ft_ppg_checking);
-	
 	if(ft_ppg_checking)
 	{
 		uint8_t tmpbuf[512] = {0};

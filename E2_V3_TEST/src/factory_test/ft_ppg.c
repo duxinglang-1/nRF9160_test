@@ -92,6 +92,7 @@ static void FTMenuPPGSle2Hander(void)
 static void FTMenuPPGStopTest(void)
 {
 	ft_ppg_checking = false;
+	ft_ppg_check_ok = false;
 	k_timer_stop(&ppg_test_timer);
 	FTStopPPG();
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
@@ -255,6 +256,7 @@ void ExitFTMenuPPG(void)
 	ft_ppg_checking = false;
 	ft_ppg_check_ok = false;
 	k_timer_stop(&ppg_test_timer);
+	FTStopPPG();
 	ReturnFTMainMenu();
 }
 

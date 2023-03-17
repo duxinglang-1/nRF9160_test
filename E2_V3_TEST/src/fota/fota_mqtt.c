@@ -430,6 +430,7 @@ void FotaMsgProc(void)
 	{
 		fota_reboot_flag = false;
 
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 		if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
 		{
 			dl_img_start();
@@ -444,7 +445,8 @@ void FotaMsgProc(void)
 			dl_ppg_start();
 		}
 	#endif
-		else	
+		else
+	#endif		
 		{
 			LCD_Clear(BLACK);
 			sys_reboot(1);

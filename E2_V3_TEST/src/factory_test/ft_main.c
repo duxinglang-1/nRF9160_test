@@ -127,6 +127,7 @@ void FTMainMenu12Proc(void)
 void FTMainMenu13Proc(void)
 {
 	ft_main_menu_index = ft_menu.index;
+	EnterFTMenuNet();
 }
 
 void FTMainMenu14Proc(void)
@@ -482,6 +483,7 @@ void FactoryTestProccess(void)
 		FTMenuVibrateProcess();
 		break;
 	case FT_NET:
+		FTMenuNetProcess();
 		break;
 	case FT_AUDIO:
 		break;

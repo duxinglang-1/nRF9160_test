@@ -1116,7 +1116,9 @@ void PowerOffShowStatus(void)
 		{
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
 		}
-	} 
+	}
+  #else
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
   #endif
  #endif 
 #endif

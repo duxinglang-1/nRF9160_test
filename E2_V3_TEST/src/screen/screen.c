@@ -6317,13 +6317,16 @@ void TestNBUpdateINfor(void)
 {
 	uint8_t tmpbuf[512] = {0};
 
-	LCD_Fill(30, 50, 190, 160, BLACK);
-#ifdef FONTMAKER_UNICODE_FONT
-	mmi_asc_to_ucs2(tmpbuf, nb_test_info);
-	LCD_ShowUniStringInRect(30, 50, 180, 160, (uint16_t*)tmpbuf);	
-#else
-	LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
-#endif
+	if(screen_id == SCREEN_ID_NB_TEST)
+	{
+		LCD_Fill(30, 50, 190, 160, BLACK);
+	#ifdef FONTMAKER_UNICODE_FONT
+		mmi_asc_to_ucs2(tmpbuf, nb_test_info);
+		LCD_ShowUniStringInRect(30, 50, 180, 160, (uint16_t*)tmpbuf);	
+	#else
+		LCD_ShowStringInRect(30, 50, 180, 160, nb_test_info);
+	#endif
+	}
 }
 
 void TestNBShowInfor(void)

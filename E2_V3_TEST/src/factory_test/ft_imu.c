@@ -14,8 +14,8 @@
 #endif
 #include "external_flash.h"
 #include "screen.h"
-#include "settings.h"
 #include "key.h"
+#include "lsm6dso_reg.h"
 #include "ft_main.h"
 #include "ft_imu.h"
 		
@@ -45,7 +45,14 @@
 #define FT_IMU_STR_X				((LCD_WIDTH-FT_IMU_STR_W)/2)
 #define FT_IMU_STR_Y				100
 
+#define FT_IMU_TEST_TIMEROUT	2
+
+static bool ft_imu_start_check = false;
 static bool ft_imu_checked = false;
+
+static void IMUDeayTestCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(imu_test_timer, IMUDeayTestCallBack, NULL);
+
 static void FTMenuIMUDumpProc(void){}
 
 const ft_menu_t FT_MENU_IMU = 
@@ -78,29 +85,43 @@ static void FTMenuIMUSle2Hander(void)
 	ExitFTMenuIMU();
 }
 
+void FTIMUStatusUpdate(void)
+{
+	uint8_t imu_id;
+	
+	imu_id = IMU_GetID();
+	if(imu_id == LSM6DSO_ID)
+	{
+		ft_imu_checked = true;
+	}
+	
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_IMU))
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+}
+
+static void IMUDeayTestCallBack(struct k_timer *timer_id)
+{
+	ft_imu_start_check = true;
+}
+
 static void FTMenuIMUUpdate(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t ret_str[2][5] = {
-								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
+								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 							  };
 
-	if(!ft_imu_checked)
-	{
-		ft_imu_checked = true;
-		
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
-		LCD_Fill(FT_IMU_STR_X, FT_IMU_STR_Y, FT_IMU_STR_W, FT_IMU_STR_H, BLACK);
-		
-		LCD_SetFontSize(FONT_SIZE_52);
-		LCD_SetFontColor(BRRED);
-		LCD_SetFontBgColor(GREEN);
-		LCD_MeasureUniString(ret_str[0], &w, &h);
-		LCD_ShowUniString(FT_IMU_RET_STR_X+(FT_IMU_RET_STR_W-w)/2, FT_IMU_RET_STR_Y+(FT_IMU_RET_STR_H-h)/2, ret_str[0]);
-		LCD_ReSetFontBgColor();
-		LCD_ReSetFontColor();
-	}
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	LCD_Fill(FT_IMU_STR_X, FT_IMU_STR_Y, FT_IMU_STR_W, FT_IMU_STR_H, BLACK);
+	
+	LCD_SetFontSize(FONT_SIZE_52);
+	LCD_SetFontColor(BRRED);
+	LCD_SetFontBgColor(GREEN);
+	LCD_MeasureUniString(ret_str[ft_imu_checked], &w, &h);
+	LCD_ShowUniString(FT_IMU_RET_STR_X+(FT_IMU_RET_STR_W-w)/2, FT_IMU_RET_STR_Y+(FT_IMU_RET_STR_H-h)/2, ret_str[ft_imu_checked]);
+	LCD_ReSetFontBgColor();
+	LCD_ReSetFontColor();
 }
 
 static void FTMenuIMUShow(void)
@@ -112,7 +133,7 @@ static void FTMenuIMUShow(void)
 								{0x4E0B,0x4E00,0x9879,0x0000},//下一项
 								{0x9000,0x51FA,0x0000},//退出
 							};
-	uint16_t notify_str[8] = {0x8BF7,0x5927,0x529B,0x6447,0x6643,0x8BBE,0x5907,0x0000};//请大力摇晃设备
+	uint16_t notify_str[9] = {0x6B63,0x5728,0x83B7,0x53D6,0x4FE1,0x606F,0x2026,0x0000};//正在获取信息…
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
@@ -171,16 +192,17 @@ void FTMenuIMUProcess(void)
 	
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_NO;
 	}
-}
 
-void FTIMUStatusUpdate(void)
-{
-	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_IMU))
-		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	if(ft_imu_start_check)
+	{
+		FTIMUStatusUpdate();
+		ft_imu_start_check = false;
+	}
 }
 
 void ExitFTMenuIMU(void)
 {
+	k_timer_stop(&imu_test_timer);
 	ReturnFTMainMenu();
 }
 
@@ -196,4 +218,6 @@ void EnterFTMenuIMU(void)
 	screen_id = SCREEN_ID_FACTORY_TEST; 
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATING;
+
+	k_timer_start(&imu_test_timer, K_SECONDS(FT_IMU_TEST_TIMEROUT), K_NO_WAIT);
 }

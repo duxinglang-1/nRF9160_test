@@ -73,7 +73,7 @@ const ft_menu_t FT_MENU_PMU =
 
 static void FTMenuPMUSle1Hander(void)
 {
-	FTMainMenu16Proc();
+	FTMainMenu13Proc();
 }
 
 static void FTMenuPMUSle2Hander(void)

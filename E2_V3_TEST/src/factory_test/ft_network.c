@@ -45,9 +45,13 @@
 #define FT_NET_NOTIFY_H				40
 #define FT_NET_NOTIFY_X				((LCD_WIDTH-FT_NET_NOTIFY_W)/2)
 #define FT_NET_NOTIFY_Y				100
-				
-#define FT_NET_TEST_TIMEROUT	10
-			
+
+#if CONFIG_LTE_NETWORK_USE_FALLBACK
+#define FT_NET_TEST_TIMEROUT	(CONFIG_LTE_NETWORK_TIMEOUT*2)
+#else
+#define FT_NET_TEST_TIMEROUT	(CONFIG_LTE_NETWORK_TIMEOUT*1)
+#endif
+
 static bool ft_net_check_ok = false;
 static bool ft_net_checking = false;
 
@@ -78,7 +82,7 @@ const ft_menu_t FT_MENU_NET =
 
 static void FTMenuNetSle1Hander(void)
 {
-	FTMainMenu14Proc();
+	FTMainMenu16Proc();
 }
 
 static void FTMenuNetSle2Hander(void)
@@ -216,16 +220,16 @@ void FTMenuNetProcess(void)
 	}
 }
 
-void FTNetStatusUpdate(uint8_t node_count)
+void FTNetStatusUpdate(uint8_t rssp)
 {
 	static uint8_t count = 0;
 
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_NET))
 	{
-		if(node_count > 0)
+		if((rssp > 0)&&(rssp < 255))
 		{
 			count++;
-			if(count > 1)
+			if(count > 2)
 			{
 				count = 0;
 				ft_net_check_ok = true;
@@ -235,6 +239,14 @@ void FTNetStatusUpdate(uint8_t node_count)
 
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 	}
+}
+
+void IsFTNetTesting(void)
+{
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_NET))
+		return true;
+	else
+		return false;
 }
 
 void ExitFTMenuNet(void)

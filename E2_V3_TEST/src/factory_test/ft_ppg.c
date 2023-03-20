@@ -81,7 +81,7 @@ const ft_menu_t FT_MENU_PPG =
 
 static void FTMenuPPGSle1Hander(void)
 {
-	FTMainMenu15Proc();
+	FTMainMenu12Proc();
 }
 
 static void FTMenuPPGSle2Hander(void)

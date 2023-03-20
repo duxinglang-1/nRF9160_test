@@ -76,7 +76,7 @@ const ft_menu_t FT_MENU_VIB =
 
 static void FTMenuVibSle1Hander(void)
 {
-	ExitFTMenuVibrate();
+	FTMainMenu14Proc();
 }
 
 static void FTMenuVibSle2Hander(void)
@@ -114,7 +114,7 @@ static void FTMenuVibShow(void)
 	uint16_t x,y,w,h;
 	uint16_t title_str[5] = {0x9707,0x52A8,0x6D4B,0x8BD5,0x0000};//震动测试
 	uint16_t sle_str[2][5] = {
-								{0x5B8C,0x6210,0x0000},//完成
+								{0x4E0B,0x4E00,0x9879,0x0000},//下一项
 								{0x9000,0x51FA,0x0000},//退出
 							 };
 	uint16_t status_str[2][5] = {

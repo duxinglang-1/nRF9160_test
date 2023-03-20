@@ -81,7 +81,7 @@ const ft_menu_t FT_MENU_GPS =
 
 static void FTMenuGPSSle1Hander(void)
 {
-	FTMainMenu13Proc();
+	ExitFTMenuGPS();
 }
 
 static void FTMenuGPSSle2Hander(void)
@@ -159,7 +159,7 @@ static void FTMenuGPSShow(void)
 	uint16_t x,y,w,h;
 	uint16_t title_str[8] = {0x0047,0x0050,0x0053,0x6D4B,0x8BD5,0x0000};//GPS测试
 	uint16_t sle_str[2][5] = {
-								{0x4E0B,0x4E00,0x9879,0x0000},//下一项
+								{0x5B8C,0x6210,0x0000},//完成
 								{0x9000,0x51FA,0x0000},//退出
 							  };
 	uint16_t notify_str[10] = {0x641C,0x5BFB,0x536B,0x661F,0x4FE1,0x53F7,0x2026,0x0000};//搜寻卫星信号…

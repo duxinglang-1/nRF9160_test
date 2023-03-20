@@ -17,7 +17,6 @@
 #endif
 #include "nb.h"
 #include "external_flash.h"
-#include "fota_mqtt.h"
 #include "screen.h"
 #include "settings.h"
 #include "logger.h"
@@ -54,98 +53,98 @@ void FTMainDumpProc(void)
 
 void FTMainMenu1Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 0;
 	EnterFTMenuCur();
 }
 
 void FTMainMenu2Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 1;
 	EnterFTMenuKey();
 }
 
 void FTMainMenu3Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 2;
 	EnterFTMenuLcd();
 }
 
 void FTMainMenu4Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 3;
 	EnterFTMenuTouch();
 }
 
 void FTMainMenu5Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 4;
 	EnterFTMenuTemp();
 }
 
 void FTMainMenu6Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 5;
 	EnterFTMenuWrist();
 }
 
 void FTMainMenu7Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 6;
 	EnterFTMenuIMU();
 }
 
 void FTMainMenu8Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 7;
 	EnterFTMenuFlash();
 }
 
 void FTMainMenu9Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 8;
 	EnterFTMenuSIM();
 }
 
 void FTMainMenu10Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
+	ft_main_menu_index = 9;
 	EnterFTMenuBle();
 }
 
 void FTMainMenu11Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuWifi();
+	ft_main_menu_index = 10;
+	EnterFTMenuPPG();
 }
 
 void FTMainMenu12Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuGPS();
+	ft_main_menu_index = 11;
+	EnterFTMenuPMU();
 }
 
 void FTMainMenu13Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuNet();
+	ft_main_menu_index = 12;
+	EnterFTMenuVibrate();
 }
 
 void FTMainMenu14Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuPPG();
+	ft_main_menu_index = 13;
+	EnterFTMenuWifi();	
 }
 
 void FTMainMenu15Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuPMU();
+	ft_main_menu_index = 14;
+	EnterFTMenuNet();
 }
 
 void FTMainMenu16Proc(void)
 {
-	ft_main_menu_index = ft_menu.index;
-	EnterFTMenuVibrate();
+	ft_main_menu_index = 15;
+	EnterFTMenuGPS();
 }
 
 static void FTMainMenuProcess(void)
@@ -243,12 +242,12 @@ const ft_menu_t FT_MENU_MAIN =
 		{0x0046,0x004C,0x0041,0x0053,0x0048,0x6D4B,0x8BD5,0x0000},	//FLASH≤‚ ‘
 		{0x0053,0x0049,0x004D,0x5361,0x6D4B,0x8BD5,0x0000},			//SIMø®≤‚ ‘
 		{0x0042,0x004C,0x0045,0x6D4B,0x8BD5,0x0000},				//BLE≤‚ ‘
-		{0x0057,0x0069,0x0046,0x0069,0x6D4B,0x8BD5,0x0000},			//WiFi≤‚ ‘
-		{0x0047,0x0050,0x0053,0x6D4B,0x8BD5,0x0000},				//GPS≤‚ ‘
-		{0x7F51,0x7EDC,0x6D4B,0x8BD5,0x0000},						//Õ¯¬Á≤‚ ‘
 		{0x0050,0x0050,0x0047,0x6D4B,0x8BD5,0x0000},				//PPG≤‚ ‘
 		{0x5145,0x7535,0x6D4B,0x8BD5,0x0000},						//≥‰µÁ≤‚ ‘
 		{0x9707,0x52A8,0x6D4B,0x8BD5,0x0000},						//’∂Ø≤‚ ‘
+		{0x0057,0x0069,0x0046,0x0069,0x6D4B,0x8BD5,0x0000},			//WiFi≤‚ ‘
+		{0x7F51,0x7EDC,0x6D4B,0x8BD5,0x0000},						//Õ¯¬Á≤‚ ‘
+		{0x0047,0x0050,0x0053,0x6D4B,0x8BD5,0x0000},				//GPS≤‚ ‘
 	},	
 	{
 		FTMainMenu1Proc,
@@ -411,15 +410,15 @@ void EnterFactoryTestScreen(void)
 	AnimaStopShow();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
-	if(TempIsWorking()&&!TempIsWorkingTiming())
+	if(TempIsWorking())
 		MenuStopTemp();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+	if(PPGIsWorking())
 		MenuStopPPG();
 #endif
 #ifdef CONFIG_WIFI_SUPPORT
-	if(IsInWifiScreen()&&wifi_is_working())
+	if(wifi_is_working())
 		MenuStopWifi();
 #endif
 

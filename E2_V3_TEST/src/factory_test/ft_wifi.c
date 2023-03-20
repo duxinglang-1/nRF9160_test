@@ -80,7 +80,7 @@ const ft_menu_t FT_MENU_WIFI =
 
 static void FTMenuWifiSle1Hander(void)
 {
-	FTMainMenu12Proc();
+	FTMainMenu15Proc();
 }
 
 static void FTMenuWifiSle2Hander(void)

@@ -85,12 +85,6 @@ static key_event_msg key_msg = {0};
 
 #ifdef CONFIG_FAST_KEY_SUPPORT
 
-#ifdef CONFIG_QRCODE_SUPPORT
-#define FAST_KEY_HANDLER_TOTAL	2
-#else
-#define FAST_KEY_HANDLER_TOTAL	1
-#endif
-
 static uint8_t key_index = 0;
 static uint8_t fast_key_timer_flag = false;
 
@@ -165,6 +159,8 @@ FastKeyFunc fast_key_fun_sum[] = {
 										EnterDeviceScreen,
 									#endif/*CONFIG_QRCODE_SUPPORT*/
 								};
+
+#define FAST_KEY_HANDLER_TOTAL	(sizeof(fast_key_fun_sum)/sizeof(fast_key_fun_sum[0]))
 
 fast_key_handler_struct fast_key_handler[FAST_KEY_HANDLER_TOTAL] = {0};
 

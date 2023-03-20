@@ -857,7 +857,12 @@ static void modem_configure(void)
 	if(test_nb_flag)
 	{
 		strcpy(nb_test_info, "modem_configure");
+	#ifdef NB_SIGNAL_TEST	
 		TestNBUpdateINfor();
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		FTNetStatusUpdate(0);
+	#endif
 	}
 
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%CESQ=1") != 0)
@@ -886,7 +891,12 @@ static void modem_configure(void)
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "Waitng for carrier registration...");
+		#ifdef NB_SIGNAL_TEST	
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
 		}
 		k_sem_take(&carrier_registered, K_FOREVER);
 	#ifdef NB_DEBUG
@@ -895,7 +905,12 @@ static void modem_configure(void)
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "Registered!");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
 		}
 	#else /* defined(CONFIG_LWM2M_CARRIER) */
 		int err;
@@ -905,7 +920,12 @@ static void modem_configure(void)
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connecting ...");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif
 		}
 		err = lte_lc_init_and_connect();
 		__ASSERT(err == 0, "LTE link could not be established.");
@@ -916,7 +936,12 @@ static void modem_configure(void)
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
 	#endif
@@ -943,6 +968,22 @@ void MenuStopNB(void)
 	if(k_timer_remaining_get(&get_nw_rsrp_timer) > 0)
 		k_timer_stop(&get_nw_rsrp_timer);
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void FTStopNet(void)
+{
+	nb_is_running = false;
+	test_nb_flag = false;
+
+	if(k_timer_remaining_get(&get_nw_rsrp_timer) > 0)
+		k_timer_stop(&get_nw_rsrp_timer);
+}
+
+void FTStartNet(void)
+{
+	test_nb_on = true;
+}
+#endif
 
 void NBGetNetMode(uint8_t *at_mode_set)
 {
@@ -1206,8 +1247,8 @@ void GetModemDateTime(void)
 	#endif
 	
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-	  if(FactryTestActived())
-	  	return;
+	  	if(FactryTestActived())
+	  		return;
 	#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
 	#ifndef NB_SIGNAL_TEST
@@ -1954,6 +1995,44 @@ static void MqttReceData(uint8_t *data, uint32_t datalen)
 	ParseReceDataStart();
 }
 
+static int configure_normal_power(void)
+{
+	int err;
+	uint8_t buf[128] = {0};
+	bool enable = false;
+	
+	err = lte_lc_psm_req(enable);
+	if(err)
+	{
+	#ifdef NB_DEBUG
+		LOGD("lte_lc_psm_req, error: %d", err);
+	#endif
+		return err;
+	}
+
+	if(enable)
+	{
+	#ifdef NB_DEBUG
+		LOGD("PSM requested");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("PSM disabled");
+	#endif
+	}
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CPSMS?") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("PSM:%s", buf);
+	#endif
+	}
+
+	return 0;
+}
+
 static int configure_low_power(void)
 {
 	int err;
@@ -2039,7 +2118,12 @@ void GetModemSignal(void)
 	if(test_nb_flag)
 	{
 		sprintf(nb_test_info, " snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
-		nb_test_update_flag = true;
+	#ifdef NB_SIGNAL_TEST
+		TestNBUpdateINfor();
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		FTNetStatusUpdate(rsrp);
+	#endif	
 	}
 	else
 	{
@@ -2641,7 +2725,7 @@ void SetModemAPN(void)
 static void modem_init(struct k_work *work)
 {
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactryTestActived())
+	if(FactryTestActived()&&!IsFTNetTesting())
 		return;
 #endif
 
@@ -2676,7 +2760,7 @@ static void nb_link(struct k_work *work)
 	static bool frist_flag = false;
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactryTestActived())
+	if(FactryTestActived()&&!IsFTNetTesting())
 		return;
 #endif
 
@@ -2726,12 +2810,17 @@ static void nb_link(struct k_work *work)
 	#endif
 
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-		if(FactryTestActived())
+		if(FactryTestActived()&&!IsFTNetTesting())
 			return;
 	#endif
 
 		nb_connecting_flag = true;
-		configure_low_power();
+
+		if(test_nb_flag)
+			configure_normal_power();
+		else
+			configure_low_power();
+
 		err = lte_lc_init_and_connect();
 		if(err)
 		{
@@ -2768,7 +2857,12 @@ static void nb_link(struct k_work *work)
 			if(test_nb_flag)
 			{
 				strcpy(nb_test_info, "LTE Link Connected!");
-				nb_test_update_flag = true;
+			#ifdef NB_SIGNAL_TEST
+				TestNBUpdateINfor();
+			#endif
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+				FTNetStatusUpdate(0);
+			#endif	
 				k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 			}
 			
@@ -2869,7 +2963,6 @@ void nb_test_update(void)
 
 void NBMsgProcess(void)
 {
-#ifdef NB_SIGNAL_TEST
 	if(test_nb_on)
 	{
 		test_nb_on = false;
@@ -2885,13 +2978,23 @@ void NBMsgProcess(void)
 		if(nb_is_connected())
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
 		else if(nb_is_connecting())
 		{
 			strcpy(nb_test_info, "LTE Link Connecting ...");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
 		}
 		else
 		{
@@ -2900,7 +3003,6 @@ void NBMsgProcess(void)
 			modem_configure();
 		}
 	}
-#endif
 
 	if(get_modem_info_flag)
 	{	

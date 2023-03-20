@@ -84,53 +84,102 @@ void ClearAllStepRecData(void)
 void SetCurDayStepRecData(uint16_t data)
 {
 	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
-	step_rec2_data *p_step = NULL;
+	step_rec2_data *p_step,tmp_step = {0};
+	sys_date_timer_t temp_date = {0};
+	
+	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	TimeIncrease(&temp_date, 60);
+
+	tmp_step.year = temp_date.year;
+	tmp_step.month = temp_date.month;
+	tmp_step.day = temp_date.day;
+	tmp_step.steps[temp_date.hour] = data;
+
 	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-
-	p_step = tmpbuf+6*sizeof(step_rec2_data);
-	if(((date_time.year > p_step->year)&&(p_step->year != 0xffff && p_step->year != 0x0000))
-		||((date_time.year == p_step->year)&&(date_time.month > p_step->month)&&(p_step->month != 0xff && p_step->month != 0x00))
-		||((date_time.month == p_step->month)&&(date_time.day > p_step->day)&&(p_step->day != 0xff && p_step->day != 0x00)))
-	{//记录存满。整体前挪并把最新的放在最后
-		step_rec2_data tmp_step = {0};
-
-	#ifdef IMU_DEBUG
-		LOGD("rec is full! step:%d", data);
-	#endif
-		tmp_step.year = date_time.year;
-		tmp_step.month = date_time.month;
-		tmp_step.day = date_time.day;
-		tmp_step.steps[date_time.hour] = data;
-		memcpy(&tmpbuf[0], &tmpbuf[sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
-		memcpy(&tmpbuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+	p_step = tmpbuf;
+	if((p_step->year == 0xffff || p_step->year == 0x0000)
+		||(p_step->month == 0xff || p_step->month == 0x00)
+		||(p_step->day == 0xff || p_step->day == 0x00)
+		||((p_step->year == temp_date.year)&&(p_step->month == temp_date.month)&&(p_step->day == temp_date.day))
+		)
+	{
+		//直接覆盖写在第一条
+		p_step->year = temp_date.year;
+		p_step->month = temp_date.month;
+		p_step->day = temp_date.day;
+		p_step->steps[temp_date.hour] = data;
 		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	}
+	else if((temp_date.year < p_step->year)
+			||((temp_date.year == p_step->year)&&(temp_date.month < p_step->month))
+			||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day < p_step->day))
+			)
+	{
+		uint8_t databuf[STEP_REC2_DATA_SIZE] = {0};
+		
+		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
+		memcpy(&databuf[0*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+		memcpy(&databuf[1*sizeof(step_rec2_data)], &tmpbuf[0*sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
+		SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
 	}
 	else
 	{
-	#ifdef IMU_DEBUG
-		LOGD("rec not full! step:%d", data);
-	#endif
+		uint8_t databuf[STEP_REC2_DATA_SIZE] = {0};
+		
+		//寻找合适的插入位置
 		for(i=0;i<7;i++)
 		{
-			p_step = tmpbuf + i*sizeof(step_rec2_data);
-			if((p_step->year == 0xffff || p_step->year == 0x0000)||(p_step->month == 0xff || p_step->month == 0x00)||(p_step->day == 0xff || p_step->day == 0x00))
+			p_step = tmpbuf+i*sizeof(step_rec2_data);
+			if((p_step->year == 0xffff || p_step->year == 0x0000)
+				||(p_step->month == 0xff || p_step->month == 0x00)
+				||(p_step->day == 0xff || p_step->day == 0x00)
+				||((p_step->year == temp_date.year)&&(p_step->month == temp_date.month)&&(p_step->day == temp_date.day))
+				)
 			{
-				p_step->year = date_time.year;
-				p_step->month = date_time.month;
-				p_step->day = date_time.day;
-				p_step->steps[date_time.hour] = data;
+				//直接覆盖写
+				p_step->year = temp_date.year;
+				p_step->month = temp_date.month;
+				p_step->day = temp_date.day;
+				p_step->steps[temp_date.hour] = data;
 				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-				break;
+				return;
 			}
-			
-			if((p_step->year == date_time.year)&&(p_step->month == date_time.month)&&(p_step->day == date_time.day))
+			else if((temp_date.year > p_step->year)
+				||((temp_date.year == p_step->year)&&(temp_date.month > p_step->month))
+				||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day > p_step->day))
+				)
 			{
-				p_step->steps[date_time.hour] = data;
-				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-				break;
+				if(i < 6)
+				{
+					p_step++;
+					if((temp_date.year < p_step->year)
+						||((temp_date.year == p_step->year)&&(temp_date.month < p_step->month))
+						||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day < p_step->day))
+						)
+					{
+						break;
+					}
+				}
 			}
 		}
-	}
+
+		if(i<6)
+		{
+			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
+			memcpy(&databuf[0*sizeof(step_rec2_data)], &tmpbuf[0*sizeof(step_rec2_data)], (i+1)*sizeof(step_rec2_data));
+			memcpy(&databuf[(i+1)*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+			memcpy(&databuf[(i+2)*sizeof(step_rec2_data)], &tmpbuf[(i+1)*sizeof(step_rec2_data)], (7-(i+2))*sizeof(step_rec2_data));
+			SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+		}
+		else
+		{
+			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
+			memcpy(&databuf[0*sizeof(step_rec2_data)], &tmpbuf[1*sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
+			memcpy(&databuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
+			SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+		}
+	}	
 }
 
 void GetCurDayStepRecData(uint16_t *databuf)

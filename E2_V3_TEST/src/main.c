@@ -29,7 +29,9 @@
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #endif
+#ifdef CONFIG_ALARM_SUPPORT
 #include "Alarm.h"
+#endif
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
@@ -535,6 +537,7 @@ void test_show_color(void)
 void test_show_string(void)
 {
 	uint16_t x,y,w,h;
+	uint8_t tmpbuf[256] = {0};
 	uint8_t enbuf[64] = {0};
 	uint8_t cnbuf[64] = {0};
 	uint8_t jpbuf[64] = {0};
@@ -546,6 +549,13 @@ void test_show_string(void)
 	
 	POINT_COLOR=WHITE;								//»­±ÊÑÕÉ«
 	BACK_COLOR=BLACK;  								//±³¾°É« 
+
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+ 	mmi_asc_to_ucs2(tmpbuf, " G:153853,160004\nIR:401502,403683\n R:425776,428105\nhr:0 spo2:0");
+ 	LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
+
+	return;
 
 #ifdef FONTMAKER_UNICODE_FONT
 #if 0//def FONT_64
@@ -816,7 +826,9 @@ int main(void)
 	#ifdef CONFIG_TOUCH_SUPPORT
 		TPMsgProcess();
 	#endif
+	#ifdef CONFIG_ALARM_SUPPORT
 		AlarmMsgProcess();
+	#endif
 		SettingsMsgPorcess();
 		SOSMsgProc();
 	#ifdef CONFIG_WIFI_SUPPORT

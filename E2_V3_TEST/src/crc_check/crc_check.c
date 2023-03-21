@@ -15,6 +15,8 @@
 #include "crc_check.h"
 #include "logger.h"
 
+#define CRC_DEBUG
+
 CRC_8 crc_8 = {0x07,0x00,0x00,false,false};
 CRC_8 crc_8_ITU = {0x07,0x00,0x55,false,false};
 CRC_8 crc_8_ROHC = {0x07,0xff,0x00,true,true};
@@ -211,7 +213,11 @@ void GenerateCrc8Table(uint8_t *crc8Table)
     for(j=0;j<256;j++)
     {
         if(!(j%16))						//16个数为1行
-            LOGD("\r\n");
+        {
+        #ifdef CRC_DEBUG
+        	LOGD("\r\n");
+		#endif
+        }
  
         crc = (uint8_t)j;
         for(i=0;i<8;i++)             
@@ -222,9 +228,13 @@ void GenerateCrc8Table(uint8_t *crc8Table)
                 crc <<= 1;                    
         }
         crc8Table[j] = crc;//取低字节
+	#ifdef CRC_DEBUG 
         LOGD("%2x ",crc);
+	#endif
     }
+#ifdef CRC_DEBUG	
     LOGD("\r\n");
+#endif
 }
 
 /*****************************************************************************
@@ -275,7 +285,11 @@ void GenerateCrc16Table(uint8_t *crcHighTable, uint8_t *crcLowTable)
     for(j=0;j<256;j++)
     {
         if(!(j%8))
-            LOGD("\r\n");
+		{
+		#ifdef CRC_DEBUG
+			LOGD("\r\n");
+		#endif
+        }
  
         crc = j;
         for(i=0;i<8;i++)             
@@ -287,9 +301,13 @@ void GenerateCrc16Table(uint8_t *crcHighTable, uint8_t *crcLowTable)
         }
         crcHighTable[j] = (uint8_t)(crc&0xff);		//取低字节
         crcLowTable[j] = (uint8_t)((crc>>8)&0xff);	//取高字节
-        LOGD("%4x  ",crc);		
+	#ifdef CRC_DEBUG
+		LOGD("%4x  ",crc);
+	#endif
     }
+#ifdef CRC_DEBUG	
     LOGD("\r\n");
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

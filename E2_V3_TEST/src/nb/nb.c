@@ -865,13 +865,6 @@ static void modem_configure(void)
 	#endif
 	}
 
-	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%CESQ=1") != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("AT_CMD write fail!");
-	#endif
-	}
-
 #if defined(CONFIG_LTE_LINK_CONTROL)
 	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT))
 	{
@@ -881,39 +874,8 @@ static void modem_configure(void)
 	}
 	else
 	{
-	#if defined(CONFIG_LWM2M_CARRIER)
-		/* Wait for the LWM2M_CARRIER to configure the modem and
-		 * start the connection.
-		 */
-	#ifdef NB_DEBUG
-		LOGD("Waitng for carrier registration...");
-	#endif
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "Waitng for carrier registration...");
-		#ifdef NB_SIGNAL_TEST	
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif	
-		}
-		k_sem_take(&carrier_registered, K_FOREVER);
-	#ifdef NB_DEBUG
-		LOGD("Registered!");
-	#endif
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "Registered!");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif	
-		}
-	#else /* defined(CONFIG_LWM2M_CARRIER) */
 		int err;
+
 	#ifdef NB_DEBUG
 		LOGD("LTE Link Connecting ...");
 	#endif
@@ -932,7 +894,7 @@ static void modem_configure(void)
 	#ifdef NB_DEBUG
 		LOGD("LTE Link Connected!");
 	#endif
-	#ifdef NB_SIGNAL_TEST
+
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
@@ -944,8 +906,6 @@ static void modem_configure(void)
 		#endif	
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
-	#endif
-	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
 #endif /* defined(CONFIG_LTE_LINK_CONTROL) */
 }
@@ -982,6 +942,18 @@ void FTStopNet(void)
 void FTStartNet(void)
 {
 	test_nb_on = true;
+}
+
+void FTPreReadyNet(void)
+{
+	struct k_work_sync work_sync;
+
+	if(k_work_pending(&mqtt_link_work))
+		k_work_cancel_delayable(&mqtt_link_work);
+	if(k_work_pending(&nb_link_work))
+		k_work_cancel_delayable(&nb_link_work);
+
+	SetModemTurnOff();
 }
 #endif
 
@@ -2731,7 +2703,7 @@ static void modem_init(struct k_work *work)
 
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
 }
 
 static void modem_on(struct k_work *work)
@@ -3020,8 +2992,15 @@ void NBMsgProcess(void)
 	{
 		GetModemSignal();
 		get_modem_signal_flag = false;
-		if(screen_id == SCREEN_ID_NB_TEST)
+
+		if((screen_id == SCREEN_ID_NB_TEST)
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| IsFTNetTesting()
+			#endif
+			)
+		{
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
+		}
 	}
 
 	if(get_modem_time_flag)

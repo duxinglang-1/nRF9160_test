@@ -370,7 +370,7 @@ static void FactoryTestMainShow(void)
 	LCD_ReSetFontColor();
 
 	//xb add 2023-03-15 Turn off the modem after entering the ft menu to prevent jamming.
-	SetModemTurnOff();
+	FTPreReadyNet();
 }
 
 static void FactoryTestMainProcess(void)

@@ -63,7 +63,6 @@ int dl_target_init(DL_DATA_TYPE data_type, size_t file_size, dl_target_callback_
 
 	if(new_target == NULL)
 	{
-		LOGD("Unknown image type");
 		return -ENOTSUP;
 	}
 
@@ -104,7 +103,6 @@ int dl_target_done(bool successful)
 	err = cur_target->done(successful);
 	if(err != 0)
 	{
-		LOGD("Unable to clean up dfu_target");
 		return err;
 	}
 

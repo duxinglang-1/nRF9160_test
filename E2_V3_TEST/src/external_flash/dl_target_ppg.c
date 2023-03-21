@@ -78,11 +78,15 @@ int dl_target_ppg_done(bool successful)
 
 	if(successful)
 	{
+	#ifdef DL_DEBUG
 		LOGD("ppg data upgrade scheduled. Reset the device to apply");
+	#endif
 	}
 	else
 	{
+	#ifdef DL_DEBUG
 		LOGD("ppg date upgrade aborted.");
+	#endif
 	}
 
 	return err;

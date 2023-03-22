@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-//#define UI_STYLE_HEALTH_BAR
+#define UI_STYLE_HEALTH_BAR
 
 //pwron
 #define PWRON_STR_W		198
@@ -57,10 +57,10 @@ extern "C" {
 #define IDLE_WEEK_Y			105
 
 //ble
-#define IDLE_BLE_X		45
-#define IDLE_BLE_Y		0
-#define IDLE_BLE_W		7
-#define IDLE_BLE_H		16
+#define IDLE_BLE_W		50
+#define IDLE_BLE_H		30
+#define IDLE_BLE_X		((LCD_WIDTH-IDLE_BLE_W)/2)
+#define IDLE_BLE_Y		5
 
 //network mode
 #define IDLE_NET_MODE_W		12

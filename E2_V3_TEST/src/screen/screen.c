@@ -400,15 +400,17 @@ void IdleShowSystemDate(void)
 
 void IdleShowBleStatus(bool flag)
 {
+	uint16_t x,y,w,h;
+	uint16_t ble_link_str[] = {0x0042,0x004C,0x0045,0x0000};//BLE
+	
 	if(flag)
 	{
-		//LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_LINK);
-		LCD_ShowString(IDLE_BLE_X,IDLE_BLE_Y,"BLE");
+		LCD_MeasureUniString(ble_link_str, &w, &h);
+		LCD_ShowUniString(IDLE_BLE_X+(IDLE_BLE_W-w)/2, IDLE_BLE_Y+(IDLE_BLE_H-w)/2, ble_link_str);
 	}
 	else
 	{
-		//LCD_ShowImg(IDLE_BLE_X, IDLE_BLE_Y, IMG_BLE_UNLINK);
-		LCD_ShowString(IDLE_BLE_X,IDLE_BLE_Y,"   ");
+		LCD_FillColor(IDLE_BLE_X, IDLE_BLE_Y, IDLE_BLE_W, IDLE_BLE_H, BLACK);
 	}
 }
 
@@ -5907,6 +5909,19 @@ void EnterAlarmScreen(void)
 	screen_id = SCREEN_ID_ALARM;	
 	scr_msg[SCREEN_ID_ALARM].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_ALARM].status = SCREEN_STATUS_CREATING;	
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	SetLeftKeyUpHandler(AlarmRemindStop);
+	SetRightKeyUpHandler(AlarmRemindStop);
+	
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, AlarmRemindStop);
+	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, AlarmRemindStop);
+	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, AlarmRemindStop);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, AlarmRemindStop);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, AlarmRemindStop);
+#endif	
 }
 
 void FindDeviceScreenProcess(void)
@@ -5959,6 +5974,19 @@ void EnterFindDeviceScreen(void)
 	screen_id = SCREEN_ID_FIND_DEVICE;	
 	scr_msg[SCREEN_ID_FIND_DEVICE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FIND_DEVICE].status = SCREEN_STATUS_CREATING;
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	SetLeftKeyUpHandler(FindDeviceStop);
+	SetRightKeyUpHandler(FindDeviceStop);
+	
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, FindDeviceStop);
+	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, FindDeviceStop);
+	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, FindDeviceStop);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FindDeviceStop);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FindDeviceStop);
+#endif	
 }
 #endif
 

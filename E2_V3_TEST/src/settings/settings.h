@@ -105,29 +105,34 @@ typedef struct
 	menu_handler pg_handler[4];
 }settings_menu_t;
 
-typedef struct{
+typedef struct
+{
 	bool is_on;
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t repeat;	//全是1就是每天提醒，全是0就是只提醒一次，0x1111100就是工作日提醒，其他就是自定义
 }alarm_infor_t;
 
-typedef struct{
+typedef struct
+{
 	bool is_on;
 	uint8_t interval;
 }phd_measure_t;		//整点测量
 
-typedef struct{
+typedef struct
+{
 	uint32_t steps;
 	uint32_t time;
 }location_interval_t;
 
-typedef struct{
+typedef struct
+{
 	uint8_t systolic;		//收缩压
 	uint8_t diastolic;		//舒张压
 }bp_calibra_t;
 
-typedef struct{
+typedef struct
+{
 	bool init;		//system inited flag
 	bool hr_is_on;	//heart rate
 	bool bp_is_on;	//blood pressure

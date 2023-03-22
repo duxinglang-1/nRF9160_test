@@ -175,7 +175,6 @@ extern void SetCurDaySpo2RecData(uint8_t spo2);
 extern void GetCurDaySpo2RecData(uint8_t *databuf);
 extern void SetCurDayHrRecData(uint8_t hr);
 extern void GetCurDayHrRecData(uint8_t *databuf);
-extern void GetHeartRate(uint8_t *HR);
 extern void APPStartHr(void);
 extern void APPStartSpo2(void);
 extern void APPStartBpt(void);

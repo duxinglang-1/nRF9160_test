@@ -238,6 +238,31 @@ void GetCurDayBptRecData(uint8_t *databuf)
 	}
 }
 
+void GetGivenTimeBptRecData(sys_date_timer_t date, bpt_data *bpt)
+{
+	uint8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
+	ppg_bpt_rec2_data bpt_rec2 = {0};
+
+	if(!CheckSystemDateTimeIsValid(date))
+		return;
+	if(bpt == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&bpt_rec2, &tmpbuf[i*sizeof(ppg_bpt_rec2_data)], sizeof(ppg_bpt_rec2_data));
+		if((bpt_rec2.year == 0xffff || bpt_rec2.year == 0x0000)||(bpt_rec2.month == 0xff || bpt_rec2.month == 0x00)||(bpt_rec2.day == 0xff || bpt_rec2.day == 0x00))
+			continue;
+		
+		if((bpt_rec2.year == date.year)&&(bpt_rec2.month == date.month)&&(bpt_rec2.day == date.day))
+		{
+			memcpy(bpt, &bpt_rec2.bpt[date.hour], sizeof(bpt_data));
+			break;
+		}
+	}
+}
+
 void ClearAllSpo2RecData(void)
 {
 	uint8_t tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0xff};
@@ -370,6 +395,31 @@ void GetCurDaySpo2RecData(uint8_t *databuf)
 		if((spo2_rec2.year == date_time.year)&&(spo2_rec2.month == date_time.month)&&(spo2_rec2.day == date_time.day))
 		{
 			memcpy(databuf, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+			break;
+		}
+	}
+}
+
+void GetGivenTimeSpo2RecData(sys_date_timer_t date, uint8_t *spo2)
+{
+	uint8_t i,tmpbuf[PPG_SPO2_REC2_DATA_SIZE] = {0};
+	ppg_spo2_rec2_data spo2_rec2 = {0};
+
+	if(!CheckSystemDateTimeIsValid(date))
+		return;
+	if(spo2 == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&spo2_rec2, &tmpbuf[i*sizeof(ppg_spo2_rec2_data)], sizeof(ppg_spo2_rec2_data));
+		if((spo2_rec2.year == 0xffff || spo2_rec2.year == 0x0000)||(spo2_rec2.month == 0xff || spo2_rec2.month == 0x00)||(spo2_rec2.day == 0xff || spo2_rec2.day == 0x00))
+			continue;
+		
+		if((spo2_rec2.year == date.year)&&(spo2_rec2.month == date.month)&&(spo2_rec2.day == date.day))
+		{
+			*spo2 = spo2_rec2.spo2[date.hour];
 			break;
 		}
 	}
@@ -512,16 +562,26 @@ void GetCurDayHrRecData(uint8_t *databuf)
 	}
 }
 
-void GetHeartRate(uint8_t *HR)
+void GetGivenTimeHrRecData(sys_date_timer_t date, uint8_t *hr)
 {
-	uint32_t heart;
+	uint8_t i,tmpbuf[PPG_HR_REC2_DATA_SIZE] = {0};
+	ppg_hr_rec2_data hr_rec2 = {0};
 
-	while(1)
+	if(!CheckSystemDateTimeIsValid(date))
+		return;	
+	if(hr == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
 	{
-		heart = sys_rand32_get();
-		if(((heart%200)>=60) && ((heart%200)<=160))
+		memcpy(&hr_rec2, &tmpbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));
+		if((hr_rec2.year == 0xffff || hr_rec2.year == 0x0000)||(hr_rec2.month == 0xff || hr_rec2.month == 0x00)||(hr_rec2.day == 0xff || hr_rec2.day == 0x00))
+			continue;
+		
+		if((hr_rec2.year == date.year)&&(hr_rec2.month == date.month)&&(hr_rec2.day == date.day))
 		{
-			*HR = (heart%200);
+			*hr = hr_rec2.hr[date.hour];
 			break;
 		}
 	}
@@ -760,6 +820,21 @@ void StartSensorhubCallBack(void)
 			}
 		}
 	#endif
+		else if((g_ppg_trigger&TRIGGER_BY_MENU) == TRIGGER_BY_APP)
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+			{
+				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_HR_MENU), K_NO_WAIT);
+			}
+			else if(g_ppg_data == PPG_DATA_SPO2)
+			{
+				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_SPO2_MENU), K_NO_WAIT);
+			}
+			else if(g_ppg_data == PPG_DATA_BPT)
+			{
+				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_BPT_MENU), K_NO_WAIT);
+			}
+		}
 	}
 	else
 	{
@@ -1272,6 +1347,8 @@ void TimerStartHr(void)
 
 void APPStartHr(void)
 {
+	uint8_t hr = 0;
+	
 	g_hr = 0;
 	temp_hr_count = 0;
 	memset(&temp_hr, 0x00, sizeof(temp_hr));
@@ -1286,7 +1363,7 @@ void APPStartHr(void)
 	}
 	else
 	{
-		MCU_send_app_get_hr_data();
+		MCU_send_app_get_ppg_data(PPG_DATA_HR, &hr);
 	}
 }
 
@@ -1425,6 +1502,8 @@ void TimerStartSpo2(void)
 
 void APPStartSpo2(void)
 {
+	uint8_t spo2 = 0;
+	
 	g_spo2 = 0;
 	temp_spo2_count	= 0;
 	memset(&temp_spo2, 0x00, sizeof(temp_spo2));	
@@ -1439,7 +1518,7 @@ void APPStartSpo2(void)
 	}
 	else
 	{
-		MCU_send_app_get_hr_data();
+		MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &spo2);
 	}
 }
 
@@ -1576,6 +1655,8 @@ void TimerStartBpt(void)
 
 void APPStartBpt(void)
 {
+	uint8_t tmpbuf[2] = {0};
+	
 	memset(&g_bpt, 0x00, sizeof(bpt_data));
 
 	get_bpt_ok_flag = false;
@@ -1589,6 +1670,7 @@ void APPStartBpt(void)
 	}
 	else
 	{
+		MCU_send_app_get_ppg_data(PPG_DATA_BPT, tmpbuf);
 	}
 }
 
@@ -1804,7 +1886,18 @@ void PPGStopCheck(void)
 	if((g_ppg_trigger&TRIGGER_BY_APP) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_APP);
-		MCU_send_app_get_hr_data();
+		switch(g_ppg_data)
+		{
+		case PPG_DATA_HR:
+			MCU_send_app_get_ppg_data(g_ppg_data, &g_hr);
+			break;
+		case PPG_DATA_SPO2:
+			MCU_send_app_get_ppg_data(g_ppg_data, &g_spo2);
+			break;
+		case PPG_DATA_BPT:
+			MCU_send_app_get_ppg_data(g_ppg_data, (uint8_t*)&g_bpt);
+			break;
+		}
 	}	
 	if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
 	{

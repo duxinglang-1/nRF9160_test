@@ -18,6 +18,7 @@
 #include <drivers/i2c.h>
 #include <logging/log.h>
 #include <nrfx.h>
+#include "uart_ble.h"
 #include "Max32674.h"
 #include "screen.h"
 #include "max_sh_interface.h"
@@ -1901,40 +1902,65 @@ void PPGStopCheck(void)
 	}	
 	if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
 	{
+		bool flag = false;
+		
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_MENU);
-		if(g_ppg_data == PPG_DATA_HR)
+		switch(g_ppg_data)
 		{
+		case PPG_DATA_HR:
+			flag = true;
 			g_hr_menu = g_hr;
-		}
-		else if(g_ppg_data == PPG_DATA_SPO2)
-		{
+			if(g_ble_connected)
+			{
+				MCU_send_app_get_ppg_data(PPG_DATA_HR, &g_hr);
+			}
+			break;
+		case PPG_DATA_SPO2:
+			flag = true;
 			g_spo2_menu = g_spo2;
-		}
-		else if((g_ppg_data == PPG_DATA_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
-		{
-			memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+			if(g_ble_connected)
+			{
+				MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &g_spo2);
+			}
+			break;
+		case PPG_DATA_BPT:
+			if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
+			{
+				flag = true;
+				memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+				if(g_ble_connected)
+				{
+					MCU_send_app_get_ppg_data(PPG_DATA_BPT, (uint8_t*)&g_bpt);
+				}
+			}
+			break;
 		}
 
-		SyncSendHealthData();
-		g_hr_menu = 0;
-		g_spo2_menu = 0;
-		memset(&g_bpt_menu, 0x00, sizeof(bpt_data));
+		if(flag)
+		{
+			SyncSendHealthData();
+			g_hr_menu = 0;
+			g_spo2_menu = 0;
+			memset(&g_bpt_menu, 0x00, sizeof(bpt_data));
+		}
 	}
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
-
-		if(g_ppg_data == PPG_DATA_HR)
+		switch(g_ppg_data)
 		{
+		case PPG_DATA_HR:
 			SetCurDayHrRecData(g_hr);
-		}
-		else if(g_ppg_data == PPG_DATA_SPO2)
-		{
+			break;
+		case PPG_DATA_SPO2:
 			SetCurDaySpo2RecData(g_spo2);
-		}
-		else if((g_ppg_data == PPG_DATA_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
-		{
-			SetCurDayBptRecData(g_bpt);
+			break;
+		case PPG_DATA_BPT:
+			if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
+			{
+				SetCurDayBptRecData(g_bpt);
+			}
+			break;
 		}
 	}
 

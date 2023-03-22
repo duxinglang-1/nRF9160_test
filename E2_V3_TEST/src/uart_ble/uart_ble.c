@@ -134,8 +134,6 @@ K_TIMER_DEFINE(uart_ble_sleep_in_timer, UartBleSleepInCallBack, NULL);
 static void GetBLEInfoCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_ble_info_timer, GetBLEInfoCallBack, NULL);
 
-static void MCU_send_heart_rate(void);
-
 void ble_connect_or_disconnect_handle(uint8_t *buf, uint32_t len)
 {
 #ifdef UART_DEBUG
@@ -494,12 +492,7 @@ void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 	LOGD("flag:%d, interval:%d", buf[6], buf[7]);
 #endif
 
-	if(buf[6] == 1)
-		global_settings.phd_infor.is_on = true;
-	else
-		global_settings.phd_infor.is_on = false;
-
-	global_settings.phd_infor.interval = buf[7];
+	global_settings.health_interval = buf[7];
 	need_save_settings = true;
 	
 	//packet head
@@ -686,30 +679,105 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 }
 #endif
 
-void APP_get_current_data(uint8_t *buf, uint32_t len)
+void MCU_reply_cur_hour_ppg(PPG_DATA_TYPE type, uint8_t *data)
+{
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x0D;
+	//data ID
+	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+	reply[reply_len++] = (uint8_t)(PULL_REFRESH_ID&0x00ff);
+	//status
+	switch(type)
+	{
+	case PPG_DATA_HR://hr
+		reply[reply_len++] = 0x81;
+		break;
+	case PPG_DATA_SPO2://spo2
+		reply[reply_len++] = 0x82;
+		break;
+	case PPG_DATA_BPT://bpt
+		reply[reply_len++] = 0x83;
+		break;
+	}
+	//control
+	reply[reply_len++] = 0x00;
+	//year
+	reply[reply_len++] = (uint8_t)(refresh_time.year>>8);
+	reply[reply_len++] = (uint8_t)(refresh_time.year&0x00ff);
+	//month
+	reply[reply_len++] = refresh_time.month;
+	//day
+	reply[reply_len++] = refresh_time.day;
+	//hour
+	reply[reply_len++] = refresh_time.hour;
+	//minute
+	reply[reply_len++] = refresh_time.minute;
+	//data
+	switch(type)
+	{
+	case PPG_DATA_HR://hr
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_SPO2://spo2
+		reply[reply_len++] = data[1];
+		break;
+	case PPG_DATA_BPT://bpt
+		reply[reply_len++] = data[0];
+		reply[reply_len++] = data[1];
+		break;
+	}
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	ble_send_date_handle(reply, reply_len);
+}
+
+void APP_get_cur_hour_health(sys_date_timer_t ask_time)
+{
+	uint8_t hr = 0,spo2 = 0;
+	bpt_data bpt = {0};
+	uint8_t data[2] = {0};
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+#ifdef CONFIG_PPG_SUPPORT
+	GetGivenTimeHrRecData(ask_time, &hr);
+	GetGivenTimeHrRecData(ask_time, &spo2);
+	GetGivenTimeHrRecData(ask_time, &bpt);
+#endif
+
+	MCU_reply_cur_hour_ppg(PPG_DATA_HR, &hr);
+	MCU_reply_cur_hour_ppg(PPG_DATA_SPO2, &spo2);
+	MCU_reply_cur_hour_ppg(PPG_DATA_BPT, (uint8_t*)&bpt);
+}
+
+void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
 {
 	uint8_t wake,reply[128] = {0};
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;	
 	uint32_t i,reply_len = 0;
 
-#ifdef UART_DEBUG
-	LOGD("%04d/%02d/%02d %02d:%02d", 2000 + buf[7],buf[8],buf[9],buf[10],buf[11]);
-#endif
-
-	refresh_time.year = 2000 + buf[7];
-	refresh_time.month = buf[8];
-	refresh_time.day = buf[9];
-	refresh_time.hour = buf[10];
-	refresh_time.minute = buf[11];
-
 #ifdef CONFIG_IMU_SUPPORT
-  #ifdef CONFIG_STEP_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
-  #endif
-  #ifdef CPNFIG_SLEEP_SUPPORT
+#endif
+#ifdef CPNFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
-  #endif
+#endif
 #endif
 	
 	wake = 8;
@@ -752,11 +820,22 @@ void APP_get_current_data(uint8_t *buf, uint32_t len)
 		reply[reply_len-2] += reply[i];
 
 	ble_send_date_handle(reply, reply_len);
+}
 
-	//上传心率数据
-#ifdef CONFIG_PPG_SUPPORT	
-	MCU_send_heart_rate();
+void APP_get_cur_hour_data(uint8_t *buf, uint32_t len)
+{
+#ifdef UART_DEBUG
+	LOGD("%04d/%02d/%02d %02d:%02d", 2000 + buf[7],buf[8],buf[9],buf[10],buf[11]);
 #endif
+
+	refresh_time.year = 2000 + buf[7];
+	refresh_time.month = buf[8];
+	refresh_time.day = buf[9];
+	refresh_time.hour = buf[10];
+	refresh_time.minute = buf[11];
+
+	APP_get_cur_hour_sport(refresh_time);
+	APP_get_cur_hour_health(refresh_time);
 }
 
 void APP_get_location_data(uint8_t *buf, uint32_t len)
@@ -943,7 +1022,7 @@ void APP_get_firmware_version(uint8_t *buf, uint32_t len)
 }
 
 #ifdef CONFIG_PPG_SUPPORT
-void APP_get_heart_rate(uint8_t *buf, uint32_t len)
+void APP_get_hr(uint8_t *buf, uint32_t len)
 {
 	uint8_t heart_rate,reply[128] = {0};
 	uint32_t i,reply_len = 0;
@@ -951,14 +1030,6 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 #ifdef UART_DEBUG
 	LOGD("type:%d, flag:%d", buf[5], buf[6]);
 #endif
-
-	switch(buf[5])
-	{
-	case 0x01://实时测量心率
-		break;
-	case 0x02://单次测量心率
-		break;
-	}
 
 	switch(buf[6])
 	{
@@ -996,8 +1067,147 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 	}
 	else
 	{
-		g_ppg_trigger |= TRIGGER_BY_APP; 
-		APPStartHr();
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量心率
+			g_ppg_trigger |= TRIGGER_BY_APP; 
+			APPStartHr();
+			break;
+
+		case 0x02://单次测量心率
+			get_cur_health_from_record(&last_data);
+			MCU_send_app_get_ppg_data(PPG_DATA_HR, &last_data.hr);
+			break;
+		}
+	}
+}
+
+void APP_get_spo2(uint8_t *buf, uint32_t len)
+{
+	uint8_t heart_rate,reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("type:%d, flag:%d", buf[5], buf[6]);
+#endif
+
+	switch(buf[6])
+	{
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
+
+	if(buf[6] == 0)
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x07;
+		//data ID
+		reply[reply_len++] = (BLOOD_OXYGEN_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_OXYGEN_ID&0x00ff);
+		//status
+		reply[reply_len++] = buf[5];
+		//control
+		reply[reply_len++] = buf[6];
+		//heart rate
+		reply[reply_len++] = 0;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
+
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		ble_send_date_handle(reply, reply_len);	
+	}
+	else
+	{
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量血氧
+			g_ppg_trigger |= TRIGGER_BY_APP; 
+			APPStartSpo2();
+			break;
+
+		case 0x02://单次测量血氧
+			get_cur_health_from_record(&last_data);
+			MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &last_data.spo2);
+			break;
+		}
+	}
+}
+
+void APP_get_bpt(uint8_t *buf, uint32_t len)
+{
+	uint8_t heart_rate,reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("type:%d, flag:%d", buf[5], buf[6]);
+#endif
+
+	switch(buf[6])
+	{
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
+
+	if(buf[6] == 0)
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x07;
+		//data ID
+		reply[reply_len++] = (BLOOD_PRESSURE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_PRESSURE_ID&0x00ff);
+		//status
+		reply[reply_len++] = buf[5];
+		//control
+		reply[reply_len++] = buf[6];
+		//heart rate
+		reply[reply_len++] = 0;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
+
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		ble_send_date_handle(reply, reply_len);	
+	}
+	else
+	{
+		uint8_t data[2] = {0};
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量血压
+			g_ppg_trigger |= TRIGGER_BY_APP; 
+			APPStartHr();
+			break;
+
+		case 0x02://单次测量血压
+			get_cur_health_from_record(&last_data);
+			data[0] = last_data.systolic;
+			data[1] = last_data.diastolic;
+			MCU_send_app_get_ppg_data(PPG_DATA_BPT, data);
+			break;
+		}
 	}
 }
 #endif
@@ -1220,9 +1430,8 @@ void MCU_send_app_one_key_measure_data(void)
 	ble_send_date_handle(reply, reply_len);
 }
 
-void MCU_send_app_get_hr_data(void)
+void MCU_send_app_get_ppg_data(PPG_DATA_TYPE flag, uint8_t *data)
 {
-	uint8_t heart_rate;
 	uint8_t reply[128] = {0};
 	uint32_t i,reply_len = 0;
 
@@ -1230,70 +1439,44 @@ void MCU_send_app_get_hr_data(void)
 	LOGD("begin");
 #endif
 
-	GetPPGData(&heart_rate, NULL, NULL, NULL);
-	
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
 	reply[reply_len++] = 0x07;
 	//data ID
-	reply[reply_len++] = (HEART_RATE_ID>>8);		
-	reply[reply_len++] = (uint8_t)(HEART_RATE_ID&0x00ff);
+	switch(flag)
+	{
+	case PPG_DATA_HR:
+		reply[reply_len++] = (HEART_RATE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(HEART_RATE_ID&0x00ff);
+		break;
+	case PPG_DATA_SPO2:
+		reply[reply_len++] = (BLOOD_OXYGEN_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_OXYGEN_ID&0x00ff);
+		break;
+	case PPG_DATA_BPT:
+		reply[reply_len++] = (BLOOD_PRESSURE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_PRESSURE_ID&0x00ff);
+		break;
+	}
 	//status
 	reply[reply_len++] = 0x02;
 	//control
 	reply[reply_len++] = 0x01;
-	//heart rate
-	reply[reply_len++] = heart_rate;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-
-	ble_send_date_handle(reply, reply_len);
-}
-
-//手环上报整点心率数据
-void MCU_send_heart_rate(void)
-{
-	uint8_t heart_rate,reply[128] = {0};
-	uint32_t i,reply_len = 0;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-
-	GetHeartRate(&heart_rate);
-	
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x0D;
-	//data ID
-	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
-	reply[reply_len++] = (uint8_t)(PULL_REFRESH_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x81;
-	//control
-	reply[reply_len++] = 0x00;
-	//year
-	reply[reply_len++] = (uint8_t)(date_time.year>>8);
-	reply[reply_len++] = (uint8_t)(date_time.year&0x00ff);
-	//month
-	reply[reply_len++] = date_time.month;
-	//day
-	reply[reply_len++] = date_time.day;
-	//hour
-	reply[reply_len++] = date_time.hour;
-	//minute
-	reply[reply_len++] = date_time.minute;
-	//data
-	reply[reply_len++] = heart_rate;
+	switch(flag)
+	{
+	case PPG_DATA_HR:
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_SPO2:
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_BPT:
+		reply[reply_len++] = data[0];		
+		reply[reply_len++] = data[1];
+		break;
+	}
 	//CRC
 	reply[reply_len++] = 0x00;
 	//packet end
@@ -1434,22 +1617,22 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case BLE_WORK_MODE_ID:
 		nrf52810_report_work_mode(buf, len);//52810工作状态
 		break;
-	case HEART_RATE_ID:			//心率
 	#ifdef CONFIG_PPG_SUPPORT
-		APP_get_heart_rate(buf, len);
-	#endif
+	case HEART_RATE_ID:			//心率
+		APP_get_hr(buf, len);
 		break;
 	case BLOOD_OXYGEN_ID:		//血氧
+		APP_get_spo2(buf, len);
 		break;
 	case BLOOD_PRESSURE_ID:		//血压
+		APP_get_bpt(buf, len);
 		break;
 	case ONE_KEY_MEASURE_ID:	//一键测量
-	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_one_key_measure_data(buf, len);
-	#endif
 		break;
+	#endif
 	case PULL_REFRESH_ID:		//下拉刷新
-		APP_get_current_data(buf, len);
+		APP_get_cur_hour_data(buf, len);
 		break;
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;

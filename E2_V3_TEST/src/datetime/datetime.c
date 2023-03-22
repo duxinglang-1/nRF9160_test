@@ -27,6 +27,7 @@
 #include "temp.h"
 #endif
 #include "screen.h"
+#include "uart_ble.h"
 #include "nb.h"
 #include "ucs2.h"
 #include "logger.h"
@@ -769,6 +770,10 @@ void TimeMsgProcess(void)
 	if(send_timing_data_flag)
 	{
 		TimeCheckSendHealthData();
+		if(g_ble_connected)
+		{
+			APP_get_cur_hour_health(date_time);
+		}
 		send_timing_data_flag = false;
 	}
 }

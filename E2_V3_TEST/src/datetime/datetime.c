@@ -772,6 +772,7 @@ void TimeMsgProcess(void)
 		TimeCheckSendHealthData();
 		if(g_ble_connected)
 		{
+			APP_get_cur_hour_sport(date_time);
 			APP_get_cur_hour_health(date_time);
 		}
 		send_timing_data_flag = false;

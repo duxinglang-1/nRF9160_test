@@ -29,7 +29,7 @@
 #include "esp8266.h"
 #endif
 
-//#define UART_DEBUG
+#define UART_DEBUG
 
 #define BLE_DEV			"UART_2"
 #define BLE_PORT		"GPIO_0"
@@ -273,7 +273,7 @@ void APP_set_language(uint8_t *buf, uint32_t len)
 
 	if(screen_id == SCREEN_ID_IDLE)
 	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_WEEK;
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_WEEK|SCREEN_EVENT_UPDATE_DATE);
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 	
@@ -1550,10 +1550,24 @@ void get_ble_mac_address_response(uint8_t *buf, uint32_t len)
 void get_ble_status_response(uint8_t *buf, uint32_t len)
 {
 #ifdef UART_DEBUG
-	LOGD("BLE_status:%d", buf[6]);
+	LOGD("BLE_status:%d", buf[7]);
 #endif
 
-	g_ble_status = buf[6];
+	g_ble_status = buf[7];
+
+	switch(g_ble_status)
+	{
+	case BLE_STATUS_OFF:
+	case BLE_STATUS_SLEEP:
+	case BLE_STATUS_BROADCAST:
+		g_ble_connected = false;
+		break;
+
+	case BLE_STATUS_CONNECTED:
+		g_ble_connected = true;
+		redraw_blt_status_flag = true;
+		break;
+	}
 }
 
 /**********************************************************************************
@@ -1979,24 +1993,42 @@ void UartMsgProc(void)
 	}
 	if(redraw_blt_status_flag)
 	{
-		IdleShowBleStatus(g_ble_connected);
+		if((screen_id == SCREEN_ID_IDLE)
+			||(screen_id == SCREEN_ID_HR)
+			||(screen_id == SCREEN_ID_SPO2)
+			||(screen_id == SCREEN_ID_BP)
+			||(screen_id == SCREEN_ID_TEMP)
+			||(screen_id == SCREEN_ID_STEPS)
+			||(screen_id == SCREEN_ID_SLEEP)
+			)
+		{
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BLE;
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
+		
 		redraw_blt_status_flag = false;
 	}
 	if(get_ble_info_flag)
 	{
 		static uint8_t index = 0;
 
-		if(index == 0)
+		switch(index)
 		{
+		case 0:
 			index = 1;
 			MCU_get_nrf52810_ver();
 			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
-		}
-		else
-		{
+			break;
+		case 1:
+			index = 2;
 			MCU_get_ble_mac_address();
+			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
+			break;
+		case 2:
+			MCU_get_ble_status();
+			break;
 		}
-		
+
 		get_ble_info_flag = false;
 	}
 }

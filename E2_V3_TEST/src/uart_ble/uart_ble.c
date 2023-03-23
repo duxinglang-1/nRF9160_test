@@ -114,8 +114,6 @@ static struct uart_data_t
 	uint16_t   len;
 };
 
-static sys_date_timer_t refresh_time = {0};
-
 bool g_ble_connected = false;
 
 uint8_t g_ble_mac_addr[20] = {0};
@@ -679,7 +677,7 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 }
 #endif
 
-void MCU_reply_cur_hour_ppg(PPG_DATA_TYPE type, uint8_t *data)
+void MCU_reply_cur_hour_ppg(sys_date_timer_t time, PPG_DATA_TYPE type, uint8_t *data)
 {
 	uint8_t reply[128] = {0};
 	uint32_t i,reply_len = 0;
@@ -708,16 +706,16 @@ void MCU_reply_cur_hour_ppg(PPG_DATA_TYPE type, uint8_t *data)
 	//control
 	reply[reply_len++] = 0x00;
 	//year
-	reply[reply_len++] = (uint8_t)(refresh_time.year>>8);
-	reply[reply_len++] = (uint8_t)(refresh_time.year&0x00ff);
+	reply[reply_len++] = (uint8_t)(time.year>>8);
+	reply[reply_len++] = (uint8_t)(time.year&0x00ff);
 	//month
-	reply[reply_len++] = refresh_time.month;
+	reply[reply_len++] = time.month;
 	//day
-	reply[reply_len++] = refresh_time.day;
+	reply[reply_len++] = time.day;
 	//hour
-	reply[reply_len++] = refresh_time.hour;
+	reply[reply_len++] = time.hour;
 	//minute
-	reply[reply_len++] = refresh_time.minute;
+	reply[reply_len++] = time.minute;
 	//data
 	switch(type)
 	{
@@ -759,9 +757,9 @@ void APP_get_cur_hour_health(sys_date_timer_t ask_time)
 	GetGivenTimeHrRecData(ask_time, &bpt);
 #endif
 
-	MCU_reply_cur_hour_ppg(PPG_DATA_HR, &hr);
-	MCU_reply_cur_hour_ppg(PPG_DATA_SPO2, &spo2);
-	MCU_reply_cur_hour_ppg(PPG_DATA_BPT, (uint8_t*)&bpt);
+	MCU_reply_cur_hour_ppg(ask_time, PPG_DATA_HR, &hr);
+	MCU_reply_cur_hour_ppg(ask_time, PPG_DATA_SPO2, &spo2);
+	MCU_reply_cur_hour_ppg(ask_time, PPG_DATA_BPT, (uint8_t*)&bpt);
 }
 
 void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
@@ -770,6 +768,10 @@ void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;	
 	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
 
 #ifdef CONFIG_IMU_SUPPORT
 #ifdef CONFIG_STEP_SUPPORT
@@ -824,6 +826,8 @@ void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
 
 void APP_get_cur_hour_data(uint8_t *buf, uint32_t len)
 {
+	sys_date_timer_t refresh_time = {0};
+
 #ifdef UART_DEBUG
 	LOGD("%04d/%02d/%02d %02d:%02d", 2000 + buf[7],buf[8],buf[9],buf[10],buf[11]);
 #endif

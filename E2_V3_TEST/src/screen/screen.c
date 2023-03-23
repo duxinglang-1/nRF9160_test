@@ -398,12 +398,12 @@ void IdleShowSystemDate(void)
 #endif
 }
 
-void IdleShowBleStatus(bool flag)
+void IdleShowBleStatus(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t ble_link_str[] = {0x0042,0x004C,0x0045,0x0000};//BLE
 	
-	if(flag)
+	if(g_ble_connected)
 	{
 		LCD_MeasureUniString(ble_link_str, &w, &h);
 		LCD_ShowUniString(IDLE_BLE_X+(IDLE_BLE_W-w)/2, IDLE_BLE_Y+(IDLE_BLE_H-w)/2, ble_link_str);
@@ -930,7 +930,8 @@ void IdleScreenProcess(void)
 		IdleShowNetMode();
 		IdleShowBatSoc();
 		IdleShowDateTime();
-
+		IdleShowBleStatus();
+		
 		//IdleShowBgImg();
 	#ifdef CONFIG_PPG_SUPPORT
 		IdleShowHrData();
@@ -973,6 +974,11 @@ void IdleScreenProcess(void)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_WEEK);
 			IdleShowSystemWeek();
+		}
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BLE)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BLE);
+			IdleShowBleStatus();
 		}
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)

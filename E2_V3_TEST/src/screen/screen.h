@@ -42,19 +42,19 @@ extern "C" {
 #define IDLE_TIME_COLON_W	17
 #define IDLE_TIME_COLON_H	60
 #define IDLE_DATE_MON_W		90
-#define IDLE_DATE_MON_H		25
+#define IDLE_DATE_MON_H		26
 #define IDLE_DATE_MON_X		141
-#define IDLE_DATE_MON_Y		105
+#define IDLE_DATE_MON_Y		106
 #define IDLE_DATE_DAY_W		22
 #define IDLE_DATE_DAY_H		20
 #define IDLE_DATE_DAY_X		112
 #define IDLE_DATE_DAY_Y		109
 #define IDLE_DATE_NUM_W		12
 #define IDLE_DATE_NUM_H		20
-#define IDLE_WEEK_W			42
-#define IDLE_WEEK_H			20
+#define IDLE_WEEK_W			52
+#define IDLE_WEEK_H			26
 #define IDLE_WEEK_X			63
-#define IDLE_WEEK_Y			105
+#define IDLE_WEEK_Y			106
 
 //ble
 #define IDLE_BLE_W		50
@@ -730,6 +730,7 @@ extern "C" {
 #define SCREEN_EVENT_UPDATE_NET_MODE	0x00010000
 #define SCREEN_EVENT_UPDATE_POP_IMG		0x00020000
 #define SCREEN_EVENT_UPDATE_POP_STR		0x00040000
+#define SCREEN_EVENT_UPDATE_BLE			0x00080000
 
 
 //screen ID

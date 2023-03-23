@@ -402,7 +402,9 @@ void IdleShowBleStatus(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t ble_link_str[] = {0x0042,0x004C,0x0045,0x0000};//BLE
-	
+
+	LCD_SetFontSize(FONT_SIZE_28);
+
 	if(g_ble_connected)
 	{
 		LCD_MeasureUniString(ble_link_str, &w, &h);

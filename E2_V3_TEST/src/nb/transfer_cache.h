@@ -37,5 +37,11 @@ extern bool delete_data_from_send_cache(void);
 extern bool add_data_into_rece_cache(uint8_t *data, uint32_t len);
 extern bool get_data_from_rece_cache(uint8_t **buf, uint32_t *len);
 extern bool delete_data_from_rece_cache(void);
+extern bool uart_add_data_into_send_cache(uint8_t *data, uint32_t len);
+extern bool uart_get_data_from_send_cache(uint8_t **buf, uint32_t *len);
+extern bool uart_delete_data_from_send_cache(void);
+extern bool uart_add_data_into_rece_cache(uint8_t *data, uint32_t len);
+extern bool uart_get_data_from_rece_cache(uint8_t **buf, uint32_t *len);
+extern bool uart_delete_data_from_rece_cache(void);
 
 #endif/*__TRANSFER_CACHE_H__*/

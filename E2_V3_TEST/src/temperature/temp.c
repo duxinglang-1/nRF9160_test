@@ -16,6 +16,7 @@
 #include "datetime.h"
 #include "lcd.h"
 #include "screen.h"
+#include "uart_ble.h"
 #include "temp.h"
 #include "inner_flash.h"
 #include "logger.h"
@@ -210,6 +211,31 @@ void GetCurDayTempRecData(uint16_t *databuf)
 		if((temp_rec2.year == date_time.year)&&(temp_rec2.month == date_time.month)&&(temp_rec2.day == date_time.day))
 		{
 			memcpy(databuf, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+			break;
+		}
+	}
+}
+
+void GetGivenTimeTempRecData(sys_date_timer_t date, uint16_t *temp)
+{
+	uint8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
+	temp_rec2_data temp_rec2 = {0};
+
+	if(!CheckSystemDateTimeIsValid(date))
+		return;	
+	if(temp == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&temp_rec2, &tmpbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
+		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)||(temp_rec2.day == 0xff || temp_rec2.day == 0x00))
+			continue;
+		
+		if((temp_rec2.year == date.year)&&(temp_rec2.month == date.month)&&(temp_rec2.day == date.day))
+		{
+			*temp = temp_rec2.deca_temp[date.hour];
 			break;
 		}
 	}
@@ -440,13 +466,32 @@ void TempMsgProcess(void)
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_APP) != 0)
 		{
+			uint8_t data[2] = {0};
+			uint16_t deca_temp = 0;
+			
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_APP);
+
+			deca_temp = g_temp_body*10;
+			data[0] = deca_temp>>8;
+			data[1] = (uint8_t)(deca_temp&0x00ff);
+			MCU_send_app_get_temp_data(data);
 		}	
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_MENU);
 			g_temp_menu = g_temp_body;
 
+			if(g_ble_connected)
+			{
+				uint8_t data[2] = {0};
+				uint16_t deca_temp = 0;
+
+				deca_temp = g_temp_body*10;
+				data[0] = deca_temp>>8;
+				data[1] = (uint8_t)(deca_temp&0x00ff);
+				MCU_send_app_get_temp_data(data);
+			}
+		
 			SyncSendHealthData();
 			g_temp_menu = 0;
 		}

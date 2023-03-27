@@ -32,7 +32,7 @@
 #endif
 
 #define TEMP_MAX			420
-#define TEMP_MIN			320
+#define TEMP_MIN			360
 
 //#define TEMP_DEBUG
 

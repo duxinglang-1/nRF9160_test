@@ -404,15 +404,18 @@ void TempMsgProcess(void)
 		if(temp_1 > 0.0)
 		{
 			g_temp_skin = temp_1;
-			g_temp_body = temp_2;
 			temp_redraw_data_flag = true;
+			if(temp_2 >= TEMP_MIN/10.0)
+			{
+				g_temp_body = temp_2;
+				if(ret)
+				{
+					temp_stop_flag = true;
+					get_temp_ok_flag = true;
+				}
+			}
 		}
 
-		if(ret)
-		{
-			temp_stop_flag = true;
-			get_temp_ok_flag = true;
-		}
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FTTempStatusUpdate();
 	#endif

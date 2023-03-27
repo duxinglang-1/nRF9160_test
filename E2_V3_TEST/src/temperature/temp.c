@@ -404,7 +404,6 @@ void TempMsgProcess(void)
 		if(temp_1 > 0.0)
 		{
 			g_temp_skin = temp_1;
-			temp_redraw_data_flag = true;
 			if(temp_2 >= TEMP_MIN/10.0)
 			{
 				g_temp_body = temp_2;
@@ -414,6 +413,8 @@ void TempMsgProcess(void)
 					get_temp_ok_flag = true;
 				}
 			}
+
+			temp_redraw_data_flag = true;
 		}
 
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT

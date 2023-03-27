@@ -1124,7 +1124,7 @@ void PPGGetSensorHubData(void)
 					LOGD("hr:%d", hr);
 				#endif
 
-					if(hr > 0)
+					if(hr > PPG_HR_MIN)
 					{
 						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
 						{
@@ -1183,7 +1183,7 @@ void PPGGetSensorHubData(void)
 				#ifdef PPG_DEBUG
 					LOGD("spo2:%d", spo2);
 				#endif
-					if(spo2 > 0)
+					if(spo2 >= PPG_SPO2_MIN)
 					{
 						for(i=0;i<sizeof(temp_spo2)/sizeof(temp_spo2[0]);i++)
 						{

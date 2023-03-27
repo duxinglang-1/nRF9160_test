@@ -820,13 +820,15 @@ static void gps_data_get_work_fn(struct k_work *item)
 bool APP_GPS_data_send(bool fix_flag)
 {
 	bool ret = false;
-	
+
+#ifdef CONFIG_BLE_SUPPORT	
 	if(ble_wait_gps)
 	{
 		APP_get_gps_data_reply(fix_flag, last_pvt);
 		ble_wait_gps = false;
 		ret = true;
 	}
+#endif
 
 	if(sos_wait_gps)
 	{

@@ -398,6 +398,7 @@ void IdleShowSystemDate(void)
 #endif
 }
 
+#ifdef CONFIG_BLE_SUPPORT
 void IdleShowBleStatus(void)
 {
 	uint16_t x,y,w,h;
@@ -415,6 +416,7 @@ void IdleShowBleStatus(void)
 		LCD_FillColor(IDLE_BLE_X, IDLE_BLE_Y, IDLE_BLE_W, IDLE_BLE_H, BLACK);
 	}
 }
+#endif
 
 void IdleShowSystemTime(void)
 {
@@ -932,9 +934,9 @@ void IdleScreenProcess(void)
 		IdleShowNetMode();
 		IdleShowBatSoc();
 		IdleShowDateTime();
+	#ifdef CONFIG_BLE_SUPPORT	
 		IdleShowBleStatus();
-		
-		//IdleShowBgImg();
+	#endif	
 	#ifdef CONFIG_PPG_SUPPORT
 		IdleShowHrData();
 	#endif
@@ -977,11 +979,13 @@ void IdleScreenProcess(void)
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_WEEK);
 			IdleShowSystemWeek();
 		}
+	#ifdef CONFIG_BLE_SUPPORT	
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_BLE)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_BLE);
 			IdleShowBleStatus();
 		}
+	#endif
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)
 		{

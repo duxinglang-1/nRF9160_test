@@ -94,6 +94,9 @@ bool uart_ble_is_waked = true;
 static bool reply_cur_data_flag = false;
 static bool uart_send_data_flag = false;
 
+static CacheInfo uart_send_cache = {0};
+static CacheInfo uart_rece_cache = {0};
+
 sys_date_timer_t refresh_time = {0};
 
 static bool redraw_blt_status_flag = false;
@@ -140,6 +143,7 @@ K_TIMER_DEFINE(uart_ble_sleep_in_timer, UartBleSleepInCallBack, NULL);
 static void GetBLEInfoCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_ble_info_timer, GetBLEInfoCallBack, NULL);
 
+#ifdef CONFIG_BLE_SUPPORT
 void ble_connect_or_disconnect_handle(uint8_t *buf, uint32_t len)
 {
 #ifdef UART_DEBUG
@@ -156,54 +160,16 @@ void ble_connect_or_disconnect_handle(uint8_t *buf, uint32_t len)
 	redraw_blt_status_flag = true;
 }
 
-#ifdef CONFIG_TOUCH_SUPPORT
-void CTP_notify_handle(uint8_t *buf, uint32_t len)
+#ifdef CONFIG_ALARM_SUPPORT
+void APP_reply_find_phone(uint8_t *buf, uint32_t len)
 {
-	uint8_t tp_type = TP_EVENT_MAX;
-	uint16_t tp_x,tp_y;
+	uint32_t i;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
-
-	switch(buf[5])
-	{
-	case GESTURE_NONE:
-		tp_type = TP_EVENT_NONE;
-		break;
-	case GESTURE_MOVING_UP:
-		tp_type = TP_EVENT_MOVING_UP;
-		break;
-	case GESTURE_MOVING_DOWN:
-		tp_type = TP_EVENT_MOVING_DOWN;
-		break;
-	case GESTURE_MOVING_LEFT:
-		tp_type = TP_EVENT_MOVING_LEFT;
-		break;
-	case GESTURE_MOVING_RIGHT:
-		tp_type = TP_EVENT_MOVING_RIGHT;
-		break;
-	case GESTURE_SINGLE_CLICK:
-		tp_type = TP_EVENT_SINGLE_CLICK;
-		break;
-	case GESTURE_DOUBLE_CLICK:
-		tp_type = TP_EVENT_DOUBLE_CLICK;
-		break;
-	case GESTURE_LONG_PRESS:
-		tp_type = TP_EVENT_LONG_PRESS;
-		break;
-	}
-
-	if(tp_type != TP_EVENT_MAX)
-	{
-		tp_x = (0x0f&buf[7])<<8 | buf[8];
-		tp_y = (0x0f&buf[9])<<8 | buf[10];
-		touch_panel_event_handle(tp_type, tp_x, tp_y);
-	}
 }
-#endif
 
-#ifdef CONFIG_ALARM_SUPPORT
 void APP_set_find_device(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
@@ -1341,82 +1307,7 @@ void APP_get_temp(uint8_t *buf, uint32_t len)
 		}
 	}
 }
-
 #endif
-
-//APP回复手环查找手机
-void APP_reply_find_phone(uint8_t *buf, uint32_t len)
-{
-	uint32_t i;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-}
-
-void MCU_get_nrf52810_ver(void)
-{
-	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x06;
-	//data ID
-	reply[reply_len++] = (GET_NRF52810_VER_ID>>8);		
-	reply[reply_len++] = (uint8_t)(GET_NRF52810_VER_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = 0x00;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-
-	BleSendData(reply, reply_len);
-}
-
-void MCU_get_ble_mac_address(void)
-{
-	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x06;
-	//data ID
-	reply[reply_len++] = (GET_BLE_MAC_ADDR_ID>>8);		
-	reply[reply_len++] = (uint8_t)(GET_BLE_MAC_ADDR_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = 0x00;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-
-	BleSendData(reply, reply_len);
-}
 
 void MCU_get_ble_status(void)
 {
@@ -1676,6 +1567,77 @@ void nrf52810_report_work_mode(uint8_t *buf, uint32_t len)
 	}
 }
 
+void get_ble_status_response(uint8_t *buf, uint32_t len)
+{
+#ifdef UART_DEBUG
+	LOGD("BLE_status:%d", buf[7]);
+#endif
+
+	g_ble_status = buf[7];
+
+	switch(g_ble_status)
+	{
+	case BLE_STATUS_OFF:
+	case BLE_STATUS_SLEEP:
+	case BLE_STATUS_BROADCAST:
+		g_ble_connected = false;
+		break;
+
+	case BLE_STATUS_CONNECTED:
+		g_ble_connected = true;
+		redraw_blt_status_flag = true;
+		break;
+	}
+}
+#endif
+
+#ifdef CONFIG_TOUCH_SUPPORT
+void CTP_notify_handle(uint8_t *buf, uint32_t len)
+{
+	uint8_t tp_type = TP_EVENT_MAX;
+	uint16_t tp_x,tp_y;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	switch(buf[5])
+	{
+	case GESTURE_NONE:
+		tp_type = TP_EVENT_NONE;
+		break;
+	case GESTURE_MOVING_UP:
+		tp_type = TP_EVENT_MOVING_UP;
+		break;
+	case GESTURE_MOVING_DOWN:
+		tp_type = TP_EVENT_MOVING_DOWN;
+		break;
+	case GESTURE_MOVING_LEFT:
+		tp_type = TP_EVENT_MOVING_LEFT;
+		break;
+	case GESTURE_MOVING_RIGHT:
+		tp_type = TP_EVENT_MOVING_RIGHT;
+		break;
+	case GESTURE_SINGLE_CLICK:
+		tp_type = TP_EVENT_SINGLE_CLICK;
+		break;
+	case GESTURE_DOUBLE_CLICK:
+		tp_type = TP_EVENT_DOUBLE_CLICK;
+		break;
+	case GESTURE_LONG_PRESS:
+		tp_type = TP_EVENT_LONG_PRESS;
+		break;
+	}
+
+	if(tp_type != TP_EVENT_MAX)
+	{
+		tp_x = (0x0f&buf[7])<<8 | buf[8];
+		tp_y = (0x0f&buf[9])<<8 | buf[10];
+		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	}
+}
+#endif
+
 void get_nrf52810_ver_response(uint8_t *buf, uint32_t len)
 {
 	uint32_t i;
@@ -1710,27 +1672,68 @@ void get_ble_mac_address_response(uint8_t *buf, uint32_t len)
 #endif
 }
 
-void get_ble_status_response(uint8_t *buf, uint32_t len)
+void MCU_get_nrf52810_ver(void)
 {
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
 #ifdef UART_DEBUG
-	LOGD("BLE_status:%d", buf[7]);
+	LOGD("begin");
 #endif
 
-	g_ble_status = buf[7];
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_NRF52810_VER_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_NRF52810_VER_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
 
-	switch(g_ble_status)
-	{
-	case BLE_STATUS_OFF:
-	case BLE_STATUS_SLEEP:
-	case BLE_STATUS_BROADCAST:
-		g_ble_connected = false;
-		break;
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
 
-	case BLE_STATUS_CONNECTED:
-		g_ble_connected = true;
-		redraw_blt_status_flag = true;
-		break;
-	}
+	BleSendData(reply, reply_len);
+}
+
+void MCU_get_ble_mac_address(void)
+{
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_BLE_MAC_ADDR_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_BLE_MAC_ADDR_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
 }
 
 /**********************************************************************************
@@ -1795,6 +1798,7 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	switch(data_ID)
 	{
+	#ifdef CONFIG_BLE_SUPPORT
 	case BLE_WORK_MODE_ID:
 		nrf52810_report_work_mode(buf, len);//52810工作状态
 		break;
@@ -1864,9 +1868,6 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case BATTERY_LEVEL_ID:		//电池电量
 		APP_get_battery_level(buf, len);
 		break;
-	case FIRMWARE_INFOR_ID:		//固件版本号
-		APP_get_firmware_version(buf, len);
-		break;
 	case FACTORY_RESET_ID:		//清除手环数据
 		APP_set_factory_reset(buf, len);
 		break;
@@ -1881,21 +1882,26 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case BLE_CONNECT_ID:		//BLE断连提醒
 		ble_connect_or_disconnect_handle(buf, len);
 		break;
-	case CTP_NOTIFY_ID:
-	#ifdef CONFIG_TOUCH_SUPPORT
-		CTP_notify_handle(buf, len);
-	#endif
+	case GET_BLE_STATUS_ID:
+		get_ble_status_response(buf, len);
 		break;
+	case SET_BEL_WORK_MODE_ID:
+		break;	
+	case FIRMWARE_INFOR_ID:		//固件版本号
+		APP_get_firmware_version(buf, len);
+		break;
+	#endif/*CONFIG_BLE_SUPPORT*/
+
+	#ifdef CONFIG_TOUCH_SUPPORT	
+	case CTP_NOTIFY_ID:
+		CTP_notify_handle(buf, len);
+		break;
+	#endif	
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);
 		break;
 	case GET_BLE_MAC_ADDR_ID:
 		get_ble_mac_address_response(buf, len);
-		break;
-	case GET_BLE_STATUS_ID:
-		get_ble_status_response(buf, len);
-		break;
-	case SET_BEL_WORK_MODE_ID:
 		break;
 	default:
 	#ifdef UART_DEBUG	
@@ -1945,26 +1951,27 @@ void UartSendData(void)
 	uint32_t data_len;
 	int ret;
 
-	ret = uart_get_data_from_send_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&uart_send_cache, &p_data, &data_len);
 	if(ret)
 	{
 		uart_send_data_handle(p_data, data_len);
-		uart_delete_data_from_send_cache();
+		delete_data_from_cache(&uart_send_cache);
 
-		k_timer_start(&uart_send_data_timer, K_MSEC(500), K_NO_WAIT);
+		k_timer_start(&uart_send_data_timer, K_MSEC(50), K_NO_WAIT);
 	}
 }
 
 void BleSendDataStart(void)
 {
-	k_timer_start(&uart_send_data_timer, K_MSEC(500), K_NO_WAIT);
+	k_timer_start(&uart_send_data_timer, K_MSEC(50), K_NO_WAIT);
 }
 
 void BleSendData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = uart_add_data_into_send_cache(data, datalen);
+	ret = add_data_into_cache(&uart_send_cache, data, datalen);
+
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -2217,20 +2224,24 @@ void UartMsgProc(void)
 			MCU_get_ble_mac_address();
 			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
 			break;
+		#ifdef CONFIG_BLE_SUPPORT	
 		case 2:
 			MCU_get_ble_status();
 			break;
+		#endif	
 		}
 
 		get_ble_info_flag = false;
 	}
 
+#ifdef CONFIG_BLE_SUPPORT
 	if(reply_cur_data_flag)
 	{
 		APP_get_cur_hour_sport(refresh_time);
 		APP_get_cur_hour_health(refresh_time);
 		reply_cur_data_flag = false;
 	}
+#endif
 }
 
 void test_uart_ble(void)

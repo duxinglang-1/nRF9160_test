@@ -1879,6 +1879,7 @@ void PPGStopCheck(void)
 
 	ppg_power_flag = 0;
 
+#ifdef CONFIG_BLE_SUPPORT
 	if((g_ppg_trigger&TRIGGER_BY_APP_ONE_KEY) != 0)
 	{
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_APP_ONE_KEY);
@@ -1899,7 +1900,8 @@ void PPGStopCheck(void)
 			MCU_send_app_get_ppg_data(g_ppg_data, (uint8_t*)&g_bpt);
 			break;
 		}
-	}	
+	}
+#endif	
 	if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
 	{
 		bool flag = false;
@@ -1910,28 +1912,34 @@ void PPGStopCheck(void)
 		case PPG_DATA_HR:
 			flag = true;
 			g_hr_menu = g_hr;
+		#ifdef CONFIG_BLE_SUPPORT	
 			if(g_ble_connected)
 			{
 				MCU_send_app_get_ppg_data(PPG_DATA_HR, &g_hr);
 			}
+		#endif	
 			break;
 		case PPG_DATA_SPO2:
 			flag = true;
 			g_spo2_menu = g_spo2;
+		#ifdef CONFIG_BLE_SUPPORT	
 			if(g_ble_connected)
 			{
 				MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &g_spo2);
 			}
+		#endif	
 			break;
 		case PPG_DATA_BPT:
 			if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
 			{
 				flag = true;
 				memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+			#ifdef CONFIG_BLE_SUPPORT	
 				if(g_ble_connected)
 				{
 					MCU_send_app_get_ppg_data(PPG_DATA_BPT, (uint8_t*)&g_bpt);
 				}
+			#endif	
 			}
 			break;
 		}

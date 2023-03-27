@@ -464,6 +464,7 @@ void TempMsgProcess(void)
 		k_timer_stop(&temp_stop_timer);
 		k_timer_stop(&temp_menu_stop_timer);
 
+	#ifdef CONFIG_BLE_SUPPORT
 		if((g_temp_trigger&TEMP_TRIGGER_BY_APP) != 0)
 		{
 			uint8_t data[2] = {0};
@@ -475,12 +476,14 @@ void TempMsgProcess(void)
 			data[0] = deca_temp>>8;
 			data[1] = (uint8_t)(deca_temp&0x00ff);
 			MCU_send_app_get_temp_data(data);
-		}	
+		}
+	#endif	
 		if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_MENU);
 			g_temp_menu = g_temp_body;
 
+		#ifdef CONFIG_BLE_SUPPORT
 			if(g_ble_connected)
 			{
 				uint8_t data[2] = {0};
@@ -491,6 +494,7 @@ void TempMsgProcess(void)
 				data[1] = (uint8_t)(deca_temp&0x00ff);
 				MCU_send_app_get_temp_data(data);
 			}
+		#endif
 		
 			SyncSendHealthData();
 			g_temp_menu = 0;

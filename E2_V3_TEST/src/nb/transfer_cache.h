@@ -14,7 +14,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 
-#define SEND_NODE_CACHE_MAX	20
+#define NODE_CACHE_MAX	20
 
 struct node
 {
@@ -27,21 +27,14 @@ typedef struct
 {
 	uint32_t count;
 	struct node *cache;
+	struct node *head;
+	struct node *tail;
 }CacheInfo;
 
 typedef struct node DataNode;
 
-extern bool add_data_into_send_cache(uint8_t *data, uint32_t len);
-extern bool get_data_from_send_cache(uint8_t **buf, uint32_t *len);
-extern bool delete_data_from_send_cache(void);
-extern bool add_data_into_rece_cache(uint8_t *data, uint32_t len);
-extern bool get_data_from_rece_cache(uint8_t **buf, uint32_t *len);
-extern bool delete_data_from_rece_cache(void);
-extern bool uart_add_data_into_send_cache(uint8_t *data, uint32_t len);
-extern bool uart_get_data_from_send_cache(uint8_t **buf, uint32_t *len);
-extern bool uart_delete_data_from_send_cache(void);
-extern bool uart_add_data_into_rece_cache(uint8_t *data, uint32_t len);
-extern bool uart_get_data_from_rece_cache(uint8_t **buf, uint32_t *len);
-extern bool uart_delete_data_from_rece_cache(void);
+extern bool add_data_into_cache(CacheInfo *data_cache, uint8_t *data, uint32_t len);
+extern bool get_data_from_cache(CacheInfo *data_cache, uint8_t **buf, uint32_t *len);
+extern bool delete_data_from_cache(CacheInfo *data_cache);
 
 #endif/*__TRANSFER_CACHE_H__*/

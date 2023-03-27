@@ -92,6 +92,9 @@ static bool nb_reconnect_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
 
+static CacheInfo nb_send_cache = {0};
+static CacheInfo nb_rece_cache = {0};
+
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
 #endif/*CONFIG_MQTT_LIB_TLS*/ 
@@ -729,7 +732,7 @@ static void NbSendData(void)
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_send_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len);
 	if(ret)
 	{
 		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
@@ -739,7 +742,7 @@ static void NbSendData(void)
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
-			delete_data_from_send_cache();
+			delete_data_from_cache(&nb_send_cache);
 		}
 		
 		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
@@ -1320,7 +1323,7 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_send_cache(data, datalen);
+	ret = add_data_into_cache(&nb_send_cache, data, datalen);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -1941,11 +1944,11 @@ static void ParseReceData(void)
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_rece_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&nb_rece_cache, &p_data, &data_len);
 	if(ret)
 	{
 		ParseData(p_data, data_len);
-		delete_data_from_rece_cache();
+		delete_data_from_cache(&nb_rece_cache);
 		
 		k_timer_start(&parse_data_timer, K_MSEC(100), K_NO_WAIT);
 	}
@@ -1960,7 +1963,7 @@ static void MqttReceData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_rece_cache(data, datalen);
+	ret = add_data_into_cache(&nb_rece_cache, data, datalen);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -3029,7 +3032,7 @@ void NBMsgProcess(void)
 	
 	if(mqtt_disconnect_flag)
 	{
-		if(send_cache_is_empty())
+		if(cache_is_empty(&nb_send_cache))
 		{
 		#ifdef NB_DEBUG
 			LOGD("001");

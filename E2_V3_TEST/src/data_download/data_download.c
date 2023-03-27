@@ -216,7 +216,6 @@ static int download_client_callback(const struct download_client_evt *event)
 	case DOWNLOAD_CLIENT_EVT_DONE:
 	#ifdef DL_DEBUG
 		LOGD("DONE datalen:%d", datalen);
-
 	#endif
 		if(datalen > 0)
 		{

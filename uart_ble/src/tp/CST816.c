@@ -691,13 +691,17 @@ void tp_init(void)
 		break;
 
 	case TP_CST816T:
+	#ifdef YKL_CST816T	
+		if(tp_fw_ver < 0x02)
+	#elif defined(ORC_CST816T)
 		if(tp_fw_ver < 0x05)
+	#endif
 		{
 			ctp_hynitron_update();
 		}
 		break;
-		
 	}
+
 	tp_set_auto_sleep();
 }
 

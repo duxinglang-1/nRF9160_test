@@ -13,6 +13,7 @@
 #include <net/download_client.h>
 #include "external_flash.h"
 #include "data_download.h"
+#include "transfer_cache.h"
 #include "dl_target.h"
 #include "screen.h"
 #include "nb.h"
@@ -26,6 +27,7 @@ static bool dl_start_flag = false;
 static bool dl_run_flag = false;
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
+static bool dl_save_data_flag = false;
 
 static uint8_t databuf[DL_BUF_LEN] = {0};
 static uint32_t datalen = 0;
@@ -43,6 +45,11 @@ static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
 
 uint8_t g_dl_progress = 0;
 DL_DATA_TYPE g_dl_data_type = DL_DATA_IMG;
+
+static CacheInfo dl_save_cache = {0};
+
+static void DlSaveDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(dl_save_data_timer, DlSaveDataCallBack, NULL);
 
 static int modem_configure(void)
 {
@@ -101,6 +108,55 @@ static void dl_target_callback_handler(enum dl_target_evt_id evt)
 	}
 }
 
+static void DlSaveDataCallBack(struct k_timer *timer)
+{
+	dl_save_data_flag = true;
+}
+
+static void DlSaveDataStart(void)
+{
+	k_timer_start(&dl_save_data_timer, K_MSEC(100), K_NO_WAIT);
+}
+
+static void DlReceiveData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
+{
+	int ret;
+	
+	ret = add_data_into_cache(&dl_save_cache, data, datalen, type);
+	if(ret)
+	{
+		DlSaveDataStart();
+	}
+}
+
+static void DlSaveData(void)
+{
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
+
+	ret = get_data_from_cache(&dl_save_cache, &p_data, &data_len, &data_type);
+	if(ret)
+	{
+		switch(g_dl_data_type)
+		{
+		case DL_DATA_IMG:
+			SpiFlash_Write(p_data, IMG_VER_ADDR, data_len);
+			break;
+
+		case DL_DATA_FONT:
+			SpiFlash_Write(p_data, FONT_VER_ADDR, data_len);
+			break;
+
+		case DL_DATA_PPG:
+			SpiFlash_Write(p_data, PPG_ALGO_VER_ADDR, data_len);
+			break;
+		}
+
+		delete_data_from_cache(&dl_save_cache);
+		k_timer_start(&dl_save_data_timer, K_MSEC(100), K_NO_WAIT);
+	}
+}
 
 static int download_client_callback(const struct download_client_evt *event)
 {
@@ -639,15 +695,15 @@ void dl_handler(const struct download_evt *evt)
 		switch(g_dl_data_type)
 		{
 		case DL_DATA_IMG:
-			SpiFlash_Write(g_new_ui_ver, IMG_VER_ADDR, 16);
+			DlReceiveData(g_new_ui_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_ui_ver, g_new_ui_ver);
 			break;
 		case DL_DATA_FONT:
-			SpiFlash_Write(g_new_font_ver, FONT_VER_ADDR, 16);
+			DlReceiveData(g_new_font_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_font_ver, g_new_font_ver);		
 			break;
 		case DL_DATA_PPG:
-			SpiFlash_Write(g_new_ppg_ver, PPG_ALGO_VER_ADDR, 16);
+			DlReceiveData(g_new_ppg_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_ppg_algo_ver, g_new_ppg_ver);				
 			break;
 		}
@@ -715,8 +771,14 @@ void DlMsgProc(void)
 		sys_reboot(0);
 	}
 
+	if(dl_save_data_flag)
+	{
+		DlSaveData();
+		dl_save_data_flag = false;
+	}
+
 	if(dl_run_flag)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(10));
 	}
 }

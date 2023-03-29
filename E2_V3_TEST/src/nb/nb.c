@@ -728,11 +728,11 @@ static void NbSendDataStop(void)
 
 static void NbSendData(void)
 {
-	uint8_t *p_data;
+	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len);
+	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
 		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
@@ -1323,7 +1323,7 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_cache(&nb_send_cache, data, datalen);
+	ret = add_data_into_cache(&nb_send_cache, data, datalen, DATA_TRANSFER);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -1940,11 +1940,11 @@ static void ParseDataCallBack(struct k_timer *timer_id)
 
 static void ParseReceData(void)
 {
-	uint8_t *p_data;
+	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_cache(&nb_rece_cache, &p_data, &data_len);
+	ret = get_data_from_cache(&nb_rece_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
 		ParseData(p_data, data_len);
@@ -1963,7 +1963,7 @@ static void MqttReceData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_cache(&nb_rece_cache, data, datalen);
+	ret = add_data_into_cache(&nb_rece_cache, data, datalen, DATA_TRANSFER);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif

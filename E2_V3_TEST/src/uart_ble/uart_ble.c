@@ -1947,11 +1947,11 @@ void uart_send_data_handle(uint8_t *buffer, uint32_t datalen)
 
 void UartSendData(void)
 {
-	uint8_t *p_data;
+	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_cache(&uart_send_cache, &p_data, &data_len);
+	ret = get_data_from_cache(&uart_send_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
 		uart_send_data_handle(p_data, data_len);
@@ -1970,7 +1970,7 @@ void BleSendData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_cache(&uart_send_cache, data, datalen);
+	ret = add_data_into_cache(&uart_send_cache, data, datalen, DATA_TRANSFER);
 
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);

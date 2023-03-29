@@ -16,25 +16,34 @@
 
 #define NODE_CACHE_MAX	20
 
-struct node
+typedef enum
+{
+	DATA_TRANSFER,
+	DATA_RESOURCE,
+	DATA_RESOURCE_VER,
+	DATA_MAX
+}DATA_TYPE;
+
+struct datanode
 {
 	uint32_t len;
+	DATA_TYPE type;
 	void *data;
-	struct node *next;
+	struct datanode *next;
 };
 
 typedef struct
 {
 	uint32_t count;
-	struct node *cache;
-	struct node *head;
-	struct node *tail;
+	struct datanode *cache;
+	struct datanode *head;
+	struct datanode *tail;
 }CacheInfo;
 
-typedef struct node DataNode;
+typedef struct datanode DataNode;
 
-extern bool add_data_into_cache(CacheInfo *data_cache, uint8_t *data, uint32_t len);
-extern bool get_data_from_cache(CacheInfo *data_cache, uint8_t **buf, uint32_t *len);
+extern bool add_data_into_cache(CacheInfo *data_cache, uint8_t *data, uint32_t len, DATA_TYPE type);
+extern bool get_data_from_cache(CacheInfo *data_cache, uint8_t **buf, uint32_t *len, DATA_TYPE *type);
 extern bool delete_data_from_cache(CacheInfo *data_cache);
 
 #endif/*__TRANSFER_CACHE_H__*/

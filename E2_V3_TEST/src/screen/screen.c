@@ -205,7 +205,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 					dl_font_start();
 			#if defined(CONFIG_PPG_SUPPORT)
 				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
@@ -4980,7 +4980,7 @@ void PrevDlImgScreen(void)
 
 void ExitDlImgScreen(void)
 {
-	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_font_start();
 #if defined(CONFIG_PPG_SUPPORT)
 	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
@@ -4994,7 +4994,7 @@ void ExitDlImgScreen(void)
 #ifdef CONFIG_FONT_DATA_UPDATE
 void PrevDlFontScreen(void)
 {
-	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_img_start();
 	else
 		EnterSettings();
@@ -5014,9 +5014,9 @@ void ExitDlFontScreen(void)
 #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 void PrevDlPpgScreen(void)
 {
-	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_font_start();
-	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
+	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_img_start();
 	else
 		EnterSettings();
@@ -5479,21 +5479,21 @@ void SleepShowStatus(void)
 
 #if 1	//xb test 20230327
 	mmi_asc_to_ucs2(strbuf, "Start");
-	LCD_ShowUniString(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, (uint16_t*)strbuf);
+	LCD_ShowUniString(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y+5, (uint16_t*)strbuf);
 #else
 	LCD_ShowImg_From_Flash(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, IMG_SLEEP_DEEP_ICON_ADDR);
-#endif
 	LCD_ShowImg_From_Flash(SLEEP_DEEP_UNIT_HR_X, SLEEP_DEEP_UNIT_HR_Y, IMG_SLEEP_H_ADDR);
 	LCD_ShowImg_From_Flash(SLEEP_DEEP_UNIT_MIN_X, SLEEP_DEEP_UNIT_MIN_Y, IMG_SLEEP_M_ADDR);
+#endif
 
 #if 1
 	mmi_asc_to_ucs2(strbuf, "Finish");
-	LCD_ShowUniString(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, (uint16_t*)strbuf);
+	LCD_ShowUniString(SLEEP_LIGHT_ICON_X-20, SLEEP_LIGHT_ICON_Y+5, (uint16_t*)strbuf);
 #else
 	LCD_ShowImg_From_Flash(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, IMG_SLEEP_LIGHT_ICON_ADDR);
-#endif
 	LCD_ShowImg_From_Flash(SLEEP_LIGHT_UNIT_HR_X, SLEEP_LIGHT_UNIT_HR_Y, IMG_SLEEP_H_ADDR);
 	LCD_ShowImg_From_Flash(SLEEP_LIGHT_UNIT_MIN_X, SLEEP_LIGHT_UNIT_MIN_Y, IMG_SLEEP_M_ADDR);
+#endif
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	total_sleep = deep_sleep+light_sleep;
@@ -5504,8 +5504,9 @@ void SleepShowStatus(void)
 	LCD_ShowImg_From_Flash(SLEEP_TOTAL_STR_MIN_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)%10]);
 
 #if 1
-	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(SLEEP_TIME_START/60)/10]);
-	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(SLEEP_TIME_START/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(60*SLEEP_TIME_START/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(60*SLEEP_TIME_START/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_DEEP_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_FONT_24_COLON_ADDR);
 	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_MIN_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(0%60)/10]);
 	LCD_ShowImg_From_Flash(SLEEP_DEEP_STR_MIN_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(0%60)%10]);
 #else
@@ -5516,8 +5517,9 @@ void SleepShowStatus(void)
 #endif
 
 #if 1
-	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(SLEEP_TIME_END/60)/10]);
-	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(SLEEP_TIME_END/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(60*SLEEP_TIME_END/60)/10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(60*SLEEP_TIME_END/60)%10]);
+	LCD_ShowImg_From_Flash(SLEEP_LIGHT_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_FONT_24_COLON_ADDR);
 	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_MIN_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(0%60)/10]);
 	LCD_ShowImg_From_Flash(SLEEP_LIGHT_STR_MIN_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(0%60)%10]);
 #else

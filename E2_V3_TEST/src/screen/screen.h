@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define UI_STYLE_HEALTH_BAR
+//#define UI_STYLE_HEALTH_BAR
 
 //pwron
 #define PWRON_STR_W		198
@@ -47,7 +47,7 @@ extern "C" {
 #define IDLE_DATE_MON_Y		106
 #define IDLE_DATE_DAY_W		22
 #define IDLE_DATE_DAY_H		20
-#define IDLE_DATE_DAY_X		112
+#define IDLE_DATE_DAY_X		114
 #define IDLE_DATE_DAY_Y		109
 #define IDLE_DATE_NUM_W		12
 #define IDLE_DATE_NUM_H		20

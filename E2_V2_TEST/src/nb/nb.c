@@ -46,7 +46,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
@@ -120,6 +120,9 @@ static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
+
+static CacheInfo nb_send_cache = {0};
+static CacheInfo nb_rece_cache = {0};
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -739,17 +742,21 @@ static void NbSendDataStop(void)
 
 static void NbSendData(void)
 {
-	u8_t *p_data;
-	u32_t data_len;
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_send_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
+		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
+		
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
-			delete_data_from_send_cache();
+			delete_data_from_cache(&nb_send_cache);
 		}
 
 		k_timer_start(&send_data_timer, K_MSEC(500), NULL);
@@ -1303,7 +1310,7 @@ static void MqttSendData(u8_t *data, u32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_send_cache(data, datalen);
+	ret = add_data_into_cache(&nb_send_cache, data, datalen, DATA_TRANSFER);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -1869,15 +1876,15 @@ static void ParseDataCallBack(struct k_timer *timer_id)
 
 static void ParseReceData(void)
 {
-	u8_t *p_data;
-	u32_t data_len;
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_rece_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&nb_rece_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
 		ParseData(p_data, data_len);
-		delete_data_from_rece_cache();
+		delete_data_from_cache(&nb_rece_cache);
 		
 		k_timer_start(&parse_data_timer, K_MSEC(100), NULL);
 	}
@@ -1892,7 +1899,7 @@ static void MqttReceData(u8_t *data, u32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_rece_cache(data, datalen);
+	ret = add_data_into_cache(&nb_rece_cache, data, datalen, DATA_TRANSFER);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif

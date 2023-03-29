@@ -272,21 +272,21 @@ uint8_t init_gpio(void)
 	if(gpio_imu == NULL)
 		gpio_imu = device_get_binding(IMU_PORT);
 	
-#ifdef CONFIG_STEP_SUPPORT	
-	//steps interrupt
+	//steps&tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, step_event, BIT(LSM6DSO_INT1_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb1);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
-#endif
 
-	//tilt interrupt
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+	//fall interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT2_PIN, flag);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, interrupt_event, BIT(LSM6DSO_INT2_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb2);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
+#endif
 
 	return 0;
 }
@@ -353,7 +353,6 @@ static bool sensor_init(void)
 
 	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
 
-#ifdef CONFIG_STEP_SUPPORT
 	/*Step Counter enable*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
@@ -361,7 +360,6 @@ static bool sensor_init(void)
 	/* Enable False Positive Rejection. */
 	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
 	lsm6dso_steps_reset(&imu_dev_ctx);
-#endif
 
 	/* Tilt enable */
 	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
@@ -1172,7 +1170,6 @@ void IMUMsgProcess(void)
 		return;
 	}
 
-#ifdef CONFIG_STEP_SUPPORT
 	if(int1_event)	//steps or tilt
 	{
 	#ifdef IMU_DEBUG
@@ -1197,6 +1194,7 @@ void IMUMsgProcess(void)
 				lcd_sleep_out = true;
 			}
 		}
+	#ifdef CONFIG_STEP_SUPPORT	
 		else
 		{
 		#ifdef IMU_DEBUG	
@@ -1205,8 +1203,8 @@ void IMUMsgProcess(void)
 			UpdateIMUData();
 			imu_redraw_steps_flag = true;
 		}
+	#endif	
 	}
-#endif
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 	if(int2_event) //fall

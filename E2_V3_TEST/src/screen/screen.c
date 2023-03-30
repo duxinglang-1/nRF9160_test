@@ -2156,6 +2156,14 @@ void SyncScreenProcess(void)
 static uint8_t img_flag = 0;
 static uint8_t temp_retry_left = 2;
 
+void TempScreenStopTimer(void)
+{
+	k_timer_stop(&mainmenu_timer);
+#ifdef UI_STYLE_HEALTH_BAR
+	k_timer_stop(&temp_status_timer);
+#endif
+}
+
 static void TempStatusTimerOutCallBack(struct k_timer *timer_id)
 {
 	if(screen_id == SCREEN_ID_TEMP)
@@ -2682,6 +2690,12 @@ void TempScreenProcess(void)
 
 void ExitTempScreen(void)
 {
+	k_timer_stop(&mainmenu_timer);
+#ifndef UI_STYLE_HEALTH_BAR	
+	k_timer_stop(&temp_status_timer);
+#endif
+	
+
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif
@@ -2770,6 +2784,14 @@ void EnterTempScreen(void)
 #ifdef CONFIG_PPG_SUPPORT
 static uint8_t img_index = 0;
 static uint8_t ppg_retry_left = 2;
+
+void PPGScreenStopTimer(void)
+{
+	k_timer_stop(&mainmenu_timer);
+#ifndef UI_STYLE_HEALTH_BAR	
+	k_timer_stop(&ppg_status_timer);
+#endif
+}
 
 static void PPGStatusTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -3367,7 +3389,9 @@ void BPScreenProcess(void)
 void ExitBPScreen(void)
 {
 	k_timer_stop(&mainmenu_timer);
-
+#ifndef UI_STYLE_HEALTH_BAR	
+	k_timer_stop(&ppg_status_timer);
+#endif
 	img_index = 0;
 	
 #ifdef CONFIG_ANIMATION_SUPPORT
@@ -3793,8 +3817,11 @@ void SPO2ScreenProcess(void)
 void ExitSPO2Screen(void)
 {
 	k_timer_stop(&mainmenu_timer);
-
+#ifndef UI_STYLE_HEALTH_BAR	
+	k_timer_stop(&ppg_status_timer);
+#endif
 	img_index = 0;
+
 #ifdef CONFIG_ANIMATION_SUPPORT
 	AnimaStop();
 #endif

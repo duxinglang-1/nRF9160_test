@@ -25,11 +25,13 @@
 #define FT_PPG_TITLE_H				40
 #define FT_PPG_TITLE_X				((LCD_WIDTH-FT_PPG_TITLE_W)/2)
 #define FT_PPG_TITLE_Y				20
+
 #define FT_PPG_MENU_STR_W			150
 #define FT_PPG_MENU_STR_H			30
 #define FT_PPG_MENU_STR_X			((LCD_WIDTH-FT_PPG_MENU_STR_W)/2)
 #define FT_PPG_MENU_STR_Y			80
 #define FT_PPG_MENU_STR_OFFSET_Y	5
+
 #define FT_PPG_SLE1_STR_W			70
 #define FT_PPG_SLE1_STR_H			30
 #define FT_PPG_SLE1_STR_X			40
@@ -38,10 +40,12 @@
 #define FT_PPG_SLE2_STR_H			30
 #define FT_PPG_SLE2_STR_X			130
 #define FT_PPG_SLE2_STR_Y			170
+
 #define FT_PPG_RET_STR_W			120
 #define FT_PPG_RET_STR_H			60
 #define FT_PPG_RET_STR_X			((LCD_WIDTH-FT_PPG_RET_STR_W)/2)
 #define FT_PPG_RET_STR_Y			((LCD_HEIGHT-FT_PPG_RET_STR_H)/2)
+
 #define FT_PPG_NOTIFY_W				240
 #define FT_PPG_NOTIFY_H				40
 #define FT_PPG_NOTIFY_X				((LCD_WIDTH-FT_PPG_NOTIFY_W)/2)
@@ -51,6 +55,7 @@
 			
 static bool ft_ppg_check_ok = false;
 static bool ft_ppg_checking = false;
+static bool update_show_flag = false;
 static uint8_t ft_ppg_scaned_count = 0;
 static uint8_t ft_ppg_infor[256] = {0};
 
@@ -70,7 +75,7 @@ const ft_menu_t FT_MENU_PPG =
 	{
 		FTMenuPPGDumpProc,
 	},
-	{	
+	{
 		//page proc func
 		FTMenuPPGDumpProc,
 		FTMenuPPGDumpProc,
@@ -112,7 +117,6 @@ static void PPGTestTimerOutCallBack(struct k_timer *timer_id)
 
 static void FTMenuPPGUpdate(void)
 {
-	static bool flag = false;
 	uint16_t x,y,w,h;
 	uint16_t ret_str[2][5] = {
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
@@ -123,9 +127,9 @@ static void FTMenuPPGUpdate(void)
 	{
 		uint8_t tmpbuf[512] = {0};
 		
-		if(!flag)
+		if(!update_show_flag)
 		{
-			flag = true;
+			update_show_flag = true;
 			LCD_Fill(FT_PPG_NOTIFY_X, FT_PPG_NOTIFY_Y, FT_PPG_NOTIFY_W, FT_PPG_NOTIFY_H, BLACK);
 			LCD_SetFontSize(FONT_SIZE_20);
 		}
@@ -136,7 +140,7 @@ static void FTMenuPPGUpdate(void)
 	}
 	else
 	{
-		flag = false;
+		update_show_flag = false;
 
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_36);
@@ -243,6 +247,7 @@ void FTPPGStatusUpdate(uint8_t hr, uint8_t spo2)
 				count = 0;
 				ft_ppg_checking = false;
 				ft_ppg_check_ok = true;
+				ft_menu_checked[ft_main_menu_index] = true;
 				FTMenuPPGStopTest();
 			}
 		}
@@ -263,6 +268,8 @@ void ExitFTMenuPPG(void)
 void EnterFTMenuPPG(void)
 {
 	ft_ppg_check_ok = false;
+	update_show_flag = false;
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_PPG, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

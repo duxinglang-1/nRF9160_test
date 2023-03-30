@@ -48,7 +48,7 @@ typedef struct
 }ft_menu_t;
 
 extern uint8_t ft_main_menu_index;
-
+extern bool ft_menu_checked[FT_MENU_MAX_COUNT];
 extern ft_menu_t ft_menu;
 
 extern void FactoryTestExit(void);

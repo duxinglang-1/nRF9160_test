@@ -23,11 +23,13 @@
 #define FT_CUR_TITLE_H				40
 #define FT_CUR_TITLE_X				((LCD_WIDTH-FT_CUR_TITLE_W)/2)
 #define FT_CUR_TITLE_Y				20
+
 #define FT_CUR_MENU_STR_W			200
 #define FT_CUR_MENU_STR_H			30
 #define FT_CUR_MENU_STR_X			((LCD_WIDTH-FT_CUR_MENU_STR_W)/2)
 #define FT_CUR_MENU_STR_Y			80
 #define FT_CUR_MENU_STR_OFFSET_Y	5
+
 #define FT_CUR_SLE1_STR_W			70
 #define FT_CUR_SLE1_STR_H			30
 #define FT_CUR_SLE1_STR_X			40
@@ -36,6 +38,16 @@
 #define FT_CUR_SLE2_STR_H			30
 #define FT_CUR_SLE2_STR_X			130
 #define FT_CUR_SLE2_STR_Y			170
+
+#define FT_CUR_PASS_STR_W			80
+#define FT_CUR_PASS_STR_H			40
+#define FT_CUR_PASS_STR_X			30
+#define FT_CUR_PASS_STR_Y			((LCD_HEIGHT-FT_CUR_PASS_STR_H)/2)
+#define FT_CUR_FAIL_STR_W			80
+#define FT_CUR_FAIL_STR_H			40
+#define FT_CUR_FAIL_STR_X			130
+#define FT_CUR_FAIL_STR_Y			((LCD_HEIGHT-FT_CUR_FAIL_STR_H)/2)
+
 #define FT_CUR_RET_STR_W			120
 #define FT_CUR_RET_STR_H			60
 #define FT_CUR_RET_STR_X			((LCD_WIDTH-FT_CUR_RET_STR_W)/2)
@@ -67,6 +79,18 @@ const ft_menu_t FT_MENU_CURRENT =
 	},
 };
 
+static void FTMenuCurPassHander(void)
+{
+	ft_menu_checked[ft_main_menu_index] = true;
+	FTMainMenu2Proc();
+}
+
+static void FTMenuCurFailHander(void)
+{
+	ft_menu_checked[ft_main_menu_index] = false;
+	FTMainMenu2Proc();
+}
+
 static void FTMenuCurSle1Hander(void)
 {
 	FTMainMenu2Proc();
@@ -93,8 +117,8 @@ static void FTMenuCurUpdate(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t ret_str[2][5] = {
-								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
+								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
 							  };
 
 	if(ft_cur_checking)
@@ -110,14 +134,19 @@ static void FTMenuCurUpdate(void)
 	}
 	else
 	{
-		LCD_Set_BL_Mode(LCD_BL_AUTO);	
-		LCD_SetFontSize(FONT_SIZE_52);
-		LCD_SetFontColor(BRRED);
-		LCD_SetFontBgColor(GREEN);
+		LCD_Set_BL_Mode(LCD_BL_AUTO);
+		
+		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_MeasureUniString(ret_str[0], &w, &h);
+		x = FT_CUR_PASS_STR_X+(FT_CUR_PASS_STR_W-w)/2;
+		y = FT_CUR_PASS_STR_Y+(FT_CUR_PASS_STR_H-h)/2;
+		LCD_DrawRectangle(FT_CUR_PASS_STR_X, FT_CUR_PASS_STR_Y, FT_CUR_PASS_STR_W, FT_CUR_PASS_STR_H);
+		LCD_ShowUniString(x, y, ret_str[0]);
 		LCD_MeasureUniString(ret_str[1], &w, &h);
-		LCD_ShowUniString(FT_CUR_RET_STR_X+(FT_CUR_RET_STR_W-w)/2, FT_CUR_RET_STR_Y+(FT_CUR_RET_STR_H-h)/2, ret_str[1]);
-		LCD_ReSetFontBgColor();
-		LCD_ReSetFontColor();
+		x = FT_CUR_FAIL_STR_X+(FT_CUR_FAIL_STR_W-w)/2;
+		y = FT_CUR_FAIL_STR_Y+(FT_CUR_FAIL_STR_H-h)/2;
+		LCD_DrawRectangle(FT_CUR_FAIL_STR_X, FT_CUR_FAIL_STR_Y, FT_CUR_FAIL_STR_W, FT_CUR_FAIL_STR_H);
+		LCD_ShowUniString(x, y, ret_str[1]);
 
 		ClearAllKeyHandler();
 		SetLeftKeyUpHandler(FTMenuCurSle1Hander);
@@ -127,6 +156,8 @@ static void FTMenuCurUpdate(void)
 		clear_all_touch_event_handle();
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_SLE1_STR_X, FT_CUR_SLE1_STR_X+FT_CUR_SLE1_STR_W, FT_CUR_SLE1_STR_Y, FT_CUR_SLE1_STR_Y+FT_CUR_SLE1_STR_H, FTMenuCurSle1Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_SLE2_STR_X, FT_CUR_SLE2_STR_X+FT_CUR_SLE2_STR_W, FT_CUR_SLE2_STR_Y, FT_CUR_SLE2_STR_Y+FT_CUR_SLE2_STR_H, FTMenuCurSle2Hander);
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_PASS_STR_X, FT_CUR_PASS_STR_X+FT_CUR_PASS_STR_W, FT_CUR_PASS_STR_Y, FT_CUR_PASS_STR_Y+FT_CUR_PASS_STR_H, FTMenuCurPassHander);
+		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_FAIL_STR_X, FT_CUR_FAIL_STR_X+FT_CUR_FAIL_STR_W, FT_CUR_FAIL_STR_Y, FT_CUR_FAIL_STR_Y+FT_CUR_FAIL_STR_H, FTMenuCurFailHander);
 	#endif		
 	}
 }
@@ -229,6 +260,7 @@ void ExitFTMenuCur(void)
 void EnterFTMenuCur(void)
 {
 	ft_cur_checking = false;
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_CURRENT, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

@@ -36,6 +36,7 @@
 #define FT_TP_TITLE_H				40
 #define FT_TP_TITLE_X				((COL-FT_TP_TITLE_W)/2)
 #define FT_TP_TITLE_Y				20
+
 #define FT_TP_MENU_STR_W			150
 #define FT_TP_MENU_STR_H			30
 #define FT_TP_MENU_STR_X			((COL-FT_TP_MENU_STR_W)/2)
@@ -64,12 +65,14 @@
 #define FT_TP_SLE2_STR_H			30
 #define FT_TP_SLE2_STR_X			130
 #define FT_TP_SLE2_STR_Y			170
+
 #define FT_TP_RET_STR_W				120
 #define FT_TP_RET_STR_H				60
 #define FT_TP_RET_STR_X				((COL-FT_TP_RET_STR_W)/2)
 #define FT_TP_RET_STR_Y				((ROW-FT_TP_RET_STR_H)/2)
 
 static bool ft_tp_testing = false;
+static bool update_show_flag = false;
 
 ft_touch_t ft_tp = {0};
 
@@ -146,6 +149,7 @@ static void FTMenuMoveHander(void)
 		ft_tp.check_item++;
 		if(ft_tp.check_item == FT_TP_MAX)
 		{
+			ft_menu_checked[ft_main_menu_index] = true;
 			FTMenuTouchStopTest();
 		}
 		else
@@ -168,6 +172,7 @@ static void FTMenuSingleClickHander(void)
 		ft_tp.check_item++;
 		if(ft_tp.check_item == FT_TP_MAX)
 		{
+			ft_menu_checked[ft_main_menu_index] = true;
 			FTMenuTouchStopTest();
 		}
 		else
@@ -191,7 +196,6 @@ static void FTMenuTouchDrawTarget(uint16_t x, uint16_t y, uint16_t radius)
 
 static void FTMenuTouchUpdate(void)
 {
-	static bool flag = false;
 	uint8_t i;
 	uint16_t x,y,w,h;
 	uint16_t title_str[] = {0x89E6,0x6478,0x6D4B,0x8BD5,0x0000};//´¥Ãþ²âÊÔ
@@ -224,9 +228,9 @@ static void FTMenuTouchUpdate(void)
 
 	if(ft_tp_testing)
 	{
-		if(!flag)
+		if(!update_show_flag)
 		{
-			flag = true;
+			update_show_flag = true;
 			LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 			
 			ClearAllKeyHandler();
@@ -262,7 +266,7 @@ static void FTMenuTouchUpdate(void)
 	{
 		uint8_t result;
 		
-		flag = false;
+		update_show_flag = false;
 		
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_36);
@@ -387,6 +391,7 @@ void ExitFTMenuTouch(void)
 
 void EnterFTMenuTouch(void)
 {
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_TOUCH, sizeof(ft_menu_t));
 	memcpy(&ft_tp, &FT_TP_INF[0], sizeof(FT_TP_INF[0]));
 	

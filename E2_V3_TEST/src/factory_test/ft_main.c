@@ -34,6 +34,11 @@
 #define SETTINGS_MENU_STR_OFFSET_X	5			
 #define SETTINGS_MENU_STR_OFFSET_Y	8
 
+#define FT_MENU_CHECKED_W		20
+#define FT_MENU_CHECKED_H		20
+#define FT_MENU_CHECKED_X		(FT_MENU_BG_X+140)
+#define FT_MENU_CHECKED_Y		(FT_MENU_BG_Y+9)
+
 #define FT_MENU_STR_W			150
 #define FT_MENU_STR_H			30
 #define FT_MENU_STR_X			(FT_MENU_BG_X+5)
@@ -45,6 +50,7 @@ static bool ft_main_redaw_flag = false;
 
 uint8_t ft_main_menu_index = 0;
 
+bool ft_menu_checked[FT_MENU_MAX_COUNT] = {false};
 ft_menu_t ft_menu = {0};
 
 void FTMainDumpProc(void)
@@ -282,6 +288,7 @@ static void FactoryTestMainUpdate(void)
 	uint16_t x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
+	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 
 	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -296,8 +303,8 @@ static void FactoryTestMainUpdate(void)
 		LCD_ShowImg_From_Flash(FT_MENU_BG_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), IMG_SET_BG_ADDR);
 		LCD_SetFontColor(WHITE);
 	
-		LCD_MeasureUniString(ft_menu.name[i+4*(ft_menu.index/4)], &w, &h);
-		LCD_ShowUniString(FT_MENU_STR_X+(FT_MENU_STR_W-w)/2, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.name[i+4*(ft_menu.index/4)]);
+		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.name[i+4*(ft_menu.index/4)]);
+		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+4*(ft_menu.index/4)]]);
 	
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -327,6 +334,7 @@ static void FactoryTestMainShow(void)
 	uint16_t i,x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
+	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 	
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
@@ -342,10 +350,9 @@ static void FactoryTestMainShow(void)
 	{
 		LCD_ShowImg_From_Flash(FT_MENU_BG_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), IMG_SET_BG_ADDR);
 		LCD_SetFontColor(WHITE);
-	
-		LCD_MeasureUniString(ft_menu.name[i+4*(ft_menu.index/4)], &w, &h);
-		LCD_ShowUniString(FT_MENU_STR_X+(FT_MENU_STR_W-w)/2, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.name[i+4*(ft_menu.index/4)]);
-	
+		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.name[i+4*(ft_menu.index/4)]);
+		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+4*(ft_menu.index/4)]]);
+		
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
 									FT_MENU_BG_X, 

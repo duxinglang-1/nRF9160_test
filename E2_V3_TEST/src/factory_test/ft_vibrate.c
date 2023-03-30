@@ -76,6 +76,7 @@ const ft_menu_t FT_MENU_VIB =
 
 static void FTMenuVibSle1Hander(void)
 {
+	vibrate_off();
 	FTMainMenu14Proc();
 }
 

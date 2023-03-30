@@ -91,8 +91,6 @@ static void FTMenuPPGSle2Hander(void)
 
 static void FTMenuPPGStopTest(void)
 {
-	ft_ppg_checking = false;
-	ft_ppg_check_ok = false;
 	k_timer_stop(&ppg_test_timer);
 	FTStopPPG();
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
@@ -101,6 +99,7 @@ static void FTMenuPPGStopTest(void)
 static void FTMenuPPGStartTest(void)
 {
 	ft_ppg_checking = true;
+	ft_ppg_check_ok = false;
 	FTStartPPG();
 	k_timer_start(&ppg_test_timer, K_SECONDS(FT_PPG_TEST_TIMEROUT), K_NO_WAIT);
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
@@ -239,9 +238,10 @@ void FTPPGStatusUpdate(uint8_t hr, uint8_t spo2)
 		if(spo2 > 0)
 		{
 			count++;
-			if(count > 10)
+			if(count > 2)
 			{
 				count = 0;
+				ft_ppg_checking = false;
 				ft_ppg_check_ok = true;
 				FTMenuPPGStopTest();
 			}

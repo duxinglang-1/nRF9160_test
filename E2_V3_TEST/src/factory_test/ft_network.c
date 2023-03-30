@@ -209,6 +209,7 @@ void FTMenuNetProcess(void)
 		case SCREEN_ACTION_ENTER:
 			scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATED;
 			FTMenuNetShow();
+			FTMenuNetStartTest();
 			break;
 			
 		case SCREEN_ACTION_UPDATE:
@@ -269,7 +270,5 @@ void EnterFTMenuNet(void)
 	screen_id = SCREEN_ID_FACTORY_TEST; 
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATING;
-
-	FTMenuNetStartTest();
 }
 

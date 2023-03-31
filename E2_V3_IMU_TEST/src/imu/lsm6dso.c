@@ -1405,8 +1405,14 @@ void IMUMsgProcess(void)
 	activity_process();
 	if(MPW_data_in.CurrentActivity > 0)
 	{
+		static uint16_t last_step = 0;
+		
 		UpdateIMUData();
-		imu_redraw_steps_flag = true;
+		if(last_step != g_steps)
+		{
+			last_step = g_steps;
+			imu_redraw_steps_flag = true;
+		}
 	}
 
     /*k_timer_start(&step_update_timer, K_SECONDS(60), K_SECONDS(1));

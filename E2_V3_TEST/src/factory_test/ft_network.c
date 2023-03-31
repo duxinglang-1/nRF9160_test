@@ -274,7 +274,7 @@ void EnterFTMenuNet(void)
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
 
-	screen_id = SCREEN_ID_FACTORY_TEST; 
+	screen_id = SCREEN_ID_FACTORY_TEST;
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FACTORY_TEST].status = SCREEN_STATUS_CREATING;
 }

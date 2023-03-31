@@ -22,11 +22,13 @@
 #define FT_KEY_TITLE_H				40
 #define FT_KEY_TITLE_X				((LCD_WIDTH-FT_KEY_TITLE_W)/2)
 #define FT_KEY_TITLE_Y				20
+
 #define FT_KEY_MENU_STR_W			150
 #define FT_KEY_MENU_STR_H			30
 #define FT_KEY_MENU_STR_X			((LCD_WIDTH-FT_KEY_MENU_STR_W)/2)
 #define FT_KEY_MENU_STR_Y			80
 #define FT_KEY_MENU_STR_OFFSET_Y	5
+
 #define FT_KEY_SLE1_STR_W			70
 #define FT_KEY_SLE1_STR_H			30
 #define FT_KEY_SLE1_STR_X			40
@@ -35,6 +37,7 @@
 #define FT_KEY_SLE2_STR_H			30
 #define FT_KEY_SLE2_STR_X			130
 #define FT_KEY_SLE2_STR_Y			170
+
 #define FT_KEY_RET_STR_W			120
 #define FT_KEY_RET_STR_H			60
 #define FT_KEY_RET_STR_X			((LCD_WIDTH-FT_KEY_RET_STR_W)/2)
@@ -185,6 +188,8 @@ static void FTMenukeyUpdate(void)
 		ClearAllKeyHandler();
 		SetLeftKeyUpHandler(FTMenuKeySle1Hander);
 		SetRightKeyUpHandler(FTMenuKeySle2Hander);
+
+		ft_menu_checked[ft_main_menu_index] = true;
 	}
 }
 
@@ -279,6 +284,7 @@ void ExitFTMenuKey(void)
 
 void EnterFTMenuKey(void)
 {
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_KEY, sizeof(ft_menu_t));
 	memcpy(&ft_key, &FT_KEY_INF, sizeof(FT_KEY_INF));
 	
@@ -296,6 +302,7 @@ void EnterFTMenuKey(void)
 #define FT_WRIST_STATUS_STR_H			40
 #define FT_WRIST_STATUS_STR_X			((LCD_WIDTH-FT_KEY_MENU_STR_W)/2)
 #define FT_WRIST_STATUS_STR_Y			100
+
 #define FT_WRIST_RET_STR_W				120
 #define FT_WRIST_RET_STR_H				60
 #define FT_WRIST_RET_STR_X				((LCD_WIDTH-FT_KEY_RET_STR_W)/2)
@@ -356,6 +363,7 @@ static void FTMenuWristUpdate(void)
 		{
 			check_count = 0;
 			ft_wrist_checked = true;
+			ft_menu_checked[ft_main_menu_index] = true;
 			
 			LCD_Set_BL_Mode(LCD_BL_AUTO);
 			LCD_SetFontSize(FONT_SIZE_52);
@@ -461,6 +469,7 @@ void ExitFTMenuWrist(void)
 void EnterFTMenuWrist(void)
 {
 	ft_wrist_checked = false;
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_WRIST, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

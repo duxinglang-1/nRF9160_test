@@ -24,11 +24,13 @@
 #define FT_SIM_TITLE_H				40
 #define FT_SIM_TITLE_X				((LCD_WIDTH-FT_SIM_TITLE_W)/2)
 #define FT_SIM_TITLE_Y				20
+
 #define FT_SIM_MENU_STR_W			150
 #define FT_SIM_MENU_STR_H			25
 #define FT_SIM_MENU_STR_X			((LCD_WIDTH-FT_SIM_MENU_STR_W)/2)
 #define FT_SIM_MENU_STR_Y			60
 #define FT_SIM_MENU_STR_OFFSET_Y	5
+
 #define FT_SIM_SLE1_STR_W			70
 #define FT_SIM_SLE1_STR_H			30
 #define FT_SIM_SLE1_STR_X			40
@@ -37,10 +39,12 @@
 #define FT_SIM_SLE2_STR_H			30
 #define FT_SIM_SLE2_STR_X			130
 #define FT_SIM_SLE2_STR_Y			170
+
 #define FT_SIM_RET_STR_W			120
 #define FT_SIM_RET_STR_H			60
 #define FT_SIM_RET_STR_X			((LCD_WIDTH-FT_SIM_RET_STR_W)/2)
 #define FT_SIM_RET_STR_Y			((LCD_HEIGHT-FT_SIM_RET_STR_H)/2)
+
 #define FT_SIM_NOTIFY_W				200
 #define FT_SIM_NOTIFY_H				40
 #define FT_SIM_NOTIFY_X				((LCD_WIDTH-FT_SIM_NOTIFY_W)/2)
@@ -63,8 +67,7 @@ const ft_menu_t FT_MENU_SIM =
 	0,
 	0,
 	{
-		{0x0049,0x004D,0x0053,0x0049,0x003A,0x0000},						//IMSI:
-		{0x0049,0x0043,0x0043,0x0049,0x0044,0x003A,0x0000},					//ICCID:
+		{0x0000},
 	},
 	{
 		FTMenuSIMDumpProc,
@@ -135,7 +138,8 @@ static void FTMenuSIMUpdate(void)
 			if((strlen(g_imsi) > 0)&&(strlen(g_iccid) > 0))
 			{
 				ft_sim_check_ok = true;
-
+				ft_menu_checked[ft_main_menu_index] = true;
+				
 				LCD_SetFontSize(FONT_SIZE_20);
 				mmi_asc_to_ucs2(tmpbuf, g_imsi);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -262,6 +266,7 @@ void EnterFTMenuSIM(void)
 	ft_sim_status = 0;
 	ft_sim_check_ok = false;
 	ft_sim_checking = true;
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_SIM, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

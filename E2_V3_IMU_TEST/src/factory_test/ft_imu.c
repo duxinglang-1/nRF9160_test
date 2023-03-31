@@ -23,11 +23,13 @@
 #define FT_IMU_TITLE_H				40
 #define FT_IMU_TITLE_X				((LCD_WIDTH-FT_IMU_TITLE_W)/2)
 #define FT_IMU_TITLE_Y				20
+
 #define FT_IMU_MENU_STR_W			150
 #define FT_IMU_MENU_STR_H			30
 #define FT_IMU_MENU_STR_X			((LCD_WIDTH-FT_IMU_MENU_STR_W)/2)
 #define FT_IMU_MENU_STR_Y			80
 #define FT_IMU_MENU_STR_OFFSET_Y	5
+
 #define FT_IMU_SLE1_STR_W			70
 #define FT_IMU_SLE1_STR_H			30
 #define FT_IMU_SLE1_STR_X			40
@@ -36,10 +38,12 @@
 #define FT_IMU_SLE2_STR_H			30
 #define FT_IMU_SLE2_STR_X			130
 #define FT_IMU_SLE2_STR_Y			170
+
 #define FT_IMU_RET_STR_W			120
 #define FT_IMU_RET_STR_H			60
 #define FT_IMU_RET_STR_X			((LCD_WIDTH-FT_IMU_RET_STR_W)/2)
 #define FT_IMU_RET_STR_Y			((LCD_HEIGHT-FT_IMU_RET_STR_H)/2)
+
 #define FT_IMU_STR_W				LCD_WIDTH
 #define FT_IMU_STR_H				40
 #define FT_IMU_STR_X				((LCD_WIDTH-FT_IMU_STR_W)/2)
@@ -93,6 +97,7 @@ void FTIMUStatusUpdate(void)
 	if(imu_id == LSM6DSO_ID)
 	{
 		ft_imu_checked = true;
+		ft_menu_checked[ft_main_menu_index] = true;
 	}
 	
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_IMU))
@@ -209,6 +214,7 @@ void ExitFTMenuIMU(void)
 void EnterFTMenuIMU(void)
 {
 	ft_imu_checked = false;
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_IMU, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

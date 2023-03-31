@@ -26,11 +26,13 @@
 #define FT_TEMP_TITLE_H				40
 #define FT_TEMP_TITLE_X				((LCD_WIDTH-FT_TEMP_TITLE_W)/2)
 #define FT_TEMP_TITLE_Y				20
+
 #define FT_TEMP_MENU_STR_W			150
 #define FT_TEMP_MENU_STR_H			30
 #define FT_TEMP_MENU_STR_X			((LCD_WIDTH-FT_TEMP_MENU_STR_W)/2)
 #define FT_TEMP_MENU_STR_Y			80
 #define FT_TEMP_MENU_STR_OFFSET_Y	5
+
 #define FT_TEMP_SLE1_STR_W			70
 #define FT_TEMP_SLE1_STR_H			30
 #define FT_TEMP_SLE1_STR_X			40
@@ -39,10 +41,12 @@
 #define FT_TEMP_SLE2_STR_H			30
 #define FT_TEMP_SLE2_STR_X			130
 #define FT_TEMP_SLE2_STR_Y			170
+
 #define FT_TEMP_RET_STR_W			120
 #define FT_TEMP_RET_STR_H			60
 #define FT_TEMP_RET_STR_X			((LCD_WIDTH-FT_TEMP_RET_STR_W)/2)
 #define FT_TEMP_RET_STR_Y			((LCD_HEIGHT-FT_TEMP_RET_STR_H)/2)
+
 #define FT_TEMP_NUM_W				200
 #define FT_TEMP_NUM_H				40
 #define FT_TEMP_NUM_X				((LCD_WIDTH-FT_TEMP_NUM_W)/2)
@@ -234,6 +238,7 @@ void FTTempStatusUpdate(void)
 		{
 			count = 0;
 			ft_temp_check_ok = true;
+			ft_menu_checked[ft_main_menu_index] = true;
 			FTMenuTempStopTest();
 		}
 	
@@ -249,6 +254,7 @@ void ExitFTMenuTemp(void)
 
 void EnterFTMenuTemp(void)
 {
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_TEMP, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

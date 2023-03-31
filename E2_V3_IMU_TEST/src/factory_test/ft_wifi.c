@@ -26,11 +26,13 @@
 #define FT_WIFI_TITLE_H				40
 #define FT_WIFI_TITLE_X				((LCD_WIDTH-FT_WIFI_TITLE_W)/2)
 #define FT_WIFI_TITLE_Y				20
+
 #define FT_WIFI_MENU_STR_W			150
 #define FT_WIFI_MENU_STR_H			30
 #define FT_WIFI_MENU_STR_X			((LCD_WIDTH-FT_WIFI_MENU_STR_W)/2)
 #define FT_WIFI_MENU_STR_Y			80
 #define FT_WIFI_MENU_STR_OFFSET_Y	5
+
 #define FT_WIFI_SLE1_STR_W			70
 #define FT_WIFI_SLE1_STR_H			30
 #define FT_WIFI_SLE1_STR_X			40
@@ -39,6 +41,7 @@
 #define FT_WIFI_SLE2_STR_H			30
 #define FT_WIFI_SLE2_STR_X			130
 #define FT_WIFI_SLE2_STR_Y			170
+
 #define FT_WIFI_RET_STR_W			120
 #define FT_WIFI_RET_STR_H			60
 #define FT_WIFI_RET_STR_X			((LCD_WIDTH-FT_WIFI_RET_STR_W)/2)
@@ -52,6 +55,7 @@
 		
 static bool ft_wifi_check_ok = false;
 static bool ft_wifi_checking = false;
+static bool update_show_flag = false;
 
 static void WifiTestTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_test_timer, WifiTestTimerOutCallBack, NULL);
@@ -111,7 +115,6 @@ static void WifiTestTimerOutCallBack(struct k_timer *timer_id)
 
 static void FTMenuWifiUpdate(void)
 {
-	static bool flag = false;
 	uint16_t x,y,w,h;
 	uint16_t ret_str[2][5] = {
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
@@ -122,20 +125,20 @@ static void FTMenuWifiUpdate(void)
 	{
 		uint8_t tmpbuf[512] = {0};
 		
-		if(!flag)
+		if(!update_show_flag)
 		{
-			flag = true;
+			update_show_flag = true;
 			LCD_Fill(FT_WIFI_NOTIFY_X, FT_WIFI_NOTIFY_Y, FT_WIFI_NOTIFY_W, FT_WIFI_NOTIFY_H, BLACK);
 			LCD_SetFontSize(FONT_SIZE_20);
 		}
 
-		LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+		LCD_Fill((LCD_WIDTH-160)/2, 60, 160, 100, BLACK);
 		mmi_asc_to_ucs2(tmpbuf, wifi_test_info);
-		LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
+		LCD_ShowUniStringInRect((LCD_WIDTH-160)/2, 60, 160, 100, (uint16_t*)tmpbuf);
 	}
 	else
 	{
-		flag = false;
+		update_show_flag = false;
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 		//pass or fail
@@ -231,6 +234,7 @@ void FTWifiStatusUpdate(uint8_t node_count)
 			{
 				count = 0;
 				ft_wifi_check_ok = true;
+				ft_menu_checked[ft_main_menu_index] = true;
 				FTMenuWifiStopTest();
 			}
 		}
@@ -250,6 +254,8 @@ void ExitFTMenuWifi(void)
 void EnterFTMenuWifi(void)
 {
 	ft_wifi_check_ok = false;
+	update_show_flag = false;
+	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_WIFI, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

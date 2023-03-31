@@ -146,11 +146,19 @@ extern unsigned char IMG_RUNNING_ANI_3[2114];
 //select icon(2)
 extern unsigned char IMG_SELECT_ICON_NO[808];
 extern unsigned char IMG_SELECT_ICON_YES[808];
-//settings(8)
+//settings(16)
 extern unsigned char IMG_SET_BG[12852];
 extern unsigned char IMG_SET_INFO_BG[17008];
-extern unsigned char IMG_SET_PG_1[272];
-extern unsigned char IMG_SET_PG_2[272];
+extern unsigned char IMG_SET_PG2_1[272];
+extern unsigned char IMG_SET_PG2_2[272];
+extern unsigned char IMG_SET_PG3_1[344];
+extern unsigned char IMG_SET_PG3_2[344];
+extern unsigned char IMG_SET_PG3_3[344];
+extern unsigned char IMG_SET_PG4_1[476];
+extern unsigned char IMG_SET_PG4_2[476];
+extern unsigned char IMG_SET_PG4_3[476];
+extern unsigned char IMG_SET_PG4_4[476];
+extern unsigned char IMG_SET_QR_ICON[1258];
 extern unsigned char IMG_SET_SWITCH_OFF_ICON[4152];
 extern unsigned char IMG_SET_SWITCH_ON_ICON[4152];
 extern unsigned char IMG_SET_TEMP_UNIT_C_ICON[2528];
@@ -161,19 +169,21 @@ extern unsigned char IMG_SIG_1[1304];
 extern unsigned char IMG_SIG_2[1304];
 extern unsigned char IMG_SIG_3[1304];
 extern unsigned char IMG_SIG_4[1304];
-//sleep(12)
+//sleep(14)
 extern unsigned char IMG_SLEEP_ANI_1[2968];
 extern unsigned char IMG_SLEEP_ANI_2[2968];
 extern unsigned char IMG_SLEEP_ANI_3[2968];
 extern unsigned char IMG_SLEEP_BIG_H[528];
 extern unsigned char IMG_SLEEP_BIG_M[768];
+extern unsigned char IMG_SLEEP_BEGIN[1576];
+extern unsigned char IMG_SLEEP_END[1576];
 extern unsigned char IMG_SLEEP_DEEP_ICON[1576];
-extern unsigned char IMG_SLEEP_H[260];
-extern unsigned char IMG_SLEEP_HOUR[552];
 extern unsigned char IMG_SLEEP_LIGHT_ICON[1576];
-extern unsigned char IMG_SLEEP_LINE[254];
+extern unsigned char IMG_SLEEP_H[260];
 extern unsigned char IMG_SLEEP_M[372];
+extern unsigned char IMG_SLEEP_HOUR[552];
 extern unsigned char IMG_SLEEP_MIN[968];
+extern unsigned char IMG_SLEEP_LINE[254];
 //sos(4)
 extern unsigned char IMG_SOS_ANI_1[40880];
 extern unsigned char IMG_SOS_ANI_2[40880];
@@ -189,16 +199,17 @@ extern unsigned char IMG_SPO2_BIG_ICON_2[5288];
 extern unsigned char IMG_SPO2_BIG_ICON_3[5288];
 extern unsigned char IMG_SPO2_DOWN_ARRAW[484];
 extern unsigned char IMG_SPO2_UP_ARRAW[484];
-//step(10)
+//step(11)
 extern unsigned char IMG_STEP_ANI_1[2328];
 extern unsigned char IMG_STEP_ANI_2[2328];
-extern unsigned char IMG_STEP_ICON[2136];
-extern unsigned char IMG_CAL_ICON[2136];
-extern unsigned char IMG_STEP_UNIT_ICON[1160];
-extern unsigned char IMG_STEP_CAL_ICON[1184];
-extern unsigned char IMG_STEP_DIS_ICON[1240];
-extern unsigned char IMG_STEP_KCAL[820];
-extern unsigned char IMG_STEP_KM[596];
+extern unsigned char IMG_STEP_STEP_ICON[2136];
+extern unsigned char IMG_STEP_CAL_ICON[2136];
+extern unsigned char IMG_STEP_UNIT_CN_ICON[400];
+extern unsigned char IMG_STEP_UNIT_EN_ICON[1160];
+extern unsigned char IMG_STEP_KCAL_CN[820];
+extern unsigned char IMG_STEP_KCAL_EN[820];
+extern unsigned char IMG_STEP_KM_CN[820];
+extern unsigned char IMG_STEP_KM_EN[596];
 extern unsigned char IMG_STEP_LINE[205];
 //sync(3)
 extern unsigned char IMG_SYNC_ERR[42128];

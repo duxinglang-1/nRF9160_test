@@ -132,9 +132,9 @@ static void FTMenuWifiUpdate(void)
 			LCD_SetFontSize(FONT_SIZE_20);
 		}
 
-		LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+		LCD_Fill((LCD_WIDTH-160)/2, 60, 160, 100, BLACK);
 		mmi_asc_to_ucs2(tmpbuf, wifi_test_info);
-		LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
+		LCD_ShowUniStringInRect((LCD_WIDTH-160)/2, 60, 160, 100, (uint16_t*)tmpbuf);
 	}
 	else
 	{

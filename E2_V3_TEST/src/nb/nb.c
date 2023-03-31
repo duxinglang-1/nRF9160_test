@@ -1226,13 +1226,11 @@ void GetModemDateTime(void)
 	  		return;
 	#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
-	#ifndef NB_SIGNAL_TEST
 		if(nb_connected && (retry > 0))
 		{
 			retry--;
 			k_timer_start(&get_nw_time_timer, K_MSEC(1000), K_NO_WAIT);
 		}
-	#endif
 		return;
 	}
 

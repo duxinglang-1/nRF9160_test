@@ -118,7 +118,7 @@ static void FTMenuPMUUpdate(void)
 		if(ft_pmu_change_flag == 2)
 		{
 			check_count++;
-			if(check_count > 2)
+			if(check_count > 1)
 			{
 				check_count = 0;
 				ft_pmu_checked = true;

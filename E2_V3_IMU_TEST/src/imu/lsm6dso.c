@@ -400,7 +400,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 /* ULTRA LOW POWER & INACTIVITY MODE IMPLEMENTED. FIFO DISABLED*/
 static bool sensor_init(void)
 {
-        k_sleep(K_MSEC(BOOT_TIME));
+	k_sleep(K_MSEC(BOOT_TIME));
 
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
 	if(whoamI != LSM6DSO_ID)
@@ -415,20 +415,20 @@ static bool sensor_init(void)
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_OFF);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
 
-        lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
 
-        lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g);
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
-	
+
 	lsm6dso_fifo_watermark_set(&imu_dev_ctx, 52);
 	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
 
-        lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_NOT_BATCHED);
 
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
 
-        lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
 
 	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
@@ -463,13 +463,13 @@ static bool sensor_init(void)
 
 	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
 
-        /*Step Counter enable*/
-        //lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-        //int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-        //lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-        /* Enable False Positive Rejection. */
-        //lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
-        //lsm6dso_steps_reset(&imu_dev_ctx);
+	/*Step Counter enable*/
+	//lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	//lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	/* Enable False Positive Rejection. */
+	//lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
+	//lsm6dso_steps_reset(&imu_dev_ctx);
 
 	/* Tilt enable */
 	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
@@ -555,56 +555,56 @@ void is_tilt(void)
 
 void activity_process(void)
 {
-    uint16_t num = 0;
-    uint8_t waterm = 0;
-    lsm6dso_fifo_tag_t reg_tag;
-    axis3bit16_t dummy;
+	uint16_t num = 0;
+	uint8_t waterm = 0;
+	lsm6dso_fifo_tag_t reg_tag;
+	axis3bit16_t dummy;
 
-    lsm6dso_fifo_wtm_flag_get(&imu_dev_ctx, &waterm);
-    if(waterm>0)
-    {
-      lsm6dso_fifo_data_level_get(&imu_dev_ctx, &num);
-      while(num--)
-      {
-        lsm6dso_fifo_sensor_tag_get(&imu_dev_ctx, &reg_tag);
-	switch(reg_tag)
+	lsm6dso_fifo_wtm_flag_get(&imu_dev_ctx, &waterm);
+	if(waterm>0)
 	{
-          case LSM6DSO_XL_NC_TAG:
-            memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
-            lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-            acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-            acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-            acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
+		lsm6dso_fifo_data_level_get(&imu_dev_ctx, &num);
+		while(num--)
+		{
+			lsm6dso_fifo_sensor_tag_get(&imu_dev_ctx, &reg_tag);
+			switch(reg_tag)
+			{
+			case LSM6DSO_XL_NC_TAG:
+				memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
+				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
+				acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
+				acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
+				acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
 
-            acceleration_g[0]   = acceleration_mg[0]/1000;
-            acceleration_g[1]   = acceleration_mg[1]/1000;
-            acceleration_g[2]   = acceleration_mg[2]/1000;
+				acceleration_g[0]   = acceleration_mg[0]/1000;
+				acceleration_g[1]   = acceleration_mg[1]/1000;
+				acceleration_g[2]   = acceleration_mg[2]/1000;
 
-            //LOGD("Axyz, %4.2f, %4.2f, %4.2f", acceleration_g[0], acceleration_g[1], acceleration_g[2]);
-            break;
+				//LOGD("Axyz, %4.2f, %4.2f, %4.2f", acceleration_g[0], acceleration_g[1], acceleration_g[2]);
+				break;
 
-          case LSM6DSO_GYRO_NC_TAG:
-            memset(data_raw_angular_rate.u8bit, 0x00, 3*sizeof(int16_t));
-            lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_angular_rate.u8bit);
-            angular_rate_mdps[0] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[0]);
-            angular_rate_mdps[1] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[1]);
-            angular_rate_mdps[2] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[2]);
+			case LSM6DSO_GYRO_NC_TAG:
+				memset(data_raw_angular_rate.u8bit, 0x00, 3*sizeof(int16_t));
+				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_angular_rate.u8bit);
+				angular_rate_mdps[0] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[0]);
+				angular_rate_mdps[1] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[1]);
+				angular_rate_mdps[2] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[2]);
 
-            angular_rate_dps[0] = angular_rate_mdps[0]/1000;
-            angular_rate_dps[1] = angular_rate_mdps[1]/1000;
-            angular_rate_dps[2] = angular_rate_mdps[2]/1000;
+				angular_rate_dps[0] = angular_rate_mdps[0]/1000;
+				angular_rate_dps[1] = angular_rate_mdps[1]/1000;
+				angular_rate_dps[2] = angular_rate_mdps[2]/1000;
 
-            //LOGD("%d, Gxyz, %4.2f, %4.2f, %4.2f", i, angular_rate_dps[0], angular_rate_dps[1], angular_rate_dps[2]);
-            break;
+				//LOGD("%d, Gxyz, %4.2f, %4.2f, %4.2f", i, angular_rate_dps[0], angular_rate_dps[1], angular_rate_dps[2]);
+				break;
 
-          default:
-            memset(dummy.u8bit, 0x00, 3 * sizeof(int16_t));
-            lsm6dso_fifo_out_raw_get(&imu_dev_ctx, dummy.u8bit);
-            break;
+			default:
+				memset(dummy.u8bit, 0x00, 3 * sizeof(int16_t));
+				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, dummy.u8bit);
+				break;
+			}
+			runActivityAlgorithms(acceleration_g[0], acceleration_g[0], acceleration_g[0]);         
 		}
-        runActivityAlgorithms(acceleration_g[0], acceleration_g[0], acceleration_g[0]);         
-      }
-    }
+	}
 }
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
@@ -1140,19 +1140,18 @@ void ReSetImuSteps(void)
 	save_cur_sport_to_record(&last_sport);	
 }
 
-//void GetImuSteps(uint16_t *steps)
-//{
-//	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
-//}
+void GetImuSteps(uint16_t *steps)
+{
+	*steps = MPW_data_out.Nsteps;
+}
 
 void UpdateIMUData(void)
 {
-	//uint16_t steps;
+	uint16_t steps;
 	
-	//GetImuSteps(&steps);
+	GetImuSteps(&steps);
 
-	//g_steps = steps+g_last_steps;
-        g_steps = MPW_data_out.Nsteps + g_last_steps;
+	g_steps = steps+g_last_steps;
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
@@ -1200,13 +1199,13 @@ void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
 }*/
 
-/*uint8_t IMU_GetID(void)
+uint8_t IMU_GetID(void)
 {
 	uint8_t sensor_id = 0;
 	
 	lsm6dso_device_id_get(&imu_dev_ctx, &sensor_id);
 	return sensor_id;
-}*/
+}
 
 void IMU_init(struct k_work_q *work_q)
 {
@@ -1239,14 +1238,14 @@ void IMU_init(struct k_work_q *work_q)
 	if(!imu_check_ok)
 		return;
 
-        initActivityLib();
+	initActivityLib();
 	getActivityLibVer();
-        setOrientationAW();
+	setOrientationAW();
 
 #ifdef CONFIG_STEP_SUPPORT
 	//lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
 	//lsm6dso_sensitivity();
-        initStepLib();
+	initStepLib();
 	getStepLibVer();
 #endif
 #ifdef CONFIG_SLEEP_SUPPORT
@@ -1256,11 +1255,10 @@ void IMU_init(struct k_work_q *work_q)
 	LOGD("IMU_init done!");
 #endif
 
-        imu_work_q = work_q;
+	imu_work_q = work_q;
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
 	k_work_init(&fall_work, fall_check);
 #endif
-        //k_timer_start(&step_update_timer, K_SECONDS(60), K_SECONDS(1));
 }
 
 /*void test_i2c(void)
@@ -1404,23 +1402,23 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_STEP_SUPPORT
-        activity_process();
-        
-        if(MPW_data_in.CurrentActivity > 0)
+	activity_process();
+	if(MPW_data_in.CurrentActivity > 0)
 	{
 		UpdateIMUData();
+		imu_redraw_steps_flag = true;
 	}
 
-        /*k_timer_start(&step_update_timer, K_SECONDS(60), K_SECONDS(1));
+    /*k_timer_start(&step_update_timer, K_SECONDS(60), K_SECONDS(1));
 
-        if(k_timer_status_get(&step_update_timer)>0){
-                UpdateIMUData();
-		imu_redraw_steps_flag = true;
-        }else{
-                imu_redraw_steps_flag = false;
-        }
+    if(k_timer_status_get(&step_update_timer)>0){
+            UpdateIMUData();
+	imu_redraw_steps_flag = true;
+    }else{
+            imu_redraw_steps_flag = false;
+    }
 
-        k_timer_stop(&step_update_timer);*/
+    k_timer_stop(&step_update_timer);*/
         	
 	if(reset_steps)
 	{

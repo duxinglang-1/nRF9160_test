@@ -135,9 +135,9 @@ static void FTMenuNetUpdate(void)
 			LCD_SetFontSize(FONT_SIZE_20);
 		}
 
-		LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+		LCD_Fill((LCD_WIDTH-160)/2, 60, 160, 100, BLACK);
 		mmi_asc_to_ucs2(tmpbuf, nb_test_info);
-		LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
+		LCD_ShowUniStringInRect((LCD_WIDTH-160)/2, 60, 160, 100, (uint16_t*)tmpbuf);
 	}
 	else
 	{
@@ -234,7 +234,7 @@ void FTNetStatusUpdate(uint8_t rssp)
 		if((rssp > 0)&&(rssp < 255))
 		{
 			count++;
-			if(count > 2)
+			if(count > 3)
 			{
 				count = 0;
 				ft_net_check_ok = true;

@@ -11,6 +11,8 @@
 #define MENU_MAX_COUNT	10
 #define MENU_NAME_MAX	20
 
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login"
+
 typedef void(*menu_handler)(void);
 
 typedef enum{

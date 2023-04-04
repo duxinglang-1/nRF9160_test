@@ -1721,7 +1721,8 @@ void SettingsUpdateStatus(void)
 		break;
 		
 	case SETTINGS_MENU_CAREMATE_QR:
-		DeviceShowQRStatus();
+		LCD_Clear(BLACK);
+		show_QR_code(strlen(SETTINGS_CAREMATE_URL), SETTINGS_CAREMATE_URL);
 		
 		SetLeftKeyUpHandler(settings_menu.sel_handler[0]);
 		SetRightKeyUpHandler(settings_menu.sel_handler[0]);

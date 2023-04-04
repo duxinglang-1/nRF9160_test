@@ -1722,6 +1722,9 @@ void SettingsUpdateStatus(void)
 		
 	case SETTINGS_MENU_CAREMATE_QR:
 		LCD_Clear(BLACK);
+		LCD_ReSetFontBgColor();
+		LCD_ReSetFontColor();
+
 		show_QR_code(strlen(SETTINGS_CAREMATE_URL), SETTINGS_CAREMATE_URL);
 		
 		SetLeftKeyUpHandler(settings_menu.sel_handler[0]);

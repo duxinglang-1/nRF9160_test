@@ -2847,7 +2847,6 @@ static void nb_link(struct k_work *work)
 
 			if(!server_has_timed_flag)
 				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
-				//GetModemDateTime();
 			
 			NBRedrawNetMode();
 		}

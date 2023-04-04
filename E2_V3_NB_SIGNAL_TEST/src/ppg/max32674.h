@@ -13,9 +13,9 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define PPG_CHECK_HR_MENU			30
-#define PPG_CHECK_SPO2_MENU			60
-#define PPG_CHECK_BPT_MENU			90
+#define PPG_CHECK_HR_MENU			60
+#define PPG_CHECK_SPO2_MENU			120
+#define PPG_CHECK_BPT_MENU			120
 
 #define PPG_CHECK_HR_TIMELY			1
 #define PPG_CHECK_SPO2_TIMELY		2
@@ -155,13 +155,10 @@ extern uint8_t g_ppg_trigger;
 extern uint8_t g_ppg_ver[64];
 
 extern uint8_t g_hr;
-extern uint8_t g_hr_timing;
 extern uint8_t g_hr_menu;
 extern uint8_t g_spo2;
-extern uint8_t g_spo2_timing;
 extern uint8_t g_spo2_menu;
 extern bpt_data g_bpt;
-extern bpt_data g_bpt_timing;
 extern bpt_data g_bpt_menu;
 
 extern PPG_WORK_STATUS g_ppg_status;

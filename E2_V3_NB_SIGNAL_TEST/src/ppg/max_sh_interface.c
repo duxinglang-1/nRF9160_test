@@ -172,13 +172,16 @@ static void sh_init_gpio(void)
 	if(gpio_ppg == NULL)
 		gpio_ppg = device_get_binding(PPG_PORT);
 
+#if 0	//xb add 20230228 Set the PPG interrupt pin as input to prevent leakage.
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
-
+#else
+	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
+#endif	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	k_sleep(K_MSEC(10));
@@ -1339,11 +1342,12 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
-
-		PPG_i2c_off();
-		PPG_Power_Off();
-		PPG_Disable();
-		return false;
+		goto need_update;
+	
+		//PPG_i2c_off();
+		//PPG_Power_Off();
+		//PPG_Disable();
+		//return false;
 	}
 #ifdef MAX_DEBUG	
 	LOGD("MCU type = %d", u8_rxbuf[0]);
@@ -1356,11 +1360,12 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
 	#endif
+		goto need_update;
 	
-		PPG_i2c_off();
-		PPG_Power_Off();
-		PPG_Disable();
-		return false;
+		//PPG_i2c_off();
+		//PPG_Power_Off();
+		//PPG_Disable();
+		//return false;
 	}
 	else
 	{
@@ -1372,6 +1377,7 @@ bool sh_init_interface(void)
 
 	if((mcu_type != 1) || ((strcmp(g_ppg_ver, g_ppg_algo_ver) != 0)&&(strlen(g_ppg_algo_ver) > 0)))
 	{
+need_update:
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
 	#else	

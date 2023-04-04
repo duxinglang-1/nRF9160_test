@@ -32,7 +32,7 @@
 #define CMD_SET_NW_MODE_LTE_M_GPS	"AT%%XSYSTEMMODE=1,0,1,0"	//Preferred network mode: LTE-M and GPS
 #define CMD_SET_NW_MODE_GPS			"AT%%XSYSTEMMODE=0,0,1,0"	//Preferred network mode: GPS
 
-#define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
+#define CMD_SET_FUN_MODE 	"AT+CFUN=1"						//Set the modem to Normal mode
 #define CMD_SET_RAI		 	"AT%%XRAI=3"					//Set the modem rai parament
 
 #define IMEI_MAX_LEN	(15)

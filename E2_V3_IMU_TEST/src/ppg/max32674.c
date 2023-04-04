@@ -30,7 +30,7 @@
 
 //#define PPG_DEBUG
 
-#define PPG_HR_COUNT_MAX		8
+#define PPG_HR_COUNT_MAX		30
 #define PPG_HR_DEL_MIN_NUM		5
 #define PPG_SPO2_COUNT_MAX		3
 #define PPG_SPO2_DEL_MIN_NUM	1
@@ -1126,6 +1126,7 @@ void PPGGetSensorHubData(void)
 
 					if(hr > PPG_HR_MIN)
 					{
+					#if 0	//xb test 2023.04.03 Modify the hr measurement data filtering mode. 
 						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
 						{
 							uint8_t k;
@@ -1173,6 +1174,20 @@ void PPGGetSensorHubData(void)
 							LOGD("get hr success! hr:%d", g_hr);
 						#endif
 						}
+					#else
+						temp_hr_count++;
+						if(temp_hr_count >= sizeof(temp_hr)/sizeof(temp_hr[0]))
+						{
+							temp_hr_count = 0;
+
+							g_hr = hr;
+							get_hr_ok_flag = true;
+							ppg_stop_flag = true;
+						#ifdef PPG_DEBUG
+							LOGD("get hr success! hr:%d", g_hr);
+						#endif
+						}
+					#endif
 					}
 				}
 				else if(g_ppg_data == PPG_DATA_SPO2)

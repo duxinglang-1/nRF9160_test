@@ -86,6 +86,7 @@ K_TIMER_DEFINE(ppg_delay_start_timer, ppg_delay_start_timerout, NULL);
 static void ppg_polling_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_polling_timer, ppg_polling_timerout, NULL);
 
+#if 1
 //xb test 20220629
 #define POLL_PERIOD_40MS       (0x1)
 
@@ -995,6 +996,7 @@ void sh_FIFO_polling_handler(void)
 	#endif
 	}
 }
+#endif
 //xb end 2022.06.29
 
 void ClearAllBptRecData(void)

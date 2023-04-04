@@ -392,15 +392,13 @@ void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 	switch(mode)
 	{
 	case LCD_BL_ALWAYS_ON:
+		k_timer_stop(&backlight_timer);
 		if(lcd_is_sleeping)
 			LCD_SleepOut();
-		if(k_timer_remaining_get(&backlight_timer) > 0)
-			k_timer_stop(&backlight_timer);
 		break;
 
 	case LCD_BL_AUTO:
-		if(k_timer_remaining_get(&backlight_timer) > 0)
-			k_timer_stop(&backlight_timer);
+		k_timer_stop(&backlight_timer);
 		if(global_settings.backlight_time != 0)
 			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), K_NO_WAIT);
 		break;

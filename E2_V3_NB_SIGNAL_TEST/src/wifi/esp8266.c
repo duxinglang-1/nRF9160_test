@@ -202,6 +202,22 @@ void Send_Cmd_To_Esp8285(uint8_t *cmd, uint32_t WaitTime)
 }
 
 /*============================================================================
+* Function Name  : IsInWifiScreen
+* Description    : 处于wifi测试界面
+* Input          : None
+* Output         : None
+* Return         : bool
+* CALL           : 可被外部调用
+==============================================================================*/
+bool IsInWifiScreen(void)
+{
+	if(screen_id == SCREEN_ID_WIFI_TEST)
+		return true;
+	else
+		return false;
+}
+
+/*============================================================================
 * Function Name  : wifi_is_working
 * Description    : wifi功能正在运行
 * Input          : None

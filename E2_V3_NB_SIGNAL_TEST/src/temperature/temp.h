@@ -23,8 +23,13 @@
 #define TEMP_IF_I2C
 #define TEMP_IF_SINGLE_LINE
 
-#define TEMP_CHECK_MENU		60
-#define TEMP_CHECK_TIMELY	2
+#define TEMP_CHECK_MENU				60
+#define TEMP_CHECK_TIMELY			2
+#ifndef CONFIG_PPG_SUPPORT
+#define PPG_CHECK_HR_TIMELY			0
+#define PPG_CHECK_SPO2_TIMELY		0
+#define PPG_CHECK_BPT_TIMELY		0
+#endif
 
 #define TEMP_MAX			420
 #define TEMP_MIN			320
@@ -74,7 +79,6 @@ extern bool get_temp_ok_flag;
 
 extern float g_temp_skin;
 extern float g_temp_body;
-extern float g_temp_timing;
 extern float g_temp_menu;
 
 extern TEMP_WORK_STATUS g_temp_status;

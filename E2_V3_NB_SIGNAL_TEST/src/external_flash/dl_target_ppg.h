@@ -9,6 +9,7 @@
 #ifndef __DL_TARGET_PPG_H__
 #define __DL_TARGET_PPG_H__
 
+#ifdef CONFIG_PPG_SUPPORT
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -20,5 +21,7 @@ extern int dl_target_ppg_init(size_t file_size, dl_target_callback_t cb);
 extern int dl_target_ppg_offset_get(size_t *offset);
 extern int dl_target_ppg_write(const void *const buf, size_t len);
 extern int dl_target_ppg_done(bool successful);
+
+#endif/*CONFIG_PPG_SUPPORT*/
 
 #endif/*__DL_TARGET_PPG_H__*/

@@ -20,7 +20,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.0.3_20230224";
+uint8_t g_fw_version[64] = "V3.0.3_20230228";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -109,7 +109,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 		{false,0,0,0},
 		{false,0,0,0},
 		{false,0,0,0},
-	}
+	},
 };
 
 const settings_menu_t SETTING_MAIN_MENU = 

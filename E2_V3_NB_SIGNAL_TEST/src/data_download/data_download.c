@@ -20,13 +20,14 @@
 
 #define TLS_SEC_TAG 42
 #define DL_SOCKET_RETRIES 2
+#define DL_BUF_LEN	4096
 
 static bool dl_start_flag = false;
 static bool dl_run_flag = false;
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
 
-static uint8_t databuf[4096] = {0};
+static uint8_t databuf[DL_BUF_LEN] = {0};
 static uint32_t datalen = 0;
 
 static dl_callback_t callback;
@@ -154,7 +155,7 @@ static int download_client_callback(const struct download_client_evt *event)
 		memcpy(&databuf[datalen], event->fragment.buf, event->fragment.len);
 		datalen += event->fragment.len;
 		LOGD("FRAGMENT datalen:%d", datalen);
-		if(datalen >= 4096)
+		if(datalen >= DL_BUF_LEN)
 		{
 			err = dl_target_write(databuf, datalen);
 			datalen = 0;
@@ -340,7 +341,7 @@ static void dl_transfer_start(struct k_work *unused)
 		break;
 	#endif
 
-	#ifdef CONFIG_PPG_DATA_UPDATE
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
 		if(strncmp(g_imsi, "460", strlen("460")) == 0)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
@@ -460,7 +461,8 @@ void dl_font_start(void)
 	EnterDlScreen();
 }
 #endif
-#ifdef CONFIG_PPG_DATA_UPDATE
+
+#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 void dl_ppg_prev(void)
 {
 	dl_run_flag = false;
@@ -491,23 +493,23 @@ void dl_prev(void)
 {
 	switch(g_dl_data_type)
 	{
-	case DL_DATA_IMG:
 	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		dl_img_prev();
-	#endif
 		break;
+	#endif
 
-	case DL_DATA_FONT:
 	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		dl_font_prev();
+		break;
 	#endif
-		break;
-		
+
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
-	#ifdef CONFIG_PPG_DATA_UPDATE
 		dl_ppg_prev();
-	#endif 
 		break;
+	#endif 
 	}
 }
 
@@ -515,23 +517,23 @@ void dl_exit(void)
 {
 	switch(g_dl_data_type)
 	{
-	case DL_DATA_IMG:
 	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		dl_img_exit();
-	#endif
 		break;
+	#endif
 
-	case DL_DATA_FONT:
 	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		dl_font_exit();
+		break;
 	#endif
-		break;
-		
+
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
-	#ifdef CONFIG_PPG_DATA_UPDATE
 		dl_ppg_exit();
-	#endif 
 		break;
+	#endif
 	}
 }
 

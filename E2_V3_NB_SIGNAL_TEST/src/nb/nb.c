@@ -73,6 +73,8 @@ K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
+static struct k_delayed_work modem_off_work;
+static struct k_delayed_work modem_on_work;
 static struct k_delayed_work nb_link_work;
 static struct k_delayed_work mqtt_link_work;
 
@@ -612,6 +614,12 @@ static void mqtt_link(struct k_work_q *work_q)
 #ifdef NB_DEBUG
 	LOGD("begin");
 #endif
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived())
+		return;
+#endif
+
 	mqtt_connecting_flag = true;
 	
 	client_init(&client);
@@ -724,12 +732,16 @@ static void NbSendData(void)
 	ret = get_data_from_send_cache(&p_data, &data_len);
 	if(ret)
 	{
+		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
+		
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
 			delete_data_from_send_cache();
 		}
-
+		
 		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 	}
 }
@@ -760,18 +772,6 @@ void DisConnectMqttLink(void)
 		}
 		
 		mqtt_connected = false;
-	}
-}
-
-void DisconnectAppMqttLink(void)
-{
-	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
-		k_timer_stop(&mqtt_disconnect_timer);
-
-	if(mqtt_connected)
-	{
-		mqtt_connected = false;
-		mqtt_disconnect_flag = true;
 	}
 }
 
@@ -1362,7 +1362,7 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendSosAlarmData(uint8_t *data, uint32_t datalen)
+void NBSendAlarmData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1376,7 +1376,7 @@ void NBSendSosAlarmData(uint8_t *data, uint32_t datalen)
 	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
-	LOGD("sos alarm data:%s", buf);
+	LOGD("alarm data:%s", buf);
 #endif
 	MqttSendData(buf, strlen(buf));
 }
@@ -1422,13 +1422,15 @@ void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
 void NBSendFallWifiData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T3:");
 	strcat(buf, data);
 	strcat(buf, ",");
-	strcat(buf, fall_trigger_time);
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
 	LOGD("fall wifi data:%s", buf);
@@ -1874,8 +1876,24 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		#ifdef NB_DEBUG
 			LOGD("%s", strdata);
 		#endif
-
-			SOSRecLocatNotify(strdata);
+			uint8_t *ptr,*ptr1;
+			uint8_t strtmp[128] = {0};
+		
+			//后台下发定位上报间隔
+			ptr = strstr(strdata, ",");
+			if(ptr != NULL)
+			{
+				memcpy(strtmp, strdata, (ptr-strdata));
+				switch(atoi(strtmp))
+				{
+				case 1://SOS Alarm
+					SOSRecLocatNotify(ptr+1);
+					break;
+				case 2://Fall Alarm
+					FallRecLocatNotify(ptr+1);
+					break;
+				}
+			}
 		}
 
 		SaveSystemSettings();
@@ -2321,7 +2339,7 @@ void SetNwtWorkMqttBroker(uint8_t *imsi_buf)
 
 void SetNetWorkParaByPlmn(uint8_t *imsi)
 {
-	SetNetWorkApn(imsi);
+	//SetNetWorkApn(imsi);
 	SetNwtWorkMqttBroker(imsi);
 }
 
@@ -2423,6 +2441,11 @@ void SetModemTurnOff(void)
 {
 	uint8_t buf[128] = {0};
 
+	DisConnectMqttLink();
+
+	nb_connected = false;
+	mqtt_connected = false;
+
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=4") == 0)
 	{
 	#ifdef NB_DEBUG
@@ -2435,8 +2458,16 @@ void SetModemTurnOff(void)
 		LOGD("Can't turn off modem!");
 	#endif
 	}
+}
 
-	nb_connected = false;
+void AppSetModemOn(void)
+{
+	k_delayed_work_submit_to_queue(app_work_q, &modem_on_work, K_NO_WAIT);
+}
+
+void AppSetModemOff(void)
+{
+	k_delayed_work_submit_to_queue(app_work_q, &modem_off_work, K_NO_WAIT);
 }
 
 void SetModemGps(void)
@@ -2549,9 +2580,24 @@ void SetModemAPN(void)
 
 static void modem_init(struct k_work *work)
 {
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived())
+		return;
+#endif
+
 	SetModemTurnOn();
 
 	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
+}
+
+static void modem_on(struct k_work *work)
+{
+	SetModemTurnOn();
+}
+
+static void modem_off(struct k_work *work)
+{
+	SetModemTurnOff();
 }
 
 static void nb_link(struct k_work *work)
@@ -2560,6 +2606,11 @@ static void nb_link(struct k_work *work)
 	uint8_t tmpbuf[128] = {0};
 	static uint32_t retry_count = 0;
 	static bool frist_flag = false;
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived())
+		return;
+#endif
 
 	if(!frist_flag)
 	{
@@ -2876,6 +2927,8 @@ void NB_init(struct k_work_q *work_q)
 	app_work_q = work_q;
 
 	k_delayed_work_init(&modem_init_work, modem_init);
+	k_delayed_work_init(&modem_on_work, modem_on);
+	k_delayed_work_init(&modem_off_work, modem_off);
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 #ifdef CONFIG_FOTA_DOWNLOAD

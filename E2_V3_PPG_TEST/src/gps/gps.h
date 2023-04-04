@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <nrf_modem_gnss.h>
 
+#define APP_WAIT_GPS_TIMEOUT	(3*60)
+
 extern bool gps_on_flag;
 extern bool gps_off_flag;
 

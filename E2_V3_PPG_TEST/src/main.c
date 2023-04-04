@@ -392,9 +392,9 @@ void test_show_digital_clock(void)
 
 void test_show_image(void)
 {
-	uint8_t i=3;
+	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
-
+	
 	LOGD("test_show_image");
 	
 	LCD_Clear(BLACK);
@@ -402,14 +402,12 @@ void test_show_image(void)
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	//LCD_get_pic_size_from_flash(IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, &w, &h);
-	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_SEC_ADDR);
+	LCD_get_pic_size_from_flash(IMG_BP_BG_ADDR, &w, &h);
+	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_BP_BG_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
-	while(1)
+	while(0)
 	{
-		LCD_Clear(BLACK);
-		LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, i*30);
 	#if 0	
 		switch(i)
 		{
@@ -456,10 +454,9 @@ void test_show_image(void)
 		}
 	#endif
 
-		if(i==0)
-			i=11;
-		else
-			i--;
+		i++;
+		if(i==23)
+			i = 0;
 		
 		k_sleep(K_MSEC(1000));								//»Ìº˛—” ±1000ms
 	}
@@ -701,9 +698,12 @@ void system_init(void)
 
 	InitSystemSettings();
 
+#ifdef CONFIG_IMU_SUPPORT
 	init_imu_int1();//xb add 2022-05-27
+#endif
+#ifdef CONFIG_PPG_SUPPORT
 	PPG_i2c_off();
-	
+#endif
 	pmu_init();
 	flash_init();
 	LCD_Init();
@@ -711,15 +711,15 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
+#ifdef CONFIG_PPG_SUPPORT	
+	PPG_init();
+#endif
 #ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
 #endif
 	ble_init();
 #ifdef CONFIG_WIFI_SUPPORT
 	wifi_init();
-#endif
-#ifdef CONFIG_PPG_SUPPORT	
-	PPG_init();
 #endif
 #ifdef CONFIG_IMU_SUPPORT
 	IMU_init(&imu_work_q);

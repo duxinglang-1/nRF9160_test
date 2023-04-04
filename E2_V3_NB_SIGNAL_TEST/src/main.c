@@ -698,9 +698,12 @@ void system_init(void)
 
 	InitSystemSettings();
 
+#ifdef CONFIG_IMU_SUPPORT
 	init_imu_int1();//xb add 2022-05-27
+#endif
+#ifdef CONFIG_PPG_SUPPORT
 	PPG_i2c_off();
-	
+#endif
 	pmu_init();
 	flash_init();
 	LCD_Init();
@@ -708,15 +711,15 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
+#ifdef CONFIG_PPG_SUPPORT	
+	PPG_init();
+#endif
 #ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
 #endif
 	ble_init();
 #ifdef CONFIG_WIFI_SUPPORT
 	wifi_init();
-#endif
-#ifdef CONFIG_PPG_SUPPORT	
-	PPG_init();
 #endif
 #ifdef CONFIG_IMU_SUPPORT
 	IMU_init(&imu_work_q);
@@ -784,7 +787,7 @@ int main(void)
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
-//	test_imei();
+//	test_imei_for_qr();
 //	test_tp();
 //	test_gps_on();
 //	test_nb();
@@ -838,6 +841,9 @@ int main(void)
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
 		TempMsgProcess();
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FactoryTestProccess();
 	#endif
 		system_init_completed();
 		k_cpu_idle();

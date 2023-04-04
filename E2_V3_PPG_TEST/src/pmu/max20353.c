@@ -16,6 +16,30 @@
 //#define SHOW_LOG_IN_SCREEN
 //#define PMU_DEBUG
 
+#ifdef GPIO_ACT_I2C
+#define PMU_SCL		0
+#define PMU_SDA		1
+
+#else/*GPIO_ACT_I2C*/
+
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define PMU_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define PMU_DEV	""
+#endif
+
+#define PMU_SCL			31
+#define PMU_SDA			30
+
+#endif/*GPIO_ACT_I2C*/
+
+#define PMU_PORT 		"GPIO_0"
+#define PMU_ALRTB		7
+#define PMU_EINT		8
+
 static bool pmu_check_ok = false;
 static uint8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
@@ -76,48 +100,45 @@ static void show_infor2(uint8_t *strbuf)
 #endif
 
 #ifdef GPIO_ACT_I2C
-#define SCL_PIN		0
-#define SDA_PIN		1
-
 void I2C_INIT(void)
 {
 	if(gpio_pmu == NULL)
 		gpio_pmu = device_get_binding(PMU_PORT);
 
-	gpio_pin_configure(gpio_pmu, SCL_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_pmu, SCL_PIN, 1);
-	gpio_pin_set(gpio_pmu, SDA_PIN, 1);
+	gpio_pin_configure(gpio_pmu, PMU_SCL, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 1);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 1);
 }
 
 void I2C_SDA_OUT(void)
 {
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
 }
 
 void I2C_SDA_IN(void)
 {
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_INPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_INPUT);
 }
 
 void I2C_SDA_H(void)
 {
-	gpio_pin_set(gpio_pmu, SDA_PIN, 1);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 1);
 }
 
 void I2C_SDA_L(void)
 {
-	gpio_pin_set(gpio_pmu, SDA_PIN, 0);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 0);
 }
 
 void I2C_SCL_H(void)
 {
-	gpio_pin_set(gpio_pmu, SCL_PIN, 1);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 1);
 }
 
 void I2C_SCL_L(void)
 {
-	gpio_pin_set(gpio_pmu, SCL_PIN, 0);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 0);
 }
 
 void Delay_ms(unsigned int dly)
@@ -190,7 +211,7 @@ uint8_t I2C_Wait_Ack(void)
 
 	while(1)
 	{
-		val = gpio_pin_get_raw(gpio_pmu, SDA_PIN);
+		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 0)
 			break;
 		
@@ -241,7 +262,7 @@ void I2C_Read_Byte(bool ack, uint8_t *data)
 		I2C_SCL_H();
 
 		receive<<=1;
-		val = gpio_pin_get_raw(gpio_pmu, SDA_PIN);
+		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 1)
 		   receive++;
    }
@@ -371,26 +392,24 @@ void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(2, (31*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED0(0, (24*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (24*level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(2, (31*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	//MAX20353_BuckBoostConfig();
+	ret = MAX20353_LED0(0, (24*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (24*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_Off(void)
 {
 	int ret = 0;
 
-	//MAX20353_BuckBoostDisable();
-	ret = MAX20353_LED0(2, 0, false);
-	ret = MAX20353_LED1(2, 0, false);
+	ret = MAX20353_LED0(0, 0, false);
+	ret = MAX20353_LED1(0, 0, false);
 }
 
 void sys_pwr_off_timerout(struct k_timer *timer_id)
@@ -482,6 +501,9 @@ void pmu_battery_low_shutdown(void)
 void pmu_battery_update(void)
 {
 	uint8_t tmpbuf[8] = {0};
+
+	if(!pmu_check_ok)
+		return;
 
 	g_bat_soc = MAX20353_CalculateSOC();
 #ifdef PMU_DEBUG
@@ -586,8 +608,6 @@ bool pmu_interrupt_proc(void)
 		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
-			uint32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
-
 		#ifdef PMU_DEBUG
 			LOGD("charger push in!");
 		#endif	
@@ -680,72 +700,78 @@ bool pmu_alert_proc(void)
 #endif
 	if(MSB&0x40)
 	{
+	#ifdef PMU_DEBUG
+		LOGD("enable voltage reset alert!");
+	#endif
 		//EnVr (enable voltage reset alert)
 		MSB = MSB&0xBF;
-	#ifdef PMU_DEBUG
-		LOGD("voltage reset alert!");
-	#endif
 	}
 	if(MSB&0x20)
 	{
-		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
-		MSB = MSB&0xDF;
 	#ifdef PMU_DEBUG
 		LOGD("SOC change alert!");
 	#endif
+		//SC (1% SOC change) is set when SOC changes by at least 1% if CONFIG.ALSC is set
+		MSB = MSB&0xDF;
 
 		pmu_battery_update();
 	}
 	if(MSB&0x10)
 	{
-		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
-		MSB = MSB&0xEF;
 	#ifdef PMU_DEBUG
 		LOGD("SOC low alert!");
 	#endif
+		//HD (SOC low) is set when SOC crosses the value in CONFIG.ATHD
+		MSB = MSB&0xEF;
 	}
 	if(MSB&0x08)
 	{
-		//VR (voltage reset) is set after the device has been reset if EnVr is set.
-		MSB = MSB&0xF7;
 	#ifdef PMU_DEBUG
 		LOGD("voltage reset alert!");
 	#endif
+		//VR (voltage reset) is set after the device has been reset if EnVr is set.
+		MSB = MSB&0xF7;
 	}
 	if(MSB&0x04)
 	{
-		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
-		MSB = MSB&0xFB;
 	#ifdef PMU_DEBUG
 		LOGD("voltage low alert!");
 	#endif
+		//VL (voltage low) is set when VCELL has been below ALRT.VALRTMIN
+		MSB = MSB&0xFB;
 	}
 	if(MSB&0x02)
 	{
-		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
-		MSB = MSB&0xFD;
 	#ifdef PMU_DEBUG
 		LOGD("voltage high alert!");
 	#endif
+		//VH (voltage high) is set when VCELL has been above ALRT.VALRTMAX
+		MSB = MSB&0xFD;
 	}
 	if(MSB&0x01)
 	{
+	#ifdef PMU_DEBUG
+		LOGD("reset indicator alert!");
+	#endif
 		//RI (reset indicator) is set when the device powers up.
 		//Any time this bit is set, the IC is not configured, so the
 		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
-	#ifdef PMU_DEBUG
-		LOGD("reset indicator alert!");
-	#endif
+		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 
+		handle_model(LOAD_MODEL);
 		MAX20353_QuickStart();
+		delay_ms(150);
+
+		goto SOC_RESET;
 	}
 
 	ret = MAX20353_SOCWriteReg(0x1A, MSB, LSB);
 	if(ret == MAX20353_ERROR)
 		return false;
-	
-	ret = MAX20353_SOCWriteReg(0x0C, 0x12, 0x5C);
+
+SOC_RESET:	
+	ret = MAX20353_SOCWriteReg(0x0C, RCOMP0, 0x5C);
 	if(ret == MAX20353_ERROR)
 		return false;
 
@@ -1000,7 +1026,12 @@ void test_soc(void)
 
 void PMURedrawBatStatus(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;

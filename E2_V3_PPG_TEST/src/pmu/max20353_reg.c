@@ -13,26 +13,11 @@
 #include "max20353_reg.h"
 #include "max20353.h"
 #include "NTC_table.h"
+#include "settings.h"
 #include "lcd.h"
 #include "logger.h"
 
 #ifdef BATTERY_SOC_GAUGE
-#define VERIFY_AND_FIX 1
-#define LOAD_MODEL !(VERIFY_AND_FIX)
-#define EMPTY_ADJUSTMENT		0
-#define FULL_ADJUSTMENT			100
-#define RCOMP0					50
-#define TEMP_COUP				(-1.0625)
-#define TEMP_CODOWN				(-7.75)
-#define TEMP_CODOWNN10			(-3.90625)
-#define OCVTEST					58592
-#define SOCCHECKA				109
-#define SOCCHECKB				110
-#define BITS					18
-#define RCOMPSEG				0x0100
-#define INI_OCVTEST_HIGH_BYTE 	(OCVTEST>>8)
-#define INI_OCVTEST_LOW_BYTE	(OCVTEST&0x00ff)
-
 static uint8_t SOC_1, SOC_2;
 static uint8_t original_OCV_1, original_OCV_2;
 static uint16_t SOC;
@@ -231,17 +216,45 @@ void VibrateStop(void)
 #endif
 }
 
+int MAX20353_Buck1Disable(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x35;
+    appdatainoutbuffer_[0] = 0x00;  	//
+    appdatainoutbuffer_[1] = 0x2C;  	//0x28    	0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
+    appdatainoutbuffer_[2] = 0x1F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x00;  	//Disable
+    ret = MAX20353_AppWrite(4);
+	
+    return ret;
+}
+
 int MAX20353_Buck1Config(void) 
 {
     int32_t ret = 0;
 	
     appcmdoutvalue_ = 0x35;
     appdatainoutbuffer_[0] = 0x00;  	//
-    appdatainoutbuffer_[1] = 0x2C;  	//0x28    0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
+    appdatainoutbuffer_[1] = 0x2C;  	//0x28    	0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
     appdatainoutbuffer_[2] = 0x1F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
-    appdatainoutbuffer_[3] = 0x01;  	// Enable
+    appdatainoutbuffer_[3] = 0x01;  	//Enable
     ret = MAX20353_AppWrite(4);
 	
+    return ret;
+}
+
+int MAX20353_Buck2Disable(void) 
+{
+    int32_t ret = 0;
+	
+    appcmdoutvalue_ = 0x3A;
+    appdatainoutbuffer_[0] = 0x01;      //
+    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x00;		//Disnable
+    ret = MAX20353_AppWrite(4);
+
     return ret;
 }
 
@@ -252,10 +265,22 @@ int MAX20353_Buck2Config(void)
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
     appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
-    appdatainoutbuffer_[2] = 0x3F;		//  0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
-    appdatainoutbuffer_[3] = 0x01;		// Enable
+    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[3] = 0x01;		//Enable
     ret = MAX20353_AppWrite(4);
 
+    return ret;
+}
+
+int MAX20353_LDO1Disable(void)
+{
+    int32_t ret = 0;
+
+    appcmdoutvalue_ = 0x40;
+    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,禁止LDO1  
+    appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
+    ret = MAX20353_AppWrite(2);
+    
     return ret;
 }
 
@@ -271,15 +296,15 @@ int MAX20353_LDO1Config(void)
     return ret;
 }
 
-int MAX20353_LDO1Disable(void)
+int MAX20353_LDO2Disbale(void)
 {
     int32_t ret = 0;
-
-    appcmdoutvalue_ = 0x40;
-    appdatainoutbuffer_[0] = 0x04;     //0x01  0.5V to 1.95V, Linear Scale, 25mV increments,使能   LDO1  
-    appdatainoutbuffer_[1] = 0x34;     //0x28  0.5V + (0.025V * number)   =  1.95V   1.8
+	
+    appcmdoutvalue_ = 0x42;
+    appdatainoutbuffer_[0] = 0x00;
+    appdatainoutbuffer_[1] = 0x18;     // 0.9V + (0.1V * number)   =  3.3V 
     ret = MAX20353_AppWrite(2);
-    
+
     return ret;
 }
 
@@ -293,20 +318,6 @@ int MAX20353_LDO2Config(void)
     ret = MAX20353_AppWrite(2);
 
     return ret;
-}
-
-int MAX20353_BoostConfig(void) 
-{
-	int32_t ret = 0;
-	
-	appcmdoutvalue_ = 0x30;
-	appdatainoutbuffer_[0] = 0x01;
-	appdatainoutbuffer_[1] = 0x00;
-	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
-	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
-	ret = MAX20353_AppWrite(4);
-
-	return ret;
 }
 
 int MAX20353_BoostDisable(void)
@@ -323,19 +334,20 @@ int MAX20353_BoostDisable(void)
 	return ret;
 }
 
-int MAX20353_ChargePumpConfig(void)
+int MAX20353_BoostConfig(void) 
 {
-    int32_t ret = 0;
-    appcmdoutvalue_ = 0x46;
-    appdatainoutbuffer_[0] = 0x01;	// Boost Enabled
-    appdatainoutbuffer_[1] = 0x03;	// 00 : 6.5V, 01: 5V
-    ret = MAX20353_AppWrite(2);
+	int32_t ret = 0;
+	
+	appcmdoutvalue_ = 0x30;
+	appdatainoutbuffer_[0] = 0x01;
+	appdatainoutbuffer_[1] = 0x00;
+	appdatainoutbuffer_[2] = 0x0b;		//100ma + (25ma * number) (100~475)ma
+	appdatainoutbuffer_[3] = 0x00;      // 5V + (0.25V * number); 0x00:5V, 0x3B:20V; EVKIT's cap can only be upto 6.3V
+	ret = MAX20353_AppWrite(4);
 
-    return ret;
+	return ret;
 }
 
-/// @brief BuckBoost to 5.0V output rail **/
-//******************************************************************************
 int MAX20353_BuckBoostDisable(void) 
 {
     int32_t ret = 0;
@@ -349,8 +361,6 @@ int MAX20353_BuckBoostDisable(void)
     return ret;
 }
 
-/// @brief BuckBoost to 4.0V output rail **/
-//******************************************************************************
 int MAX20353_BuckBoostConfig(void) 
 {
     int32_t ret = 0;
@@ -360,6 +370,17 @@ int MAX20353_BuckBoostConfig(void)
     appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 4.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
+
+    return ret;
+}
+
+int MAX20353_ChargePumpConfig(void)
+{
+    int32_t ret = 0;
+    appcmdoutvalue_ = 0x46;
+    appdatainoutbuffer_[0] = 0x01;	// Boost Enabled
+    appdatainoutbuffer_[1] = 0x03;	// 00 : 6.5V, 01: 5V
+    ret = MAX20353_AppWrite(2);
 
     return ret;
 }
@@ -420,7 +441,7 @@ int MAX20353_HardResetConfig(void)
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
-*			Amplitude:0-31
+*			Amplitude:(0x00~0x18)
 *return: 
 ***************************************************/
 int MAX20353_LED0(int IStep, int Amplitude, bool flag)
@@ -430,7 +451,7 @@ int MAX20353_LED0(int IStep, int Amplitude, bool flag)
 	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
-	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*(Amplitude+1),(0.6mA/1.0mA/1.2mA ~ 15mA/25mA/30mA)
 	if(flag)
 		ret |= MAX20353_WriteReg(REG_LED0_DIRECT,  0x20|(Amplitude&0x1F)); 
 	else
@@ -443,7 +464,7 @@ int MAX20353_LED0(int IStep, int Amplitude, bool flag)
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
-*			Amplitude:0-31
+*			Amplitude:(0x00~0x18)
 *return: 
 ***************************************************/
 int MAX20353_LED1(int IStep, int Amplitude, bool flag)
@@ -453,7 +474,7 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
-	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude(0x00~0x18), LED current=IStep*(Amplitude+1),(0.6mA/1.0mA/1.2mA ~ 15mA/25mA/30mA)
 	if(flag)
 		ret |= MAX20353_WriteReg(REG_LED1_DIRECT,  0x20|(Amplitude&0x1F)); 
 	else
@@ -466,7 +487,7 @@ int MAX20353_LED1(int IStep, int Amplitude, bool flag)
 *Parameter:
 *			flag:true-on,false-off
 *			IStep:0-2
-*			Amplitude:0-31
+*			Amplitude:(0x00~0x18)
 *return: 
 ***************************************************/
 int MAX20353_LED2(int IStep, int Amplitude, bool flag)
@@ -476,9 +497,9 @@ int MAX20353_LED2(int IStep, int Amplitude, bool flag)
 	//Bit7: LED2Open, Bit6: LED1Open, Bit5: LED0Open, Bit1-0: LEDIStep: 0:0.6mA, 1:1.0mA, 2:1.2mA, 3:Reserved 
 	ret |= MAX20353_WriteReg(REG_LED_STEP_DIRECT,  IStep&0x03);
 
-	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*Amplitude 
+	//Bit7-5: 1:LED1On, Bit4-0: Amplitude, LED current = IStep*(Amplitude+1),(0.6mA/1.0mA/1.2mA ~ 15mA/25mA/30mA)
 	if(flag)
-		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x20|(Amplitude&0x1F)); 
+		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x20|(Amplitude&0x1F));
 	else
 		ret |= MAX20353_WriteReg(REG_LED2_DIRECT,  0x00); 
 }
@@ -820,7 +841,7 @@ int MAX20353_ChargerCfg(void)
 
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
-	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
+	appdatainoutbuffer_[1] = 0x60; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.05IFChg 
 	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0111:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
@@ -872,8 +893,8 @@ int InitCharger(void)
 
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
-	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
-	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0110:4.40V 
+	appdatainoutbuffer_[1] = 0x60; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.05IFChg 
+	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0111:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
 	
@@ -1085,10 +1106,10 @@ void MAX20353_UpdateTemper(void)
 	uint8_t thm;
 	int8_t begin,end,tmp;
 	float resistance;
-	int16_t temper=25;
+	int16_t temper=20;
 	uint8_t tmpbuf[128] = {0};
 	static uint8_t pre_thm=0;
-	static uint16_t pre_temper=25;	//初始化默认25度
+	static uint16_t pre_temper=20;	//初始化默认20度
 	
 	thm = MAX20353_ReadTHM();
 	if(thm == pre_thm)
@@ -1354,13 +1375,13 @@ void load_model(void)
 		// Fill in your model data here from the INI file
 		// 0x##, 0x##, ..., 0x##
 		0x40,
-		0x9F,0x20,0xB6,0xC0,0xB8,0x00,0xB9,0x40,0xBB,0xB0,
-		0xBC,0xA0,0xBD,0x90,0xBE,0xD0,0xC0,0x50,0xC3,0x90,
-		0xC7,0x70,0xCA,0x60,0xCD,0x60,0xD1,0xC0,0xD6,0x20,
-		0xDA,0xE0,0x00,0x70,0x0F,0x20,0x0E,0xE0,0x0F,0x00,
-		0x1C,0xC0,0x1C,0xD0,0x15,0xF0,0x12,0xF0,0x0A,0xB0,
-		0x09,0xA0,0x07,0x90,0x07,0xE0,0x07,0x50,0x07,0x80,
-		0x04,0x80,0x04,0x80
+		0x97,0xC0,0xB3,0x80,0xB7,0x00,0xB9,0x80,0xBB,0x80,
+		0xBC,0xE0,0xBE,0x10,0xBE,0x40,0xBF,0xF0,0xC1,0x80,
+		0xC5,0x40,0xC6,0xC0,0xC9,0x60,0xCC,0x30,0xD0,0xD0,
+		0xD8,0x80,0x00,0x20,0x07,0x00,0x0D,0x00,0x0F,0x10,
+		0x1E,0x00,0x19,0x00,0x21,0x70,0x11,0xD0,0x0D,0xF0,
+		0x07,0xF0,0x0D,0xF0,0x07,0xF0,0x07,0xF0,0x08,0xD0,
+		0x05,0xF0,0x05,0xF0
 	};
 	uint8_t RCOMP_data[33] = // 1+16*2, first byte is the memory address
 	{
@@ -1619,24 +1640,21 @@ int MAX20353_SOCWriteReg(uint8_t reg, uint8_t MSB, uint8_t LSB)
 
 void MAX20353_SOCInit(void)
 {
-	uint8_t MSB,LSB;
-
+	uint8_t MSB=0,LSB=0;
+	
 	MAX20353_SOCReadReg(0x1A, &MSB, &LSB);
 	if(MSB&0x01)
 	{
-		//RI (reset indicator) is set when the device powers up.
-		//Any time this bit is set, the IC is not configured, so the
-		//model should be loaded and the bit should be cleared
 		MSB = MSB&0xFE;
 		MAX20353_SOCWriteReg(0x1A, MSB, LSB);
-		MAX20353_QuickStart();
-		delay_ms(150);
 		
 		handle_model(LOAD_MODEL);
+		MAX20353_QuickStart();
+		delay_ms(150);
 	}
-	
-	//设置默认温度25度，SOC变化1%报警，电量小于4%报警
-	WriteWord(0x0C, 0x12, 0x5C);
+
+	//设置默认温度20度，SOC变化1%报警，电量小于4%报警
+	WriteWord(0x0C, RCOMP0, 0x5C);
 
 #ifdef BATTERT_NTC_CHECK
 	MAX20353_StartCheckTemper();

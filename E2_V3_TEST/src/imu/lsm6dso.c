@@ -1,3 +1,10 @@
+/*
+Last Update: 9/03/2022 by Zabdiel
+ULTRA LOW POWER AND INACTIVITY MODE
+-Functions: wrist tilt detection, step counter
+-Fall detection disabled
+-26Hz data rate
+*/
 #ifdef CONFIG_IMU_SUPPORT
 
 #include <nrf9160.h>
@@ -272,144 +279,89 @@ uint8_t init_gpio(void)
 	if(gpio_imu == NULL)
 		gpio_imu = device_get_binding(IMU_PORT);
 	
-	//steps&tilt interrupt
+#ifdef CONFIG_STEP_SUPPORT	
+	//steps interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb1, step_event, BIT(LSM6DSO_INT1_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb1);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
+#endif
 
-#ifdef CONFIG_FALL_DETECT_SUPPORT
-	//fall interrupt
+	//tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT2_PIN, flag);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, interrupt_event, BIT(LSM6DSO_INT2_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb2);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
-#endif
 
 	return 0;
 }
 
 /* ULTRA LOW POWER & INACTIVITY MODE IMPLEMENTED. FIFO DISABLED*/
-static bool sensor_init(void)
-{
-	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
-	if(whoamI != LSM6DSO_ID)
+static bool sensor_init(void){
+
+  lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
+  if(whoamI != LSM6DSO_ID)
 		return false;
+  
+  lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
+  lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
-	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_reset_get(&imu_dev_ctx, &rst);
+  lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
+  lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_BYPASS_MODE);    
+  
+  lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_26Hz);
+  lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
+  lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
 
-	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
-	//lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_BYPASS_MODE);
+  // ULTRA LOW POWER & INACTIVITY MODE
+  lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
+  /* Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) */
+  lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
+  /* Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) */
+  lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
+  /* Set Activity/Inactivity threshold to 312.5 mg */
+  lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x05);
+  /* Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down */
+  lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
+  /* Enable interrupt generation on Inactivity INT1 pin */
+  lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+  int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE; 
+  lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
-	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
-	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
+#ifdef CONFIG_STEP_SUPPORT
+  /*Step Counter enable*/
+  lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+  int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+  lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+  /* Enable False Positive Rejection. */
+  lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
+  lsm6dso_steps_reset(&imu_dev_ctx);
+#endif
 
-	lsm6dso_fifo_watermark_set(&imu_dev_ctx, PATTERN_LEN);
-	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
-
-	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
-
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
-
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
-
-	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
-
-	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_tap_detection_on_x_set(&imu_dev_ctx, PROPERTY_ENABLE);
-
-	lsm6dso_tap_threshold_x_set(&imu_dev_ctx, 0x12);
-	lsm6dso_tap_threshold_y_set(&imu_dev_ctx, 0x12);
-	lsm6dso_tap_threshold_z_set(&imu_dev_ctx, 0x12);
-
-	lsm6dso_tap_quiet_set(&imu_dev_ctx, 0x03);
-	lsm6dso_tap_shock_set(&imu_dev_ctx, 0x03);
-
-	lsm6dso_tap_mode_set(&imu_dev_ctx, LSM6DSO_ONLY_SINGLE);
-
-	//lsm6dso_all_sources_get(&imu_dev_ctx, &all_source);
-
-	// ULTRA LOW POWER & INACTIVITY MODE
-	//lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
-	/* Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) */
-	//lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
-	/* Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) */
-	//lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
-	/* Set Activity/Inactivity threshold to 312.5 mg */
-	//lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x05);
-	/* Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down */
-	//lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
-	/* Enable interrupt generation on Inactivity INT1 pin */
-	//lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	//int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE; 
-	//lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-
-	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
-
-	/*Step Counter enable*/
-	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-	/* Enable False Positive Rejection. */
-	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
-	lsm6dso_steps_reset(&imu_dev_ctx);
-
-	/* Tilt enable */
-	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
-	lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
-	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 2);
-	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
-	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
-	fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_ENABLE;
-	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
-	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
-	fsm_addr = LSM6DSO_START_FSM_ADD;
-	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)lsm6so_prg_wrist_tilt, sizeof(lsm6so_prg_wrist_tilt));
-	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
-	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)falltrigger, sizeof(falltrigger));
-
-	/* wrist single tap, wrist tilt to INT2 pin*/
-	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
-	//int2_route.fsm_int2_a.int2_fsm2 = PROPERTY_ENABLE;
-	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
-	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
-
-	/* route step counter to INT1 pin*/
-	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-
-	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
-
-	return true;
+  /* Tilt enable */
+  lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
+  lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
+  lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 2);
+  lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
+  fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
+  fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_ENABLE;
+  lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
+  lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
+  fsm_addr = LSM6DSO_START_FSM_ADD;
+  lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)lsm6so_prg_wrist_tilt,
+  					  sizeof(lsm6so_prg_wrist_tilt));
+  
+  fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
+  /* wrist tilt to INT2 pin*/
+  lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
+  int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+  lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+  
+  return true;
 }
 
-void sensor_reset(void)
-{
-	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_reset_get(&imu_dev_ctx, &rst);
-	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
-	lsm6dso_fifo_watermark_set(&imu_dev_ctx, ACC_GYRO_FIFO_BUF_LEN);
-	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
-	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
-	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
-	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
-}
 
 /*@brief Get real time X/Y/Z reading in mg
 *
@@ -433,16 +385,6 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 	*sensor_z = acceleration_mg[2];
 }
 
-void is_tilt(void)
-{
-	lsm6dso_all_sources_t status;
-	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
-	if(status.fsm_status_a.is_fsm1)
-	{ 
-		wrist_tilt = true;
-	}
-}
-
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 void is_falltrigger(void)
 {
@@ -458,418 +400,6 @@ void is_falltrigger(void)
 	}
 }
 
-void historic_buffer(void)
-{
-	uint16_t histBuff_counter = 0;
-	uint16_t i = 0;
-
-	while(1)
-	{
-		uint16_t num = 0;
-		uint8_t waterm = 0;
-		lsm6dso_fifo_tag_t reg_tag;
-		axis3bit16_t dummy;
-
-		lsm6dso_fifo_wtm_flag_get(&imu_dev_ctx, &waterm);
-		if(waterm>0)
-		{
-			lsm6dso_fifo_data_level_get(&imu_dev_ctx, &num);
-			while(num--)
-			{
-				lsm6dso_fifo_sensor_tag_get(&imu_dev_ctx, &reg_tag);
-				switch(reg_tag)
-				{
-				case LSM6DSO_XL_NC_TAG:
-					memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
-					lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-					acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-					acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-					acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
-
-					acceleration_g[0]   = acceleration_mg[0]/1000;
-					acceleration_g[1]   = acceleration_mg[1]/1000;
-					acceleration_g[2]   = acceleration_mg[2]/1000;
-
-					acc_x_hist_buffer[i] = acceleration_g[0]; //[i]
-					acc_y_hist_buffer[i] = acceleration_g[1];
-					acc_z_hist_buffer[i] = acceleration_g[2];   
-
-					histBuff_counter++;
-					//LOGD("%d, Axyz, %4.2f, %4.2f, %4.2f", i, acc_x_hist_buffer[i], acc_y_hist_buffer[i], acc_z_hist_buffer[i]);
-					break;
-
-				case LSM6DSO_GYRO_NC_TAG:
-					memset(data_raw_angular_rate.u8bit, 0x00, 3*sizeof(int16_t));
-					lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_angular_rate.u8bit);
-					angular_rate_mdps[0] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[0]);
-					angular_rate_mdps[1] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[1]);
-					angular_rate_mdps[2] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[2]);
-
-					angular_rate_dps[0] = angular_rate_mdps[0]/1000;
-					angular_rate_dps[1] = angular_rate_mdps[1]/1000;
-					angular_rate_dps[2] = angular_rate_mdps[2]/1000;
-
-					gyro_x_hist_buffer[i] = angular_rate_dps[0];
-					gyro_y_hist_buffer[i] = angular_rate_dps[1];
-					gyro_z_hist_buffer[i] = angular_rate_dps[2];
-
-					histBuff_counter++;
-					i++;
-					//LOGD("%d, Gxyz, %4.2f, %4.2f, %4.2f", i, angular_rate_dps[0], angular_rate_dps[1], angular_rate_dps[2]);
-					break;
-
-				default:
-					memset(dummy.u8bit, 0x00, 3 * sizeof(int16_t));
-					lsm6dso_fifo_out_raw_get(&imu_dev_ctx, dummy.u8bit);
-					break;
-				}         
-			}
-
-			//lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_BYPASS_MODE); //clear FIFO contents
-			//lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_BYPASS_TO_FIFO_MODE); //switch to bypass_to_fifo mode
-
-			if(histBuff_counter == PATTERN_LEN)
-			{
-				//LOGD("HIST BUFFER FLAG ON");
-				hist_buff_flag = true;
-				break;
-			}
-		}
-		else
-		{
-			break;
-		}
-	}
-}
-
-void curr_vrif_buffers(void)
-{
-	uint16_t buff_counter = 0;
-
-	sensor_reset();
-
-	while(1)
-	{
-		uint16_t num = 0;
-		uint8_t waterm = 0;
-		uint8_t i_rev = ACC_GYRO_FIFO_BUF_LEN-1;
-		uint8_t j_rev = ACC_GYRO_FIFO_BUF_LEN-1;
-		uint8_t k_rev = ACC_GYRO_FIFO_BUF_LEN-1;
-
-		lsm6dso_fifo_wtm_flag_get(&imu_dev_ctx, &waterm);
-		if(waterm>0)
-		{
-			lsm6dso_fifo_data_level_get(&imu_dev_ctx, &num);
-			while(num--)
-			{
-				memset(data_raw_angular_rate.u8bit, 0x00, 3*sizeof(int16_t));
-				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_angular_rate.u8bit);
-				angular_rate_mdps[0] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[0]);
-				angular_rate_mdps[1] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[1]);
-				angular_rate_mdps[2] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[2]);
-
-				angular_rate_dps[0]  = angular_rate_mdps[0]/1000;
-				angular_rate_dps[1]  = angular_rate_mdps[1]/1000;
-				angular_rate_dps[2]  = angular_rate_mdps[2]/1000;
-				gyro_tempX[num]      = angular_rate_dps[0];
-				gyro_tempY[num]      = angular_rate_dps[1];
-				gyro_tempZ[num]      = angular_rate_dps[2];
-
-				memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
-				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-				acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-				acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-				acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
-
-				acceleration_g[0]  = acceleration_mg[0]/1000;
-				acceleration_g[1]  = acceleration_mg[1]/1000;
-				acceleration_g[2]  = acceleration_mg[2]/1000;
-				accel_tempX[num]   = acceleration_g[0];
-				accel_tempY[num]   = acceleration_g[1];
-				accel_tempZ[num]   = acceleration_g[2];
-				buff_counter++;
-
-				if(buff_counter >= ACC_GYRO_FIFO_BUF_LEN && buff_counter < 2*ACC_GYRO_FIFO_BUF_LEN)
-				{
-					for (uint8_t i = 0; i < ACC_GYRO_FIFO_BUF_LEN; i++)
-					{
-						acc_x_cur_buffer[i]  = accel_tempX[i_rev];
-						acc_y_cur_buffer[i]  = accel_tempY[i_rev];
-						acc_z_cur_buffer[i]  = accel_tempZ[i_rev];
-						gyro_x_cur_buffer[i] = gyro_tempX[i_rev];
-						gyro_y_cur_buffer[i] = gyro_tempY[i_rev];
-						gyro_z_cur_buffer[i] = gyro_tempZ[i_rev];
-						buff_counter++;
-						i_rev--;
-
-						//LOGD("%d, Cur_Axyz, %4.2f, %4.2f, %4.2f", i, acc_x_cur_buffer[i], acc_y_cur_buffer[i], acc_z_cur_buffer[i]);
-					}
-				}
-
-				if(buff_counter >= 3*ACC_GYRO_FIFO_BUF_LEN && buff_counter < 4*ACC_GYRO_FIFO_BUF_LEN)
-				{
-					for (uint8_t j = 0; j < ACC_GYRO_FIFO_BUF_LEN; j++)
-					{
-						acc_x_vrif_buffer[j]  = accel_tempX[j_rev];
-						acc_y_vrif_buffer[j]  = accel_tempY[j_rev];
-						acc_z_vrif_buffer[j]  = accel_tempZ[j_rev];
-						gyro_x_vrif_buffer[j] = gyro_tempX[j_rev];
-						gyro_y_vrif_buffer[j] = gyro_tempY[j_rev];
-						gyro_z_vrif_buffer[j] = gyro_tempZ[j_rev];
-						buff_counter++;
-						j_rev--;
-
-						//LOGD("%d, Veri_Axyz, %4.2f, %4.2f, %4.2f", j, acc_x_vrif_buffer[j], acc_y_vrif_buffer[j], acc_z_vrif_buffer[j]);
-					}
-				}
-
-				if(buff_counter >= 5*ACC_GYRO_FIFO_BUF_LEN && buff_counter < 6*ACC_GYRO_FIFO_BUF_LEN)
-				{
-					for (uint8_t k = 0; k < ACC_GYRO_FIFO_BUF_LEN; k++)
-					{
-						acc_x_vrif_buffer_1[k]  = accel_tempX[k_rev];
-						acc_y_vrif_buffer_1[k]  = accel_tempY[k_rev];
-						acc_z_vrif_buffer_1[k]  = accel_tempZ[k_rev];
-						gyro_x_vrif_buffer_1[k] = gyro_tempX[k_rev];
-						gyro_y_vrif_buffer_1[k] = gyro_tempY[k_rev];
-						gyro_z_vrif_buffer_1[k] = gyro_tempZ[k_rev];
-						buff_counter++;
-						k_rev--;
-
-						//LOGD("%d, Veri_Axyz_1, %4.2f, %4.2f, %4.2f", k, acc_x_vrif_buffer_1[k], acc_y_vrif_buffer_1[k], acc_z_vrif_buffer_1[k]);
-					}
-				}
-			}
-
-			if(buff_counter == 6*ACC_GYRO_FIFO_BUF_LEN)
-			{
-				curr_vrif_buff_flag = true;
-				return;
-			}
-		}
-	}
-}
-
-static float angle_analyse_fifo(void)
-{
-	volatile float angle_degree=0,avg_index=50;
-	volatile float start_avg_accel_x=0,start_avg_accel_y=0,start_avg_accel_z=0;
-	volatile float end_avg_accel_x=0, end_avg_accel_y=0, end_avg_accel_z=0;
-	volatile float num=0,denom=0;
-	volatile double angle=0;
-	volatile uint16_t i;
-
-	for(i = 0; i < avg_index; i++ )
-	{       
-		start_avg_accel_x += acc_x_hist_buffer[i];
-		start_avg_accel_y += acc_y_hist_buffer[i];
-		start_avg_accel_z += acc_z_hist_buffer[i];
-	}
-
-	start_avg_accel_x /=avg_index;  //get average for each axis
-	start_avg_accel_y /=avg_index;
-	start_avg_accel_z /=avg_index;
-
-	start_avg_accel_x = get_acc_magn(start_avg_accel_x);	//get acc magnitude
-	start_avg_accel_y = get_acc_magn(start_avg_accel_y);
-	start_avg_accel_z = get_acc_magn(start_avg_accel_z);
-
-	for(i = ACC_GYRO_FIFO_BUF_LEN-avg_index; i < ACC_GYRO_FIFO_BUF_LEN; i++)
-	{
-		end_avg_accel_x += acc_x_cur_buffer[i];
-		end_avg_accel_y += acc_y_cur_buffer[i];
-		end_avg_accel_z += acc_z_cur_buffer[i];
-	}
-
-	end_avg_accel_x /=avg_index; //get average for each axis
-	end_avg_accel_y /=avg_index;
-	end_avg_accel_z /=avg_index;
-
-	end_avg_accel_x = get_acc_magn(end_avg_accel_x);  //get acc magnitude
-	end_avg_accel_y = get_acc_magn(end_avg_accel_y);
-	end_avg_accel_z = get_acc_magn(end_avg_accel_z);
-
-	num= (start_avg_accel_x*end_avg_accel_x) + (start_avg_accel_y*end_avg_accel_y) + (start_avg_accel_z*end_avg_accel_z);
-	denom= (pow(start_avg_accel_x,2) + pow(start_avg_accel_y,2) + pow(start_avg_accel_z,2)) * (pow(end_avg_accel_x,2)+pow(end_avg_accel_y,2)+pow(end_avg_accel_z,2));
-	angle=acos(num/sqrt(denom));
-
-	angle_degree=angle *(180.0f/3.14159265f);  //get angle in degree
-
-	return angle_degree;
-}
-
-static float acceleration_analyse_fifo(void)
-{
-	volatile uint16_t i;
-	volatile float acc_magn_square = 0, max_acc_magn_square = 0;
-	/*
-	* Compute Accelerometer's Magnitude
-	*/
-	for(i=0;i<ACC_GYRO_FIFO_BUF_LEN*2;i++)
-	{
-		//acc magnitude square to avoid sqrt() call to save time.
-		if(i<ACC_GYRO_FIFO_BUF_LEN)
-		{
-			acc_magn_square = pow(get_acc_magn(acc_x_hist_buffer[i]),2)+pow(get_acc_magn(acc_y_hist_buffer[i]),2)+pow(get_acc_magn(acc_z_hist_buffer[i]),2);
-		} 
-		else
-		{
-			acc_magn_square = pow(get_acc_magn(acc_x_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2)+pow(get_acc_magn(acc_y_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2)+pow(get_acc_magn(acc_z_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2);
-		}
-
-		if(acc_magn_square > max_acc_magn_square) 
-			max_acc_magn_square = acc_magn_square;	//get the maximum acc magnitude square
-	}
-	return max_acc_magn_square;		//do once sqrt() to get acc magnitude
-}
-
-
-static float gyroscope_analyse_fifo(void)
-{
-	volatile uint16_t i;
-	volatile float gyro_magn_square = 0, max_gyro_magn_square = 0;
-	/*
-	* Compute Gyroscope's Magnitude for all data after fall
-	*/
-	for(i=0;i<ACC_GYRO_FIFO_BUF_LEN*2;i++)
-	{
-		if(i < ACC_GYRO_FIFO_BUF_LEN)
-		{
-			//gyroscope magnitude square to avoid sqrt() call to save time.
-			// gyro_magn_square = pow(get_gyro_magn(gyro_x_cur_buffer[i]),2)+pow(get_gyro_magn(gyro_y_cur_buffer[i]),2)+pow(get_gyro_magn(gyro_z_cur_buffer[i]),2);
-			gyro_magn_square = pow(get_gyro_magn(gyro_y_hist_buffer[i]),2)+pow(get_gyro_magn(gyro_z_hist_buffer[i]),2);
-		} 
-		else
-		{
-			gyro_magn_square = pow(get_gyro_magn(gyro_y_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2)+pow(get_gyro_magn(gyro_z_cur_buffer[i-ACC_GYRO_FIFO_BUF_LEN]),2);
-		}
-
-		if(gyro_magn_square > max_gyro_magn_square)
-			max_gyro_magn_square = gyro_magn_square;	//get the maximum gyroscope magnitude square
-	}
-	// return (sqrt(max_gyro_magn_square));     //do once sqrt() to get gyroscope magnitude
-	return sqrt(max_gyro_magn_square);          //do once sqrt() to get gyroscope magnitude
-}
-
-static float fall_verification_fifo_skip(void)
-{
-	volatile uint16_t i;
-	volatile float std_deviation = 0, variance=0,average = 0;
-
-	memset(verify_acc_magn,0x00,VERIFY_DATA_BUF_LEN);
-	//compute acc magnitude
-	for(i=0;i<VERIFY_DATA_BUF_LEN;i++)
-	{
-		verify_acc_magn[i] = sqrt(pow(get_acc_magn(acc_x_vrif_buffer_1[i]),2)+ pow(get_acc_magn(acc_y_vrif_buffer_1[i]),2) + pow(get_acc_magn(acc_z_vrif_buffer_1[i]),2));
-		average += verify_acc_magn[i];
-	}
-
-	average /= (float)VERIFY_DATA_BUF_LEN;
-
-	//compute variance and standard deviation to a base 0.5g
-	for(i=0;i<VERIFY_DATA_BUF_LEN;i++)
-	{
-		variance += pow((verify_acc_magn[i]-average),2);
-	}
-	std_deviation = sqrt(variance/(float)(VERIFY_DATA_BUF_LEN));
-
-	return std_deviation;
-}
-
-/**@brief Function for getting input degree according to angle or gyroscope magnitude.
- *
- * @return input degree in float.
- */
-static float get_input_degree(float x, float a, float b, float c, float d)
-{
-	volatile float re_val=0;
-
-	if(d == b)                  // Rshoulder
-	{
-		if(x >= b)                     re_val = 1;
-		else if(x > a && x < b)        re_val = (x - a) / (b - a);
-		else if(x <= a)                re_val = 0;
-	}
-	else if(d == c)             // Triangle
-	{
-		if(x <= a)                     re_val = 0;
-		else if(x == b)                re_val = 1;
-		else if(x < b)                 re_val = (x - a) / (b - a);
-		else if(x >= c)                re_val = 0;
-		else if(x > b)                 re_val = (c - x) / (c - b);
-	}
-	else if(d == a)             //Lshoulder
-	{
-		if(x <= c)                     re_val = 1;
-		else if(x > c && x < d)        re_val = (d - x) / (d - c);
-		else if(x >= d)                re_val = 0;
-	}
-	else re_val = 0;
-
-	return re_val;
-}
-
-/**@brief Function for getting weight according to memship.
- *
- * @return weight in uint8_t.
- */
-static uint8_t get_output_from_memship(uint8_t memship)
-{
-	if(memship == LOW_MS)    
-		return WEIGHT_VALUE_10;
-	else if(memship == MEDIUM_MS) 
-		return WEIGHT_VALUE_30;
-	else if(memship == HIGH_MS)   
-		return WEIGHT_VALUE_50;
-	else 
-		return 0;
-}
-
-/**@brief Function for getting fuzzy output.
- *
- * @return fuzzy analysis output in float.
- */
-static float fuzzy_analyse(float angle, float max_gyro_magn)
-{
-	volatile uint8_t i=0;
-	volatile float fire_strength[9];
-	volatile float sum_firestrenths = 0;
-	volatile float output_value=0;
-
-	volatile float low_angle_degree=0, medium_angle_degree=0, high_angle_degree=0;
-	volatile float low_gyro_magnitude_degree=0, medium_gyro_magnitude_degree=0, high_gyro_magnitude_degree=0;
-	volatile float current_angle = angle;  // should compute this value continously from sensor
-	volatile float current_max_gyro_magn = max_gyro_magn;
-
-	//===================================================1-Fuzzification
-	low_angle_degree =    get_input_degree(current_angle, MEDIUM_ANGLE, 0, LOW_ANGLE, MEDIUM_ANGLE);
-	medium_angle_degree = get_input_degree(current_angle, LOW_ANGLE, MEDIUM_ANGLE, HIGH_ANGLE, HIGH_ANGLE);
-	high_angle_degree =   get_input_degree(current_angle, MEDIUM_ANGLE, HIGH_ANGLE, 0, HIGH_ANGLE);
-
-	low_gyro_magnitude_degree =    get_input_degree(current_max_gyro_magn, MEDIUM_GYRO_MAGNITUDE, 0, LOW_GYRO_MAGNITUDE, MEDIUM_GYRO_MAGNITUDE);
-	medium_gyro_magnitude_degree = get_input_degree(current_max_gyro_magn, LOW_GYRO_MAGNITUDE, MEDIUM_GYRO_MAGNITUDE, HIGH_GYRO_MAGNITUDE, HIGH_GYRO_MAGNITUDE);
-	high_gyro_magnitude_degree =   get_input_degree(current_max_gyro_magn, MEDIUM_GYRO_MAGNITUDE, HIGH_GYRO_MAGNITUDE, 0, HIGH_GYRO_MAGNITUDE);
-
-	//===================================================2-Fire Strength
-	fire_strength[0] = min(low_angle_degree   , low_gyro_magnitude_degree);
-	fire_strength[1] = min(low_angle_degree   , medium_gyro_magnitude_degree);
-	fire_strength[2] = min(low_angle_degree   , high_gyro_magnitude_degree);
-	fire_strength[3] = min(medium_angle_degree, low_gyro_magnitude_degree);
-	fire_strength[4] = min(medium_angle_degree, medium_gyro_magnitude_degree);
-	fire_strength[5] = min(medium_angle_degree, high_gyro_magnitude_degree);
-	fire_strength[6] = min(high_angle_degree  , low_gyro_magnitude_degree);
-	fire_strength[7] = min(high_angle_degree  , medium_gyro_magnitude_degree);
-	fire_strength[8] = min(high_angle_degree  , high_gyro_magnitude_degree);
-
-	//======================================================3- linguistic and numric output
-	for (i = 0; i < 9; i++)
-	{
-		output_value += fire_strength[i] * get_output_from_memship(suspicion_rules[i][2]);
-		sum_firestrenths += fire_strength[i];
-	}
-	output_value /= sum_firestrenths;
-	return output_value;
-}
 
 /*@brief Fall detection analyse
 *
@@ -1090,6 +620,46 @@ void IMU_init(struct k_work_q *work_q)
 #endif
 }
 
+/*@brief Check if a wrist tilt happend
+*
+* @return If tilt detected, wrist_tilt=true, otherwise false
+*/
+void is_tilt(void)
+{
+	lsm6dso_all_sources_t status;
+
+	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
+	if(status.fsm_status_a.is_fsm1)
+	{ 
+		//tilt detected
+		wrist_tilt = true;
+	}
+}
+
+/*@brief disable the wrist tilt detection
+*
+*/
+void disable_tilt_detection(void)
+{
+	lsm6dso_all_sources_t status;
+	
+	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_DISABLE;
+	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);
+}
+
+/*@brief enable the wrist tilt detection
+*
+*/
+void enable_tilt_detection(void)
+{
+	lsm6dso_all_sources_t status;
+	
+	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
+	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);
+}
+
 void test_i2c(void)
 {
 	struct device *i2c_dev;
@@ -1170,7 +740,8 @@ void IMUMsgProcess(void)
 		return;
 	}
 
-	if(int1_event)	//steps or tilt
+#ifdef CONFIG_STEP_SUPPORT
+	if(int1_event)	//steps
 	{
 	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
@@ -1178,7 +749,25 @@ void IMUMsgProcess(void)
 		int1_event = false;
 
 		if(!imu_check_ok || !is_wearing())
-		return;
+			return;
+		
+	#ifdef IMU_DEBUG	
+		LOGD("steps trigger!");
+	#endif
+		UpdateIMUData();
+		imu_redraw_steps_flag = true;	
+	}
+#endif
+
+	if(int2_event) //tilt
+	{
+	#ifdef IMU_DEBUG
+		LOGD("int2 evt!");
+	#endif
+		int2_event = false;
+
+		if(!imu_check_ok || !is_wearing())
+			return;
 
 		is_tilt();
 		if(wrist_tilt)
@@ -1194,16 +783,6 @@ void IMUMsgProcess(void)
 				lcd_sleep_out = true;
 			}
 		}
-	#ifdef CONFIG_STEP_SUPPORT	
-		else
-		{
-		#ifdef IMU_DEBUG	
-			LOGD("steps trigger!");
-		#endif
-			UpdateIMUData();
-			imu_redraw_steps_flag = true;
-		}
-	#endif	
 	}
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT

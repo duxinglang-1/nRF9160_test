@@ -5,10 +5,17 @@ typedef union{
 
 #define LSM6DSO_INT1_PIN	9
 #define LSM6DSO_INT2_PIN	10
+#define LSM6DSO_SDA_PIN		11
+#define LSM6DSO_SCL_PIN		12
 
+#define TWI_INSTANCE_ID               0
+#define LSM6DSO_I2C_ADD               LSM6DSO_I2C_ADD_L >> 1 //need to shift 1 bit to the right.
 #define ACC_GYRO_FIFO_BUF_LEN         200
 #define VERIFY_DATA_BUF_LEN           200
 #define PATTERN_LEN                   2*ACC_GYRO_FIFO_BUF_LEN
+#define TWI_BUFFER_SIZE               14
+#define TWI_TIMEOUT                   1000
+#define INT_PIN                       10
 
 //define low, medium, high memership
 #define LOW_MS                        1
@@ -31,16 +38,17 @@ typedef union{
 #define	WEIGHT_VALUE_50               50
 
 //define default thresholds
-#define ACC_MAGN_TRIGGER_THRES_DEF    9.0f //2.0f//9.0f 	 // for acc trigger
-#define FUZZY_OUT_THRES_DEF           45.0f //10.0f//45.0f	 // for fuzzy output
-//#define STD_SVMG_SECOND_STAGE         12.0f
-#define STD_VARIANCE_THRES_DEF        0.13f //1.0f//0.13f  	 // for Standard Deviation
-//#define PEAKS_NO_THRES                8       //number of peaks threshold
-//#define PEAK_THRES                    11.0f
-#define MAX_GYROSCOPE_THRESHOLD       200//100//200  //max gyroscope threshold
-#define MAX_ANGLE_THRESHOLD           40//10//40
+#define ACC_MAGN_TRIGGER_THRES_DEF    9.0f 	 // for acc trigger
+#define FUZZY_OUT_THRES_DEF           45.0f	 // for fuzzy output
+#define STD_SVMG_SECOND_STAGE         12.0f
+#define STD_VARIANCE_THRES_DEF        0.13f  	 // for Standard Deviation
+#define PEAKS_NO_THRES                8       //number of peaks threshold
+#define PEAK_THRES                    11.0f
+#define MAX_GYROSCOPE_THRESHOLD       200  //max gyroscope threshold
+#define MAX_ANGLE_THRESHOLD           40
 #define	get_acc_magn(x)               x   //do nothing
 #define	get_gyro_magn(x)              x   //do noting
+
 
 //define minimum function
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -60,7 +68,6 @@ bool int1_event = false;
 bool int2_event = false;
 bool fall_result = false;
 bool wrist_tilt = false;
-bool fall_trigger = false;
 
 static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;
@@ -68,11 +75,16 @@ static float acceleration_mg[3];
 static float angular_rate_mdps[3];
 static float acceleration_g[3];
 static float angular_rate_dps[3];
-
+static uint8_t whoamI, rst;
 float verify_acc_magn[VERIFY_DATA_BUF_LEN*2] = {0};
 float std_devi=0;
 float acc_magn_square=0, cur_angle=0, cur_max_gyro_magn=0, cur_fuzzy_output=0;
 
+//static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_ID);
+static volatile bool m_xfer_done = false;
+
+
+//uint8_t twi_tx_buffer[TWI_BUFFER_SIZE];
 
 float acc_x_hist_buffer[PATTERN_LEN]  = {0}, acc_y_hist_buffer[PATTERN_LEN]   = {0}, acc_z_hist_buffer[PATTERN_LEN]   = {0};
 float gyro_x_hist_buffer[PATTERN_LEN] = {0}, gyro_y_hist_buffer[PATTERN_LEN]  = {0}, gyro_z_hist_buffer[PATTERN_LEN]  = {0};

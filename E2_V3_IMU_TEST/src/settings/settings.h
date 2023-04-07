@@ -8,8 +8,10 @@
 #include <sys/printk.h>
 
 #define ALARM_MAX	8
-#define MENU_MAX_COUNT	8
+#define MENU_MAX_COUNT	10
 #define MENU_NAME_MAX	20
+
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login"
 
 typedef void(*menu_handler)(void);
 
@@ -77,6 +79,7 @@ typedef enum
 	SETTINGS_MENU_MAIN,
 	SETTINGS_MENU_LANGUAGE,
 	SETTINGS_MENU_FACTORY_RESET,
+	SETTINGS_MENU_CAREMATE_QR,
 	SETTINGS_MENU_OTA,
 	SETTINGS_MENU_BRIGHTNESS,
 	SETTINGS_MENU_TEMP,

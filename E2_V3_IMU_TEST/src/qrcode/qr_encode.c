@@ -12,7 +12,10 @@
 #include "QR_Encode.h"
 #include "LCD.h"
 #include "nb.h"
+#include "logger.h"
+#include <math.h>
 
+#define QR_CODE_DOT_PIXEL_MIN	2
 #define QR_CODE_DOT_PIXEL	3
 #define QR_CODE_BG_SHADE	4
 
@@ -1830,17 +1833,34 @@ int CountPenalty(void)
 void show_QR_code(uint32_t datalen, uint8_t *data)
 {
 	uint8_t i,j;
+	int8_t dot_pix = 0;
+	uint32_t side_len = 0;
 	
 	EncodeData(data);
 
-	LCD_Fill((LCD_WIDTH-QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE))/2, (LCD_HEIGHT-QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE))/2, QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE), QR_CODE_DOT_PIXEL*(m_nSymbleSize+QR_CODE_BG_SHADE), WHITE);
-	for(i=0;i<m_nSymbleSize;i++)
+	side_len = LCD_WIDTH > LCD_HEIGHT ? (uint32_t)sqrt(2*pow(LCD_HEIGHT/2,2)) : (uint32_t)sqrt(2*pow(LCD_WIDTH/2,2));
+	dot_pix = (side_len-QR_CODE_BG_SHADE*2)/m_nSymbleSize;
+	if(dot_pix < QR_CODE_DOT_PIXEL_MIN)
 	{
-		for(j=0;j<m_nSymbleSize;j++)
+		uint32_t x,y,w,h;
+		uint16_t tmpbuf[128] = {0};
+
+		LCD_SetFontSize(FONT_SIZE_20);
+		mmi_asc_to_ucs2((uint8_t*)tmpbuf, "It exceeds the screen size!");
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
+	}
+	else
+	{
+		LCD_Fill((LCD_WIDTH-dot_pix*(m_nSymbleSize+QR_CODE_BG_SHADE))/2, (LCD_HEIGHT-dot_pix*(m_nSymbleSize+QR_CODE_BG_SHADE))/2, dot_pix*(m_nSymbleSize+QR_CODE_BG_SHADE), dot_pix*(m_nSymbleSize+QR_CODE_BG_SHADE), WHITE);
+		for(i=0;i<m_nSymbleSize;i++)
 		{
-			if(m_byModuleData[i][j] == 1)
+			for(j=0;j<m_nSymbleSize;j++)
 			{
-				LCD_Fill((LCD_WIDTH-QR_CODE_DOT_PIXEL*m_nSymbleSize)/2+i*QR_CODE_DOT_PIXEL, (LCD_HEIGHT-QR_CODE_DOT_PIXEL*m_nSymbleSize)/2+j*QR_CODE_DOT_PIXEL, QR_CODE_DOT_PIXEL, QR_CODE_DOT_PIXEL, BLACK);
+				if(m_byModuleData[i][j] == 1)
+				{
+					LCD_Fill((LCD_WIDTH-dot_pix*m_nSymbleSize)/2+i*dot_pix, (LCD_HEIGHT-dot_pix*m_nSymbleSize)/2+j*dot_pix, dot_pix, dot_pix, BLACK);
+				}
 			}
 		}
 	}

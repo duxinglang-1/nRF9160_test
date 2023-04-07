@@ -58,7 +58,6 @@ char lib_ver[VERSION_STRING_LENGTH];
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
 static struct k_work_q *imu_work_q;
-static struct k_delayed_work sensor_work;
 static struct k_delayed_work fall_work;
 
 static bool imu_check_ok = false;
@@ -656,15 +655,6 @@ void activity_process(void)
 
 			runActivityAlgorithms(acceleration_g[0], acceleration_g[0], acceleration_g[0]);         
 		}
-	}
-}
-
-static void sensor_check(struct k_work *work)
-{
-	while(1)
-	{
-		activity_process();
-		k_sleep(K_MSEC(5));
 	}
 }
 
@@ -1323,12 +1313,6 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
 	k_work_init(&fall_work, fall_check);
 #endif
-
-#if defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)
-	k_work_init(&sensor_work, sensor_check);
-	k_delayed_work_submit_to_queue(imu_work_q, &sensor_work, K_NO_WAIT);
-#endif
-
 }
 
 /*void test_i2c(void)
@@ -1472,6 +1456,7 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_STEP_SUPPORT
+	activity_process();
 	if(MPW_data_in.CurrentActivity > 0)
 	{
 		static uint16_t last_step = 0;

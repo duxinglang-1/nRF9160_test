@@ -58,6 +58,7 @@ char lib_ver[VERSION_STRING_LENGTH];
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
 static struct k_work_q *imu_work_q;
+static struct k_delayed_work sensor_work;
 static struct k_delayed_work fall_work;
 
 static bool imu_check_ok = false;
@@ -366,84 +367,85 @@ void initStepLib(void){
 
 int runActivityAlgorithms(float accX, float accY, float accZ)
 {
-  MAW_input_t MAW_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f};
-  MSM_input_t MSM_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f};
-  MAW_output_t MAW_data_out;
-  
-  static int32_t activity_conversion = 0;
-  static uint8_t resampling = 0;
+	MAW_input_t MAW_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f};
+	MSM_input_t MSM_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f};
+	MAW_output_t MAW_data_out;
 
-  MAW_data_in.AccX = MPW_data_in.AccX = MSM_data_in.AccX = accX;
-  MAW_data_in.AccY = MPW_data_in.AccY = MSM_data_in.AccY = accY;
-  MAW_data_in.AccZ = MPW_data_in.AccZ = MSM_data_in.AccZ = accZ;
-    
-  // Get current activity
-  MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
-  #ifdef IMU_DEBUG
-  LOGD("MAW Current Activity: %d\n", MAW_data_out.current_activity);
-  #endif
+	static int32_t activity_conversion = 0;
+	static uint8_t resampling = 0;
 
-  // Convert current activity number
-  activity_conversion = (int32_t)MAW_data_out.current_activity - 4;
-  if (activity_conversion <= (int32_t)MPW_UNKNOWN_ACTIVITY || activity_conversion > (int32_t)MPW_JOGGING)
-  {
-    activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
-  }
-  MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
-  #ifdef IMU_DEBUG
-  LOGD("MPW Current Activity: %d\n", MPW_data_in.CurrentActivity);
-  #endif
+	MAW_data_in.AccX = MPW_data_in.AccX = MSM_data_in.AccX = accX;
+	MAW_data_in.AccY = MPW_data_in.AccY = MSM_data_in.AccY = accY;
+	MAW_data_in.AccZ = MPW_data_in.AccZ = MSM_data_in.AccZ = accZ;
 
-  #ifdef CONFIG_STEP_SUPPORT
-  MotionPW_Update(&MPW_data_in, &MPW_data_out);
-  #endif
+	// Get current activity
+	MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
+#ifdef IMU_DEBUG
+	LOGD("MAW Current Activity: %d\n", MAW_data_out.current_activity);
+#endif
 
-  resampling++;
-  if (resampling == 3U)
-  {
-    #ifdef CONFIG_SLEEP_SUPPORT
-      MotionSM_Update(&MSM_data_in, &MSM_data_out);
-    #endif
+	// Convert current activity number
+	activity_conversion = (int32_t)MAW_data_out.current_activity - 4;
+	if (activity_conversion <= (int32_t)MPW_UNKNOWN_ACTIVITY || activity_conversion > (int32_t)MPW_JOGGING)
+	{
+		activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
+	}
 
-    resampling = 0;
-  }
+	MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
+#ifdef IMU_DEBUG
+	LOGD("MPW Current Activity: %d\n", MPW_data_in.CurrentActivity);
+#endif
 
-  
-  // Get current activity
-  /*MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
-  #ifdef IMU_DEBUG
-  LOGD("MAW Current Activity: %d\n", MAW_data_out.current_activity);
-  #endif
+#ifdef CONFIG_STEP_SUPPORT
+	MotionPW_Update(&MPW_data_in, &MPW_data_out);
+#endif
 
-  
-  activity_conversion = (int32_t)MAW_data_out.current_activity;
-  if(activity_conversion <= (int32_t)MAW_LYING || activity_conversion >= (int32_t)MAW_BIKING)
-  {
-    activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
-    MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
-  } else if(activity_conversion == (int32_t)MAW_WALKING)// || MAW_data_out.current_activity == MAW_FASTWALKING || MAW_data_out.current_activity == MAW_JOGGING)
-  {
-    activity_conversion = (int32_t)MPW_WALKING;
-    MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
-    MotionPW_Update(&MPW_data_in, &MPW_data_out);
-  }*/
+	resampling++;
+	if (resampling == 3U)
+	{
+	#ifdef CONFIG_SLEEP_SUPPORT
+		MotionSM_Update(&MSM_data_in, &MSM_data_out);
+	#endif
 
-  timeStamp += (int64_t)reportInterval;
+		resampling = 0;
+	}
 
-  #ifdef IMU_DEBUG
-    LOGD("Steps: %d\n", MPW_data_out.Nsteps);
-    //LOGD("Cadence: %d\n", MPW_data_out.Cadence);
-    //LOGD("Confidence: %d\n", MPW_data_out.Confidence);
-  #endif
 
-  #ifdef IMU_DEBUG
-    LOGD("Sleep Flag: %d\n", MSM_data_out.SleepFlag);
-    LOGD("Total Sleep Time: %d\n", MSM_data_out.TotalSleepTime);
-  #endif
+	// Get current activity
+	/*MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
+#ifdef IMU_DEBUG
+	LOGD("MAW Current Activity: %d\n", MAW_data_out.current_activity);
+#endif
 
-  total_SleepTime = MSM_data_out.TotalSleepTime;
+	activity_conversion = (int32_t)MAW_data_out.current_activity;
+	if(activity_conversion <= (int32_t)MAW_LYING || activity_conversion >= (int32_t)MAW_BIKING)
+	{
+		activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
+		MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
+	}
+	else if(activity_conversion == (int32_t)MAW_WALKING)// || MAW_data_out.current_activity == MAW_FASTWALKING || MAW_data_out.current_activity == MAW_JOGGING)
+	{
+		activity_conversion = (int32_t)MPW_WALKING;
+		MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
+		MotionPW_Update(&MPW_data_in, &MPW_data_out);
+	}*/
 
-  return 0;
+	timeStamp += (int64_t)reportInterval;
+
+#ifdef IMU_DEBUG
+	LOGD("Steps: %d\n", MPW_data_out.Nsteps);
+	//LOGD("Cadence: %d\n", MPW_data_out.Cadence);
+	//LOGD("Confidence: %d\n", MPW_data_out.Confidence);
+#endif
+
+#ifdef IMU_DEBUG
+	LOGD("Sleep Flag: %d\n", MSM_data_out.SleepFlag);
+	LOGD("Total Sleep Time: %d\n", MSM_data_out.TotalSleepTime);
+#endif
+
+	total_SleepTime = MSM_data_out.TotalSleepTime;
+
+	return 0;
 }
 
 /* ULTRA LOW POWER & INACTIVITY MODE IMPLEMENTED. FIFO DISABLED*/
@@ -651,8 +653,18 @@ void activity_process(void)
 				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, dummy.u8bit);
 				break;
 			}
+
 			runActivityAlgorithms(acceleration_g[0], acceleration_g[0], acceleration_g[0]);         
 		}
+	}
+}
+
+static void sensor_check(struct k_work *work)
+{
+	while(1)
+	{
+		activity_process();
+		k_sleep(K_MSEC(5));
 	}
 }
 
@@ -1307,9 +1319,16 @@ void IMU_init(struct k_work_q *work_q)
 #endif
 
 	imu_work_q = work_q;
+
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
 	k_work_init(&fall_work, fall_check);
 #endif
+
+#if defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)
+	k_work_init(&sensor_work, sensor_check);
+	k_delayed_work_submit_to_queue(imu_work_q, &sensor_work, K_NO_WAIT);
+#endif
+
 }
 
 /*void test_i2c(void)
@@ -1453,7 +1472,6 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_STEP_SUPPORT
-	activity_process();
 	if(MPW_data_in.CurrentActivity > 0)
 	{
 		static uint16_t last_step = 0;

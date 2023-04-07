@@ -1715,18 +1715,24 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
+				bp_calibra_t bpt = {0};
+				
 				memcpy(strtmp, strdata, (ptr-strdata));
-				global_settings.bp_calibra.systolic = atoi(strtmp);
+				bpt.systolic = atoi(strtmp);
 
 				ptr++;
 				memset(strtmp, 0, sizeof(strtmp));
 				strcpy(strtmp, ptr);
-				global_settings.bp_calibra.diastolic = atoi(strtmp);
+				bpt.diastolic = atoi(strtmp);
 
 			#ifdef CONFIG_PPG_SUPPORT
-				sh_clear_bpt_cal_data();
-				ppg_bpt_is_calbraed = false;
-				ppg_bpt_cal_need_update = true;
+				if((global_settings.bp_calibra.systolic != bpt.systolic) || (global_settings.bp_calibra.diastolic != bpt.diastolic))
+				{
+					memcpy(&global_settings.bp_calibra, &bpt, sizeof(bp_calibra_t));
+					sh_clear_bpt_cal_data();
+					ppg_bpt_is_calbraed = false;
+					ppg_bpt_cal_need_update = true;
+				}
 			#endif
 			}
 

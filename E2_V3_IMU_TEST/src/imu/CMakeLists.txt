@@ -16,9 +16,9 @@ add_library(awLib STATIC IMPORTED GLOBAL)
 set_target_properties(awLib PROPERTIES IMPORTED_LOCATION ${LIB_DIR}/awLib/MotionAW_CM33F_wc32_ot.a)
 target_link_libraries(app PUBLIC awLib)
 
-#add_library(smLib STATIC IMPORTED GLOBAL)
-#set_target_properties(smLib PROPERTIES IMPORTED_LOCATION ${LIB_DIR}/smLib/MotionSM_CM33F_wc32_ot.a)
-#target_link_libraries(app PUBLIC smLib)
+add_library(smLib STATIC IMPORTED GLOBAL)
+set_target_properties(smLib PROPERTIES IMPORTED_LOCATION ${LIB_DIR}/smLib/MotionSM_CM33F_wc32_ot.a)
+target_link_libraries(app PUBLIC smLib)
 
 add_library(pwLib STATIC IMPORTED GLOBAL)
 set_target_properties(pwLib PROPERTIES IMPORTED_LOCATION ${LIB_DIR}/pwLib/MotionPW_CM33F_wc32_ot.a)

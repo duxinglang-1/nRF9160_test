@@ -25,6 +25,7 @@
 #include "logger.h"
 #include "motion_pw.h"
 #include "motion_aw.h"
+#include "motion_sm.h"
 
 //#define IMU_DEBUG
 
@@ -47,13 +48,12 @@
 #define PULL_UP 0
 #endif
 
-//K_TIMER_DEFINE(step_update_timer, NULL, NULL);
-
 #define VERSION_STRING_LENGTH  35
 char lib_ver[VERSION_STRING_LENGTH];
 
 #define BOOT_TIME   10
-#define ALGO_FREQ  50U /* Algorithm frequency >= 50Hz */
+#define ALGO_FREQ   50U /* Algorithm frequency >= 50Hz */
+//#define ALGO_FREQ   25U /* Algorithm frequency >= 25Hz */
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
@@ -80,17 +80,11 @@ uint16_t g_distance = 0;
 extern bool update_sleep_parameter;
 
 static MPW_output_t MPW_data_out;
+static MSM_output_t MSM_data_out;
 MPW_input_t MPW_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f, .CurrentActivity = MPW_UNKNOWN_ACTIVITY};
 static int64_t timeStamp = 0;
-uint32_t AlgoFreq = ALGO_FREQ;
 static const uint32_t reportInterval = 1000U / ALGO_FREQ;
-
-//static void step_handler(struct k_timer *timer_id)
-//{
-//	UpdateIMUData();
-//	imu_redraw_steps_flag = true;
-//}
-//K_TIMER_DEFINE(step_update_timer, step_handler, NULL);
+uint32_t total_SleepTime = 0;
 
 void ClearAllStepRecData(void)
 {
@@ -314,18 +308,6 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-void initActivityLib(void){
-  MotionAW_Initialize();
-  MotionAW_Reset();
-  MotionAW_Reset_Activity_Duration();
-}
-
-void initStepLib(void){
-  MotionPW_Initialize();
-  MotionPW_ResetStepCount();
-  MotionPW_ResetPedometerLibrary();
-}
-
 void getActivityLibVer(void){
   MotionAW_GetLibVersion(lib_ver);
   #ifdef IMU_DEBUG
@@ -340,6 +322,13 @@ void getStepLibVer(void){
   #endif
 }
 
+void getSleepLibVer(void){
+  MotionSM_GetLibVersion(lib_ver);
+  #ifdef IMU_DEBUG
+  LOGD("Sleep Library Version is: %s\n", lib_ver);
+  #endif
+}
+
 void setOrientationAW(void){
   char acc_orientation[3];
 
@@ -350,41 +339,94 @@ void setOrientationAW(void){
   MotionAW_SetOrientation_Acc(acc_orientation);
 }
 
+void setOrientationSM(void){
+  const char orientation[4] = "enu";
+
+  MotionSM_SetOrientation_Acc(orientation);
+}
+
+void initActivityLib(void){
+  MotionAW_Initialize();
+  setOrientationAW();
+  MotionAW_Reset();
+  MotionAW_Reset_Activity_Duration();
+}
+
+void initSleepLib(void){
+  MotionSM_Initialize();
+  MotionSM_Reset();
+  setOrientationSM();
+}
+
+void initStepLib(void){
+  MotionPW_Initialize();
+  MotionPW_ResetStepCount();
+  MotionPW_ResetPedometerLibrary();
+}
+
 int runActivityAlgorithms(float accX, float accY, float accZ)
 {
   MAW_input_t MAW_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f};
+  MSM_input_t MSM_data_in = {.AccX = 0.0f, .AccY = 0.0f, .AccZ = 0.0f};
   MAW_output_t MAW_data_out;
   
   static int32_t activity_conversion = 0;
   static uint8_t resampling = 0;
 
-  MAW_data_in.AccX = MPW_data_in.AccX = accX;
-  MAW_data_in.AccY = MPW_data_in.AccY = accY;
-  MAW_data_in.AccZ = MPW_data_in.AccZ = accZ;
+  MAW_data_in.AccX = MPW_data_in.AccX = MSM_data_in.AccX = accX;
+  MAW_data_in.AccY = MPW_data_in.AccY = MSM_data_in.AccY = accY;
+  MAW_data_in.AccZ = MPW_data_in.AccZ = MSM_data_in.AccZ = accZ;
+    
+  // Get current activity
+  MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
+  #ifdef IMU_DEBUG
+  LOGD("MAW Current Activity: %d\n", MAW_data_out.current_activity);
+  #endif
+
+  // Convert current activity number
+  activity_conversion = (int32_t)MAW_data_out.current_activity - 4;
+  if (activity_conversion <= (int32_t)MPW_UNKNOWN_ACTIVITY || activity_conversion > (int32_t)MPW_JOGGING)
+  {
+    activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
+  }
+  MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
+  #ifdef IMU_DEBUG
+  LOGD("MPW Current Activity: %d\n", MPW_data_in.CurrentActivity);
+  #endif
+
+  #ifdef CONFIG_STEP_SUPPORT
+  MotionPW_Update(&MPW_data_in, &MPW_data_out);
+  #endif
 
   resampling++;
   if (resampling == 3U)
   {
-    // Get current activity
-    MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
-
-    // Convert current activity number
-    activity_conversion = (int32_t)MAW_data_out.current_activity - 4;
-    if (activity_conversion < (int32_t)MPW_UNKNOWN_ACTIVITY || activity_conversion > (int32_t)MPW_JOGGING)
-    {
-      activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
-    }
-    MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
-    #ifdef IMU_DEBUG
-    //LOGD("Current Activity: %d\n", MPW_data_in.CurrentActivity);
+    #ifdef CONFIG_SLEEP_SUPPORT
+      MotionSM_Update(&MSM_data_in, &MSM_data_out);
     #endif
 
     resampling = 0;
   }
 
-  #ifdef CONFIG_STEP_SUPPORT
-  MotionPW_Update(&MPW_data_in, &MPW_data_out);
+  
+  // Get current activity
+  /*MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
+  #ifdef IMU_DEBUG
+  LOGD("MAW Current Activity: %d\n", MAW_data_out.current_activity);
   #endif
+
+  
+  activity_conversion = (int32_t)MAW_data_out.current_activity;
+  if(activity_conversion <= (int32_t)MAW_LYING || activity_conversion >= (int32_t)MAW_BIKING)
+  {
+    activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
+    MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
+  } else if(activity_conversion == (int32_t)MAW_WALKING)// || MAW_data_out.current_activity == MAW_FASTWALKING || MAW_data_out.current_activity == MAW_JOGGING)
+  {
+    activity_conversion = (int32_t)MPW_WALKING;
+    MPW_data_in.CurrentActivity = (MPW_activity_t)activity_conversion;
+    MotionPW_Update(&MPW_data_in, &MPW_data_out);
+  }*/
 
   timeStamp += (int64_t)reportInterval;
 
@@ -393,6 +435,13 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
     //LOGD("Cadence: %d\n", MPW_data_out.Cadence);
     //LOGD("Confidence: %d\n", MPW_data_out.Confidence);
   #endif
+
+  #ifdef IMU_DEBUG
+    LOGD("Sleep Flag: %d\n", MSM_data_out.SleepFlag);
+    LOGD("Total Sleep Time: %d\n", MSM_data_out.TotalSleepTime);
+  #endif
+
+  total_SleepTime = MSM_data_out.TotalSleepTime;
 
   return 0;
 }
@@ -415,7 +464,7 @@ static bool sensor_init(void)
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_OFF);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
 
-	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 
 	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
@@ -512,13 +561,13 @@ void sensor_reset(void)
 	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
 	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_52Hz);
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_52Hz);
 }
 
 /*@brief Get real time X/Y/Z reading in mg
@@ -1147,11 +1196,12 @@ void GetImuSteps(uint16_t *steps)
 
 void UpdateIMUData(void)
 {
-	uint16_t steps;
+	//uint16_t steps;
 	
-	GetImuSteps(&steps);
+	//GetImuSteps(&steps);
 
-	g_steps = steps+g_last_steps;
+	//g_steps = steps+g_last_steps;
+        g_steps = MPW_data_out.Nsteps + g_last_steps;
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
@@ -1238,9 +1288,8 @@ void IMU_init(struct k_work_q *work_q)
 	if(!imu_check_ok)
 		return;
 
-	initActivityLib();
+    initActivityLib();
 	getActivityLibVer();
-	setOrientationAW();
 
 #ifdef CONFIG_STEP_SUPPORT
 	//lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
@@ -1249,7 +1298,9 @@ void IMU_init(struct k_work_q *work_q)
 	getStepLibVer();
 #endif
 #ifdef CONFIG_SLEEP_SUPPORT
-	StartSleepTimeMonitor();
+	initSleepLib();
+	getSleepLibVer();
+	//StartSleepTimeMonitor();
 #endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
@@ -1414,17 +1465,6 @@ void IMUMsgProcess(void)
 			imu_redraw_steps_flag = true;
 		}
 	}
-
-    /*k_timer_start(&step_update_timer, K_SECONDS(60), K_SECONDS(1));
-
-    if(k_timer_status_get(&step_update_timer)>0){
-            UpdateIMUData();
-	imu_redraw_steps_flag = true;
-    }else{
-            imu_redraw_steps_flag = false;
-    }
-
-    k_timer_stop(&step_update_timer);*/
         	
 	if(reset_steps)
 	{
@@ -1449,7 +1489,7 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_SLEEP_SUPPORT
-	if(update_sleep_parameter)
+	/*if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
 
@@ -1457,7 +1497,7 @@ void IMUMsgProcess(void)
 			return;
 
 		UpdateSleepPara();
-	}
+	}*/
 #endif
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT

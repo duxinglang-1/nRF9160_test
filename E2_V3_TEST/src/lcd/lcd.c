@@ -1541,7 +1541,6 @@ void LCD_dis_pic_angle_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, uns
 	if(show_w < w)
 		readlen = 2*show_w;
 
-	//LOGD("c_x:%d, c_y:%d", c_x, c_y);
 	while(datelen)
 	{
 		if(datelen < readlen)
@@ -1569,7 +1568,6 @@ void LCD_dis_pic_angle_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, uns
 			{
 				offset_y = j*sin(angle*PI/180);
 				offset_x = j*cos(angle*PI/180);
-				//LOGD("i:%d,angle:%d,c_r:%d,offset_x:%d,offset_y:%d", i,angle,c_r,offset_x,offset_y);
 				BlockWrite(c_x+offset_x, c_y-offset_y, 1, 1);	//ÉèÖÃË¢ÐÂÎ»ÖÃ
 				j++;
 			}

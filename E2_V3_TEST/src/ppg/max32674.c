@@ -1928,36 +1928,45 @@ void PPGStopCheck(void)
 		switch(g_ppg_data)
 		{
 		case PPG_DATA_HR:
-			flag = true;
-			g_hr_menu = g_hr;
-		#ifdef CONFIG_BLE_SUPPORT	
-			if(g_ble_connected)
-			{
-				MCU_send_app_get_ppg_data(PPG_DATA_HR, &g_hr);
-			}
-		#endif	
-			break;
-		case PPG_DATA_SPO2:
-			flag = true;
-			g_spo2_menu = g_spo2;
-		#ifdef CONFIG_BLE_SUPPORT	
-			if(g_ble_connected)
-			{
-				MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &g_spo2);
-			}
-		#endif	
-			break;
-		case PPG_DATA_BPT:
-			if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
+			if(get_hr_ok_flag)
 			{
 				flag = true;
-				memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+				g_hr_menu = g_hr;
 			#ifdef CONFIG_BLE_SUPPORT	
 				if(g_ble_connected)
 				{
-					MCU_send_app_get_ppg_data(PPG_DATA_BPT, (uint8_t*)&g_bpt);
+					MCU_send_app_get_ppg_data(PPG_DATA_HR, &g_hr);
 				}
-			#endif	
+			#endif
+			}
+			break;
+		case PPG_DATA_SPO2:
+			if(get_spo2_ok_flag)
+			{
+				flag = true;
+				g_spo2_menu = g_spo2;
+			#ifdef CONFIG_BLE_SUPPORT	
+				if(g_ble_connected)
+				{
+					MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &g_spo2);
+				}
+			#endif
+			}
+			break;
+		case PPG_DATA_BPT:
+			if(get_bpt_ok_flag)
+			{
+				if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
+				{
+					flag = true;
+					memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+				#ifdef CONFIG_BLE_SUPPORT	
+					if(g_ble_connected)
+					{
+						MCU_send_app_get_ppg_data(PPG_DATA_BPT, (uint8_t*)&g_bpt);
+					}
+				#endif	
+				}
 			}
 			break;
 		}

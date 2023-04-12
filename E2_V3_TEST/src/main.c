@@ -397,15 +397,13 @@ void test_show_image(void)
 	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
 	
-	LOGD("test_show_image");
-	
 	LCD_Clear(BLACK);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_BP_BG_ADDR, &w, &h);
-	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_BP_BG_ADDR);
+	LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
+	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
 	while(0)
@@ -740,6 +738,9 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
+
+	//log_read_from_flash();
+
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 }
@@ -805,6 +806,7 @@ int main(void)
 //	test_bat_soc();
 //	test_notify();
 //	test_wifi();
+//	LogInit();
 
 	while(1)
 	{
@@ -857,6 +859,7 @@ int main(void)
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FactoryTestProccess();
 	#endif
+		LogMsgProcess();
 		system_init_completed();
 		k_cpu_idle();
 	}

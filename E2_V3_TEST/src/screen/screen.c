@@ -1328,11 +1328,7 @@ void SettingsUpdateStatus(void)
 		  #elif defined(CONFIG_TEMP_SUPPORT)
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
 		  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-		  #ifdef CONFIG_SLEEP_SUPPORT
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-		  #elif defined(CONFIG_STEP_SUPPORT)
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
-		  #endif
 		  #else
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 		  #endif
@@ -1999,11 +1995,7 @@ void EnterSettingsScreen(void)
   #elif defined(CONFIG_TEMP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
   #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-   #ifdef CONFIG_SLEEP_SUPPORT
-  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-   #elif defined(CONFIG_STEP_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
-   #endif
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
   #endif
@@ -2757,11 +2749,7 @@ void EnterTempScreen(void)
  #ifdef CONFIG_PPG_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-   #ifdef CONFIG_SLEEP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-   #elif defined(CONFIG_STEP_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
-   #endif
  #else
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
  #endif
@@ -4309,11 +4297,7 @@ void EnterHRScreen(void)
   #endif
 
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-   #ifdef CONFIG_SLEEP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-   #elif defined(CONFIG_STEP_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
-   #endif
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
   #endif
@@ -5646,6 +5630,7 @@ void StepUpdateStatus(void)
 {
 	uint8_t i,language,count=1;
 	uint16_t steps,calorie,distance;
+	uint16_t total_sleep,deep_sleep,light_sleep;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_38_NUM_0_ADDR,IMG_FONT_38_NUM_1_ADDR,IMG_FONT_38_NUM_2_ADDR,IMG_FONT_38_NUM_3_ADDR,IMG_FONT_38_NUM_4_ADDR,
 								IMG_FONT_38_NUM_5_ADDR,IMG_FONT_38_NUM_6_ADDR,IMG_FONT_38_NUM_7_ADDR,IMG_FONT_38_NUM_8_ADDR,IMG_FONT_38_NUM_9_ADDR};
@@ -5684,14 +5669,21 @@ void StepUpdateStatus(void)
 		calorie = calorie%divisor;
 		divisor = divisor/10;
 	}
-
 	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-4*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, cal_uint[language]);
+
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+	total_sleep = deep_sleep+light_sleep;
+	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+0*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+1*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+0*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+1*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)%10]);
 }
 
 void StepShowStatus(void)
 {
 	uint8_t i,language,count=1;
 	uint16_t steps,calorie,distance;
+	uint16_t total_sleep,deep_sleep,light_sleep;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_38_NUM_0_ADDR,IMG_FONT_38_NUM_1_ADDR,IMG_FONT_38_NUM_2_ADDR,IMG_FONT_38_NUM_3_ADDR,IMG_FONT_38_NUM_4_ADDR,
 							IMG_FONT_38_NUM_5_ADDR,IMG_FONT_38_NUM_6_ADDR,IMG_FONT_38_NUM_7_ADDR,IMG_FONT_38_NUM_8_ADDR,IMG_FONT_38_NUM_9_ADDR};
@@ -5730,8 +5722,19 @@ void StepShowStatus(void)
 		calorie = calorie%divisor;
 		divisor = divisor/10;
 	}
-
 	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-4*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, cal_uint[language]);
+
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+	total_sleep = deep_sleep+light_sleep;
+
+	LCD_ShowImg_From_Flash(IMU_SLEEP_ICON_X, IMU_SLEEP_ICON_Y, IMG_STEP_SLEEP_ICON_ADDR);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_H_UNIT_X, IMU_SLEEP_H_UNIT_Y, IMG_SLEEP_H_ADDR);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_M_UNIT_X, IMU_SLEEP_M_UNIT_Y, IMG_SLEEP_M_ADDR);
+	
+	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+0*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)/10]);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+1*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)%10]);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+0*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)/10]);
+	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+1*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)%10]);
 }
 
 void StepsScreenProcess(void)
@@ -5808,9 +5811,7 @@ void EnterStepsScreen(void)
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_STEPS].status = SCREEN_STATUS_CREATING;
 
-#ifdef CONFIG_SLEEP_SUPPORT
-	SetLeftKeyUpHandler(EnterSleepScreen);
-#elif defined(CONFIG_PPG_SUPPORT)
+#ifdef CONFIG_PPG_SUPPORT
 	SetLeftKeyUpHandler(EnterHRScreen);
 #elif defined(CONFIG_TEMP_SUPPORT)
 	SetLeftKeyUpHandler(EnterTempScreen);
@@ -5824,9 +5825,7 @@ void EnterStepsScreen(void)
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 
-  #ifdef CONFIG_SLEEP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-  #elif defined(CONFIG_PPG_SUPPORT)
+  #ifdef CONFIG_PPG_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
   #elif defined(CONFIG_TEMP_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
@@ -5889,11 +5888,7 @@ void EnterIdleScreen(void)
 	SetLeftKeyUpHandler(EnterNBTestScreen);
 #else
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
- #ifdef CONFIG_STEP_SUPPORT
 	SetLeftKeyUpHandler(EnterStepsScreen);
- #elif defined(CONFIG_SLEEP_SUPPORT)
-	SetLeftKeyUpHandler(EnterSleepScreen);
- #endif
 #elif defined(CONFIG_PPG_SUPPORT)
 	SetLeftKeyUpHandler(EnterHRScreen);
 #elif defined(CONFIG_TEMP_SUPPORT)
@@ -5915,11 +5910,7 @@ void EnterIdleScreen(void)
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-   #ifdef CONFIG_STEP_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
-   #elif defined(CONFIG_SLEEP_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-   #endif
   #elif defined(CONFIG_PPG_SUPPORT)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
   #elif defined(CONFIG_TEMP_SUPPORT)

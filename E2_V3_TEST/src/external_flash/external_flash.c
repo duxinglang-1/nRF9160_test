@@ -705,12 +705,19 @@ void test_flash(void)
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
 	LCD_ShowString(0,20,tmpbuf);
 
-#if 0
+#if 1
 	//写之前需要先执行擦除操作
 	LCD_ShowString(0,40,"FLASH开始擦除...");
 	SPIFlash_Erase_Chip();
 	//SPIFlash_Erase_Sector(0);
 	LCD_ShowString(0,60,"FLASH擦除成功!");
+#endif
+
+#if 0
+	LCD_ShowString(0,40,"FLASH开始擦除块...");
+	for(addr=IMG_START_ADDR;addr<FONT_START_ADDR;addr+=SPIFlash_BLOCK_SIZE)
+		SPIFlash_Erase_Block(addr);
+	LCD_ShowString(0,60,"FLASH擦除块成功!");
 #endif
 
 #if 0	

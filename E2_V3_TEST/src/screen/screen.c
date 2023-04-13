@@ -4730,13 +4730,13 @@ void DlShowStatus(void)
 	switch(g_dl_data_type)
 	{
 	case DL_DATA_IMG:
-		strcpy(str_title, "UI UPGRADING");
+		strcpy(str_title, "UI OTA");
 		break;
 	case DL_DATA_FONT:
-		strcpy(str_title, "FONT UPGRADING");
+		strcpy(str_title, "FONT OTA");
 		break;
 	case DL_DATA_PPG:
-		strcpy(str_title, "PPG_AG UPGRADING");
+		strcpy(str_title, "PPG_AG OTA");
 		break;
 	}
 
@@ -4823,7 +4823,7 @@ void DlUpdateStatus(void)
 							  DL_NOTIFY_STRING_Y,
 							  DL_NOTIFY_STRING_W,
 							  40,
-							  "Downloading data...");
+							  "Upgrading......");
 			
 			LCD_DrawRectangle(DL_NOTIFY_PRO_X, DL_NOTIFY_PRO_Y, DL_NOTIFY_PRO_W, DL_NOTIFY_PRO_H);
 			LCD_Fill(DL_NOTIFY_PRO_X+1, DL_NOTIFY_PRO_Y+1, DL_NOTIFY_PRO_W-1, DL_NOTIFY_PRO_H-1, BLACK);

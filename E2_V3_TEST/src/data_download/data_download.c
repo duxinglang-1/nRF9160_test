@@ -115,7 +115,7 @@ static void DlSaveDataCallBack(struct k_timer *timer)
 
 static void DlSaveDataStart(void)
 {
-	k_timer_start(&dl_save_data_timer, K_MSEC(100), K_NO_WAIT);
+	k_timer_start(&dl_save_data_timer, K_MSEC(200), K_NO_WAIT);
 }
 
 static void DlReceiveData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
@@ -154,7 +154,7 @@ static void DlSaveData(void)
 		}
 
 		delete_data_from_cache(&dl_save_cache);
-		k_timer_start(&dl_save_data_timer, K_MSEC(100), K_NO_WAIT);
+		k_timer_start(&dl_save_data_timer, K_MSEC(200), K_NO_WAIT);
 	}
 }
 

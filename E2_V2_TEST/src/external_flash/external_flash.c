@@ -715,7 +715,7 @@ void test_flash(void)
 	LCD_ShowString(0,60,"FLASH擦除成功!");
 #endif
 
-#if 1
+#if 0
 	LCD_ShowString(0,40,"FLASH开始擦除块...");
 	for(addr=FONT_START_ADDR;addr<PPG_ALGO_START_ADDR;addr+=SPIFlash_BLOCK_SIZE)
 		SPIFlash_Erase_Block(addr);

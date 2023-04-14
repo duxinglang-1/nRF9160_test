@@ -26,7 +26,7 @@ DEF_DL_TARGET(ui);
 #include "dl_target_font.h"
 DEF_DL_TARGET(font);
 #endif
-#ifdef CONFIG_PPG_DATA_UPDATE
+#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 #include "dl_target_ppg.h"
 DEF_DL_TARGET(ppg);
 #endif
@@ -54,7 +54,7 @@ int dl_target_init(DL_DATA_TYPE data_type, size_t file_size, dl_target_callback_
 		break;
 	#endif
 
-	#ifdef CONFIG_PPG_DATA_UPDATE
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
 		new_target = &dl_target_ppg;
 		break;
@@ -63,7 +63,6 @@ int dl_target_init(DL_DATA_TYPE data_type, size_t file_size, dl_target_callback_
 
 	if(new_target == NULL)
 	{
-		LOGD("Unknown image type");
 		return -ENOTSUP;
 	}
 
@@ -104,7 +103,6 @@ int dl_target_done(bool successful)
 	err = cur_target->done(successful);
 	if(err != 0)
 	{
-		LOGD("Unable to clean up dfu_target");
 		return err;
 	}
 

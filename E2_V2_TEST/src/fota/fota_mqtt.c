@@ -169,6 +169,7 @@ static void app_dfu_transfer_start(struct k_work *unused)
 		fota_run_flag = false;
 		fota_cur_status = FOTA_STATUS_ERROR;
 		fota_redraw_pro_flag = true;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);
 	}
 }
 
@@ -244,6 +245,22 @@ void fota_start(void)
 
 void fota_start_confirm(void)
 {
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking()&&!TempIsWorkingTiming())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+		MenuStopPPG();
+#endif
+#ifdef CONFIG_WIFI_SUPPORT
+	if(wifi_is_working())
+		MenuStopWifi();
+#endif
+
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -266,6 +283,7 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 		LOGD("Received error");
 	#endif
 		fota_cur_status = FOTA_STATUS_ERROR;
+		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), NULL);
 		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:
@@ -426,6 +444,7 @@ void FotaMsgProc(void)
 	{
 		fota_reboot_flag = false;
 
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 		if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
 		{
 			dl_img_start();
@@ -440,7 +459,8 @@ void FotaMsgProc(void)
 			dl_ppg_start();
 		}
 	#endif
-		else	
+		else
+	#endif		
 		{
 			LCD_Clear(BLACK);
 			sys_reboot(0);

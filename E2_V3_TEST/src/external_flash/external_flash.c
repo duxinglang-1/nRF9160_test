@@ -705,7 +705,7 @@ void test_flash(void)
 	sprintf(tmpbuf, "FLASH ID:%X", flash_id);
 	LCD_ShowString(0,20,tmpbuf);
 
-#if 1
+#if 0
 	//写之前需要先执行擦除操作
 	LCD_ShowString(0,40,"FLASH开始擦除...");
 	SPIFlash_Erase_Chip();

@@ -137,8 +137,10 @@ void FTMainMenu13Proc(void)
 
 void FTMainMenu14Proc(void)
 {
+#ifdef CONFIG_WIFI_SUPPORT
 	ft_main_menu_index = 13;
 	EnterFTMenuWifi();	
+#endif
 }
 
 void FTMainMenu15Proc(void)
@@ -517,8 +519,10 @@ void FactoryTestProccess(void)
 	case FT_TOUCH:
 		FTMenuTouchProcess();
 		break;
+	#ifdef CONFIG_WIFI_SUPPORT		
 	case FT_WIFI:
 		FTMenuWifiProcess();
 		break;
+	#endif		
 	}
 }

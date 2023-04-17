@@ -1854,9 +1854,11 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case TIME_24_SETTING_ID:	//12/24小时设置
 		APP_set_time_24_format(buf, len);
 		break;
+	#ifdef CONFIG_ALARM_SUPPORT	
 	case FIND_PHONE_ID:			//查找手机回复
 		APP_reply_find_phone(buf, len);
 		break;
+	#endif
 	case WEATHER_INFOR_ID:		//天气信息下发
 		break;
 	case TIME_SYNC_ID:			//时间同步

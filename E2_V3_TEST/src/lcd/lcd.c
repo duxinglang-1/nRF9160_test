@@ -78,8 +78,6 @@ bool lcd_sleep_out = false;
 bool lcd_is_sleeping = true;
 bool sleep_out_by_wrist = false;
 
-static uint8_t imgbuf[LCD_DATA_LEN] = {0};
-
 #ifdef FONTMAKER_UNICODE_FONT
 font_uni_infor uni_infor = {0};
 #endif

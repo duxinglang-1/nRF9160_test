@@ -208,59 +208,6 @@ static void MqttReceData(uint8_t *data, uint32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
-//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
-//AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
-AT_MONITOR(ltelc_atmon_modem_info, "%XMODEMSLEEP", at_handler_modem_notify, PAUSED);
-
-static void at_handler_modem_notify(const char *response)
-{
-	int err;
-	struct lte_lc_evt evt = {0};
-
-	__ASSERT_NO_MSG(response != NULL);
-
-#ifdef NB_DEBUG
-	LOGD("%%XMODEMSLEEP notification");
-#endif
-
-	err = parse_xmodemsleep(response, &evt.modem_sleep);
-	if(err)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Can't parse modem sleep pre-warning notification, error: %d", err);
-	#endif
-		return;
-	}
-
-	/* Link controller only supports PSM, RF inactivity and flight mode
-	 * modem sleep types.
-	 */
-	if((evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_PSM) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_RF_INACTIVITY) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_FLIGHT_MODE))
-	{
-		return;
-	}
-
-	/* Propagate the appropriate event depending on the parsed time parameter. */
-	if(evt.modem_sleep.time == CONFIG_LTE_LC_MODEM_SLEEP_PRE_WARNING_TIME_MS)
-	{
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING;
-	}
-	else if(evt.modem_sleep.time == 0)
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_EXIT);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT;
-	}
-	else
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_ENTER);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_ENTER;
-	}
-
-	event_handler_list_dispatch(&evt);
-}
-
 /**@brief Function to publish data on the configured topic
  */
 static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,

@@ -15,7 +15,7 @@
 #include "crc_check.h"
 #include "logger.h"
 
-#define CRC_DEBUG
+//#define CRC_DEBUG
 
 CRC_8 crc_8 = {0x07,0x00,0x00,false,false};
 CRC_8 crc_8_ITU = {0x07,0x00,0x55,false,false};

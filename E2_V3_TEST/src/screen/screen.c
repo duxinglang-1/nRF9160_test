@@ -5961,145 +5961,6 @@ void EnterWifiTestScreen(void)
 }
 #endif
 
-#ifdef CONFIG_QRCODE_SUPPORT
-void DeviceShowQRStatus(void)
-{
-	uint8_t buf[512] = {0};
-	
-	LCD_Clear(BLACK);
-
-	//IMEI
-	strcpy(buf, "IMEI:");
-	strcat(buf, g_imei);
-	strcat(buf, ",");
-	//IMSI
-	strcat(buf, "IMSI:");
-	strcat(buf, g_imsi);
-	strcat(buf, ",");
-	//ICCID
-	strcat(buf, "ICCID:");
-	strcat(buf, g_iccid);
-	strcat(buf, ",");
-	//nrf9160 FW ver
-	strcat(buf, "MCU:");
-	strcat(buf, g_fw_version);
-	strcat(buf, ",");
-#ifdef CONFIG_WIFI_SUPPORT	
-	//WIFI FW ver
-	strcat(buf, "WIFI:");
-	strcat(buf, g_wifi_ver);
-	strcat(buf, ",");
-	//WIFI Mac
-	strcat(buf, "WIFI MAC:");
-	strcat(buf, g_wifi_mac_addr);
-	strcat(buf, ",");
-#else
-	//WIFI FW ver
-	strcat(buf, "WIFI:");
-	strcat(buf, "NO");
-	strcat(buf, ",");
-	//WIFI Mac
-	strcat(buf, "WIFI MAC:");
-	strcat(buf, "NO");
-	strcat(buf, ",");
-#endif
-	//BLE FW ver
-	strcat(buf, "BLE:");
-	strcat(buf, &g_nrf52810_ver[15]);
-	strcat(buf, ",");
-	//BLE Mac
-	strcat(buf, "BLE MAC:");
-	strcat(buf, g_ble_mac_addr);
-	strcat(buf, ",");
-#ifdef CONFIG_PPG_SUPPORT	
-	//PPG ver
-	strcat(buf, "PPG:");
-	strcat(buf, g_ppg_ver);
-	strcat(buf, ",");
-#else
-	//PPG ver
-	strcat(buf, "PPG:");
-	strcat(buf, "NO");
-	strcat(buf, ",");
-#endif
-	//Modem ver
-	strcat(buf, "MODEM:");
-	strcat(buf, &g_modem[12]);
-
-	show_QR_code(strlen(buf), buf);
-}
-
-void DeviceScreenProcess(void)
-{
-	switch(scr_msg[SCREEN_ID_DEVICE_INFOR].act)
-	{
-	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_DEVICE_INFOR].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_DEVICE_INFOR].status = SCREEN_STATUS_CREATED;
-
-		DeviceShowQRStatus();
-		break;
-		
-	case SCREEN_ACTION_UPDATE:
-		DeviceShowQRStatus();
-		break;
-	}
-	
-	scr_msg[SCREEN_ID_DEVICE_INFOR].act = SCREEN_ACTION_NO;
-}
-
-void ExitDeviceScreen(void)
-{
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
-	EnterIdleScreen();
-}
-
-void EnterDeviceScreen(void)
-{
-	if(screen_id == SCREEN_ID_DEVICE_INFOR)
-		return;
-
-	k_timer_stop(&mainmenu_timer);
-
-#ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
-#endif
-#ifdef CONFIG_PPG_SUPPORT
-	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
-		PPGStopCheck();
-#endif
-#ifdef CONFIG_TEMP_SUPPORT
-	if(IsInTempScreen()&&!TempIsWorkingTiming())
-		MenuStopTemp();
-#endif
-#ifdef CONFIG_SYNC_SUPPORT
-	if(SyncIsRunning())
-		SyncDataStop();
-#endif
-
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-
-	history_screen_id = screen_id;
-	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
-	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
-
-	screen_id = SCREEN_ID_DEVICE_INFOR;	
-	scr_msg[SCREEN_ID_DEVICE_INFOR].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_DEVICE_INFOR].status = SCREEN_STATUS_CREATING;
-
-	SetLeftKeyUpHandler(ExitDeviceScreen);
-	SetRightKeyUpHandler(ExitDeviceScreen);
-#ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
-#endif	
-}
-#endif
-
-#ifdef NB_SIGNAL_TEST
 void TestGPSUpdateInfor(void)
 {
 	uint8_t tmpbuf[512] = {0};
@@ -6305,6 +6166,144 @@ void EnterNBTestScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 #endif
+}
+#endif
+
+#ifdef CONFIG_QRCODE_SUPPORT
+void DeviceShowQRStatus(void)
+{
+	uint8_t buf[512] = {0};
+	
+	LCD_Clear(BLACK);
+
+	//IMEI
+	strcpy(buf, "IMEI:");
+	strcat(buf, g_imei);
+	strcat(buf, ",");
+	//IMSI
+	strcat(buf, "IMSI:");
+	strcat(buf, g_imsi);
+	strcat(buf, ",");
+	//ICCID
+	strcat(buf, "ICCID:");
+	strcat(buf, g_iccid);
+	strcat(buf, ",");
+	//nrf9160 FW ver
+	strcat(buf, "MCU:");
+	strcat(buf, g_fw_version);
+	strcat(buf, ",");
+#ifdef CONFIG_WIFI_SUPPORT	
+	//WIFI FW ver
+	strcat(buf, "WIFI:");
+	strcat(buf, g_wifi_ver);
+	strcat(buf, ",");
+	//WIFI Mac
+	strcat(buf, "WIFI MAC:");
+	strcat(buf, g_wifi_mac_addr);
+	strcat(buf, ",");
+#else
+	//WIFI FW ver
+	strcat(buf, "WIFI:");
+	strcat(buf, "NO");
+	strcat(buf, ",");
+	//WIFI Mac
+	strcat(buf, "WIFI MAC:");
+	strcat(buf, "NO");
+	strcat(buf, ",");
+#endif
+	//BLE FW ver
+	strcat(buf, "BLE:");
+	strcat(buf, &g_nrf52810_ver[15]);
+	strcat(buf, ",");
+	//BLE Mac
+	strcat(buf, "BLE MAC:");
+	strcat(buf, g_ble_mac_addr);
+	strcat(buf, ",");
+#ifdef CONFIG_PPG_SUPPORT	
+	//PPG ver
+	strcat(buf, "PPG:");
+	strcat(buf, g_ppg_ver);
+	strcat(buf, ",");
+#else
+	//PPG ver
+	strcat(buf, "PPG:");
+	strcat(buf, "NO");
+	strcat(buf, ",");
+#endif
+	//Modem ver
+	strcat(buf, "MODEM:");
+	strcat(buf, &g_modem[12]);
+
+	show_QR_code(strlen(buf), buf);
+}
+
+void DeviceScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_DEVICE_INFOR].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_DEVICE_INFOR].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_DEVICE_INFOR].status = SCREEN_STATUS_CREATED;
+
+		DeviceShowQRStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		DeviceShowQRStatus();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_DEVICE_INFOR].act = SCREEN_ACTION_NO;
+}
+
+void ExitDeviceScreen(void)
+{
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	EnterIdleScreen();
+}
+
+void EnterDeviceScreen(void)
+{
+	if(screen_id == SCREEN_ID_DEVICE_INFOR)
+		return;
+
+	k_timer_stop(&mainmenu_timer);
+
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStopShow();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+		PPGStopCheck();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(IsInTempScreen()&&!TempIsWorkingTiming())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_SYNC_SUPPORT
+	if(SyncIsRunning())
+		SyncDataStop();
+#endif
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_DEVICE_INFOR;	
+	scr_msg[SCREEN_ID_DEVICE_INFOR].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_DEVICE_INFOR].status = SCREEN_STATUS_CREATING;
+
+	SetLeftKeyUpHandler(ExitDeviceScreen);
+	SetRightKeyUpHandler(ExitDeviceScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
+#endif	
 }
 #endif
 

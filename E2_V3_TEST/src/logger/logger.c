@@ -213,7 +213,6 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 		*(buf + n) = '\n';
 		n++;
 
-		LOG_INF("%s", log_strdup(buf));
 		LogWriteData(buf, n, DATA_TRANSFER);
 	}
 #endif	
@@ -226,7 +225,7 @@ static void LogSaveDataCallBack(struct k_timer *timer)
 
 static void LogSaveDataStart(void)
 {
-	k_timer_start(&log_save_data_timer, K_MSEC(100), K_NO_WAIT);
+	k_timer_start(&log_save_data_timer, K_MSEC(200), K_NO_WAIT);
 }
 
 static void LogWriteData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
@@ -251,7 +250,7 @@ static void LogSaveData(void)
 	{
 		log_write_data_to_flash(p_data, data_len);
 		delete_data_from_cache(&log_save_cache);
-		k_timer_start(&log_save_data_timer, K_MSEC(100), K_NO_WAIT);
+		k_timer_start(&log_save_data_timer, K_MSEC(200), K_NO_WAIT);
 	}
 }
 

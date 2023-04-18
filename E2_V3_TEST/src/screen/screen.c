@@ -618,6 +618,10 @@ void IdleShowNetMode(void)
 			LCD_ShowImg_From_Flash(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IMG_IDLE_NET_LTEM_ADDR);	
 		}
 	}
+	else
+	{
+		LCD_Fill(IDLE_NET_MODE_X, IDLE_NET_MODE_Y, IDLE_NET_MODE_W, IDLE_NET_MODE_H, BLACK);
+	}
 }
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)

@@ -397,8 +397,6 @@ void test_show_image(void)
 	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
 	
-	LOGD("test_show_image");
-	
 	LCD_Clear(BLACK);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
@@ -857,6 +855,7 @@ int main(void)
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FactoryTestProccess();
 	#endif
+		LogMsgProcess();
 		system_init_completed();
 		k_cpu_idle();
 	}

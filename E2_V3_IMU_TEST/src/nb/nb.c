@@ -70,6 +70,10 @@ static void GetModemStatusCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_modem_status_timer, GetModemStatusCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
+static void MqttReconnectCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mqtt_reconnect_timer, MqttReconnectCallBack, NULL);
+static void MqttActWaitCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mqtt_act_wait_timer, MqttActWaitCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
@@ -87,8 +91,10 @@ static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 static bool power_on_data_flag = true;
 static bool nb_connecting_flag = false;
-static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
+static bool mqtt_connecting_flag = false;
+static bool mqtt_reconnect_flag = false;
+static bool mqtt_act_wait_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
 
@@ -202,59 +208,6 @@ static void MqttReceData(uint8_t *data, uint32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
-//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
-//AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
-AT_MONITOR(ltelc_atmon_modem_info, "%XMODEMSLEEP", at_handler_modem_notify, PAUSED);
-
-static void at_handler_modem_notify(const char *response)
-{
-	int err;
-	struct lte_lc_evt evt = {0};
-
-	__ASSERT_NO_MSG(response != NULL);
-
-#ifdef NB_DEBUG
-	LOGD("%%XMODEMSLEEP notification");
-#endif
-
-	err = parse_xmodemsleep(response, &evt.modem_sleep);
-	if(err)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Can't parse modem sleep pre-warning notification, error: %d", err);
-	#endif
-		return;
-	}
-
-	/* Link controller only supports PSM, RF inactivity and flight mode
-	 * modem sleep types.
-	 */
-	if((evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_PSM) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_RF_INACTIVITY) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_FLIGHT_MODE))
-	{
-		return;
-	}
-
-	/* Propagate the appropriate event depending on the parsed time parameter. */
-	if(evt.modem_sleep.time == CONFIG_LTE_LC_MODEM_SLEEP_PRE_WARNING_TIME_MS)
-	{
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING;
-	}
-	else if(evt.modem_sleep.time == 0)
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_EXIT);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT;
-	}
-	else
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_ENTER);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_ENTER;
-	}
-
-	event_handler_list_dispatch(&evt);
-}
-
 /**@brief Function to publish data on the configured topic
  */
 static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
@@ -271,6 +224,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
+	k_timer_start(&mqtt_act_wait_timer, K_MSEC(200), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 
@@ -439,6 +393,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#ifdef NB_DEBUG	
 		LOGD("PUBACK packet id: %u", evt->param.puback.message_id);
 	#endif
+		k_timer_stop(&mqtt_act_wait_timer);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -613,6 +568,7 @@ void mqtt_is_connecting(void)
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err,i=0;
+	static uint32_t retry_count = 0;
 
 #ifdef NB_DEBUG
 	LOGD("begin");
@@ -646,6 +602,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	}
 
 	mqtt_connecting_flag = false;
+	retry_count = 0;
 	
 	while(1)
 	{
@@ -707,8 +664,25 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
+	return;
+
 link_over:
 	mqtt_connecting_flag = false;
+#ifdef NB_DEBUG
+	LOGD("mqtt link err, rerty:%d", retry_count);
+#endif
+	if(retry_count < 3)
+	{
+		retry_count++;
+		k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+	}
+	else
+	{
+		nb_connected = false;
+
+		k_timer_stop(&nb_reconnect_timer);
+		k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+	}
 }
 
 static void SendDataCallBack(struct k_timer *timer)
@@ -743,9 +717,14 @@ static void NbSendData(void)
 		if(!ret)
 		{
 			delete_data_from_cache(&nb_send_cache);
+			k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 		}
-		
-		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
+		else
+		{
+		#ifdef NB_DEBUG
+			LOGD("mqtt send fail, wait act timerout and recount!");
+		#endif
+		}
 	}
 }
 
@@ -1070,7 +1049,11 @@ void NBRedrawSignal(void)
 			}
 			else
 			{
+			#ifdef NB_DEBUG
+				LOGD("registered:%d,mqtt_connected:%d,nb_connected:%d", g_nw_registered, mqtt_connected, nb_connected);
+			#endif
 				g_nw_registered = false;
+				mqtt_connected = false;
 				nb_connected = false;
 				
 				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
@@ -2124,6 +2107,16 @@ static void GetModemInforCallBack(struct k_timer *timer_id)
 	get_modem_info_flag = true;
 }
 
+static void MqttActWaitCallBack(struct k_timer *timer_id)
+{
+	mqtt_act_wait_flag = false;
+}
+
+static void MqttReconnectCallBack(struct k_timer *timer_id)
+{
+	mqtt_reconnect_flag = true;
+}
+
 static void NBReconnectCallBack(struct k_timer *timer_id)
 {
 	nb_reconnect_flag = true;
@@ -3062,11 +3055,17 @@ void NBMsgProcess(void)
 
 	if(nb_reconnect_flag)
 	{
+	#ifdef NB_DEBUG
+		LOGD("nb_reconnect_flag begin");
+	#endif
 		nb_reconnect_flag = false;
 		
-		if(test_gps_flag || nb_connected)
+		if(test_gps_flag)
 			return;
-	
+
+	#ifdef NB_DEBUG
+		LOGD("nb_reconnect_flag 001");
+	#endif
 		if(!nb_connecting_flag)
 		{
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
@@ -3076,7 +3075,54 @@ void NBMsgProcess(void)
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
-	
+
+	if(mqtt_reconnect_flag)
+	{
+	#ifdef NB_DEBUG
+		LOGD("mqtt_reconnect_flag begin");
+	#endif
+		mqtt_reconnect_flag = false;
+
+		if(test_gps_flag)
+			return;
+
+	#ifdef NB_DEBUG
+		LOGD("mqtt_reconnect_flag 001");
+	#endif
+		if(!mqtt_connecting_flag)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		}		
+	}
+
+	if(mqtt_act_wait_flag)
+	{
+	#ifdef NB_DEBUG
+		LOGD("mqtt_act_wait_flag begin");
+	#endif
+		mqtt_act_wait_flag = false;
+
+		if(test_gps_flag)
+			return;
+
+	#ifdef NB_DEBUG
+		LOGD("mqtt_act_wait_flag 001");
+	#endif
+		DisConnectMqttLink();
+		if(!mqtt_connecting_flag)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		}
+	}
+
 	if(nb_connecting_flag)
 	{
 		k_sleep(K_MSEC(5));

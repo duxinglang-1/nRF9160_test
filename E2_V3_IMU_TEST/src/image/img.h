@@ -199,11 +199,12 @@ extern unsigned char IMG_SPO2_BIG_ICON_2[5288];
 extern unsigned char IMG_SPO2_BIG_ICON_3[5288];
 extern unsigned char IMG_SPO2_DOWN_ARRAW[484];
 extern unsigned char IMG_SPO2_UP_ARRAW[484];
-//step(11)
+//step(12)
 extern unsigned char IMG_STEP_ANI_1[2328];
 extern unsigned char IMG_STEP_ANI_2[2328];
 extern unsigned char IMG_STEP_STEP_ICON[2136];
 extern unsigned char IMG_STEP_CAL_ICON[2136];
+extern unsigned char IMG_STEP_SLEEP_ICON[1744];
 extern unsigned char IMG_STEP_UNIT_CN_ICON[400];
 extern unsigned char IMG_STEP_UNIT_EN_ICON[1160];
 extern unsigned char IMG_STEP_KCAL_CN[820];

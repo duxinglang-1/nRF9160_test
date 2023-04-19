@@ -713,6 +713,13 @@ void test_flash(void)
 	LCD_ShowString(0,60,"FLASH擦除成功!");
 #endif
 
+#if 0
+	LCD_ShowString(0,40,"FLASH开始擦除块...");
+	for(addr=IMG_START_ADDR;addr<FONT_START_ADDR;addr+=SPIFlash_BLOCK_SIZE)
+		SPIFlash_Erase_Block(addr);
+	LCD_ShowString(0,60,"FLASH擦除块成功!");
+#endif
+
 #if 0	
 	//写入数据
 	//LCD_ShowString(0,80,"FLASH写入图片1数据...");

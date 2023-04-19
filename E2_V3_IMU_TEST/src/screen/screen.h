@@ -160,29 +160,51 @@ extern "C" {
 //steps
 #define IMU_STEP_ICON_W				28
 #define IMU_STEP_ICON_H				38
-#define IMU_STEP_ICON_X				45
-#define IMU_STEP_ICON_Y				83
+#define IMU_STEP_ICON_X				40
+#define IMU_STEP_ICON_Y				63
 #define IMU_STEP_UNIT_W				35
 #define IMU_STEP_UNIT_H				15
-#define IMU_STEP_UNIT_X				191
-#define IMU_STEP_UNIT_Y				102
+#define IMU_STEP_UNIT_X				184
+#define IMU_STEP_UNIT_Y				82
 #define IMU_STEP_STR_W				105
 #define IMU_STEP_STR_H				38
-#define IMU_STEP_STR_X				83
-#define IMU_STEP_STR_Y				83
+#define IMU_STEP_STR_X				77
+#define IMU_STEP_STR_Y				63
 //calorie
 #define IMU_CAL_ICON_W				28
 #define IMU_CAL_ICON_H				38
-#define IMU_CAL_ICON_X				45
-#define IMU_CAL_ICON_Y				144
+#define IMU_CAL_ICON_X				40
+#define IMU_CAL_ICON_Y				113
 #define IMU_CAL_UNIT_W				29
 #define IMU_CAL_UNIT_H				14
-#define IMU_CAL_UNIT_X				170
-#define IMU_CAL_UNIT_Y				165
+#define IMU_CAL_UNIT_X				163
+#define IMU_CAL_UNIT_Y				134
 #define IMU_CAL_STR_W				84
 #define IMU_CAL_STR_H				38
-#define IMU_CAL_STR_X				83
-#define IMU_CAL_STR_Y				144
+#define IMU_CAL_STR_X				77
+#define IMU_CAL_STR_Y				113
+//sleep
+#define IMU_SLEEP_ICON_W			30
+#define IMU_SLEEP_ICON_H			33
+#define IMU_SLEEP_ICON_X			40
+#define IMU_SLEEP_ICON_Y			166
+#define IMU_SLEEP_H_UNIT_W			9
+#define IMU_SLEEP_H_UNIT_H			14
+#define IMU_SLEEP_H_UNIT_X			122
+#define IMU_SLEEP_H_UNIT_Y			185
+#define IMU_SLEEP_M_UNIT_W			13
+#define IMU_SLEEP_M_UNIT_H			14
+#define IMU_SLEEP_M_UNIT_X			177
+#define IMU_SLEEP_M_UNIT_Y			185
+#define IMU_SLEEP_H_STR_W			43
+#define IMU_SLEEP_H_STR_H			38
+#define IMU_SLEEP_H_STR_X			77
+#define IMU_SLEEP_H_STR_Y			163
+#define IMU_SLEEP_M_STR_W			43
+#define IMU_SLEEP_M_STR_H			38
+#define IMU_SLEEP_M_STR_X			132
+#define IMU_SLEEP_M_STR_Y			163
+
 //distance
 #define IMU_DIS_ICON_W				22
 #define IMU_DIS_ICON_H				28
@@ -840,7 +862,6 @@ extern void DisplayPopUp(notify_infor infor);
 extern void EnterDeviceScreen(void);
 #endif
 extern void EnterFallScreen(void);
-extern uint32_t total_SleepTime;
 
 #ifdef __cplusplus
 }

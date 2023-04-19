@@ -18,7 +18,9 @@
 #include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "sleep.h"
 #include "external_flash.h"
+#include "datetime.h"
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
@@ -59,6 +61,7 @@ char lib_ver[VERSION_STRING_LENGTH];
 
 static struct k_work_q *imu_work_q;
 static struct k_delayed_work fall_work;
+static struct k_delayed_work activity_count_work;
 
 static bool imu_check_ok = false;
 static uint8_t whoamI, rst;
@@ -308,60 +311,63 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-void getActivityLibVer(void){
-  MotionAW_GetLibVersion(lib_ver);
-  #ifdef IMU_DEBUG
-  LOGD("Activity Library Version is: %s\n", lib_ver);
-  #endif
+void getActivityLibVer(void)
+{
+	MotionAW_GetLibVersion(lib_ver);
+#ifdef IMU_DEBUG
+	LOGD("Activity Library Version is: %s\n", lib_ver);
+#endif
 }
 
-void getStepLibVer(void){
-  MotionPW_GetLibVersion(lib_ver);
-  #ifdef IMU_DEBUG
-  LOGD("Step Library Version is: %s\n", lib_ver);
-  #endif
+void getStepLibVer(void)
+{
+	MotionPW_GetLibVersion(lib_ver);
+#ifdef IMU_DEBUG
+	LOGD("Step Library Version is: %s\n", lib_ver);
+#endif
 }
 
-void getSleepLibVer(void){
-  MotionSM_GetLibVersion(lib_ver);
-  #ifdef IMU_DEBUG
-  LOGD("Sleep Library Version is: %s\n", lib_ver);
-  #endif
+void getSleepLibVer(void)
+{
+	MotionSM_GetLibVersion(lib_ver);
+#ifdef IMU_DEBUG
+	LOGD("Sleep Library Version is: %s\n", lib_ver);
+#endif
 }
 
 void setOrientationAW(void){
   char acc_orientation[3];
 
-  acc_orientation[0] = 'e';
-  acc_orientation[1] = 'n';
+  acc_orientation[0] = 'n';
+  acc_orientation[1] = 'e';
   acc_orientation[2] = 'u';
 
   MotionAW_SetOrientation_Acc(acc_orientation);
 }
 
 void setOrientationSM(void){
-  const char orientation[4] = "enu";
+  const char orientation[4] = "neu";
 
   MotionSM_SetOrientation_Acc(orientation);
 }
 
 void initActivityLib(void){
+  //MotionAW_Reset();
+  //MotionAW_Reset_Activity_Duration();
   MotionAW_Initialize();
   setOrientationAW();
-  MotionAW_Reset();
-  MotionAW_Reset_Activity_Duration();
 }
 
 void initSleepLib(void){
+  //MotionSM_Reset();
   MotionSM_Initialize();
-  MotionSM_Reset();
   setOrientationSM();
 }
 
 void initStepLib(void){
+  //MotionPW_ResetStepCount();
+  //MotionPW_ResetPedometerLibrary();
   MotionPW_Initialize();
-  MotionPW_ResetStepCount();
-  MotionPW_ResetPedometerLibrary();
 }
 
 int runActivityAlgorithms(float accX, float accY, float accZ)
@@ -400,12 +406,46 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 #endif
 
 	resampling++;
-	if (resampling == 3U)
+	if(resampling == 3U)
 	{
-	#ifdef CONFIG_SLEEP_SUPPORT
-		MotionSM_Update(&MSM_data_in, &MSM_data_out);
-	#endif
+		if((date_time.hour >= SLEEP_TIME_START) || (date_time.hour < SLEEP_TIME_END))
+		{
+			if((date_time.hour == SLEEP_TIME_START)&&(date_time.minute == 0))//正式启动当天睡眠监测，清空上一天的数据
+			{
+				last_light_sleep = 0;
+				last_deep_sleep = 0;
+				light_sleep_time = 0;
+				deep_sleep_time = 0;
+				g_light_sleep = 0;
+				g_deep_sleep = 0;
 
+				initSleepLib();
+			}
+			else
+			{
+			#ifdef CONFIG_SLEEP_SUPPORT
+				MotionSM_Update(&MSM_data_in, &MSM_data_out);
+			#ifdef IMU_DEBUG
+				LOGD("Sleep Flag: %d\n", MSM_data_out.SleepFlag);
+				LOGD("Total Sleep Time: %d\n", MSM_data_out.TotalSleepTime);
+			#endif
+				total_SleepTime = MSM_data_out.TotalSleepTime;
+			#endif
+				g_deep_sleep = total_SleepTime/60;
+			}
+
+			last_sport.timestamp.year = date_time.year;
+			last_sport.timestamp.month = date_time.month; 
+			last_sport.timestamp.day = date_time.day;
+			last_sport.timestamp.hour = date_time.hour;
+			last_sport.timestamp.minute = date_time.minute;
+			last_sport.timestamp.second = date_time.second;
+			last_sport.timestamp.week = date_time.week;
+			last_sport.deep_sleep = g_deep_sleep;
+			last_sport.light_sleep = g_light_sleep;
+			save_cur_sport_to_record(&last_sport);			
+		}
+		
 		resampling = 0;
 	}
 
@@ -437,12 +477,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 	//LOGD("Confidence: %d\n", MPW_data_out.Confidence);
 #endif
 
-#ifdef IMU_DEBUG
-	LOGD("Sleep Flag: %d\n", MSM_data_out.SleepFlag);
-	LOGD("Total Sleep Time: %d\n", MSM_data_out.TotalSleepTime);
-#endif
 
-	total_SleepTime = MSM_data_out.TotalSleepTime;
 
 	return 0;
 }
@@ -583,9 +618,9 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 	{
 		memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
 		lsm6dso_acceleration_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-		acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-		acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-		acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
+		acceleration_mg[0] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[0]);
+		acceleration_mg[1] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[1]);
+		acceleration_mg[2] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[2]);
 	}
 
 	*sensor_x = acceleration_mg[0];
@@ -622,9 +657,9 @@ void activity_process(void)
 			case LSM6DSO_XL_NC_TAG:
 				memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
 				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-				acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-				acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-				acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
+				acceleration_mg[0] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[0]);
+				acceleration_mg[1] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[1]);
+				acceleration_mg[2] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[2]);
 
 				acceleration_g[0]   = acceleration_mg[0]/1000;
 				acceleration_g[1]   = acceleration_mg[1]/1000;
@@ -653,9 +688,14 @@ void activity_process(void)
 				break;
 			}
 
-			runActivityAlgorithms(acceleration_g[0], acceleration_g[0], acceleration_g[0]);         
+			runActivityAlgorithms(acceleration_g[0], acceleration_g[1], acceleration_g[2]);         
 		}
 	}
+}
+
+static void activity_count(struct k_work *work)
+{
+	activity_process();
 }
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
@@ -1203,7 +1243,7 @@ void UpdateIMUData(void)
 	//GetImuSteps(&steps);
 
 	//g_steps = steps+g_last_steps;
-        g_steps = MPW_data_out.Nsteps + g_last_steps;
+	g_steps = MPW_data_out.Nsteps + g_last_steps;
 	g_distance = 0.7*g_steps;
 	g_calorie = (0.8214*60*g_distance)/1000;
 
@@ -1309,7 +1349,7 @@ void IMU_init(struct k_work_q *work_q)
 #endif
 
 	imu_work_q = work_q;
-
+    k_work_init(&activity_count_work, activity_count);
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
 	k_work_init(&fall_work, fall_check);
 #endif
@@ -1402,7 +1442,7 @@ void IMUMsgProcess(void)
 	#endif
 		int1_event = false;
 
-		if(!imu_check_ok)// || !is_wearing())
+		if(!imu_check_ok || !is_wearing())
 		return;
 
 		is_tilt();
@@ -1456,7 +1496,8 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_STEP_SUPPORT
-	activity_process();
+	//activity_process();
+	k_delayed_work_submit_to_queue(imu_work_q, &activity_count_work, K_NO_WAIT);
 	if(MPW_data_in.CurrentActivity > 0)
 	{
 		static uint16_t last_step = 0;

@@ -180,7 +180,7 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 	uint32_t timemap=0;
 	va_list args;
 
-#ifdef TEST_DEBUG
+#if 0//def TEST_DEBUG
 	memset(buf, 0, sizeof(buf));
 	timemap = (k_uptime_get()%1000);
 	va_start(args, fmt);

@@ -61,7 +61,7 @@ char lib_ver[VERSION_STRING_LENGTH];
 
 static struct k_work_q *imu_work_q;
 static struct k_delayed_work fall_work;
-static struct k_delayed_work activity_count_work;
+//static struct k_delayed_work activity_count_work;
 
 static bool imu_check_ok = false;
 static uint8_t whoamI, rst;
@@ -335,39 +335,44 @@ void getSleepLibVer(void)
 #endif
 }
 
-void setOrientationAW(void){
-  char acc_orientation[3];
+void setOrientationAW(void)
+{
+	char acc_orientation[3];
 
-  acc_orientation[0] = 'n';
-  acc_orientation[1] = 'e';
-  acc_orientation[2] = 'u';
+	acc_orientation[0] = 'n';
+	acc_orientation[1] = 'e';
+	acc_orientation[2] = 'u';
 
-  MotionAW_SetOrientation_Acc(acc_orientation);
+	MotionAW_SetOrientation_Acc(acc_orientation);
 }
 
-void setOrientationSM(void){
-  const char orientation[4] = "neu";
+void setOrientationSM(void)
+{
+	const char orientation[4] = "neu";
 
-  MotionSM_SetOrientation_Acc(orientation);
+	MotionSM_SetOrientation_Acc(orientation);
 }
 
-void initActivityLib(void){
-  //MotionAW_Reset();
-  //MotionAW_Reset_Activity_Duration();
-  MotionAW_Initialize();
-  setOrientationAW();
+void initActivityLib(void)
+{
+	MotionAW_Reset();
+	MotionAW_Reset_Activity_Duration();
+	MotionAW_Initialize();
+	setOrientationAW();
 }
 
-void initSleepLib(void){
-  //MotionSM_Reset();
-  MotionSM_Initialize();
-  setOrientationSM();
+void initSleepLib(void)
+{
+	MotionSM_Reset();
+	MotionSM_Initialize();
+	setOrientationSM();
 }
 
-void initStepLib(void){
-  //MotionPW_ResetStepCount();
-  //MotionPW_ResetPedometerLibrary();
-  MotionPW_Initialize();
+void initStepLib(void)
+{
+	MotionPW_ResetStepCount();
+	MotionPW_ResetPedometerLibrary();
+	MotionPW_Initialize();
 }
 
 int runActivityAlgorithms(float accX, float accY, float accZ)
@@ -391,7 +396,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 
 	// Convert current activity number
 	activity_conversion = (int32_t)MAW_data_out.current_activity - 4;
-	if (activity_conversion <= (int32_t)MPW_UNKNOWN_ACTIVITY || activity_conversion > (int32_t)MPW_JOGGING)
+	if(activity_conversion <= (int32_t)MPW_UNKNOWN_ACTIVITY || activity_conversion > (int32_t)MPW_JOGGING)
 	{
 		activity_conversion = (int32_t)MPW_UNKNOWN_ACTIVITY;
 	}
@@ -449,7 +454,6 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 		resampling = 0;
 	}
 
-
 	// Get current activity
 	/*MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
 #ifdef IMU_DEBUG
@@ -476,8 +480,6 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 	//LOGD("Cadence: %d\n", MPW_data_out.Cadence);
 	//LOGD("Confidence: %d\n", MPW_data_out.Confidence);
 #endif
-
-
 
 	return 0;
 }
@@ -693,10 +695,10 @@ void activity_process(void)
 	}
 }
 
-static void activity_count(struct k_work *work)
+/*static void activity_count(struct k_work *work)
 {
 	activity_process();
-}
+}*/
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 void is_falltrigger(void)
@@ -1211,7 +1213,8 @@ static void fall_check(struct k_work *work)
 void ReSetImuSteps(void)
 {
 	//lsm6dso_steps_reset(&imu_dev_ctx);
-        MotionPW_ResetStepCount();
+        //MotionPW_ResetStepCount();
+        initStepLib();
 
 	g_last_steps = 0;
 	g_steps = 0;
@@ -1349,7 +1352,7 @@ void IMU_init(struct k_work_q *work_q)
 #endif
 
 	imu_work_q = work_q;
-    k_work_init(&activity_count_work, activity_count);
+    //k_work_init(&activity_count_work, activity_count);
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
 	k_work_init(&fall_work, fall_check);
 #endif
@@ -1496,8 +1499,8 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_STEP_SUPPORT
-	//activity_process();
-	k_delayed_work_submit_to_queue(imu_work_q, &activity_count_work, K_NO_WAIT);
+	activity_process();
+	//k_delayed_work_submit_to_queue(imu_work_q, &activity_count_work, K_NO_WAIT);
 	if(MPW_data_in.CurrentActivity > 0)
 	{
 		static uint16_t last_step = 0;

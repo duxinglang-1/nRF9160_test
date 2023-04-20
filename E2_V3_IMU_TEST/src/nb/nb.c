@@ -224,7 +224,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	k_timer_start(&mqtt_act_wait_timer, K_MSEC(200), K_NO_WAIT);
+	k_timer_start(&mqtt_act_wait_timer, K_MSEC(500), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 
@@ -1052,12 +1052,15 @@ void NBRedrawSignal(void)
 			#ifdef NB_DEBUG
 				LOGD("registered:%d,mqtt_connected:%d,nb_connected:%d", g_nw_registered, mqtt_connected, nb_connected);
 			#endif
-				g_nw_registered = false;
-				mqtt_connected = false;
-				nb_connected = false;
-				
-				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+				if(g_nw_registered)
+				{
+					g_nw_registered = false;
+					mqtt_connected = false;
+					nb_connected = false;
+
+					if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+						k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+				}
 			}
 		}
 	}
@@ -2109,7 +2112,7 @@ static void GetModemInforCallBack(struct k_timer *timer_id)
 
 static void MqttActWaitCallBack(struct k_timer *timer_id)
 {
-	mqtt_act_wait_flag = false;
+	mqtt_act_wait_flag = true;
 }
 
 static void MqttReconnectCallBack(struct k_timer *timer_id)
@@ -3060,7 +3063,7 @@ void NBMsgProcess(void)
 	#endif
 		nb_reconnect_flag = false;
 		
-		if(test_gps_flag)
+		if(test_gps_flag || nb_connected)
 			return;
 
 	#ifdef NB_DEBUG
@@ -3083,7 +3086,7 @@ void NBMsgProcess(void)
 	#endif
 		mqtt_reconnect_flag = false;
 
-		if(test_gps_flag)
+		if(test_gps_flag || mqtt_connected)
 			return;
 
 	#ifdef NB_DEBUG

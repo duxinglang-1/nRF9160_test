@@ -279,10 +279,11 @@ void step_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pin
 
 void init_imu_int1(void)
 {
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
+
 	if(gpio_imu == NULL)
 		gpio_imu = device_get_binding(IMU_PORT);
-	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_imu, LSM6DSO_INT1_PIN, 0);
+	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
 }
 
 uint8_t init_gpio(void)
@@ -410,6 +411,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 	MotionPW_Update(&MPW_data_in, &MPW_data_out);
 #endif
 
+#if 0	//xb test 2023.04.23  π”√¥∫ÍÕÀØ√ﬂÀ„∑®
 	resampling++;
 	if(resampling == 3U)
 	{
@@ -436,7 +438,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 			#endif
 				total_SleepTime = MSM_data_out.TotalSleepTime;
 			#endif
-				g_deep_sleep = total_SleepTime/60;
+				g_deep_sleep = last_deep_sleep + total_SleepTime/60;
 			}
 
 			last_sport.timestamp.year = date_time.year;
@@ -453,6 +455,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 		
 		resampling = 0;
 	}
+#endif
 
 	// Get current activity
 	/*MotionAW_Update(&MAW_data_in, &MAW_data_out, timeStamp);
@@ -1312,7 +1315,10 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 #endif
-	if(last_sport.timestamp.day == date_time.day)
+	if((last_sport.timestamp.year == date_time.year)
+		&&(last_sport.timestamp.month == date_time.month)
+		&&(last_sport.timestamp.day == date_time.day)
+		)
 	{
 		g_last_steps = last_sport.steps;
 		g_steps = last_sport.steps;
@@ -1343,9 +1349,9 @@ void IMU_init(struct k_work_q *work_q)
 	getStepLibVer();
 #endif
 #ifdef CONFIG_SLEEP_SUPPORT
-	initSleepLib();
-	getSleepLibVer();
-	//StartSleepTimeMonitor();
+	//initSleepLib();
+	//getSleepLibVer();
+	StartSleepTimeMonitor();
 #endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
@@ -1536,7 +1542,7 @@ void IMUMsgProcess(void)
 #endif
 
 #ifdef CONFIG_SLEEP_SUPPORT
-	/*if(update_sleep_parameter)
+	if(update_sleep_parameter)
 	{
 		update_sleep_parameter = false;
 
@@ -1544,7 +1550,7 @@ void IMUMsgProcess(void)
 			return;
 
 		UpdateSleepPara();
-	}*/
+	}
 #endif
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT

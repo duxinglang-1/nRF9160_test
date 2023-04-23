@@ -374,7 +374,10 @@ void FTStopTemp(void)
 void temp_init(void)
 {
 	get_cur_health_from_record(&last_health);
-	if(last_health.timestamp.day == date_time.day)
+	if((last_health.timestamp.year == date_time.year)
+		&&(last_health.timestamp.month == date_time.month)
+		&&(last_health.timestamp.day == date_time.day)
+		)
 	{
 		g_temp_body = (float)(last_health.deca_temp/10.0);
 	}

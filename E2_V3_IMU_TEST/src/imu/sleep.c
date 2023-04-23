@@ -140,21 +140,7 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 					}
 				}
 
-				if((watch_state >= (3600*2))||(waggle_flag >= 7)||/* (3)晚上2个3时终端没有动，判断为晚上睡觉没有佩戴过，累计睡眠、久坐数据清空*/
-					((hour<8)&&(sedentary_time_temp > 180)))  /* 晚上睡眠监测时间累加150分钟又走动或者久坐，默认睡眠监测数据为0*/
-				{
-					sedentary_time_temp = 0;
-
-					last_light_sleep = 0;
-					last_deep_sleep = 0;
-					light_sleep_time = 0;				 
-					deep_sleep_time = 0;
-					g_light_sleep = 0;
-					g_deep_sleep = 0;
-
-					save_flag = true;
-				}
-				else if((move == step)&&(watch_state >= 60)) /* 在期间没有走动过 */
+				if((move == step)&&(watch_state >= 60)) /* 在期间没有走动过 */
 				{
 					if(is_wearing())	//xb add 2021-03-02 脱腕之后不计算睡眠
 					{
@@ -218,13 +204,19 @@ void ClearAllSleepRecData(void)
 
 void StartSleepTimeMonitor(void)
 {
+	if((last_sport.timestamp.year == date_time.year)
+		&&(last_sport.timestamp.month == date_time.month)
+		&&(last_sport.timestamp.day == date_time.day)
+		)
+	{
+		last_light_sleep = last_sport.light_sleep;
+		last_deep_sleep = last_sport.deep_sleep;
+		g_light_sleep = last_light_sleep;
+		g_deep_sleep = last_deep_sleep;		
+	}
+
 	k_timer_init(&sleep_timer, sleep_timer_handler, NULL);
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));
-
-	last_light_sleep = last_sport.light_sleep;
-	last_deep_sleep = last_sport.deep_sleep;
-	g_light_sleep = last_light_sleep;
-	g_deep_sleep = last_deep_sleep;
 }
 
 void GetSleepTimeData(uint16_t *deep_sleep, uint16_t *light_sleep)

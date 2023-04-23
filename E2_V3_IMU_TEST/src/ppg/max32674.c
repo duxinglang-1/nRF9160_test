@@ -2075,7 +2075,10 @@ void PPG_init(void)
 #endif
 
 	get_cur_health_from_record(&last_health);
-	if(last_health.timestamp.day == date_time.day)
+	if((last_health.timestamp.year == date_time.year)
+		&&(last_health.timestamp.month == date_time.month)
+		&&(last_health.timestamp.day == date_time.day)
+		)
 	{
 		g_hr = last_health.hr;
 		g_spo2 = last_health.spo2;

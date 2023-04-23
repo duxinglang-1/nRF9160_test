@@ -417,7 +417,7 @@ void LCD_SleepOut(void)
 //ÆÁÄ»ÖØÖÃ±³¹âÑÓÊ±
 void LCD_ResetBL_Timer(void)
 {
-	if(bl_mode == LCD_BL_ALWAYS_ON)
+	if((bl_mode == LCD_BL_ALWAYS_ON) || (bl_mode == LCD_BL_OFF))
 		return;
 	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
@@ -454,6 +454,8 @@ void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 		break;
 
 	case LCD_BL_OFF:
+		k_timer_stop(&backlight_timer);
+		LCD_BL_Off();
 		if(!lcd_is_sleeping)
 			LCD_SleepIn();
 		break;

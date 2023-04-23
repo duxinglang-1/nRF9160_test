@@ -525,7 +525,11 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	uint8_t strbuf[128] = {0};
 	uint16_t x,y,w,h;
 
-	if(lcd_is_sleeping)
+	if(lcd_is_sleeping
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		&&!IsFTCurrentTest()
+	#endif
+		)
 	{
 		sleep_out_by_wrist = false;
 		lcd_sleep_out = true;

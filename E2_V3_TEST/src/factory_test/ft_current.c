@@ -131,6 +131,9 @@ static void FTMenuCurUpdate(void)
 		ClearAllKeyHandler();
 		SetLeftKeyUpHandler(FTMenuCurStopTest);
 		SetRightKeyUpHandler(FTMenuCurStopTest);
+	#ifdef CONFIG_TOUCH_SUPPORT
+		clear_all_touch_event_handle();
+	#endif	
 	}
 	else
 	{

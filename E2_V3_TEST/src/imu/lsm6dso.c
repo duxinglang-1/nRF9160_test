@@ -582,7 +582,10 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 #endif
-	if(last_sport.timestamp.day == date_time.day)
+	if((last_sport.timestamp.year == date_time.year)
+		&&(last_sport.timestamp.month == date_time.month)
+		&&(last_sport.timestamp.day == date_time.day)
+		)
 	{
 		g_last_steps = last_sport.steps;
 		g_steps = last_sport.steps;

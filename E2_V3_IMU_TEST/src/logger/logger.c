@@ -48,7 +48,10 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 	memset(buf, 0, sizeof(buf));
 	timemap = (k_uptime_get()%1000);
 	va_start(args, fmt);
-	sprintf(buf, "[%02d:%02d:%02d:%03d]..%s>>", 
+	sprintf(buf, "[%04d-%02d-%02d %02d:%02d:%02d:%03d]..%s>>", 
+						date_time.year,
+						date_time.month,
+						date_time.day,
 						date_time.hour, 
 						date_time.minute, 
 						date_time.second, 
@@ -180,11 +183,14 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 	uint32_t timemap=0;
 	va_list args;
 
-#ifdef TEST_DEBUG
+#if 0//def TEST_DEBUG
 	memset(buf, 0, sizeof(buf));
 	timemap = (k_uptime_get()%1000);
 	va_start(args, fmt);
-	sprintf(buf, "[%02d:%02d:%02d:%03d]..%s>>", 
+	sprintf(buf, "[%04d-%02d-%02d %02d:%02d:%02d:%03d]..%s>>", 
+						date_time.year,
+						date_time.month,
+						date_time.day,
 						date_time.hour, 
 						date_time.minute, 
 						date_time.second, 

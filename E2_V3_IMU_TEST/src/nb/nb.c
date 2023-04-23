@@ -988,6 +988,11 @@ void NBRedrawSignal(void)
 	uint8_t strbuf[128] = {0};
 	uint8_t tmpbuf[128] = {0};
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived())
+		return;
+#endif
+
 	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_GET_REG_STATUS) == 0)
 	{
 		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
@@ -3063,7 +3068,11 @@ void NBMsgProcess(void)
 	#endif
 		nb_reconnect_flag = false;
 		
-		if(test_gps_flag || nb_connected)
+		if(test_gps_flag || nb_connected
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| FactryTestActived()
+		#endif
+			)
 			return;
 
 	#ifdef NB_DEBUG
@@ -3086,7 +3095,11 @@ void NBMsgProcess(void)
 	#endif
 		mqtt_reconnect_flag = false;
 
-		if(test_gps_flag || mqtt_connected)
+		if(test_gps_flag || mqtt_connected
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| FactryTestActived()
+		#endif
+			)
 			return;
 
 	#ifdef NB_DEBUG
@@ -3109,7 +3122,11 @@ void NBMsgProcess(void)
 	#endif
 		mqtt_act_wait_flag = false;
 
-		if(test_gps_flag)
+		if(test_gps_flag
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| FactryTestActived()
+		#endif
+			)
 			return;
 
 	#ifdef NB_DEBUG

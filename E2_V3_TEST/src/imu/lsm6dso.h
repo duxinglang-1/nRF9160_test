@@ -5,6 +5,12 @@
 #include <device.h>
 #include "inner_flash.h"
 
+typedef struct
+{
+	uint8_t deep;
+	uint8_t light;
+}sleep_data;
+
 //单次测量
 typedef struct
 {
@@ -17,6 +23,17 @@ typedef struct
 	uint16_t steps;
 }step_rec1_data;
 
+typedef struct
+{
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+	sleep_data sleep;
+}sleep_rec1_data;
+
 //整点测量
 typedef struct
 {
@@ -25,6 +42,14 @@ typedef struct
 	uint8_t day;
 	uint16_t steps[24];
 }step_rec2_data;
+
+typedef struct
+{
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	sleep_data sleep[24];
+}sleep_rec2_data;
 
 extern bool reset_steps;
 #ifdef CONFIG_FALL_DETECT_SUPPORT

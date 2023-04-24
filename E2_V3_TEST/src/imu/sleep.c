@@ -12,6 +12,7 @@
 #include "lsm6dso.h"
 #include "sleep.h"
 #include "datetime.h"
+#include "external_flash.h"
 #include "max20353.h"
 #include "logger.h"
 
@@ -27,6 +28,169 @@ int hour_time = 0;
 bool update_sleep_parameter = false;
 
 static struct k_timer sleep_timer;
+
+void ClearAllSleepRecData(void)
+{
+	uint8_t tmpbuf[SLEEP_REC2_DATA_SIZE] = {0xff};
+
+	last_light_sleep = 0;
+	last_deep_sleep = 0;
+	light_sleep_time = 0;
+	deep_sleep_time = 0;
+	g_light_sleep = 0;
+	g_deep_sleep = 0;
+
+	SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+}
+
+void SetCurDaySleepRecData(sleep_data data)
+{
+	uint8_t i,tmpbuf[SLEEP_REC2_DATA_SIZE] = {0};
+	sleep_rec2_data *p_sleep,tmp_sleep = {0};
+	sys_date_timer_t temp_date = {0};
+	
+	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	TimeIncrease(&temp_date, 60);
+
+	tmp_sleep.year = temp_date.year;
+	tmp_sleep.month = temp_date.month;
+	tmp_sleep.day = temp_date.day;
+	memcpy(tmp_sleep.sleep[temp_date.hour], data, sizeof(sleep_data));
+
+	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	p_sleep = tmpbuf;
+	if((p_sleep->year == 0xffff || p_sleep->year == 0x0000)
+		||(p_sleep->month == 0xff || p_sleep->month == 0x00)
+		||(p_sleep->day == 0xff || p_sleep->day == 0x00)
+		||((p_sleep->year == temp_date.year)&&(p_sleep->month == temp_date.month)&&(p_sleep->day == temp_date.day))
+		)
+	{
+		//直接覆盖写在第一条
+		p_sleep->year = temp_date.year;
+		p_sleep->month = temp_date.month;
+		p_sleep->day = temp_date.day;
+		memcpy(p_sleep->sleep[temp_date.hour], data, sizeof(sleep_data));
+		SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	}
+	else if((temp_date.year < p_sleep->year)
+			||((temp_date.year == p_sleep->year)&&(temp_date.month < p_sleep->month))
+			||((temp_date.year == p_sleep->year)&&(temp_date.month == p_sleep->month)&&(temp_date.day < p_sleep->day))
+			)
+	{
+		uint8_t databuf[SLEEP_REC2_DATA_SIZE] = {0};
+		
+		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
+		memcpy(&databuf[0*sizeof(sleep_rec2_data)], &tmp_sleep, sizeof(sleep_rec2_data));
+		memcpy(&databuf[1*sizeof(sleep_rec2_data)], &tmpbuf[0*sizeof(sleep_rec2_data)], 6*sizeof(sleep_rec2_data));
+		SpiFlash_Write(databuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	}
+	else
+	{
+		uint8_t databuf[SLEEP_REC2_DATA_SIZE] = {0};
+		
+		//寻找合适的插入位置
+		for(i=0;i<7;i++)
+		{
+			p_sleep = tmpbuf+i*sizeof(sleep_rec2_data);
+			if((p_sleep->year == 0xffff || p_sleep->year == 0x0000)
+				||(p_sleep->month == 0xff || p_sleep->month == 0x00)
+				||(p_sleep->day == 0xff || p_sleep->day == 0x00)
+				||((p_sleep->year == temp_date.year)&&(p_sleep->month == temp_date.month)&&(p_sleep->day == temp_date.day))
+				)
+			{
+				//直接覆盖写
+				p_sleep->year = temp_date.year;
+				p_sleep->month = temp_date.month;
+				p_sleep->day = temp_date.day;
+				memcpy(p_sleep->sleep[temp_date.hour], data, sizeof(sleep_data));
+				SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+				return;
+			}
+			else if((temp_date.year > p_sleep->year)
+				||((temp_date.year == p_sleep->year)&&(temp_date.month > p_sleep->month))
+				||((temp_date.year == p_sleep->year)&&(temp_date.month == p_sleep->month)&&(temp_date.day > p_sleep->day))
+				)
+			{
+				if(i < 6)
+				{
+					p_sleep++;
+					if((temp_date.year < p_sleep->year)
+						||((temp_date.year == p_sleep->year)&&(temp_date.month < p_sleep->month))
+						||((temp_date.year == p_sleep->year)&&(temp_date.month == p_sleep->month)&&(temp_date.day < p_sleep->day))
+						)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		if(i<6)
+		{
+			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
+			memcpy(&databuf[0*sizeof(sleep_rec2_data)], &tmpbuf[0*sizeof(sleep_rec2_data)], (i+1)*sizeof(sleep_rec2_data));
+			memcpy(&databuf[(i+1)*sizeof(sleep_rec2_data)], &tmp_sleep, sizeof(sleep_rec2_data));
+			memcpy(&databuf[(i+2)*sizeof(sleep_rec2_data)], &tmpbuf[(i+1)*sizeof(sleep_rec2_data)], (7-(i+2))*sizeof(sleep_rec2_data));
+			SpiFlash_Write(databuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+		}
+		else
+		{
+			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
+			memcpy(&databuf[0*sizeof(sleep_rec2_data)], &tmpbuf[1*sizeof(sleep_rec2_data)], 6*sizeof(sleep_rec2_data));
+			memcpy(&databuf[6*sizeof(sleep_rec2_data)], &tmp_sleep, sizeof(sleep_rec2_data));
+			SpiFlash_Write(databuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+		}
+	}	
+}
+
+void GetCurDaySleepRecData(uint8_t *databuf)
+{
+	uint8_t i,tmpbuf[SLEEP_REC2_DATA_SIZE] = {0};
+	sleep_rec2_data sleep_rec2 = {0};
+	
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&sleep_rec2, &tmpbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
+		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00))
+			continue;
+		
+		if((sleep_rec2.year == date_time.year)&&(sleep_rec2.month == date_time.month)&&(sleep_rec2.day == date_time.day))
+		{
+			memcpy(databuf, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+			break;
+		}
+	}
+}
+
+void GetGivenTimeSleepRecData(sys_date_timer_t date, sleep_data *sleep)
+{
+	uint8_t i,tmpbuf[SLEEP_REC2_DATA_SIZE] = {0};
+	sleep_rec2_data sleep_rec2 = {0};
+
+	if(!CheckSystemDateTimeIsValid(date))
+		return;
+	if(sleep == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&sleep_rec2, &tmpbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
+		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00))
+			continue;
+		
+		if((sleep_rec2.year == date.year)&&(sleep_rec2.month == date.month)&&(sleep_rec2.day == date.day))
+		{
+			memcpy(sleep, &sleep_rec2.sleep[date.hour], sizeof(sleep_data));
+			break;
+		}
+	}
+}
 
 void set_sleep_parameter(int light_sleep, int deep_sleep,int *waggle) /* 回传睡眠参数*/
 {
@@ -159,6 +323,8 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 
 			if(save_flag)
 			{
+				sleep_data sleep = {0};
+				
 				last_sport.timestamp.year = date_time.year;
 				last_sport.timestamp.month = date_time.month; 
 				last_sport.timestamp.day = date_time.day;
@@ -168,7 +334,11 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 				last_sport.timestamp.week = date_time.week;
 				last_sport.deep_sleep = g_deep_sleep;
 				last_sport.light_sleep = g_light_sleep;
-				save_cur_sport_to_record(&last_sport);			
+				save_cur_sport_to_record(&last_sport);	
+
+				sleep.deep = g_deep_sleep;
+				sleep.light = g_light_sleep;
+				SetCurDaySleepRecData(sleep);
 			}
 		}	
 	}
@@ -190,16 +360,6 @@ int get_deep_sleep_time(void) /* 深睡时长*/
 static void sleep_timer_handler(struct k_timer *timer)
 {
 	update_sleep_parameter = true;
-}
-
-void ClearAllSleepRecData(void)
-{
-	last_light_sleep = 0;
-	last_deep_sleep = 0;
-	light_sleep_time = 0;
-	deep_sleep_time = 0;
-	g_light_sleep = 0;
-	g_deep_sleep = 0;
 }
 
 void StartSleepTimeMonitor(void)

@@ -977,6 +977,7 @@
 #define TEMP_REC2_DATA_END					(TEMP_REC2_DATA_ADDR+TEMP_REC2_DATA_SIZE)
 
 //IMU DATA
+//STEP
 //单次测量(100组数据)
 #define STEP_REC1_DATA_ADDR					(TEMP_REC2_DATA_END)
 #define STEP_REC1_DATA_SIZE					(100*(7+2))
@@ -985,6 +986,15 @@
 #define STEP_REC2_DATA_ADDR					(STEP_REC1_DATA_END)
 #define STEP_REC2_DATA_SIZE					(7*(4+24*2))
 #define STEP_REC2_DATA_END					(STEP_REC2_DATA_ADDR+STEP_REC2_DATA_SIZE)
+//SLEEP
+//单次测量(100组数据)
+#define SLEEP_REC1_DATA_ADDR				(STEP_REC2_DATA_END)
+#define SLEEP_REC1_DATA_SIZE				(100*(7+2))
+#define SLEEP_REC1_DATA_END					(SLEEP_REC1_DATA_ADDR+SLEEP_REC1_DATA_SIZE)
+//整点测量(7天数据)
+#define SLEEP_REC2_DATA_ADDR				(SLEEP_REC1_DATA_END)
+#define SLEEP_REC2_DATA_SIZE				(7*(4+24*2))
+#define SLEEP_REC2_DATA_END					(SLEEP_REC2_DATA_ADDR+SLEEP_REC2_DATA_SIZE)
 
 #define DATA_END_ADDR						0x7fffff
 /****************************************************date end********************************************************/

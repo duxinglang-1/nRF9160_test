@@ -604,7 +604,6 @@ void UpdateSystemTime(void)
 		date_time_changed = date_time_changed&0xF7;
 
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-		SetCurDayStepRecData(g_steps);
 		g_steps = 0;
 		reset_steps = true;
 	#endif

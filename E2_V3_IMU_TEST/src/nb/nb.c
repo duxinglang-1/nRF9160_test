@@ -224,7 +224,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	k_timer_start(&mqtt_act_wait_timer, K_MSEC(500), K_NO_WAIT);
+	k_timer_start(&mqtt_act_wait_timer, K_MSEC(30*1000), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 

@@ -738,6 +738,9 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
+
+	//log_read_from_flash();
+
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 }
@@ -803,6 +806,7 @@ int main(void)
 //	test_bat_soc();
 //	test_notify();
 //	test_wifi();
+//	LogInit();
 
 	while(1)
 	{

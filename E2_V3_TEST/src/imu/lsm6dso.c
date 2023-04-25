@@ -26,6 +26,9 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #include "settings.h"
 #include "screen.h"
 #include "external_flash.h"
+#ifdef CONFIG_SLEEP_SUPPORT
+#include "sleep.h"
+#endif
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
@@ -74,8 +77,6 @@ uint16_t g_steps = 0;
 uint16_t g_calorie = 0;
 uint16_t g_distance = 0;
 
-extern bool update_sleep_parameter;
-
 void ClearAllStepRecData(void)
 {
 	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
@@ -94,9 +95,7 @@ void SetCurDayStepRecData(uint16_t data)
 	step_rec2_data *p_step,tmp_step = {0};
 	sys_date_timer_t temp_date = {0};
 	
-	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
 	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
-	TimeIncrease(&temp_date, 60);
 
 	tmp_step.year = temp_date.year;
 	tmp_step.month = temp_date.month;
@@ -537,7 +536,6 @@ void UpdateIMUData(void)
 	save_cur_sport_to_record(&last_sport);
 	
 	//StepCheckSendLocationData(g_steps);
-	SetCurDayStepRecData(g_steps);
 }
 
 void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
@@ -572,6 +570,42 @@ uint8_t IMU_GetID(void)
 	return sensor_id;
 }
 
+void StepsDataReset(bool reset_flag)
+{
+	bool flag = false;
+	
+	if((last_sport.timestamp.year == date_time.year)
+		&&(last_sport.timestamp.month == date_time.month)
+		&&(last_sport.timestamp.day == date_time.day)
+		)
+	{
+		flag = true;
+	}
+
+	if(reset_flag)
+	{
+		if(!flag)
+		{
+			g_steps -= g_last_steps;
+			g_distance = 0.7*g_steps;
+			g_calorie = (0.8214*60*g_distance)/1000;
+			g_last_steps = 0;
+
+			imu_redraw_steps_flag = true;
+		}
+	}
+	else
+	{
+		if(flag)
+		{
+			g_last_steps = last_sport.steps;
+			g_steps = last_sport.steps;
+			g_distance = last_sport.distance;
+			g_calorie = last_sport.calorie;
+		}
+	}
+}
+
 void IMU_init(struct k_work_q *work_q)
 {
 #ifdef IMU_DEBUG
@@ -582,16 +616,7 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 #endif
-	if((last_sport.timestamp.year == date_time.year)
-		&&(last_sport.timestamp.month == date_time.month)
-		&&(last_sport.timestamp.day == date_time.day)
-		)
-	{
-		g_last_steps = last_sport.steps;
-		g_steps = last_sport.steps;
-		g_distance = last_sport.distance;
-		g_calorie = last_sport.calorie;
-	}
+	StepsDataReset(false);
 
 	imu_work_q = work_q;
 #ifdef CONFIG_FALL_DETECT_SUPPORT	

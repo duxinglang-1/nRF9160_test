@@ -17,7 +17,10 @@
 #include "lcd.h"
 #include "font.h"
 #ifdef CONFIG_IMU_SUPPORT
-#include "lsm6dso.h"
+#include "Lsm6dso.h"
+#ifdef CONFIG_IMU_SUPPORT
+#include "Sleep.h"
+#endif
 #endif
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
@@ -58,6 +61,14 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 static bool send_timing_data_flag = false;
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+static bool save_step_data_flag = false;
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
+static bool save_sleep_data_flag = false;
+#endif
+#endif
 
 uint8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 uint64_t laststamp = 0;
@@ -596,7 +607,17 @@ void UpdateSystemTime(void)
 				send_timing_data_flag = true;
 			}
 		}
-	#endif		
+
+	 #ifdef CONFIG_IMU_SUPPORT
+	  #ifdef CONFIG_STEP_SUPPORT
+		save_step_data_flag = true;
+	  #endif
+	  #ifdef CONFIG_SLEEP_SUPPORT	
+		save_sleep_data_flag = true;
+	  #endif
+	 #endif
+
+	#endif
 	}
 
 	if((date_time_changed&0x08) != 0)
@@ -765,6 +786,27 @@ void TimeMsgProcess(void)
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
 	}
+
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+	if(save_step_data_flag)
+	{
+		SetCurDayStepRecData(g_steps);
+		save_step_data_flag = false;
+	}
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT	
+	if(save_sleep_data_flag)
+	{
+		sleep_data sleep = {0};
+		
+		sleep.deep = g_deep_sleep;
+		sleep.light = g_light_sleep;
+		SetCurDaySleepRecData(sleep);
+		save_sleep_data_flag = false;
+	}
+#endif
+#endif
 
 	if(send_timing_data_flag)
 	{

@@ -1298,6 +1298,15 @@ void GetModemDateTime(void)
 
 		RedrawSystemTime();
 		SaveSystemDateTime();
+
+	#ifdef CONFIG_IMU_SUPPORT
+	#ifdef CONFIG_STEP_SUPPORT
+		StepsDataReset(true);
+	#endif
+	#ifdef CONFIG_SLEEP_SUPPORT
+		SleepDataReset(true);
+	#endif
+	#endif	
 	}
 
 #ifdef NB_DEBUG	
@@ -1886,8 +1895,16 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
 				RedrawSystemTime();
 				SaveSystemDateTime();
-
 				server_has_timed_flag = true;
+				
+			#ifdef CONFIG_IMU_SUPPORT
+			#ifdef CONFIG_STEP_SUPPORT
+				StepsDataReset(true);
+			#endif
+			#ifdef CONFIG_SLEEP_SUPPORT
+				SleepDataReset(true);
+			#endif
+			#endif
 			}
 
 			flag = true;			

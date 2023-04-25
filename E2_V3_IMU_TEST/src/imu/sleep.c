@@ -26,7 +26,6 @@ int waggle_level[12] = {0};
 int hour_time = 0;
 
 bool update_sleep_parameter = false;
-
 static struct k_timer sleep_timer;
 
 void ClearAllSleepRecData(void)
@@ -49,14 +48,12 @@ void SetCurDaySleepRecData(sleep_data data)
 	sleep_rec2_data *p_sleep,tmp_sleep = {0};
 	sys_date_timer_t temp_date = {0};
 	
-	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
 	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
-	TimeIncrease(&temp_date, 60);
 
 	tmp_sleep.year = temp_date.year;
 	tmp_sleep.month = temp_date.month;
 	tmp_sleep.day = temp_date.day;
-	memcpy(tmp_sleep.sleep[temp_date.hour], data, sizeof(sleep_data));
+	memcpy(&tmp_sleep.sleep[temp_date.hour], &data, sizeof(sleep_data));
 
 	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
 	p_sleep = tmpbuf;
@@ -70,7 +67,7 @@ void SetCurDaySleepRecData(sleep_data data)
 		p_sleep->year = temp_date.year;
 		p_sleep->month = temp_date.month;
 		p_sleep->day = temp_date.day;
-		memcpy(p_sleep->sleep[temp_date.hour], data, sizeof(sleep_data));
+		memcpy(&p_sleep->sleep[temp_date.hour], &data, sizeof(sleep_data));
 		SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
 	}
 	else if((temp_date.year < p_sleep->year)
@@ -103,7 +100,7 @@ void SetCurDaySleepRecData(sleep_data data)
 				p_sleep->year = temp_date.year;
 				p_sleep->month = temp_date.month;
 				p_sleep->day = temp_date.day;
-				memcpy(p_sleep->sleep[temp_date.hour], data, sizeof(sleep_data));
+				memcpy(&p_sleep->sleep[temp_date.hour], &data, sizeof(sleep_data));
 				SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
 				return;
 			}
@@ -323,8 +320,6 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 
 			if(save_flag)
 			{
-				sleep_data sleep = {0};
-				
 				last_sport.timestamp.year = date_time.year;
 				last_sport.timestamp.month = date_time.month; 
 				last_sport.timestamp.day = date_time.day;
@@ -335,10 +330,6 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 				last_sport.deep_sleep = g_deep_sleep;
 				last_sport.light_sleep = g_light_sleep;
 				save_cur_sport_to_record(&last_sport);	
-
-				sleep.deep = g_deep_sleep;
-				sleep.light = g_light_sleep;
-				SetCurDaySleepRecData(sleep);
 			}
 		}	
 	}
@@ -362,18 +353,77 @@ static void sleep_timer_handler(struct k_timer *timer)
 	update_sleep_parameter = true;
 }
 
-void StartSleepTimeMonitor(void)
+void SleepDataReset(bool reset_flag)
 {
+	bool flag = false;
+		
 	if((last_sport.timestamp.year == date_time.year)
 		&&(last_sport.timestamp.month == date_time.month)
 		&&(last_sport.timestamp.day == date_time.day)
 		)
 	{
-		last_light_sleep = last_sport.light_sleep;
-		last_deep_sleep = last_sport.deep_sleep;
-		g_light_sleep = last_light_sleep;
-		g_deep_sleep = last_deep_sleep;		
+		//The last record and current time are on the same day
+		if(((date_time.hour >= SLEEP_TIME_START)&&(last_sport.timestamp.hour >= SLEEP_TIME_START))
+			||((date_time.hour < SLEEP_TIME_END)&&(last_sport.timestamp.hour < SLEEP_TIME_END))
+			)
+		{
+			//in the same sleep period.
+			flag = true;
+		}
+		else if(((date_time.hour >= SLEEP_TIME_END)&&(date_time.hour < SLEEP_TIME_START))
+				||((last_sport.timestamp.hour >= SLEEP_TIME_END)&&(last_sport.timestamp.hour < SLEEP_TIME_START))
+				)
+		{
+			//in the same non-sleep time period.
+			flag = true;
+		}
 	}
+	else
+	{
+		sys_date_timer_t timestamp;
+
+		memcpy(&timestamp, &last_sport.timestamp, sizeof(sys_date_timer_t));
+		DateIncreaseOne(&timestamp);
+
+		if((timestamp.year == date_time.year)
+			&&(timestamp.month == date_time.month)
+			&&(timestamp.day == date_time.day)
+			)
+		{
+			//The last recorded time was yesterday.
+			if((timestamp.hour >= SLEEP_TIME_START)&&(date_time.hour < SLEEP_TIME_END))
+			{
+				//The last recorded time and current time are consecutive sleep periods.
+				flag = true;
+			}
+		}
+	}
+
+	if(reset_flag)
+	{
+		if(!flag)
+		{
+			g_light_sleep -= last_light_sleep;
+			g_deep_sleep -= last_deep_sleep;
+			last_light_sleep = 0;
+			last_deep_sleep = 0;
+		}
+	}
+	else
+	{
+		if(flag)
+		{
+			last_light_sleep = last_sport.light_sleep;
+			last_deep_sleep = last_sport.deep_sleep;
+			g_light_sleep = last_light_sleep;
+			g_deep_sleep = last_deep_sleep; 	
+		}
+	}
+}
+
+void StartSleepTimeMonitor(void)
+{
+	SleepDataReset(false);
 
 	k_timer_init(&sleep_timer, sleep_timer_handler, NULL);
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));

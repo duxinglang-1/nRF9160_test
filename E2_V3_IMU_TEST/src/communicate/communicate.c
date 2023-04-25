@@ -164,6 +164,7 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
  *****************************************************************************/
 void TimeCheckSendHealthData(void)
 {
+	uint16_t light_sleep=0,deep_sleep=0;
 	uint8_t i,tmpbuf[20] = {0};
 	uint8_t databuf[1024] = {0};
 	uint8_t hr_data[24] = {0};
@@ -173,10 +174,7 @@ void TimeCheckSendHealthData(void)
 #endif
 	uint16_t temp_data[24] = {0};
 	uint16_t step_data[24] = {0};
-#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)	
-	sleep_data sleep = {0};
-#endif
-
+	
 	//wrist
 	if(is_wearing())
 		strcat(databuf, "1,");
@@ -190,19 +188,18 @@ void TimeCheckSendHealthData(void)
 	strcat(databuf, "0,");
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
-	GetGivenTimeSleepRecData(date_time, &sleep);
+	GetSleepTimeData(&deep_sleep, &light_sleep);
+#endif
 	//light sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", sleep.light);
+	sprintf(tmpbuf, "%d,", light_sleep);
 	strcat(databuf, tmpbuf);
+	
 	//deep sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", sleep.deep);
+	sprintf(tmpbuf, "%d,", deep_sleep);
 	strcat(databuf, tmpbuf);
-#else
-	strcat(databuf, "0,0,");
-#endif
-
+	
 	//move body
 	strcat(databuf, "0,");
 

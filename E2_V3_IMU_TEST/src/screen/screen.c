@@ -25,6 +25,9 @@
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #include "fall.h"
+#ifdef CONFIG_SLEEP_SUPPORT
+#include "sleep.h"
+#endif/*CONFIG_SLEEP_SUPPORT*/
 #endif
 #include "external_flash.h"
 #include "screen.h"
@@ -57,9 +60,6 @@
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #include "ft_main.h"
 #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
-#ifdef CONFIG_SLEEP_SUPPORT
-#include "sleep.h"
-#endif/*CONFIG_SLEEP_SUPPORT*/
 #include "logger.h"
 
 static uint8_t scr_index = 0;

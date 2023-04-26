@@ -876,7 +876,7 @@ void PPGGetSensorHubData(void)
 	int ret = 0;
 	int num_bytes_to_read = 0;
 	uint8_t hubStatus = 0;
-	uint8_t databuf[256] = {0};
+	uint8_t databuf[READ_SAMPLE_COUNT_MAX*SS_NORMAL_BPT_PACKAGE_SIZE] = {0};
 	whrm_wspo2_suite_sensorhub_data sensorhub_out = {0};
 	bpt_sensorhub_data bpt = {0};
 	accel_data accel = {0};

@@ -477,7 +477,7 @@ int runActivityAlgorithms(float accX, float accY, float accZ)
 	timeStamp += (int64_t)reportInterval;
 
 #ifdef IMU_DEBUG
-	LOGD("Steps: %d\n", MPW_data_out.Nsteps);
+	LOGD("Steps: %d", MPW_data_out.Nsteps);
 	//LOGD("Cadence: %d\n", MPW_data_out.Cadence);
 	//LOGD("Confidence: %d\n", MPW_data_out.Confidence);
 #endif
@@ -1214,8 +1214,8 @@ static void fall_check(struct k_work *work)
 void ReSetImuSteps(void)
 {
 	//lsm6dso_steps_reset(&imu_dev_ctx);
-        //MotionPW_ResetStepCount();
-        initStepLib();
+	//MotionPW_ResetStepCount();
+	initStepLib();
 
 	g_last_steps = 0;
 	g_steps = 0;

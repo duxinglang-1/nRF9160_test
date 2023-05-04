@@ -570,7 +570,7 @@ uint8_t IMU_GetID(void)
 	return sensor_id;
 }
 
-void StepsDataReset(bool reset_flag)
+void StepsDataInit(bool reset_flag)
 {
 	bool flag = false;
 	
@@ -616,7 +616,7 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 #endif
-	StepsDataReset(false);
+	StepsDataInit(false);
 
 	imu_work_q = work_q;
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
@@ -869,6 +869,16 @@ void IMUMsgProcess(void)
 			return;
 
 		UpdateSleepPara();
+	}
+
+	if(reset_sleep_data)
+	{
+		reset_sleep_data = false;
+
+		if(!imu_check_ok)
+			return;
+
+		SleepDataReset();
 	}
 #endif
 

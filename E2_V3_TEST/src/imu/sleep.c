@@ -22,9 +22,18 @@ uint16_t light_sleep_time = 0;
 uint16_t deep_sleep_time = 0;
 uint16_t g_light_sleep = 0;
 uint16_t g_deep_sleep = 0;
-int waggle_level[12] = {0};
-int hour_time = 0;
 
+static int waggle_level[12] = {0};
+static int hour_time = 0;
+static int move = 0;
+static int rtc_sec = 0;
+static int gsensor = 0;
+static int move_flag = 0;
+static uint16_t watch_state = 0;
+static int waggle_flag = 0;
+static int sedentary_time_temp = 0;
+
+bool reset_sleep_data = false;
 bool update_sleep_parameter = false;
 static struct k_timer sleep_timer;
 
@@ -202,13 +211,6 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 {	
 	bool save_flag = false;
 	int test=0,i=0;
-	static int move = 0;
-	static int rtc_sec = 0;
-	static int gsensor = 0;
-	static int move_flag = 0;
-	static uint16_t watch_state = 0;
-	static int waggle_flag = 0;
-	static int sedentary_time_temp = 0;
 
 	if(charging || !is_wearing())
 	{
@@ -353,7 +355,38 @@ static void sleep_timer_handler(struct k_timer *timer)
 	update_sleep_parameter = true;
 }
 
-void SleepDataReset(bool reset_flag)
+void SleepDataReset(void)
+{
+	move = 0;	 
+	gsensor = 0;
+	rtc_sec = 0;
+	move_flag = 0;
+	watch_state = 0;
+	waggle_flag = 0;
+	waggle_flag = 0;
+	sedentary_time_temp = 0;			
+	memset(waggle_level,0,sizeof(waggle_level)); /* »Î¶¯µÈ¼¶ */
+	
+	last_light_sleep = 0;
+	last_deep_sleep = 0;
+	light_sleep_time = 0;
+	deep_sleep_time = 0;
+	g_light_sleep = 0;
+	g_deep_sleep = 0;
+
+	last_sport.timestamp.year = date_time.year;
+	last_sport.timestamp.month = date_time.month; 
+	last_sport.timestamp.day = date_time.day;
+	last_sport.timestamp.hour = date_time.hour;
+	last_sport.timestamp.minute = date_time.minute;
+	last_sport.timestamp.second = date_time.second;
+	last_sport.timestamp.week = date_time.week;
+	last_sport.deep_sleep = g_deep_sleep;
+	last_sport.light_sleep = g_light_sleep;
+	save_cur_sport_to_record(&last_sport);		
+}
+
+void SleepDataInit(bool reset_flag)
 {
 	bool flag = false;
 		
@@ -423,7 +456,7 @@ void SleepDataReset(bool reset_flag)
 
 void StartSleepTimeMonitor(void)
 {
-	SleepDataReset(false);
+	SleepDataInit(false);
 
 	k_timer_init(&sleep_timer, sleep_timer_handler, NULL);
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));

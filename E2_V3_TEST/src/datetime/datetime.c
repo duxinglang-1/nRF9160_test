@@ -612,11 +612,14 @@ void UpdateSystemTime(void)
 	  #ifdef CONFIG_STEP_SUPPORT
 		save_step_data_flag = true;
 	  #endif
-	  #ifdef CONFIG_SLEEP_SUPPORT	
+	  #ifdef CONFIG_SLEEP_SUPPORT
 		save_sleep_data_flag = true;
+	  	if(date_time.hour == SLEEP_TIME_START)
+	  	{
+	  		reset_sleep_data = true;
+	  	}
 	  #endif
 	 #endif
-
 	#endif
 	}
 

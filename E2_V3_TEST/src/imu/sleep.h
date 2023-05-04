@@ -13,6 +13,7 @@
 #define SLEEP_TIME_END		8
 
 extern bool update_sleep_parameter;
+extern bool reset_sleep_data;
 extern uint16_t g_light_sleep;
 extern uint16_t g_deep_sleep;
 

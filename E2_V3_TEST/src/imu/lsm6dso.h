@@ -71,8 +71,7 @@ extern bool fall_result; //fall_result = true when fall happens
 extern void fall_detection(void); //fall detection algorithm, if a fall happens, bool fall_result = true;
 
 /*wrist tilt*/
-extern void is_tilt(void); //detect if a tilt happened
-extern bool wrist_tilt; //wrist_tilt = true if a tilt happened
+extern bool is_tilt(void); //detect if a tilt happened
 extern void disable_tilt_detection(void); //disable wrist tilt detection
 extern void enable_tilt_detection(void); //enable wrist tilt detection
 

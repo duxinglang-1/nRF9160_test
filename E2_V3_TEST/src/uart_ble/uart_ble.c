@@ -2142,7 +2142,9 @@ static void UartReceDataCallBack(struct k_timer *timer_id)
 
 static void UartReceFrameCallBack(struct k_timer *timer_id)
 {
-	uart_rece_frame_flag = true;
+	//uart_rece_frame_flag = true;
+	uart_receive_data_handle(rx_buf, rece_len);
+	rece_len = 0;
 }
 
 void ble_init(void)
@@ -2218,8 +2220,8 @@ void UartMsgProc(void)
 	
 	if(uart_rece_frame_flag)
 	{
-		BleReceData(rx_buf, rece_len);
-		memset(&rx_buf, 0x00, BUF_MAXSIZE);
+		//BleReceData(rx_buf, rece_len);
+		uart_receive_data_handle(rx_buf, rece_len);
 		rece_len = 0;
 		uart_rece_frame_flag = false;
 	}

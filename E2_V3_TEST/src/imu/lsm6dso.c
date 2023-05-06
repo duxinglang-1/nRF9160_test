@@ -317,11 +317,11 @@ static bool sensor_init(void)
 	/* Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) */
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
 	/* Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) */
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_52Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
 
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_52Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 	/* Enable interrupt generation on Inactivity INT1 pin */
 	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 
@@ -358,9 +358,10 @@ static bool sensor_init(void)
 	
 	/* route step counter & wrist tilt to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	
 	/* route fall to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
 	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
@@ -379,13 +380,13 @@ void sensor_reset(void)
 	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
 	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_52Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
 	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_52Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 }
 
 /*@brief Get real time X/Y/Z reading in mg
@@ -1256,10 +1257,7 @@ void IMUMsgProcess(void)
 		if(!imu_check_ok || !is_wearing())
 			return;
 
-		if(is_falltrigger())
-		{
-			k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
-		}
+		k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
 	}
 #endif
 	

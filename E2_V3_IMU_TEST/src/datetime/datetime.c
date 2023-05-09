@@ -363,7 +363,7 @@ void UpdateSystemTime(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
 	timestamp = k_uptime_get();
-	timeskip = timestamp - laststamp;
+	timeskip = abs(timestamp-laststamp);
 	laststamp = timestamp;
 
 	timeoffset += (timeskip%1000);
@@ -612,11 +612,14 @@ void UpdateSystemTime(void)
 	  #ifdef CONFIG_STEP_SUPPORT
 		save_step_data_flag = true;
 	  #endif
-	  #ifdef CONFIG_SLEEP_SUPPORT	
+	  #ifdef CONFIG_SLEEP_SUPPORT
 		save_sleep_data_flag = true;
+	  	if(date_time.hour == SLEEP_TIME_START)
+	  	{
+	  		reset_sleep_data = true;
+	  	}
 	  #endif
 	 #endif
-
 	#endif
 	}
 

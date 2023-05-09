@@ -363,7 +363,7 @@ void UpdateSystemTime(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
 	timestamp = k_uptime_get();
-	timeskip = timestamp - laststamp;
+	timeskip = abs(timestamp-laststamp);
 	laststamp = timestamp;
 
 	timeoffset += (timeskip%1000);

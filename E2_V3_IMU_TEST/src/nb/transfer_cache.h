@@ -14,7 +14,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 
-#define NODE_CACHE_MAX	20
+#define NODE_CACHE_MAX	50
 
 typedef enum
 {

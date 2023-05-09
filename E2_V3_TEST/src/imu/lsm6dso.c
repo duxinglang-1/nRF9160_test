@@ -335,9 +335,9 @@ static bool sensor_init(void)
 
 	lsm6dso_tap_quiet_set(&imu_dev_ctx, 0x03);
 	lsm6dso_tap_shock_set(&imu_dev_ctx, 0x03);
-
 	lsm6dso_tap_mode_set(&imu_dev_ctx, LSM6DSO_ONLY_SINGLE);
-
+	
+	//Enable step counts algorithm
 	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_PEDO_BASE_MODE);
 
 	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
@@ -361,11 +361,13 @@ static bool sensor_init(void)
 	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-	
+
+#ifdef CONFIG_FALL_DETECT_SUPPORT	
 	/* route fall to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
 	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+#endif
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
 	return true;
@@ -848,6 +850,8 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 */
 void fall_detection(void)
 {
+	fall_check_flag = true;
+	
 	historic_buffer();
 #ifdef IMU_DEBUG
 	LOGD("Historic buffer filled");
@@ -1257,7 +1261,13 @@ void IMUMsgProcess(void)
 		if(!imu_check_ok || !is_wearing())
 			return;
 
-		k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
+		if(is_falltrigger())
+		{
+		#ifdef IMU_DEBUG
+			LOGD("fall trigger!");
+		#endif
+			k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
+		}
 	}
 #endif
 	

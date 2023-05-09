@@ -93,6 +93,8 @@ bool uart_ble_is_waked = true;
 #endif
 static bool reply_cur_data_flag = false;
 static bool uart_send_data_flag = false;
+static bool uart_rece_data_flag = false;
+static bool uart_rece_frame_flag = false;
 
 static CacheInfo uart_send_cache = {0};
 static CacheInfo uart_rece_cache = {0};
@@ -134,6 +136,10 @@ extern bool app_find_device;
 
 static void UartSendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(uart_send_data_timer, UartSendDataCallBack, NULL);
+static void UartReceDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_rece_data_timer, UartReceDataCallBack, NULL);
+static void UartReceFrameCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_rece_frame_timer, UartReceFrameCallBack, NULL);
 
 #ifdef CONFIG_PM_DEVICE
 static void UartBleSleepInCallBack(struct k_timer *timer_id);
@@ -1973,54 +1979,52 @@ void BleSendData(uint8_t *data, uint32_t datalen)
 	int ret;
 
 	ret = add_data_into_cache(&uart_send_cache, data, datalen, DATA_TRANSFER);
-
-#ifdef NB_DEBUG
-	LOGD("data add ret:%d", ret);
-#endif
-
 	BleSendDataStart();
 }
 
-static void uart_receive_data(uint8_t data, uint32_t datalen)
+static void uart_receive_data_handle(uint8_t *data, uint32_t datalen)
 {
-	static uint32_t data_len = 0;
-
-#ifdef UART_DEBUG
-	//LOGD("rece_len:%d, data_len:%d data:%x", rece_len, data_len, data);
-#endif
+	uint32_t data_len = 0;
 
 #ifdef CONFIG_PM_DEVICE
 	if(!uart_ble_is_waked)
 		return;
 #endif
 
-	if((rece_len == 0) && (data != PACKET_HEAD))
-		return;
-	
-    rx_buf[rece_len++] = data;
-	if(rece_len == 3)
-		data_len = (256*rx_buf[1]+rx_buf[2]+3);
-	
-    if(rece_len == data_len)	
+	data_len = (256*data[1]+data[2]+3);
+    if(datalen == data_len)	
     {
-        ble_receive_data_handle(rx_buf, rece_len);
-        
-        memset(rx_buf, 0, sizeof(rx_buf));
-        rece_len = 0;
-		data_len = 0;
+        ble_receive_data_handle(data, datalen);
     }
-	else if((rece_len >= data_len)&&(data == PACKET_END))
-    {
-        memset(rx_buf, 0, sizeof(rx_buf));
-        rece_len = 0;
-		data_len = 0;
-    }
-	else if(rece_len >= BUF_MAXSIZE)
+}
+
+void UartReceData(void)
+{
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
+
+	ret = get_data_from_cache(&uart_rece_cache, &p_data, &data_len, &data_type);
+	if(ret)
 	{
-		memset(rx_buf, 0, sizeof(rx_buf));
-        rece_len = 0;
-		data_len = 0;
+		uart_receive_data_handle(p_data, data_len);
+		delete_data_from_cache(&uart_rece_cache);
+
+		k_timer_start(&uart_rece_data_timer, K_MSEC(50), K_NO_WAIT);
 	}
+}
+
+void BleReceDataStart(void)
+{
+	k_timer_start(&uart_rece_data_timer, K_MSEC(50), K_NO_WAIT);
+}
+
+void BleReceData(uint8_t *data, uint32_t datalen)
+{
+	int ret;
+
+	ret = add_data_into_cache(&uart_rece_cache, data, datalen, DATA_TRANSFER);
+	BleReceDataStart();
 }
 
 static void uart_cb(struct device *x)
@@ -2032,8 +2036,11 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
-		while((len = uart_fifo_read(x, &tmpbyte, 1)) > 0)
-			uart_receive_data(tmpbyte, 1);
+		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
+		{
+			rece_len += len;
+			k_timer_start(&uart_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+		}
 	}
 	
 	if(uart_irq_tx_ready(x))
@@ -2128,6 +2135,18 @@ static void UartSendDataCallBack(struct k_timer *timer)
 	uart_send_data_flag = true;
 }
 
+static void UartReceDataCallBack(struct k_timer *timer_id)
+{
+	uart_rece_data_flag = true;
+}
+
+static void UartReceFrameCallBack(struct k_timer *timer_id)
+{
+	//uart_rece_frame_flag = true;
+	uart_receive_data_handle(rx_buf, rece_len);
+	rece_len = 0;
+}
+
 void ble_init(void)
 {
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
@@ -2191,6 +2210,20 @@ void UartMsgProc(void)
 	{
 		UartSendData();
 		uart_send_data_flag = false;
+	}
+
+	if(uart_rece_data_flag)
+	{
+		UartReceData();
+		uart_rece_data_flag = false;
+	}
+	
+	if(uart_rece_frame_flag)
+	{
+		//BleReceData(rx_buf, rece_len);
+		uart_receive_data_handle(rx_buf, rece_len);
+		rece_len = 0;
+		uart_rece_frame_flag = false;
 	}
 	
 	if(redraw_blt_status_flag)

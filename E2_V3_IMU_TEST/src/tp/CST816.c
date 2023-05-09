@@ -295,9 +295,6 @@ void clear_all_touch_event_handle(void)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -311,10 +308,6 @@ void clear_all_touch_event_handle(void)
 			k_free(pnext);
 			pnext = tp_event_info.cache;
 		}while(pnext != NULL);
-
-	#ifdef TP_DEBUG
-		LOGD("002");
-	#endif
 	}
 }
 
@@ -324,9 +317,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -342,18 +332,12 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 			{
 				if(pnext == tp_event_info.cache)
 				{
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					tp_event_info.cache = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
 				}
 				else if(pnext == tp_event_tail)
 				{
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					tp_event_tail = ppre;
 					tp_event_tail->next = NULL;
 					tp_event_info.count--;
@@ -361,9 +345,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					ppre = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
@@ -378,9 +359,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 			}
 				
 		}while(pnext != NULL);
-	#ifdef TP_DEBUG
-		LOGD("005");
-	#endif
 	}
 }
 
@@ -459,9 +437,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return false;
 	}
 	else
@@ -479,9 +454,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					return true;
 				}
 				else if((x_pos >= pnew->x_begin)
@@ -491,31 +463,19 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					return true;
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					pnew = pnew->next;
 				}
 			}
 			else
 			{
-			#ifdef TP_DEBUG
-				LOGD("005");
-			#endif
 				pnew = pnew->next;
 			}
 				
 		}while(pnew != NULL);
-	#ifdef TP_DEBUG
-		LOGD("006");
-	#endif
 		return false;
 	}
 }

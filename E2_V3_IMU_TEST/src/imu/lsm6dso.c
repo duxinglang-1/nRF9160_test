@@ -18,7 +18,10 @@
 #include "gps.h"
 #include "settings.h"
 #include "screen.h"
+#include "external_flash.h"
+#ifdef CONFIG_SLEEP_SUPPORT
 #include "sleep.h"
+#endif
 #include "external_flash.h"
 #include "datetime.h"
 #ifdef CONFIG_WIFI_SUPPORT
@@ -505,7 +508,7 @@ static bool sensor_init(void)
 
 	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g);
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_8g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 
 	lsm6dso_fifo_watermark_set(&imu_dev_ctx, 52);
@@ -514,7 +517,7 @@ static bool sensor_init(void)
 	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_NOT_BATCHED);
 
-	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
+	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_MODE);
 
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
@@ -565,7 +568,7 @@ static bool sensor_init(void)
 	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 2);
 	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
 	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
-	fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_ENABLE;
+	fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_DISABLE;
 	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
 	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
 	fsm_addr = LSM6DSO_START_FSM_ADD;
@@ -602,7 +605,7 @@ void sensor_reset(void)
 	lsm6dso_data_ready_mode_set(&imu_dev_ctx, LSM6DSO_DRDY_PULSED);
 	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_52Hz);
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g);
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_8g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
@@ -621,24 +624,14 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 	{
 		memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
 		lsm6dso_acceleration_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-		acceleration_mg[0] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[0]);
-		acceleration_mg[1] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[1]);
-		acceleration_mg[2] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[2]);
+		acceleration_mg[0] = lsm6dso_from_fs8_to_mg(data_raw_acceleration.i16bit[0]);
+		acceleration_mg[1] = lsm6dso_from_fs8_to_mg(data_raw_acceleration.i16bit[1]);
+		acceleration_mg[2] = lsm6dso_from_fs8_to_mg(data_raw_acceleration.i16bit[2]);
 	}
 
 	*sensor_x = acceleration_mg[0];
 	*sensor_y = acceleration_mg[1];
 	*sensor_z = acceleration_mg[2];
-}
-
-void is_tilt(void)
-{
-	lsm6dso_all_sources_t status;
-	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
-	if(status.fsm_status_a.is_fsm1)
-	{ 
-		wrist_tilt = true;
-	}
 }
 
 void activity_process(void)
@@ -660,9 +653,9 @@ void activity_process(void)
 			case LSM6DSO_XL_NC_TAG:
 				memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
 				lsm6dso_fifo_out_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-				acceleration_mg[0] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[0]);
-				acceleration_mg[1] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[1]);
-				acceleration_mg[2] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[2]);
+				acceleration_mg[0] = lsm6dso_from_fs8_to_mg(data_raw_acceleration.i16bit[0]);
+				acceleration_mg[1] = lsm6dso_from_fs8_to_mg(data_raw_acceleration.i16bit[1]);
+				acceleration_mg[2] = lsm6dso_from_fs8_to_mg(data_raw_acceleration.i16bit[2]);
 
 				acceleration_g[0]   = acceleration_mg[0]/1000;
 				acceleration_g[1]   = acceleration_mg[1]/1000;
@@ -702,18 +695,21 @@ void activity_process(void)
 }*/
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
-void is_falltrigger(void)
+bool is_falltrigger(void)
 {
+	bool ret = false;
 	lsm6dso_all_sources_t status;
+	
 	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
 	if(status.tap_src.single_tap)
 	{
-		//tap detected
-		fall_trigger = true;
 	#ifdef IMU_DEBUG
 		LOGD("Tap Detected");
 	#endif
+		ret = true;
 	}
+
+	return ret;
 }
 
 void historic_buffer(void)
@@ -1135,6 +1131,8 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 */
 void fall_detection(void)
 {
+	fall_check_flag = true;
+	
 	historic_buffer();
 #ifdef IMU_DEBUG
 	LOGD("Historic buffer filled");
@@ -1302,7 +1300,7 @@ uint8_t IMU_GetID(void)
 	return sensor_id;
 }
 
-void StepsDataReset(bool reset_flag)
+void StepsDataInit(bool reset_flag)
 {
 	bool flag = false;
 	
@@ -1348,7 +1346,12 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef IMU_DEBUG
 	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
 #endif
-	StepsDataReset(false);
+	StepsDataInit(false);
+
+	imu_work_q = work_q;
+#ifdef CONFIG_FALL_DETECT_SUPPORT	
+	k_work_init(&fall_work, fall_check);
+#endif
 
 	if(init_i2c() != 0)
 		return;
@@ -1380,12 +1383,25 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
+}
 
-	imu_work_q = work_q;
-    //k_work_init(&activity_count_work, activity_count);
-#ifdef CONFIG_FALL_DETECT_SUPPORT	
-	k_work_init(&fall_work, fall_check);
-#endif
+/*@brief Check if a wrist tilt happend
+*
+* @return If tilt detected, return true, otherwise false
+*/
+bool is_tilt(void)
+{
+	bool ret = false;
+	lsm6dso_all_sources_t status;
+
+	lsm6dso_all_sources_get(&imu_dev_ctx, &status);
+	if(status.fsm_status_a.is_fsm1)
+	{ 
+		//tilt detected
+		ret = true;
+	}
+
+	return ret;
 }
 
 /*void test_i2c(void)
@@ -1476,16 +1492,13 @@ void IMUMsgProcess(void)
 		int1_event = false;
 
 		if(!imu_check_ok || !is_wearing())
-		return;
+			return;
 
-		is_tilt();
-		if(wrist_tilt)
+		if(is_tilt())
 		{
 		#ifdef IMU_DEBUG
 			LOGD("tilt trigger!");
 		#endif
-			wrist_tilt = false;
-
 			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
 			{
 				sleep_out_by_wrist = true;
@@ -1515,14 +1528,11 @@ void IMUMsgProcess(void)
 		if(!imu_check_ok || !is_wearing())
 			return;
 
-		is_falltrigger();
-		if(fall_trigger)
+		if(is_falltrigger())
 		{
 		#ifdef IMU_DEBUG
-			LOGD("Fall trigger!");
+			LOGD("fall trigger!");
 		#endif
-			fall_trigger = false;
-			fall_check_flag = true;
 			k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
 		}
 	}
@@ -1574,6 +1584,16 @@ void IMUMsgProcess(void)
 			return;
 
 		UpdateSleepPara();
+	}
+
+	if(reset_sleep_data)
+	{
+		reset_sleep_data = false;
+
+		if(!imu_check_ok)
+			return;
+
+		SleepDataReset();
 	}
 #endif
 

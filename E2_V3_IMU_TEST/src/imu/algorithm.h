@@ -59,8 +59,6 @@ volatile bool curr_vrif_buff_flag = false;
 bool int1_event = false;
 bool int2_event = false;
 bool fall_result = false;
-bool wrist_tilt = false;
-bool fall_trigger = false;
 
 static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;

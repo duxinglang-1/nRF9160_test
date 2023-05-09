@@ -1301,10 +1301,10 @@ void GetModemDateTime(void)
 
 	#ifdef CONFIG_IMU_SUPPORT
 	#ifdef CONFIG_STEP_SUPPORT
-		StepsDataReset(true);
+		StepsDataInit(true);
 	#endif
 	#ifdef CONFIG_SLEEP_SUPPORT
-		SleepDataReset(true);
+		SleepDataInit(true);
 	#endif
 	#endif	
 	}
@@ -1899,10 +1899,10 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				
 			#ifdef CONFIG_IMU_SUPPORT
 			#ifdef CONFIG_STEP_SUPPORT
-				StepsDataReset(true);
+				StepsDataInit(true);
 			#endif
 			#ifdef CONFIG_SLEEP_SUPPORT
-				SleepDataReset(true);
+				SleepDataInit(true);
 			#endif
 			#endif
 			}

@@ -5404,7 +5404,7 @@ void EnterFallScreen(void)
 		MenuStopGPS();
 #endif	
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
@@ -6391,7 +6391,7 @@ void EnterSOSScreen(void)
 		MenuStopGPS();
 #endif	
 #ifdef CONFIG_PPG_SUPPORT
-	if(PPGIsWorking())
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		PPGStopCheck();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT

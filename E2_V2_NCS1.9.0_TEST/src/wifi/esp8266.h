@@ -43,6 +43,12 @@ extern bool sos_wait_wifi;
 extern bool fall_wait_wifi;
 extern bool location_wait_wifi;
 
+#ifdef CONFIG_PM_DEVICE
+extern bool uart_wifi_sleep_flag;
+extern bool uart_wifi_wake_flag;
+extern bool uart_wifi_is_waked;
+#endif
+
 extern uint8_t g_wifi_mac_addr[20];
 extern uint8_t g_wifi_ver[20];
 extern uint8_t wifi_test_info[256];

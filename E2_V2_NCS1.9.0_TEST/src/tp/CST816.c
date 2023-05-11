@@ -23,6 +23,23 @@
 //#define TP_DEBUG
 //#define TP_TEST
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define TP_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define TP_DEV	""
+#endif
+#define TP_PORT 	"GPIO_0"
+
+#define TP_RESET		16
+#define TP_EINT			25
+#define TP_SCL			1
+#define TP_SDA			0
+#endif
+
 bool tp_int_flag = false;
 bool tp_trige_flag = false;
 bool tp_redraw_flag = false;
@@ -40,6 +57,7 @@ static struct gpio_callback gpio_cb;
 static TPInfo tp_event_info = {0};
 static TpEventNode *tp_event_tail = NULL;
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
 static uint8_t init_i2c(void)
 {
 	i2c_ctp = device_get_binding(TP_DEV);
@@ -269,6 +287,7 @@ bool ctp_hynitron_update(void)
 	}
 	return false;
 }
+#endif
 
 void clear_all_touch_event_handle(void)
 {
@@ -276,9 +295,6 @@ void clear_all_touch_event_handle(void)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -292,10 +308,6 @@ void clear_all_touch_event_handle(void)
 			k_free(pnext);
 			pnext = tp_event_info.cache;
 		}while(pnext != NULL);
-
-	#ifdef TP_DEBUG
-		LOGD("002");
-	#endif
 	}
 }
 
@@ -305,9 +317,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -323,18 +332,12 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 			{
 				if(pnext == tp_event_info.cache)
 				{
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					tp_event_info.cache = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
 				}
 				else if(pnext == tp_event_tail)
 				{
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					tp_event_tail = ppre;
 					tp_event_tail->next = NULL;
 					tp_event_info.count--;
@@ -342,9 +345,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					ppre = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
@@ -359,9 +359,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 			}
 				
 		}while(pnext != NULL);
-	#ifdef TP_DEBUG
-		LOGD("005");
-	#endif
 	}
 }
 
@@ -440,9 +437,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return false;
 	}
 	else
@@ -460,9 +454,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					return true;
 				}
 				else if((x_pos >= pnew->x_begin)
@@ -472,31 +463,19 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					return true;
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					pnew = pnew->next;
 				}
 			}
 			else
 			{
-			#ifdef TP_DEBUG
-				LOGD("005");
-			#endif
 				pnew = pnew->next;
 			}
 				
 		}while(pnew != NULL);
-	#ifdef TP_DEBUG
-		LOGD("006");
-	#endif
 		return false;
 	}
 }
@@ -506,7 +485,11 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	uint8_t strbuf[128] = {0};
 	uint16_t x,y,w,h;
 
-	if(lcd_is_sleeping)
+	if(lcd_is_sleeping
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		&&!IsFTCurrentTest()
+	#endif
+		)
 	{
 		sleep_out_by_wrist = false;
 		lcd_sleep_out = true;
@@ -594,6 +577,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	tp_trige_flag = true;
 }
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
 void CaptouchInterruptHandle(void)
 {
 	tp_int_flag = true;
@@ -745,6 +729,7 @@ void test_tp(void)
 
 	tp_init();
 }
+#endif
 
 void tp_show_infor(void)
 {
@@ -791,12 +776,13 @@ void tp_show_infor(void)
 
 void TPMsgProcess(void)
 {
+#if defined(TP_DEBUG)||defined(TP_TEST)
 	if(tp_int_flag)
 	{
 		tp_int_flag = false;
 		tp_interrupt_proc();
 	}
-
+#endif
 	if(tp_trige_flag)
 	{
 		tp_trige_flag = false;

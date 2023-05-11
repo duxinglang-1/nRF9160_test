@@ -329,7 +329,16 @@ void LCD_SleepOut(void)
 			bk_time = 5;
 		}
 
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), NULL);
+		switch(bl_mode)
+		{
+		case LCD_BL_ALWAYS_ON:
+		case LCD_BL_OFF:
+			break;
+
+		case LCD_BL_AUTO:
+			k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_NO_WAIT);
+			break;
+		}
 	}
 
 	if(!lcd_is_sleeping)
@@ -345,7 +354,7 @@ void LCD_SleepOut(void)
 //屏幕重置背光延时
 void LCD_ResetBL_Timer(void)
 {
-	if(bl_mode == LCD_BL_ALWAYS_ON)
+	if((bl_mode == LCD_BL_ALWAYS_ON) || (bl_mode == LCD_BL_OFF))
 		return;
 	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
@@ -370,20 +379,20 @@ void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 	switch(mode)
 	{
 	case LCD_BL_ALWAYS_ON:
+		k_timer_stop(&backlight_timer);
 		if(lcd_is_sleeping)
 			LCD_SleepOut();
-		if(k_timer_remaining_get(&backlight_timer) > 0)
-			k_timer_stop(&backlight_timer);
 		break;
 
 	case LCD_BL_AUTO:
-		if(k_timer_remaining_get(&backlight_timer) > 0)
-			k_timer_stop(&backlight_timer);
+		k_timer_stop(&backlight_timer);
 		if(global_settings.backlight_time != 0)
-			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), K_NO_WAIT);
 		break;
 
 	case LCD_BL_OFF:
+		k_timer_stop(&backlight_timer);
+		LCD_BL_Off();
 		if(!lcd_is_sleeping)
 			LCD_SleepIn();
 		break;
@@ -391,6 +400,7 @@ void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 
 	bl_mode = mode;
 }
+
 
 //LCD初始化函数
 void LCD_Init(void)

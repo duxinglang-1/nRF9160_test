@@ -12,6 +12,7 @@
 #include <device.h>
 #include <pm/device.h>
 #include "logger.h"
+#include "transfer_cache.h"
 #include "datetime.h"
 #include "Settings.h"
 #include "Uart_ble.h"
@@ -45,6 +46,7 @@
 #define HEART_RATE_ID			0xFF31			//心率
 #define BLOOD_OXYGEN_ID			0xFF32			//血氧
 #define BLOOD_PRESSURE_ID		0xFF33			//血压
+#define TEMPERATURE_ID			0xFF62			//体温
 #define	ONE_KEY_MEASURE_ID		0xFF34			//一键测量
 #define	PULL_REFRESH_ID			0xFF35			//下拉刷新
 #define	SLEEP_DETAILS_ID		0xFF36			//睡眠详情
@@ -82,23 +84,25 @@
 #define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 
 bool blue_is_on = true;
-bool uart_send_flag = false;
 bool get_ble_info_flag = false;
 #ifdef CONFIG_PM_DEVICE
-bool uart_log_sleep_flag = false;
-bool uart_log_wake_flag = false;
 bool uart_ble_sleep_flag = false;
 bool uart_ble_wake_flag = false;
-bool uart_log_is_waked = true;
 bool uart_ble_is_waked = true;
-
-#define UART_LOG_WAKE_HOLD_TIME_SEC		(10)
 #define UART_BLE_WAKE_HOLD_TIME_SEC		(10)
 #endif
+static bool reply_cur_data_flag = false;
+static bool uart_send_data_flag = false;
+static bool uart_rece_data_flag = false;
+static bool uart_rece_frame_flag = false;
+
+static CacheInfo uart_send_cache = {0};
+static CacheInfo uart_rece_cache = {0};
+
+sys_date_timer_t refresh_time = {0};
 
 static bool redraw_blt_status_flag = false;
 
-static ENUM_DATA_TYPE uart_data_type=DATA_TYPE_BLE;
 static ENUM_BLE_WORK_MODE ble_work_mode=BLE_WORK_NORMAL;
 
 static uint32_t rece_len=0;
@@ -106,17 +110,14 @@ static uint32_t send_len=0;
 static uint8_t rx_buf[BUF_MAXSIZE]={0};
 static uint8_t tx_buf[BUF_MAXSIZE]={0};
 
-static struct device *uart_ble = NULL;
-static struct device *uart_log = NULL;
-static struct device *gpio_ble = NULL;
-static struct gpio_callback gpio_cb;
-
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
 
-static sys_date_timer_t refresh_time = {0};
+static struct device *uart_ble = NULL;
+static struct device *gpio_ble = NULL;
+static struct gpio_callback gpio_cb;
 
-struct uart_data_t
+static struct uart_data_t
 {
 	void  *fifo_reserved;
 	uint8_t    data[BUF_MAXSIZE];
@@ -133,9 +134,14 @@ ENUM_BLE_MODE g_ble_mode = BLE_MODE_TURN_OFF;
 
 extern bool app_find_device;
 
+static void UartSendDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_send_data_timer, UartSendDataCallBack, NULL);
+static void UartReceDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_rece_data_timer, UartReceDataCallBack, NULL);
+static void UartReceFrameCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(uart_rece_frame_timer, UartReceFrameCallBack, NULL);
+
 #ifdef CONFIG_PM_DEVICE
-static void UartLogSleepInCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(uart_log_sleep_in_timer, UartLogSleepInCallBack, NULL);
 static void UartBleSleepInCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(uart_ble_sleep_in_timer, UartBleSleepInCallBack, NULL);
 #endif
@@ -143,8 +149,7 @@ K_TIMER_DEFINE(uart_ble_sleep_in_timer, UartBleSleepInCallBack, NULL);
 static void GetBLEInfoCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_ble_info_timer, GetBLEInfoCallBack, NULL);
 
-static void MCU_send_heart_rate(void);
-
+#ifdef CONFIG_BLE_SUPPORT
 void ble_connect_or_disconnect_handle(uint8_t *buf, uint32_t len)
 {
 #ifdef UART_DEBUG
@@ -161,52 +166,15 @@ void ble_connect_or_disconnect_handle(uint8_t *buf, uint32_t len)
 	redraw_blt_status_flag = true;
 }
 
-#ifdef CONFIG_TOUCH_SUPPORT
-void CTP_notify_handle(uint8_t *buf, uint32_t len)
+#ifdef CONFIG_ALARM_SUPPORT
+void APP_reply_find_phone(uint8_t *buf, uint32_t len)
 {
-	uint8_t tp_type = TP_EVENT_MAX;
-	uint16_t tp_x,tp_y;
+	uint32_t i;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
-
-	switch(buf[5])
-	{
-	case GESTURE_NONE:
-		tp_type = TP_EVENT_NONE;
-		break;
-	case GESTURE_MOVING_UP:
-		tp_type = TP_EVENT_MOVING_UP;
-		break;
-	case GESTURE_MOVING_DOWN:
-		tp_type = TP_EVENT_MOVING_DOWN;
-		break;
-	case GESTURE_MOVING_LEFT:
-		tp_type = TP_EVENT_MOVING_LEFT;
-		break;
-	case GESTURE_MOVING_RIGHT:
-		tp_type = TP_EVENT_MOVING_RIGHT;
-		break;
-	case GESTURE_SINGLE_CLICK:
-		tp_type = TP_EVENT_SINGLE_CLICK;
-		break;
-	case GESTURE_DOUBLE_CLICK:
-		tp_type = TP_EVENT_DOUBLE_CLICK;
-		break;
-	case GESTURE_LONG_PRESS:
-		tp_type = TP_EVENT_LONG_PRESS;
-		break;
-	}
-
-	if(tp_type != TP_EVENT_MAX)
-	{
-		tp_x = (0x0f&buf[7])<<8 | buf[8];
-		tp_y = (0x0f&buf[9])<<8 | buf[10];
-		touch_panel_event_handle(tp_type, tp_x, tp_y);
-	}
 }
-#endif
 
 void APP_set_find_device(uint8_t *buf, uint32_t len)
 {
@@ -237,10 +205,11 @@ void APP_set_find_device(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	app_find_device = true;	
 }
+#endif
 
 void APP_set_language(uint8_t *buf, uint32_t len)
 {
@@ -280,11 +249,11 @@ void APP_set_language(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	if(screen_id == SCREEN_ID_IDLE)
 	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_WEEK;
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_WEEK|SCREEN_EVENT_UPDATE_DATE);
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 	
@@ -327,7 +296,7 @@ void APP_set_time_24_format(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	if(screen_id == SCREEN_ID_IDLE)
 	{
@@ -377,7 +346,7 @@ void APP_set_date_format(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	if(screen_id == SCREEN_ID_IDLE)
 	{
@@ -438,9 +407,10 @@ void APP_set_date_time(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);	
+	BleSendData(reply, reply_len);	
 }
 
+#ifdef CONFIG_ALARM_SUPPORT
 void APP_set_alarm(uint8_t *buf, uint32_t len)
 {
 	uint8_t result=0,reply[128] = {0};
@@ -487,8 +457,9 @@ void APP_set_alarm(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);	
+	BleSendData(reply, reply_len);	
 }
+#endif
 
 void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 {
@@ -499,12 +470,7 @@ void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 	LOGD("flag:%d, interval:%d", buf[6], buf[7]);
 #endif
 
-	if(buf[6] == 1)
-		global_settings.phd_infor.is_on = true;
-	else
-		global_settings.phd_infor.is_on = false;
-
-	global_settings.phd_infor.interval = buf[7];
+	global_settings.health_interval = buf[7];
 	need_save_settings = true;
 	
 	//packet head
@@ -527,7 +493,7 @@ void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	need_save_settings = true;	
 }
@@ -566,7 +532,7 @@ void APP_set_wake_screen_by_wrist(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	need_save_settings = true;
 }
@@ -600,7 +566,7 @@ void APP_set_factory_reset(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	need_reset_settings = true;
 }
@@ -636,7 +602,7 @@ void APP_set_target_steps(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 
 	need_save_settings = true;
 }
@@ -686,12 +652,157 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
-		ble_send_date_handle(reply, reply_len);
+		BleSendData(reply, reply_len);
 	}
 }
 #endif
 
-void APP_get_current_data(uint8_t *buf, uint32_t len)
+void MCU_reply_cur_hour_ppg(sys_date_timer_t time, PPG_DATA_TYPE type, uint8_t *data)
+{
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x0D;
+	//data ID
+	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+	reply[reply_len++] = (uint8_t)(PULL_REFRESH_ID&0x00ff);
+	//status
+	switch(type)
+	{
+	case PPG_DATA_HR://hr
+		reply[reply_len++] = 0x81;
+		break;
+	case PPG_DATA_SPO2://spo2
+		reply[reply_len++] = 0x82;
+		break;
+	case PPG_DATA_BPT://bpt
+		reply[reply_len++] = 0x83;
+		break;
+	}
+	//control
+	reply[reply_len++] = 0x00;
+	//year
+	reply[reply_len++] = (time.year-2000);
+	//month
+	reply[reply_len++] = time.month;
+	//day
+	reply[reply_len++] = time.day;
+	//hour
+	reply[reply_len++] = time.hour;
+	//minute
+	reply[reply_len++] = time.minute;
+	//data
+	switch(type)
+	{
+	case PPG_DATA_HR://hr
+	#ifdef UART_DEBUG
+		LOGD("hr:%d", data[0]);
+	#endif
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_SPO2://spo2
+	#ifdef UART_DEBUG
+		LOGD("spo2:%d", data[0]);
+	#endif
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_BPT://bpt
+	#ifdef UART_DEBUG
+		LOGD("bpt:%d\\%d", data[0],data[1]);
+	#endif
+		reply[reply_len++] = data[0];
+		reply[reply_len++] = data[1];
+		break;
+	}
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_reply_cur_hour_temp(sys_date_timer_t time, uint8_t *data)
+{
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x0D;
+	//data ID
+	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
+	reply[reply_len++] = (uint8_t)(PULL_REFRESH_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x86;
+	//control
+	reply[reply_len++] = 0x00;
+	//year
+	reply[reply_len++] = (time.year-2000);
+	//month
+	reply[reply_len++] = time.month;
+	//day
+	reply[reply_len++] = time.day;
+	//hour
+	reply[reply_len++] = time.hour;
+	//minute
+	reply[reply_len++] = time.minute;
+	//data
+#ifdef UART_DEBUG
+	LOGD("temp:%d.%d", (256*data[0]+data[1])/10, (256*data[0]+data[1])%10);
+#endif
+	reply[reply_len++] = data[0];
+	reply[reply_len++] = data[1];
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void APP_get_cur_hour_health(sys_date_timer_t ask_time)
+{
+	uint8_t hr = 0,spo2 = 0;
+	bpt_data bpt = {0};
+	uint16_t temp = 0;
+	uint8_t data[2] = {0};
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+#ifdef CONFIG_PPG_SUPPORT
+	GetGivenTimeHrRecData(ask_time, &hr);
+	GetGivenTimeSpo2RecData(ask_time, &spo2);
+	GetGivenTimeBptRecData(ask_time, &bpt);
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	GetGivenTimeTempRecData(ask_time, &temp);
+#endif
+
+	MCU_reply_cur_hour_ppg(ask_time, PPG_DATA_HR, &hr);
+	MCU_reply_cur_hour_ppg(ask_time, PPG_DATA_SPO2, &spo2);
+	MCU_reply_cur_hour_ppg(ask_time, PPG_DATA_BPT, (uint8_t*)&bpt);
+
+	data[0] = temp>>8;
+	data[1] = (uint8_t)(temp&0x00ff);
+	MCU_reply_cur_hour_temp(ask_time, data);
+}
+
+void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
 {
 	uint8_t wake,reply[128] = {0};
 	uint16_t steps=0,calorie=0,distance=0;
@@ -699,22 +810,16 @@ void APP_get_current_data(uint8_t *buf, uint32_t len)
 	uint32_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
-	LOGD("%04d/%02d/%02d %02d:%02d", 2000 + buf[7],buf[8],buf[9],buf[10],buf[11]);
+	LOGD("begin");
 #endif
 
-	refresh_time.year = 2000 + buf[7];
-	refresh_time.month = buf[8];
-	refresh_time.day = buf[9];
-	refresh_time.hour = buf[10];
-	refresh_time.minute = buf[11];
-
 #ifdef CONFIG_IMU_SUPPORT
-  #ifdef CONFIG_STEP_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
 	GetSportData(&steps, &calorie, &distance);
-  #endif
-  #ifdef CPNFIG_SLEEP_SUPPORT
+#endif
+#ifdef CPNFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
-  #endif
+#endif
 #endif
 	
 	wake = 8;
@@ -756,12 +861,22 @@ void APP_get_current_data(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
+}
 
-	//上传心率数据
-#ifdef CONFIG_PPG_SUPPORT	
-	MCU_send_heart_rate();
+void APP_get_cur_hour_data(uint8_t *buf, uint32_t len)
+{
+#ifdef UART_DEBUG
+	LOGD("%04d/%02d/%02d %02d:%02d", 2000 + buf[7],buf[8],buf[9],buf[10],buf[11]);
 #endif
+
+	refresh_time.year = 2000 + buf[7];
+	refresh_time.month = buf[8];
+	refresh_time.day = buf[9];
+	refresh_time.hour = buf[10];
+	refresh_time.minute = buf[11];
+
+	reply_cur_data_flag = true;
 }
 
 void APP_get_location_data(uint8_t *buf, uint32_t len)
@@ -866,7 +981,7 @@ void APP_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
 void APP_get_battery_level(uint8_t *buf, uint32_t len)
@@ -910,7 +1025,7 @@ void APP_get_battery_level(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
 void APP_get_firmware_version(uint8_t *buf, uint32_t len)
@@ -944,11 +1059,11 @@ void APP_get_firmware_version(uint8_t *buf, uint32_t len)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
 #ifdef CONFIG_PPG_SUPPORT
-void APP_get_heart_rate(uint8_t *buf, uint32_t len)
+void APP_get_hr(uint8_t *buf, uint32_t len)
 {
 	uint8_t heart_rate,reply[128] = {0};
 	uint32_t i,reply_len = 0;
@@ -956,14 +1071,6 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 #ifdef UART_DEBUG
 	LOGD("type:%d, flag:%d", buf[5], buf[6]);
 #endif
-
-	switch(buf[5])
-	{
-	case 0x01://实时测量心率
-		break;
-	case 0x02://单次测量心率
-		break;
-	}
 
 	switch(buf[6])
 	{
@@ -997,89 +1104,216 @@ void APP_get_heart_rate(uint8_t *buf, uint32_t len)
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
-		ble_send_date_handle(reply, reply_len);	
+		BleSendData(reply, reply_len);	
 	}
 	else
 	{
-		g_ppg_trigger |= TRIGGER_BY_APP; 
-		APPStartHr();
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量心率
+			APPStartHr();
+			break;
+
+		case 0x02://单次测量心率
+			get_cur_health_from_record(&last_data);
+			MCU_send_app_get_ppg_data(PPG_DATA_HR, &last_data.hr);
+			break;
+		}
+	}
+}
+
+void APP_get_spo2(uint8_t *buf, uint32_t len)
+{
+	uint8_t heart_rate,reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("type:%d, flag:%d", buf[5], buf[6]);
+#endif
+
+	switch(buf[6])
+	{
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
+
+	if(buf[6] == 0)
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x07;
+		//data ID
+		reply[reply_len++] = (BLOOD_OXYGEN_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_OXYGEN_ID&0x00ff);
+		//status
+		reply[reply_len++] = buf[5];
+		//control
+		reply[reply_len++] = buf[6];
+		//heart rate
+		reply[reply_len++] = 0;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
+
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		BleSendData(reply, reply_len);	
+	}
+	else
+	{
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量血氧
+			APPStartSpo2();
+			break;
+
+		case 0x02://单次测量血氧
+			get_cur_health_from_record(&last_data);
+			MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &last_data.spo2);
+			break;
+		}
+	}
+}
+
+void APP_get_bpt(uint8_t *buf, uint32_t len)
+{
+	uint8_t heart_rate,reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("type:%d, flag:%d", buf[5], buf[6]);
+#endif
+
+	switch(buf[6])
+	{
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
+
+	if(buf[6] == 0)
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x07;
+		//data ID
+		reply[reply_len++] = (BLOOD_PRESSURE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_PRESSURE_ID&0x00ff);
+		//status
+		reply[reply_len++] = buf[5];
+		//control
+		reply[reply_len++] = buf[6];
+		//heart rate
+		reply[reply_len++] = 0;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
+
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		BleSendData(reply, reply_len);	
+	}
+	else
+	{
+		uint8_t data[2] = {0};
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量血压
+			APPStartHr();
+			break;
+
+		case 0x02://单次测量血压
+			get_cur_health_from_record(&last_data);
+			data[0] = last_data.systolic;
+			data[1] = last_data.diastolic;
+			MCU_send_app_get_ppg_data(PPG_DATA_BPT, data);
+			break;
+		}
 	}
 }
 #endif
-
-//APP回复手环查找手机
-void APP_reply_find_phone(uint8_t *buf, uint32_t len)
+#ifdef CONFIG_TEMP_SUPPORT
+void APP_get_temp(uint8_t *buf, uint32_t len)
 {
-	uint32_t i;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-}
-
-void MCU_get_nrf52810_ver(void)
-{
-	uint8_t reply[128] = {0};
+	uint8_t heart_rate,reply[128] = {0};
 	uint32_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
-	LOGD("begin");
+	LOGD("type:%d, flag:%d", buf[5], buf[6]);
 #endif
 
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x06;
-	//data ID
-	reply[reply_len++] = (GET_NRF52810_VER_ID>>8);		
-	reply[reply_len++] = (uint8_t)(GET_NRF52810_VER_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = 0x00;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
+	switch(buf[6])
+	{
+	case 0://关闭传感器
+		break;
+	case 1://打开传感器
+		break;
+	}
 
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
+	if(buf[6] == 0)
+	{
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x07;
+		//data ID
+		reply[reply_len++] = (TEMPERATURE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(TEMPERATURE_ID&0x00ff);
+		//status
+		reply[reply_len++] = buf[5];
+		//control
+		reply[reply_len++] = buf[6];
+		//heart rate
+		reply[reply_len++] = 0;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
 
-	ble_send_date_handle(reply, reply_len);
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+
+		BleSendData(reply, reply_len);	
+	}
+	else
+	{
+		uint8_t data[2] = {0};
+		health_record_t last_data = {0};
+
+		switch(buf[5])
+		{
+		case 0x01://实时测量体温
+			APPStartTemp();
+			break;
+
+		case 0x02://单次测量体温
+			get_cur_health_from_record(&last_data);
+			data[0] = last_data.deca_temp>>8;
+			data[1] = (uint8_t)(last_data.deca_temp&0x00ff);
+			MCU_send_app_get_temp_data(data);
+			break;
+		}
+	}
 }
-
-void MCU_get_ble_mac_address(void)
-{
-	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
 #endif
-
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x06;
-	//data ID
-	reply[reply_len++] = (GET_BLE_MAC_ADDR_ID>>8);		
-	reply[reply_len++] = (uint8_t)(GET_BLE_MAC_ADDR_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = 0x00;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-
-	ble_send_date_handle(reply, reply_len);
-}
 
 void MCU_get_ble_status(void)
 {
@@ -1110,7 +1344,7 @@ void MCU_get_ble_status(void)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
 //设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
@@ -1143,7 +1377,7 @@ void MCU_set_ble_work_mode(uint8_t work_mode)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);	
+	BleSendData(reply, reply_len);	
 }
 
 //手环查找手机
@@ -1178,7 +1412,7 @@ void MCU_send_find_phone(void)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);	
+	BleSendData(reply, reply_len);	
 }
 
 //手环上报一键测量数据
@@ -1222,12 +1456,11 @@ void MCU_send_app_one_key_measure_data(void)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
-void MCU_send_app_get_hr_data(void)
+void MCU_send_app_get_ppg_data(PPG_DATA_TYPE flag, uint8_t *data)
 {
-	uint8_t heart_rate;
 	uint8_t reply[128] = {0};
 	uint32_t i,reply_len = 0;
 
@@ -1235,22 +1468,44 @@ void MCU_send_app_get_hr_data(void)
 	LOGD("begin");
 #endif
 
-	GetPPGData(&heart_rate, NULL, NULL, NULL);
-	
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
 	reply[reply_len++] = 0x07;
 	//data ID
-	reply[reply_len++] = (HEART_RATE_ID>>8);		
-	reply[reply_len++] = (uint8_t)(HEART_RATE_ID&0x00ff);
+	switch(flag)
+	{
+	case PPG_DATA_HR:
+		reply[reply_len++] = (HEART_RATE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(HEART_RATE_ID&0x00ff);
+		break;
+	case PPG_DATA_SPO2:
+		reply[reply_len++] = (BLOOD_OXYGEN_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_OXYGEN_ID&0x00ff);
+		break;
+	case PPG_DATA_BPT:
+		reply[reply_len++] = (BLOOD_PRESSURE_ID>>8);		
+		reply[reply_len++] = (uint8_t)(BLOOD_PRESSURE_ID&0x00ff);
+		break;
+	}
 	//status
 	reply[reply_len++] = 0x02;
 	//control
 	reply[reply_len++] = 0x01;
-	//heart rate
-	reply[reply_len++] = heart_rate;
+	switch(flag)
+	{
+	case PPG_DATA_HR:
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_SPO2:
+		reply[reply_len++] = data[0];
+		break;
+	case PPG_DATA_BPT:
+		reply[reply_len++] = data[0];		
+		reply[reply_len++] = data[1];
+		break;
+	}
 	//CRC
 	reply[reply_len++] = 0x00;
 	//packet end
@@ -1259,46 +1514,33 @@ void MCU_send_app_get_hr_data(void)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
-//手环上报整点心率数据
-void MCU_send_heart_rate(void)
+void MCU_send_app_get_temp_data(uint8_t *data)
 {
-	uint8_t heart_rate,reply[128] = {0};
+	uint8_t reply[128] = {0};
 	uint32_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
 
-	GetHeartRate(&heart_rate);
-	
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x0D;
+	reply[reply_len++] = 0x07;
 	//data ID
-	reply[reply_len++] = (PULL_REFRESH_ID>>8);		
-	reply[reply_len++] = (uint8_t)(PULL_REFRESH_ID&0x00ff);
+	reply[reply_len++] = (TEMPERATURE_ID>>8);		
+	reply[reply_len++] = (uint8_t)(TEMPERATURE_ID&0x00ff);
 	//status
-	reply[reply_len++] = 0x81;
+	reply[reply_len++] = 0x02;
 	//control
-	reply[reply_len++] = 0x00;
-	//year
-	reply[reply_len++] = (uint8_t)(date_time.year>>8);
-	reply[reply_len++] = (uint8_t)(date_time.year&0x00ff);
-	//month
-	reply[reply_len++] = date_time.month;
-	//day
-	reply[reply_len++] = date_time.day;
-	//hour
-	reply[reply_len++] = date_time.hour;
-	//minute
-	reply[reply_len++] = date_time.minute;
-	//data
-	reply[reply_len++] = heart_rate;
+	reply[reply_len++] = 0x01;
+	//tempdata
+	reply[reply_len++] = data[0];		
+	reply[reply_len++] = data[1];
 	//CRC
 	reply[reply_len++] = 0x00;
 	//packet end
@@ -1307,7 +1549,7 @@ void MCU_send_heart_rate(void)
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
-	ble_send_date_handle(reply, reply_len);
+	BleSendData(reply, reply_len);
 }
 
 void nrf52810_report_work_mode(uint8_t *buf, uint32_t len)
@@ -1330,6 +1572,77 @@ void nrf52810_report_work_mode(uint8_t *buf, uint32_t len)
 		}
 	}
 }
+
+void get_ble_status_response(uint8_t *buf, uint32_t len)
+{
+#ifdef UART_DEBUG
+	LOGD("BLE_status:%d", buf[7]);
+#endif
+
+	g_ble_status = buf[7];
+
+	switch(g_ble_status)
+	{
+	case BLE_STATUS_OFF:
+	case BLE_STATUS_SLEEP:
+	case BLE_STATUS_BROADCAST:
+		g_ble_connected = false;
+		break;
+
+	case BLE_STATUS_CONNECTED:
+		g_ble_connected = true;
+		redraw_blt_status_flag = true;
+		break;
+	}
+}
+#endif
+
+#ifdef CONFIG_TOUCH_SUPPORT
+void CTP_notify_handle(uint8_t *buf, uint32_t len)
+{
+	uint8_t tp_type = TP_EVENT_MAX;
+	uint16_t tp_x,tp_y;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	switch(buf[5])
+	{
+	case GESTURE_NONE:
+		tp_type = TP_EVENT_NONE;
+		break;
+	case GESTURE_MOVING_UP:
+		tp_type = TP_EVENT_MOVING_UP;
+		break;
+	case GESTURE_MOVING_DOWN:
+		tp_type = TP_EVENT_MOVING_DOWN;
+		break;
+	case GESTURE_MOVING_LEFT:
+		tp_type = TP_EVENT_MOVING_LEFT;
+		break;
+	case GESTURE_MOVING_RIGHT:
+		tp_type = TP_EVENT_MOVING_RIGHT;
+		break;
+	case GESTURE_SINGLE_CLICK:
+		tp_type = TP_EVENT_SINGLE_CLICK;
+		break;
+	case GESTURE_DOUBLE_CLICK:
+		tp_type = TP_EVENT_DOUBLE_CLICK;
+		break;
+	case GESTURE_LONG_PRESS:
+		tp_type = TP_EVENT_LONG_PRESS;
+		break;
+	}
+
+	if(tp_type != TP_EVENT_MAX)
+	{
+		tp_x = (0x0f&buf[7])<<8 | buf[8];
+		tp_y = (0x0f&buf[9])<<8 | buf[10];
+		touch_panel_event_handle(tp_type, tp_x, tp_y);
+	}
+}
+#endif
 
 void get_nrf52810_ver_response(uint8_t *buf, uint32_t len)
 {
@@ -1365,13 +1678,68 @@ void get_ble_mac_address_response(uint8_t *buf, uint32_t len)
 #endif
 }
 
-void get_ble_status_response(uint8_t *buf, uint32_t len)
+void MCU_get_nrf52810_ver(void)
 {
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
 #ifdef UART_DEBUG
-	LOGD("BLE_status:%d", buf[6]);
+	LOGD("begin");
 #endif
 
-	g_ble_status = buf[6];
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_NRF52810_VER_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_NRF52810_VER_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_get_ble_mac_address(void)
+{
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (GET_BLE_MAC_ADDR_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_BLE_MAC_ADDR_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
 }
 
 /**********************************************************************************
@@ -1436,36 +1804,44 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	switch(data_ID)
 	{
+	#ifdef CONFIG_BLE_SUPPORT
 	case BLE_WORK_MODE_ID:
 		nrf52810_report_work_mode(buf, len);//52810工作状态
 		break;
-	case HEART_RATE_ID:			//心率
 	#ifdef CONFIG_PPG_SUPPORT
-		APP_get_heart_rate(buf, len);
-	#endif
+	case HEART_RATE_ID:			//心率
+		APP_get_hr(buf, len);
 		break;
 	case BLOOD_OXYGEN_ID:		//血氧
+		APP_get_spo2(buf, len);
 		break;
 	case BLOOD_PRESSURE_ID:		//血压
+		APP_get_bpt(buf, len);
 		break;
+	case TEMPERATURE_ID:		//体温
+		APP_get_temp(buf, len);
+		break;	
 	case ONE_KEY_MEASURE_ID:	//一键测量
-	#ifdef CONFIG_PPG_SUPPORT
 		APP_get_one_key_measure_data(buf, len);
-	#endif
 		break;
+	#endif
 	case PULL_REFRESH_ID:		//下拉刷新
-		APP_get_current_data(buf, len);
+		APP_get_cur_hour_data(buf, len);
 		break;
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
+	#ifdef CONFIG_ALARM_SUPPORT	
 	case FIND_DEVICE_ID:		//查找手环
 		APP_set_find_device(buf, len);
 		break;
+	#endif	
 	case SMART_NOTIFY_ID:		//智能提醒
 		break;
+	#ifdef CONFIG_ALARM_SUPPORT	
 	case ALARM_SETTING_ID:		//闹钟设置
 		APP_set_alarm(buf, len);
 		break;
+	#endif	
 	case USER_INFOR_ID:			//用户信息
 		break;
 	case SEDENTARY_ID:			//久坐提醒
@@ -1484,9 +1860,11 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case TIME_24_SETTING_ID:	//12/24小时设置
 		APP_set_time_24_format(buf, len);
 		break;
+	#ifdef CONFIG_ALARM_SUPPORT	
 	case FIND_PHONE_ID:			//查找手机回复
 		APP_reply_find_phone(buf, len);
 		break;
+	#endif
 	case WEATHER_INFOR_ID:		//天气信息下发
 		break;
 	case TIME_SYNC_ID:			//时间同步
@@ -1497,9 +1875,6 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 		break;
 	case BATTERY_LEVEL_ID:		//电池电量
 		APP_get_battery_level(buf, len);
-		break;
-	case FIRMWARE_INFOR_ID:		//固件版本号
-		APP_get_firmware_version(buf, len);
 		break;
 	case FACTORY_RESET_ID:		//清除手环数据
 		APP_set_factory_reset(buf, len);
@@ -1515,21 +1890,26 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case BLE_CONNECT_ID:		//BLE断连提醒
 		ble_connect_or_disconnect_handle(buf, len);
 		break;
-	case CTP_NOTIFY_ID:
-	#ifdef CONFIG_TOUCH_SUPPORT
-		CTP_notify_handle(buf, len);
-	#endif
+	case GET_BLE_STATUS_ID:
+		get_ble_status_response(buf, len);
 		break;
+	case SET_BEL_WORK_MODE_ID:
+		break;	
+	case FIRMWARE_INFOR_ID:		//固件版本号
+		APP_get_firmware_version(buf, len);
+		break;
+	#endif/*CONFIG_BLE_SUPPORT*/
+
+	#ifdef CONFIG_TOUCH_SUPPORT	
+	case CTP_NOTIFY_ID:
+		CTP_notify_handle(buf, len);
+		break;
+	#endif	
 	case GET_NRF52810_VER_ID:
 		get_nrf52810_ver_response(buf, len);
 		break;
 	case GET_BLE_MAC_ADDR_ID:
 		get_ble_mac_address_response(buf, len);
-		break;
-	case GET_BLE_STATUS_ID:
-		get_ble_status_response(buf, len);
-		break;
-	case SET_BEL_WORK_MODE_ID:
 		break;
 	default:
 	#ifdef UART_DEBUG	
@@ -1561,136 +1941,90 @@ void ble_wakeup_nrf52810(void)
 }
 
 //xb add 2021-11-01 唤醒52810的串口需要时间，不能直接在接收的中断里延时等待，防止重启
-void uart_send_data_handle(void)
+void uart_send_data_handle(uint8_t *buffer, uint32_t datalen)
 {
-	switch(uart_data_type)
-	{
-	case DATA_TYPE_BLE:
-		ble_wakeup_nrf52810();
-	#ifdef CONFIG_WIFI_SUPPORT
-		switch_to_ble();
-	#endif	
-		break;
-
-	case DATA_TYPE_WIFI:
-	#ifdef CONFIG_WIFI_SUPPORT
-		switch_to_ble();
-	#endif	
-		
-		break;
-	}
+	ble_wakeup_nrf52810();
 
 #ifdef CONFIG_PM_DEVICE
-	uart_sleep_out(UART_PERIPHERAL);
+	uart_ble_sleep_out();
 #endif
 
-	uart_fifo_fill(uart_ble, tx_buf, send_len);
+	uart_fifo_fill(uart_ble, buffer, datalen);
 	uart_irq_tx_enable(uart_ble); 	
 }
 
-void ble_send_date_handle(uint8_t *buf, uint32_t len)
+void UartSendData(void)
 {
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
 
-	send_len = len;
-	memcpy(tx_buf, buf, len);
-	
-	uart_data_type = DATA_TYPE_BLE;
-	uart_send_flag = true;
+	ret = get_data_from_cache(&uart_send_cache, &p_data, &data_len, &data_type);
+	if(ret)
+	{
+		uart_send_data_handle(p_data, data_len);
+		delete_data_from_cache(&uart_send_cache);
+
+		k_timer_start(&uart_send_data_timer, K_MSEC(50), K_NO_WAIT);
+	}
 }
 
-#ifdef CONFIG_WIFI_SUPPORT
-void wifi_send_data_handle(uint8_t *buf, uint32_t len)
+void BleSendDataStart(void)
 {
-#ifdef UART_DEBUG
-	LOGD("cmd:%s", buf);
-#endif
-
-#ifdef CONFIG_PM_DEVICE
-	uart_sleep_out(UART_PERIPHERAL);
-#endif
-
-	switch_to_wifi();
-
-	uart_fifo_fill(uart_ble, buf, len);
-	uart_irq_tx_enable(uart_ble);
+	k_timer_start(&uart_send_data_timer, K_MSEC(50), K_NO_WAIT);
 }
-#endif
 
-static void uart_receive_data(uint8_t data, uint32_t datalen)
+void BleSendData(uint8_t *data, uint32_t datalen)
 {
-	static uint32_t data_len = 0;
+	int ret;
 
-#ifdef UART_DEBUG
-	//LOGD("rece_len:%d, data_len:%d data:%x", rece_len, data_len, data);
-#endif
+	ret = add_data_into_cache(&uart_send_cache, data, datalen, DATA_TRANSFER);
+	BleSendDataStart();
+}
+
+static void uart_receive_data_handle(uint8_t *data, uint32_t datalen)
+{
+	uint32_t data_len = 0;
 
 #ifdef CONFIG_PM_DEVICE
 	if(!uart_ble_is_waked)
 		return;
 #endif
 
-    if(blue_is_on)
+	data_len = (256*data[1]+data[2]+3);
+    if(datalen == data_len)	
     {
-    	if((rece_len == 0) && (data != PACKET_HEAD))
-			return;
-		
-        rx_buf[rece_len++] = data;
-		if(rece_len == 3)
-			data_len = (256*rx_buf[1]+rx_buf[2]+3);
-		
-        if(rece_len == data_len)	
-        {
-            ble_receive_data_handle(rx_buf, rece_len);
-            
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-			data_len = 0;
-        }
-		else if((rece_len >= data_len)&&(data == PACKET_END))
-        {
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-			data_len = 0;
-        }
-		else if(rece_len >= BUF_MAXSIZE)
-		{
-			memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-			data_len = 0;
-		}		
+        ble_receive_data_handle(data, datalen);
     }
-#ifdef CONFIG_WIFI_SUPPORT	
-    else if(wifi_is_on)
-    {
-        rx_buf[rece_len++] = data;
-
-        if((rx_buf[rece_len-2] == 0x4F) && (rx_buf[rece_len-1] == 0x4B))	//"OK"
-        {
-        	wifi_receive_data_handle(rx_buf, rece_len);
-			
-            memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-        }
-		else if(rece_len == BUF_MAXSIZE)
-		{
-			memset(rx_buf, 0, sizeof(rx_buf));
-            rece_len = 0;
-		}
-   }
-#endif	
 }
 
-void uart_send_data(void)
+void UartReceData(void)
 {
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
 
-	uart_fifo_fill(uart_ble, "Hello World!", strlen("Hello World!"));
-	uart_irq_tx_enable(uart_ble); 
+	ret = get_data_from_cache(&uart_rece_cache, &p_data, &data_len, &data_type);
+	if(ret)
+	{
+		uart_receive_data_handle(p_data, data_len);
+		delete_data_from_cache(&uart_rece_cache);
+
+		k_timer_start(&uart_rece_data_timer, K_MSEC(50), K_NO_WAIT);
+	}
+}
+
+void BleReceDataStart(void)
+{
+	k_timer_start(&uart_rece_data_timer, K_MSEC(50), K_NO_WAIT);
+}
+
+void BleReceData(uint8_t *data, uint32_t datalen)
+{
+	int ret;
+
+	ret = add_data_into_cache(&uart_rece_cache, data, datalen, DATA_TRANSFER);
+	BleReceDataStart();
 }
 
 static void uart_cb(struct device *x)
@@ -1702,8 +2036,11 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
-		while((len = uart_fifo_read(x, &tmpbyte, 1)) > 0)
-			uart_receive_data(tmpbyte, 1);
+		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
+		{
+			rece_len += len;
+			k_timer_start(&uart_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+		}
 	}
 	
 	if(uart_irq_tx_ready(x))
@@ -1741,36 +2078,6 @@ static void uart_cb(struct device *x)
 }
 
 #ifdef CONFIG_PM_DEVICE
-void uart_log_sleep_out(void)
-{
-	if(k_timer_remaining_get(&uart_log_sleep_in_timer) > 0)
-		k_timer_stop(&uart_log_sleep_in_timer);
-	k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
-
-	if(uart_log_is_waked)
-		return;
-
-	pm_device_action_run(uart_log, PM_DEVICE_ACTION_RESUME);
-	uart_log_is_waked = true;
-
-#ifdef UART_DEBUG
-	LOGD("uart log set active success!");
-#endif
-}
-
-void uart_log_sleep_in(void)
-{	
-	if(!uart_log_is_waked)
-		return;
-
-	pm_device_action_run(uart_log, PM_DEVICE_ACTION_SUSPEND);
-	uart_log_is_waked = false;
-
-#ifdef UART_DEBUG
-	LOGD("uart log set low power success!");
-#endif
-}
-
 void uart_ble_sleep_out(void)
 {
 	if(k_timer_remaining_get(&uart_ble_sleep_in_timer) > 0)
@@ -1801,49 +2108,12 @@ void uart_ble_sleep_in(void)
 #endif
 }
 
-void uart_sleep_out(ENUM_UART_TYPE flag)
-{
-	switch(flag)
-	{
-	case UART_MODEM:
-		uart_log_sleep_out();
-		break;
-
-	case UART_PERIPHERAL:
-		uart_ble_sleep_out();
-		break;
-	}
-}
-
-void uart_sleep_in(ENUM_UART_TYPE flag)
-{
-	switch(flag)
-	{
-	case UART_MODEM:
-		uart_log_sleep_in();
-		break;
-
-	case UART_PERIPHERAL:
-		uart_ble_sleep_in();
-		break;
-	}
-}
-
 static void ble_interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
 {
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
 	uart_ble_wake_flag = true;
-}
-
-
-static void UartLogSleepInCallBack(struct k_timer *timer_id)
-{
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-	uart_log_sleep_flag = true;
 }
 
 static void UartBleSleepInCallBack(struct k_timer *timer_id)
@@ -1860,18 +2130,29 @@ static void GetBLEInfoCallBack(struct k_timer *timer_id)
 	get_ble_info_flag = true;
 }
 
+static void UartSendDataCallBack(struct k_timer *timer)
+{
+	uart_send_data_flag = true;
+}
+
+static void UartReceDataCallBack(struct k_timer *timer_id)
+{
+	uart_rece_data_flag = true;
+}
+
+static void UartReceFrameCallBack(struct k_timer *timer_id)
+{
+	//uart_rece_frame_flag = true;
+	uart_receive_data_handle(rx_buf, rece_len);
+	rece_len = 0;
+}
+
 void ble_init(void)
 {
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
-#endif
-
-#ifdef CONFIG_PM_DEVICE
-	uart_log = device_get_binding("UART_0");
-	if(uart_log)
-		k_timer_start(&uart_log_sleep_in_timer, K_SECONDS(UART_LOG_WAKE_HOLD_TIME_SEC), K_NO_WAIT);
 #endif
 
 	uart_ble = device_get_binding(BLE_DEV);
@@ -1885,10 +2166,6 @@ void ble_init(void)
 
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
-
-#ifdef CONFIG_WIFI_SUPPORT
-	wifi_init();
-#endif
 
 	gpio_ble = device_get_binding(BLE_PORT);
 	if(!gpio_ble)
@@ -1916,24 +2193,6 @@ void ble_init(void)
 void UartMsgProc(void)
 {
 #ifdef CONFIG_PM_DEVICE
-	if(uart_log_wake_flag)
-	{
-	#ifdef UART_DEBUG
-		LOGD("uart_wake!");
-	#endif
-		uart_log_wake_flag = false;
-		uart_log_sleep_out();
-	}
-
-	if(uart_log_sleep_flag)
-	{
-	#ifdef UART_DEBUG
-		LOGD("uart_sleep!");
-	#endif
-		uart_log_sleep_flag = false;
-		uart_log_sleep_in();
-	}
-
 	if(uart_ble_wake_flag)
 	{
 		uart_ble_wake_flag = false;
@@ -1947,33 +2206,77 @@ void UartMsgProc(void)
 	}
 #endif/*CONFIG_PM_DEVICE*/
 
-	if(uart_send_flag)
+	if(uart_send_data_flag)
 	{
-		uart_send_data_handle();
-		uart_send_flag = false;
+		UartSendData();
+		uart_send_data_flag = false;
 	}
+
+	if(uart_rece_data_flag)
+	{
+		UartReceData();
+		uart_rece_data_flag = false;
+	}
+	
+	if(uart_rece_frame_flag)
+	{
+		//BleReceData(rx_buf, rece_len);
+		uart_receive_data_handle(rx_buf, rece_len);
+		rece_len = 0;
+		uart_rece_frame_flag = false;
+	}
+	
 	if(redraw_blt_status_flag)
 	{
-		IdleShowBleStatus(g_ble_connected);
+		if((screen_id == SCREEN_ID_IDLE)
+			||(screen_id == SCREEN_ID_HR)
+			||(screen_id == SCREEN_ID_SPO2)
+			||(screen_id == SCREEN_ID_BP)
+			||(screen_id == SCREEN_ID_TEMP)
+			||(screen_id == SCREEN_ID_STEPS)
+			||(screen_id == SCREEN_ID_SLEEP)
+			)
+		{
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BLE;
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
+		
 		redraw_blt_status_flag = false;
 	}
+
 	if(get_ble_info_flag)
 	{
 		static uint8_t index = 0;
-
-		if(index == 0)
+		switch(index)
 		{
+		case 0:
 			index = 1;
 			MCU_get_nrf52810_ver();
 			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
-		}
-		else
-		{
+			break;
+		case 1:
+			index = 2;
 			MCU_get_ble_mac_address();
+			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
+			break;
+		#ifdef CONFIG_BLE_SUPPORT	
+		case 2:
+			MCU_get_ble_status();
+			break;
+		#endif	
 		}
-		
+
 		get_ble_info_flag = false;
 	}
+
+#ifdef CONFIG_BLE_SUPPORT
+	if(reply_cur_data_flag)
+	{
+		APP_get_cur_hour_sport(refresh_time);
+		APP_get_cur_hour_health(refresh_time);
+		reply_cur_data_flag = false;
+	}
+#endif
 }
 
 void test_uart_ble(void)
@@ -1984,7 +2287,7 @@ void test_uart_ble(void)
 
 	while(1)
 	{
-		ble_send_date_handle("Hello World!\n", strlen("Hello World!\n"));
+		BleSendData("Hello World!\n", strlen("Hello World!\n"));
 		k_sleep(K_MSEC(1000));
 	}
 }

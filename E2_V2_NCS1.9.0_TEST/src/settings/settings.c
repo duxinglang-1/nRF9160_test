@@ -9,7 +9,9 @@
 #include "screen.h"
 #include "settings.h"
 #include "datetime.h"
+#ifdef CONFIG_ALARM_SUPPORT
 #include "alarm.h"
+#endif
 #include "lcd.h"
 #include "codetrans.h"
 #include "inner_flash.h"
@@ -20,7 +22,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V2.1.0_20221130";
+uint8_t g_fw_version[64] = "V3.1.0_20221130";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -48,12 +50,12 @@ static void SettingsMainMenu4Proc(void);
 static void SettingsMainMenu5Proc(void);
 static void SettingsMainMenu6Proc(void);
 static void SettingsMainMenu7Proc(void);
-static void SettingsMainMenu8Proc(void);
 static void SettingsMenuLang1Proc(void);
 static void SettingsMenuLang2Proc(void);
 static void SettingsMenuLang3Proc(void);
 static void SettingsMenuReset1Proc(void);
 static void SettingsMenuReset2Proc(void);
+static void SettingsMenuCaremateQRProc(void);
 static void SettingsMenuOTAProc(void);
 static void SettingsMenuBrightness1Proc(void);
 static void SettingsMenuBrightness2Proc(void);
@@ -87,6 +89,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	false,					//blood oxygen turn on		
 	true,					//wake screen by wrist
 	false,					//wrist off check
+	3,						//location type: 1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	0,						//target steps
 	60,						//health interval
 	TEMP_UINT_C,			//Centigrade
@@ -108,44 +111,41 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 		{false,0,0,0},
 		{false,0,0,0},
 		{false,0,0,0},
-	}
+	},
 };
 
 const settings_menu_t SETTING_MAIN_MENU = 
 {
 	SETTINGS_MENU_MAIN,
 	0,
-	8,
+	7,
 	{
 		{
 			{0x004c,0x0061,0x006e,0x0067,0x0075,0x0061,0x0067,0x0065,0x0000},//language
-			{0x0046,0x0061,0x0063,0x0074,0x006f,0x0072,0x0079,0x0020,0x0064,0x0065,0x0066,0x0061,0x0075,0x006c,0x0074,0x0000},//Factory default
-			{0x004f,0x0054,0x0041,0x0020,0x0055,0x0070,0x0064,0x0061,0x0074,0x0065,0x0000},//OTA Update
 			{0x0042,0x0072,0x0069,0x0067,0x0068,0x0074,0x006e,0x0065,0x0073,0x0073,0x0000},//Brightness
 			{0x0054,0x0065,0x006d,0x0070,0x0020,0x0064,0x0069,0x0073,0x0070,0x006c,0x0061,0x0079,0x0000},//Temp display
 			{0x0044,0x0065,0x0076,0x0069,0x0063,0x0065,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//Device info
-			{0x0053,0x0049,0x004d,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//SIM Info
-			{0x0046,0x0057,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//FW Info
+			{0x0043,0x0061,0x0072,0x0065,0x006D,0x0061,0x0074,0x0065,0x0020,0x0051,0x0052,0x0000},//Caremate QR
+			{0x0046,0x0061,0x0063,0x0074,0x006f,0x0072,0x0079,0x0020,0x0064,0x0065,0x0066,0x0061,0x0075,0x006c,0x0074,0x0000},//Factory default
+			{0x004f,0x0054,0x0041,0x0020,0x0055,0x0070,0x0064,0x0061,0x0074,0x0065,0x0000},//OTA Update
 		},
 		{
 			{0x0053,0x0070,0x0072,0x0061,0x0063,0x0068,0x0065,0x0000},//Sprache
-			{0x0057,0x0065,0x0072,0x006B,0x0073,0x0065,0x0049,0x006E,0x0073,0x0074,0x0065,0x006C,0x006C,0x0075,0x006E,0x0067,0x0000},//Werkseinstellung
-			{0x004f,0x0054,0x0041,0x0020,0x0055,0x0070,0x0064,0x0061,0x0074,0x0065,0x0000},//OTA Update
 			{0x0048,0x0065,0x006C,0x006C,0x0069,0x0067,0x006B,0x0065,0x0069,0x0074,0x0000},//Helligkeit
 			{0x0054,0x0065,0x006D,0x0070,0x0020,0x0041,0x006E,0x007A,0x0065,0x0069,0x0067,0x0065,0x0000},//Temp Anzeige
 			{0x0047,0x0065,0x0072,0x00E4,0x0074,0x0065,0x0020,0x0049,0x006E,0x0066,0x006F,0x0000},//Ger?te Info
-			{0x0053,0x0049,0x004d,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//SIM Info
-			{0x0046,0x0057,0x0020,0x0049,0x006e,0x0066,0x006f,0x0000},//FW Info
+			{0x0043,0x0061,0x0072,0x0065,0x006D,0x0061,0x0074,0x0065,0x0020,0x0051,0x0052,0x0000},////Caremate QR
+			{0x0057,0x0065,0x0072,0x006B,0x0073,0x0065,0x0049,0x006E,0x0073,0x0074,0x0065,0x006C,0x006C,0x0075,0x006E,0x0067,0x0000},//Werkseinstellung
+			{0x004f,0x0054,0x0041,0x0020,0x0055,0x0070,0x0064,0x0061,0x0074,0x0065,0x0000},//OTA Update
 		},
 		{
 			{0x8BED,0x8A00,0x0000},//语言
-			{0x6062,0x590D,0x51FA,0x5382,0x8BBE,0x7F6E,0x0000},//恢复出厂设置
-			{0x004F,0x0054,0x0041,0x5347,0x7EA7,0x0000},//OTA升级
-			{0x80CC,0x5149,0x4EAE,0x5EA6,0x0000},//背光亮度
+			{0x5C4F,0x5E55,0x4EAE,0x5EA6,0x0000},//屏幕亮度
 			{0x4F53,0x6E29,0x663E,0x793A,0x0000},//体温显示
 			{0x8BBE,0x5907,0x4FE1,0x606F,0x0000},//设备信息
-			{0x0053,0x0049,0x004D,0x4FE1,0x606F,0x0000},//SIM信息
-			{0x56FA,0x4EF6,0x4FE1,0x606F,0x0000},//固件信息
+			{0x0043,0x0061,0x0072,0x0065,0x006D,0x0061,0x0074,0x0065,0x4E8C,0x7EF4,0x7801,0x0000},//Caremate二维码
+			{0x6062,0x590D,0x51FA,0x5382,0x8BBE,0x7F6E,0x0000},//恢复出厂设置
+			{0x004F,0x0054,0x0041,0x5347,0x7EA7,0x0000},//OTA升级
 		},			
 	},
 	{
@@ -157,7 +157,6 @@ const settings_menu_t SETTING_MAIN_MENU =
 		SettingsMainMenu5Proc,
 		SettingsMainMenu6Proc,
 		SettingsMainMenu7Proc,
-		SettingsMainMenu8Proc,
 	},
 	{	
 		//page proc func
@@ -194,11 +193,34 @@ const settings_menu_t SETTING_MENU_LANGUAGE =
 		SettingsMenuLang1Proc,
 		SettingsMenuLang2Proc,
 		SettingsMenuLang3Proc,
+	},
+	{	
+		//page proc func
 		SettingsMenuDumpProc,
 		SettingsMenuDumpProc,
 		SettingsMenuDumpProc,
 		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
+	},	
+};
+
+const settings_menu_t SETTING_MENU_CAREMATE_QR = 
+{
+	SETTINGS_MENU_CAREMATE_QR,
+	0,
+	1,
+	{
+		{
+			{0x0000},
+		},
+		{
+			{0x0000},
+		},
+		{
+			{0x0000},
+		},		
+	},
+	{
+		SettingsMenuCaremateQRProc,
 	},
 	{	
 		//page proc func
@@ -231,12 +253,6 @@ const settings_menu_t SETTING_MENU_FACTORY_RESET =
 	{
 		SettingsMenuReset1Proc,
 		SettingsMenuReset2Proc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
 	},
 	{	
 		//page proc func
@@ -265,13 +281,6 @@ const settings_menu_t SETTING_MENU_OTA_UPDATE =
 	},
 	{
 		SettingsMenuOTAProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
 	},
 	{	
 		//page proc func
@@ -306,11 +315,6 @@ const settings_menu_t SETTING_MENU_BRIGHTNESS =
 		SettingsMenuBrightness1Proc,
 		SettingsMenuBrightness2Proc,
 		SettingsMenuBrightness3Proc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,		
 	},
 	{	
 		//page proc func
@@ -343,12 +347,6 @@ const settings_menu_t SETTING_MENU_TEMP =
 	{
 		SettingsMenuTemp1Proc,
 		SettingsMenuTemp2Proc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
 	},
 	{	
 		//page proc func
@@ -363,22 +361,43 @@ const settings_menu_t SETTING_MENU_DEVICE =
 {
 	SETTINGS_MENU_DEVICE,
 	0,
-	3,
+	10,
 	{
 		{
-			{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:
-			{0x0057,0x0049,0x0046,0x0049,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//WIFI MAC:
 			{0x0049,0x004D,0x0045,0x0049,0x003A,0x0000},//IMEI:
+			{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x003A,0x0000},//IMSI No:
+			{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x003A,0x0000},//ICCID No:
+			{0x004D,0x0043,0x0055,0x003A,0x0000},//MCU:
+			{0x004D,0x004F,0x0044,0x0045,0x004D,0x003A,0x0000},//MODEM:
+			{0x0050,0x0050,0x0047,0x003A,0x0000},//PPG:
+			{0x0057,0x0069,0x0046,0x0069,0x003A,0x0000},//WiFi:
+			{0x0057,0x0069,0x0046,0x0069,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//WiFi MAC:
+			{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
+			{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:						
 		},
 		{
-			{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:
-			{0x0057,0x0049,0x0046,0x0049,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//WIFI MAC:
 			{0x0049,0x004D,0x0045,0x0049,0x003A,0x0000},//IMEI:
+			{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x003A,0x0000},//IMSI No:
+			{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x003A,0x0000},//ICCID No:	
+			{0x004D,0x0043,0x0055,0x003A,0x0000},//MCU:
+			{0x004D,0x004F,0x0044,0x0045,0x004D,0x003A,0x0000},//MODEM:
+			{0x0050,0x0050,0x0047,0x003A,0x0000},//PPG:
+			{0x0057,0x0069,0x0046,0x0069,0x003A,0x0000},//WiFi:
+			{0x0057,0x0069,0x0046,0x0069,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//WiFi MAC:
+			{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
+			{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:
 		},
 		{
-			{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:
-			{0x0057,0x0049,0x0046,0x0049,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//WIFI MAC:
 			{0x0049,0x004D,0x0045,0x0049,0x003A,0x0000},//IMEI:
+			{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x003A,0x0000},//IMSI No:
+			{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x003A,0x0000},//ICCID No:
+			{0x004D,0x0043,0x0055,0x003A,0x0000},//MCU:
+			{0x004D,0x004F,0x0044,0x0045,0x004D,0x003A,0x0000},//MODEM:
+			{0x0050,0x0050,0x0047,0x003A,0x0000},//PPG:
+			{0x0057,0x0069,0x0046,0x0069,0x003A,0x0000},//WiFi:
+			{0x0057,0x0069,0x0046,0x0069,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//WiFi MAC:
+			{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
+			{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:
 		},		
 	},
 	{
@@ -390,91 +409,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 		SettingsMenuDeviceProc,
 		SettingsMenuDeviceProc,
 		SettingsMenuDeviceProc,
-	},
-	{	
-		//page proc func
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-	},	
-};
-
-const settings_menu_t SETTING_MENU_SIM = 
-{
-	SETTINGS_MENU_SIM,
-	0,
-	2,
-	{
-		{
-			{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x003A,0x0000},//IMSI No:
-			{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x003A,0x0000},//ICCID No:
-		},
-		{
-			{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x003A,0x0000},//IMSI No:
-			{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x003A,0x0000},//ICCID No:
-		},
-		{
-			{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x003A,0x0000},//IMSI No:
-			{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x003A,0x0000},//ICCID No:
-		},
-	},
-	{
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-		SettingsMenuSIMProc,
-	},
-	{	
-		//page proc func
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-	},	
-};
-
-const settings_menu_t SETTING_MENU_FW = 
-{
-	SETTINGS_MENU_FW,
-	0,
-	5,
-	{
-		{
-			{0x004D,0x0043,0x0055,0x003A,0x0000},//MCU:
-			{0x0057,0x0049,0x0046,0x0049,0x003A,0x0000},//WIFI:
-			{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
-			{0x0050,0x0050,0x0047,0x003A,0x0000},//PPG:
-			{0x004D,0x004F,0x0044,0x0045,0x004D,0x003A,0x0000},//MODEM: 
-		},
-		{
-			{0x004D,0x0043,0x0055,0x003A,0x0000},//MCU:
-			{0x0057,0x0049,0x0046,0x0049,0x003A,0x0000},//WIFI:
-			{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
-			{0x0050,0x0050,0x0047,0x003A,0x0000},//PPG:
-			{0x004D,0x004F,0x0044,0x0045,0x004D,0x003A,0x0000},//MODEM: 
-		},
-		{
-			{0x004D,0x0043,0x0055,0x003A,0x0000},//MCU:
-			{0x0057,0x0049,0x0046,0x0049,0x003A,0x0000},//WIFI:
-			{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
-			{0x0050,0x0050,0x0047,0x003A,0x0000},//PPG:
-			{0x004D,0x004F,0x0044,0x0045,0x004D,0x003A,0x0000},//MODEM: 
-		},
-	},	
-	{
-		SettingsMenuFWProc,
-		SettingsMenuFWProc,
-		SettingsMenuFWProc,
-		SettingsMenuFWProc,
-		SettingsMenuFWProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
-		SettingsMenuDumpProc,
+		SettingsMenuDeviceProc,
+		SettingsMenuDeviceProc,
 	},
 	{	
 		//page proc func
@@ -482,7 +418,7 @@ const settings_menu_t SETTING_MENU_FW =
 		SettingsMenuPgDownProc,
 		SettingsMenuDumpProc,
 		SettingsMenuDumpProc,
-	},
+	},	
 };
 
 void FactoryResetCallBack(struct k_timer *timer_id)
@@ -557,15 +493,18 @@ void InitSystemSettings(void)
 
 	ReadSettingsFromInnerFlash(&global_settings);
 
-	if(!global_settings.init)
+	if(!global_settings.init || (global_settings.location_type < 1 || global_settings.location_type > 4))
 	{
+		ResetInnerFlash();
+
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
 	}
 
 	InitSystemDateTime();
+#ifdef CONFIG_ALARM_SUPPORT	
 	AlarmRemindInit();
-
+#endif
 	mmi_chset_init();
 }
 
@@ -603,11 +542,14 @@ void ResetFactoryDefault(void)
 	ClearAllTempRecData();
 #endif
 
-	if(k_timer_remaining_get(&reset_timer) > 0)
-		k_timer_stop(&reset_timer);
-
-	g_reset_status = RESET_STATUS_SUCCESS;
-	reset_redraw_flag = true;
+	if((screen_id == SCREEN_ID_SETTINGS) && (settings_menu.id == SETTINGS_MENU_FACTORY_RESET))
+	{
+		if(k_timer_remaining_get(&reset_timer) > 0)
+			k_timer_stop(&reset_timer);
+		
+		g_reset_status = RESET_STATUS_SUCCESS;
+		reset_redraw_flag = true;
+	}
 }
 
 void ResetUpdateStatus(void)
@@ -654,7 +596,7 @@ void SettingsMainMenu2Proc(void)
 {
 	main_menu_index_bk = settings_menu.index;
 
-	memcpy(&settings_menu, &SETTING_MENU_FACTORY_RESET, sizeof(settings_menu_t));
+	memcpy(&settings_menu, &SETTING_MENU_BRIGHTNESS, sizeof(settings_menu_t));
 
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
@@ -663,6 +605,54 @@ void SettingsMainMenu2Proc(void)
 }
 
 void SettingsMainMenu3Proc(void)
+{
+	main_menu_index_bk = settings_menu.index;
+	
+	memcpy(&settings_menu, &SETTING_MENU_TEMP, sizeof(settings_menu_t));
+
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMainMenu4Proc(void)
+{
+	main_menu_index_bk = settings_menu.index;
+	
+	memcpy(&settings_menu, &SETTING_MENU_DEVICE, sizeof(settings_menu_t));
+
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMainMenu5Proc(void)
+{
+	main_menu_index_bk = settings_menu.index;
+	
+	memcpy(&settings_menu, &SETTING_MENU_CAREMATE_QR, sizeof(settings_menu_t));
+
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMainMenu6Proc(void)
+{
+	main_menu_index_bk = settings_menu.index;
+	
+	memcpy(&settings_menu, &SETTING_MENU_FACTORY_RESET, sizeof(settings_menu_t));
+
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMainMenu7Proc(void)
 {
 #ifdef CONFIG_FOTA_DOWNLOAD
 	extern uint8_t g_new_fw_ver[64];
@@ -685,66 +675,6 @@ void SettingsMainMenu3Proc(void)
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
-	}
-}
-
-void SettingsMainMenu4Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_BRIGHTNESS, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMainMenu5Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_TEMP, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMainMenu6Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_DEVICE, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMainMenu7Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_SIM, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMainMenu8Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_FW, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
 
@@ -811,6 +741,17 @@ void SettingsMenuReset2Proc(void)
 	}
 
 	k_timer_start(&reset_start_timer, K_MSEC(100), K_NO_WAIT);
+}
+
+void SettingsMenuCaremateQRProc(void)
+{
+	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
+	settings_menu.index = main_menu_index_bk;
+	
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 void SettingsMenuOTAProc(void)
@@ -894,28 +835,6 @@ void SettingsMenuTemp2Proc(void)
 }
 
 void SettingsMenuDeviceProc(void)
-{
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuSIMProc(void)
-{
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuFWProc(void)
 {
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;

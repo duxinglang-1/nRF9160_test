@@ -99,8 +99,8 @@ void LCD_ShowStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t heigh
 #ifdef LCD_VGM068A4W01_SH1106G
 void LCD_ShowStrInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t *p);
 #endif/*LCD_VGM068A4W01_SH1106G*/
-void LCD_ShowNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len);
-void LCD_ShowxNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len,uint8_t mode);
+//void LCD_ShowNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len);
+//void LCD_ShowxNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len,uint8_t mode);
 void LCD_ShowImg(uint16_t x, uint16_t y, unsigned char *color);
 void LCD_ShowImg_From_Flash(uint16_t x, uint16_t y, uint32_t img_addr);
 void LCD_SetFontSize(uint8_t font_size);

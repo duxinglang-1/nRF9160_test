@@ -16,6 +16,30 @@
 //#define SHOW_LOG_IN_SCREEN
 //#define PMU_DEBUG
 
+#ifdef GPIO_ACT_I2C
+#define PMU_SCL		0
+#define PMU_SDA		1
+
+#else/*GPIO_ACT_I2C*/
+
+#define I2C1_NODE DT_NODELABEL(i2c1)
+#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
+#define PMU_DEV	DT_LABEL(I2C1_NODE)
+#else
+/* A build error here means your board does not have I2C enabled. */
+#error "i2c1 devicetree node is disabled"
+#define PMU_DEV	""
+#endif
+
+#define PMU_SCL			31
+#define PMU_SDA			30
+
+#endif/*GPIO_ACT_I2C*/
+
+#define PMU_PORT 		"GPIO_0"
+#define PMU_ALRTB		7
+#define PMU_EINT		8
+
 static bool pmu_check_ok = false;
 static uint8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
@@ -76,48 +100,45 @@ static void show_infor2(uint8_t *strbuf)
 #endif
 
 #ifdef GPIO_ACT_I2C
-#define SCL_PIN		0
-#define SDA_PIN		1
-
 void I2C_INIT(void)
 {
 	if(gpio_pmu == NULL)
 		gpio_pmu = device_get_binding(PMU_PORT);
 
-	gpio_pin_configure(gpio_pmu, SCL_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_pmu, SCL_PIN, 1);
-	gpio_pin_set(gpio_pmu, SDA_PIN, 1);
+	gpio_pin_configure(gpio_pmu, PMU_SCL, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 1);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 1);
 }
 
 void I2C_SDA_OUT(void)
 {
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
 }
 
 void I2C_SDA_IN(void)
 {
-	gpio_pin_configure(gpio_pmu, SDA_PIN, GPIO_INPUT);
+	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_INPUT);
 }
 
 void I2C_SDA_H(void)
 {
-	gpio_pin_set(gpio_pmu, SDA_PIN, 1);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 1);
 }
 
 void I2C_SDA_L(void)
 {
-	gpio_pin_set(gpio_pmu, SDA_PIN, 0);
+	gpio_pin_set(gpio_pmu, PMU_SDA, 0);
 }
 
 void I2C_SCL_H(void)
 {
-	gpio_pin_set(gpio_pmu, SCL_PIN, 1);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 1);
 }
 
 void I2C_SCL_L(void)
 {
-	gpio_pin_set(gpio_pmu, SCL_PIN, 0);
+	gpio_pin_set(gpio_pmu, PMU_SCL, 0);
 }
 
 void Delay_ms(unsigned int dly)
@@ -190,7 +211,7 @@ uint8_t I2C_Wait_Ack(void)
 
 	while(1)
 	{
-		val = gpio_pin_get_raw(gpio_pmu, SDA_PIN);
+		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 0)
 			break;
 		
@@ -241,7 +262,7 @@ void I2C_Read_Byte(bool ack, uint8_t *data)
 		I2C_SCL_H();
 
 		receive<<=1;
-		val = gpio_pin_get_raw(gpio_pmu, SDA_PIN);
+		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 1)
 		   receive++;
    }
@@ -408,6 +429,8 @@ void vibrate_stop_timerout(struct k_timer *timer_id)
 
 void vibrate_off(void)
 {
+	k_timer_stop(&vib_start_timer);
+	k_timer_stop(&vib_stop_timer);
 	memset(&g_vib, 0, sizeof(g_vib));
 	
 	vibrate_stop_flag = true;
@@ -519,6 +542,10 @@ void pmu_battery_update(void)
 
 	if(g_chg_status == BAT_CHARGING_NO)
 		pmu_redraw_bat_flag = true;
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	FTPMUStatusUpdate(1);
+#endif	
 }
 
 bool pmu_interrupt_proc(void)
@@ -587,8 +614,6 @@ bool pmu_interrupt_proc(void)
 		
 		if((status1&0x08) == 0x08) //USB OK   
 		{
-			uint32_t bat_img[5] = {IMG_BAT_CHRING_ANI_1_ADDR,IMG_BAT_CHRING_ANI_2_ADDR,IMG_BAT_CHRING_ANI_3_ADDR,IMG_BAT_CHRING_ANI_4_ADDR,IMG_BAT_CHRING_ANI_5_ADDR};
-
 		#ifdef PMU_DEBUG
 			LOGD("charger push in!");
 		#endif	
@@ -640,6 +665,10 @@ bool pmu_interrupt_proc(void)
 		}
 
 		pmu_redraw_bat_flag = true;
+		
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTPMUStatusUpdate(2);
+	#endif
 	}
 
 	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT);//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低
@@ -1001,7 +1030,14 @@ void test_soc(void)
 
 void PMURedrawBatStatus(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		||(screen_id == SCREEN_ID_STEPS)
+		||(screen_id == SCREEN_ID_SLEEP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
@@ -1076,15 +1112,27 @@ void PMUMsgProcess(void)
 	{
 		if(pmu_check_ok)
 			VibrateStart();
-		
+
 		vibrate_start_flag = false;
+
+		if(g_vib.work_mode == VIB_RHYTHMIC)
+		{
+			k_timer_start(&vib_start_timer, K_MSEC(g_vib.on_time), K_NO_WAIT);
+		}
+		else
+		{
+			memset(&g_vib, 0, sizeof(g_vib));
+		}
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTVibrateStatusUpdate(true);
+	#endif
 	}
 	
 	if(vibrate_stop_flag)
 	{
 		if(pmu_check_ok)
 			VibrateStop();
-		
+
 		vibrate_stop_flag = false;
 
 		if(g_vib.work_mode == VIB_RHYTHMIC)
@@ -1095,6 +1143,9 @@ void PMUMsgProcess(void)
 		{
 			memset(&g_vib, 0, sizeof(g_vib));
 		}
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FTVibrateStatusUpdate(false);
+	#endif
 	}
 
 #ifdef BATTERY_SOC_GAUGE

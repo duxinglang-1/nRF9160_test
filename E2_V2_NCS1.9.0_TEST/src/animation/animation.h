@@ -11,10 +11,10 @@
 
 typedef void (*ShowFinishCB)(void);
 
-struct node
+struct aninode
 {
 	uint32_t img_addr;
-	struct node *next;
+	struct aninode *next;
 };
 
 typedef struct
@@ -25,10 +25,10 @@ typedef struct
 	uint16_t y;				//显示Y坐标
 	bool loop;				//是否循环播放
 	ShowFinishCB callback;	//播放结束回调函数
-	struct node *cache;		//帧图像数据链表
+	struct aninode *cache;		//帧图像数据链表
 }AnimaShowInfo;
 
-typedef struct node AnimaNode;
+typedef struct aninode AnimaNode;
 
 extern bool AnimaIsShowing(void);
 extern void AnimaStopShow(void);

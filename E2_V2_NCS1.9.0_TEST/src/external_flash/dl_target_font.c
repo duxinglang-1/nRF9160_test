@@ -78,11 +78,15 @@ int dl_target_font_done(bool successful)
 
 	if(successful)
 	{
+	#ifdef DL_DEBUG
 		LOGD("font data upgrade scheduled. Reset the device to apply");
+	#endif
 	}
 	else
 	{
+	#ifdef DL_DEBUG
 		LOGD("ui data upgrade aborted.");
+	#endif
 	}
 
 	return err;

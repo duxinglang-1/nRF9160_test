@@ -29,7 +29,9 @@
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #endif
+#ifdef CONFIG_ALARM_SUPPORT
 #include "Alarm.h"
+#endif
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
@@ -392,24 +394,20 @@ void test_show_digital_clock(void)
 
 void test_show_image(void)
 {
-	uint8_t i=3;
+	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
-
-	LOGD("test_show_image");
 	
 	LCD_Clear(BLACK);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	//LCD_get_pic_size_from_flash(IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, &w, &h);
-	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_SEC_ADDR);
+	LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
+	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
-	while(1)
+	while(0)
 	{
-		LCD_Clear(BLACK);
-		LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, i*30);
 	#if 0	
 		switch(i)
 		{
@@ -456,10 +454,9 @@ void test_show_image(void)
 		}
 	#endif
 
-		if(i==0)
-			i=11;
-		else
-			i--;
+		i++;
+		if(i==23)
+			i = 0;
 		
 		k_sleep(K_MSEC(1000));								//Èí¼þÑÓÊ±1000ms
 	}
@@ -538,6 +535,7 @@ void test_show_color(void)
 void test_show_string(void)
 {
 	uint16_t x,y,w,h;
+	uint8_t tmpbuf[256] = {0};
 	uint8_t enbuf[64] = {0};
 	uint8_t cnbuf[64] = {0};
 	uint8_t jpbuf[64] = {0};
@@ -549,6 +547,13 @@ void test_show_string(void)
 	
 	POINT_COLOR=WHITE;								//»­±ÊÑÕÉ«
 	BACK_COLOR=BLACK;  								//±³¾°É« 
+
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+ 	mmi_asc_to_ucs2(tmpbuf, " G:153853,160004\nIR:401502,403683\n R:425776,428105\nhr:0 spo2:0");
+ 	LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
+
+	return;
 
 #ifdef FONTMAKER_UNICODE_FONT
 #if 0//def FONT_64
@@ -701,9 +706,12 @@ void system_init(void)
 
 	InitSystemSettings();
 
+#ifdef CONFIG_IMU_SUPPORT
 	init_imu_int1();//xb add 2022-05-27
+#endif
+#ifdef CONFIG_PPG_SUPPORT
 	PPG_i2c_off();
-	
+#endif
 	pmu_init();
 	flash_init();
 	LCD_Init();
@@ -711,12 +719,15 @@ void system_init(void)
 	ShowBootUpLogo();
 
 	key_init();
+#ifdef CONFIG_PPG_SUPPORT	
+	PPG_init();
+#endif
 #ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
 #endif
 	ble_init();
-#ifdef CONFIG_PPG_SUPPORT	
-	PPG_init();
+#ifdef CONFIG_WIFI_SUPPORT
+	wifi_init();
 #endif
 #ifdef CONFIG_IMU_SUPPORT
 	IMU_init(&imu_work_q);
@@ -727,6 +738,9 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
+
+	//log_read_from_flash();
+
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 }
@@ -784,13 +798,15 @@ int main(void)
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
-//	test_imei();
+//	test_imei_for_qr();
 //	test_tp();
 //	test_gps_on();
 //	test_nb();
 //	test_i2c();
 //	test_bat_soc();
 //	test_notify();
+//	test_wifi();
+//	LogInit();
 
 	while(1)
 	{
@@ -812,7 +828,9 @@ int main(void)
 	#ifdef CONFIG_TOUCH_SUPPORT
 		TPMsgProcess();
 	#endif
+	#ifdef CONFIG_ALARM_SUPPORT
 		AlarmMsgProcess();
+	#endif
 		SettingsMsgPorcess();
 		SOSMsgProc();
 	#ifdef CONFIG_WIFI_SUPPORT
@@ -838,6 +856,10 @@ int main(void)
 	#ifdef CONFIG_TEMP_SUPPORT
 		TempMsgProcess();
 	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FactoryTestProccess();
+	#endif
+		LogMsgProcess();
 		system_init_completed();
 		k_cpu_idle();
 	}

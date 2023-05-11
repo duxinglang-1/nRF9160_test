@@ -11,7 +11,7 @@
 	status = "okay";
 	sck-pin = <22>;
 	mosi-pin = <20>;
-	miso-pin = <5>;
+	miso-pin = <28>;
 };
 
 &i2c1{
@@ -31,7 +31,7 @@
 	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <4>;
-	rx-pin = <28>;
+	rx-pin = <11>;
 	/* delete rts-pin&cts-pin to release the related 2 pins for other uses */
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;	

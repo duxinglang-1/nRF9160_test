@@ -17,7 +17,10 @@
 #include "lcd.h"
 #include "font.h"
 #ifdef CONFIG_IMU_SUPPORT
-#include "lsm6dso.h"
+#include "Lsm6dso.h"
+#ifdef CONFIG_IMU_SUPPORT
+#include "Sleep.h"
+#endif
 #endif
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
@@ -27,6 +30,7 @@
 #include "temp.h"
 #endif
 #include "screen.h"
+#include "uart_ble.h"
 #include "nb.h"
 #include "ucs2.h"
 #include "logger.h"
@@ -57,7 +61,14 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 static bool send_timing_data_flag = false;
-static bool save_timing_data_flag = false;
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+static bool save_step_data_flag = false;
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
+static bool save_sleep_data_flag = false;
+#endif
+#endif
 
 uint8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 uint64_t laststamp = 0;
@@ -352,7 +363,7 @@ void UpdateSystemTime(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
 	timestamp = k_uptime_get();
-	timeskip = timestamp - laststamp;
+	timeskip = abs(timestamp-laststamp);
 	laststamp = timestamp;
 
 	timeoffset += (timeskip%1000);
@@ -465,6 +476,9 @@ void UpdateSystemTime(void)
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+		  #ifdef CONFIG_FACTORY_TEST_SUPPORT
+			&& (!FactryTestActived())
+		  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 		)
 		{
 			//The sensor needs to be turned on in advance. 
@@ -525,8 +539,10 @@ void UpdateSystemTime(void)
 				}
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}
-			
+
+		#ifdef CONFIG_ALARM_SUPPORT	
 			AlarmRemindCheck(date_time);
+		#endif
 			//TimeCheckSendLocationData();
 		}
 	#endif
@@ -546,12 +562,13 @@ void UpdateSystemTime(void)
 			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 				&& (!dl_is_running())
 			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			  	&& (!FactryTestActived())
+			#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 			)
 		{
 			bool send_flag = false;
 
-			save_timing_data_flag = true;
-			
 			switch(global_settings.health_interval)
 			{
 			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
@@ -590,13 +607,28 @@ void UpdateSystemTime(void)
 				send_timing_data_flag = true;
 			}
 		}
-	#endif		
+
+	 #ifdef CONFIG_IMU_SUPPORT
+	  #ifdef CONFIG_STEP_SUPPORT
+		save_step_data_flag = true;
+	  #endif
+	  #ifdef CONFIG_SLEEP_SUPPORT
+		save_sleep_data_flag = true;
+	  	if(date_time.hour == SLEEP_TIME_START)
+	  	{
+	  		reset_sleep_data = true;
+	  	}
+	  #endif
+	 #endif
+	#endif
 	}
 
 	if((date_time_changed&0x08) != 0)
 	{
 		date_time_changed = date_time_changed&0xF7;
-	#ifdef CONFIG_IMU_SUPPORT
+
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+		g_steps = 0;
 		reset_steps = true;
 	#endif
 	}
@@ -742,42 +774,53 @@ void TimeMsgProcess(void)
 		if(lcd_is_sleeping)
 			return;
 		
-		if(screen_id == SCREEN_ID_IDLE)
+		if((screen_id == SCREEN_ID_IDLE)
+			||(screen_id == SCREEN_ID_HR)
+			||(screen_id == SCREEN_ID_SPO2)
+			||(screen_id == SCREEN_ID_BP)
+			||(screen_id == SCREEN_ID_TEMP)
+			||(screen_id == SCREEN_ID_STEPS)
+			||(screen_id == SCREEN_ID_SLEEP)
+			)
 		{
 			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))
 				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
-			
+
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
 	}
 
-	if(save_timing_data_flag)
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+	if(save_step_data_flag)
 	{
-	#ifdef CONFIG_TEMP_SUPPORT
-		SetCurDayTempRecData(g_temp_timing);
-		g_temp_timing = 0.0;
-	#endif
-	#ifdef CONFIG_PPG_SUPPORT
-		SetCurDayHrRecData(g_hr_timing);
-		g_hr_timing = 0;
-		SetCurDaySpo2RecData(g_spo2_timing);
-		g_spo2_timing = 0;
-		SetCurDayBptRecData(g_bpt_timing);
-		memset(&g_bpt_timing, 0, sizeof(g_bpt_timing));
-	#endif		
-	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-		if((date_time_changed&0x08) != 0)
-			g_steps = 0;
 		SetCurDayStepRecData(g_steps);
-		g_steps = 0;
-	#endif
-		
-		save_timing_data_flag = false;
+		save_step_data_flag = false;
 	}
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT	
+	if(save_sleep_data_flag)
+	{
+		sleep_data sleep = {0};
+		
+		sleep.deep = g_deep_sleep;
+		sleep.light = g_light_sleep;
+		SetCurDaySleepRecData(sleep);
+		save_sleep_data_flag = false;
+	}
+#endif
+#endif
 
 	if(send_timing_data_flag)
 	{
 		TimeCheckSendHealthData();
+	#ifdef CONFIG_BLE_SUPPORT	
+		if(g_ble_connected)
+		{
+			APP_get_cur_hour_sport(date_time);
+			APP_get_cur_hour_health(date_time);
+		}
+	#endif	
 		send_timing_data_flag = false;
 	}
 }

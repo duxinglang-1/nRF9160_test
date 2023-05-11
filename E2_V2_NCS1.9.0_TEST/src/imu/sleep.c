@@ -12,6 +12,7 @@
 #include "lsm6dso.h"
 #include "sleep.h"
 #include "datetime.h"
+#include "external_flash.h"
 #include "max20353.h"
 #include "logger.h"
 
@@ -21,12 +22,181 @@ uint16_t light_sleep_time = 0;
 uint16_t deep_sleep_time = 0;
 uint16_t g_light_sleep = 0;
 uint16_t g_deep_sleep = 0;
-int waggle_level[12] = {0};
-int hour_time = 0;
 
+static int waggle_level[12] = {0};
+static int hour_time = 0;
+static int move = 0;
+static int rtc_sec = 0;
+static int gsensor = 0;
+static int move_flag = 0;
+static uint16_t watch_state = 0;
+static int waggle_flag = 0;
+static int sedentary_time_temp = 0;
+
+bool reset_sleep_data = false;
 bool update_sleep_parameter = false;
-
 static struct k_timer sleep_timer;
+
+void ClearAllSleepRecData(void)
+{
+	uint8_t tmpbuf[SLEEP_REC2_DATA_SIZE] = {0xff};
+
+	last_light_sleep = 0;
+	last_deep_sleep = 0;
+	light_sleep_time = 0;
+	deep_sleep_time = 0;
+	g_light_sleep = 0;
+	g_deep_sleep = 0;
+
+	SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+}
+
+void SetCurDaySleepRecData(sleep_data data)
+{
+	uint8_t i,tmpbuf[SLEEP_REC2_DATA_SIZE] = {0};
+	sleep_rec2_data *p_sleep,tmp_sleep = {0};
+	sys_date_timer_t temp_date = {0};
+	
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+
+	tmp_sleep.year = temp_date.year;
+	tmp_sleep.month = temp_date.month;
+	tmp_sleep.day = temp_date.day;
+	memcpy(&tmp_sleep.sleep[temp_date.hour], &data, sizeof(sleep_data));
+
+	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	p_sleep = tmpbuf;
+	if((p_sleep->year == 0xffff || p_sleep->year == 0x0000)
+		||(p_sleep->month == 0xff || p_sleep->month == 0x00)
+		||(p_sleep->day == 0xff || p_sleep->day == 0x00)
+		||((p_sleep->year == temp_date.year)&&(p_sleep->month == temp_date.month)&&(p_sleep->day == temp_date.day))
+		)
+	{
+		//直接覆盖写在第一条
+		p_sleep->year = temp_date.year;
+		p_sleep->month = temp_date.month;
+		p_sleep->day = temp_date.day;
+		memcpy(&p_sleep->sleep[temp_date.hour], &data, sizeof(sleep_data));
+		SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	}
+	else if((temp_date.year < p_sleep->year)
+			||((temp_date.year == p_sleep->year)&&(temp_date.month < p_sleep->month))
+			||((temp_date.year == p_sleep->year)&&(temp_date.month == p_sleep->month)&&(temp_date.day < p_sleep->day))
+			)
+	{
+		uint8_t databuf[SLEEP_REC2_DATA_SIZE] = {0};
+		
+		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
+		memcpy(&databuf[0*sizeof(sleep_rec2_data)], &tmp_sleep, sizeof(sleep_rec2_data));
+		memcpy(&databuf[1*sizeof(sleep_rec2_data)], &tmpbuf[0*sizeof(sleep_rec2_data)], 6*sizeof(sleep_rec2_data));
+		SpiFlash_Write(databuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	}
+	else
+	{
+		uint8_t databuf[SLEEP_REC2_DATA_SIZE] = {0};
+		
+		//寻找合适的插入位置
+		for(i=0;i<7;i++)
+		{
+			p_sleep = tmpbuf+i*sizeof(sleep_rec2_data);
+			if((p_sleep->year == 0xffff || p_sleep->year == 0x0000)
+				||(p_sleep->month == 0xff || p_sleep->month == 0x00)
+				||(p_sleep->day == 0xff || p_sleep->day == 0x00)
+				||((p_sleep->year == temp_date.year)&&(p_sleep->month == temp_date.month)&&(p_sleep->day == temp_date.day))
+				)
+			{
+				//直接覆盖写
+				p_sleep->year = temp_date.year;
+				p_sleep->month = temp_date.month;
+				p_sleep->day = temp_date.day;
+				memcpy(&p_sleep->sleep[temp_date.hour], &data, sizeof(sleep_data));
+				SpiFlash_Write(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+				return;
+			}
+			else if((temp_date.year > p_sleep->year)
+				||((temp_date.year == p_sleep->year)&&(temp_date.month > p_sleep->month))
+				||((temp_date.year == p_sleep->year)&&(temp_date.month == p_sleep->month)&&(temp_date.day > p_sleep->day))
+				)
+			{
+				if(i < 6)
+				{
+					p_sleep++;
+					if((temp_date.year < p_sleep->year)
+						||((temp_date.year == p_sleep->year)&&(temp_date.month < p_sleep->month))
+						||((temp_date.year == p_sleep->year)&&(temp_date.month == p_sleep->month)&&(temp_date.day < p_sleep->day))
+						)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		if(i<6)
+		{
+			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
+			memcpy(&databuf[0*sizeof(sleep_rec2_data)], &tmpbuf[0*sizeof(sleep_rec2_data)], (i+1)*sizeof(sleep_rec2_data));
+			memcpy(&databuf[(i+1)*sizeof(sleep_rec2_data)], &tmp_sleep, sizeof(sleep_rec2_data));
+			memcpy(&databuf[(i+2)*sizeof(sleep_rec2_data)], &tmpbuf[(i+1)*sizeof(sleep_rec2_data)], (7-(i+2))*sizeof(sleep_rec2_data));
+			SpiFlash_Write(databuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+		}
+		else
+		{
+			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
+			memcpy(&databuf[0*sizeof(sleep_rec2_data)], &tmpbuf[1*sizeof(sleep_rec2_data)], 6*sizeof(sleep_rec2_data));
+			memcpy(&databuf[6*sizeof(sleep_rec2_data)], &tmp_sleep, sizeof(sleep_rec2_data));
+			SpiFlash_Write(databuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+		}
+	}	
+}
+
+void GetCurDaySleepRecData(uint8_t *databuf)
+{
+	uint8_t i,tmpbuf[SLEEP_REC2_DATA_SIZE] = {0};
+	sleep_rec2_data sleep_rec2 = {0};
+	
+	if(databuf == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&sleep_rec2, &tmpbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
+		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00))
+			continue;
+		
+		if((sleep_rec2.year == date_time.year)&&(sleep_rec2.month == date_time.month)&&(sleep_rec2.day == date_time.day))
+		{
+			memcpy(databuf, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+			break;
+		}
+	}
+}
+
+void GetGivenTimeSleepRecData(sys_date_timer_t date, sleep_data *sleep)
+{
+	uint8_t i,tmpbuf[SLEEP_REC2_DATA_SIZE] = {0};
+	sleep_rec2_data sleep_rec2 = {0};
+
+	if(!CheckSystemDateTimeIsValid(date))
+		return;
+	if(sleep == NULL)
+		return;
+
+	SpiFlash_Read(tmpbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	for(i=0;i<7;i++)
+	{
+		memcpy(&sleep_rec2, &tmpbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
+		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00))
+			continue;
+		
+		if((sleep_rec2.year == date.year)&&(sleep_rec2.month == date.month)&&(sleep_rec2.day == date.day))
+		{
+			memcpy(sleep, &sleep_rec2.sleep[date.hour], sizeof(sleep_data));
+			break;
+		}
+	}
+}
 
 void set_sleep_parameter(int light_sleep, int deep_sleep,int *waggle) /* 回传睡眠参数*/
 {
@@ -41,13 +211,6 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 {	
 	bool save_flag = false;
 	int test=0,i=0;
-	static int move = 0;
-	static int rtc_sec = 0;
-	static int gsensor = 0;
-	static int move_flag = 0;
-	static uint16_t watch_state = 0;
-	static int waggle_flag = 0;
-	static int sedentary_time_temp = 0;
 
 	if(charging || !is_wearing())
 	{
@@ -140,21 +303,7 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 					}
 				}
 
-				if((watch_state >= (3600*2))||(waggle_flag >= 7)||/* (3)晚上2个3时终端没有动，判断为晚上睡觉没有佩戴过，累计睡眠、久坐数据清空*/
-					((hour<8)&&(sedentary_time_temp > 180)))  /* 晚上睡眠监测时间累加150分钟又走动或者久坐，默认睡眠监测数据为0*/
-				{
-					sedentary_time_temp = 0;
-
-					last_light_sleep = 0;
-					last_deep_sleep = 0;
-					light_sleep_time = 0;				 
-					deep_sleep_time = 0;
-					g_light_sleep = 0;
-					g_deep_sleep = 0;
-
-					save_flag = true;
-				}
-				else if((move == step)&&(watch_state >= 60)) /* 在期间没有走动过 */
+				if((move == step)&&(watch_state >= 60)) /* 在期间没有走动过 */
 				{
 					if(is_wearing())	//xb add 2021-03-02 脱腕之后不计算睡眠
 					{
@@ -182,7 +331,7 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 				last_sport.timestamp.week = date_time.week;
 				last_sport.deep_sleep = g_deep_sleep;
 				last_sport.light_sleep = g_light_sleep;
-				save_cur_sport_to_record(&last_sport);			
+				save_cur_sport_to_record(&last_sport);	
 			}
 		}	
 	}
@@ -206,25 +355,111 @@ static void sleep_timer_handler(struct k_timer *timer)
 	update_sleep_parameter = true;
 }
 
-void ClearAllSleepRecData(void)
+void SleepDataReset(void)
 {
+	move = 0;	 
+	gsensor = 0;
+	rtc_sec = 0;
+	move_flag = 0;
+	watch_state = 0;
+	waggle_flag = 0;
+	waggle_flag = 0;
+	sedentary_time_temp = 0;			
+	memset(waggle_level,0,sizeof(waggle_level)); /* 晃动等级 */
+	
 	last_light_sleep = 0;
 	last_deep_sleep = 0;
 	light_sleep_time = 0;
 	deep_sleep_time = 0;
 	g_light_sleep = 0;
 	g_deep_sleep = 0;
+
+	last_sport.timestamp.year = date_time.year;
+	last_sport.timestamp.month = date_time.month; 
+	last_sport.timestamp.day = date_time.day;
+	last_sport.timestamp.hour = date_time.hour;
+	last_sport.timestamp.minute = date_time.minute;
+	last_sport.timestamp.second = date_time.second;
+	last_sport.timestamp.week = date_time.week;
+	last_sport.deep_sleep = g_deep_sleep;
+	last_sport.light_sleep = g_light_sleep;
+	save_cur_sport_to_record(&last_sport);		
+}
+
+void SleepDataInit(bool reset_flag)
+{
+	bool flag = false;
+		
+	if((last_sport.timestamp.year == date_time.year)
+		&&(last_sport.timestamp.month == date_time.month)
+		&&(last_sport.timestamp.day == date_time.day)
+		)
+	{
+		//The last record and current time are on the same day
+		if(((date_time.hour >= SLEEP_TIME_START)&&(last_sport.timestamp.hour >= SLEEP_TIME_START))
+			||((date_time.hour < SLEEP_TIME_END)&&(last_sport.timestamp.hour < SLEEP_TIME_END))
+			)
+		{
+			//in the same sleep period.
+			flag = true;
+		}
+		else if(((date_time.hour >= SLEEP_TIME_END)&&(date_time.hour < SLEEP_TIME_START))
+				||((last_sport.timestamp.hour >= SLEEP_TIME_END)&&(last_sport.timestamp.hour < SLEEP_TIME_START))
+				)
+		{
+			//in the same non-sleep time period.
+			flag = true;
+		}
+	}
+	else
+	{
+		sys_date_timer_t timestamp;
+
+		memcpy(&timestamp, &last_sport.timestamp, sizeof(sys_date_timer_t));
+		DateIncreaseOne(&timestamp);
+
+		if((timestamp.year == date_time.year)
+			&&(timestamp.month == date_time.month)
+			&&(timestamp.day == date_time.day)
+			)
+		{
+			//The last recorded time was yesterday.
+			if((timestamp.hour >= SLEEP_TIME_START)&&(date_time.hour < SLEEP_TIME_END))
+			{
+				//The last recorded time and current time are consecutive sleep periods.
+				flag = true;
+			}
+		}
+	}
+
+	if(reset_flag)
+	{
+		if(!flag)
+		{
+			g_light_sleep -= last_light_sleep;
+			g_deep_sleep -= last_deep_sleep;
+			last_light_sleep = 0;
+			last_deep_sleep = 0;
+		}
+	}
+	else
+	{
+		if(flag)
+		{
+			last_light_sleep = last_sport.light_sleep;
+			last_deep_sleep = last_sport.deep_sleep;
+			g_light_sleep = last_light_sleep;
+			g_deep_sleep = last_deep_sleep; 	
+		}
+	}
 }
 
 void StartSleepTimeMonitor(void)
 {
+	SleepDataInit(false);
+
 	k_timer_init(&sleep_timer, sleep_timer_handler, NULL);
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));
-
-	last_light_sleep = last_sport.light_sleep;
-	last_deep_sleep = last_sport.deep_sleep;
-	g_light_sleep = last_light_sleep;
-	g_deep_sleep = last_deep_sleep;
 }
 
 void GetSleepTimeData(uint16_t *deep_sleep, uint16_t *light_sleep)

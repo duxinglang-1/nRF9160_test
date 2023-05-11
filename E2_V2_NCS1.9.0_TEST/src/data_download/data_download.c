@@ -13,6 +13,7 @@
 #include <net/download_client.h>
 #include "external_flash.h"
 #include "data_download.h"
+#include "transfer_cache.h"
 #include "dl_target.h"
 #include "screen.h"
 #include "nb.h"
@@ -26,6 +27,7 @@ static bool dl_start_flag = false;
 static bool dl_run_flag = false;
 static bool dl_reboot_flag = false;
 static bool dl_redraw_pro_flag = false;
+static bool dl_save_data_flag = false;
 
 static uint8_t databuf[DL_BUF_LEN] = {0};
 static uint32_t datalen = 0;
@@ -44,6 +46,11 @@ static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
 uint8_t g_dl_progress = 0;
 DL_DATA_TYPE g_dl_data_type = DL_DATA_IMG;
 
+static CacheInfo dl_save_cache = {0};
+
+static void DlSaveDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(dl_save_data_timer, DlSaveDataCallBack, NULL);
+
 static int modem_configure(void)
 {
 	int err;
@@ -51,13 +58,17 @@ static int modem_configure(void)
 	err = lte_lc_psm_req(false);
 	if(err)
 	{
+	#ifdef DL_DEBUG
 		LOGD("lte_lc_psm_req, error: %d", err);
+	#endif
 	}
 
 	err = lte_lc_edrx_req(false);
 	if(err)
 	{
+	#ifdef DL_DEBUG
 		LOGD("lte_lc_edrx_req, error: %d", err);
+	#endif
 	}
 
 	return err;
@@ -97,6 +108,55 @@ static void dl_target_callback_handler(enum dl_target_evt_id evt)
 	}
 }
 
+static void DlSaveDataCallBack(struct k_timer *timer)
+{
+	dl_save_data_flag = true;
+}
+
+static void DlSaveDataStart(void)
+{
+	k_timer_start(&dl_save_data_timer, K_MSEC(200), K_NO_WAIT);
+}
+
+static void DlReceiveData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
+{
+	int ret;
+	
+	ret = add_data_into_cache(&dl_save_cache, data, datalen, type);
+	if(ret)
+	{
+		DlSaveDataStart();
+	}
+}
+
+static void DlSaveData(void)
+{
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
+
+	ret = get_data_from_cache(&dl_save_cache, &p_data, &data_len, &data_type);
+	if(ret)
+	{
+		switch(g_dl_data_type)
+		{
+		case DL_DATA_IMG:
+			SpiFlash_Write(p_data, IMG_VER_ADDR, data_len);
+			break;
+
+		case DL_DATA_FONT:
+			SpiFlash_Write(p_data, FONT_VER_ADDR, data_len);
+			break;
+
+		case DL_DATA_PPG:
+			SpiFlash_Write(p_data, PPG_ALGO_VER_ADDR, data_len);
+			break;
+		}
+
+		delete_data_from_cache(&dl_save_cache);
+		k_timer_start(&dl_save_data_timer, K_MSEC(200), K_NO_WAIT);
+	}
+}
 
 static int download_client_callback(const struct download_client_evt *event)
 {
@@ -119,7 +179,9 @@ static int download_client_callback(const struct download_client_evt *event)
 			err = download_client_file_size_get(&dlc, &file_size);
 			if(err != 0)
 			{
+			#ifdef DL_DEBUG
 				LOGD("download_client_file_size_get err: %d", err);
+			#endif
 				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
 			}
@@ -128,7 +190,9 @@ static int download_client_callback(const struct download_client_evt *event)
 			err = dl_target_init(g_dl_data_type, file_size, dl_target_callback_handler);
 			if((err < 0) && (err != -EBUSY))
 			{
+			#ifdef DL_DEBUG
 				LOGD("dfu_target_init error %d", err);
+			#endif
 				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
 			}
@@ -136,7 +200,9 @@ static int download_client_callback(const struct download_client_evt *event)
 			err = dl_target_offset_get(&offset);
 			if(err != 0)
 			{
+			#ifdef DL_DEBUG
 				LOGD("unable to get dfu target offset err: %d", err);
+			#endif
 				send_evt(DOWNLOAD_EVT_ERROR);
 			}
 
@@ -146,7 +212,9 @@ static int download_client_callback(const struct download_client_evt *event)
 				 * schedule new download from offset.
 				 */
 				k_delayed_work_submit(&dlc_with_offset_work, K_SECONDS(1));
+			#ifdef DL_DEBUG
 				LOGD("Refuse fragment, restart with offset");
+			#endif
 
 				return -1;
 			}
@@ -154,7 +222,9 @@ static int download_client_callback(const struct download_client_evt *event)
 
 		memcpy(&databuf[datalen], event->fragment.buf, event->fragment.len);
 		datalen += event->fragment.len;
+	#ifdef DL_DEBUG
 		LOGD("FRAGMENT datalen:%d", datalen);
+	#endif
 		if(datalen >= DL_BUF_LEN)
 		{
 			err = dl_target_write(databuf, datalen);
@@ -162,7 +232,9 @@ static int download_client_callback(const struct download_client_evt *event)
 			
 			if(err != 0)
 			{
+			#ifdef DL_DEBUG
 				LOGD("dl_target_write error %d", err);
+			#endif
 				(void) download_client_disconnect(&dlc);
 				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
@@ -174,25 +246,33 @@ static int download_client_callback(const struct download_client_evt *event)
 			err = dl_target_offset_get(&offset);
 			if(err != 0)
 			{
+			#ifdef DL_DEBUG
 				LOGD("unable to get dl target offset err: %d", err);
+			#endif
 				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
 			}
 
 			if(file_size == 0)
 			{
+			#ifdef DL_DEBUG
 				LOGD("invalid file size: %d", file_size);
+			#endif
 				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
 			}
 
 			send_progress((offset * 100) / file_size);
+		#ifdef DL_DEBUG
 			LOGD("Progress: %d/%d", offset, file_size);
+		#endif
 		}
 		break;
 
 	case DOWNLOAD_CLIENT_EVT_DONE:
+	#ifdef DL_DEBUG
 		LOGD("DONE datalen:%d", datalen);
+	#endif
 		if(datalen > 0)
 		{
 			err = dl_target_write(databuf, datalen);
@@ -200,7 +280,9 @@ static int download_client_callback(const struct download_client_evt *event)
 			
 			if(err != 0)
 			{
+			#ifdef DL_DEBUG
 				LOGD("dl_target_write error %d", err);
+			#endif
 				(void) download_client_disconnect(&dlc);
 				send_evt(DOWNLOAD_EVT_ERROR);
 				return err;
@@ -210,7 +292,9 @@ static int download_client_callback(const struct download_client_evt *event)
 		err = dl_target_done(true);
 		if(err != 0)
 		{
+		#ifdef DL_DEBUG
 			LOGD("dfu_target_done error: %d", err);
+		#endif
 			send_evt(DOWNLOAD_EVT_ERROR);
 			return err;
 		}
@@ -232,7 +316,9 @@ static int download_client_callback(const struct download_client_evt *event)
 		if((socket_retries_left) && ((event->error == -ENOTCONN) ||
 					      (event->error == -ECONNRESET)))
 		{
+		#ifdef DL_DEBUG
 			LOGD("Download socket error. %d retries left...", socket_retries_left);
+		#endif
 			socket_retries_left--;
 			/* Fall through and return 0 below to tell
 			 * download_client to retry
@@ -241,7 +327,9 @@ static int download_client_callback(const struct download_client_evt *event)
 		else
 		{
 			download_client_disconnect(&dlc);
+		#ifdef DL_DEBUG
 			LOGD("Download client error");
+		#endif
 			first_fragment = true;
 			send_evt(DOWNLOAD_EVT_ERROR);
 			/* Return non-zero to tell download_client to stop */
@@ -262,11 +350,14 @@ static void download_with_offset(struct k_work *unused)
 	int err = dl_target_offset_get(&offset);
 
 	err = download_client_start(&dlc, dlc.file, offset);
-
+#ifdef DL_DEBUG
 	LOGD("Downloading from offset: 0x%x", offset);
+#endif
 	if (err != 0)
 	{
+	#ifdef DL_DEBUG
 		LOGD("%s failed with error %d", __func__, err);
+	#endif
 	}
 }
 
@@ -309,7 +400,9 @@ static void dl_transfer_start(struct k_work *unused)
 	int retval;
 	int sec_tag;
 
+#ifdef DL_DEBUG
 	LOGD("begin");
+#endif
 
 #ifndef CONFIG_USE_HTTPS
 	sec_tag = -1;
@@ -341,7 +434,7 @@ static void dl_transfer_start(struct k_work *unused)
 		break;
 	#endif
 
-	#ifdef CONFIG_PPG_DATA_UPDATE
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
 		if(strncmp(g_imsi, "460", strlen("460")) == 0)
 			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
@@ -356,7 +449,9 @@ static void dl_transfer_start(struct k_work *unused)
 	retval = dl_download_start(dl_host, dl_file, sec_tag);
 	if(retval != 0)
 	{
+	#ifdef DL_DEBUG
 		LOGD("download_start() failed, err %d", retval);
+	#endif
 		dl_run_flag = false;
 		dl_cur_status = DL_STATUS_ERROR;
 		dl_redraw_pro_flag = true;
@@ -461,7 +556,8 @@ void dl_font_start(void)
 	EnterDlScreen();
 }
 #endif
-#ifdef CONFIG_PPG_DATA_UPDATE
+
+#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 void dl_ppg_prev(void)
 {
 	dl_run_flag = false;
@@ -492,23 +588,23 @@ void dl_prev(void)
 {
 	switch(g_dl_data_type)
 	{
-	case DL_DATA_IMG:
 	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		dl_img_prev();
-	#endif
 		break;
+	#endif
 
-	case DL_DATA_FONT:
 	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		dl_font_prev();
+		break;
 	#endif
-		break;
-		
+
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
-	#ifdef CONFIG_PPG_DATA_UPDATE
 		dl_ppg_prev();
-	#endif 
 		break;
+	#endif 
 	}
 }
 
@@ -516,23 +612,23 @@ void dl_exit(void)
 {
 	switch(g_dl_data_type)
 	{
-	case DL_DATA_IMG:
 	#ifdef CONFIG_IMG_DATA_UPDATE
+	case DL_DATA_IMG:
 		dl_img_exit();
-	#endif
 		break;
+	#endif
 
-	case DL_DATA_FONT:
 	#ifdef CONFIG_FONT_DATA_UPDATE
+	case DL_DATA_FONT:
 		dl_font_exit();
+		break;
 	#endif
-		break;
-		
+
+	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
-	#ifdef CONFIG_PPG_DATA_UPDATE
 		dl_ppg_exit();
-	#endif 
 		break;
+	#endif
 	}
 }
 
@@ -578,30 +674,36 @@ void dl_handler(const struct download_evt *evt)
 	switch(evt->id)
 	{
 	case DOWNLOAD_EVT_ERROR:
+	#ifdef DL_DEBUG
 		LOGD("Received error");
+	#endif
 		dl_cur_status = DL_STATUS_ERROR;
 		break;
 
 	case DOWNLOAD_EVT_PROGRESS:
+	#ifdef DL_DEBUG
 		LOGD("Received progress:%d", evt->progress);
+	#endif
 		g_dl_progress = evt->progress;
 		dl_cur_status = DL_STATUS_DOWNLOADING;
 		break;
 		
 	case DOWNLOAD_EVT_FINISHED:
+	#ifdef DL_DEBUG
 		LOGD("Received finished!");
+	#endif
 		switch(g_dl_data_type)
 		{
 		case DL_DATA_IMG:
-			SpiFlash_Write(g_new_ui_ver, IMG_VER_ADDR, 16);
+			DlReceiveData(g_new_ui_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_ui_ver, g_new_ui_ver);
 			break;
 		case DL_DATA_FONT:
-			SpiFlash_Write(g_new_font_ver, FONT_VER_ADDR, 16);
+			DlReceiveData(g_new_font_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_font_ver, g_new_font_ver);		
 			break;
 		case DL_DATA_PPG:
-			SpiFlash_Write(g_new_ppg_ver, PPG_ALGO_VER_ADDR, 16);
+			DlReceiveData(g_new_ppg_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_ppg_algo_ver, g_new_ppg_ver);				
 			break;
 		}
@@ -669,8 +771,14 @@ void DlMsgProc(void)
 		sys_reboot(0);
 	}
 
+	if(dl_save_data_flag)
+	{
+		DlSaveData();
+		dl_save_data_flag = false;
+	}
+
 	if(dl_run_flag)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(10));
 	}
 }

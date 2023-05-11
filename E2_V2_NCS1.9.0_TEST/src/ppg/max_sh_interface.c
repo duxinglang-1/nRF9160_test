@@ -126,12 +126,23 @@ void PPG_Enable(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
+	
+	k_sleep(K_MSEC(10));
+
+	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 1);
 }
 
 void PPG_Disable(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_MFIO_PIN, 0);
 }
 
 static void sh_init_i2c(void)
@@ -161,13 +172,16 @@ static void sh_init_gpio(void)
 	if(gpio_ppg == NULL)
 		gpio_ppg = device_get_binding(PPG_PORT);
 
+#if 0	//xb add 20230228 Set the PPG interrupt pin as input to prevent leakage.
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
-
+#else
+	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
+#endif	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	k_sleep(K_MSEC(10));

@@ -19,5 +19,7 @@
 #define LOGC(fmt, args...) LOGDD("", fmt, ##args)
 /* 有自动添加函数名 */
 #define LOGD(fmt, args...) LOGDD(__func__, fmt, ##args)
+/* 有自动添加函数名 */
+#define LOGM(fmt, args...) LOGDM(__func__, fmt, ##args)
 
 #endif/*__LOGGER_H__*/

@@ -70,9 +70,15 @@ static void GetModemStatusCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(get_modem_status_timer, GetModemStatusCallBack, NULL);
 static void NBReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(nb_reconnect_timer, NBReconnectCallBack, NULL);
+static void MqttReconnectCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mqtt_reconnect_timer, MqttReconnectCallBack, NULL);
+static void MqttActWaitCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mqtt_act_wait_timer, MqttActWaitCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
+static struct k_delayed_work modem_off_work;
+static struct k_delayed_work modem_on_work;
 static struct k_delayed_work nb_link_work;
 static struct k_delayed_work mqtt_link_work;
 
@@ -85,10 +91,15 @@ static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
 static bool power_on_data_flag = true;
 static bool nb_connecting_flag = false;
-static bool mqtt_connecting_flag = false;
 static bool nb_reconnect_flag = false;
+static bool mqtt_connecting_flag = false;
+static bool mqtt_reconnect_flag = false;
+static bool mqtt_act_wait_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
+
+static CacheInfo nb_send_cache = {0};
+static CacheInfo nb_rece_cache = {0};
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 static sec_tag_t sec_tag_list[] = { CONFIG_SEC_TAG };
@@ -197,59 +208,6 @@ static void MqttReceData(uint8_t *data, uint32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
-//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
-//AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
-AT_MONITOR(ltelc_atmon_modem_info, "%XMODEMSLEEP", at_handler_modem_notify, PAUSED);
-
-static void at_handler_modem_notify(const char *response)
-{
-	int err;
-	struct lte_lc_evt evt = {0};
-
-	__ASSERT_NO_MSG(response != NULL);
-
-#ifdef NB_DEBUG
-	LOGD("%%XMODEMSLEEP notification");
-#endif
-
-	err = parse_xmodemsleep(response, &evt.modem_sleep);
-	if(err)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Can't parse modem sleep pre-warning notification, error: %d", err);
-	#endif
-		return;
-	}
-
-	/* Link controller only supports PSM, RF inactivity and flight mode
-	 * modem sleep types.
-	 */
-	if((evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_PSM) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_RF_INACTIVITY) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_FLIGHT_MODE))
-	{
-		return;
-	}
-
-	/* Propagate the appropriate event depending on the parsed time parameter. */
-	if(evt.modem_sleep.time == CONFIG_LTE_LC_MODEM_SLEEP_PRE_WARNING_TIME_MS)
-	{
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING;
-	}
-	else if(evt.modem_sleep.time == 0)
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_EXIT);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT;
-	}
-	else
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_ENTER);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_ENTER;
-	}
-
-	event_handler_list_dispatch(&evt);
-}
-
 /**@brief Function to publish data on the configured topic
  */
 static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
@@ -266,6 +224,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
+	k_timer_start(&mqtt_act_wait_timer, K_MSEC(30*1000), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 
@@ -434,6 +393,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#ifdef NB_DEBUG	
 		LOGD("PUBACK packet id: %u", evt->param.puback.message_id);
 	#endif
+		k_timer_stop(&mqtt_act_wait_timer);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -608,10 +568,17 @@ void mqtt_is_connecting(void)
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err,i=0;
+	static uint32_t retry_count = 0;
 
 #ifdef NB_DEBUG
 	LOGD("begin");
 #endif
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived())
+		return;
+#endif
+
 	mqtt_connecting_flag = true;
 	
 	client_init(&client);
@@ -635,6 +602,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	}
 
 	mqtt_connecting_flag = false;
+	retry_count = 0;
 	
 	while(1)
 	{
@@ -696,8 +664,25 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
+	return;
+
 link_over:
 	mqtt_connecting_flag = false;
+#ifdef NB_DEBUG
+	LOGD("mqtt link err, rerty:%d", retry_count);
+#endif
+	if(retry_count < 3)
+	{
+		retry_count++;
+		k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+	}
+	else
+	{
+		nb_connected = false;
+
+		k_timer_stop(&nb_reconnect_timer);
+		k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+	}
 }
 
 static void SendDataCallBack(struct k_timer *timer)
@@ -717,20 +702,29 @@ static void NbSendDataStop(void)
 
 static void NbSendData(void)
 {
-	uint8_t *p_data;
+	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_send_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
+		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
+		
 		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		if(!ret)
 		{
-			delete_data_from_send_cache();
+			delete_data_from_cache(&nb_send_cache);
+			k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 		}
-
-		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
+		else
+		{
+		#ifdef NB_DEBUG
+			LOGD("mqtt send fail, wait act timerout and recount!");
+		#endif
+		}
 	}
 }
 
@@ -760,18 +754,6 @@ void DisConnectMqttLink(void)
 		}
 		
 		mqtt_connected = false;
-	}
-}
-
-void DisconnectAppMqttLink(void)
-{
-	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
-		k_timer_stop(&mqtt_disconnect_timer);
-
-	if(mqtt_connected)
-	{
-		mqtt_connected = false;
-		mqtt_disconnect_flag = true;
 	}
 }
 
@@ -823,8 +805,17 @@ static void modem_rsrp_handler(char rsrp_value)
 #ifdef NB_DEBUG
 	LOGD("rsrp_value:%d", rsrp_value);
 #endif
-	g_rsrp = rsrp_value;
-	nb_redraw_sig_flag = true;
+	if(g_rsrp != rsrp_value)
+	{
+		if((g_rsrp == 255)&&(rsrp_value != 0))
+		{
+			if(!server_has_timed_flag)
+				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
+		}
+
+		g_rsrp = rsrp_value;
+		nb_redraw_sig_flag = true;
+	}
 }
 
 #ifdef CONFIG_MODEM_INFO
@@ -857,13 +848,11 @@ static void modem_configure(void)
 	if(test_nb_flag)
 	{
 		strcpy(nb_test_info, "modem_configure");
+	#ifdef NB_SIGNAL_TEST	
 		TestNBUpdateINfor();
-	}
-
-	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%CESQ=1") != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("AT_CMD write fail!");
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		FTNetStatusUpdate(0);
 	#endif
 	}
 
@@ -876,49 +865,38 @@ static void modem_configure(void)
 	}
 	else
 	{
-	#if defined(CONFIG_LWM2M_CARRIER)
-		/* Wait for the LWM2M_CARRIER to configure the modem and
-		 * start the connection.
-		 */
-	#ifdef NB_DEBUG
-		LOGD("Waitng for carrier registration...");
-	#endif
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "Waitng for carrier registration...");
-			TestNBUpdateINfor();
-		}
-		k_sem_take(&carrier_registered, K_FOREVER);
-	#ifdef NB_DEBUG
-		LOGD("Registered!");
-	#endif
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "Registered!");
-			TestNBUpdateINfor();
-		}
-	#else /* defined(CONFIG_LWM2M_CARRIER) */
 		int err;
+
 	#ifdef NB_DEBUG
 		LOGD("LTE Link Connecting ...");
 	#endif
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connecting ...");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif
 		}
 		err = lte_lc_init_and_connect();
 		__ASSERT(err == 0, "LTE link could not be established.");
 	#ifdef NB_DEBUG
 		LOGD("LTE Link Connected!");
 	#endif
+
 		if(test_nb_flag)
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
-	#endif /* defined(CONFIG_LWM2M_CARRIER) */
 	}
 #endif /* defined(CONFIG_LTE_LINK_CONTROL) */
 }
@@ -941,6 +919,34 @@ void MenuStopNB(void)
 	if(k_timer_remaining_get(&get_nw_rsrp_timer) > 0)
 		k_timer_stop(&get_nw_rsrp_timer);
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void FTStopNet(void)
+{
+	nb_is_running = false;
+	test_nb_flag = false;
+
+	if(k_timer_remaining_get(&get_nw_rsrp_timer) > 0)
+		k_timer_stop(&get_nw_rsrp_timer);
+}
+
+void FTStartNet(void)
+{
+	test_nb_on = true;
+}
+
+void FTPreReadyNet(void)
+{
+	struct k_work_sync work_sync;
+
+	if(k_work_pending(&mqtt_link_work))
+		k_work_cancel_delayable(&mqtt_link_work);
+	if(k_work_pending(&nb_link_work))
+		k_work_cancel_delayable(&nb_link_work);
+
+	SetModemTurnOff();
+}
+#endif
 
 void NBGetNetMode(uint8_t *at_mode_set)
 {
@@ -970,7 +976,14 @@ void NBGetNetMode(uint8_t *at_mode_set)
 
 void NBRedrawNetMode(void)
 {
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		||(screen_id == SCREEN_ID_STEPS)
+		||(screen_id == SCREEN_ID_SLEEP)
+		)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_NET_MODE;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
@@ -983,6 +996,11 @@ void NBRedrawSignal(void)
 	bool flag=false;
 	uint8_t strbuf[128] = {0};
 	uint8_t tmpbuf[128] = {0};
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived())
+		return;
+#endif
 
 	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_GET_REG_STATUS) == 0)
 	{
@@ -1045,11 +1063,18 @@ void NBRedrawSignal(void)
 			}
 			else
 			{
-				g_nw_registered = false;
-				nb_connected = false;
-				
-				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			#ifdef NB_DEBUG
+				LOGD("registered:%d,mqtt_connected:%d,nb_connected:%d", g_nw_registered, mqtt_connected, nb_connected);
+			#endif
+				if(g_nw_registered)
+				{
+					g_nw_registered = false;
+					mqtt_connected = false;
+					nb_connected = false;
+
+					if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+						k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+				}
 			}
 		}
 	}
@@ -1135,9 +1160,16 @@ void NBRedrawSignal(void)
 		g_nb_sig = NB_SIG_LEVEL_0;
 	}
 
-	if(screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE)
+		||(screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		||(screen_id == SCREEN_ID_TEMP)
+		||(screen_id == SCREEN_ID_STEPS)
+		||(screen_id == SCREEN_ID_SLEEP)
+		)
 	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SIG;
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_SIG|SCREEN_EVENT_UPDATE_NET_MODE);
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
@@ -1188,14 +1220,17 @@ void GetModemDateTime(void)
 	#ifdef NB_DEBUG
 		LOGD("Get CCLK fail!");
 	#endif
+	
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	  	if(FactryTestActived())
+	  		return;
+	#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
-	#ifndef NB_SIGNAL_TEST
 		if(nb_connected && (retry > 0))
 		{
 			retry--;
 			k_timer_start(&get_nw_time_timer, K_MSEC(1000), K_NO_WAIT);
 		}
-	#endif
 		return;
 	}
 
@@ -1272,6 +1307,15 @@ void GetModemDateTime(void)
 
 		RedrawSystemTime();
 		SaveSystemDateTime();
+
+	#ifdef CONFIG_IMU_SUPPORT
+	#ifdef CONFIG_STEP_SUPPORT
+		StepsDataInit(true);
+	#endif
+	#ifdef CONFIG_SLEEP_SUPPORT
+		SleepDataInit(true);
+	#endif
+	#endif	
 	}
 
 #ifdef NB_DEBUG	
@@ -1286,7 +1330,7 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_send_cache(data, datalen);
+	ret = add_data_into_cache(&nb_send_cache, data, datalen, DATA_TRANSFER);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -1352,16 +1396,37 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+void NBSendAlarmData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T0:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG	
+	LOGD("alarm data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
 void NBSendSosWifiData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T1:");
 	strcat(buf, data);
 	strcat(buf, ",");
-	strcat(buf, sos_trigger_time);
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
 	LOGD("sos wifi data:%s", buf);
@@ -1391,13 +1456,15 @@ void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
 void NBSendFallWifiData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
 	strcat(buf, ":T3:");
 	strcat(buf, data);
 	strcat(buf, ",");
-	strcat(buf, fall_trigger_time);
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG	
 	LOGD("fall wifi data:%s", buf);
@@ -1597,7 +1664,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		
 		if(strcmp(strcmd, "S7") == 0)
 		{
-			uint8_t *ptr;
+			uint8_t *ptr,*ptr1;
 			uint8_t strtmp[128] = {0};
 
 			//后台下发定位上报间隔
@@ -1608,9 +1675,21 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				global_settings.dot_interval.time = atoi(strtmp);
 
 				ptr++;
-				memset(strtmp, 0, sizeof(strtmp));
-				strcpy(strtmp, ptr);
-				global_settings.dot_interval.steps = atoi(strtmp);
+				ptr1 = strstr(ptr, ",");
+				if(ptr1 != NULL)
+				{
+					memset(strtmp, 0, sizeof(strtmp));
+					memcpy(strtmp, ptr, ptr1-ptr);
+					global_settings.dot_interval.steps = atoi(strtmp);
+
+					ptr = ptr1+1;
+					memset(strtmp, 0, sizeof(strtmp));
+					strcpy(strtmp, ptr);
+					global_settings.location_type = atoi(strtmp);
+				}
+			#ifdef NB_DEBUG
+				LOGD("time:%d, steps:%d, location_type:%d", global_settings.dot_interval.time,global_settings.dot_interval.steps,global_settings.location_type);
+			#endif	
 			}
 
 			flag = true;
@@ -1645,18 +1724,24 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
+				bp_calibra_t bpt = {0};
+				
 				memcpy(strtmp, strdata, (ptr-strdata));
-				global_settings.bp_calibra.systolic = atoi(strtmp);
+				bpt.systolic = atoi(strtmp);
 
 				ptr++;
 				memset(strtmp, 0, sizeof(strtmp));
 				strcpy(strtmp, ptr);
-				global_settings.bp_calibra.diastolic = atoi(strtmp);
+				bpt.diastolic = atoi(strtmp);
 
 			#ifdef CONFIG_PPG_SUPPORT
-				sh_clear_bpt_cal_data();
-				ppg_bpt_is_calbraed = false;
-				ppg_bpt_cal_need_update = true;
+				if((global_settings.bp_calibra.systolic != bpt.systolic) || (global_settings.bp_calibra.diastolic != bpt.diastolic))
+				{
+					memcpy(&global_settings.bp_calibra, &bpt, sizeof(bp_calibra_t));
+					sh_clear_bpt_cal_data();
+					ppg_bpt_is_calbraed = false;
+					ppg_bpt_cal_need_update = true;
+				}
 			#endif
 			}
 
@@ -1819,8 +1904,16 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
 				RedrawSystemTime();
 				SaveSystemDateTime();
-
 				server_has_timed_flag = true;
+				
+			#ifdef CONFIG_IMU_SUPPORT
+			#ifdef CONFIG_STEP_SUPPORT
+				StepsDataInit(true);
+			#endif
+			#ifdef CONFIG_SLEEP_SUPPORT
+				SleepDataInit(true);
+			#endif
+			#endif
 			}
 
 			flag = true;			
@@ -1831,8 +1924,24 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		#ifdef NB_DEBUG
 			LOGD("%s", strdata);
 		#endif
-
-			SOSRecLocatNotify(strdata);
+			uint8_t *ptr,*ptr1;
+			uint8_t strtmp[128] = {0};
+		
+			//后台下发定位上报间隔
+			ptr = strstr(strdata, ",");
+			if(ptr != NULL)
+			{
+				memcpy(strtmp, strdata, (ptr-strdata));
+				switch(atoi(strtmp))
+				{
+				case 1://SOS Alarm
+					SOSRecLocatNotify(ptr+1);
+					break;
+				case 2://Fall Alarm
+					//FallRecLocatNotify(ptr+1);
+					break;
+				}
+			}
 		}
 
 		SaveSystemSettings();
@@ -1852,15 +1961,15 @@ static void ParseDataCallBack(struct k_timer *timer_id)
 
 static void ParseReceData(void)
 {
-	uint8_t *p_data;
+	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
 
-	ret = get_data_from_rece_cache(&p_data, &data_len);
+	ret = get_data_from_cache(&nb_rece_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
 		ParseData(p_data, data_len);
-		delete_data_from_rece_cache();
+		delete_data_from_cache(&nb_rece_cache);
 		
 		k_timer_start(&parse_data_timer, K_MSEC(100), K_NO_WAIT);
 	}
@@ -1875,11 +1984,49 @@ static void MqttReceData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_rece_cache(data, datalen);
+	ret = add_data_into_cache(&nb_rece_cache, data, datalen, DATA_TRANSFER);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
 	ParseReceDataStart();
+}
+
+static int configure_normal_power(void)
+{
+	int err;
+	uint8_t buf[128] = {0};
+	bool enable = false;
+	
+	err = lte_lc_psm_req(enable);
+	if(err)
+	{
+	#ifdef NB_DEBUG
+		LOGD("lte_lc_psm_req, error: %d", err);
+	#endif
+		return err;
+	}
+
+	if(enable)
+	{
+	#ifdef NB_DEBUG
+		LOGD("PSM requested");
+	#endif
+	}
+	else
+	{
+	#ifdef NB_DEBUG
+		LOGD("PSM disabled");
+	#endif
+	}
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CPSMS?") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("PSM:%s", buf);
+	#endif
+	}
+
+	return 0;
 }
 
 static int configure_low_power(void)
@@ -1967,7 +2114,12 @@ void GetModemSignal(void)
 	if(test_nb_flag)
 	{
 		sprintf(nb_test_info, " snr:%d(%ddB)\nrsrq:%d(%0.1fdB)\nrsrp:%d(%ddBm)", snr,(snr-24),rsrq,(rsrq/2-19.5),rsrp,(rsrp-141));
-		nb_test_update_flag = true;
+	#ifdef NB_SIGNAL_TEST
+		TestNBUpdateINfor();
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		FTNetStatusUpdate(rsrp);
+	#endif	
 	}
 	else
 	{
@@ -1987,6 +2139,16 @@ static void GetNetWorkTimeCallBack(struct k_timer *timer_id)
 static void GetModemInforCallBack(struct k_timer *timer_id)
 {
 	get_modem_info_flag = true;
+}
+
+static void MqttActWaitCallBack(struct k_timer *timer_id)
+{
+	mqtt_act_wait_flag = true;
+}
+
+static void MqttReconnectCallBack(struct k_timer *timer_id)
+{
+	mqtt_reconnect_flag = true;
 }
 
 static void NBReconnectCallBack(struct k_timer *timer_id)
@@ -2361,6 +2523,30 @@ void GetModemStatus(void)
 void SetModemTurnOn(void)
 {
 	uint8_t buf[128] = {0};
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN?") == 0)
+	{
+		uint8_t *ptr,ret,tmpbuf[10] = {0};
+
+	#ifdef NB_DEBUG
+		LOGD("modem status:%s", buf);
+	#endif
+
+		ptr = strstr(buf, "+CFUN: ");
+		if(ptr)
+		{
+			ptr += strlen("+CFUN: ");
+			memcpy(tmpbuf, ptr, 1);
+			ret = atoi(tmpbuf);
+			if(ret == 1)
+			{
+			#ifdef NB_DEBUG
+				LOGD("modem has been turn on, return!");
+			#endif
+				return;
+			}
+		}
+	}
 	
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=1") == 0)
 	{
@@ -2380,7 +2566,37 @@ void SetModemTurnOff(void)
 {
 	uint8_t buf[128] = {0};
 
-	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=4") == 0)
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN?") == 0)
+	{
+		uint8_t *ptr,ret,tmpbuf[10] = {0};
+
+	#ifdef NB_DEBUG
+		LOGD("modem status:%s", buf);
+	#endif
+
+		ptr = strstr(buf, "+CFUN: ");
+		if(ptr)
+		{
+			ptr += strlen("+CFUN: ");
+			memcpy(tmpbuf, ptr, 1);
+			ret = atoi(tmpbuf);
+			if(ret == 0)
+			{
+			#ifdef NB_DEBUG
+				LOGD("modem has been turn off, return!");
+			#endif
+				return;
+			}
+		}
+	}
+	
+	if(mqtt_connected)
+		DisConnectMqttLink();
+
+	nb_connected = false;
+	mqtt_connected = false;
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=0") == 0)
 	{
 	#ifdef NB_DEBUG
 		LOGD("turn off modem success!");
@@ -2392,8 +2608,16 @@ void SetModemTurnOff(void)
 		LOGD("Can't turn off modem!");
 	#endif
 	}
+}
 
-	nb_connected = false;
+void AppSetModemOn(void)
+{
+	k_delayed_work_submit_to_queue(app_work_q, &modem_on_work, K_NO_WAIT);
+}
+
+void AppSetModemOff(void)
+{
+	k_delayed_work_submit_to_queue(app_work_q, &modem_off_work, K_NO_WAIT);
 }
 
 void SetModemGps(void)
@@ -2506,9 +2730,32 @@ void SetModemAPN(void)
 
 static void modem_init(struct k_work *work)
 {
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived()&&!IsFTNetTesting())
+		return;
+#endif
+
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(1));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+}
+
+static void modem_on(struct k_work *work)
+{
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
+
+	SetModemTurnOn();
+}
+
+static void modem_off(struct k_work *work)
+{
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
+
+	SetModemTurnOff();
 }
 
 static void nb_link(struct k_work *work)
@@ -2517,6 +2764,11 @@ static void nb_link(struct k_work *work)
 	uint8_t tmpbuf[128] = {0};
 	static uint32_t retry_count = 0;
 	static bool frist_flag = false;
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	if(FactryTestActived()&&!IsFTNetTesting())
+		return;
+#endif
 
 	if(!frist_flag)
 	{
@@ -2562,9 +2814,19 @@ static void nb_link(struct k_work *work)
 	#ifdef NB_DEBUG
 		LOGD("linking");
 	#endif
-	
+
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		if(FactryTestActived()&&!IsFTNetTesting())
+			return;
+	#endif
+
 		nb_connecting_flag = true;
-		configure_low_power();
+
+		if(test_nb_flag)
+			configure_normal_power();
+		else
+			configure_low_power();
+
 		err = lte_lc_init_and_connect();
 		if(err)
 		{
@@ -2601,7 +2863,12 @@ static void nb_link(struct k_work *work)
 			if(test_nb_flag)
 			{
 				strcpy(nb_test_info, "LTE Link Connected!");
-				nb_test_update_flag = true;
+			#ifdef NB_SIGNAL_TEST
+				TestNBUpdateINfor();
+			#endif
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+				FTNetStatusUpdate(0);
+			#endif	
 				k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 			}
 			
@@ -2612,7 +2879,7 @@ static void nb_link(struct k_work *work)
 		#endif
 
 			if(!server_has_timed_flag)
-				GetModemDateTime();
+				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
 			
 			NBRedrawNetMode();
 		}
@@ -2717,13 +2984,23 @@ void NBMsgProcess(void)
 		if(nb_is_connected())
 		{
 			strcpy(nb_test_info, "LTE Link Connected!");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 		}
 		else if(nb_is_connecting())
 		{
 			strcpy(nb_test_info, "LTE Link Connecting ...");
+		#ifdef NB_SIGNAL_TEST
 			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
 		}
 		else
 		{
@@ -2749,8 +3026,15 @@ void NBMsgProcess(void)
 	{
 		GetModemSignal();
 		get_modem_signal_flag = false;
-		if(screen_id == SCREEN_ID_NB_TEST)
+
+		if((screen_id == SCREEN_ID_NB_TEST)
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| IsFTNetTesting()
+			#endif
+			)
+		{
 			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
+		}
 	}
 
 	if(get_modem_time_flag)
@@ -2779,7 +3063,7 @@ void NBMsgProcess(void)
 	
 	if(mqtt_disconnect_flag)
 	{
-		if(send_cache_is_empty())
+		if(cache_is_empty(&nb_send_cache))
 		{
 		#ifdef NB_DEBUG
 			LOGD("001");
@@ -2805,11 +3089,21 @@ void NBMsgProcess(void)
 
 	if(nb_reconnect_flag)
 	{
+	#ifdef NB_DEBUG
+		LOGD("nb_reconnect_flag begin");
+	#endif
 		nb_reconnect_flag = false;
 		
-		if(test_gps_flag || nb_connected)
+		if(test_gps_flag || nb_connected
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| FactryTestActived()
+		#endif
+			)
 			return;
-	
+
+	#ifdef NB_DEBUG
+		LOGD("nb_reconnect_flag 001");
+	#endif
 		if(!nb_connecting_flag)
 		{
 			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
@@ -2819,7 +3113,65 @@ void NBMsgProcess(void)
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
-	
+
+	if(mqtt_reconnect_flag)
+	{
+	#ifdef NB_DEBUG
+		LOGD("mqtt_reconnect_flag begin");
+	#endif
+		mqtt_reconnect_flag = false;
+
+		if(test_gps_flag || mqtt_connected
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| FactryTestActived()
+		#endif
+			)
+			return;
+
+	#ifdef NB_DEBUG
+		LOGD("mqtt_reconnect_flag 001");
+	#endif
+		if(!mqtt_connecting_flag)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		}		
+	}
+
+	if(mqtt_act_wait_flag)
+	{
+	#ifdef NB_DEBUG
+		LOGD("mqtt_act_wait_flag begin");
+	#endif
+		mqtt_act_wait_flag = false;
+
+		if(test_gps_flag
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| FactryTestActived()
+		#endif
+			)
+			return;
+
+	#ifdef NB_DEBUG
+		LOGD("mqtt_act_wait_flag 001");
+	#endif
+		DisConnectMqttLink();
+		nb_connected = false;
+		nb_redraw_sig_flag = true;
+
+		if(!nb_connecting_flag)
+		{
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+		}
+		else
+		{
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		}
+	}
+
 	if(nb_connecting_flag)
 	{
 		k_sleep(K_MSEC(5));
@@ -2833,6 +3185,8 @@ void NB_init(struct k_work_q *work_q)
 	app_work_q = work_q;
 
 	k_delayed_work_init(&modem_init_work, modem_init);
+	k_delayed_work_init(&modem_on_work, modem_on);
+	k_delayed_work_init(&modem_off_work, modem_off);
 	k_delayed_work_init(&nb_link_work, nb_link);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 #ifdef CONFIG_FOTA_DOWNLOAD

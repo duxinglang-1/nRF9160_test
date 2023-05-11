@@ -21,10 +21,13 @@
 #include "datetime.h"
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
-#endif/*CONFIG_PPG_SUPPORT*/
+#endif
 #ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
-#endif/*CONFIG_TEMP_SUPPORT*/
+#endif
+#ifdef CONFIG_IMU_SUPPORT
+#include "Lsm6dso.h"
+#endif
 #include "communicate.h"
 #include "logger.h"
 
@@ -444,22 +447,22 @@ void SyncSendHealthData(void)
 #ifdef CONFIG_PPG_SUPPORT	
 	//systolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bpt.systolic);
+	sprintf(tmpbuf, "%d,", g_bpt_menu.systolic);
 	strcat(databuf, tmpbuf);
 	
 	//diastolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bpt.diastolic); 	
+	sprintf(tmpbuf, "%d,", g_bpt_menu.diastolic); 	
 	strcat(databuf, tmpbuf);
 	
 	//heart rate
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_hr);		
+	sprintf(tmpbuf, "%d,", g_hr_menu);		
 	strcat(databuf, tmpbuf);
 	
 	//SPO2
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_spo2); 	
+	sprintf(tmpbuf, "%d,", g_spo2_menu); 	
 	strcat(databuf, tmpbuf);
 #else
 	strcat(databuf, "0,0,0,0,");
@@ -468,7 +471,7 @@ void SyncSendHealthData(void)
 #ifdef CONFIG_TEMP_SUPPORT
 	//body temp
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%0.1f", g_temp_body); 	
+	sprintf(tmpbuf, "%0.1f", g_temp_menu); 	
 	strcat(databuf, tmpbuf);
 #else
 	strcat(databuf, "0.0");
@@ -586,17 +589,26 @@ void SendSosAlarmData(void)
 	uint8_t reply[256] = {0};
 	uint32_t i,count=1;
 
-	strcat(reply, "3,");
-	for(i=0;i<count;i++)
-	{
-		strcat(reply, "");
-		strcat(reply, "&");
-		strcat(reply, "");
-		strcat(reply, "&");
-		if(i < (count-1))
-			strcat(reply, "|");
-	}
+	strcat(reply, "1");
+	NBSendAlarmData(reply, strlen(reply));
+}
 
-	NBSendSosWifiData(reply, strlen(reply));
+/*****************************************************************************
+ * FUNCTION
+ *  SendFallAlarmData
+ * DESCRIPTION
+ *  发送Fall报警包(无地址信息)
+ * PARAMETERS
+ *	
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendFallAlarmData(void)
+{
+	uint8_t reply[256] = {0};
+	uint32_t i,count=1;
+
+	strcat(reply, "2");
+	NBSendAlarmData(reply, strlen(reply));
 }
 

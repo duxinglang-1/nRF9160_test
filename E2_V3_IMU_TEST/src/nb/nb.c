@@ -805,8 +805,17 @@ static void modem_rsrp_handler(char rsrp_value)
 #ifdef NB_DEBUG
 	LOGD("rsrp_value:%d", rsrp_value);
 #endif
-	g_rsrp = rsrp_value;
-	nb_redraw_sig_flag = true;
+	if(g_rsrp != rsrp_value)
+	{
+		if((g_rsrp == 255)&&(rsrp_value != 0))
+		{
+			if(!server_has_timed_flag)
+				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
+		}
+
+		g_rsrp = rsrp_value;
+		nb_redraw_sig_flag = true;
+	}
 }
 
 #ifdef CONFIG_MODEM_INFO

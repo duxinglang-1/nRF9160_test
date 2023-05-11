@@ -1160,7 +1160,7 @@ void NBRedrawSignal(void)
 		||(screen_id == SCREEN_ID_SLEEP)
 		)
 	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SIG;
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_SIG|SCREEN_EVENT_UPDATE_NET_MODE);
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 }
@@ -3150,13 +3150,16 @@ void NBMsgProcess(void)
 		LOGD("mqtt_act_wait_flag 001");
 	#endif
 		DisConnectMqttLink();
-		if(!mqtt_connecting_flag)
+		nb_connected = false;
+		nb_redraw_sig_flag = true;
+
+		if(!nb_connecting_flag)
 		{
-			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 		}
 		else
 		{
-			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
 

@@ -89,6 +89,7 @@ static bool nb_redraw_sig_flag = false;
 static bool send_data_flag = false;
 static bool parse_data_flag = false;
 static bool mqtt_disconnect_flag = false;
+static bool nb_connect_ok_flag = true;
 static bool power_on_data_flag = true;
 static bool nb_connecting_flag = false;
 static bool nb_reconnect_flag = false;
@@ -339,7 +340,16 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			SendPowerOnData();
 			power_on_data_flag = false;
 		}
-
+		if(nb_connect_ok_flag)
+		{
+		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)) 
+			SendMissingSportData();
+		#endif
+		#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+			SendMissingHealthData();
+		#endif
+			nb_connect_ok_flag = false;
+		}
 		NbSendDataStart();
 		MqttDicConnectStart();
 		break;
@@ -805,8 +815,17 @@ static void modem_rsrp_handler(char rsrp_value)
 #ifdef NB_DEBUG
 	LOGD("rsrp_value:%d", rsrp_value);
 #endif
-	g_rsrp = rsrp_value;
-	nb_redraw_sig_flag = true;
+	if(g_rsrp != rsrp_value)
+	{
+		if((g_rsrp == 255)&&(rsrp_value != 0))
+		{
+			if(!server_has_timed_flag)
+				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
+		}
+
+		g_rsrp = rsrp_value;
+		nb_redraw_sig_flag = true;
+	}
 }
 
 #ifdef CONFIG_MODEM_INFO
@@ -1505,7 +1524,37 @@ void NBSendSingleHealthData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
+void NBSendTimelySportData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T16:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	if(timemap != NULL)
+	{
+		strcat(buf, timemap);
+	}
+	else
+	{
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		GetSystemTimeSecString(tmpbuf);
+		strcat(buf, tmpbuf);
+	}
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("sport data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
 {
 	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1518,9 +1567,16 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 	GetBatterySocString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, ",");
-	memset(tmpbuf, 0, sizeof(tmpbuf));
-	GetSystemTimeSecString(tmpbuf);
-	strcat(buf, tmpbuf);
+	if(timemap != NULL)
+	{
+		strcat(buf, timemap);
+	}
+	else
+	{
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		GetSystemTimeSecString(tmpbuf);
+		strcat(buf, tmpbuf);
+	}
 	strcat(buf, "}");
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
@@ -2812,7 +2868,7 @@ static void nb_link(struct k_work *work)
 	#endif
 
 		nb_connecting_flag = true;
-
+	
 		if(test_nb_flag)
 			configure_normal_power();
 		else
@@ -2848,6 +2904,8 @@ static void nb_link(struct k_work *work)
 		#ifdef NB_DEBUG
 			LOGD("Connected to LTE network");
 		#endif
+
+			nb_connect_ok_flag = true;
 
 			GetModemNw();
 

@@ -814,6 +814,10 @@ void TimeMsgProcess(void)
 	if(send_timing_data_flag)
 	{
 		TimeCheckSendHealthData();
+	#ifdef CONFIG_IMU_SUPPORT
+		TimeCheckSendSportData();
+	#endif
+
 	#ifdef CONFIG_BLE_SUPPORT	
 		if(g_ble_connected)
 		{

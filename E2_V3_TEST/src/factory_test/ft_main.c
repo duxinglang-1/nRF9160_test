@@ -416,7 +416,7 @@ void FactoryTestExit(void)
 void EnterFactoryTestScreen(void)
 {
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking())

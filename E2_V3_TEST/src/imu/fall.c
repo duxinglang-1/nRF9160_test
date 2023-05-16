@@ -70,7 +70,7 @@ static void FallVibOff(void)
 static void FallEnd(void)
 {
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_AUDIO_SUPPORT	
 	FallStopAlarm();
@@ -105,7 +105,7 @@ static void FallStatusUpdate(void)
 
 	case FALL_STATUS_NOTIFY:
 	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaStopShow();
+		AnimaStop();
 	#endif
 	#ifdef CONFIG_AUDIO_SUPPORT
 		FallStopAlarm();
@@ -128,7 +128,7 @@ static void FallStatusUpdate(void)
 		if(screen_id == SCREEN_ID_FALL)
 		{
 		#ifdef CONFIG_ANIMATION_SUPPORT 
-			AnimaStopShow();
+			AnimaStop();
 		#endif			
 		}
 		
@@ -146,7 +146,7 @@ static void FallStatusUpdate(void)
 
 	case FALL_STATUS_CANCEL:
 	#ifdef CONFIG_ANIMATION_SUPPORT
-		AnimaStopShow();
+		AnimaStop();
 	#endif
 	#ifdef CONFIG_AUDIO_SUPPORT
 		FallStopAlarm();

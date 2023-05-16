@@ -74,7 +74,7 @@ void SOSStatusUpdate(void)
 		if(screen_id == SCREEN_ID_SOS)
 		{
 		#ifdef CONFIG_ANIMATION_SUPPORT	
-			AnimaStopShow();
+			AnimaStop();
 		#endif			
 		}
 		sos_state = SOS_STATUS_RECEIVED;

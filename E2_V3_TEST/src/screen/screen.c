@@ -1069,7 +1069,7 @@ void EnterPoweroffScreen(void)
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 
 	k_timer_stop(&mainmenu_timer);
@@ -1475,7 +1475,7 @@ void SettingsUpdateStatus(void)
 														  };
 					
 				#ifdef CONFIG_ANIMATION_SUPPORT
-					AnimaStopShow();
+					AnimaStop();
 				#endif
 
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_LOGO_X, SETTINGS_MENU_RESET_LOGO_Y, IMG_RESET_SUCCESS_ADDR);
@@ -1511,7 +1511,7 @@ void SettingsUpdateStatus(void)
 													   };
 
 				#ifdef CONFIG_ANIMATION_SUPPORT
-					AnimaStopShow();
+					AnimaStop();
 				#endif
 
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_LOGO_X, SETTINGS_MENU_RESET_LOGO_Y, IMG_RESET_FAIL_ADDR);
@@ -1921,7 +1921,7 @@ void EnterSettingsScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking()&&!TempIsWorkingTiming())
@@ -2039,7 +2039,7 @@ void EnterSyncDataScreen(void)
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking()&&!TempIsWorkingTiming())
@@ -2100,7 +2100,7 @@ void SyncUpdateStatus(void)
 		
 	case SYNC_STATUS_SENT:
 	#ifdef CONFIG_ANIMATION_SUPPORT 
-		AnimaStopShow();
+		AnimaStop();
 	#endif
 	
 		LCD_ShowImg_From_Flash(SYNC_FINISH_ICON_X, SYNC_FINISH_ICON_Y, IMG_SYNC_FINISH_ADDR);
@@ -2111,7 +2111,7 @@ void SyncUpdateStatus(void)
 		
 	case SYNC_STATUS_FAIL:
 	#ifdef CONFIG_ANIMATION_SUPPORT 
-		AnimaStopShow();
+		AnimaStop();
 	#endif
 	
 		LCD_ShowImg_From_Flash(SYNC_FINISH_ICON_X, SYNC_FINISH_ICON_Y, IMG_SYNC_ERR_ADDR);
@@ -2723,7 +2723,7 @@ void EnterTempScreen(void)
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
@@ -3422,7 +3422,7 @@ void EnterBPScreen(void)
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
 		MenuStopPPG();
@@ -3850,7 +3850,7 @@ void EnterSPO2Screen(void)
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(IsInTempScreen()&&!TempIsWorkingTiming())
@@ -4278,7 +4278,7 @@ void EnterHRScreen(void)
 #endif
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(IsInTempScreen()&&!TempIsWorkingTiming())
@@ -4363,7 +4363,7 @@ void DisplayPopUp(notify_infor infor)
 	k_timer_stop(&mainmenu_timer);
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
@@ -4514,7 +4514,7 @@ void NotifyUpdate(void)
 			scr_msg[SCREEN_ID_NOTIFY].para &= (~SCREEN_EVENT_UPDATE_POP_IMG);
 
 		#ifdef CONFIG_ANIMATION_SUPPORT
-			AnimaStopShow();
+			AnimaStop();
 		#endif
 			LCD_Fill(notify_msg.x+1, notify_msg.y+1, notify_msg.w-2, (notify_msg.h*2)/3-2, BLACK);
 			
@@ -5059,7 +5059,7 @@ void ExitDlPpgScreen(void)
 void EnterDlScreen(void)
 {
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking())
@@ -5353,7 +5353,7 @@ void EnterFOTAScreen(void)
 		return;
 
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking())
@@ -5426,7 +5426,7 @@ void EnterFallScreen(void)
 	k_timer_stop(&mainmenu_timer);
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef NB_SIGNAL_TEST
 	if(gps_is_working())
@@ -5579,7 +5579,7 @@ void EnterSleepScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(IsInTempScreen()&&!TempIsWorkingTiming())
@@ -5798,7 +5798,7 @@ void EnterStepsScreen(void)
 
 	k_timer_stop(&mainmenu_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(IsInTempScreen()&&!TempIsWorkingTiming())
@@ -5865,7 +5865,7 @@ void EnterIdleScreen(void)
 	k_timer_stop(&notify_timer);
 	k_timer_stop(&mainmenu_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef NB_SIGNAL_TEST
 	MenuStopNB();
@@ -6489,7 +6489,7 @@ void EnterDeviceScreen(void)
 	k_timer_stop(&mainmenu_timer);
 
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_PPG_SUPPORT
 	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
@@ -6538,7 +6538,7 @@ void SOSUpdateStatus(void)
 	
 	case SOS_STATUS_SENT:
 	#ifdef CONFIG_ANIMATION_SUPPORT	
-		AnimaStopShow();
+		AnimaStop();
 	#endif
 
 		LCD_ShowImg_From_Flash(SOS_ICON_X, SOS_ICON_Y, IMG_SOS_ANI_4_ADDR);
@@ -6599,7 +6599,7 @@ void EnterSOSScreen(void)
 	k_timer_stop(&mainmenu_timer);
 
 #ifdef CONFIG_ANIMATION_SUPPORT
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef NB_SIGNAL_TEST
 	if(gps_is_working())

@@ -34,5 +34,6 @@ extern bool AnimaIsShowing(void);
 extern void AnimaStopShow(void);
 extern void AnimaPaushShow(void);
 extern void AnimaResumeShow(void);
+extern void AnimaStop(void);
 extern void AnimaShow(uint16_t x, uint16_t y, uint32_t *anima_img, uint8_t anima_count, uint32_t interview, bool loop_flag, ShowFinishCB callback);
 #endif/*__ANIMATION_H__*/

@@ -640,7 +640,7 @@ void dl_start(void)
 void dl_start_confirm(void)
 {
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking()&&!TempIsWorkingTiming())

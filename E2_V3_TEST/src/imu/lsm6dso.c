@@ -337,9 +337,6 @@ static bool sensor_init(void)
 	lsm6dso_tap_shock_set(&imu_dev_ctx, 0x03);
 	lsm6dso_tap_mode_set(&imu_dev_ctx, LSM6DSO_ONLY_SINGLE);
 	
-	//Enable step counts algorithm
-	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_PEDO_BASE_MODE);
-
 	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
 	
 	/*Fall&Tilt enable */
@@ -356,11 +353,19 @@ static bool sensor_init(void)
 	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
 	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)falltrigger, sizeof(falltrigger));
 	
-	/* route step counter & wrist tilt to INT1 pin*/
+	/* route wrist tilt to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+#ifdef CONFIG_STEP_SUPPORT
+	/*Step Counter enable*/
+	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	//Enable step counts algorithm
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_PEDO_BASE_MODE);
+	lsm6dso_steps_reset(&imu_dev_ctx);
+#endif
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT	
 	/* route fall to INT2 pin*/

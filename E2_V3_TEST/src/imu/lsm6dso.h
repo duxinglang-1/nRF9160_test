@@ -7,8 +7,8 @@
 
 typedef struct
 {
-	uint8_t deep;
-	uint8_t light;
+	uint16_t deep;
+	uint16_t light;
 }sleep_data;
 
 //µ¥´Î²âÁ¿

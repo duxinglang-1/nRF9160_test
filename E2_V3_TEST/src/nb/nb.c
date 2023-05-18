@@ -123,6 +123,9 @@ static struct sockaddr_storage broker;
 static bool nb_connected = false;
 static bool mqtt_connected = false;
 
+/* Net Reconnect count*/
+static uint32_t net_retry_count = 0;
+
 /* File descriptor */
 static struct pollfd fds;
 
@@ -323,15 +326,15 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	case MQTT_EVT_CONNACK:
 		if(evt->result != 0)
 		{
-		#if 1//def NB_DEBUG
-			LOGM("MQTT connect failed %d", evt->result);
+		#ifdef NB_DEBUG
+			LOGD("MQTT connect failed %d", evt->result);
 		#endif
 			break;
 		}
 
 		mqtt_connected = true;
-	#if 1//def NB_DEBUG
-		LOGM("MQTT client connected!");		
+	#ifdef NB_DEBUG
+		LOGD("MQTT client connected!");		
 	#endif
 		subscribe();
 
@@ -355,8 +358,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		break;
 
 	case MQTT_EVT_DISCONNECT:
-	#if 1//def NB_DEBUG
-		LOGM("MQTT client disconnected %d", evt->result);
+	#ifdef NB_DEBUG
+		LOGD("MQTT client disconnected %d", evt->result);
 	#endif
 		mqtt_connected = false;
 		
@@ -676,8 +679,8 @@ static void mqtt_link(struct k_work_q *work_q)
 
 link_over:
 	mqtt_connecting_flag = false;
-#if 1//def NB_DEBUG
-	LOGM("mqtt link err");
+#ifdef NB_DEBUG
+	LOGD("mqtt link err");
 #endif
 }
 
@@ -717,8 +720,8 @@ static void NbSendData(void)
 		}
 		else
 		{
-		#if 1//def NB_DEBUG
-			LOGM("mqtt send fail, wait act timerout and recount!");
+		#ifdef NB_DEBUG
+			LOGD("mqtt send fail, wait act timerout and recount!");
 		#endif
 		}
 	}
@@ -1343,22 +1346,22 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 		{
 			if(!mqtt_connecting_flag)
 			{
-			#if 1//def NB_DEBUG
-				LOGM("mqtt isn't connecting, submit mqtt link work");
+			#ifdef NB_DEBUG
+				LOGD("mqtt isn't connecting, submit mqtt link work");
 			#endif
 				k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 			}
 			else
 			{
-			#if 1//def NB_DEBUG
-				LOGM("mqtt is connecting, wait mqtt event");
+			#ifdef NB_DEBUG
+				LOGD("mqtt is connecting, wait mqtt event");
 			#endif
 			}
 		}
 		else
 		{
-		#if 1//def NB_DEBUG
-			LOGM("nb isn't connected, reconnect timer");
+		#ifdef NB_DEBUG
+			LOGD("nb isn't connected, reconnect timer");
 		#endif
 
 			k_timer_stop(&nb_reconnect_timer);
@@ -2170,28 +2173,16 @@ static void GetModemInforCallBack(struct k_timer *timer_id)
 
 static void MqttActWaitCallBack(struct k_timer *timer_id)
 {
-#if 1//def NB_DEBUG
-	LOGM("begin");
-#endif
-
 	mqtt_act_wait_flag = true;
 }
 
 static void MqttReconnectCallBack(struct k_timer *timer_id)
 {
-#if 1//def NB_DEBUG
-	LOGM("begin");
-#endif
-
 	mqtt_reconnect_flag = true;
 }
 
 static void NBReconnectCallBack(struct k_timer *timer_id)
 {
-#if 1//def NB_DEBUG
-	LOGM("begin");
-#endif
-
 	nb_reconnect_flag = true;
 }
 
@@ -2801,7 +2792,6 @@ static void nb_link(struct k_work *work)
 {
 	int err=0;
 	uint8_t tmpbuf[128] = {0};
-	static uint32_t retry_count = 0;
 	static bool frist_flag = false;
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
@@ -2824,8 +2814,8 @@ static void nb_link(struct k_work *work)
 #ifndef NB_SIGNAL_TEST
 	if(strlen(g_imsi) == 0)
 	{
-	#if 1//def NB_DEBUG
-		LOGM("Can't get sim info, cancel the connecting!");
+	#ifdef NB_DEBUG
+		LOGD("Can't get sim info, cancel the connecting!");
 	#endif
 		return;
 	}
@@ -2833,25 +2823,25 @@ static void nb_link(struct k_work *work)
 
 	if(gps_is_working())
 	{
-	#if 1//def NB_DEBUG
-		LOGM("gps is working, continue waiting!");
+	#ifdef NB_DEBUG
+		LOGD("gps is working, continue waiting!");
 	#endif
-
-		if(retry_count <= 2)		//2次以内每1分钟重连一次
+	
+		if(net_retry_count <= 2)		//2次以内每1分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-		else if(retry_count <= 4)	//3到4次每5分钟重连一次
+		else if(net_retry_count <= 4)	//3到4次每5分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-		else if(retry_count <= 6)	//5到6次每10分钟重连一次
+		else if(net_retry_count <= 6)	//5到6次每10分钟重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-		else if(retry_count <= 8)	//7到8次每1小时重连一次
+		else if(net_retry_count <= 8)	//7到8次每1小时重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
 		else						//8次以上每6小时重连一次
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 	}
 	else
 	{
-	#if 1//def NB_DEBUG
-		LOGM("linking");
+	#ifdef NB_DEBUG
+		LOGD("linking");
 	#endif
 
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
@@ -2869,8 +2859,8 @@ static void nb_link(struct k_work *work)
 		err = lte_lc_init_and_connect();
 		if(err)
 		{
-		#if 1//def NB_DEBUG
-			LOGM("Can't connected to LTE network. retry:%d", retry_count);
+		#ifdef NB_DEBUG
+			LOGD("Can't connected to LTE network. err:%d", err);
 		#endif
 		
 		#ifdef CONFIG_SYNC_SUPPORT
@@ -2879,22 +2869,22 @@ static void nb_link(struct k_work *work)
 
 			nb_connected = false;
 
-			retry_count++;
-			if(retry_count <= 2)		//2次以内每1分钟重连一次
+			net_retry_count++;
+			if(net_retry_count <= 2)		//2次以内每1分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-			else if(retry_count <= 4)	//3到4次每5分钟重连一次
+			else if(net_retry_count <= 4)	//3到4次每5分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-			else if(retry_count <= 6)	//5到6次每10分钟重连一次
+			else if(net_retry_count <= 6)	//5到6次每10分钟重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(retry_count <= 8)	//7到8次每1小时重连一次
+			else if(net_retry_count <= 8)	//7到8次每1小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-			else						//8次以上每6小时重连一次
+			else							//8次以上每6小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 		}
 		else
 		{
-		#if 1//def NB_DEBUG
-			LOGM("Connected to LTE network");
+		#ifdef NB_DEBUG
+			LOGD("Connected to LTE network");
 		#endif
 
 			nb_connect_ok_flag = true;
@@ -2914,7 +2904,7 @@ static void nb_link(struct k_work *work)
 			}
 			
 			nb_connected = true;
-			retry_count = 0;
+			net_retry_count = 0;
 		#ifdef CONFIG_MODEM_INFO
 			modem_data_init();
 		#endif
@@ -3130,8 +3120,8 @@ void NBMsgProcess(void)
 
 	if(nb_reconnect_flag)
 	{
-	#if 1//def NB_DEBUG
-		LOGM("nb_reconnect_flag begin");
+	#ifdef NB_DEBUG
+		LOGD("nb_reconnect_flag begin");
 	#endif
 		nb_reconnect_flag = false;
 		
@@ -3142,8 +3132,8 @@ void NBMsgProcess(void)
 			)
 			return;
 
-	#if 1//def NB_DEBUG
-		LOGM("nb_reconnect_flag 001");
+	#ifdef NB_DEBUG
+		LOGD("nb_reconnect_flag 001");
 	#endif
 		if(!nb_connecting_flag)
 		{
@@ -3151,14 +3141,14 @@ void NBMsgProcess(void)
 		}
 		else
 		{
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
 	}
 
 	if(mqtt_reconnect_flag)
 	{
-	#if 1//def NB_DEBUG
-		LOGM("mqtt_reconnect_flag begin");
+	#ifdef NB_DEBUG
+		LOGD("mqtt_reconnect_flag begin");
 	#endif
 		mqtt_reconnect_flag = false;
 
@@ -3169,8 +3159,8 @@ void NBMsgProcess(void)
 			)
 			return;
 
-	#if 1//def NB_DEBUG
-		LOGM("mqtt_reconnect_flag 001");
+	#ifdef NB_DEBUG
+		LOGD("mqtt_reconnect_flag 001");
 	#endif
 		if(!mqtt_connecting_flag)
 		{
@@ -3184,8 +3174,8 @@ void NBMsgProcess(void)
 
 	if(mqtt_act_wait_flag)
 	{
-	#if 1//def NB_DEBUG
-		LOGM("mqtt_act_wait_flag begin");
+	#ifdef NB_DEBUG
+		LOGD("mqtt_act_wait_flag begin");
 	#endif
 		mqtt_act_wait_flag = false;
 
@@ -3196,8 +3186,8 @@ void NBMsgProcess(void)
 			)
 			return;
 
-	#if 1//def NB_DEBUG
-		LOGM("mqtt_act_wait_flag 001");
+	#ifdef NB_DEBUG
+		LOGD("mqtt_act_wait_flag 001");
 	#endif
 		DisConnectMqttLink();
 		nb_connected = false;
@@ -3209,7 +3199,8 @@ void NBMsgProcess(void)
 		}
 		else
 		{
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			net_retry_count = 0;
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
 	}
 

@@ -739,7 +739,7 @@ void system_init(void)
 	dl_init();
 #endif
 
-	log_read_from_flash();
+	//log_read_from_flash();
 
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);

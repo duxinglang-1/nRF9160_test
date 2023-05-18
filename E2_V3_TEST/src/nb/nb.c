@@ -2299,8 +2299,7 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 		#ifdef NB_DEBUG
 			LOGD("rsrp:%s", tmpbuf);
 		#endif
-			g_rsrp = atoi(tmpbuf);
-			modem_rsrp_handler(g_rsrp);
+			modem_rsrp_handler(atoi(tmpbuf));
 		#if 0	
 			//snr
 			memset(tmpbuf, 0, sizeof(tmpbuf));
@@ -2860,7 +2859,7 @@ static void nb_link(struct k_work *work)
 		if(err)
 		{
 		#ifdef NB_DEBUG
-			LOGD("Can't connected to LTE network. err:%d", err);
+			LOGD("Can't connected to LTE network. retry count:%d", net_retry_count);
 		#endif
 		
 		#ifdef CONFIG_SYNC_SUPPORT

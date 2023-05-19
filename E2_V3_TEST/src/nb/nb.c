@@ -809,7 +809,7 @@ static void modem_rsrp_handler(char rsrp_value)
 		if((g_rsrp == 255)&&(rsrp_value != 0))
 		{
 			if(!server_has_timed_flag)
-				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
+				k_timer_start(&get_nw_time_timer, K_MSEC(500), K_NO_WAIT);
 		}
 
 		g_rsrp = rsrp_value;
@@ -2413,8 +2413,7 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 		{
 			g_nw_registered = false;
 			nb_connected = false;
-			g_rsrp = 255;
-			modem_rsrp_handler(g_rsrp);
+			modem_rsrp_handler(255);
 		}
 	}
 }
@@ -2909,7 +2908,7 @@ static void nb_link(struct k_work *work)
 		#endif
 
 			if(!server_has_timed_flag)
-				k_timer_start(&get_nw_time_timer, K_MSEC(200), K_NO_WAIT);
+				k_timer_start(&get_nw_time_timer, K_MSEC(500), K_NO_WAIT);
 			
 			NBRedrawNetMode();
 		}

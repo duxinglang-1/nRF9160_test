@@ -783,6 +783,84 @@ void IdleShowHrData(void)
 		divisor = divisor/10;
 	}
 }
+
+static uint8_t idle_spo2 = 0;
+
+void IdleUpdateSPO2Data(void)
+{
+	uint16_t bg_color = 0x1820;
+	uint8_t i,spo2_show,count=1;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
+							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
+
+	if(g_spo2 > 0)
+		idle_spo2 = g_spo2;
+	spo2_show = idle_spo2;
+	
+	LCD_Fill(IDLE_SPO2_STR_X, IDLE_SPO2_STR_Y, IDLE_SPO2_STR_W, IDLE_SPO2_STR_H, bg_color);
+
+	while(1)
+	{
+		if(spo2_show/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, img_num[spo2_show/divisor]);
+		spo2_show = spo2_show%divisor;
+		divisor = divisor/10;
+	}
+	LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, IMG_FONT_20_PERC_ADDR);
+}
+
+void IdleShowSPO2Data(void)
+{
+	uint16_t bg_color = 0x1820;
+	uint8_t i,spo2_show,count=1;
+	uint32_t divisor=10;
+	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
+							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
+
+	if(g_spo2 > 0)
+		idle_spo2 = g_spo2;
+	spo2_show = idle_spo2;
+
+	LCD_ShowImg_From_Flash(IDLE_SPO2_BG_X, IDLE_SPO2_BG_Y, IMG_IDLE_SPO2_BG_ADDR);
+	LCD_dis_pic_trans_from_flash(IDLE_SPO2_ICON_X, IDLE_SPO2_ICON_Y, IMG_IDLE_SPO2_ICON_ADDR, bg_color);
+
+	while(1)
+	{
+		if(spo2_show/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, img_num[spo2_show/divisor]);
+		spo2_show = spo2_show%divisor;
+		divisor = divisor/10;
+	}
+	LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, IMG_FONT_20_PERC_ADDR);
+}
+
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT
@@ -948,8 +1026,9 @@ void IdleScreenProcess(void)
 	#endif	
 	#ifdef CONFIG_PPG_SUPPORT
 		IdleShowHrData();
+		IdleShowSPO2Data();
 	#endif
-	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	#if 0//defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		IdleShowSportData();
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
@@ -995,7 +1074,7 @@ void IdleScreenProcess(void)
 			IdleShowBleStatus();
 		}
 	#endif
-	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	#if 0//defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SPORT);
@@ -1007,6 +1086,11 @@ void IdleScreenProcess(void)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_HR);
 			IdleUpdateHrData();
+		}
+		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPO2)
+		{
+			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SPO2);
+			IdleUpdateSPO2Data();
 		}
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT

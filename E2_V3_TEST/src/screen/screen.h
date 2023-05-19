@@ -43,15 +43,15 @@ extern "C" {
 #define IDLE_TIME_COLON_H	60
 #define IDLE_DATE_MON_W		90
 #define IDLE_DATE_MON_H		26
-#define IDLE_DATE_MON_X		141
+#define IDLE_DATE_MON_X		137
 #define IDLE_DATE_MON_Y		106
 #define IDLE_DATE_DAY_W		22
 #define IDLE_DATE_DAY_H		20
-#define IDLE_DATE_DAY_X		114
+#define IDLE_DATE_DAY_X		110
 #define IDLE_DATE_DAY_Y		109
 #define IDLE_DATE_NUM_W		12
 #define IDLE_DATE_NUM_H		20
-#define IDLE_WEEK_W			52
+#define IDLE_WEEK_W			45
 #define IDLE_WEEK_H			26
 #define IDLE_WEEK_X			63
 #define IDLE_WEEK_Y			106
@@ -97,18 +97,36 @@ extern "C" {
 //idle hr
 #define IDLE_HR_BG_W		66
 #define IDLE_HR_BG_H		66
-#define IDLE_HR_BG_X		21
-#define IDLE_HR_BG_Y		134
+#define IDLE_HR_BG_X		87
+#define IDLE_HR_BG_Y		167
 #define IDLE_HR_ICON_W		22
 #define IDLE_HR_ICON_H		20
-#define IDLE_HR_ICON_X		42
-#define IDLE_HR_ICON_Y		142
+#define IDLE_HR_ICON_X		109
+#define IDLE_HR_ICON_Y		177
 #define IDLE_HR_STR_W		50
 #define IDLE_HR_STR_H		20
 #define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
-#define IDLE_HR_STR_Y		165
+#define IDLE_HR_STR_Y		202
 #define IDLE_HR_NUM_W		12
 #define IDLE_HR_NUM_H		20
+
+//idle spo2
+#define IDLE_SPO2_BG_W		66
+#define IDLE_SPO2_BG_H		66
+#define IDLE_SPO2_BG_X		153
+#define IDLE_SPO2_BG_Y		134
+#define IDLE_SPO2_ICON_W	18
+#define IDLE_SPO2_ICON_H	24
+#define IDLE_SPO2_ICON_X	177
+#define IDLE_SPO2_ICON_Y	138
+#define IDLE_SPO2_STR_W		60
+#define IDLE_SPO2_STR_H		20
+#define IDLE_SPO2_STR_X		(IDLE_SPO2_BG_X+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2)
+#define IDLE_SPO2_STR_Y		163
+#define IDLE_SPO2_NUM_W		12
+#define IDLE_SPO2_NUM_H		20
+#define IDLE_SPO2_PERC_W	19
+#define IDLE_SPO2_PERC_H	20
 
 //idle step
 #define IDLE_STEPS_BG_W		66
@@ -129,21 +147,20 @@ extern "C" {
 //idle temp
 #define IDLE_TEMP_BG_W		66
 #define IDLE_TEMP_BG_H		66
-#define IDLE_TEMP_BG_X		153
+#define IDLE_TEMP_BG_X		21
 #define IDLE_TEMP_BG_Y		134
-#define IDLE_TEMP_ICON_W	17
-#define IDLE_TEMP_ICON_H	20
-#define IDLE_TEMP_ICON_X	177
-#define IDLE_TEMP_ICON_Y	142
+#define IDLE_TEMP_ICON_W	18
+#define IDLE_TEMP_ICON_H	22
+#define IDLE_TEMP_ICON_X	45
+#define IDLE_TEMP_ICON_Y	141
 #define IDLE_TEMP_STR_W		50
 #define IDLE_TEMP_STR_H		20
 #define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
-#define IDLE_TEMP_STR_Y		165
+#define IDLE_TEMP_STR_Y		163
 #define IDLE_TEMP_NUM_W		12
 #define IDLE_TEMP_NUM_H		20
 #define IDLE_TEMP_DOT_W		6
 #define IDLE_TEMP_DOT_H		20
-
 
 //notify
 #define NOTIFY_IMG_MAX_COUNT	10

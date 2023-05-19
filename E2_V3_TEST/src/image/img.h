@@ -100,13 +100,16 @@ extern unsigned char IMG_IDLE_CIRCLE_BG[36488];
 //idle hr(2)
 extern unsigned char IMG_IDLE_HR_BG[8720];
 extern unsigned char IMG_IDLE_HR_ICON[888];
+//idle spo2
+extern unsigned char IMG_IDLE_SPO2_BG[8720];
+extern unsigned char IMG_IDLE_SPO2_ICON[1088];
 //idle step
 extern unsigned char IMG_IDLE_STEP_BG[8720];
 extern unsigned char IMG_IDLE_STEP_ICON[568];
 //idle temp(3)
 extern unsigned char IMG_IDLE_TEMP_BG[8720];
-extern unsigned char IMG_IDLE_TEMP_C_ICON[688];
-extern unsigned char IMG_IDLE_TEMP_F_ICON[688];
+extern unsigned char IMG_IDLE_TEMP_C_ICON[968];
+extern unsigned char IMG_IDLE_TEMP_F_ICON[968];
 //idle net mode(2)
 extern unsigned char IMG_IDLE_NET_LTEM[344];
 extern unsigned char IMG_IDLE_NET_NB[316];

@@ -1213,6 +1213,7 @@ void GetModemDateTime(void)
 	uint8_t tz_dir[3] = {0};
 	uint8_t tz_count,daylight;
 	static uint8_t retry = 5;
+	sys_date_timer_t tmp_dt = {0};
 
 	if(nrf_modem_at_cmd(timebuf, sizeof(timebuf), "AT+CCLK?") != 0)
 	{
@@ -1245,32 +1246,32 @@ void GetModemDateTime(void)
 	{
 		ptr++;
 		memcpy(tmpbuf, ptr, 2);
-		date_time.year = 2000+atoi(tmpbuf);
+		tmp_dt.year = 2000+atoi(tmpbuf);
 
 		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
-		date_time.month= atoi(tmpbuf);
+		tmp_dt.month= atoi(tmpbuf);
 
 		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
-		date_time.day = atoi(tmpbuf);
+		tmp_dt.day = atoi(tmpbuf);
 
 		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
-		date_time.hour = atoi(tmpbuf);
+		tmp_dt.hour = atoi(tmpbuf);
 
 		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
-		date_time.minute = atoi(tmpbuf);
+		tmp_dt.minute = atoi(tmpbuf);
 
 		ptr+=3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		memcpy(tmpbuf, ptr, 2);
-		date_time.second = atoi(tmpbuf);
+		tmp_dt.second = atoi(tmpbuf);
 
 		ptr+=2;
 		memcpy(tz_dir, ptr, 1);
@@ -1282,11 +1283,11 @@ void GetModemDateTime(void)
 		tz_count = atoi(tmpbuf);
 		if(tz_dir[0] == '+')
 		{
-			TimeIncrease(&date_time, tz_count*15);
+			TimeIncrease(&tmp_dt, tz_count*15);
 		}
 		else if(tz_dir[0] == '-')
 		{
-			TimeDecrease(&date_time, tz_count*15);
+			TimeDecrease(&tmp_dt, tz_count*15);
 		}
 
 		ptr+=3;
@@ -1297,24 +1298,29 @@ void GetModemDateTime(void)
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			memcpy(tmpbuf, ptr, 1);
 			daylight = atoi(tmpbuf);
-			TimeDecrease(&date_time, daylight*60);
+			TimeDecrease(&tmp_dt, daylight*60);
 		}
 
 		strcpy(g_timezone, tz_dir);
 		sprintf(tmpbuf, "%d", tz_count/4);
 		strcat(g_timezone, tmpbuf);
 
-		RedrawSystemTime();
-		SaveSystemDateTime();
+		if(CheckSystemDateTimeIsValid(tmp_dt))
+		{
+			tmp_dt.week = GetWeekDayByDate(tmp_dt);
+			memcpy(&date_time, &tmp_dt, sizeof(sys_date_timer_t));
+			RedrawSystemTime();
+			SaveSystemDateTime();
 
-	#ifdef CONFIG_IMU_SUPPORT
-	#ifdef CONFIG_STEP_SUPPORT
-		StepsDataInit(true);
-	#endif
-	#ifdef CONFIG_SLEEP_SUPPORT
-		SleepDataInit(true);
-	#endif
-	#endif	
+		#ifdef CONFIG_IMU_SUPPORT
+		#ifdef CONFIG_STEP_SUPPORT
+			StepsDataInit(true);
+		#endif
+		#ifdef CONFIG_SLEEP_SUPPORT
+			SleepDataInit(true);
+		#endif
+		#endif	
+		}
 	}
 
 #ifdef NB_DEBUG	

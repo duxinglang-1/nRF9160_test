@@ -635,7 +635,10 @@ void PPGRedrawData(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
 	{
-		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_HR|SCREEN_EVENT_UPDATE_SPO2);
+		if(g_ppg_data == PPG_DATA_HR)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		else if(g_ppg_data == PPG_DATA_SPO2)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 	else if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
@@ -1273,7 +1276,7 @@ void PPGGetSensorHubData(void)
 		if(flag || get_bpt_ok_flag)
 			ppg_redraw_data_flag = true;
 	}
-	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2))
+	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_IDLE))
 	{
 		ppg_redraw_data_flag = true;
 	}

@@ -228,7 +228,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	k_timer_start(&mqtt_act_wait_timer, K_MSEC(30*1000), K_NO_WAIT);
+	k_timer_start(&mqtt_act_wait_timer, K_MSEC(10*1000), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 
@@ -806,12 +806,13 @@ static void modem_rsrp_handler(char rsrp_value)
 #endif
 	if(g_rsrp != rsrp_value)
 	{
+	#if 0	//xb add 20230523
 		if((g_rsrp == 255)&&(rsrp_value != 0))
 		{
 			if(!server_has_timed_flag)
 				k_timer_start(&get_nw_time_timer, K_MSEC(500), K_NO_WAIT);
 		}
-
+	#endif
 		g_rsrp = rsrp_value;
 		nb_redraw_sig_flag = true;
 	}

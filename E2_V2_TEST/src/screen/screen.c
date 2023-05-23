@@ -1795,7 +1795,7 @@ void EnterSettingsScreen(void)
 
 #ifndef NB_SIGNAL_TEST
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+  	if(1)//((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_img_start);
 	}

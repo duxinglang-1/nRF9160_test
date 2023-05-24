@@ -66,27 +66,27 @@ extern "C" {
 #define IDLE_NET_MODE_W		12
 #define IDLE_NET_MODE_H		16
 #define IDLE_NET_MODE_X		108
-#define IDLE_NET_MODE_Y		35
+#define IDLE_NET_MODE_Y		34
 
 //battery soc
 #define IDLE_BAT_W		30
 #define IDLE_BAT_H		16
 #define IDLE_BAT_X		169
-#define IDLE_BAT_Y		35
+#define IDLE_BAT_Y		34
 #define IDLE_BAT_PERCENT_W		44
 #define IDLE_BAT_PERCENT_H		18
 #define IDLE_BAT_PERCENT_X		120
-#define IDLE_BAT_PERCENT_Y		33
+#define IDLE_BAT_PERCENT_Y		32
 #define IDLE_BAT_INNER_RECT_W	22
 #define IDLE_BAT_INNER_RECT_H	10
 #define IDLE_BAT_INNER_RECT_X	172
-#define IDLE_BAT_INNER_RECT_Y	38
+#define IDLE_BAT_INNER_RECT_Y	37
 
 //NB signal
 #define IDLE_SIGNAL_W		54
 #define IDLE_SIGNAL_H		12
 #define IDLE_SIGNAL_X		45
-#define IDLE_SIGNAL_Y		36
+#define IDLE_SIGNAL_Y		35
 
 //idle circle bg
 #define IDLE_CIRCLE_BG_W	192

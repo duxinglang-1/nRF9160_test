@@ -265,10 +265,11 @@ void step_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pin
 
 void init_imu_int1(void)
 {
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
+
 	if(gpio_imu == NULL)
 		gpio_imu = device_get_binding(IMU_PORT);
-	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_imu, LSM6DSO_INT1_PIN, 0);
+	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
 }
 
 uint8_t init_gpio(void)

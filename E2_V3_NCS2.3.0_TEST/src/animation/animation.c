@@ -6,7 +6,7 @@
 ** Modified Date:      		2021-09-17 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <drivers/uart.h>
 #include <string.h>

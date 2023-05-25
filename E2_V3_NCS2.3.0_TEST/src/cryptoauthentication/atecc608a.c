@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include <sys/printk.h>
 #include <dk_buttons_and_leds.h>
 #include "atecc608a.h"

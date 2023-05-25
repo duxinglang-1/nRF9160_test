@@ -6,11 +6,11 @@
 ** Modified Date:      		2021-03-29 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/uart.h>
 #include <string.h>
 #include <pm/device.h>
 #include <dk_buttons_and_leds.h>

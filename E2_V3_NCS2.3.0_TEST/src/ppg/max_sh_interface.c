@@ -6,10 +6,10 @@
 ** Modified Date:      		2021-06-21 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include "max_sh_interface.h"
 
 #include "max_sh_api.h"

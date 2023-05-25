@@ -6,7 +6,7 @@
 ** Modified Date:      		2021-10-25 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <string.h>
 #include "datetime.h"

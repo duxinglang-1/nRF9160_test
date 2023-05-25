@@ -9,10 +9,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <logging/log.h>
 #include <nrfx.h>
 #include "codetrans.h"

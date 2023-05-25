@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 
 #define BL_AES_NONCE_SIZE     11
 #define BL_AES_AUTH_SIZE      16

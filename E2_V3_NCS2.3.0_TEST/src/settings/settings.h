@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <sys/printk.h>
 
 #define ALARM_MAX	8

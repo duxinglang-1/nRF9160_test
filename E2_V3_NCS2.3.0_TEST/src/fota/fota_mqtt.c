@@ -8,8 +8,8 @@
 ******************************************************************************************************/
 #ifdef CONFIG_FOTA_DOWNLOAD
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <drivers/flash.h>
 #include <sys/reboot.h>
 #include <modem/lte_lc.h>

@@ -6,8 +6,8 @@
 ** Modified Date:      		2023-02-17 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <drivers/flash.h>
 #ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"

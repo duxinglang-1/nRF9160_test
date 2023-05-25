@@ -7,7 +7,7 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 #include <string.h>
 #include <stdio.h>

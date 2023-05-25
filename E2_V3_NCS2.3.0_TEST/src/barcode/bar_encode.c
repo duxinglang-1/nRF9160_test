@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <sys/printk.h>
 #include <modem/nrf_modem_lib.h>
 //#include <modem/at_cmd.h>

@@ -35,7 +35,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 
 #define PPG_REPORT_SIZE            18

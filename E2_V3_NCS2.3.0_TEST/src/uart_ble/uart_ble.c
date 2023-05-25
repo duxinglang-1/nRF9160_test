@@ -3,12 +3,12 @@
 *
 * SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
 */
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <string.h>
 #include <drivers/uart.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <device.h>
 #include <pm/device.h>
 #include "logger.h"

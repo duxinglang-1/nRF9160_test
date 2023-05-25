@@ -7,7 +7,7 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <drivers/flash.h>
 #include <pm_config.h>
 #include "external_flash.h"

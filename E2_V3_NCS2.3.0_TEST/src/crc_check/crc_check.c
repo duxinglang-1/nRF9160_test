@@ -7,11 +7,10 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <nrf9160.h>
-#include <kernel_structs.h>
 #include <device.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include "crc_check.h"
 #include "logger.h"
 

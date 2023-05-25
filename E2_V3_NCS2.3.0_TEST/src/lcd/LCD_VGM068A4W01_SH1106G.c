@@ -7,7 +7,7 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <drivers/spi.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "lcd.h"
 #include "font.h" 

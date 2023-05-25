@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <math.h>
 #include "lcd.h"
 #include "settings.h"

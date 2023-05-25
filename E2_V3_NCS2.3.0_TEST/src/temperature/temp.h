@@ -10,7 +10,7 @@
 #define __TEMP_H__
 
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 #include <stdio.h>
 

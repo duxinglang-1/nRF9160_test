@@ -9,11 +9,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <sys/printk.h>
-#include <drivers/i2c.h>
-#include <drivers/i2s.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/gpio.h>
 #include <nrfx.h>
 #include <nrfx_i2s.h>
 //#include "audio_wav.h"

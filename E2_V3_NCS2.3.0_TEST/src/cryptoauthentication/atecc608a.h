@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <sys/printk.h>
 
 #define ATECC608A_I2C_ADD	0x50

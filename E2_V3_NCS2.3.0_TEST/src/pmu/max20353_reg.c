@@ -8,8 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include "max20353_reg.h"
 #include "max20353.h"
 #include "NTC_table.h"

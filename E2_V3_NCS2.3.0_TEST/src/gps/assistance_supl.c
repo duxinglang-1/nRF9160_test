@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <net/socket.h>
 #include <supl_os_client.h>
 #include <supl_session.h>

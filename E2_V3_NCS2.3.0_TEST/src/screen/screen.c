@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"

@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include "max20353.h"
 #include "max20353_reg.h"
 #include "Lcd.h"

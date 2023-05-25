@@ -9,7 +9,7 @@
 #ifndef __TRANSFER_CACHE_H__
 #define __TRANSFER_CACHE_H__
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <string.h>

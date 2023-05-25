@@ -8,12 +8,12 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #ifdef CONFIG_IMU_SUPPORT
 
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 #include <sys/printk.h>
 #include <nrf_socket.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

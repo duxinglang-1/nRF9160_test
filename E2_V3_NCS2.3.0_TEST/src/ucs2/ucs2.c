@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <logging/log.h>
 #include <nrfx.h>
 #include "logger.h"

@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <sys/printk.h>
 #include <fs/nvs.h>
 #include <drivers/flash.h>

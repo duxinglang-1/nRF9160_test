@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_BUFF_SIZE (1024)
 /* 无自动添加函数名 */

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include "lcd.h"
 #include "font.h" 
 #include "settings.h"

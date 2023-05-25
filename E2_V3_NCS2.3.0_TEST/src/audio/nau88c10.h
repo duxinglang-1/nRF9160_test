@@ -10,7 +10,7 @@
 #define __NAU88C10_H__
 
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 
 extern struct device *nau88c10_I2C;

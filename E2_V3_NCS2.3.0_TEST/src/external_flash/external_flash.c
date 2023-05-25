@@ -8,8 +8,8 @@
 ** Descriptions:		外挂flash驱动源文件
 ******************************************************************************************************/
 #include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 #include <stdio.h>
 #include <string.h>

@@ -10,7 +10,7 @@
 #define __MAX32674_H__
 
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 
 #define PPG_CHECK_HR_MENU			60

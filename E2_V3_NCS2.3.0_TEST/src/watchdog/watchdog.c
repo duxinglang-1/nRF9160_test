@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
  */
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 #include <drivers/watchdog.h>
 #include "logger.h"

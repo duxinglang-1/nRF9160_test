@@ -6,8 +6,8 @@
 ** Modified Date:      		2021-12-28 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <drivers/flash.h>
 #include <modem/lte_lc.h>
 #include <net/download_client.h>

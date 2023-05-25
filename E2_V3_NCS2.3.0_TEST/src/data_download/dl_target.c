@@ -6,7 +6,7 @@
 ** Modified Date:      		2021-12-29 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include "dl_target.h"
 #include "logger.h"
 

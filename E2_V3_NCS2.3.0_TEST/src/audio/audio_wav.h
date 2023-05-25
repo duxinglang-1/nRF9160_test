@@ -10,7 +10,7 @@
 #define __AUDIO_WAV_H__
 	
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <device.h>
 
 //wav文件的数据结构，其中数据头共44bytes

@@ -6,7 +6,7 @@
 ** Modified Date:      		2021-04-19 
 ** Version:			    	V1.1
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <string.h>

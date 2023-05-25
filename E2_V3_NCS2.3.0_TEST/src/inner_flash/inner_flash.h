@@ -9,7 +9,7 @@
 #ifndef __INNER_FLASH_H__
 #define __INNER_FLASH_H__
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <drivers/gps.h>

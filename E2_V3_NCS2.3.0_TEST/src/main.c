@@ -5,14 +5,14 @@
 */
 
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <kernel_structs.h>
 #include <device.h>
 #include <stdio.h>
 #include <sys/printk.h>
 #include <power/reboot.h>
 #include <drivers/spi.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "datetime.h"

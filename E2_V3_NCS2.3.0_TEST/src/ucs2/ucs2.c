@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <logging/log.h>
 #include <nrfx.h>
 #include "logger.h"
 

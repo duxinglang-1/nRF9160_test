@@ -7,8 +7,8 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
 #include <stdio.h>
-#include <drivers/uart.h>
 #include <string.h>
 #include "lcd.h"
 #include "font.h"

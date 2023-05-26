@@ -8,7 +8,6 @@
 ******************************************************************************************************/
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
-#include <drivers/flash.h>
 #include <modem/lte_lc.h>
 #include <net/download_client.h>
 #include "external_flash.h"
@@ -34,13 +33,13 @@ static uint32_t datalen = 0;
 
 static dl_callback_t callback;
 static struct download_client   dlc;
-static struct k_delayed_work    dlc_with_offset_work;
+static struct k_work_delayable    dlc_with_offset_work;
 static int socket_retries_left;
 
 static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
-static struct k_delayed_work dl_work;
+static struct k_work_delayable dl_work;
 static DL_STATUS_ENUM dl_cur_status = DL_STATUS_ERROR;
 
 uint8_t g_dl_progress = 0;

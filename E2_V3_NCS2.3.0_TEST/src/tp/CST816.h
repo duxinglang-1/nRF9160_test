@@ -11,7 +11,7 @@
 
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <stdio.h>
 
 #define TP_I2C_ADDRESS			0x15

@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #define PPG_REPORT_SIZE            18
 #define ACCEL_REPORT_SIZE          6

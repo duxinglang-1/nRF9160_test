@@ -912,13 +912,13 @@ int sensorhub_set_bpt_algo_submode( const uint8_t algo_op_mode );
 
 
 /**
- * @brief	function to set 512 bytes of user calibration
+ * @brief	function to set CAL_RESULT_SIZE bytes of user calibration
  *
- * @param[in]  cal_result[512]			-	user calibration data
+ * @param[in]  cal_result			-	user calibration data
  *
  * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
  */
-int sh_set_cfg_bpt_cal_result(uint8_t cal_result[512]);
+int sh_set_cfg_bpt_cal_result(uint8_t *cal_result);
 /**
  * @brief	function to get 512 bytes of user calibration
  *

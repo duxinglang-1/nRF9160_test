@@ -9,10 +9,10 @@
 #ifndef __INNER_FLASH_H__
 #define __INNER_FLASH_H__
 
-#include <zephyr/kernel.h>
 #include <stdio.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <drivers/gps.h>
+#include <nrf_modem_gnss.h>
 #include "datetime.h"
 #include "Settings.h"
 
@@ -76,7 +76,7 @@ typedef struct
 	float altitude;
 	float speed;
 	float heading;
-	struct gps_datetime datetime;
+	struct nrf_modem_gnss_datetime datetime;
 }local_record_t;
 
 typedef union

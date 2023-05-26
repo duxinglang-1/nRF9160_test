@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
 #include <stdio.h>
-#include <drivers/uart.h>
 #include <string.h>
 #include <net/mqtt.h>
 #include <net/socket.h>
@@ -76,11 +76,11 @@ static void MqttActWaitCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_act_wait_timer, MqttActWaitCallBack, NULL);
 
 static struct k_work_q *app_work_q;
-static struct k_delayed_work modem_init_work;
-static struct k_delayed_work modem_off_work;
-static struct k_delayed_work modem_on_work;
-static struct k_delayed_work nb_link_work;
-static struct k_delayed_work mqtt_link_work;
+static struct k_work_delayable modem_init_work;
+static struct k_work_delayable modem_off_work;
+static struct k_work_delayable modem_on_work;
+static struct k_work_delayable nb_link_work;
+static struct k_work_delayable mqtt_link_work;
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 

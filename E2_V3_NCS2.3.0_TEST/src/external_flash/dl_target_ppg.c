@@ -8,7 +8,6 @@
 ******************************************************************************************************/
 #include <string.h>
 #include <zephyr/kernel.h>
-#include <drivers/flash.h>
 #include <pm_config.h>
 #include "external_flash.h"
 #include "dl_target.h"

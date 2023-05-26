@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <nrf_socket.h>
 #include <zephyr/drivers/gpio.h>
 #include <logging/log.h>

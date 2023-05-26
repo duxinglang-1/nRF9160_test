@@ -17,8 +17,19 @@ extern uint16_t  POINT_COLOR;//默认红色
 extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
-#define LCD_PORT	"GPIO_0"
-#define LCD_DEV 	"SPI_3"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)
+#define LCD_DEV DT_NODELABEL(spi3)
+#else
+#error "spi3 devicetree node is disabled"
+#define LCD_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define LCD_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define LCD_PORT	""
+#endif
 
 #define CS		30
 #define	RST		16

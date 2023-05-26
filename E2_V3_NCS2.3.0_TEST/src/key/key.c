@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <logging/log.h>
 #include <nrfx.h>
@@ -44,7 +44,13 @@ static atomic_t my_buttons;
 static sys_slist_t button_handlers;
 
 #ifdef CONFIG_WRIST_CHECK_SUPPORT
-#define WEAR_PORT 	"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define WEAR_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define WEAR_PORT	""
+#endif
+
 #define WEAR_PIN	06
 
 static bool wear_int_flag = false;
@@ -68,7 +74,7 @@ static const key_cfg button_pins[] =
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
 static struct gpio_callback gpio_cb;
 static struct k_spinlock lock;
-static struct k_delayed_work buttons_scan;
+static struct k_work_delayable buttons_scan;
 static struct k_mutex button_handler_mut;
 static struct k_timer g_long_press_timer_id;
 
@@ -796,7 +802,7 @@ static int buttons_init(button_handler_t button_handler)
 
 	for(size_t i = 0; i < ARRAY_SIZE(button_pins); i++)
 	{
-		button_devs[i] = device_get_binding(button_pins[i].port);
+		button_devs[i] = DEVICE_DT_GET(button_pins[i].port);
 		if (!button_devs[i])
 		{
 			return -ENODEV;
@@ -910,7 +916,7 @@ void wear_init(void)
 	int flag = GPIO_INPUT|GPIO_PULL_UP;
 
   	//¶Ë¿Ú³õÊ¼»¯
-  	gpio_wear = device_get_binding(WEAR_PORT);
+  	gpio_wear = DEVICE_DT_GET(WEAR_PORT);
 	if(!gpio_wear)
 		return;
 

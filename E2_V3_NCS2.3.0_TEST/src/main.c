@@ -7,7 +7,7 @@
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
 #include <kernel_structs.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <stdio.h>
 #include <sys/printk.h>
 #include <power/reboot.h>

@@ -48,7 +48,13 @@ static u32_t       * volatile mp_block_to_fill  = NULL;
 static u32_t const * volatile mp_block_to_check = NULL;
 #endif
 
-#define AUDIO_PORT	"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define AUDIO_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define AUDIO_PORT	""
+#endif
+
 #define WTN_DATA	13      //接 13脚
 #define WTN_BUSY	14		//busy脚,音频播放之后由低变高
 
@@ -192,7 +198,7 @@ void audio_init(void)
 	
 	Set_Audio_Power_On();
 	
-	gpio_audio = device_get_binding(AUDIO_PORT);
+	gpio_audio = DEVICE_DT_GET(AUDIO_PORT);
 	
 	gpio_pin_configure(gpio_audio, WTN_DATA, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_audio, WTN_DATA, 1);

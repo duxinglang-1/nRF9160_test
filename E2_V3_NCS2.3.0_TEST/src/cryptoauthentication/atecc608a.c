@@ -7,7 +7,19 @@
 #include <dk_buttons_and_leds.h>
 #include "atecc608a.h"
 
-#define CRYPTO_DEV "I2C_1"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define CRYPTO_DEV DT_NODELABEL(i2c1)
+#else
+#error "i2c1 devicetree node is disabled"
+#define CRYPTO_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define CRYPTO_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define CRYPTO_PORT	""
+#endif
 
 static mcdev_ctx_t dev_ctx;
 
@@ -16,7 +28,7 @@ struct device *ATECC608A_I2C;
 
 static void init_i2c(void)
 {
-	ATECC608A_I2C = device_get_binding(CRYPTO_DEV);
+	ATECC608A_I2C = DEVICE_DT_GET(CRYPTO_DEV);
 	if(!ATECC608A_I2C)
 	{
 		return 0;

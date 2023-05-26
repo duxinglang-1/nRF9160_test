@@ -4,13 +4,13 @@
 * SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
 */
 #include <zephyr/kernel.h>
-#include <stdio.h>
+#include <zephyr/device.h>
 #include <zephyr/types.h>
-#include <string.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/gpio.h>
-#include <device.h>
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
+#include <stdio.h>
+#include <string.h>
 #include "logger.h"
 #include "transfer_cache.h"
 #include "datetime.h"
@@ -1923,7 +1923,7 @@ void ble_wakeup_nrf52810(void)
 {
 	if(!gpio_ble)
 	{
-		gpio_ble = device_get_binding(BLE_PORT);
+		gpio_ble = DEVICE_DT_GET(BLE_PORT);
 		if(!gpio_ble)
 		{
 		#ifdef UART_DEBUG
@@ -2155,7 +2155,7 @@ void ble_init(void)
 	LOGD("begin");
 #endif
 
-	uart_ble = device_get_binding(BLE_DEV);
+	uart_ble = DEVICE_DT_GET(BLE_DEV);
 	if(!uart_ble)
 	{
 	#ifdef UART_DEBUG
@@ -2167,7 +2167,7 @@ void ble_init(void)
 	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
 
-	gpio_ble = device_get_binding(BLE_PORT);
+	gpio_ble = DEVICE_DT_GET(BLE_PORT);
 	if(!gpio_ble)
 	{
 	#ifdef UART_DEBUG

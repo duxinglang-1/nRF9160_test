@@ -11,7 +11,7 @@
 
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #define PPG_CHECK_HR_MENU			60
 #define PPG_CHECK_SPO2_MENU			150

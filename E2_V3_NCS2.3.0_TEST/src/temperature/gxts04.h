@@ -9,16 +9,19 @@
 #ifndef __GXTS04_H__
 #define __GXTS04_H__
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define TEMP_DEV	DT_LABEL(I2C1_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define TEMP_DEV DT_NODELABEL(i2c1)
 #else
-/* A build error here means your board does not have I2C enabled. */
 #error "i2c1 devicetree node is disabled"
 #define TEMP_DEV	""
 #endif
 
-#define TEMP_PORT 	"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define TEMP_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define TEMP_PORT	""
+#endif
 
 #define TEMP_ALRTB		7
 #define TEMP_EINT		8

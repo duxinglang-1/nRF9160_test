@@ -7,7 +7,7 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <zephyr/kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include "max_sh_interface.h"
@@ -42,17 +42,20 @@
 #define SH_MFIO_PIN            		14
 #endif
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define PPG_DEV	DT_LABEL(I2C1_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define PPG_DEV DT_NODELABEL(i2c1)
 #else
-/* A build error here means your board does not have I2C enabled. */
 #error "i2c1 devicetree node is disabled"
 #define PPG_DEV	""
 #endif
 
-#define PPG_PORT 	"GPIO_0"
-	
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define PPG_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define PPG_PORT	""
+#endif
+
 #define PPG_SDA_PIN		11
 #define PPG_SCL_PIN		12
 #define PPG_INT_PIN		13
@@ -101,7 +104,7 @@ void wait_ms(int ms)
 void PPG_i2c_on(void)
 {
 	if(gpio_ppg == NULL)
-		gpio_ppg = device_get_binding(PPG_PORT);
+		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 1);
@@ -113,7 +116,7 @@ void PPG_i2c_on(void)
 void PPG_i2c_off(void)
 {
 	if(gpio_ppg == NULL)
-		gpio_ppg = device_get_binding(PPG_PORT);
+		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 0);
@@ -147,7 +150,7 @@ void PPG_Disable(void)
 
 static void sh_init_i2c(void)
 {
-	i2c_ppg = device_get_binding(PPG_DEV);
+	i2c_ppg = DEVICE_DT_GET(PPG_DEV);
 	if(!i2c_ppg)
 	{
 	#ifdef MAX_DEBUG
@@ -170,7 +173,7 @@ static void sh_init_gpio(void)
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
 	if(gpio_ppg == NULL)
-		gpio_ppg = device_get_binding(PPG_PORT);
+		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
 
 #if 0	//xb add 20230228 Set the PPG interrupt pin as input to prevent leakage.
 	//interrupt

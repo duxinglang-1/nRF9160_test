@@ -4,7 +4,6 @@
 #include <zephyr/kernel.h>
 #include <sys/printk.h>
 #include <fs/nvs.h>
-#include <drivers/flash.h>
 #include <dk_buttons_and_leds.h>
 #include "screen.h"
 #include "settings.h"

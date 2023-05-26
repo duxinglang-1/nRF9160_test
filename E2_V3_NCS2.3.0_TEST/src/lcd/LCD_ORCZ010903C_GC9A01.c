@@ -44,7 +44,7 @@ void LCD_CS_HIGH(void)
 
 static void LCD_SPI_Init(void)
 {
-	spi_lcd = device_get_binding(LCD_DEV);
+	spi_lcd = DEVICE_DT_GET(LCD_DEV);
 	if(!spi_lcd) 
 	{
 		return;
@@ -55,7 +55,7 @@ static void LCD_SPI_Init(void)
 	spi_cfg.slave = 0;
 
 #ifndef SPI_MUIT_BY_CS
-	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
+	spi_cs_ctr.gpio_dev = DEVICE_DT_GET(LCD_PORT);
 	if (!spi_cs_ctr.gpio_dev)
 	{
 		printk("Unable to get GPIO SPI CS device\n");
@@ -426,7 +426,7 @@ void LCD_Init(void)
 	int err;
 
   	//¶Ë¿Ú³õÊ¼»¯
-  	gpio_lcd = device_get_binding(LCD_PORT);
+  	gpio_lcd = DEVICE_DT_GET(LCD_PORT);
 	if(!gpio_lcd)
 	{
 		return;

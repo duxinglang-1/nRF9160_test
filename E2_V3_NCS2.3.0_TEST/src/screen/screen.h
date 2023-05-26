@@ -12,7 +12,6 @@
 #define __SCREEN_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
 #include "font.h"
 #include "lcd.h"
 

@@ -10,7 +10,6 @@
 #include <nrf_modem_gnss.h>
 #include <modem/lte_lc.h>
 #include <date_time.h>
-#include <logger.h>
 #include "screen.h"
 #include "gps.h"
 

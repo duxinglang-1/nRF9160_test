@@ -41,7 +41,7 @@ u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte d
 
 static void LCD_SPI_Init(void)
 {
-	spi_lcd = device_get_binding(LCD_DEV);
+	spi_lcd = DEVICE_DT_GET(LCD_DEV);
 	if(!spi_lcd) 
 	{
 		return;
@@ -425,7 +425,7 @@ void LCD_Init(void)
 	int err;
 	
   	//¶Ë¿Ú³õÊ¼»¯
-  	gpio_lcd = device_get_binding(LCD_PORT);
+  	gpio_lcd = DEVICE_DT_GET(LCD_PORT);
 	if(!gpio_lcd)
 	{
 		return;

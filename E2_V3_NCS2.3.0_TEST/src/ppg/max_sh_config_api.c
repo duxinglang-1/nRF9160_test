@@ -754,7 +754,7 @@ int sensorhub_set_bpt_algo_submode(const uint8_t algo_op_mode)
 	return status;
 }
 
-int sh_set_cfg_bpt_cal_result(uint8_t cal_result[CAL_RESULT_SIZE])
+int sh_set_cfg_bpt_cal_result(uint8_t *cal_result)
 {
 	int byte_stream_sz = 240;
     int status = sh_set_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_BPT_CAL_RESULT, &cal_result[0], byte_stream_sz);

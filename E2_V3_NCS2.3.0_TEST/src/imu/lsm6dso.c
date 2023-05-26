@@ -9,8 +9,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
-#include <device.h>
-#include <sys/printk.h>
+#include <zephyr/device.h>
 #include <nrf_socket.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
@@ -36,16 +35,19 @@ ULTRA LOW POWER AND INACTIVITY MODE
 
 //#define IMU_DEBUG
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define IMU_DEV	DT_LABEL(I2C1_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define IMU_DEV DT_NODELABEL(i2c1)
 #else
-/* A build error here means your board does not have I2C enabled. */
 #error "i2c1 devicetree node is disabled"
 #define IMU_DEV	""
 #endif
 
-#define IMU_PORT "GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define IMU_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define IMU_PORT	""
+#endif
 
 #define LSM6DSO_I2C_ADD     LSM6DSO_I2C_ADD_L >> 1 //need to shift 1 bit to the right.
 
@@ -58,7 +60,7 @@ ULTRA LOW POWER AND INACTIVITY MODE
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
 static struct k_work_q *imu_work_q;
-static struct k_delayed_work fall_work;
+static struct k_work_delayable fall_work;
 
 static bool imu_check_ok = false;
 static uint8_t whoamI, rst;
@@ -213,7 +215,7 @@ void GetCurDayStepRecData(uint16_t *databuf)
 
 static uint8_t init_i2c(void)
 {
-	i2c_imu = device_get_binding(IMU_DEV);
+	i2c_imu = DEVICE_DT_GET(IMU_DEV);
 	if(!i2c_imu)
 	{
 	#ifdef IMU_DEBUG
@@ -265,10 +267,11 @@ void step_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pin
 
 void init_imu_int1(void)
 {
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
+
 	if(gpio_imu == NULL)
-		gpio_imu = device_get_binding(IMU_PORT);
-	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_imu, LSM6DSO_INT1_PIN, 0);
+		gpio_imu = DEVICE_DT_GET(IMU_PORT);
+	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
 }
 
 uint8_t init_gpio(void)
@@ -276,7 +279,7 @@ uint8_t init_gpio(void)
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
 
 	if(gpio_imu == NULL)
-		gpio_imu = device_get_binding(IMU_PORT);
+		gpio_imu = DEVICE_DT_GET(IMU_PORT);
 	
 	//steps&tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
@@ -1147,13 +1150,13 @@ void test_i2c(void)
 	struct device *i2c_dev;
 	struct device *dev0;
 
-	dev0 = device_get_binding("GPIO_0");
+	dev0 = DEVICE_DT_GET(IMU_PORT);
 	gpio_pin_configure(dev0, 0, GPIO_OUTPUT);
 	gpio_pin_write(dev0, 0, 1);
 #ifdef IMU_DEBUG
 	LOGD("Starting i2c scanner...");
 #endif
-	i2c_dev = device_get_binding(IMU_DEV);
+	i2c_dev = DEVICE_DT_GET(IMU_DEV);
 	if(!i2c_dev)
 	{
 	#ifdef IMU_DEBUG

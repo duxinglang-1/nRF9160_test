@@ -9,13 +9,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr/kernel.h>
 #include <soc.h>
-#include <device.h>
 #include <nrf_socket.h>
-#include <zephyr/drivers/gpio.h>
-#include <logging/log.h>
 #include <nrfx.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include "lcd.h"
 #include "sync.h"
 #ifdef CONFIG_WIFI_SUPPORT

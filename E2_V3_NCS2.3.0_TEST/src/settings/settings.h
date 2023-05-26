@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <sys/printk.h>
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	10

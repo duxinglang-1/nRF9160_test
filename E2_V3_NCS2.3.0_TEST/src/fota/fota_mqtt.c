@@ -10,13 +10,13 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
-#include <drivers/flash.h>
-#include <sys/reboot.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/dfu/mcuboot.h>
 #include <modem/lte_lc.h>
 #include <modem/nrf_modem_lib.h>
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
-#include <dfu/mcuboot.h>
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
@@ -42,7 +42,7 @@ uint8_t g_fota_progress = 0;
 static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
-static struct k_delayed_work fota_work;
+static struct k_work_delayable fota_work;
 static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
 static void fota_timer_handler(struct k_timer *timer_id);
@@ -328,50 +328,13 @@ void fota_init(void)
 	LOGD("begin");
 #endif
 
-#if !defined(CONFIG_NRF_MODEM_LIB_SYS_INIT)
 	err = nrf_modem_lib_init(NORMAL_MODE);
-#else
-	err = nrf_modem_lib_get_init_ret();
-#endif
-	switch(err)
+	if(err)
 	{
-	case 0:
-		/* Initialization successful, no action required. */
 	#ifdef FOTA_DEBUG
-		LOGD("Initialization successful");
-	#endif		
-		break;
-
-	case MODEM_DFU_RESULT_OK:
-	#ifdef FOTA_DEBUG	
-		LOGD("Modem firmware update successful!");
-		LOGD("Modem will run the new firmware after reboot");
+		LOGD("Failed to initialize modem library!");
 	#endif
-		k_thread_suspend(k_current_get());
-		break;
-		
-	case MODEM_DFU_RESULT_UUID_ERROR:
-	case MODEM_DFU_RESULT_AUTH_ERROR:
-	#ifdef FOTA_DEBUG
-		LOGD("Modem firmware update failed");
-		LOGD("Modem will run non-updated firmware on reboot.");
-	#endif
-		break;
-		
-	case MODEM_DFU_RESULT_HARDWARE_ERROR:
-	case MODEM_DFU_RESULT_INTERNAL_ERROR:
-	#ifdef FOTA_DEBUG
-		LOGD("Modem firmware update failed");
-		LOGD("Fatal error.");
-	#endif
-		break;
 		return;
-		
-	default:
-	#ifdef FOTA_DEBUG	
-		LOGD("Could not initialize modem library, fatal error: %d", err);
-	#endif
-		break;
 	}
 
 	boot_write_img_confirmed();

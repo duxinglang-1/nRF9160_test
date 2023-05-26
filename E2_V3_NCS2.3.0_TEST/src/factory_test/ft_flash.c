@@ -8,7 +8,6 @@
 ******************************************************************************************************/
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
-#include <drivers/flash.h>
 #ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"
 #endif

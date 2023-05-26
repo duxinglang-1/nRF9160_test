@@ -35,7 +35,7 @@ static float t_temp80 = 0.0;		//预测的人体温度值
 
 static uint8_t init_i2c(void)
 {
-	i2c_temp = device_get_binding(TEMP_DEV);
+	i2c_temp = DEVICE_DT_GET(TEMP_DEV);
 	if(!i2c_temp)
 	{
 		return -1;

@@ -13,8 +13,8 @@
 #include "logger.h"
 #include "external_flash.h"
 #include "transfer_cache.h"
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define TEST_DEBUG

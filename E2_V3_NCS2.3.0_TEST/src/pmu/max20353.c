@@ -22,11 +22,9 @@
 
 #else/*GPIO_ACT_I2C*/
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define PMU_DEV	DT_LABEL(I2C1_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define PMU_DEV DT_NODELABEL(i2c1)
 #else
-/* A build error here means your board does not have I2C enabled. */
 #error "i2c1 devicetree node is disabled"
 #define PMU_DEV	""
 #endif
@@ -36,7 +34,13 @@
 
 #endif/*GPIO_ACT_I2C*/
 
-#define PMU_PORT 		"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define PMU_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define PMU_PORT	""
+#endif
+
 #define PMU_ALRTB		7
 #define PMU_EINT		8
 
@@ -103,7 +107,7 @@ static void show_infor2(uint8_t *strbuf)
 void I2C_INIT(void)
 {
 	if(gpio_pmu == NULL)
-		gpio_pmu = device_get_binding(PMU_PORT);
+		gpio_pmu = DEVICE_DT_GET(PMU_PORT);
 
 	gpio_pin_configure(gpio_pmu, PMU_SCL, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_pmu, PMU_SDA, GPIO_OUTPUT);
@@ -326,7 +330,7 @@ static bool init_i2c(void)
 	I2C_INIT();
 	return true;
 #else
-	i2c_pmu = device_get_binding(PMU_DEV);
+	i2c_pmu = DEVICE_DT_GET(PMU_DEV);
 	if(!i2c_pmu)
 	{
 	#ifdef PMU_DEBUG
@@ -891,7 +895,7 @@ void pmu_init(void)
 #ifdef PMU_DEBUG
 	LOGD("pmu_init");
 #endif
-  	gpio_pmu = device_get_binding(PMU_PORT);
+  	gpio_pmu = DEVICE_DT_GET(PMU_PORT);
 	if(!gpio_pmu)
 	{
 	#ifdef PMU_DEBUG

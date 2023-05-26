@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include <device.h>
-#include <drivers/watchdog.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/watchdog.h>
 #include "logger.h"
 
 //#define WATCHDOG_DEBUG
@@ -17,7 +17,7 @@ struct wdt_data_storage
 {
 	struct device *wdt_drv;
 	int wdt_channel_id;
-	struct k_delayed_work system_workqueue_work;
+	struct k_work_delayable system_workqueue_work;
 	struct k_work second_workqueue_work;
 };
 
@@ -137,7 +137,7 @@ static int watchdog_enable(struct wdt_data_storage *data)
 
 	int err = -ENXIO;
 
-	data->wdt_drv = device_get_binding(DT_LABEL(DT_NODELABEL(wdt)));
+	data->wdt_drv = DEVICE_DT_GET(DT_NODELABEL(wdt));
 	if(data->wdt_drv == NULL)
 	{
 	#ifdef WATCHDOG_DEBUG

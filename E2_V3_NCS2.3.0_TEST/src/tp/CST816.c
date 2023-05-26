@@ -24,15 +24,19 @@
 //#define TP_TEST
 
 #if defined(TP_DEBUG)||defined(TP_TEST)
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define TP_DEV	DT_LABEL(I2C1_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define TP_DEV DT_NODELABEL(i2c1)
 #else
-/* A build error here means your board does not have I2C enabled. */
 #error "i2c1 devicetree node is disabled"
 #define TP_DEV	""
 #endif
-#define TP_PORT 	"GPIO_0"
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define TP_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define TP_PORT	""
+#endif
 
 #define TP_RESET		16
 #define TP_EINT			25
@@ -60,7 +64,7 @@ static TpEventNode *tp_event_tail = NULL;
 #if defined(TP_DEBUG)||defined(TP_TEST)
 static uint8_t init_i2c(void)
 {
-	i2c_ctp = device_get_binding(TP_DEV);
+	i2c_ctp = DEVICE_DT_GET(TP_DEV);
 	if(!i2c_ctp)
 	{
 	#ifdef TP_DEBUG
@@ -671,7 +675,7 @@ void tp_init(void)
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 	
   	//¶Ë¿Ú³õÊ¼»¯
-  	gpio_ctp = device_get_binding(TP_PORT);
+  	gpio_ctp = DEVICE_DT_GET(TP_PORT);
 	if(!gpio_ctp)
 	{
 	#ifdef TP_DEBUG

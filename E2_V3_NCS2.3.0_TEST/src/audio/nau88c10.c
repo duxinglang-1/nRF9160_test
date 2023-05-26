@@ -56,7 +56,7 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 
 static bool init_i2c(void)
 {
-	i2c_audio = device_get_binding(AUDIO_DEV);
+	i2c_audio = DEVICE_DT_GET(AUDIO_DEV);
 	if(!i2c_audio)
 	{
 		LOGD("ERROR SETTING UP I2C");
@@ -71,7 +71,7 @@ static bool init_i2c(void)
 
 static void init_gpio(void)
 {
-	gpio_audio = device_get_binding(AUDIO_PORT);
+	gpio_audio = DEVICE_DT_GET(AUDIO_PORT);
 	gpio_pin_configure(gpio_audio, AUDIO_LDO_EN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_audio, AUDIO_LDO_EN, 1);
 

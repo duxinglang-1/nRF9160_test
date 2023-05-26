@@ -7,12 +7,12 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <zephyr/kernel.h>
-#include <stdio.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
+#include <stdio.h>
 #include <string.h>
-#include <pm/device.h>
 #include <dk_buttons_and_leds.h>
 #include "esp8266.h"
 #include "uart_ble.h"
@@ -25,8 +25,19 @@
 #define WIFI_EN_PIN		4	//WIFI EN，使用WIFI需要拉低此脚
 #define WIFI_RST_PIN	3
 
-#define WIFI_DEV		"UART_0"
-#define WIFI_PORT		"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
+#define WIFI_DEV DT_NODELABEL(uart0)
+#else
+#error "uart0 devicetree node is disabled"
+#define WIFI_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define WIFI_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define WIFI_PORT	""
+#endif
 
 #define WIFI_RETRY_COUNT_MAX	5
 #define BUF_MAXSIZE	1024
@@ -804,7 +815,7 @@ void wifi_init(void)
 	LOGD("begin");
 #endif
 
-	uart_wifi = device_get_binding(WIFI_DEV);
+	uart_wifi = DEVICE_DT_GET(WIFI_DEV);
 	if(!uart_wifi)
 	{
 	#ifdef WIFI_DEBUG
@@ -816,7 +827,7 @@ void wifi_init(void)
 	uart_irq_callback_set(uart_wifi, uart_cb);
 	uart_irq_rx_enable(uart_wifi);
 
-	gpio_wifi = device_get_binding(WIFI_PORT);
+	gpio_wifi = DEVICE_DT_GET(WIFI_PORT);
 	if(!gpio_wifi)
 	{
 	#ifdef WIFI_DEBUG

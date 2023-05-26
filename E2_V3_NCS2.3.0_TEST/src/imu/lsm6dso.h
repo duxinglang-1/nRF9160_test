@@ -2,7 +2,7 @@
 
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include "inner_flash.h"
 
 typedef struct

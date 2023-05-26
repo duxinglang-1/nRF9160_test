@@ -14,15 +14,21 @@
 #include "font.h"
 
 //SPIÒý½Å¶¨Òå
-#define SPI3_NODE DT_NODELABEL(spi3)
-#if DT_NODE_HAS_STATUS(SPI3_NODE, okay)
-#define FLASH_DEVICE	DT_LABEL(SPI3_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)
+#define FLASH_DEVICE DT_NODELABEL(spi3)
 #else
 #error "spi3 devicetree node is disabled"
-#define FLASH_DEVICE ""
-#endif 
+#define FLASH_DEVICE	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define FLASH_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define FLASH_PORT	""
+#endif
+ 
 #define FLASH_NAME 		"W25Q64FW"
-#define FLASH_PORT		"GPIO_0"
 #define FLASH_CS_PIN		(2)
 #define FLASH_CLK_PIN		(22)
 #define FLASH_MOSI_PIN		(20)

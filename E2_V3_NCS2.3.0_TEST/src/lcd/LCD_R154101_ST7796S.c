@@ -472,7 +472,7 @@ void LCD_Init(void)
 	int i;
 	
 	//¶Ë¿Ú³õÊ¼»¯
-	gpio_lcd = device_get_binding(LCD_PORT);
+	gpio_lcd = DEVICE_DT_GET(LCD_PORT);
 
 	gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
 	gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);

@@ -11,7 +11,6 @@
 ******************************************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
-#include <drivers/flash.h>
 #include "datetime.h"
 #include "settings.h"
 #include "lcd.h"

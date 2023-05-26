@@ -7,9 +7,8 @@
 ** Version:			    	V1.1
 ******************************************************************************************************/
 #include <fs/nvs.h>
-#include <drivers/flash.h>
 #include <flash_map_pm.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

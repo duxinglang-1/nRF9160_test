@@ -52,7 +52,7 @@
 //#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
-#define MQTT_CONNECTED_KEEP_TIME	(30)
+#define MQTT_CONNECTED_KEEP_TIME	(60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -228,7 +228,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	k_timer_start(&mqtt_act_wait_timer, K_MSEC(10*1000), K_NO_WAIT);
+	k_timer_start(&mqtt_act_wait_timer, K_SECONDS(30), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 

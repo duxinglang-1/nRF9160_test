@@ -669,6 +669,10 @@ bool pmu_interrupt_proc(void)
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FTPMUStatusUpdate(2);
 	#endif
+
+	#ifdef CONFIG_IMU_SUPPORT
+		imu_sensor_init();
+	#endif
 	}
 
 	val = gpio_pin_get_raw(gpio_pmu, PMU_EINT);//xb add 20201202 防止多个中断同时触发，MCU没及时处理导致PMU中断脚一直拉低

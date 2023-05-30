@@ -3193,7 +3193,8 @@ void NBMsgProcess(void)
 	#ifdef NB_DEBUG
 		LOGD("mqtt_act_wait_flag 001");
 	#endif
-		DisConnectMqttLink();
+		//DisConnectMqttLink();
+		mqtt_connected = false;
 		nb_connected = false;
 		nb_redraw_sig_flag = true;
 

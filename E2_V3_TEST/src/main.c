@@ -13,6 +13,7 @@
 #include <power/reboot.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
+#include <hal/nrf_power.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "datetime.h"
@@ -776,6 +777,149 @@ void system_init_completed(void)
 		sys_pwron_completed_flag = true;
 }
 
+void system_pwron_infor(void)
+{
+	/* Show last reset reason */
+	uint32_t reas;
+	
+#if NRF_POWER_HAS_RESETREAS
+	reas = nrf_power_resetreas_get(NRF_POWER);
+	nrf_power_resetreas_clear(NRF_POWER, reas);
+	if(reas & NRF_POWER_RESETREAS_RESETPIN_MASK)
+	{
+		LOGD("Reset from pin reset detected");
+	}
+	else if(reas & NRF_POWER_RESETREAS_DOG_MASK)
+	{
+		LOGD("Reset from global watchdog detected");
+	}
+	else if(reas & NRF_POWER_RESETREAS_SREQ_MASK)
+	{
+		LOGD("Reset from AIRCR.SYSRESETREQ detected");
+	}
+	else if(reas & NRF_POWER_RESETREAS_LOCKUP_MASK)
+	{
+		LOGD("Reset from CPU lock-up detected");
+	}
+	else if(reas & NRF_POWER_RESETREAS_OFF_MASK)
+	{
+		LOGD("Reset due to wakeup from System OFF mode, when wakeup is triggered by DETECT signal from GPIO");
+	}
+#if defined(POWER_RESETREAS_LPCOMP_Msk) || defined(__NRFX_DOXYGEN__)	
+	else if(reas & NRF_POWER_RESETREAS_LPCOMP_MASK)
+	{
+		LOGD("Reset due to wake up from System OFF mode when wakeup is triggered from ANADETECT signal from LPCOMP");
+	}
+#endif	
+	else if(reas & NRF_POWER_RESETREAS_DIF_MASK)
+	{
+		LOGD("Reset due to wakeup from System OFF mode, when wakeup is triggered by entering debug interface mode");
+	}
+#if defined(POWER_RESETREAS_NFC_Msk) || defined(__NRFX_DOXYGEN__)	
+	else if(reas & NRF_POWER_RESETREAS_NFC_MASK)
+	{
+		LOGD("Reset due to wake up from System OFF mode by NFC field detect");
+	}
+#endif	
+#if defined(POWER_RESETREAS_VBUS_Msk) || defined(__NRFX_DOXYGEN__)
+	else if(reas & NRF_POWER_RESETREAS_VBUS_MASK)
+	{
+		LOGD("Reset due to wake up from System OFF mode by VBUS rising into valid range");
+	}
+#endif	
+	else if(reas)
+	{
+		LOGD("Reset by a different source (0x%08X)", reas);
+	}
+	else
+	{
+		LOGD("Power-on-reset");
+	}
+	
+#else
+
+	reas = nrf_reset_resetreas_get(NRF_RESET);
+	nrf_reset_resetreas_clear(NRF_RESET, reas);
+
+	if(reas & NRF_RESET_RESETREAS_RESETPIN_MASK)
+	{
+		LOGD("Reset from pin reset detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_DOG0_MASK)
+	{
+		LOGD("Reset from application watchdog timer 0 detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_CTRLAP_MASK)
+	{
+		LOGD("Reset from application CTRL-AP detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_SREQ_MASK)
+	{
+		LOGD("Reset from application soft reset detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_LOCKUP_MASK)
+	{
+		LOGD("Reset from application CPU lockup detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_OFF_MASK)
+	{
+		LOGD("Reset due to wakeup from System OFF mode when wakeup is triggered by DETECT signal from GPIO");
+	}
+	else if(reas & NRF_RESET_RESETREAS_LPCOMP_MASK)
+	{
+		LOGD("Reset due to wakeup from System OFF mode when wakeup is triggered by ANADETECT signal from LPCOMP");
+	}
+	else if(reas & NRF_RESET_RESETREAS_DIF_MASK)
+	{
+		LOGD("Reset due to wakeup from System OFF mode when wakeup is triggered by entering the Debug Interface mode");
+	}
+#if NRF_RESET_HAS_NETWORK	
+	else if(reas & NRF_RESET_RESETREAS_LSREQ_MASK)
+	{
+		LOGD("Reset from network soft reset detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_LLOCKUP_MASK)
+	{
+		LOGD("Reset from network CPU lockup detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_LDOG_MASK)
+	{
+		LOGD("Reset from network watchdog timer detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_MFORCEOFF_MASK)
+	{
+		LOGD("Force-OFF reset from application core detected");
+	}
+#endif
+	else if(reas & NRF_RESET_RESETREAS_NFC_MASK)
+	{
+		LOGD("Reset after wakeup from System OFF mode due to NFC field being detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_DOG1_MASK)
+	{
+		LOGD("Reset from application watchdog timer 1 detected");
+	}
+	else if(reas & NRF_RESET_RESETREAS_VBUS_MASK)
+	{
+		LOGD("Reset after wakeup from System OFF mode due to VBUS rising into valid range");
+	}
+#if NRF_RESET_HAS_NETWORK	
+	else if(reas & NRF_RESET_RESETREAS_LCTRLAP_MASK)
+	{
+		LOGD("Reset from network CTRL-AP detected");
+	}
+#endif
+	else if(reas)
+	{
+		LOGD("Reset by a different source (0x%08X)", reas);
+	}
+	else
+	{
+		LOGD("Power-on-reset");
+	}
+#endif
+}
+
 /***************************************************************************
 * 描  述 : main函数 
 * 入  参 : 无 
@@ -783,6 +927,7 @@ void system_init_completed(void)
 **************************************************************************/
 int main(void)
 {
+	//system_pwron_infor();
 	work_init();
 	system_init();
 

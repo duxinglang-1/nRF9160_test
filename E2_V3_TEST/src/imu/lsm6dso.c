@@ -298,12 +298,8 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-bool imu_sensor_init(void)
+void imu_sensor_init(void)
 {
-	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
-	if(whoamI != LSM6DSO_ID)
-		return false;
-
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
@@ -376,6 +372,15 @@ bool imu_sensor_init(void)
 #endif
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
+}
+
+static bool sensor_init(void)
+{
+	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
+	if(whoamI != LSM6DSO_ID)
+		return false;
+
+	imu_sensor_init();
 	return true;
 }
 
@@ -907,7 +912,7 @@ void fall_detection(void)
 		}
 
 		curr_vrif_buff_flag = false;
-		imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
+		sensor_init(); //resets the algorithm, will work continuosly on every tap
 	#ifdef IMU_DEBUG
 		LOGD("Set sensor back to default settings");
 	#endif
@@ -1084,7 +1089,7 @@ void IMU_init(struct k_work_q *work_q)
 	imu_dev_ctx.read_reg = platform_read;
 	imu_dev_ctx.handle = i2c_imu;
 
-	imu_check_ok = imu_sensor_init();
+	imu_check_ok = sensor_init();
 	if(!imu_check_ok)
 		return;
 

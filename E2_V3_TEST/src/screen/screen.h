@@ -45,10 +45,10 @@ extern "C" {
 #define IDLE_DATE_MON_H		26
 #define IDLE_DATE_MON_X		137
 #define IDLE_DATE_MON_Y		106
-#define IDLE_DATE_DAY_W		22
+#define IDLE_DATE_DAY_W		24
 #define IDLE_DATE_DAY_H		20
-#define IDLE_DATE_DAY_X		110
-#define IDLE_DATE_DAY_Y		109
+#define IDLE_DATE_DAY_X		112
+#define IDLE_DATE_DAY_Y		110
 #define IDLE_DATE_NUM_W		12
 #define IDLE_DATE_NUM_H		20
 #define IDLE_WEEK_W			45

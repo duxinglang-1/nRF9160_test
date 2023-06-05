@@ -1138,19 +1138,19 @@ void NBRedrawSignal(void)
 		if(flag)
 			g_nb_sig = NB_SIG_LEVEL_NO;
 	}
-	else if(g_rsrp >= 80)
+	else if(g_rsrp >= 75)
 	{
 		g_nb_sig = NB_SIG_LEVEL_4;
 	}
-	else if(g_rsrp >= 60)
+	else if(g_rsrp >= 55)
 	{
 		g_nb_sig = NB_SIG_LEVEL_3;
 	}
-	else if(g_rsrp >= 40)
+	else if(g_rsrp >= 35)
 	{
 		g_nb_sig = NB_SIG_LEVEL_2;
 	}
-	else if(g_rsrp >= 20)
+	else if(g_rsrp >= 15)
 	{
 		g_nb_sig = NB_SIG_LEVEL_1;
 	}

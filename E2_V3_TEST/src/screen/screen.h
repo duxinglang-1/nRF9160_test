@@ -33,28 +33,43 @@ extern "C" {
 #define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
-#define IDLE_TIME_W		153
-#define IDLE_TIME_H		60
-#define IDLE_TIME_X		((LCD_WIDTH-IDLE_TIME_W)/2)
-#define IDLE_TIME_Y		50
-#define IDLE_TIME_NUM_W		34
-#define IDLE_TIME_NUM_H		60
-#define IDLE_TIME_COLON_W	17
-#define IDLE_TIME_COLON_H	60
-#define IDLE_DATE_MON_W		90
-#define IDLE_DATE_MON_H		26
-#define IDLE_DATE_MON_X		137
-#define IDLE_DATE_MON_Y		106
-#define IDLE_DATE_DAY_W		24
-#define IDLE_DATE_DAY_H		20
-#define IDLE_DATE_DAY_X		112
-#define IDLE_DATE_DAY_Y		110
-#define IDLE_DATE_NUM_W		12
-#define IDLE_DATE_NUM_H		20
-#define IDLE_WEEK_W			45
-#define IDLE_WEEK_H			26
-#define IDLE_WEEK_X			63
-#define IDLE_WEEK_Y			106
+#define IDLE_TIME_W				153
+#define IDLE_TIME_H				60
+#define IDLE_TIME_X				((LCD_WIDTH-IDLE_TIME_W)/2)
+#define IDLE_TIME_Y				50
+#define IDLE_TIME_NUM_W			34
+#define IDLE_TIME_NUM_H			60
+#define IDLE_TIME_COLON_W		17
+#define IDLE_TIME_COLON_H		60
+#define IDLE_DATE_MON_EN_W		50
+#define IDLE_DATE_MON_EN_H		26
+#define IDLE_DATE_MON_EN_X		142
+#define IDLE_DATE_MON_EN_Y		106
+#define IDLE_DATE_DAY_EN_W		24
+#define IDLE_DATE_DAY_EN_H		20
+#define IDLE_DATE_DAY_EN_X		115
+#define IDLE_DATE_DAY_EN_Y		106
+#define IDLE_DATE_NUM_EN_W		12
+#define IDLE_DATE_NUM_EN_H		20
+#define IDLE_DATE_MON_CN_W		100
+#define IDLE_DATE_MON_CN_H		26
+#define IDLE_DATE_MON_CN_X		46
+#define IDLE_DATE_MON_CN_Y		106
+#define IDLE_DATE_DAY_CN_W		24
+#define IDLE_DATE_DAY_CN_H		20
+#define IDLE_DATE_DAY_CN_X		63
+#define IDLE_DATE_DAY_CN_Y		110
+#define IDLE_DATE_NUM_CN_W		14
+#define IDLE_DATE_NUM_CN_H		24
+#define IDLE_WEEK_EN_W			50
+#define IDLE_WEEK_EN_H			26
+#define IDLE_WEEK_EN_X			60
+#define IDLE_WEEK_EN_Y			106
+#define IDLE_WEEK_CN_W			45
+#define IDLE_WEEK_CN_H			26
+#define IDLE_WEEK_CN_X			150
+#define IDLE_WEEK_CN_Y			106
+
 
 //ble
 #define IDLE_BLE_W		50

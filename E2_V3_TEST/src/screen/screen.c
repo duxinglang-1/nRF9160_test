@@ -322,6 +322,26 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 #endif/*UI_STYLE_HEALTH_BAR*/
 }
 
+#ifdef CONFIG_BLE_SUPPORT
+void IdleShowBleStatus(void)
+{
+	uint16_t x,y,w,h;
+	uint16_t ble_link_str[] = {0x0042,0x004C,0x0045,0x0000};//BLE
+
+	LCD_SetFontSize(FONT_SIZE_28);
+
+	if(g_ble_connected)
+	{
+		LCD_MeasureUniString(ble_link_str, &w, &h);
+		LCD_ShowUniString(IDLE_BLE_X+(IDLE_BLE_W-w)/2, IDLE_BLE_Y+(IDLE_BLE_H-w)/2, ble_link_str);
+	}
+	else
+	{
+		LCD_FillColor(IDLE_BLE_X, IDLE_BLE_Y, IDLE_BLE_W, IDLE_BLE_H, BLACK);
+	}
+}
+#endif
+
 void IdleShowSystemDate(void)
 {
 	uint16_t x,y,w,h;
@@ -372,10 +392,14 @@ void IdleShowSystemDate(void)
 											{0x5341,0x4E8C,0x6708,0x0000,0x0000},//Ê®¶þÔÂ
 										},
 									};
+	uint16_t str_mon_cn[2] = {0x6708,0x0000};
+	uint16_t str_day_cn[2] = {0x65E5,0x0000};
 #else	
 	uint8_t *str_mon[12] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"};
 #endif
-	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
+	uint32_t img_24_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+							 IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+	uint32_t img_20_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							 IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
 	POINT_COLOR=WHITE;
@@ -384,13 +408,44 @@ void IdleShowSystemDate(void)
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_28);
 
-	LCD_FillColor(IDLE_DATE_DAY_X, IDLE_DATE_DAY_Y, IDLE_DATE_DAY_W, IDLE_DATE_DAY_H, BLACK);
+	switch(global_settings.language)
+	{
+	case LANGUAGE_CHN:
+		LCD_FillColor(IDLE_DATE_MON_CN_X, IDLE_DATE_MON_CN_Y, IDLE_DATE_MON_CN_W, IDLE_DATE_MON_CN_H, BLACK);
 
-	LCD_ShowImg_From_Flash(IDLE_DATE_DAY_X+0*IDLE_DATE_NUM_W, IDLE_DATE_DAY_Y, img_num[date_time.day/10]);
-	LCD_ShowImg_From_Flash(IDLE_DATE_DAY_X+1*IDLE_DATE_NUM_W, IDLE_DATE_DAY_Y, img_num[date_time.day%10]);
+		x = IDLE_DATE_MON_CN_X;
+		y = IDLE_DATE_MON_CN_Y;
+		if(date_time.month > 9)
+		{
+			LCD_ShowImg_From_Flash(x, y+2, img_24_num[date_time.month/10]);
+			x += IDLE_DATE_NUM_CN_W;
+		}
+		LCD_ShowImg_From_Flash(x, y+2, img_24_num[date_time.month%10]);
+		x += IDLE_DATE_NUM_CN_W;
+		LCD_ShowUniString(x, y, str_mon_cn);
+		LCD_MeasureUniString(str_mon_cn, &w, &h);
+
+		x += w;
+		if(date_time.day > 9)
+		{
+			LCD_ShowImg_From_Flash(x, y+2, img_24_num[date_time.day/10]);
+			x += IDLE_DATE_NUM_CN_W;
+		}
+		LCD_ShowImg_From_Flash(x, y+2, img_24_num[date_time.day%10]);
+		x += IDLE_DATE_NUM_CN_W;
+		LCD_ShowUniString(x, y, str_day_cn);
+		break;
+
+	default:
+		LCD_FillColor(IDLE_DATE_DAY_EN_X, IDLE_DATE_DAY_EN_Y, IDLE_DATE_DAY_EN_W, IDLE_DATE_DAY_EN_H, BLACK);
+
+		LCD_ShowImg_From_Flash(IDLE_DATE_DAY_EN_X+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day/10]);
+		LCD_ShowImg_From_Flash(IDLE_DATE_DAY_EN_X+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day%10]);
 	
-	LCD_FillColor(IDLE_DATE_MON_X, IDLE_DATE_MON_Y, IDLE_DATE_MON_W, IDLE_DATE_MON_H, BLACK);
-	LCD_ShowUniString(IDLE_DATE_MON_X, IDLE_DATE_MON_Y, str_mon[global_settings.language][date_time.month-1]);
+		LCD_FillColor(IDLE_DATE_MON_EN_X, IDLE_DATE_MON_EN_Y, IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_H, BLACK);
+		LCD_ShowUniString(IDLE_DATE_MON_EN_X, IDLE_DATE_MON_EN_Y, str_mon[global_settings.language][date_time.month-1]);
+		break;
+	}
 #else
 	LCD_SetFontSize(FONT_SIZE_32);
 
@@ -400,26 +455,6 @@ void IdleShowSystemDate(void)
 	LCD_ShowString(IDLE_DATE_MON_X,IDLE_DATE_MON_Y,str_date);
 #endif
 }
-
-#ifdef CONFIG_BLE_SUPPORT
-void IdleShowBleStatus(void)
-{
-	uint16_t x,y,w,h;
-	uint16_t ble_link_str[] = {0x0042,0x004C,0x0045,0x0000};//BLE
-
-	LCD_SetFontSize(FONT_SIZE_28);
-
-	if(g_ble_connected)
-	{
-		LCD_MeasureUniString(ble_link_str, &w, &h);
-		LCD_ShowUniString(IDLE_BLE_X+(IDLE_BLE_W-w)/2, IDLE_BLE_Y+(IDLE_BLE_H-w)/2, ble_link_str);
-	}
-	else
-	{
-		LCD_FillColor(IDLE_BLE_X, IDLE_BLE_Y, IDLE_BLE_W, IDLE_BLE_H, BLACK);
-	}
-}
-#endif
 
 void IdleShowSystemTime(void)
 {
@@ -443,6 +478,7 @@ void IdleShowSystemTime(void)
 
 void IdleShowSystemWeek(void)
 {
+	uint16_t x,y,w,h;
 #ifdef FONTMAKER_UNICODE_FONT	
 	uint16_t str_week[LANGUAGE_MAX][7][4] = {
 										{
@@ -482,12 +518,25 @@ void IdleShowSystemWeek(void)
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_28);
-	LCD_FillColor(IDLE_WEEK_X, IDLE_WEEK_Y, IDLE_WEEK_W, IDLE_WEEK_H, BLACK);
-	LCD_ShowUniString(IDLE_WEEK_X, IDLE_WEEK_Y, str_week[global_settings.language][date_time.week]);
+
+	switch(global_settings.language)
+	{
+	case LANGUAGE_CHN:
+		x = IDLE_WEEK_CN_X;
+		y = IDLE_WEEK_CN_Y;
+		break;
+		
+	default:
+		x = IDLE_WEEK_EN_X;
+		y = IDLE_WEEK_EN_Y;	
+		break;
+	}	
+	LCD_FillColor(x, y, IDLE_WEEK_EN_W, IDLE_WEEK_EN_H, BLACK);
+	LCD_ShowUniString(x, y, str_week[global_settings.language][date_time.week]);
 #else
 	LCD_SetFontSize(FONT_SIZE_32);
 	GetSystemWeekStrings(str_week);
-	LCD_ShowString(IDLE_WEEK_X, IDLE_WEEK_Y, str_week);
+	LCD_ShowString(IDLE_WEEK_EN_X, IDLE_WEEK_EN_Y, str_week);
 #endif
 }
 

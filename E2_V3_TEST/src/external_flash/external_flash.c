@@ -656,6 +656,8 @@ void flash_init(void)
 
 	SPI_Flash_Init();
 
+	k_sleep(K_MSEC(50));//xb add 2023=06-06 Prevent version information reading errors while flash initialization is not yet complete.
+	
 	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
 }
 

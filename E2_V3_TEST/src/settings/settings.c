@@ -22,7 +22,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.2.1_20230602";
+uint8_t g_fw_version[64] = "V3.2.1_20230606";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -94,7 +94,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	60,						//health interval
 	TEMP_UINT_C,			//Centigrade
 	TIME_FORMAT_24,			//24 format
-	LANGUAGE_EN,			//language
+	LANGUAGE_CHN,			//language
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_10_SEC,		//backlight time

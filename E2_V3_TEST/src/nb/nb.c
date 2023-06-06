@@ -1055,16 +1055,14 @@ void NBRedrawSignal(void)
 		#ifdef NB_DEBUG
 			LOGD("reg_status:%d", reg_status);
 		#endif
-			
-			if(reg_status == 1 || reg_status == 5)
+
+			switch(reg_status)
 			{
-				g_nw_registered = true;
-			}
-			else
-			{
-			#ifdef NB_DEBUG
-				LOGD("registered:%d,mqtt_connected:%d,nb_connected:%d", g_nw_registered, mqtt_connected, nb_connected);
-			#endif
+			case 0://Not registered. UE is not currently searching for an operator to register to.
+			case 3://Registration denied.
+			case 4://Unknown (e.g. out of E-UTRAN coverage).
+			case 8://Attached for emergency bearer services only.
+			case 90://Not registered due to UICC failure.
 				if(g_nw_registered)
 				{
 					g_nw_registered = false;
@@ -1074,6 +1072,21 @@ void NBRedrawSignal(void)
 					if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
 						k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 				}
+				break;
+
+			case 2://Not registered, but UE is currently trying to attach or searching an operator to register to.
+				if(g_nw_registered)
+				{
+					g_nw_registered = false;
+					mqtt_connected = false;
+					nb_connected = false;
+				}
+				break;
+
+			case 1://Registered, home network.
+			case 5://Registered, roaming.
+				g_nw_registered = true;
+				break;
 			}
 		}
 	}
@@ -2803,44 +2816,13 @@ static void nb_link(struct k_work *work)
 		return;
 #endif
 
-	if(!frist_flag)
-	{
-		frist_flag = true;
-		GetModemInfor();
-		SetModemTurnOff();
-		SetNetWorkParaByPlmn(g_imsi);
-	}
-	else
-	{
-		SetModemTurnOff();
-	}
-
-#ifndef NB_SIGNAL_TEST
-	if(strlen(g_imsi) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Can't get sim info, cancel the connecting!");
-	#endif
-		return;
-	}
-#endif
-
 	if(gps_is_working())
 	{
 	#ifdef NB_DEBUG
 		LOGD("gps is working, continue waiting!");
 	#endif
 	
-		if(net_retry_count <= 2)		//2次以内每1分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-		else if(net_retry_count <= 4)	//3到4次每5分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-		else if(net_retry_count <= 6)	//5到6次每10分钟重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-		else if(net_retry_count <= 8)	//7到8次每1小时重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-		else						//8次以上每6小时重连一次
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
+		k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 	}
 	else
 	{
@@ -2848,9 +2830,26 @@ static void nb_link(struct k_work *work)
 		LOGD("linking");
 	#endif
 
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-		if(FactryTestActived()&&!IsFTNetTesting())
+		if(!frist_flag)
+		{
+			frist_flag = true;
+			GetModemInfor();
+			SetModemTurnOff();
+			SetNetWorkParaByPlmn(g_imsi);
+		}
+		else
+		{
+			SetModemTurnOff();
+		}
+	
+	#ifndef NB_SIGNAL_TEST
+		if(strlen(g_imsi) == 0)
+		{
+		#ifdef NB_DEBUG
+			LOGD("Can't get sim info, cancel the connecting!");
+		#endif
 			return;
+		}
 	#endif
 
 		nb_connecting_flag = true;

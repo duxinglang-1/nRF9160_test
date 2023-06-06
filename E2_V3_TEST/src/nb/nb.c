@@ -74,6 +74,8 @@ static void MqttReconnectCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_reconnect_timer, MqttReconnectCallBack, NULL);
 static void MqttActWaitCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_act_wait_timer, MqttActWaitCallBack, NULL);
+static void MqttSendMissDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(mqtt_send_miss_timer, MqttSendMissDataCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
@@ -85,17 +87,19 @@ static struct k_delayed_work mqtt_link_work;
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
 static struct modem_param_info modem_param;
+
 static bool nb_redraw_sig_flag = false;
 static bool send_data_flag = false;
 static bool parse_data_flag = false;
-static bool mqtt_disconnect_flag = false;
 static bool nb_connect_ok_flag = true;
 static bool power_on_data_flag = true;
 static bool nb_connecting_flag = false;
 static bool nb_reconnect_flag = false;
 static bool mqtt_connecting_flag = false;
+static bool mqtt_disconnect_flag = false;
 static bool mqtt_reconnect_flag = false;
 static bool mqtt_act_wait_flag = false;
+static bool mqtt_send_miss_data_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
 
@@ -345,12 +349,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		}
 		if(nb_connect_ok_flag)
 		{
-		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)) 
-			SendMissingSportData();
-		#endif
-		#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
-			SendMissingHealthData();
-		#endif
+			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(5), K_NO_WAIT);
 			nb_connect_ok_flag = false;
 		}
 		NbSendDataStart();
@@ -2190,6 +2189,11 @@ static void GetModemInforCallBack(struct k_timer *timer_id)
 	get_modem_info_flag = true;
 }
 
+static void MqttSendMissDataCallBack(struct k_timer *timer_id)
+{
+	mqtt_send_miss_data_flag = true;
+}
+
 static void MqttActWaitCallBack(struct k_timer *timer_id)
 {
 	mqtt_act_wait_flag = true;
@@ -3115,6 +3119,17 @@ void NBMsgProcess(void)
 		mqtt_disconnect_flag = false;
 	}
 
+	if(mqtt_send_miss_data_flag)
+	{
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)) 
+		SendMissingSportData();
+	#endif
+	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+		SendMissingHealthData();
+	#endif
+		mqtt_send_miss_data_flag = false;
+	}
+	
 	if(nb_test_update_flag)
 	{
 		nb_test_update_flag = false;

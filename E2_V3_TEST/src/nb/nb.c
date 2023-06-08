@@ -51,8 +51,7 @@
 
 //#define NB_DEBUG
 
-#define LTE_TAU_WAKEUP_EARLY_TIME	(30)
-#define MQTT_CONNECTED_KEEP_TIME	(60)
+#define MQTT_CONNECTED_KEEP_TIME	(30)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -216,6 +215,59 @@ static void MqttReceData(uint8_t *data, uint32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
+//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
+//AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
+AT_MONITOR(ltelc_atmon_modem_info, "%XMODEMSLEEP", at_handler_modem_notify, PAUSED);
+
+static void at_handler_modem_notify(const char *response)
+{
+	int err;
+	struct lte_lc_evt evt = {0};
+
+	__ASSERT_NO_MSG(response != NULL);
+
+#ifdef NB_DEBUG
+	LOGD("%%XMODEMSLEEP notification");
+#endif
+
+	err = parse_xmodemsleep(response, &evt.modem_sleep);
+	if(err)
+	{
+	#ifdef NB_DEBUG
+		LOGD("Can't parse modem sleep pre-warning notification, error: %d", err);
+	#endif
+		return;
+	}
+
+	/* Link controller only supports PSM, RF inactivity and flight mode
+	 * modem sleep types.
+	 */
+	if((evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_PSM) &&
+		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_RF_INACTIVITY) &&
+		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_FLIGHT_MODE))
+	{
+		return;
+	}
+
+	/* Propagate the appropriate event depending on the parsed time parameter. */
+	if(evt.modem_sleep.time == CONFIG_LTE_LC_MODEM_SLEEP_PRE_WARNING_TIME_MS)
+	{
+		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING;
+	}
+	else if(evt.modem_sleep.time == 0)
+	{
+		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_EXIT);
+		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT;
+	}
+	else
+	{
+		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_ENTER);
+		evt.type = LTE_LC_EVT_MODEM_SLEEP_ENTER;
+	}
+
+	event_handler_list_dispatch(&evt);
+}
+
 /**@brief Function to publish data on the configured topic
  */
 static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
@@ -232,7 +284,6 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
-	k_timer_start(&mqtt_act_wait_timer, K_SECONDS(30), K_NO_WAIT);
 	return mqtt_publish(c, &param);
 }
 
@@ -405,7 +456,6 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#ifdef NB_DEBUG	
 		LOGD("PUBACK packet id: %u", evt->param.puback.message_id);
 	#endif
-		k_timer_stop(&mqtt_act_wait_timer);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -674,13 +724,8 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
-	return;
-
 link_over:
 	mqtt_connecting_flag = false;
-#ifdef NB_DEBUG
-	LOGD("mqtt link err");
-#endif
 }
 
 static void SendDataCallBack(struct k_timer *timer)
@@ -715,14 +760,9 @@ static void NbSendData(void)
 		if(!ret)
 		{
 			delete_data_from_cache(&nb_send_cache);
-			k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 		}
-		else
-		{
-		#ifdef NB_DEBUG
-			LOGD("mqtt send fail, wait act timerout and recount!");
-		#endif
-		}
+		
+		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
 	}
 }
 
@@ -1054,38 +1094,18 @@ void NBRedrawSignal(void)
 		#ifdef NB_DEBUG
 			LOGD("reg_status:%d", reg_status);
 		#endif
-
-			switch(reg_status)
+			
+			if(reg_status == 1 || reg_status == 5)
 			{
-			case 0://Not registered. UE is not currently searching for an operator to register to.
-			case 3://Registration denied.
-			case 4://Unknown (e.g. out of E-UTRAN coverage).
-			case 8://Attached for emergency bearer services only.
-			case 90://Not registered due to UICC failure.
-				if(g_nw_registered)
-				{
-					g_nw_registered = false;
-					mqtt_connected = false;
-					nb_connected = false;
-
-					if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-						k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
-				}
-				break;
-
-			case 2://Not registered, but UE is currently trying to attach or searching an operator to register to.
-				if(g_nw_registered)
-				{
-					g_nw_registered = false;
-					mqtt_connected = false;
-					nb_connected = false;
-				}
-				break;
-
-			case 1://Registered, home network.
-			case 5://Registered, roaming.
 				g_nw_registered = true;
-				break;
+			}
+			else
+			{
+				g_nw_registered = false;
+				nb_connected = false;
+				
+				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 			}
 		}
 	}
@@ -3159,7 +3179,7 @@ void NBMsgProcess(void)
 		}
 		else
 		{
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
 

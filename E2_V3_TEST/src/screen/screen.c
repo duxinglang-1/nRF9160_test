@@ -212,7 +212,12 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 					dl_ppg_start();
 			#endif
 				else
-					dl_reboot_confirm();
+				{
+					if(get_dl_status() == DL_STATUS_FINISHED)
+						dl_reboot_confirm();
+					else
+						EntryIdleScr();
+				}
 				break;
 			}
 			break;
@@ -231,7 +236,12 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 					dl_ppg_start();
 				else
 			#endif		
-					dl_reboot_confirm();
+				{
+					if(get_dl_status() == DL_STATUS_FINISHED)
+						dl_reboot_confirm();
+					else
+						EntryIdleScr();
+				}
 				break;
 			}
 			break;
@@ -245,7 +255,10 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				dl_reboot_confirm();
+				if(get_dl_status() == DL_STATUS_FINISHED)
+					dl_reboot_confirm();
+				else
+					EntryIdleScr();
 				break;
 			}
 			break;
@@ -5476,7 +5489,7 @@ void ExitFOTAScreen(void)
 	else
 #endif
 	{
-		EnterPoweroffScreen();
+		EntryIdleScr();
 	}
 }
 

@@ -2779,7 +2779,7 @@ void SetModemAPN(void)
 #endif
 }
 
-static void modem_init(struct k_work *work)
+static void modem_link_init(struct k_work *work)
 {
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	if(FactryTestActived()&&!IsFTNetTesting())
@@ -3235,7 +3235,7 @@ void NB_init(struct k_work_q *work_q)
 
 	app_work_q = work_q;
 
-	k_delayed_work_init(&modem_init_work, modem_init);
+	k_delayed_work_init(&modem_init_work, modem_link_init);
 	k_delayed_work_init(&modem_on_work, modem_on);
 	k_delayed_work_init(&modem_off_work, modem_off);
 	k_delayed_work_init(&nb_link_work, nb_link);

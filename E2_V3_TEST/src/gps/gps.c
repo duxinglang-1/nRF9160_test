@@ -346,7 +346,7 @@ static void date_time_evt_handler(const struct date_time_evt *evt)
 	k_sem_give(&time_sem);
 }
 
-static int modem_init(void)
+static int modem_gnss_init(void)
 {
     uint8_t tmpbuf[128] = {0};
 
@@ -931,7 +931,7 @@ bool gps_turn_on(void)
 	uint8_t cnt = 0;
 	struct nrf_modem_gnss_nmea_data_frame *nmea_data;
 
-	if(modem_init() != 0)
+	if(modem_gnss_init() != 0)
 	{
 	#ifdef GPS_DEBUG
 		LOGD("Failed to initialize modem");

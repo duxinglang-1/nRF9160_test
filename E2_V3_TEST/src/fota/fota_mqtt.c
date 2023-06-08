@@ -328,54 +328,6 @@ void fota_init(void)
 	LOGD("begin");
 #endif
 
-#if !defined(CONFIG_NRF_MODEM_LIB_SYS_INIT)
-	err = nrf_modem_lib_init(NORMAL_MODE);
-#else
-	err = nrf_modem_lib_get_init_ret();
-#endif
-	switch(err)
-	{
-	case 0:
-		/* Initialization successful, no action required. */
-	#ifdef FOTA_DEBUG
-		LOGD("Initialization successful");
-	#endif		
-		break;
-
-	case MODEM_DFU_RESULT_OK:
-	#ifdef FOTA_DEBUG	
-		LOGD("Modem firmware update successful!");
-		LOGD("Modem will run the new firmware after reboot");
-	#endif
-		k_thread_suspend(k_current_get());
-		break;
-		
-	case MODEM_DFU_RESULT_UUID_ERROR:
-	case MODEM_DFU_RESULT_AUTH_ERROR:
-	#ifdef FOTA_DEBUG
-		LOGD("Modem firmware update failed");
-		LOGD("Modem will run non-updated firmware on reboot.");
-	#endif
-		break;
-		
-	case MODEM_DFU_RESULT_HARDWARE_ERROR:
-	case MODEM_DFU_RESULT_INTERNAL_ERROR:
-	#ifdef FOTA_DEBUG
-		LOGD("Modem firmware update failed");
-		LOGD("Fatal error.");
-	#endif
-		break;
-		return;
-		
-	default:
-	#ifdef FOTA_DEBUG	
-		LOGD("Could not initialize modem library, fatal error: %d", err);
-	#endif
-		break;
-	}
-
-	boot_write_img_confirmed();
-
 	err = application_init();
 	if(err != 0)
 	{

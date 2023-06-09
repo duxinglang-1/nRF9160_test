@@ -146,12 +146,15 @@ static void gnss_event_handler(int event)
 
 	case NRF_MODEM_GNSS_EVT_AGPS_REQ:
 	#if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
-		retval = nrf_modem_gnss_read(&last_agps,
-					     sizeof(last_agps),
-					     NRF_MODEM_GNSS_DATA_AGPS_REQ);
-		if(retval == 0)
+		if(!IsFTGPSTesting())
 		{
-			k_work_submit_to_queue(&gnss_work_q, &agps_data_get_work);
+			retval = nrf_modem_gnss_read(&last_agps,
+						     sizeof(last_agps),
+						     NRF_MODEM_GNSS_DATA_AGPS_REQ);
+			if(retval == 0)
+			{
+				k_work_submit_to_queue(&gnss_work_q, &agps_data_get_work);
+			}
 		}
 	#endif /* !CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE */
 		break;
@@ -1000,13 +1003,13 @@ void MenuStopGPS(void)
 void FTStartGPS(void)
 {
 	test_gps_flag = true;
-	gps_on_flag = true;
+	gps_on();
 }
 
 void FTStopGPS(void)
 {
 	test_gps_flag = false;
-	gps_off_flag = true;
+	gps_off();
 }
 #endif
 

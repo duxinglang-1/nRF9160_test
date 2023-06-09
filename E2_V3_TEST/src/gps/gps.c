@@ -146,7 +146,7 @@ static void gnss_event_handler(int event)
 
 	case NRF_MODEM_GNSS_EVT_AGPS_REQ:
 	#if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
-		if(!IsFTGPSTesting())
+		if(!test_gps_flag)
 		{
 			retval = nrf_modem_gnss_read(&last_agps,
 						     sizeof(last_agps),
@@ -1019,11 +1019,22 @@ void GPS_init(struct k_work_q *work_q)
 	gps_work_init();
 }
 
+void GPSTestInit(void)
+{
+	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, CONFIG_LTE_MODE_PREFERENCE);
+}
+
 void GPSMsgProcess(void)
 {
 	if(gps_on_flag)
 	{
 		gps_on_flag = false;
+		if(test_gps_flag)
+		{
+			SetModemTurnOff();
+			GPSTestInit();
+			SetModemTurnOn();
+		}
 		gps_on();
 	}
 	

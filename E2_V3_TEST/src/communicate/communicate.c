@@ -224,7 +224,7 @@ void TimeCheckSendSportData(void)
 		strcat(databuf, tmpbuf);
 	}
 
-	NBSendTimelySportData(databuf, strlen(databuf), NULL);
+	NBSendTimelySportData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
@@ -332,7 +332,7 @@ void TimeCheckSendHealthData(void)
 		strcat(databuf, tmpbuf);
 	}
 
-	NBSendTimelyHealthData(databuf, strlen(databuf), NULL);
+	NBSendTimelyHealthData(databuf, strlen(databuf));
 }
 
 /*****************************************************************************
@@ -367,30 +367,28 @@ void SendMissingSportData(void)
 
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)	
 		memcpy(&step_rec2, &stepbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
-		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
-			continue;
-		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
-			continue;
-		memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
+		if((step_rec2.year != 0xffff && step_rec2.year != 0x0000)
+			&&(step_rec2.month != 0xff && step_rec2.month != 0x00)
+			&&(step_rec2.day != 0xff && step_rec2.day != 0x00)
+			)
+		{
+			memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
+		}
 	#endif
 
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
 		memcpy(&sleep_rec2, &sleepbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
-		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00))
-			continue;
-		if((sleep_rec2.year == date_time.year)&&(sleep_rec2.month == date_time.month)&&(sleep_rec2.day == date_time.day))
-			continue;
-		memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+		if((sleep_rec2.year != 0xffff && sleep_rec2.year != 0x0000)
+			&&(sleep_rec2.month != 0xff && sleep_rec2.month != 0x00)
+			&&(sleep_rec2.day != 0xff && sleep_rec2.day != 0x00)
+			)
+		{
+			memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+		}
 	#endif
 
 		memset(databuf, 0, sizeof(databuf));
-
-		//wrist
-		if(is_wearing())
-			strcpy(databuf, "1,");
-		else
-			strcpy(databuf, "0,");
-		
+		//step
 		for(j=0;j<24;j++)
 		{
 			uint16_t calorie,distance;
@@ -411,7 +409,7 @@ void SendMissingSportData(void)
 			
 			strcat(databuf, tmpbuf);
 		}
-
+		//sleep
 		for(j=0;j<24;j++)
 		{
 			uint16_t total_sleep;
@@ -448,7 +446,7 @@ void SendMissingSportData(void)
 													0);
 	#endif
 
-		NBSendTimelySportData(databuf, strlen(databuf), tmpbuf);
+		NBSendMissSportData(databuf, strlen(databuf), tmpbuf);
 	}
 }
 
@@ -495,45 +493,46 @@ void SendMissingHealthData(void)
 	#ifdef CONFIG_PPG_SUPPORT
 		//hr
 		memcpy(&hr_rec2, &hrbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));
-		if((hr_rec2.year == 0xffff || hr_rec2.year == 0x0000)||(hr_rec2.month == 0xff || hr_rec2.month == 0x00)||(hr_rec2.day == 0xff || hr_rec2.day == 0x00))
-			continue;
-		if((hr_rec2.year == date_time.year)&&(hr_rec2.month == date_time.month)&&(hr_rec2.day == date_time.day))
-			continue;
-		memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
+		if((hr_rec2.year != 0xffff && hr_rec2.year != 0x0000)
+			&&(hr_rec2.month != 0xff && hr_rec2.month != 0x00)
+			&&(hr_rec2.day != 0xff && hr_rec2.day != 0x00)
+			)
+		{
+			memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
+		}
 		//spo2
 		memcpy(&spo2_rec2, &spo2buf[i*sizeof(ppg_spo2_rec2_data)], sizeof(ppg_spo2_rec2_data));
-		if((spo2_rec2.year == 0xffff || spo2_rec2.year == 0x0000)||(spo2_rec2.month == 0xff || spo2_rec2.month == 0x00)||(spo2_rec2.day == 0xff || spo2_rec2.day == 0x00))
-			continue;
-		if((spo2_rec2.year == date_time.year)&&(spo2_rec2.month == date_time.month)&&(spo2_rec2.day == date_time.day))
-			continue;
-		memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+		if((spo2_rec2.year != 0xffff && spo2_rec2.year != 0x0000)
+			&&(spo2_rec2.month != 0xff && spo2_rec2.month != 0x00)
+			&&(spo2_rec2.day != 0xff && spo2_rec2.day != 0x00)
+			)
+		{
+			memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+		}
 		//bpt
 		memcpy(&bpt_rec2, &bptbuf[i*sizeof(ppg_bpt_rec2_data)], sizeof(ppg_bpt_rec2_data));
-		if((bpt_rec2.year == 0xffff || bpt_rec2.year == 0x0000)||(bpt_rec2.month == 0xff || bpt_rec2.month == 0x00)||(bpt_rec2.day == 0xff || bpt_rec2.day == 0x00))
-			continue;
-		if((bpt_rec2.year == date_time.year)&&(bpt_rec2.month == date_time.month)&&(bpt_rec2.day == date_time.day))
-			continue;
-		memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
+		if((bpt_rec2.year != 0xffff && bpt_rec2.year != 0x0000)
+			&&(bpt_rec2.month != 0xff && bpt_rec2.month != 0x00)
+			&&(bpt_rec2.day != 0xff && bpt_rec2.day != 0x00)
+			)
+		{
+			memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
+		}
 	#endif/*CONFIG_PPG_SUPPORT*/
 
 	#ifdef CONFIG_TEMP_SUPPORT
 		//body temp
 		memcpy(&temp_rec2, &tempbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
-		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)||(temp_rec2.day == 0xff || temp_rec2.day == 0x00))
-			continue;
-		if((temp_rec2.year == date_time.year)&&(temp_rec2.month == date_time.month)&&(temp_rec2.day == date_time.day))
-			continue;
-		memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+		if((temp_rec2.year != 0xffff && temp_rec2.year != 0x0000)
+			&&(temp_rec2.month != 0xff && temp_rec2.month != 0x00)
+			&&(temp_rec2.day != 0xff && temp_rec2.day != 0x00)
+			)
+		{
+			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+		}
 	#endif/*CONFIG_TEMP_SUPPORT*/
 
 		memset(databuf, 0, sizeof(databuf));
-
-		//wrist
-		if(is_wearing())
-			strcpy(databuf, "1,");
-		else
-			strcpy(databuf, "0,");
-		
 		//hr
 		for(j=0;j<24;j++)
 		{
@@ -616,7 +615,7 @@ void SendMissingHealthData(void)
 													0);
 	#endif
 
-		NBSendTimelyHealthData(databuf, strlen(databuf), tmpbuf);
+		NBSendMissHealthData(databuf, strlen(databuf), tmpbuf);
 	}
 }
 

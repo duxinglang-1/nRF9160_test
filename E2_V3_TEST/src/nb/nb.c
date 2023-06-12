@@ -1483,37 +1483,7 @@ void NBSendSingleHealthData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendTimelySportData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
-{
-	uint8_t buf[1024] = {0};
-	uint8_t tmpbuf[32] = {0};
-	
-	strcpy(buf, "{1:1:0:0:");
-	strcat(buf, g_imei);
-	strcat(buf, ":T16:");
-	strcat(buf, data);
-	strcat(buf, ",");
-	GetBatterySocString(tmpbuf);
-	strcat(buf, tmpbuf);
-	strcat(buf, ",");
-	if(timemap != NULL)
-	{
-		strcat(buf, timemap);
-	}
-	else
-	{
-		memset(tmpbuf, 0, sizeof(tmpbuf));
-		GetSystemTimeSecString(tmpbuf);
-		strcat(buf, tmpbuf);
-	}
-	strcat(buf, "}");
-#ifdef NB_DEBUG
-	LOGD("sport data:%s", buf);
-#endif
-	MqttSendData(buf, strlen(buf));
-}
-
-void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
+void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1526,19 +1496,74 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
 	GetBatterySocString(tmpbuf);
 	strcat(buf, tmpbuf);
 	strcat(buf, ",");
-	if(timemap != NULL)
-	{
-		strcat(buf, timemap);
-	}
-	else
-	{
-		memset(tmpbuf, 0, sizeof(tmpbuf));
-		GetSystemTimeSecString(tmpbuf);
-		strcat(buf, tmpbuf);
-	}
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendMissHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T17:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	strcat(buf, timemap);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("health data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T16:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("sport data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
+void NBSendMissSportData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T18:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	strcat(buf, timemap);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("sport data:%s", buf);
 #endif
 	MqttSendData(buf, strlen(buf));
 }
@@ -2455,6 +2480,7 @@ void SetNetWorkParaByPlmn(uint8_t *imsi)
 
 void GetModemInfor(void)
 {
+	static uint8_t count = 3;
 	uint8_t tmpbuf[256] = {0};
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_V) == 0)
@@ -2464,29 +2490,6 @@ void GetModemInfor(void)
 		LOGD("MODEM version:%s", g_modem);
 	#endif	
 	}
-
-#if 0
-	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_SUPPORT_BAND) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("support band:%s", tmpbuf);
-	#endif
-	}
-
-	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_CUR_BAND) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("current band:%s", tmpbuf);
-	#endif
-	}
-
-	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_LOCKED_BAND) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("locked band:%s", tmpbuf);
-	#endif
-	}
-#endif
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_IMEI) == 0)
 	{
@@ -2510,6 +2513,19 @@ void GetModemInfor(void)
 	#ifdef NB_DEBUG
 		LOGD("iccid:%s", g_iccid);
 	#endif
+	}
+
+	if((strlen(g_imsi) == 0)
+		||(strlen(g_imei) == 0)
+		||(strlen(g_iccid) == 0)
+		||(strlen(g_modem) == 0)
+		)
+	{
+		if(count > 0)
+		{
+			count--;
+			k_timer_start(&get_modem_infor_timer, K_SECONDS(2), K_NO_WAIT);
+		}
 	}
 }
 
@@ -2746,7 +2762,7 @@ static void modem_link_init(struct k_work *work)
 
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 }
 
 static void modem_on(struct k_work *work)
@@ -2864,16 +2880,6 @@ static void nb_link(struct k_work *work)
 			SetModemTurnOff();
 		}
 	
-	#ifndef NB_SIGNAL_TEST
-		if(strlen(g_imsi) == 0)
-		{
-		#ifdef NB_DEBUG
-			LOGD("Can't get sim info, cancel the connecting!");
-		#endif
-			return;
-		}
-	#endif
-
 		nb_connecting_flag = true;
 	
 		if(test_nb_flag)
@@ -3266,5 +3272,5 @@ void NB_init(struct k_work_q *work_q)
 	dl_work_init(work_q);
 #endif
 
-	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(2));
+	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_NO_WAIT);
 }

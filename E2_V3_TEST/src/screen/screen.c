@@ -1265,6 +1265,14 @@ void PowerOffShowStatus(void)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+  	if((strlen(g_ui_ver) == 0) 
+		|| (strlen(g_font_ver) == 0)
+		|| (strlen(g_ppg_algo_ver) == 0)
+		)
+	{
+		SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+	}
+
    #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
    	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
   	{
@@ -2094,6 +2102,14 @@ void EnterSettingsScreen(void)
 
 #ifndef NB_SIGNAL_TEST
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+ 	if((strlen(g_ui_ver) == 0) 
+		|| (strlen(g_font_ver) == 0)
+		|| (strlen(g_ppg_algo_ver) == 0)
+		)
+	{
+		SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+	}
+ 
   	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_img_start);

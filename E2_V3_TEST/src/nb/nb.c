@@ -81,6 +81,7 @@ static struct k_delayed_work modem_init_work;
 static struct k_delayed_work modem_off_work;
 static struct k_delayed_work modem_on_work;
 static struct k_delayed_work nb_link_work;
+static struct k_delayed_work nb_test_work;
 static struct k_delayed_work mqtt_link_work;
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
@@ -875,69 +876,6 @@ void modem_data_init(void)
 	modem_info_rsrp_register(modem_rsrp_handler);
 }
 #endif /* CONFIG_MODEM_INFO */
-
-/**@brief Configures modem to provide LTE link. Blocks until link is
- * successfully established.
- */
-static void modem_configure(void)
-{
-	uint8_t buf[128] = {0};
-	
-	if(test_nb_flag)
-	{
-		strcpy(nb_test_info, "modem_configure");
-	#ifdef NB_SIGNAL_TEST	
-		TestNBUpdateINfor();
-	#endif
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-		FTNetStatusUpdate(0);
-	#endif
-	}
-
-#if defined(CONFIG_LTE_LINK_CONTROL)
-	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT))
-	{
-		/* Do nothing, modem is already turned on
-		 * and connected.
-		 */
-	}
-	else
-	{
-		int err;
-
-	#ifdef NB_DEBUG
-		LOGD("LTE Link Connecting ...");
-	#endif
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "LTE Link Connecting ...");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif
-		}
-		err = lte_lc_init_and_connect();
-		__ASSERT(err == 0, "LTE link could not be established.");
-	#ifdef NB_DEBUG
-		LOGD("LTE Link Connected!");
-	#endif
-
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "LTE Link Connected!");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif	
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
-		}
-	}
-#endif /* defined(CONFIG_LTE_LINK_CONTROL) */
-}
 
 void test_nb(void)
 {
@@ -2829,6 +2767,66 @@ static void modem_off(struct k_work *work)
 	SetModemTurnOff();
 }
 
+static void nb_test(struct k_work *work)
+{
+	uint8_t buf[128] = {0};
+	
+	if(test_nb_flag)
+	{
+		strcpy(nb_test_info, "modem_configure");
+	#ifdef NB_SIGNAL_TEST	
+		TestNBUpdateINfor();
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		FTNetStatusUpdate(0);
+	#endif
+	}
+
+#if defined(CONFIG_LTE_LINK_CONTROL)
+	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT))
+	{
+		/* Do nothing, modem is already turned on
+		 * and connected.
+		 */
+	}
+	else
+	{
+		int err;
+
+	#ifdef NB_DEBUG
+		LOGD("LTE Link Connecting ...");
+	#endif
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LTE Link Connecting ...");
+		#ifdef NB_SIGNAL_TEST
+			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif
+		}
+		err = lte_lc_init_and_connect();
+		__ASSERT(err == 0, "LTE link could not be established.");
+	#ifdef NB_DEBUG
+		LOGD("LTE Link Connected!");
+	#endif
+
+		if(test_nb_flag)
+		{
+			strcpy(nb_test_info, "LTE Link Connected!");
+		#ifdef NB_SIGNAL_TEST
+			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
+			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
+		}
+	}
+#endif /* defined(CONFIG_LTE_LINK_CONTROL) */
+}
+
 static void nb_link(struct k_work *work)
 {
 	int err=0;
@@ -3064,7 +3062,7 @@ void NBMsgProcess(void)
 		{
 			SetModemTurnOff();
 			configure_low_power();
-			modem_configure();
+			k_delayed_work_submit_to_queue(app_work_q, &nb_test_work, K_NO_WAIT);
 		}
 	}
 
@@ -3259,6 +3257,7 @@ void NB_init(struct k_work_q *work_q)
 	k_delayed_work_init(&modem_on_work, modem_on);
 	k_delayed_work_init(&modem_off_work, modem_off);
 	k_delayed_work_init(&nb_link_work, nb_link);
+	k_delayed_work_init(&nb_test_work, nb_test);
 	k_delayed_work_init(&mqtt_link_work, mqtt_link);
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);

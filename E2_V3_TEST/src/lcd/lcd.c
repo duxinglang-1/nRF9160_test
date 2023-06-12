@@ -3435,6 +3435,7 @@ void LCDMsgProcess(void)
 
 			if((screen_id == SCREEN_ID_STEPS)
 				||(screen_id == SCREEN_ID_SLEEP)
+				||(screen_id == SCREEN_ID_SETTINGS)
 				)
 			{
 				EnterIdleScreen();

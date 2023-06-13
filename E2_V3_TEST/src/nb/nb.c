@@ -1516,9 +1516,6 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
 	strcat(buf, ":T17:");
 	strcat(buf, data);
 	strcat(buf, ",");
-	GetBatterySocString(tmpbuf);
-	strcat(buf, tmpbuf);
-	strcat(buf, ",");
 	strcat(buf, timemap);
 	strcat(buf, "}");
 #ifdef NB_DEBUG
@@ -2761,8 +2758,10 @@ static void modem_link_init(struct k_work *work)
 #endif
 
 	SetModemTurnOn();
+	GetModemInfor();
+	SetModemTurnOff();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_NO_WAIT);
 }
 
 static void modem_on(struct k_work *work)
@@ -2847,7 +2846,6 @@ static void nb_link(struct k_work *work)
 {
 	int err=0;
 	uint8_t tmpbuf[128] = {0};
-	static bool frist_flag = false;
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	if(FactryTestActived()&&!IsFTNetTesting())
@@ -2867,19 +2865,6 @@ static void nb_link(struct k_work *work)
 	#ifdef NB_DEBUG
 		LOGD("linking");
 	#endif
-
-		if(!frist_flag)
-		{
-			frist_flag = true;
-			GetModemInfor();
-			SetModemTurnOff();
-			SetNetWorkParaByPlmn(g_imsi);
-		}
-		else
-		{
-			SetModemTurnOff();
-		}
-	
 		nb_connecting_flag = true;
 	
 		if(test_nb_flag)
@@ -2954,6 +2939,7 @@ static void nb_link(struct k_work *work)
 		
 		if(!err && !test_nb_flag)
 		{
+			SetNetWorkParaByPlmn(g_imsi);
 			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif

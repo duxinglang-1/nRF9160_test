@@ -814,15 +814,17 @@ void TimeMsgProcess(void)
 	if(send_timing_data_flag)
 	{
 		TimeCheckSendHealthData();
-	#ifdef CONFIG_IMU_SUPPORT
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 		TimeCheckSendSportData();
 	#endif
 
 	#ifdef CONFIG_BLE_SUPPORT	
 		if(g_ble_connected)
 		{
-			APP_get_cur_hour_sport(date_time);
 			APP_get_cur_hour_health(date_time);
+		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+			APP_get_cur_hour_sport(date_time);
+		#endif
 		}
 	#endif	
 		send_timing_data_flag = false;

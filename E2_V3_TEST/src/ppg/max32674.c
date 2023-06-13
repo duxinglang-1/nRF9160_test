@@ -1994,10 +1994,7 @@ void PPGStopCheck(void)
 			SetCurDaySpo2RecData(g_spo2);
 			break;
 		case PPG_DATA_BPT:
-			if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
-			{
-				SetCurDayBptRecData(g_bpt);
-			}
+			SetCurDayBptRecData(g_bpt);
 			break;
 		}
 	}

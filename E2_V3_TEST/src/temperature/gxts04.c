@@ -127,8 +127,14 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	uint8_t databuf[10] = {0};
 	uint16_t trans_temp = 0;
 
-	if(!is_wearing())
-		return;
+	if(!is_wearing()
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		&& !IsFTTempTesting()	
+	#endif
+		)
+	{
+		return false;
+	}
 	
 	gxts04_write_data(CMD_WAKEUP);
 	gxts04_read_data(CMD_MEASURE_LOW_POWER, &databuf, 10);

@@ -418,11 +418,12 @@ void TempMsgProcess(void)
 			}
 
 			temp_redraw_data_flag = true;
-		}
 
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-		FTTempStatusUpdate();
-	#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			if(IsFTTempTesting())
+				FTTempStatusUpdate();
+		#endif
+		}
 	}
 
 	if(menu_start_temp)

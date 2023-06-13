@@ -82,6 +82,14 @@ const ft_menu_t FT_MENU_TEMP =
 	},
 };
 
+bool IsFTTempTesting(void)
+{
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_TEMP))
+		return true;
+	else
+		return false;
+}
+
 static void FTMenuTempSle1Hander(void)
 {
 	FTMainMenu6Proc();

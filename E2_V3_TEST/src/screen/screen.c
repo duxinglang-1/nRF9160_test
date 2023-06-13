@@ -1325,7 +1325,9 @@ void SettingsUpdateStatus(void)
 	uint16_t x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
-	
+
+	k_timer_stop(&mainmenu_timer);
+
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
 #else
@@ -1532,9 +1534,6 @@ void SettingsUpdateStatus(void)
 											);
 			#endif
 			}
-
-			k_timer_stop(&mainmenu_timer);
-			k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 		}
 		break;
 		
@@ -1650,9 +1649,6 @@ void SettingsUpdateStatus(void)
 						LCD_MeasureUniString(str_success[global_settings.language], &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, str_success[global_settings.language]);
 					}
-
-					k_timer_stop(&mainmenu_timer);
-					k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 				}
 				break;
 				
@@ -1686,9 +1682,6 @@ void SettingsUpdateStatus(void)
 						LCD_MeasureUniString(str_fail[global_settings.language], &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, str_fail[global_settings.language]);
 					}
-
-					k_timer_stop(&mainmenu_timer);
-					k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 				}
 				break;
 			}
@@ -1718,9 +1711,6 @@ void SettingsUpdateStatus(void)
 										LCD_HEIGHT, 
 										settings_menu.sel_handler[0]);
 		#endif	
-
-			k_timer_stop(&mainmenu_timer);
-			k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 		}
 		break;
 		
@@ -1764,9 +1754,6 @@ void SettingsUpdateStatus(void)
 			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, settings_menu.pg_handler[2]);
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, settings_menu.pg_handler[3]);
 		#endif
-
-			k_timer_stop(&mainmenu_timer);
-			k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 		}
 		break;
 		
@@ -1800,9 +1787,6 @@ void SettingsUpdateStatus(void)
 											settings_menu.sel_handler[i]);
 			#endif
 			}
-
-			k_timer_stop(&mainmenu_timer);
-			k_timer_start(&mainmenu_timer, K_SECONDS(3), K_NO_WAIT);
 		}
 		break;
 		
@@ -1935,6 +1919,8 @@ void SettingsUpdateStatus(void)
 
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
+
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 }
 
 void SettingsShowStatus(void)
@@ -2044,6 +2030,9 @@ void SettingsShowStatus(void)
 	entry_setting_bk_flag = false;
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
+
+	k_timer_stop(&mainmenu_timer);
+	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 }
 
 void SettingsScreenProcess(void)

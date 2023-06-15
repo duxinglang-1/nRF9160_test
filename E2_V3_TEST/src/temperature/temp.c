@@ -374,12 +374,12 @@ void FTStopTemp(void)
 void temp_init(void)
 {
 	get_cur_health_from_record(&last_health);
-	if((last_health.timestamp.year == date_time.year)
-		&&(last_health.timestamp.month == date_time.month)
-		&&(last_health.timestamp.day == date_time.day)
+	if((last_health.temp_rec.timestamp.year == date_time.year)
+		&&(last_health.temp_rec.timestamp.month == date_time.month)
+		&&(last_health.temp_rec.timestamp.day == date_time.day)
 		)
 	{
-		g_temp_body = (float)(last_health.deca_temp/10.0);
+		g_temp_body = (float)(last_health.temp_rec.deca_temp/10.0);
 	}
 
 #ifdef TEMP_GXTS04
@@ -528,14 +528,14 @@ void TempMsgProcess(void)
 
 		if(g_temp_body > 0.0)
 		{
-			last_health.timestamp.year = date_time.year;
-			last_health.timestamp.month = date_time.month; 
-			last_health.timestamp.day = date_time.day;
-			last_health.timestamp.hour = date_time.hour;
-			last_health.timestamp.minute = date_time.minute;
-			last_health.timestamp.second = date_time.second;
-			last_health.timestamp.week = date_time.week;
-			last_health.deca_temp = (uint16_t)(g_temp_body*10);
+			last_health.temp_rec.timestamp.year = date_time.year;
+			last_health.temp_rec.timestamp.month = date_time.month; 
+			last_health.temp_rec.timestamp.day = date_time.day;
+			last_health.temp_rec.timestamp.hour = date_time.hour;
+			last_health.temp_rec.timestamp.minute = date_time.minute;
+			last_health.temp_rec.timestamp.second = date_time.second;
+			last_health.temp_rec.timestamp.week = date_time.week;
+			last_health.temp_rec.deca_temp = (uint16_t)(g_temp_body*10);
 			save_cur_health_to_record(&last_health);
 		}
 	}

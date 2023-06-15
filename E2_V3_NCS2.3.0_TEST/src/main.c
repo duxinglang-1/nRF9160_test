@@ -6,12 +6,11 @@
 
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
-#include <kernel_structs.h>
 #include <zephyr/device.h>
 #include <stdio.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <power/reboot.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"

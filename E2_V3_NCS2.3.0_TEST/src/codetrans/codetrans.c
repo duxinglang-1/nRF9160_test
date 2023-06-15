@@ -13,7 +13,6 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <logging/log.h>
 #include <nrfx.h>
 #include "codetrans.h"
 #include "CharsetTable.h"

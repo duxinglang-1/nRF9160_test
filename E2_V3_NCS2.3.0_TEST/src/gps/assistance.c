@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
-#include <logging/log.h>
 #include <modem/modem_info.h>
 #include <modem/modem_jwt.h>
 #include <net/nrf_cloud_rest.h>

@@ -6,9 +6,10 @@
 ** Modified Date:      		2021-07-12
 ** Version:			    	V1.1
 ******************************************************************************************************/
-#include <fs/nvs.h>
+#include <zephyr/fs/nvs.h>
 #include <flash_map_pm.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

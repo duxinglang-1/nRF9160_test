@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/slist.h>
 
 #define L(x) ASCTOUCS2(x)
 

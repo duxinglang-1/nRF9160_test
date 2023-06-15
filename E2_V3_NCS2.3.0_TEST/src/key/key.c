@@ -13,7 +13,6 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <logging/log.h>
 #include <nrfx.h>
 #include "key.h"
 #include "Max20353.h"
@@ -32,6 +31,13 @@
 #include "logger.h"
 
 //#define KEY_DEBUG
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define KEY_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define KEY_PORT	""
+#endif
 
 static bool key_trigger_flag = false;
 static uint8_t flag;
@@ -67,8 +73,8 @@ K_TIMER_DEFINE(wear_off_timer, wear_off_timerout, NULL);
 
 static const key_cfg button_pins[] = 
 {
-	{"GPIO_0", 26, ACTIVE_LOW},
-	{"GPIO_0", 15, ACTIVE_LOW},
+	{26, ACTIVE_LOW},
+	{15, ACTIVE_LOW},
 };
 
 static struct device *button_devs[ARRAY_SIZE(button_pins)];
@@ -776,7 +782,7 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, ui
 	{
 	case STATE_WAITING:
 		state = STATE_SCANNING;
-		k_delayed_work_submit(&buttons_scan, K_NO_WAIT);
+		k_work_schedule_for_queue(&buttons_scan, K_NO_WAIT);
 		break;
 
 	case STATE_SCANNING:
@@ -802,7 +808,7 @@ static int buttons_init(button_handler_t button_handler)
 
 	for(size_t i = 0; i < ARRAY_SIZE(button_pins); i++)
 	{
-		button_devs[i] = DEVICE_DT_GET(button_pins[i].port);
+		button_devs[i] = DEVICE_DT_GET(KEY_PORT);
 		if (!button_devs[i])
 		{
 			return -ENODEV;

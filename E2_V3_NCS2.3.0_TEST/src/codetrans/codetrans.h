@@ -10,7 +10,7 @@
 #define __CODETRANS_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

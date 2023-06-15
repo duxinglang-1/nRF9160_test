@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/gpio.h>

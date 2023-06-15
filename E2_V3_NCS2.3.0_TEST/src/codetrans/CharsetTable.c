@@ -12,15 +12,9 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/device.h>
-#include <logging/log.h>
 #include <nrfx.h>
 #include "codetrans.h"
 #include "CharsetTable.h"
-
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-LOG_MODULE_REGISTER(charsettable, CONFIG_LOG_DEFAULT_LEVEL);
-
 
 #ifdef __MMI_CHSET_BIG5__
 const unsigned short g_chset_ucs2_to_big5_table[] = {

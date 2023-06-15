@@ -6,7 +6,7 @@
 ** Modified Date:      		2021-01-07
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 
 #include "lcd.h"

@@ -1274,7 +1274,7 @@ void IMUMsgProcess(void)
 		#ifdef IMU_DEBUG
 			LOGD("fall trigger!");
 		#endif
-			k_delayed_work_submit_to_queue(imu_work_q, &fall_work, K_NO_WAIT);
+			k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
 		}
 	}
 #endif

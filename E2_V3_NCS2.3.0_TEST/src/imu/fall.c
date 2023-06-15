@@ -14,7 +14,6 @@
 #include <zephyr/device.h>
 #include <nrf_socket.h>
 #include <zephyr/drivers/gpio.h>
-#include <logging/log.h>
 #include <nrfx.h>
 #include "settings.h"
 #include "sos.h"

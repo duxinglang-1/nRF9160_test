@@ -32,8 +32,21 @@
 
 //#define UART_DEBUG
 
-#define BLE_DEV			"UART_2"
-#define BLE_PORT		"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+#define BLE_DEV DT_NODELABEL(uart2)
+#else
+#error "uart2 devicetree node is disabled"
+#define BLE_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define BLE_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define BLE_PORT	""
+#endif
+
+
 #define BLE_INT_PIN		27
 #define BLE_WAKE_PIN	25
 

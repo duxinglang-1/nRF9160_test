@@ -210,7 +210,7 @@ static int download_client_callback(const struct download_client_evt *event)
 				/* Abort current download procedure, and
 				 * schedule new download from offset.
 				 */
-				k_delayed_work_submit(&dlc_with_offset_work, K_SECONDS(1));
+				k_work_schedule(&dlc_with_offset_work, K_SECONDS(1));
 			#ifdef DL_DEBUG
 				LOGD("Refuse fragment, restart with offset");
 			#endif
@@ -490,7 +490,7 @@ void dl_work_init(struct k_work_q *work_q)
 {
 	app_work_q = work_q;
 
-	k_delayed_work_init(&dl_work, dl_transfer_start);
+	k_work_init_delayable(&dl_work, dl_transfer_start);
 }
 
 DL_STATUS_ENUM get_dl_status(void)
@@ -660,7 +660,7 @@ void dl_start_confirm(void)
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	//DisConnectMqttLink();
 	modem_configure();
-	k_delayed_work_submit_to_queue(app_work_q, &dl_work, K_SECONDS(2));
+	k_work_schedule_for_queue(app_work_q, &dl_work, K_SECONDS(2));
 }
 
 void dl_reboot_confirm(void)
@@ -725,7 +725,7 @@ void dl_application(dl_callback_t client_callback)
 
 	callback = client_callback;
 
-	k_delayed_work_init(&dlc_with_offset_work, download_with_offset);
+	k_work_init_delayable(&dlc_with_offset_work, download_with_offset);
 
 	int err = download_client_init(&dlc, download_client_callback);
 

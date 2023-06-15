@@ -3,13 +3,13 @@
  *
  * SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
  */
-
-#include <zephyr/kernel.h>
-#include <zephyr/drivers/uart.h>
 #include <stdio.h>
 #include <string.h>
-#include <net/mqtt.h>
-#include <net/socket.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/net/mqtt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/random/rand32.h>
 #include <modem/lte_lc.h>
 #include <modem/at_cmd_parser.h>
 #include <modem/at_params.h>
@@ -19,14 +19,6 @@
 #include <modem/nrf_modem_lib.h>
 #include <modem/at_monitor.h>
 #include <nrf_modem_at.h>
-#if defined(CONFIG_LWM2M_CARRIER)
-#include <lwm2m_carrier.h>
-#endif
-#if defined(CONFIG_BSD_LIBRARY)
-#include <modem/bsdlib.h>
-#include <bsd.h>
-#endif /* CONFIG_BSD_LIBRARY */
-#include <random/rand32.h>
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
@@ -1366,7 +1358,7 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 			#ifdef NB_DEBUG
 				LOGD("begin 003.1");
 			#endif
-				k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
+				k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_NO_WAIT);
 			}
 			else
 			{
@@ -2671,12 +2663,12 @@ void SetModemTurnOff(void)
 
 void AppSetModemOn(void)
 {
-	k_delayed_work_submit_to_queue(app_work_q, &modem_on_work, K_NO_WAIT);
+	k_work_schedule_for_queue(app_work_q, &modem_on_work, K_NO_WAIT);
 }
 
 void AppSetModemOff(void)
 {
-	k_delayed_work_submit_to_queue(app_work_q, &modem_off_work, K_NO_WAIT);
+	k_work_schedule_for_queue(app_work_q, &modem_off_work, K_NO_WAIT);
 }
 
 void SetModemGps(void)
@@ -2796,7 +2788,7 @@ static void modem_init(struct k_work *work)
 
 	SetModemTurnOn();
 
-	k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	k_work_schedule_for_queue(app_work_q, &nb_link_work, K_SECONDS(5));
 }
 
 static void modem_on(struct k_work *work)
@@ -2953,7 +2945,7 @@ static void nb_link(struct k_work *work)
 		
 		if(!err && !test_nb_flag)
 		{
-			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif
 
@@ -3167,7 +3159,7 @@ void NBMsgProcess(void)
 	#endif
 		if(!nb_connecting_flag)
 		{
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+			k_work_schedule_for_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 		}
 		else
 		{
@@ -3194,7 +3186,7 @@ void NBMsgProcess(void)
 	#endif
 		if(!mqtt_connecting_flag)
 		{
-			k_delayed_work_submit_to_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 		else
 		{
@@ -3225,7 +3217,7 @@ void NBMsgProcess(void)
 
 		if(!nb_connecting_flag)
 		{
-			k_delayed_work_submit_to_queue(app_work_q, &nb_link_work, K_SECONDS(2));
+			k_work_schedule_for_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 		}
 		else
 		{
@@ -3245,11 +3237,11 @@ void NB_init(struct k_work_q *work_q)
 
 	app_work_q = work_q;
 
-	k_delayed_work_init(&modem_init_work, modem_init);
-	k_delayed_work_init(&modem_on_work, modem_on);
-	k_delayed_work_init(&modem_off_work, modem_off);
-	k_delayed_work_init(&nb_link_work, nb_link);
-	k_delayed_work_init(&mqtt_link_work, mqtt_link);
+	k_work_init_delayable(&modem_init_work, modem_init);
+	k_work_init_delayable(&modem_on_work, modem_on);
+	k_work_init_delayable(&modem_off_work, modem_off);
+	k_work_init_delayable(&nb_link_work, nb_link);
+	k_work_init_delayable(&mqtt_link_work, mqtt_link);
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);
 #endif
@@ -3257,5 +3249,5 @@ void NB_init(struct k_work_q *work_q)
 	dl_work_init(work_q);
 #endif
 
-	k_delayed_work_submit_to_queue(app_work_q, &modem_init_work, K_SECONDS(2));
+	k_work_schedule_for_queue(app_work_q, &modem_init_work, K_SECONDS(2));
 }

@@ -1,4 +1,4 @@
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include "lcd.h"
 #include "font.h" 

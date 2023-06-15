@@ -10,7 +10,7 @@
 #define __KEY_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +64,6 @@ typedef enum
 
 typedef struct
 {
-	const char * const port;
 	const uint8_t number;
 	const uint8_t active_flag;
 }key_cfg;

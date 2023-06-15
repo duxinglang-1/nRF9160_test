@@ -212,7 +212,7 @@ void fota_work_init(struct k_work_q *work_q)
 {
 	app_work_q = work_q;
 
-	k_delayed_work_init(&fota_work, app_dfu_transfer_start);
+	k_work_init_delayable(&fota_work, app_dfu_transfer_start);
 }
 
 FOTA_STATUS_ENUM get_fota_status(void)
@@ -264,7 +264,7 @@ void fota_start_confirm(void)
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	//DisConnectMqttLink();
 	modem_configure();
-	k_delayed_work_submit_to_queue(app_work_q, &fota_work, K_SECONDS(2));
+	k_work_schedule_for_queue(app_work_q, &fota_work, K_SECONDS(2));
 }
 
 void fota_reboot_confirm(void)

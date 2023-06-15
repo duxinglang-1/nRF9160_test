@@ -525,16 +525,19 @@ void TempMsgProcess(void)
 			return;
 		}
 	#endif
-	
-		last_health.timestamp.year = date_time.year;
-		last_health.timestamp.month = date_time.month; 
-		last_health.timestamp.day = date_time.day;
-		last_health.timestamp.hour = date_time.hour;
-		last_health.timestamp.minute = date_time.minute;
-		last_health.timestamp.second = date_time.second;
-		last_health.timestamp.week = date_time.week;
-		last_health.deca_temp = (uint16_t)(g_temp_body*10);
-		save_cur_health_to_record(&last_health);
+
+		if(g_temp_body > 0.0)
+		{
+			last_health.timestamp.year = date_time.year;
+			last_health.timestamp.month = date_time.month; 
+			last_health.timestamp.day = date_time.day;
+			last_health.timestamp.hour = date_time.hour;
+			last_health.timestamp.minute = date_time.minute;
+			last_health.timestamp.second = date_time.second;
+			last_health.timestamp.week = date_time.week;
+			last_health.deca_temp = (uint16_t)(g_temp_body*10);
+			save_cur_health_to_record(&last_health);
+		}
 	}
 	
 	if(temp_redraw_data_flag)

@@ -1878,6 +1878,8 @@ void PPGStartCheck(void)
 void PPGStopCheck(void)
 {
 	int status = -1;
+	bool save_flag = false;
+	
 #ifdef PPG_DEBUG
 	LOGD("ppg_power_flag:%d", ppg_power_flag);
 #endif
@@ -2007,24 +2009,40 @@ void PPGStopCheck(void)
 	}
 #endif
 
-	last_health.timestamp.year = date_time.year;
-	last_health.timestamp.month = date_time.month; 
-	last_health.timestamp.day = date_time.day;
-	last_health.timestamp.hour = date_time.hour;
-	last_health.timestamp.minute = date_time.minute;
-	last_health.timestamp.second = date_time.second;
-	last_health.timestamp.week = date_time.week;
 	if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{
-		last_health.hr = g_hr;
-		last_health.spo2 = g_spo2;
+		if((g_ppg_data == PPG_DATA_HR)&&(g_hr > 0))
+		{
+			last_health.hr = g_hr;
+			save_flag = true;
+		}
+		else if((g_ppg_data == PPG_DATA_SPO2)&&(g_spo2 > 0))
+		{
+			last_health.spo2 = g_spo2;
+			save_flag = true;
+		}
 	}
 	else if((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
 	{
-		last_health.systolic = g_bpt.systolic;
-		last_health.diastolic = g_bpt.diastolic;
+		if((g_bpt.systolic > 0)&&(g_bpt.diastolic > 0))
+		{
+			last_health.systolic = g_bpt.systolic;
+			last_health.diastolic = g_bpt.diastolic;
+			save_flag = true;
+		}
 	}
-	save_cur_health_to_record(&last_health);
+
+	if(save_flag)
+	{
+		last_health.timestamp.year = date_time.year;
+		last_health.timestamp.month = date_time.month; 
+		last_health.timestamp.day = date_time.day;
+		last_health.timestamp.hour = date_time.hour;
+		last_health.timestamp.minute = date_time.minute;
+		last_health.timestamp.second = date_time.second;
+		last_health.timestamp.week = date_time.week;
+		save_cur_health_to_record(&last_health);
+	}
 }
 
 void PPGStopBptCal(void)

@@ -155,6 +155,7 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 	NBSendLocationData(reply, strlen(reply));
 }
 
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendSportData
@@ -226,6 +227,7 @@ void TimeCheckSendSportData(void)
 
 	NBSendTimelySportData(databuf, strlen(databuf));
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -335,6 +337,7 @@ void TimeCheckSendHealthData(void)
 	NBSendTimelyHealthData(databuf, strlen(databuf));
 }
 
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 /*****************************************************************************
  * FUNCTION
  *  SendMissingSportData
@@ -445,6 +448,7 @@ void SendMissingSportData(void)
 		NBSendMissSportData(databuf, strlen(databuf), timemap);
 	}
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -482,11 +486,15 @@ void SendMissingHealthData(void)
 		bpt_data bp_data[24] = {0};
 	#endif
 		uint16_t temp_data[24] = {0};
+	#ifdef CONFIG_PPG_SUPPORT
 		ppg_hr_rec2_data hr_rec2 = {0};
 		ppg_spo2_rec2_data spo2_rec2 = {0};
 		ppg_bpt_rec2_data bpt_rec2 = {0};
+	#endif	
+	#ifdef CONFIG_TEMP_SUPPORT	
 		temp_rec2_data temp_rec2 = {0};
-
+	#endif
+	
 	#ifdef CONFIG_PPG_SUPPORT
 		//hr
 		memcpy(&hr_rec2, &hrbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));

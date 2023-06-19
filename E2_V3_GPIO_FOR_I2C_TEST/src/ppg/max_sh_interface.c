@@ -42,6 +42,15 @@
 #define SH_MFIO_PIN            		14
 #endif
 
+#define GPIO_ACT_I2C
+
+#ifdef GPIO_ACT_I2C
+
+#define PPG_SDA_PIN		28
+#define PPG_SCL_PIN		13
+
+#else/*GPIO_ACT_I2C*/
+
 #define I2C1_NODE DT_NODELABEL(i2c1)
 #if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
 #define PPG_DEV	DT_LABEL(I2C1_NODE)
@@ -51,10 +60,13 @@
 #define PPG_DEV	""
 #endif
 
-#define PPG_PORT 	"GPIO_0"
-	
 #define PPG_SDA_PIN		11
 #define PPG_SCL_PIN		12
+
+#endif/*GPIO_ACT_I2C*/
+
+#define PPG_PORT 	"GPIO_0"
+	
 #define PPG_INT_PIN		13
 #define PPG_MFIO_PIN	14
 #define PPG_RST_PIN		16
@@ -90,13 +102,223 @@ extern uint8_t g_ppg_ver[64];
 
 void wait_us(int us)
 {
-	k_sleep(K_MSEC(1));
+	k_usleep(us);
 }
 
 void wait_ms(int ms)
 {
 	k_sleep(K_MSEC(ms));
 }
+
+#ifdef GPIO_ACT_I2C
+static void I2C_INIT(void)
+{
+	if(gpio_ppg == NULL)
+		gpio_ppg = device_get_binding(PPG_PORT);
+
+	gpio_pin_configure(gpio_ppg, PPG_SCL_PIN, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_ppg, PPG_SDA_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_SCL_PIN, 1);
+	gpio_pin_set(gpio_ppg, PPG_SDA_PIN, 1);
+}
+
+static void I2C_SDA_OUT(void)
+{
+	gpio_pin_configure(gpio_ppg, PPG_SDA_PIN, GPIO_OUTPUT);
+}
+
+static void I2C_SDA_IN(void)
+{
+	gpio_pin_configure(gpio_ppg, PPG_SDA_PIN, GPIO_INPUT);
+}
+
+static void I2C_SDA_H(void)
+{
+	gpio_pin_set(gpio_ppg, PPG_SDA_PIN, 1);
+}
+
+static void I2C_SDA_L(void)
+{
+	gpio_pin_set(gpio_ppg, PPG_SDA_PIN, 0);
+}
+
+static void I2C_SCL_H(void)
+{
+	gpio_pin_set(gpio_ppg, PPG_SCL_PIN, 1);
+}
+
+static void I2C_SCL_L(void)
+{
+	gpio_pin_set(gpio_ppg, PPG_SCL_PIN, 0);
+}
+
+//产生起始信号
+static void I2C_Start(void)
+{
+	I2C_SDA_OUT();
+
+	I2C_SDA_H();
+	I2C_SCL_H();
+	I2C_SDA_L();
+	I2C_SCL_L();
+}
+
+//产生停止信号
+static void I2C_Stop(void)
+{
+	I2C_SDA_OUT();
+
+	I2C_SCL_L();
+	I2C_SDA_L();
+	I2C_SCL_H();
+	I2C_SDA_H();
+}
+
+//主机产生应答信号ACK
+static void I2C_Ack(void)
+{
+	I2C_SDA_OUT();
+	
+	I2C_SDA_L();
+	I2C_SCL_L();
+	I2C_SCL_H();
+	I2C_SCL_L();
+}
+
+//主机不产生应答信号NACK
+static void I2C_NAck(void)
+{
+	I2C_SDA_OUT();
+	
+	I2C_SDA_H();
+	I2C_SCL_L();
+	I2C_SCL_H();
+	I2C_SCL_L();
+}
+
+//等待从机应答信号
+//返回值：1 接收应答失败
+//		  0 接收应答成功
+static uint8_t I2C_Wait_Ack(void)
+{
+	uint8_t val,tempTime=0;
+
+	I2C_SDA_IN();
+	I2C_SCL_H();
+
+	while(1)
+	{
+		val = gpio_pin_get_raw(gpio_ppg, PPG_SDA_PIN);
+		if(val == 0)
+			break;
+		
+		tempTime++;
+		if(tempTime>250)
+		{
+			I2C_Stop();
+			return 1;
+		}	 
+	}
+
+	I2C_SCL_L();
+	return 0;
+}
+
+//I2C 发送一个字节
+static uint8_t I2C_Write_Byte(uint8_t txd)
+{
+	uint8_t i=0;
+
+	I2C_SDA_OUT();
+	I2C_SCL_L();//拉低时钟开始数据传输
+
+	for(i=0;i<8;i++)
+	{
+		if((txd&0x80)>0) //0x80  1000 0000
+			I2C_SDA_H();
+		else
+			I2C_SDA_L();
+
+		txd<<=1;
+		I2C_SCL_H();
+		I2C_SCL_L();
+	}
+
+	return I2C_Wait_Ack();
+}
+
+//I2C 读取一个字节
+static void I2C_Read_Byte(bool ack, uint8_t *data)
+{
+	uint8_t i=0,receive=0,val=0;
+
+	I2C_SDA_IN();
+	I2C_SCL_L();
+	for(i=0;i<8;i++)
+	{
+		I2C_SCL_H();
+		receive<<=1;
+		val = gpio_pin_get_raw(gpio_ppg, PPG_SDA_PIN);
+		if(val == 1)
+			receive++;
+		I2C_SCL_L();
+	}
+
+	if(ack == false)
+		I2C_NAck();
+	else
+		I2C_Ack();
+
+	*data = receive;
+}
+
+static uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint32_t len)
+{
+	uint32_t i;
+
+	addr = (addr<<1);
+
+	I2C_Start();
+	if(I2C_Write_Byte(addr))
+		goto err;
+
+	for(i=0;i<len;i++)
+	{
+		if(I2C_Write_Byte(databuf[i]))
+			goto err;
+	}
+
+	I2C_Stop();
+	return 0;
+	
+err:
+	return -1;
+}
+
+static uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint32_t len)
+{
+	uint32_t i;
+
+	addr = (addr<<1)|1;
+
+	I2C_Start();
+	if(I2C_Write_Byte(addr))
+		goto err;
+
+	for(i=0;i<len;i++)
+	{
+		if(i == len-1)
+			I2C_Read_Byte(false, &databuf[i]);
+		else
+			I2C_Read_Byte(true, &databuf[i]);
+	}
+	I2C_Stop();
+	return 0;
+	
+err:
+	return -1;
+}
+#endif
 
 void PPG_i2c_on(void)
 {
@@ -147,6 +369,9 @@ void PPG_Disable(void)
 
 static void sh_init_i2c(void)
 {
+#ifdef GPIO_ACT_I2C
+	I2C_INIT();
+#else
 	i2c_ppg = device_get_binding(PPG_DEV);
 	if(!i2c_ppg)
 	{
@@ -158,6 +383,7 @@ static void sh_init_i2c(void)
 	{
 		i2c_configure(i2c_ppg, I2C_SPEED_SET(I2C_SPEED_FAST));
 	}
+#endif	
 }
 
 static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, uint32_t pins)
@@ -180,7 +406,7 @@ static void sh_init_gpio(void)
 	gpio_add_callback(gpio_ppg, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 #else
-	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
+	//gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
 #endif	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
@@ -308,7 +534,11 @@ int sh_read_cmd(uint8_t *cmd_bytes,
 	int retries = SS_DEFAULT_RETRIES;
 
 	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+#ifdef GPIO_ACT_I2C
+	int ret = I2C_write_data(MAX32674_I2C_ADD, cmd_bytes, cmd_bytes_len);
+#else
 	int ret = i2c_write(i2c_ppg, cmd_bytes, cmd_bytes_len, MAX32674_I2C_ADD);
+#endif
 	SH_pull_mfio_to_high();
 
 	while((ret != 0) && (retries-- > 0))
@@ -316,7 +546,11 @@ int sh_read_cmd(uint8_t *cmd_bytes,
 		WAIT_MS(1);
 
 		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	#ifdef GPIO_ACT_I2C
+		ret = I2C_write_data(MAX32674_I2C_ADD, cmd_bytes, cmd_bytes_len);
+	#else	
 		ret = i2c_write(i2c_ppg, cmd_bytes, cmd_bytes_len, MAX32674_I2C_ADD);
+	#endif
 		SH_pull_mfio_to_high();
 	}
 
@@ -327,7 +561,11 @@ int sh_read_cmd(uint8_t *cmd_bytes,
 	WAIT_MS(sleep_ms);
 
 	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+#ifdef GPIO_ACT_I2C
+	ret = I2C_read_data(MAX32674_I2C_ADD, rxbuf, rxbuf_sz);
+#else
 	ret = i2c_read(i2c_ppg, rxbuf, rxbuf_sz, MAX32674_I2C_ADD);
+#endif
 	SH_pull_mfio_to_high();
 
 	bool try_again = (rxbuf[0] == SS_ERR_TRY_AGAIN);
@@ -337,7 +575,11 @@ int sh_read_cmd(uint8_t *cmd_bytes,
 		WAIT_MS(sleep_ms);
 
 		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	#ifdef GPIO_ACT_I2C
+		ret = I2C_read_data(MAX32674_I2C_ADD, rxbuf, rxbuf_sz);
+	#else	
 		ret = i2c_read(i2c_ppg, rxbuf, rxbuf_sz, MAX32674_I2C_ADD);
+	#endif
 		SH_pull_mfio_to_high();
 
 		try_again = (rxbuf[0] == SS_ERR_TRY_AGAIN);
@@ -361,14 +603,22 @@ int sh_write_cmd_without_status_cb(uint8_t *tx_buf,
 	int retries = SS_DEFAULT_RETRIES;
 
 	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+#ifdef GPIO_ACT_I2C
+	int ret = I2C_write_data(MAX32674_I2C_ADD, tx_buf, tx_len);
+#else	
 	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+#endif
 	SH_pull_mfio_to_high();
 
 	while((ret != 0) && (retries--) > 0)
 	{
 		WAIT_MS(1);
 		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	#ifdef GPIO_ACT_I2C
+		ret = I2C_write_data(MAX32674_I2C_ADD, tx_buf, tx_len);
+	#else	
 		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	#endif
 		SH_pull_mfio_to_high();
 	}
 
@@ -385,14 +635,22 @@ int sh_write_cmd(uint8_t *tx_buf,
 	int retries = SS_DEFAULT_RETRIES;
 
 	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+#ifdef GPIO_ACT_I2C
+	int ret = I2C_write_data(MAX32674_I2C_ADD, tx_buf, tx_len);
+#else		
 	int ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+#endif
 	SH_pull_mfio_to_high();
 
 	while((ret != 0) && (retries--) > 0)
 	{
 		WAIT_MS(1);
 		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	#ifdef GPIO_ACT_I2C
+		ret = I2C_write_data(MAX32674_I2C_ADD, tx_buf, tx_len);
+	#else	
 		ret = i2c_write(i2c_ppg, tx_buf, tx_len, MAX32674_I2C_ADD);
+	#endif
 		SH_pull_mfio_to_high();
 	}
 
@@ -405,7 +663,11 @@ int sh_write_cmd(uint8_t *tx_buf,
 
 	uint8_t status_byte;
 	SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+#ifdef GPIO_ACT_I2C
+	ret = I2C_read_data(MAX32674_I2C_ADD, (uint8_t*)&status_byte, 1);
+#else	
 	ret = i2c_read(i2c_ppg, (uint8_t*)&status_byte, 1, MAX32674_I2C_ADD);
+#endif
 	SH_pull_mfio_to_high();
 
 	bool try_again = (status_byte == SS_ERR_TRY_AGAIN);
@@ -415,7 +677,11 @@ int sh_write_cmd(uint8_t *tx_buf,
 		WAIT_MS(sleep_ms);
 
 		SH_mfio_to_low_and_keep(MFIO_LOW_DURATION);
+	#ifdef GPIO_ACT_I2C
+		ret = I2C_read_data(MAX32674_I2C_ADD, (uint8_t*)&status_byte, 1);
+	#else	
 		ret = i2c_read(i2c_ppg, (uint8_t*)&status_byte, 1, MAX32674_I2C_ADD);
+	#endif
 		SH_pull_mfio_to_high();
 
 		try_again = (status_byte == SS_ERR_TRY_AGAIN);

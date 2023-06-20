@@ -99,6 +99,16 @@ static void show_infor2(uint8_t *strbuf)
 }
 #endif
 
+void Delay_ms(unsigned int dly)
+{
+	k_sleep(K_MSEC(dly));
+}
+
+void Delay_us(unsigned int dly)
+{
+	k_usleep(dly);
+}
+
 #ifdef GPIO_ACT_I2C
 void I2C_INIT(void)
 {
@@ -141,16 +151,6 @@ void I2C_SCL_L(void)
 	gpio_pin_set(gpio_pmu, PMU_SCL, 0);
 }
 
-void Delay_ms(unsigned int dly)
-{
-	k_sleep(K_MSEC(dly));
-}
-
-void Delay_us(unsigned int dly)
-{
-	k_usleep(dly);
-}
-
 //产生起始信号
 void I2C_Start(void)
 {
@@ -158,9 +158,7 @@ void I2C_Start(void)
 
 	I2C_SDA_H();
 	I2C_SCL_H();
-	//Delay_us(10);
 	I2C_SDA_L();
-	//Delay_us(10);
 	I2C_SCL_L();
 }
 
@@ -172,9 +170,7 @@ void I2C_Stop(void)
 	I2C_SCL_L();
 	I2C_SDA_L();
 	I2C_SCL_H();
-	//Delay_us(10);
 	I2C_SDA_H();
-	//Delay_us(10);
 }
 
 //主机产生应答信号ACK

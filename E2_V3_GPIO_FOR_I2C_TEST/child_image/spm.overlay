@@ -17,8 +17,8 @@
 &i2c1{
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <30>;
-	scl-pin = <31>;
+	sda-pin = <28>;
+	scl-pin = <13>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 

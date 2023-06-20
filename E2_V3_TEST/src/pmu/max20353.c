@@ -253,6 +253,7 @@ void I2C_Read_Byte(bool ack, uint8_t *data)
 
 	I2C_SDA_IN();
 	I2C_SCL_L();
+
 	for(i=0;i<8;i++)
 	{
 		I2C_SCL_H();

@@ -99,6 +99,16 @@ static void show_infor2(uint8_t *strbuf)
 }
 #endif
 
+void Delay_ms(unsigned int dly)
+{
+	k_sleep(K_MSEC(dly));
+}
+
+void Delay_us(unsigned int dly)
+{
+	k_usleep(dly);
+}
+
 #ifdef GPIO_ACT_I2C
 void I2C_INIT(void)
 {
@@ -141,16 +151,6 @@ void I2C_SCL_L(void)
 	gpio_pin_set(gpio_pmu, PMU_SCL, 0);
 }
 
-void Delay_ms(unsigned int dly)
-{
-	k_sleep(K_MSEC(dly));
-}
-
-void Delay_us(unsigned int dly)
-{
-	k_usleep(dly);
-}
-
 //产生起始信号
 void I2C_Start(void)
 {
@@ -158,9 +158,7 @@ void I2C_Start(void)
 
 	I2C_SDA_H();
 	I2C_SCL_H();
-	//Delay_us(10);
 	I2C_SDA_L();
-	//Delay_us(10);
 	I2C_SCL_L();
 }
 
@@ -172,18 +170,16 @@ void I2C_Stop(void)
 	I2C_SCL_L();
 	I2C_SDA_L();
 	I2C_SCL_H();
-	//Delay_us(10);
 	I2C_SDA_H();
-	//Delay_us(10);
 }
 
 //主机产生应答信号ACK
 void I2C_Ack(void)
 {
 	I2C_SDA_OUT();
-	I2C_SCL_L();
-
+	
 	I2C_SDA_L();
+	I2C_SCL_L();
 	I2C_SCL_H();
 	I2C_SCL_L();
 }
@@ -192,9 +188,9 @@ void I2C_Ack(void)
 void I2C_NAck(void)
 {
 	I2C_SDA_OUT();
-	I2C_SCL_L();
-
+	
 	I2C_SDA_H();
+	I2C_SCL_L();
 	I2C_SCL_H();
 	I2C_SCL_L();
 }
@@ -253,31 +249,31 @@ uint8_t I2C_Write_Byte(uint8_t txd)
 //I2C 读取一个字节
 void I2C_Read_Byte(bool ack, uint8_t *data)
 {
-   uint8_t i=0,receive=0,val=0;
+	uint8_t i=0,receive=0,val=0;
 
-   I2C_SDA_IN();
-   for(i=0;i<8;i++)
-   {
-   		I2C_SCL_L();
+	I2C_SDA_IN();
+	I2C_SCL_L();
+	for(i=0;i<8;i++)
+	{
 		I2C_SCL_H();
-
 		receive<<=1;
 		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 1)
-		   receive++;
-   }
+			receive++;
+		I2C_SCL_L();
+	}
 
-   	if(ack == false)
-	   	I2C_NAck();
+	if(ack == false)
+		I2C_NAck();
 	else
 		I2C_Ack();
 
 	*data = receive;
 }
 
-uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint16_t len)
+uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint32_t len)
 {
-	uint8_t i;
+	uint32_t i;
 
 	addr = (addr<<1);
 
@@ -298,9 +294,9 @@ err:
 	return -1;
 }
 
-uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint16_t len)
+uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint32_t len)
 {
-	uint8_t i;
+	uint32_t i;
 
 	addr = (addr<<1)|1;
 
@@ -310,7 +306,10 @@ uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint16_t len)
 
 	for(i=0;i<len;i++)
 	{
-		I2C_Read_Byte(false, &databuf[i]);
+		if(i == len-1)
+			I2C_Read_Byte(false, &databuf[i]);
+		else
+			I2C_Read_Byte(true, &databuf[i]);
 	}
 	I2C_Stop();
 	return 0;

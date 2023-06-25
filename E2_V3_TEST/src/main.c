@@ -731,12 +731,12 @@ void system_init(void)
 	PPG_i2c_off();
 #endif
 	pmu_init();
-	flash_init();
+	key_init();
 	LCD_Init();
+	flash_init();
 	
 	ShowBootUpLogo();
-
-	key_init();
+	
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
 #endif

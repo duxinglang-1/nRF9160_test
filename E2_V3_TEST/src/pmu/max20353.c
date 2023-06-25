@@ -41,6 +41,7 @@
 #define PMU_EINT		8
 
 static bool pmu_check_ok = false;
+static uint8_t last_bat_soc = 0;
 static uint8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -503,7 +504,7 @@ void pmu_battery_low_shutdown(void)
 void pmu_battery_update(void)
 {
 	uint8_t tmpbuf[8] = {0};
-
+	
 	if(!pmu_check_ok)
 		return;
 
@@ -511,8 +512,31 @@ void pmu_battery_update(void)
 #ifdef PMU_DEBUG
 	LOGD("SOC:%d", g_bat_soc);
 #endif	
-	if(g_bat_soc>100)
+
+	if(g_bat_soc > 100)
 		g_bat_soc = 100;
+
+	if(charger_is_connected)
+	{
+		switch(g_chg_status)
+		{
+		case BAT_CHARGING_NO:
+		case BAT_CHARGING_FINISHED:
+			break;
+		case BAT_CHARGING_PROGRESS:
+			if(g_bat_soc >= 100)
+				g_bat_soc = 99;
+			break;
+		}
+		last_bat_soc = g_bat_soc;
+	}
+	else
+	{
+		if(g_bat_soc > last_bat_soc)
+			g_bat_soc = last_bat_soc;
+		else
+			last_bat_soc = g_bat_soc;
+	}
 	
 	if(g_bat_soc < 5)
 	{
@@ -597,6 +621,8 @@ bool pmu_interrupt_proc(void)
 		#endif
 			if(g_bat_soc >= 95)
 				g_bat_soc = 100;
+
+			last_bat_soc = g_bat_soc;
 		#endif
 
 			lcd_sleep_out = true;
@@ -638,8 +664,10 @@ bool pmu_interrupt_proc(void)
 
 		#ifdef BATTERY_SOC_GAUGE	
 			g_bat_soc = MAX20353_CalculateSOC();
-			if(g_bat_soc>100)
+			if(g_bat_soc > 100)
 				g_bat_soc = 100;
+			if(g_bat_soc > last_bat_soc)
+				g_bat_soc = last_bat_soc;
 			
 			if(g_bat_soc < 5)
 			{
@@ -836,7 +864,8 @@ void MAX20353_InitData(void)
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
-		
+		last_bat_soc = g_bat_soc;
+
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
@@ -865,7 +894,8 @@ void MAX20353_InitData(void)
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
-		
+		last_bat_soc = g_bat_soc;
+
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;

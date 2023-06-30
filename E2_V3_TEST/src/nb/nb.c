@@ -2054,6 +2054,13 @@ static int configure_normal_power(void)
 	#endif
 	}
 
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XEPCO=0") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("XEPCO:%s", buf);
+	#endif
+	}
+
 	return 0;
 }
 
@@ -2089,6 +2096,13 @@ static int configure_low_power(void)
 	{
 	#ifdef NB_DEBUG
 		LOGD("PSM:%s", buf);
+	#endif
+	}
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XEPCO=0") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("XEPCO:%s", buf);
 	#endif
 	}
 

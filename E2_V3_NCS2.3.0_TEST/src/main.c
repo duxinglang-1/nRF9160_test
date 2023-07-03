@@ -712,12 +712,12 @@ void system_init(void)
 	PPG_i2c_off();
 #endif
 	pmu_init();
-	flash_init();
+	key_init();
 	LCD_Init();
+	flash_init();
 	
 	ShowBootUpLogo();
-
-	key_init();
+	
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
 #endif
@@ -738,7 +738,7 @@ void system_init(void)
 	dl_init();
 #endif
 
-	log_read_from_flash();
+	//log_read_from_flash();
 
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
@@ -746,17 +746,17 @@ void system_init(void)
 
 void work_init(void)
 {
-	k_work_q_start(&nb_work_q, nb_stack_area,
+	k_work_queue_start(&nb_work_q, nb_stack_area,
 					K_THREAD_STACK_SIZEOF(nb_stack_area),
-					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY,NULL);
 #ifdef CONFIG_IMU_SUPPORT	
-	k_work_q_start(&imu_work_q, imu_stack_area,
+	k_work_queue_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
-					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY,NULL);
 #endif
-	k_work_q_start(&gps_work_q, gps_stack_area,
+	k_work_queue_start(&gps_work_q, gps_stack_area,
 					K_THREAD_STACK_SIZEOF(gps_stack_area),
-					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY,NULL);	
 	
 	if(IS_ENABLED(CONFIG_WATCHDOG))
 	{

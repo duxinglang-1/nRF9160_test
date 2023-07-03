@@ -41,6 +41,7 @@
 #define PMU_EINT		8
 
 static bool pmu_check_ok = false;
+static uint8_t last_bat_soc = 0;
 static uint8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -177,9 +178,9 @@ void I2C_Stop(void)
 void I2C_Ack(void)
 {
 	I2C_SDA_OUT();
-	I2C_SCL_L();
-
+	
 	I2C_SDA_L();
+	I2C_SCL_L();
 	I2C_SCL_H();
 	I2C_SCL_L();
 }
@@ -188,9 +189,9 @@ void I2C_Ack(void)
 void I2C_NAck(void)
 {
 	I2C_SDA_OUT();
-	I2C_SCL_L();
-
+	
 	I2C_SDA_H();
+	I2C_SCL_L();
 	I2C_SCL_H();
 	I2C_SCL_L();
 }
@@ -249,31 +250,32 @@ uint8_t I2C_Write_Byte(uint8_t txd)
 //I2C 读取一个字节
 void I2C_Read_Byte(bool ack, uint8_t *data)
 {
-   uint8_t i=0,receive=0,val=0;
+	uint8_t i=0,receive=0,val=0;
 
-   I2C_SDA_IN();
-   for(i=0;i<8;i++)
-   {
-   		I2C_SCL_L();
+	I2C_SDA_IN();
+	I2C_SCL_L();
+
+	for(i=0;i<8;i++)
+	{
 		I2C_SCL_H();
-
 		receive<<=1;
 		val = gpio_pin_get_raw(gpio_pmu, PMU_SDA);
 		if(val == 1)
-		   receive++;
-   }
+			receive++;
+		I2C_SCL_L();
+	}
 
-   	if(ack == false)
-	   	I2C_NAck();
+	if(ack == false)
+		I2C_NAck();
 	else
 		I2C_Ack();
 
 	*data = receive;
 }
 
-uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint16_t len)
+uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint32_t len)
 {
-	uint8_t i;
+	uint32_t i;
 
 	addr = (addr<<1);
 
@@ -294,9 +296,9 @@ err:
 	return -1;
 }
 
-uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint16_t len)
+uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint32_t len)
 {
-	uint8_t i;
+	uint32_t i;
 
 	addr = (addr<<1)|1;
 
@@ -306,7 +308,10 @@ uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint16_t len)
 
 	for(i=0;i<len;i++)
 	{
-		I2C_Read_Byte(false, &databuf[i]);
+		if(i == len-1)
+			I2C_Read_Byte(false, &databuf[i]);
+		else
+			I2C_Read_Byte(true, &databuf[i]);
 	}
 	I2C_Stop();
 	return 0;
@@ -499,7 +504,7 @@ void pmu_battery_low_shutdown(void)
 void pmu_battery_update(void)
 {
 	uint8_t tmpbuf[8] = {0};
-
+	
 	if(!pmu_check_ok)
 		return;
 
@@ -507,41 +512,208 @@ void pmu_battery_update(void)
 #ifdef PMU_DEBUG
 	LOGD("SOC:%d", g_bat_soc);
 #endif	
-	if(g_bat_soc>100)
+
+	if(g_bat_soc > 100)
 		g_bat_soc = 100;
-	
-	if(g_bat_soc < 5)
+
+	if(charger_is_connected)
 	{
-		g_bat_level = BAT_LEVEL_VERY_LOW;
-		if(!charger_is_connected)
-		{
-			pmu_battery_low_shutdown();
-		}
-	}
-	else if(g_bat_soc < 10)
-	{
-		g_bat_level = BAT_LEVEL_LOW;
-	}
-	else if(g_bat_soc < 80)
-	{
+		last_bat_soc = g_bat_soc;
 		g_bat_level = BAT_LEVEL_NORMAL;
 	}
 	else
 	{
-		g_bat_level = BAT_LEVEL_GOOD;
-	}
+		if(g_bat_soc > last_bat_soc)
+			g_bat_soc = last_bat_soc;
+		else
+			last_bat_soc = g_bat_soc;
 
-	if(charger_is_connected)
-	{
-		g_bat_level = BAT_LEVEL_NORMAL;
+		if(g_bat_soc < 5)
+		{
+			g_bat_level = BAT_LEVEL_VERY_LOW;
+			pmu_battery_low_shutdown();
+		}
+		else if(g_bat_soc < 10)
+		{
+			g_bat_level = BAT_LEVEL_LOW;
+		}
+		else if(g_bat_soc < 80)
+		{
+			g_bat_level = BAT_LEVEL_NORMAL;
+		}
+		else
+		{
+			g_bat_level = BAT_LEVEL_GOOD;
+		}
 	}
-
-	if(g_chg_status == BAT_CHARGING_NO)
+	
+	if(g_chg_status != BAT_CHARGING_PROGRESS)
 		pmu_redraw_bat_flag = true;
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	FTPMUStatusUpdate(1);
 #endif	
+}
+
+void pmu_status_update(void)
+{
+	bool flag = false;
+	uint8_t status0,status1;
+	static uint8_t charging_count = 0;
+	
+	MAX20353_ReadReg(REG_STATUS0, &status0);
+#ifdef PMU_DEBUG
+	LOGD("status0:%d", (status0&0x07));
+#endif	
+	switch((status0&0x07))
+	{
+	case 0x00://Charger off
+	case 0x01://Charging suspended due to temperature (see battery charger state diagram)
+	case 0x07://Charger fault condition (see battery charger state diagram)
+		if(g_chg_status != BAT_CHARGING_NO)
+		{
+		#ifdef PMU_DEBUG
+			LOGD("BAT_CHARGING_NO");
+		#endif
+			g_chg_status = BAT_CHARGING_NO;
+			flag = true;
+		}
+		break;
+		
+	case 0x02://Pre-charge in progress
+	case 0x03://Fast-charge constant current mode in progress
+		if(g_chg_status != BAT_CHARGING_PROGRESS)
+		{
+		#ifdef PMU_DEBUG
+			LOGD("BAT_CHARGING_PROGRESS");
+		#endif
+			g_chg_status = BAT_CHARGING_PROGRESS;
+			charging_count = 0;
+			flag = true;
+		}
+		break;
+
+	case 0x04://Fast-charge constant voltage mode in progress
+	case 0x05://Maintain charge in progress
+		if(g_chg_status == BAT_CHARGING_PROGRESS)
+		{
+			if(g_bat_soc == 100)
+				charging_count++;
+			if(charging_count > 1)
+			{
+			#ifdef PMU_DEBUG
+				LOGD("change to finished!");
+			#endif
+				g_chg_status = BAT_CHARGING_FINISHED;
+				lcd_sleep_out = true;
+				flag = true;
+			}
+		}
+		break;
+		
+	case 0x06://Maintain charger timer done
+		if(g_chg_status != BAT_CHARGING_FINISHED)
+		{
+		#ifdef PMU_DEBUG
+			LOGD("BAT_CHARGING_FINISHED");
+		#endif
+			g_chg_status = BAT_CHARGING_FINISHED;
+
+		#ifdef BATTERY_SOC_GAUGE	
+			g_bat_soc = MAX20353_CalculateSOC();
+		#ifdef PMU_DEBUG
+			LOGD("g_bat_soc:%d", g_bat_soc);
+		#endif
+			if(g_bat_soc >= 95)
+				g_bat_soc = 100;
+
+			last_bat_soc = g_bat_soc;
+		#endif
+
+			lcd_sleep_out = true;
+			flag = true;
+		}
+		break;
+	}
+	
+	MAX20353_ReadReg(REG_STATUS1, &status1);
+#ifdef PMU_DEBUG
+	LOGD("status1:%d", (status1&0x08));
+#endif	
+	if((status1&0x08) == 0x08) //USB OK   
+	{
+		if(!charger_is_connected)
+		{
+		#ifdef PMU_DEBUG
+			LOGD("charger push in!");
+		#endif
+			charger_is_connected = true;
+			g_chg_status = BAT_CHARGING_PROGRESS;
+			pmu_battery_stop_shutdown();
+			InitCharger();
+		}
+
+	#ifdef BATTERY_SOC_GAUGE	
+		g_bat_soc = MAX20353_CalculateSOC();
+	#ifdef PMU_DEBUG
+		LOGD("soc:%d", g_bat_soc);
+	#endif
+		if(g_bat_soc > 100)
+			g_bat_soc = 100;
+		last_bat_soc = g_bat_soc;
+		g_bat_level = BAT_LEVEL_NORMAL;
+	#endif
+
+		flag = true;
+	}
+	else
+	{			
+		if(charger_is_connected)
+		{
+		#ifdef PMU_DEBUG
+			LOGD("charger push out!");
+		#endif
+			charger_is_connected = false;
+			g_chg_status = BAT_CHARGING_NO;
+		}
+		
+	#ifdef BATTERY_SOC_GAUGE	
+		g_bat_soc = MAX20353_CalculateSOC();
+	#ifdef PMU_DEBUG
+		LOGD("soc:%d", g_bat_soc);
+	#endif
+		if(g_bat_soc > 100)
+			g_bat_soc = 100;
+
+		if(g_bat_soc > last_bat_soc)
+			g_bat_soc = last_bat_soc;
+		else
+			last_bat_soc = g_bat_soc;
+
+		if(g_bat_soc < 5)
+		{
+			g_bat_level = BAT_LEVEL_VERY_LOW;
+			pmu_battery_low_shutdown();
+		}
+		else if(g_bat_soc < 20)
+		{
+			g_bat_level = BAT_LEVEL_LOW;
+		}
+		else if(g_bat_soc < 80)
+		{
+			g_bat_level = BAT_LEVEL_NORMAL;
+		}
+		else
+		{
+			g_bat_level = BAT_LEVEL_GOOD;
+		}
+	#endif
+
+		flag = true;
+	}
+
+	if(flag)
+		pmu_redraw_bat_flag = true;
 }
 
 bool pmu_interrupt_proc(void)
@@ -564,7 +736,10 @@ bool pmu_interrupt_proc(void)
 		ret = MAX20353_ReadReg(REG_STATUS0, &status0);
 		if(ret == MAX20353_ERROR)
 			return false;
-		
+
+	#ifdef PMU_DEBUG
+		LOGD("status0:%d", (status0&0x07));
+	#endif	
 		switch((status0&0x07))
 		{
 		case 0x00://Charger off
@@ -576,26 +751,33 @@ bool pmu_interrupt_proc(void)
 		case 0x02://Pre-charge in progress
 		case 0x03://Fast-charge constant current mode in progress
 		case 0x04://Fast-charge constant voltage mode in progress
-		case 0x05://Maintain charge in progress
 			g_chg_status = BAT_CHARGING_PROGRESS;
+			break;
+
+		case 0x05://Maintain charge in progress
 			break;
 			
 		case 0x06://Maintain charger timer done
-			g_chg_status = BAT_CHARGING_FINISHED;
-		#ifdef PMU_DEBUG
-			LOGD("charging finished!");
-		#endif
-			
-		#ifdef BATTERY_SOC_GAUGE	
-			g_bat_soc = MAX20353_CalculateSOC();
-		#ifdef PMU_DEBUG
-			LOGD("g_bat_soc:%d", g_bat_soc);
-		#endif
-			if(g_bat_soc >= 95)
-				g_bat_soc = 100;
-		#endif
+			if(g_chg_status != BAT_CHARGING_FINISHED)
+			{
+				g_chg_status = BAT_CHARGING_FINISHED;
+			#ifdef PMU_DEBUG
+				LOGD("charging finished!");
+			#endif
 
-			lcd_sleep_out = true;
+			#ifdef BATTERY_SOC_GAUGE
+				g_bat_soc = MAX20353_CalculateSOC();
+			#ifdef PMU_DEBUG
+				LOGD("g_bat_soc:%d", g_bat_soc);
+			#endif
+				if(g_bat_soc >= 95)
+					g_bat_soc = 100;
+
+				last_bat_soc = g_bat_soc;
+			#endif
+
+				lcd_sleep_out = true;
+			}
 			break;
 		}
 
@@ -607,18 +789,20 @@ bool pmu_interrupt_proc(void)
 		ret = MAX20353_ReadReg(REG_STATUS1, &status1);
 		if(ret == MAX20353_ERROR)
 			return false;
-		
+
+	#ifdef PMU_DEBUG
+		LOGD("status1:%d", (status1&0x08));
+	#endif
 		if((status1&0x08) == 0x08) //USB OK   
 		{
 		#ifdef PMU_DEBUG
 			LOGD("charger push in!");
 		#endif	
-			pmu_battery_stop_shutdown();
-			
-			InitCharger();
-
 			charger_is_connected = true;
-			
+		
+			pmu_battery_stop_shutdown();
+			InitCharger();
+		
 			g_chg_status = BAT_CHARGING_PROGRESS;
 			g_bat_level = BAT_LEVEL_NORMAL;
 			lcd_sleep_out = true;
@@ -634,8 +818,10 @@ bool pmu_interrupt_proc(void)
 
 		#ifdef BATTERY_SOC_GAUGE	
 			g_bat_soc = MAX20353_CalculateSOC();
-			if(g_bat_soc>100)
+			if(g_bat_soc > 100)
 				g_bat_soc = 100;
+			if(g_bat_soc > last_bat_soc)
+				g_bat_soc = last_bat_soc;
 			
 			if(g_bat_soc < 5)
 			{
@@ -822,46 +1008,48 @@ void MAX20353_InitData(void)
 	MAX20353_ReadReg(REG_STATUS1, &status1);
 	if((status1&0x08) == 0x08) //USB OK   
 	{
-		pmu_battery_stop_shutdown();
-		InitCharger();
-
 		charger_is_connected = true;
-		g_chg_status = BAT_CHARGING_PROGRESS;
-	
+		
+		InitCharger();
 	#ifdef BATTERY_SOC_GAUGE	
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
-		
-		if(g_bat_soc < 5)
+		last_bat_soc = g_bat_soc;
+
+		if(g_chg_status != BAT_CHARGING_PROGRESS)
 		{
-			g_bat_level = BAT_LEVEL_VERY_LOW;
-			pmu_battery_low_shutdown();
-		}
-		else if(g_bat_soc < 20)
-		{
-			g_bat_level = BAT_LEVEL_LOW;
-		}
-		else if(g_bat_soc < 80)
-		{
-			g_bat_level = BAT_LEVEL_NORMAL;
-		}
-		else
-		{
-			g_bat_level = BAT_LEVEL_GOOD;
+			if(g_bat_soc < 5)
+			{
+				g_bat_level = BAT_LEVEL_VERY_LOW;
+			}
+			else if(g_bat_soc < 20)
+			{
+				g_bat_level = BAT_LEVEL_LOW;
+			}
+			else if(g_bat_soc < 80)
+			{
+				g_bat_level = BAT_LEVEL_NORMAL;
+			}
+			else
+			{
+				g_bat_level = BAT_LEVEL_GOOD;
+			}
 		}
 	#endif
 	}
 	else
 	{			
 		charger_is_connected = false;
+		
 		g_chg_status = BAT_CHARGING_NO;
 		
 	#ifdef BATTERY_SOC_GAUGE	
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc>100)
 			g_bat_soc = 100;
-		
+		last_bat_soc = g_bat_soc;
+
 		if(g_bat_soc < 5)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;

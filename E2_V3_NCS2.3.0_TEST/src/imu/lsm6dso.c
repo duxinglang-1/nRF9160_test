@@ -300,12 +300,8 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-static bool sensor_init(void)
+void imu_sensor_init(void)
 {
-	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
-	if(whoamI != LSM6DSO_ID)
-		return false;
-
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
@@ -378,6 +374,15 @@ static bool sensor_init(void)
 #endif
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
+}
+
+static bool sensor_init(void)
+{
+	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
+	if(whoamI != LSM6DSO_ID)
+		return false;
+
+	imu_sensor_init();
 	return true;
 }
 
@@ -945,16 +950,16 @@ void ReSetImuSteps(void)
 	g_distance = 0;
 	g_calorie = 0;
 	
-	last_sport.timestamp.year = date_time.year;
-	last_sport.timestamp.month = date_time.month; 
-	last_sport.timestamp.day = date_time.day;
-	last_sport.timestamp.hour = date_time.hour;
-	last_sport.timestamp.minute = date_time.minute;
-	last_sport.timestamp.second = date_time.second;
-	last_sport.timestamp.week = date_time.week;
-	last_sport.steps = g_steps;
-	last_sport.distance = g_distance;
-	last_sport.calorie = g_calorie;
+	last_sport.step_rec.timestamp.year = date_time.year;
+	last_sport.step_rec.timestamp.month = date_time.month; 
+	last_sport.step_rec.timestamp.day = date_time.day;
+	last_sport.step_rec.timestamp.hour = date_time.hour;
+	last_sport.step_rec.timestamp.minute = date_time.minute;
+	last_sport.step_rec.timestamp.second = date_time.second;
+	last_sport.step_rec.timestamp.week = date_time.week;
+	last_sport.step_rec.steps = g_steps;
+	last_sport.step_rec.distance = g_distance;
+	last_sport.step_rec.calorie = g_calorie;
 	save_cur_sport_to_record(&last_sport);	
 }
 
@@ -977,16 +982,16 @@ void UpdateIMUData(void)
 	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
 #endif
 
-	last_sport.timestamp.year = date_time.year;
-	last_sport.timestamp.month = date_time.month; 
-	last_sport.timestamp.day = date_time.day;
-	last_sport.timestamp.hour = date_time.hour;
-	last_sport.timestamp.minute = date_time.minute;
-	last_sport.timestamp.second = date_time.second;
-	last_sport.timestamp.week = date_time.week;
-	last_sport.steps = g_steps;
-	last_sport.distance = g_distance;
-	last_sport.calorie = g_calorie;
+	last_sport.step_rec.timestamp.year = date_time.year;
+	last_sport.step_rec.timestamp.month = date_time.month; 
+	last_sport.step_rec.timestamp.day = date_time.day;
+	last_sport.step_rec.timestamp.hour = date_time.hour;
+	last_sport.step_rec.timestamp.minute = date_time.minute;
+	last_sport.step_rec.timestamp.second = date_time.second;
+	last_sport.step_rec.timestamp.week = date_time.week;
+	last_sport.step_rec.steps = g_steps;
+	last_sport.step_rec.distance = g_distance;
+	last_sport.step_rec.calorie = g_calorie;
 	save_cur_sport_to_record(&last_sport);
 	
 	//StepCheckSendLocationData(g_steps);
@@ -1028,9 +1033,9 @@ void StepsDataInit(bool reset_flag)
 {
 	bool flag = false;
 	
-	if((last_sport.timestamp.year == date_time.year)
-		&&(last_sport.timestamp.month == date_time.month)
-		&&(last_sport.timestamp.day == date_time.day)
+	if((last_sport.step_rec.timestamp.year == date_time.year)
+		&&(last_sport.step_rec.timestamp.month == date_time.month)
+		&&(last_sport.step_rec.timestamp.day == date_time.day)
 		)
 	{
 		flag = true;
@@ -1052,10 +1057,10 @@ void StepsDataInit(bool reset_flag)
 	{
 		if(flag)
 		{
-			g_last_steps = last_sport.steps;
-			g_steps = last_sport.steps;
-			g_distance = last_sport.distance;
-			g_calorie = last_sport.calorie;
+			g_last_steps = last_sport.step_rec.steps;
+			g_steps = last_sport.step_rec.steps;
+			g_distance = last_sport.step_rec.distance;
+			g_calorie = last_sport.step_rec.calorie;
 		}
 	}
 }

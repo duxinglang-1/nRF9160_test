@@ -49,7 +49,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(30)
@@ -771,6 +771,8 @@ static void MqttDisConnect(void)
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
 	#endif
 	}
+
+	//fota_start_confirm();
 }
 
 static void MqttDisConnectCallBack(struct k_timer *timer_id)

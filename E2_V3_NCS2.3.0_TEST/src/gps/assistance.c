@@ -13,7 +13,7 @@
 #include <net/nrf_cloud_agps.h>
 #endif /* CONFIG_NRF_CLOUD_AGPS */
 #if defined(CONFIG_NRF_CLOUD_PGPS)
-#include <pm_config.h>
+//#include <pm_config.h> 
 #include <net/nrf_cloud_pgps.h>
 #endif /* CONFIG_NRF_CLOUD_PGPS */
 

@@ -155,6 +155,7 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 	NBSendLocationData(reply, strlen(reply));
 }
 
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendSportData
@@ -224,8 +225,9 @@ void TimeCheckSendSportData(void)
 		strcat(databuf, tmpbuf);
 	}
 
-	NBSendTimelySportData(databuf, strlen(databuf), NULL);
+	NBSendTimelySportData(databuf, strlen(databuf));
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -332,14 +334,15 @@ void TimeCheckSendHealthData(void)
 		strcat(databuf, tmpbuf);
 	}
 
-	NBSendTimelyHealthData(databuf, strlen(databuf), NULL);
+	NBSendTimelyHealthData(databuf, strlen(databuf));
 }
 
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 /*****************************************************************************
  * FUNCTION
  *  SendMissingSportData
  * DESCRIPTION
- *  补发漏传的运动数据包
+ *  补发漏传的运动数据包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -360,6 +363,7 @@ void SendMissingSportData(void)
 
 	for(i=0;i<7;i++)
 	{
+		uint8_t timemap[16] = {0};
 		uint16_t step_data[24] = {0};
 		sleep_data sleep[24] = {0};
 		step_rec2_data step_rec2 = {0};
@@ -367,26 +371,40 @@ void SendMissingSportData(void)
 
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)	
 		memcpy(&step_rec2, &stepbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
-		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
+		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)
+			||(step_rec2.month == 0xff || step_rec2.month == 0x00)
+			||(step_rec2.day == 0xff || step_rec2.day == 0x00)
+			)
+		{
 			continue;
-		memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
+		}
+		else
+		{
+			memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
+			if(strlen(timemap) == 0)
+				sprintf(timemap, "%04d%02d%02d230000", step_rec2.year,step_rec2.month,step_rec2.day);
+		}
 	#endif
 
 	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
 		memcpy(&sleep_rec2, &sleepbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
-		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00))
+		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)
+			||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)
+			||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00)
+			)
+		{
 			continue;
-		memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+		}
+		else
+		{
+			memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+			if(strlen(timemap) == 0)
+				sprintf(timemap, "%04d%02d%02d230000", sleep_rec2.year,sleep_rec2.month,sleep_rec2.day);
+		}
 	#endif
 
 		memset(databuf, 0, sizeof(databuf));
-
-		//wrist
-		if(is_wearing())
-			strcpy(databuf, "1,");
-		else
-			strcpy(databuf, "0,");
-		
+		//step
 		for(j=0;j<24;j++)
 		{
 			uint16_t calorie,distance;
@@ -407,7 +425,7 @@ void SendMissingSportData(void)
 			
 			strcat(databuf, tmpbuf);
 		}
-
+		//sleep
 		for(j=0;j<24;j++)
 		{
 			uint16_t total_sleep;
@@ -427,32 +445,16 @@ void SendMissingSportData(void)
 			strcat(databuf, tmpbuf);
 		}
 
-		memset(tmpbuf, 0, sizeof(tmpbuf));
-	#ifdef CONFIG_STEP_SUPPORT	
-		sprintf(tmpbuf, "%04d%02d%02d%02d%02d%02d", step_rec2.year,
-													step_rec2.month,
-													step_rec2.day,
-													23,
-													0,
-													0);
-	#elif defined(CONFIG_SLEEP_SUPPORT)
-		sprintf(tmpbuf, "%04d%02d%02d%02d%02d%02d", sleep_rec2.year,
-													sleep_rec2.month,
-													sleep_rec2.day,
-													23,
-													0,
-													0);
-	#endif
-
-		NBSendTimelySportData(databuf, strlen(databuf), tmpbuf);
+		NBSendMissSportData(databuf, strlen(databuf), timemap);
 	}
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
  *  SendMissingHealthData
  * DESCRIPTION
- *  补发漏传的健康数据包
+ *  补发漏传的健康数据包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
  * PARAMETERS
  *	Nothing
  * RETURNS
@@ -477,51 +479,66 @@ void SendMissingHealthData(void)
 
 	for(i=0;i<7;i++)
 	{
+		uint8_t timemap[16] = {0};
 		uint8_t hr_data[24] = {0};
 		uint8_t spo2_data[24] = {0};
 	#ifdef CONFIG_PPG_SUPPORT	
 		bpt_data bp_data[24] = {0};
 	#endif
 		uint16_t temp_data[24] = {0};
+	#ifdef CONFIG_PPG_SUPPORT
 		ppg_hr_rec2_data hr_rec2 = {0};
 		ppg_spo2_rec2_data spo2_rec2 = {0};
 		ppg_bpt_rec2_data bpt_rec2 = {0};
+	#endif	
+	#ifdef CONFIG_TEMP_SUPPORT	
 		temp_rec2_data temp_rec2 = {0};
-
+	#endif
+	
 	#ifdef CONFIG_PPG_SUPPORT
 		//hr
 		memcpy(&hr_rec2, &hrbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));
-		if((hr_rec2.year == 0xffff || hr_rec2.year == 0x0000)||(hr_rec2.month == 0xff || hr_rec2.month == 0x00)||(hr_rec2.day == 0xff || hr_rec2.day == 0x00))
+		if((hr_rec2.year == 0xffff || hr_rec2.year == 0x0000)
+			||(hr_rec2.month == 0xff || hr_rec2.month == 0x00)
+			||(hr_rec2.day == 0xff || hr_rec2.day == 0x00)
+			)
+		{
 			continue;
-		memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
+		}
+		else
+		{
+			memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
+			sprintf(timemap, "%04d%02d%02d230000", hr_rec2.year,hr_rec2.month,hr_rec2.day);
+		}
+		
 		//spo2
 		memcpy(&spo2_rec2, &spo2buf[i*sizeof(ppg_spo2_rec2_data)], sizeof(ppg_spo2_rec2_data));
-		if((spo2_rec2.year == 0xffff || spo2_rec2.year == 0x0000)||(spo2_rec2.month == 0xff || spo2_rec2.month == 0x00)||(spo2_rec2.day == 0xff || spo2_rec2.day == 0x00))
-			continue;
 		memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+		
 		//bpt
 		memcpy(&bpt_rec2, &bptbuf[i*sizeof(ppg_bpt_rec2_data)], sizeof(ppg_bpt_rec2_data));
-		if((bpt_rec2.year == 0xffff || bpt_rec2.year == 0x0000)||(bpt_rec2.month == 0xff || bpt_rec2.month == 0x00)||(bpt_rec2.day == 0xff || bpt_rec2.day == 0x00))
-			continue;
 		memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
 	#endif/*CONFIG_PPG_SUPPORT*/
 
 	#ifdef CONFIG_TEMP_SUPPORT
 		//body temp
 		memcpy(&temp_rec2, &tempbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
-		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)||(temp_rec2.day == 0xff || temp_rec2.day == 0x00))
+		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)
+			||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)
+			||(temp_rec2.day == 0xff || temp_rec2.day == 0x00)
+			)
+		{
 			continue;
-		memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+		}
+		else
+		{
+			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+			if(strlen(timemap) == 0)
+				sprintf(timemap, "%04d%02d%02d%230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
+		}
 	#endif/*CONFIG_TEMP_SUPPORT*/
 
 		memset(databuf, 0, sizeof(databuf));
-
-		//wrist
-		if(is_wearing())
-			strcpy(databuf, "1,");
-		else
-			strcpy(databuf, "0,");
-		
 		//hr
 		for(j=0;j<24;j++)
 		{
@@ -586,25 +603,8 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,"|");
 			strcat(databuf, tmpbuf);
 		}
-
-		memset(tmpbuf, 0, sizeof(tmpbuf));
-	#ifdef CONFIG_PPG_SUPPORT	
-		sprintf(tmpbuf, "%04d%02d%02d%02d%02d%02d", hr_rec2.year,
-													hr_rec2.month,
-													hr_rec2.day,
-													23,
-													0,
-													0);
-	#elif defined(CONFIG_TEMP_SUPPORT)
-		sprintf(tmpbuf, "%04d%02d%02d%02d%02d%02d", temp_rec2.year,
-													temp_rec2.month,
-													temp_rec2.day,
-													23,
-													0,
-													0);
-	#endif
-
-		NBSendTimelyHealthData(databuf, strlen(databuf), tmpbuf);
+		
+		NBSendMissHealthData(databuf, strlen(databuf), timemap);
 	}
 }
 

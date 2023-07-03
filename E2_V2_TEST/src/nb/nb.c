@@ -46,7 +46,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define LTE_TAU_WAKEUP_EARLY_TIME	(30)
 #define MQTT_CONNECTED_KEEP_TIME	(1*60)
@@ -818,6 +818,8 @@ static void MqttDisConnect(void)
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
 	#endif
 	}
+
+	dl_ppg_start();
 }
 
 static void MqttDisConnectCallBack(struct k_timer *timer_id)
@@ -2713,13 +2715,6 @@ static void nb_link(struct k_work *work)
 		SetModemTurnOff();
 	}
 
-	if(strlen(g_imsi) == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Can't get sim info, cancel the connecting!");
-	#endif
-		return;
-	}
 #endif
 
 	if(gps_is_working())

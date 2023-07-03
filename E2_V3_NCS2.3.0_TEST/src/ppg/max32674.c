@@ -634,7 +634,10 @@ void PPGRedrawData(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
 	{
-		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		if(g_ppg_data == PPG_DATA_HR)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		else if(g_ppg_data == PPG_DATA_SPO2)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
 	else if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
@@ -1272,7 +1275,7 @@ void PPGGetSensorHubData(void)
 		if(flag || get_bpt_ok_flag)
 			ppg_redraw_data_flag = true;
 	}
-	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2))
+	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_IDLE))
 	{
 		ppg_redraw_data_flag = true;
 	}
@@ -1874,6 +1877,8 @@ void PPGStartCheck(void)
 void PPGStopCheck(void)
 {
 	int status = -1;
+	bool save_flag = false;
+	
 #ifdef PPG_DEBUG
 	LOGD("ppg_power_flag:%d", ppg_power_flag);
 #endif
@@ -1990,10 +1995,7 @@ void PPGStopCheck(void)
 			SetCurDaySpo2RecData(g_spo2);
 			break;
 		case PPG_DATA_BPT:
-			if(g_ppg_bpt_status == BPT_STATUS_GET_EST)
-			{
-				SetCurDayBptRecData(g_bpt);
-			}
+			SetCurDayBptRecData(g_bpt);
 			break;
 		}
 	}
@@ -2006,24 +2008,54 @@ void PPGStopCheck(void)
 	}
 #endif
 
-	last_health.timestamp.year = date_time.year;
-	last_health.timestamp.month = date_time.month; 
-	last_health.timestamp.day = date_time.day;
-	last_health.timestamp.hour = date_time.hour;
-	last_health.timestamp.minute = date_time.minute;
-	last_health.timestamp.second = date_time.second;
-	last_health.timestamp.week = date_time.week;
 	if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{
-		last_health.hr = g_hr;
-		last_health.spo2 = g_spo2;
+		if((g_ppg_data == PPG_DATA_HR)&&(g_hr > 0))
+		{
+			last_health.hr_rec.timestamp.year = date_time.year;
+			last_health.hr_rec.timestamp.month = date_time.month; 
+			last_health.hr_rec.timestamp.day = date_time.day;
+			last_health.hr_rec.timestamp.hour = date_time.hour;
+			last_health.hr_rec.timestamp.minute = date_time.minute;
+			last_health.hr_rec.timestamp.second = date_time.second;
+			last_health.hr_rec.timestamp.week = date_time.week;
+			last_health.hr_rec.hr = g_hr;
+			save_flag = true;
+		}
+		else if((g_ppg_data == PPG_DATA_SPO2)&&(g_spo2 > 0))
+		{
+			last_health.spo2_rec.timestamp.year = date_time.year;
+			last_health.spo2_rec.timestamp.month = date_time.month; 
+			last_health.spo2_rec.timestamp.day = date_time.day;
+			last_health.spo2_rec.timestamp.hour = date_time.hour;
+			last_health.spo2_rec.timestamp.minute = date_time.minute;
+			last_health.spo2_rec.timestamp.second = date_time.second;
+			last_health.spo2_rec.timestamp.week = date_time.week;
+			last_health.spo2_rec.spo2 = g_spo2;
+			save_flag = true;
+		}
 	}
 	else if((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
 	{
-		last_health.systolic = g_bpt.systolic;
-		last_health.diastolic = g_bpt.diastolic;
+		if((g_bpt.systolic > 0)&&(g_bpt.diastolic > 0))
+		{
+			last_health.bpt_rec.timestamp.year = date_time.year;
+			last_health.bpt_rec.timestamp.month = date_time.month; 
+			last_health.bpt_rec.timestamp.day = date_time.day;
+			last_health.bpt_rec.timestamp.hour = date_time.hour;
+			last_health.bpt_rec.timestamp.minute = date_time.minute;
+			last_health.bpt_rec.timestamp.second = date_time.second;
+			last_health.bpt_rec.timestamp.week = date_time.week;
+			last_health.bpt_rec.systolic = g_bpt.systolic;
+			last_health.bpt_rec.diastolic = g_bpt.diastolic;
+			save_flag = true;
+		}
 	}
-	save_cur_health_to_record(&last_health);
+
+	if(save_flag)
+	{
+		save_cur_health_to_record(&last_health);
+	}
 }
 
 void PPGStopBptCal(void)
@@ -2074,15 +2106,27 @@ void PPG_init(void)
 #endif
 
 	get_cur_health_from_record(&last_health);
-	if((last_health.timestamp.year == date_time.year)
-		&&(last_health.timestamp.month == date_time.month)
-		&&(last_health.timestamp.day == date_time.day)
+	if((last_health.hr_rec.timestamp.year == date_time.year)
+		&&(last_health.hr_rec.timestamp.month == date_time.month)
+		&&(last_health.hr_rec.timestamp.day == date_time.day)
 		)
 	{
-		g_hr = last_health.hr;
-		g_spo2 = last_health.spo2;
-		g_bpt.systolic = last_health.systolic;
-		g_bpt.diastolic = last_health.diastolic;
+		g_hr = last_health.hr_rec.hr;
+	}
+	if((last_health.spo2_rec.timestamp.year == date_time.year)
+		&&(last_health.spo2_rec.timestamp.month == date_time.month)
+		&&(last_health.spo2_rec.timestamp.day == date_time.day)
+		)
+	{
+		g_spo2 = last_health.spo2_rec.spo2;
+	}
+	if((last_health.bpt_rec.timestamp.year == date_time.year)
+		&&(last_health.bpt_rec.timestamp.month == date_time.month)
+		&&(last_health.bpt_rec.timestamp.day == date_time.day)
+		)
+	{
+		g_bpt.systolic = last_health.bpt_rec.systolic;
+		g_bpt.diastolic = last_health.bpt_rec.diastolic;
 	}
 
 	if(!sh_init_interface())

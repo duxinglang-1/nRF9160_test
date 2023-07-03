@@ -17,7 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define TEST_DEBUG
+#define TEST_DEBUG
 
 #define LOG_COUNT_ADDR		(0x160000)
 #define LOG_DATA_BEGIN_ADDR	(0x160000+4)

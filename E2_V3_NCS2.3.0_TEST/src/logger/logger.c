@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define TEST_DEBUG
+//#define TEST_DEBUG
 
 #define LOG_COUNT_ADDR		(0x160000)
 #define LOG_DATA_BEGIN_ADDR	(0x160000+4)
@@ -79,7 +79,7 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 		*(buf + n) = '\n';
 		n++;
 		
-		LOG_INF("%s", log_strdup(buf));
+		LOG_INF("%s", buf);
 	}
 #endif	
 }
@@ -152,7 +152,7 @@ void log_read_from_flash(void)
 				{
 					buf[j-1] = 0x00;
 					j = 0;
-					LOG_INF("%s", log_strdup(buf));
+					LOG_INF("%s", buf);
 					k++;
 					if(k == rec_count)
 						return;
@@ -163,7 +163,7 @@ void log_read_from_flash(void)
 					{
 						buf[j] = 0x00;
 						j=0;
-						LOG_INF("%s", log_strdup(buf));
+						LOG_INF("%s", buf);
 						k++;
 						if(k == rec_count)
 							return;

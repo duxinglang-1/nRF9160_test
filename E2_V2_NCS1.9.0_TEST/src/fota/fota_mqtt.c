@@ -244,7 +244,7 @@ void fota_start(void)
 void fota_start_confirm(void)
 {
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 #ifdef CONFIG_TEMP_SUPPORT
 	if(TempIsWorking()&&!TempIsWorkingTiming())

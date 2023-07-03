@@ -782,7 +782,7 @@ static void button_pressed(struct device *gpio_dev, struct gpio_callback *cb, ui
 	{
 	case STATE_WAITING:
 		state = STATE_SCANNING;
-		k_work_schedule_for_queue(&buttons_scan, K_NO_WAIT);
+		k_work_schedule(&buttons_scan, K_NO_WAIT);
 		break;
 
 	case STATE_SCANNING:

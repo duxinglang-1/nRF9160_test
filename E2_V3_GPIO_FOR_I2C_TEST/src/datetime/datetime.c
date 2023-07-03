@@ -547,7 +547,7 @@ void UpdateSystemTime(void)
 		}
 	#endif
 
-		pmu_battery_update();
+		pmu_status_update();
 	}
 
 	if((date_time_changed&0x04) != 0)

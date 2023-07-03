@@ -217,7 +217,7 @@ static uint8_t SpiFlash_ReadSR(void)
 //等待W25Q64FW就绪
 void SpiFlash_Wait_Busy(void)   
 {   
-	while((SpiFlash_ReadSR()&0x01)==0x01);  		// 等待BUSY位清空
+	//while((SpiFlash_ReadSR()&0x01)==0x01);  		// 等待BUSY位清空
 } 
 /*****************************************************************************
 ** 描  述：擦除扇区，W25Q64FW最小的擦除单位是扇区
@@ -658,7 +658,7 @@ void flash_init(void)
 
 	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
 
-	LOGD("ui:%s, font:%s, ppg:%s", g_ui_ver, g_font_ver, g_ppg_algo_ver);
+	//LOGD("ui:%s, font:%s, ppg:%s", g_ui_ver, g_font_ver, g_ppg_algo_ver);
 }
 
 void test_flash_write_and_read(u8_t *buf, u32_t len)

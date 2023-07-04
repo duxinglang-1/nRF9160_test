@@ -6778,6 +6778,10 @@ void EnterSOSScreen(void)
 	scr_msg[SCREEN_ID_SOS].status = SCREEN_STATUS_CREATING;
 
 	ClearAllKeyHandler();
+#ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
+#endif
+	
 }
 
 #if 0

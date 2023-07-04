@@ -1257,7 +1257,7 @@ void PowerOffShowStatus(void)
 	SetLeftKeyLongPressHandler(poweroff_confirm);
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
+	register_touch_event_handle(TP_EVENT_LONG_PRESS, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 

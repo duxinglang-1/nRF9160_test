@@ -94,7 +94,11 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	60,						//health interval
 	TEMP_UINT_C,			//Centigrade
 	TIME_FORMAT_24,			//24 format
+#ifdef FW_FOR_CN	
 	LANGUAGE_CHN,			//language
+#else
+	LANGUAGE_EN,			//language
+#endif
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode
 	BACKLIGHT_10_SEC,		//backlight time

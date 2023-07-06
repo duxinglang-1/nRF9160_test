@@ -7,6 +7,8 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 
+#define FW_FOR_CN	//ÖÐÎÄ°æ±¾
+
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	10
 #define MENU_NAME_MAX	20

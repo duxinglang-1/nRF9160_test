@@ -977,6 +977,8 @@ void NBRedrawSignal(void)
 	if(FactryTestActived())
 		return;
 #endif
+	if(gps_is_working())
+		return;
 
 	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_GET_REG_STATUS) == 0)
 	{

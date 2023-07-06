@@ -38,6 +38,7 @@ static bool sos_trigger_flag = false;
 static bool sos_start_gps_flag = false;
 #ifdef CONFIG_WIFI_SUPPORT
 static bool sos_start_wifi_flag = false;
+static bool sos_wait_wifi_addr_flag = false;
 #endif
 static bool sos_status_change_flag = false;
 
@@ -50,6 +51,8 @@ K_TIMER_DEFINE(sos_gps_timer, SOSStartGPSCallBack, NULL);
 #ifdef CONFIG_WIFI_SUPPORT
 static void SOSStartWifiCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_wifi_timer, SOSStartWifiCallBack, NULL);
+static void SOSWaitWifiAddrCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(sos_wait_wifi_addr_timer, SOSWaitWifiAddrCallBack, NULL);
 #endif
 
 void SOSTimerOutCallBack(struct k_timer *timer_id)
@@ -118,6 +121,11 @@ static void SOSStartWifiCallBack(struct k_timer *timer_id)
 	sos_start_wifi_flag = true;
 }
 
+static void SOSWaitWifiAddrCallBack(struct k_timer *timer_id)
+{
+	sos_wait_wifi_addr_flag = true;
+}
+
 void sos_get_wifi_data_reply(wifi_infor wifi_data)
 {
 	uint8_t reply[256] = {0};
@@ -158,6 +166,20 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 		strcat(reply, ",");
 		strcat(reply, sos_trigger_time);
 		NBSendSosWifiData(reply, strlen(reply));
+
+		switch(global_settings.location_type)
+		{
+		case 1://only wifi
+		case 2://only gps
+		case 4://gps+wifi
+			break;	
+		case 3://wifi+gps
+			if(nb_is_connected())
+				k_timer_start(&sos_wait_wifi_addr_timer, K_SECONDS(30), K_NO_WAIT);
+			else
+				k_timer_start(&sos_wait_wifi_addr_timer, K_SECONDS(90), K_NO_WAIT);
+			break;
+		}
 	}
 }
 #endif
@@ -276,6 +298,8 @@ void SOSRecLocatNotify(uint8_t *strmsg)
 	uint8_t strtmp[512] = {0};
 	notify_infor infor = {0};
 
+	k_timer_stop(&sos_wait_wifi_addr_timer);
+	
 	sos_state = SOS_STATUS_RECEIVED;
 	SOSStatusUpdate();
 	
@@ -345,7 +369,6 @@ void SOSStart(void)
 
 	if(sos_state != SOS_STATUS_IDLE)
 	{
-		//LOGD("sos is running!");
 		return;
 	}
 
@@ -406,6 +429,21 @@ void SOSMsgProc(void)
 		sos_wait_wifi = true;
 		APP_Ask_wifi_data();
 		sos_start_wifi_flag = false;
+	}
+
+	if(sos_wait_wifi_addr_flag)
+	{
+		switch(global_settings.location_type)
+		{
+		case 1://only wifi
+		case 2://only gps
+		case 4://gps+wifi
+			break;			
+		case 3://wifi+gps
+			k_timer_start(&sos_gps_timer, K_SECONDS(5), K_NO_WAIT);
+			break;
+		}
+		sos_wait_wifi_addr_flag = false;
 	}
 #endif
 

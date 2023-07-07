@@ -22,7 +22,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.3.1_20230704";
+uint8_t g_fw_version[64] = "V3.3.1_20230707";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 
@@ -661,11 +661,11 @@ void SettingsMainMenu7Proc(void)
 #ifdef CONFIG_FOTA_DOWNLOAD
 	extern uint8_t g_new_fw_ver[64];
 
-#ifdef NB_SIGNAL_TEST
-	if(strcmp(g_new_fw_ver,g_fw_version) >= 0)
-#else
-	if(strcmp(g_new_fw_ver,g_fw_version) > 0)
-#endif		
+	if((strcmp(g_new_fw_ver,g_fw_version) != 0)
+		#ifdef NB_SIGNAL_TEST
+		 || 1
+		#endif
+		)
 	{
 		fota_start();
 	}

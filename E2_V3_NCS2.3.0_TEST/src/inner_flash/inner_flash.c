@@ -22,6 +22,9 @@
 //#define INNER_FLASH_DEBUG
 
 #define STORAGE_NODE_LABEL storage
+#define NVS_PARTITION		storage_partition
+#define NVS_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(NVS_PARTITION)
+#define NVS_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(NVS_PARTITION)
 
 #define value1  "53.760241,-5.147095,1.023,11:20:22"
 #define value2  "53.760241,-5.147095,1.023,11:20:23"
@@ -51,16 +54,17 @@ static int nvs_setup(void)
     struct device *flash_dev;
 	int err;	
 
-	flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
-	if(!device_is_ready(flash_dev))
+	//flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
+	fs.flash_device = NVS_PARTITION_DEVICE;
+	if(!device_is_ready(fs.flash_device))
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOGD("Flash device %s is not ready", flash_dev->name);
+		LOGD("Flash device %s is not ready", fs.flash_device->name);
 	#endif	
 		return;
 	}
-	fs.offset = FLASH_AREA_OFFSET(STORAGE_NODE_LABEL);
-	err = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
+	fs.offset = NVS_PARTITION_OFFSET;
+	err = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (err)
 	{		
 	#ifdef INNER_FLASH_DEBUG

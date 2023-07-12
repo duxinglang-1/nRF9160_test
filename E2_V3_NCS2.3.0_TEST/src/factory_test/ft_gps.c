@@ -50,7 +50,8 @@
 #define FT_GPS_NOTIFY_Y				100
 				
 #define FT_GPS_TEST_TIMEROUT	3*60
-			
+
+static bool ft_gps_stop_flag = false;
 static bool ft_gps_check_ok = false;
 static bool ft_gps_checking = false;
 static bool ft_gps_start_flag = false;
@@ -94,6 +95,11 @@ static void FTMenuGPSSle2Hander(void)
 	ExitFTMenuGPS();
 }
 
+static void FTMenuGPSInit(void)
+{
+	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+}
+
 static void FTMenuGPSStopTest(void)
 {
 	ft_gps_checking = false;
@@ -106,6 +112,7 @@ static void FTMenuGPSStopTest(void)
 static void FTMenuGPSStartTest(void)
 {
 	ft_gps_checking = true;
+	FTMenuGPSInit();
 	SetModemTurnOn();
 	FTStartGPS();
 	k_timer_start(&gps_test_timer, K_SECONDS(FT_GPS_TEST_TIMEROUT), K_NO_WAIT);
@@ -114,7 +121,7 @@ static void FTMenuGPSStartTest(void)
 
 static void GPSTestTimerOutCallBack(struct k_timer *timer_id)
 {
-	FTMenuGPSStopTest();
+	ft_gps_stop_flag = true;
 }
 
 static void FTMenuGPSUpdate(void)
@@ -223,6 +230,12 @@ void FTMenuGPSProcess(void)
 		}
 	
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_NO;
+	}
+
+	if(ft_gps_stop_flag)
+	{
+		FTMenuGPSStopTest();
+		ft_gps_stop_flag = false;
 	}
 }
 

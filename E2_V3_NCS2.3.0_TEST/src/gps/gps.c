@@ -10,6 +10,7 @@
 #include <nrf_modem_gnss.h>
 #include <modem/lte_lc.h>
 #include <date_time.h>
+#include <logger.h>
 #include "screen.h"
 #include "gps.h"
 
@@ -145,12 +146,15 @@ static void gnss_event_handler(int event)
 
 	case NRF_MODEM_GNSS_EVT_AGPS_REQ:
 	#if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE)
-		retval = nrf_modem_gnss_read(&last_agps,
-					     sizeof(last_agps),
-					     NRF_MODEM_GNSS_DATA_AGPS_REQ);
-		if(retval == 0)
+		if(!test_gps_flag)
 		{
-			k_work_submit_to_queue(&gnss_work_q, &agps_data_get_work);
+			retval = nrf_modem_gnss_read(&last_agps,
+						     sizeof(last_agps),
+						     NRF_MODEM_GNSS_DATA_AGPS_REQ);
+			if(retval == 0)
+			{
+				k_work_submit_to_queue(&gnss_work_q, &agps_data_get_work);
+			}
 		}
 	#endif /* !CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE */
 		break;
@@ -999,13 +1003,13 @@ void MenuStopGPS(void)
 void FTStartGPS(void)
 {
 	test_gps_flag = true;
-	gps_on_flag = true;
+	gps_on();
 }
 
 void FTStopGPS(void)
 {
 	test_gps_flag = false;
-	gps_off_flag = true;
+	gps_off();
 }
 #endif
 
@@ -1015,11 +1019,22 @@ void GPS_init(struct k_work_q *work_q)
 	gps_work_init();
 }
 
+void GPSTestInit(void)
+{
+	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+}
+
 void GPSMsgProcess(void)
 {
 	if(gps_on_flag)
 	{
 		gps_on_flag = false;
+		if(test_gps_flag)
+		{
+			SetModemTurnOff();
+			GPSTestInit();
+			SetModemTurnOn();
+		}
 		gps_on();
 	}
 	

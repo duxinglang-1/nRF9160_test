@@ -12,6 +12,7 @@
 #include <power/reboot.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <modem/nrf_modem_lib.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "datetime.h"
@@ -695,10 +696,26 @@ void test_notify(void)
 	DisplayPopUp(infor);
 }
 
+static void modem_init(void)
+{
+	int err;
+
+	err = nrf_modem_lib_init(NORMAL_MODE);
+	if(err)
+	{
+		LOGD("Failed to initialize modem library!");
+		return;
+	}
+	
+	boot_write_img_confirmed();
+}
+
 void system_init(void)
 {
 	k_sleep(K_MSEC(500));//xb test 2022-03-11 启动时候延迟0.5S,等待其他外设完全启动
-	
+
+	modem_init();
+
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_init();
 #endif

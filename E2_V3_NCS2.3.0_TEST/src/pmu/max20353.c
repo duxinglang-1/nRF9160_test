@@ -1073,6 +1073,14 @@ void MAX20353_InitData(void)
 		}
 	#endif
 	}
+
+	if(!charger_is_connected && g_bat_soc == 0)
+	{
+	#ifdef PMU_DEBUG
+		LOGD("g_bat_soc=0, Can't startup!");
+	#endif
+		SystemShutDown();
+	}
 }
 
 void pmu_init(void)

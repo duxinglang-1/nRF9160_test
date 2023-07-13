@@ -237,7 +237,7 @@ int MAX20353_Buck1Config(void)
     appcmdoutvalue_ = 0x35;
     appdatainoutbuffer_[0] = 0x00;  	//
     appdatainoutbuffer_[1] = 0x2C;  	//0x28    	0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
-    appdatainoutbuffer_[2] = 0x1F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
+    appdatainoutbuffer_[2] = 0x1F;  	//0x2F 375ma  01 = 20mA, Use for 1V < Buck1VSet < 1.8V
     appdatainoutbuffer_[3] = 0x01;  	//Enable
     ret = MAX20353_AppWrite(4);
 	
@@ -265,7 +265,7 @@ int MAX20353_Buck2Config(void)
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
     appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
-    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  11 = 40mA, Use for Buck2Vset > 3V
     appdatainoutbuffer_[3] = 0x01;		//Enable
     ret = MAX20353_AppWrite(4);
 

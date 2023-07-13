@@ -12,7 +12,6 @@
 #include <date_time.h>
 #include <logger.h>
 #include "screen.h"
-#include "settings.h"
 #include "gps.h"
 
 //#define GPS_DEBUG
@@ -1020,18 +1019,9 @@ void GPS_init(struct k_work_q *work_q)
 	gps_work_init();
 }
 
-void GPSModemInit(void)
+void GPSTestInit(void)
 {
 	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-}
-
-void GPSModemUnInit(void)
-{
-#if IS_ENABLED(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
-	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_NBIOT_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-#else
-	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-#endif
 }
 
 void GPSMsgProcess(void)
@@ -1039,11 +1029,12 @@ void GPSMsgProcess(void)
 	if(gps_on_flag)
 	{
 		gps_on_flag = false;
-	#ifdef FW_FOR_CN
-		SetModemTurnOff();
-		GPSModemInit();
-		SetModemTurnOn();
-	#endif
+		if(test_gps_flag)
+		{
+			SetModemTurnOff();
+			GPSTestInit();
+			SetModemTurnOn();
+		}
 		gps_on();
 	}
 	
@@ -1051,10 +1042,6 @@ void GPSMsgProcess(void)
 	{
 		gps_off_flag = false;
 		gps_off();
-	#ifdef FW_FOR_CN
-		SetModemTurnOff();
-		GPSModemUnInit();
-	#endif
 	}
 
 	if(gps_send_data_flag)

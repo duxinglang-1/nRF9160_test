@@ -6679,8 +6679,6 @@ void EnterDeviceScreen(void)
 
 void SOSUpdateStatus(void)
 {
-	LOGD("state:%d", sos_state);
-
 	switch(sos_state)
 	{
 	case SOS_STATUS_IDLE:

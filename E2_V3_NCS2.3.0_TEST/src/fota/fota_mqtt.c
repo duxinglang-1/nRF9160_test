@@ -328,15 +328,7 @@ void fota_init(void)
 	LOGD("begin");
 #endif
 
-	err = nrf_modem_lib_init(NORMAL_MODE);
-	if(err)
-	{
-	#ifdef FOTA_DEBUG
-		LOGD("Failed to initialize modem library!");
-	#endif
-		return;
-	}
-
+	nrf_modem_lib_init(NORMAL_MODE);
 	boot_write_img_confirmed();
 
 	err = application_init();

@@ -328,9 +328,6 @@ void fota_init(void)
 	LOGD("begin");
 #endif
 
-	nrf_modem_lib_init(NORMAL_MODE);
-	boot_write_img_confirmed();
-
 	err = application_init();
 	if(err != 0)
 	{

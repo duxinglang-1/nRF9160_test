@@ -700,15 +700,7 @@ void test_notify(void)
 
 static void modem_init(void)
 {
-	int err;
-
-	err = nrf_modem_lib_init(NORMAL_MODE);
-	if(err)
-	{
-		LOGD("Failed to initialize modem library!");
-		return;
-	}
-	
+	nrf_modem_lib_init(NORMAL_MODE);
 	boot_write_img_confirmed();
 }
 

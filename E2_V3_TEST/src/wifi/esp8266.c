@@ -284,7 +284,7 @@ void wifi_disable(void)
 void wifi_start_scanning(void)
 {
 	//设置工作模式 1:station模式 2:AP模式 3:兼容AP+station模式
-	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",80);
+	Send_Cmd_To_Esp8285("AT+CWMODE=3\r\n",100);
 	//设置AT+CWLAP信号的排序方式：按RSSI排序，只显示信号强度和MAC模式
 	Send_Cmd_To_Esp8285("AT+CWLAPOPT=1,12\r\n",50);
 	//启动扫描

@@ -645,10 +645,6 @@ static void uart_receive_data(uint8_t data, uint32_t datalen)
 {
 	static uint32_t data_len = 0;
 
-#ifdef WIFI_DEBUG
-	//LOGD("rece_len:%d, data_len:%d data:%x", rece_len, data_len, data);
-#endif
-
 #ifdef CONFIG_PM_DEVICE
 	if(!uart_wifi_is_waked)
 		return;
@@ -819,7 +815,7 @@ void wifi_init(void)
 	if(!uart_wifi)
 	{
 	#ifdef WIFI_DEBUG
-		LOGD("Could not get %s device", WIFI_DEV);
+		LOGD("Could not get uart!");
 	#endif
 		return;
 	}
@@ -831,7 +827,7 @@ void wifi_init(void)
 	if(!gpio_wifi)
 	{
 	#ifdef WIFI_DEBUG
-		LOGD("Could not get %s port", WIFI_PORT);
+		LOGD("Could not get gpio!");
 	#endif
 		return;
 	}

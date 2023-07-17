@@ -2172,7 +2172,7 @@ void ble_init(void)
 	if(!uart_ble)
 	{
 	#ifdef UART_DEBUG
-		LOGD("Could not get %s device", BLE_DEV);
+		LOGD("Could not get uart!");
 	#endif
 		return;
 	}
@@ -2184,7 +2184,7 @@ void ble_init(void)
 	if(!gpio_ble)
 	{
 	#ifdef UART_DEBUG
-		LOGD("Could not get %s port", BLE_PORT);
+		LOGD("Could not get gpio!");
 	#endif
 		return;
 	}	

@@ -2233,7 +2233,6 @@ void UartMsgProc(void)
 	
 	if(uart_rece_frame_flag)
 	{
-		//BleReceData(rx_buf, rece_len);
 		uart_receive_data_handle(rx_buf, rece_len);
 		rece_len = 0;
 		uart_rece_frame_flag = false;

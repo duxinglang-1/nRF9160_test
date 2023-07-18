@@ -19,6 +19,7 @@
 #include "screen.h"
 #include "lcd.h"
 #include "logger.h"
+#include "transfer_cache.h"
 
 //#define WIFI_DEBUG
 
@@ -70,6 +71,13 @@ bool sos_wait_wifi = false;
 bool fall_wait_wifi = false;
 bool location_wait_wifi = false;
 bool wifi_is_on = false;
+#ifdef CONFIG_PM_DEVICE
+bool uart_wifi_sleep_flag = false;
+bool uart_wifi_wake_flag = false;
+bool uart_wifi_is_waked = true;
+#endif
+
+uint8_t wifi_test_info[256] = {0};
 
 static bool app_wifi_on = false;
 static bool wifi_on_flag = false;
@@ -81,26 +89,44 @@ static bool wifi_wait_timerout_flag = false;
 static bool wifi_off_retry_flag = false;
 static bool wifi_off_ok_flag = false;
 static bool wifi_get_infor_flag = false;
+static bool wifi_send_data_flag = false;
+static bool wifi_rece_data_flag = false;
+static bool wifi_rece_frame_flag = false;
 
-#ifdef CONFIG_PM_DEVICE
-bool uart_wifi_sleep_flag = false;
-bool uart_wifi_wake_flag = false;
-bool uart_wifi_is_waked = true;
-#endif
-
-static void WifiGetInforCallBack(struct k_timer *timer_id);
-K_TIMER_DEFINE(wifi_get_infor_timer, WifiGetInforCallBack, NULL);
+static CacheInfo wifi_send_cache = {0};
+static CacheInfo wifi_rece_cache = {0};
 
 static wifi_infor wifi_data = {0};
 
-uint8_t wifi_test_info[256] = {0};
-
+static void WifiSendDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_send_data_timer, WifiSendDataCallBack, NULL);
+static void WifiReceDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_rece_data_timer, WifiReceDataCallBack, NULL);
+static void WifiReceFrameCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_rece_frame_timer, WifiReceFrameCallBack, NULL);
+static void WifiGetInforCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_get_infor_timer, WifiGetInforCallBack, NULL);
 static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_scan_timer, APP_Ask_wifi_Data_timerout, NULL);
 static void wifi_rescan_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_rescan_timer, wifi_rescan_timerout, NULL);
 static void wifi_off_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_off_retry_timer, wifi_off_timerout, NULL);
+
+static void WifiSendDataCallBack(struct k_timer *timer)
+{
+	wifi_send_data_flag = true;
+}
+
+static void WifiReceDataCallBack(struct k_timer *timer_id)
+{
+	wifi_rece_data_flag = true;
+}
+
+static void WifiReceFrameCallBack(struct k_timer *timer_id)
+{
+	wifi_rece_frame_flag = true;
+}
 
 static void APP_Ask_wifi_Data_timerout(struct k_timer *timer_id)
 {
@@ -207,9 +233,7 @@ void APP_Ask_wifi_data(void)
 ==============================================================================*/
 void Send_Cmd_To_Esp8285(uint8_t *cmd, uint32_t WaitTime)
 {
-	wifi_send_data_handle(cmd, strlen(cmd));//发送命令
-	if(WaitTime > 0)
-		delay_ms(WaitTime);
+	WifiSendData(cmd, strlen(cmd));//发送命令
 }
 
 /*============================================================================
@@ -381,6 +405,9 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 	LOGD("receive:%s", buf);
 #endif
 
+	if((buf[len-4] != 0x4F) || (buf[len-3] != 0x4B))	//"OK"
+		return;
+
 	if(strstr(ptr, WIFI_SLEEP_REPLY))
 	{
 		wifi_off_ok_flag = true;
@@ -424,6 +451,7 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 				}
 			}
 		}
+		wifi_off_flag = true;
 		return;
 	}
 	
@@ -523,7 +551,7 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	if(test_wifi_flag)
 	{
-		if(count>0)
+		if(count > 0)
 		{
 			memset(wifi_test_info,0,sizeof(wifi_test_info));
 			sprintf(wifi_test_info, "%d\n", count);
@@ -641,29 +669,62 @@ void wifi_send_data_handle(uint8_t *buf, uint32_t len)
 	uart_irq_tx_enable(uart_wifi);
 }
 
-static void uart_receive_data(uint8_t data, uint32_t datalen)
+static void WifiSendDataProc(void)
 {
-	static uint32_t data_len = 0;
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
 
-#ifdef CONFIG_PM_DEVICE
-	if(!uart_wifi_is_waked)
-		return;
-#endif
-
-	rx_buf[rece_len++] = data;
-
-	if((rx_buf[rece_len-2] == 0x4F) && (rx_buf[rece_len-1] == 0x4B))	//"OK"
+	ret = get_data_from_cache(&wifi_send_cache, &p_data, &data_len, &data_type);
+	if(ret)
 	{
-		wifi_receive_data_handle(rx_buf, rece_len);
+		wifi_send_data_handle(p_data, data_len);
+		delete_data_from_cache(&wifi_send_cache);
 
-		memset(rx_buf, 0, sizeof(rx_buf));
-		rece_len = 0;
+		k_timer_start(&wifi_send_data_timer, K_MSEC(50), K_NO_WAIT);
 	}
-	else if(rece_len == BUF_MAXSIZE)
+}
+
+static void WifiSendDataStart(void)
+{
+	k_timer_start(&wifi_send_data_timer, K_MSEC(50), K_NO_WAIT);
+}
+
+void WifiSendData(uint8_t *data, uint32_t datalen)
+{
+	int ret;
+
+	ret = add_data_into_cache(&wifi_send_cache, data, datalen, DATA_TRANSFER);
+	WifiSendDataStart();
+}
+
+static void WifiReceDataProc(void)
+{
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
+
+	ret = get_data_from_cache(&wifi_rece_cache, &p_data, &data_len, &data_type);
+	if(ret)
 	{
-		memset(rx_buf, 0, sizeof(rx_buf));
-		rece_len = 0;
+		wifi_receive_data_handle(p_data, data_len);
+		delete_data_from_cache(&wifi_rece_cache);
+
+		k_timer_start(&wifi_rece_data_timer, K_MSEC(50), K_NO_WAIT);
 	}
+}
+
+static void WifiReceDataStart(void)
+{
+	k_timer_start(&wifi_rece_data_timer, K_MSEC(50), K_NO_WAIT);
+}
+
+static void WifiReceFrameData(uint8_t *data, uint32_t datalen)
+{
+	int ret;
+
+	ret = add_data_into_cache(&wifi_rece_cache, data, datalen, DATA_TRANSFER);
+	WifiReceDataStart();
 }
 
 static void uart_cb(struct device *x)
@@ -675,8 +736,11 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
-		while((len = uart_fifo_read(x, &tmpbyte, 1)) > 0)
-			uart_receive_data(tmpbyte, 1);
+		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
+		{
+			rece_len += len;
+			k_timer_start(&wifi_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+		}
 	}
 	
 	if(uart_irq_tx_ready(x))
@@ -734,6 +798,25 @@ void WifiMsgProcess(void)
 		uart_wifi_sleep_in();
 	}
 #endif
+
+	if(wifi_send_data_flag)
+	{
+		WifiSendDataProc();
+		wifi_send_data_flag = false;
+	}
+
+	if(wifi_rece_data_flag)
+	{
+		WifiReceDataProc();
+		wifi_rece_data_flag = false;
+	}
+	
+	if(wifi_rece_frame_flag)
+	{
+		WifiReceFrameData(rx_buf, rece_len);
+		rece_len = 0;
+		wifi_rece_frame_flag = false;
+	}
 
 	if(wifi_get_infor_flag)
 	{
@@ -801,8 +884,6 @@ void wifi_get_infor(void)
 	Send_Cmd_To_Esp8285(WIFI_GET_MAC_CMD,50);
 	//获取版本信息
 	Send_Cmd_To_Esp8285(WIFI_GET_VER,50);
-
-	wifi_off_flag = true;
 }
 
 void wifi_init(void)

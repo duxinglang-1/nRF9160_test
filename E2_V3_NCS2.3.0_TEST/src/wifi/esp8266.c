@@ -405,9 +405,6 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 	LOGD("receive:%s", buf);
 #endif
 
-	if((buf[len-4] != 0x4F) || (buf[len-3] != 0x4B))	//"OK"
-		return;
-
 	if(strstr(ptr, WIFI_SLEEP_REPLY))
 	{
 		wifi_off_ok_flag = true;
@@ -416,6 +413,11 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	if(strstr(ptr, WIFI_GET_MAC_REPLY))
 	{
+		//AT+CIPAPMAC_DEF?
+		//+CIPAPMAC_DEF:"ff:ff:ff:ff:ff:ff"
+		//\r\n
+		//OK
+		//\r\n
 		ptr1 = strstr(ptr, WIFI_DATA_MAC_BEGIN);
 		if(ptr1)
 		{
@@ -436,6 +438,8 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 		//SDK version:2.2.1(6ab97e9)
 		//compile time:Jun  7 2018 19:34:26
 		//Bin version(Wroom 02):1.6.2
+		//OK
+		//\r\n
 		ptr1 = strstr(ptr, WIFI_DATA_VER_BIN);
 		if(ptr1)
 		{
@@ -454,101 +458,113 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 		wifi_off_flag = true;
 		return;
 	}
-	
-	while(1)
+
+	if(strstr(ptr,WIFI_DATA_HEAD))
 	{
-		uint8_t len;
-	    uint8_t str_rssi[8]={0};
-		uint8_t str_mac[32]={0};
-
-		//head
-		ptr1 = strstr(ptr,WIFI_DATA_HEAD);
-		if(ptr1 == NULL)
+		//+CWLAP:(-61,"f4:84:8d:8e:9f:eb")
+		//+CWLAP:(-67,"da:f1:5b:ff:f2:bc")
+		//+CWLAP:(-67,"e2:c1:13:2d:9e:47")
+		//+CWLAP:(-73,"7c:94:2a:39:9f:50")
+		//+CWLAP:(-76,"52:c2:e8:c6:fa:1e")
+		//+CWLAP:(-80,"80:ea:07:73:96:1a")
+		//\r\n
+		//OK
+		//\r\n 
+		while(1)
 		{
-			ptr2 = ptr;
-			goto loop;
-		}
+			uint8_t len;
+		    uint8_t str_rssi[8]={0};
+			uint8_t str_mac[32]={0};
 
-		//scaned data flag
-		flag = true;
-		
-		//rssi
-		ptr += strlen(WIFI_DATA_HEAD);
-		ptr1 = strstr(ptr,WIFI_DATA_RSSI_BEGIN);         //取字符串中的,之后的字符
-		if(ptr1 == NULL)
-		{
-			ptr2 = ptr;
-			goto loop;
-		}
-		
-		ptr2 = strstr(ptr1+1,WIFI_DATA_RSSI_END);
-		if(ptr2 == NULL)
-		{
-			ptr2 = ptr1+1;
-			goto loop;
-		}
-
-		len = ptr2 - (ptr1+1);
-		if(len > 4)
-		{
-			goto loop;
-		}
-		
-		memcpy(str_rssi, ptr1+1, len);
-
-		//MAC
-		ptr1 = strstr(ptr2,WIFI_DATA_MAC_BEGIN);
-		if(ptr1 == NULL)
-		{
-			goto loop;
-		}
-
-		ptr2 = strstr(ptr1+1,WIFI_DATA_MAC_END);
-		if(ptr2 == NULL)
-		{
-			ptr2 = ptr1+1;
-			goto loop;
-		}
-
-		len = ptr2 - (ptr1+1);
-		if(len != 17)
-		{
-			goto loop;
-		}
-
-		memcpy(str_mac, ptr1+1, len);
-		
-		if(test_wifi_flag)
-		{
-			uint8_t buf[128] = {0};
-
-			count++;
-			if(count<=6)
+			//head
+			ptr1 = strstr(ptr,WIFI_DATA_HEAD);
+			if(ptr1 == NULL)
 			{
-			#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
-				sprintf(buf, "%02d|", -(atoi(str_rssi)));
-			#else
-				sprintf(buf, "%s|%02d\n", str_mac, -(atoi(str_rssi)));
-			#endif
-				strcat(tmpbuf, buf);
+				ptr2 = ptr;
+				goto loop;
 			}
-		}
-		else
-		{
-			strcpy(wifi_data.node[wifi_data.count].rssi, str_rssi);
-			strcpy(wifi_data.node[wifi_data.count].mac, str_mac);
+
+			//scaned data flag
+			flag = true;
 			
-			wifi_data.count++;
-			if(wifi_data.count == WIFI_NODE_MAX)
+			//rssi
+			ptr += strlen(WIFI_DATA_HEAD);
+			ptr1 = strstr(ptr,WIFI_DATA_RSSI_BEGIN);         //取字符串中的,之后的字符
+			if(ptr1 == NULL)
+			{
+				ptr2 = ptr;
+				goto loop;
+			}
+			
+			ptr2 = strstr(ptr1+1,WIFI_DATA_RSSI_END);
+			if(ptr2 == NULL)
+			{
+				ptr2 = ptr1+1;
+				goto loop;
+			}
+
+			len = ptr2 - (ptr1+1);
+			if(len > 4)
+			{
+				goto loop;
+			}
+			
+			memcpy(str_rssi, ptr1+1, len);
+
+			//MAC
+			ptr1 = strstr(ptr2,WIFI_DATA_MAC_BEGIN);
+			if(ptr1 == NULL)
+			{
+				goto loop;
+			}
+
+			ptr2 = strstr(ptr1+1,WIFI_DATA_MAC_END);
+			if(ptr2 == NULL)
+			{
+				ptr2 = ptr1+1;
+				goto loop;
+			}
+
+			len = ptr2 - (ptr1+1);
+			if(len != 17)
+			{
+				goto loop;
+			}
+
+			memcpy(str_mac, ptr1+1, len);
+			
+			if(test_wifi_flag)
+			{
+				uint8_t buf[128] = {0};
+
+				count++;
+				if(count<=6)
+				{
+				#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+					sprintf(buf, "%02d|", -(atoi(str_rssi)));
+				#else
+					sprintf(buf, "%s|%02d\n", str_mac, -(atoi(str_rssi)));
+				#endif
+					strcat(tmpbuf, buf);
+				}
+			}
+			else
+			{
+				strcpy(wifi_data.node[wifi_data.count].rssi, str_rssi);
+				strcpy(wifi_data.node[wifi_data.count].mac, str_mac);
+				
+				wifi_data.count++;
+				if(wifi_data.count == WIFI_NODE_MAX)
+					break;
+			}
+
+		loop:
+			ptr = ptr2+1;
+			if(*ptr == 0x00)
 				break;
 		}
-
-	loop:
-		ptr = ptr2+1;
-		if(*ptr == 0x00)
-			break;
-	}
-
+	}	
+	
 	if(test_wifi_flag)
 	{
 		if(count > 0)
@@ -723,8 +739,11 @@ static void WifiReceFrameData(uint8_t *data, uint32_t datalen)
 {
 	int ret;
 
-	ret = add_data_into_cache(&wifi_rece_cache, data, datalen, DATA_TRANSFER);
-	WifiReceDataStart();
+	if((data[datalen-4] == 0x4F) && (data[datalen-3] == 0x4B))	//"OK"
+	{
+		ret = add_data_into_cache(&wifi_rece_cache, data, datalen, DATA_TRANSFER);
+		WifiReceDataStart();
+	}
 }
 
 static void uart_cb(struct device *x)

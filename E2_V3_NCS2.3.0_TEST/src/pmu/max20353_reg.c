@@ -948,10 +948,10 @@ bool MAX20353_Init(void)
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();		//1.8V 350mA
-	MAX20353_Buck2Config(); 	//3.3V 350mA
-	MAX20353_LDO1Config();		//1.8V 50mA switch mode
+	MAX20353_Buck2Config(); 	//3.3V 350mA wifi ppg
+	MAX20353_LDO1Config();		//1.8V 50mA imu temp
 	MAX20353_LDO2Config();		//3.3V 100mA 给CTP供电
-	MAX20353_BoostConfig();		//5V
+	MAX20353_BoostConfig();		//5V led of ppg
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();

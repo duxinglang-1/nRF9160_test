@@ -62,7 +62,7 @@
 #define PPG_MFIO_PIN	14
 #define PPG_RST_PIN		16
 #define PPG_EN_PIN		17
-#define PPG_I2C_EN_PIN	3
+#define PPG_I2C_EN_PIN	29
 
 #define MAX32674_I2C_ADD     0x55
 	
@@ -108,9 +108,6 @@ void PPG_i2c_on(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 1);
-
-	gpio_pin_configure(gpio_ppg, 29, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ppg, 29, 1);
 }
 
 void PPG_i2c_off(void)
@@ -120,9 +117,6 @@ void PPG_i2c_off(void)
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 0);
-
-	gpio_pin_configure(gpio_ppg, 29, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ppg, 29, 0);
 }
 
 void PPG_Enable(void)

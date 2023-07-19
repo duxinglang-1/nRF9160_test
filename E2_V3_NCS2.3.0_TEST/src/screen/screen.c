@@ -5829,12 +5829,14 @@ void StepUpdateStatus(void)
 	}
 	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-4*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, cal_uint[language]);
 
+#ifdef CONFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	total_sleep = deep_sleep+light_sleep;
 	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+0*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)/10]);
 	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+1*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)%10]);
 	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+0*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)/10]);
 	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+1*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)%10]);
+#endif	
 }
 
 void StepShowStatus(void)
@@ -5882,6 +5884,7 @@ void StepShowStatus(void)
 	}
 	LCD_ShowImg_From_Flash(IMU_CAL_STR_X+(IMU_CAL_STR_W-4*IMU_NUM_W)/2+i*IMU_NUM_W, IMU_CAL_UNIT_Y, cal_uint[language]);
 
+#ifdef CONFIG_SLEEP_SUPPORT
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	total_sleep = deep_sleep+light_sleep;
 
@@ -5893,6 +5896,7 @@ void StepShowStatus(void)
 	LCD_ShowImg_From_Flash(IMU_SLEEP_H_STR_X+1*IMU_NUM_W, IMU_SLEEP_H_STR_Y, img_num[(total_sleep/60)%10]);
 	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+0*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)/10]);
 	LCD_ShowImg_From_Flash(IMU_SLEEP_M_STR_X+1*IMU_NUM_W, IMU_SLEEP_M_STR_Y, img_num[(total_sleep%60)%10]);
+#endif	
 }
 
 void StepsScreenProcess(void)

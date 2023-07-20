@@ -907,10 +907,10 @@ void FTPreReadyNet(void)
 {
 	struct k_work_sync work_sync;
 
-	if(k_work_pending(&mqtt_link_work))
-		k_work_cancel_delayable(&mqtt_link_work);
-	if(k_work_pending(&nb_link_work))
-		k_work_cancel_delayable(&nb_link_work);
+	if(k_work_is_pending(&mqtt_link_work))
+		k_work_cancel(&mqtt_link_work);
+	if(k_work_is_pending(&nb_link_work))
+		k_work_cancel(&nb_link_work);
 
 	SetModemTurnOff();
 }

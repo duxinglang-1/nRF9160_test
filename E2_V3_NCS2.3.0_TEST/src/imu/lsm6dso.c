@@ -280,7 +280,7 @@ uint8_t init_gpio(void)
 
 	if(gpio_imu == NULL)
 		gpio_imu = DEVICE_DT_GET(IMU_PORT);
-	
+
 	//steps&tilt interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT1_PIN, flag);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_DISABLE);
@@ -288,14 +288,12 @@ uint8_t init_gpio(void)
 	gpio_add_callback(gpio_imu, &gpio_cb1);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT1_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
 
-#ifdef CONFIG_FALL_DETECT_SUPPORT
 	//fall interrupt
 	gpio_pin_configure(gpio_imu, LSM6DSO_INT2_PIN, flag);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb2, interrupt_event, BIT(LSM6DSO_INT2_PIN));
 	gpio_add_callback(gpio_imu, &gpio_cb2);
     gpio_pin_interrupt_configure(gpio_imu, LSM6DSO_INT2_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
-#endif
 
 	return 0;
 }

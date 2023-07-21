@@ -154,3 +154,8 @@
 	compatible = "nordic,nrf-twim";
 	status = "disabled";
 };
+
+&interface_to_nrf52840{
+	compatible = "nordic,nrf9160dk-nrf52840-interface";
+	status = "disabled";
+};

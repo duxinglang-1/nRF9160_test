@@ -2176,7 +2176,8 @@ void ble_init(void)
 	#endif
 		return;
 	}
-	uart_irq_callback_set(uart_ble, uart_cb);
+
+	uart_irq_callback_set(uart_ble, uart_cb);
 	uart_irq_rx_enable(uart_ble);
 
 	gpio_ble = DEVICE_DT_GET(BLE_PORT);

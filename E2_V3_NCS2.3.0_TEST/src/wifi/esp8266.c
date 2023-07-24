@@ -80,6 +80,7 @@ bool uart_wifi_is_waked = true;
 uint8_t wifi_test_info[256] = {0};
 
 static bool app_wifi_on = false;
+static bool wifi_check_ok_flag = false;
 static bool wifi_on_flag = false;
 static bool wifi_off_flag = false;
 static bool test_wifi_flag = false;
@@ -112,6 +113,8 @@ static void wifi_rescan_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_rescan_timer, wifi_rescan_timerout, NULL);
 static void wifi_off_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_off_retry_timer, wifi_off_timerout, NULL);
+static void wifi_turn_off_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_turn_off_timer, wifi_turn_off_timerout, NULL);
 
 static void WifiSendDataCallBack(struct k_timer *timer)
 {
@@ -141,6 +144,11 @@ static void wifi_rescan_timerout(struct k_timer *timer_id)
 static void wifi_off_timerout(struct k_timer *timer_id)
 {
 	wifi_off_retry_flag = true;
+}
+
+static void wifi_turn_off_timerout(struct k_timer *timer_id)
+{
+	wifi_off_flag = true;
 }
 
 void wifi_scanned_wait_timerout(void)
@@ -212,8 +220,11 @@ void APP_Ask_wifi_data(void)
 #ifdef WIFI_DEBUG
 	LOGD("begin");
 #endif
-	if(!app_wifi_on)
+	if(!app_wifi_on && wifi_check_ok_flag)
 	{
+		if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
+			k_timer_stop(&wifi_turn_off_timer);
+
 		retry = 0;
 		app_wifi_on = true;
 		memset(&wifi_data, 0, sizeof(wifi_data));
@@ -304,8 +315,12 @@ void wifi_enable(void)
 ==============================================================================*/
 void wifi_disable(void)
 {
+#if 0
 	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
-	//Send_Cmd_To_Esp8285(WIFI_SLEEP_CMD,30);
+#else
+	Send_Cmd_To_Esp8285(WIFI_SLEEP_CMD,30);
+	k_timer_start(&wifi_off_retry_timer, K_SECONDS(5), K_NO_WAIT);
+#endif
 }
 
 /*============================================================================
@@ -352,6 +367,7 @@ void wifi_turn_off_success(void)
 	LOGD("begin");
 #endif
 
+	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
 	wifi_off_retry_flag = false;
 	k_timer_stop(&wifi_off_retry_timer);
 
@@ -368,9 +384,11 @@ void wifi_turn_off(void)
 #endif
 	wifi_disable();
 
+#if 0
 	wifi_is_on = false;
 #ifdef CONFIG_PM_DEVICE	
 	uart_wifi_sleep_flag = true;
+#endif
 #endif
 }
 
@@ -455,6 +473,8 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 				}
 			}
 		}
+
+		wifi_check_ok_flag = true;
 		wifi_off_flag = true;
 		return;
 	}
@@ -798,6 +818,8 @@ static void uart_cb(struct device *x)
 
 void WifiMsgProcess(void)
 {
+	static uint8_t wifi_sleep_retry = 0;
+	
 #ifdef CONFIG_PM_DEVICE
 	if(uart_wifi_wake_flag)
 	{
@@ -846,6 +868,10 @@ void WifiMsgProcess(void)
 	if(wifi_on_flag)
 	{
 		wifi_on_flag = false;
+
+		if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
+			k_timer_stop(&wifi_turn_off_timer);
+		
 		memset(&wifi_data, 0, sizeof(wifi_data));
 		wifi_turn_on_and_scanning();
 
@@ -862,6 +888,8 @@ void WifiMsgProcess(void)
 		
 		if(k_timer_remaining_get(&wifi_rescan_timer) > 0)
 			k_timer_stop(&wifi_rescan_timer);
+		if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
+			k_timer_stop(&wifi_turn_off_timer);
 	}
 
 	if(wifi_rescanning_flag)
@@ -873,13 +901,18 @@ void WifiMsgProcess(void)
 	if(wifi_off_ok_flag)
 	{
 		wifi_off_ok_flag = false;
+		wifi_sleep_retry = 0;
 		wifi_turn_off_success();
 	}
 	
 	if(wifi_off_retry_flag)
 	{
 		wifi_off_retry_flag = false;
-		wifi_turn_off();
+		wifi_sleep_retry++;
+		if(wifi_sleep_retry > 3)
+			wifi_off_ok_flag = true;
+		else
+			wifi_off_flag = true;
 	}
 	
 	if(wifi_wait_timerout_flag)
@@ -903,6 +936,8 @@ void wifi_get_infor(void)
 	Send_Cmd_To_Esp8285(WIFI_GET_MAC_CMD,50);
 	//获取版本信息
 	Send_Cmd_To_Esp8285(WIFI_GET_VER,50);
+
+	k_timer_start(&wifi_turn_off_timer, K_SECONDS(5), K_NO_WAIT);	
 }
 
 void wifi_init(void)

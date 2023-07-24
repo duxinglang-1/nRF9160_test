@@ -300,6 +300,62 @@ uint8_t init_gpio(void)
 
 void imu_sensor_init(void)
 {
+#if 1	//xb add 2023-07-24 老的代码功耗较低
+	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_reset_get(&imu_dev_ctx, &rst);
+
+	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
+	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_BYPASS_MODE);    
+
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_26Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
+
+	// ULTRA LOW POWER & INACTIVITY MODE
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
+	/* Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) */
+	lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
+	/* Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) */
+	lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
+	/* Set Activity/Inactivity threshold to 312.5 mg */
+	lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x05);
+	/* Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down */
+	lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
+	/* Enable interrupt generation on Inactivity INT1 pin */
+	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+	int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE; 
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+
+#ifdef CONFIG_STEP_SUPPORT
+	/*Step Counter enable*/
+	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	/* Enable False Positive Rejection. */
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); 
+	lsm6dso_steps_reset(&imu_dev_ctx);
+#endif
+
+	/* Tilt enable */
+	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
+	lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
+	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 2);
+	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
+	fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_ENABLE;
+	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
+	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
+	fsm_addr = LSM6DSO_START_FSM_ADD;
+	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)lsm6so_prg_wrist_tilt,
+						  sizeof(lsm6so_prg_wrist_tilt));
+
+	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
+	/* wrist tilt to INT2 pin*/
+	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
+	int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+
+#else
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
@@ -320,7 +376,7 @@ void imu_sensor_init(void)
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 	/* Enable interrupt generation on Inactivity INT1 pin */
-	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
 
 	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
@@ -372,6 +428,7 @@ void imu_sensor_init(void)
 #endif
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
+#endif
 }
 
 static bool sensor_init(void)

@@ -12,7 +12,11 @@
 #define MENU_MAX_COUNT	10
 #define MENU_NAME_MAX	20
 
+#ifdef FW_FOR_CN
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
+#else
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login"
+#endif
 
 typedef void(*menu_handler)(void);
 

@@ -75,6 +75,8 @@ static void MqttActWaitCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_act_wait_timer, MqttActWaitCallBack, NULL);
 static void MqttSendMissDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_send_miss_timer, MqttSendMissDataCallBack, NULL);
+static void TestNBRXPowertCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(testNBRXPowert, TestNBRXPowertCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_delayed_work modem_init_work;
@@ -102,6 +104,7 @@ static bool mqtt_act_wait_flag = false;
 static bool mqtt_send_miss_data_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
+static bool testNB_RX_Powert_flag = false;
 
 static CacheInfo nb_send_cache = {0};
 static CacheInfo nb_rece_cache = {0};
@@ -896,6 +899,11 @@ void MenuStopNB(void)
 		k_timer_stop(&get_nw_rsrp_timer);
 }
 
+static void TestNBRXPowertCallBack(struct k_timer *timer_id)
+{
+	testNB_RX_Powert_flag = true;
+}
+
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 void FTStopNet(void)
 {
@@ -904,6 +912,8 @@ void FTStopNet(void)
 
 	if(k_timer_remaining_get(&get_nw_rsrp_timer) > 0)
 		k_timer_stop(&get_nw_rsrp_timer);
+	if(k_timer_remaining_get(&testNBRXPowert) > 0)
+		k_timer_stop(&testNBRXPowert);
 }
 
 void FTStartNet(void)
@@ -1982,6 +1992,57 @@ void ParseData(uint8_t *data, uint32_t datalen)
 	}
 }
 
+void receiveToAtWithNb(void)
+{
+    uint8_t buf[128] = {0};
+	// 0,1,5,8800,-100,0
+	// 1,1,8,8800,17,0,3,12,0,0,0,0
+	// 3,1,1,21400,-65,1,1
+	// 0,1,20,8060,-100,0
+	uint8_t bdm_1[5]={0};
+	int bdm_2 = 0; 
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XRFTEST=0,1,20,8060,-100,0") == 0)
+	{           
+		bdm_1[0] = buf[11];
+		bdm_1[1] = buf[12];
+		bdm_1[2] = buf[13];
+		bdm_1[3] = buf[14];
+		bdm_1[4] = buf[15];
+		bdm_2 = atoi(bdm_1);
+		
+		if(1)
+		{
+			int dbmint = bdm_2/256;
+			uint8_t cvalue[5] = {0};
+			itoa(dbmint, cvalue, 10);
+			uint8_t lastValue[30] = {0};
+			strcpy(lastValue, "\nRXpower:- ");
+			strcat(lastValue, cvalue);
+			strcat(lastValue, " dbm");
+			sprintf(nb_test_info, lastValue);
+		#ifdef NB_SIGNAL_TEST
+			TestNBUpdateINfor();
+		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+			FTNetStatusUpdate(0);
+		#endif	
+		}
+	}
+	else
+	{
+		//LOGD("no_receive!");
+	}
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XRFTEST=0,0") == 0)
+	{
+		//LOGD("closed status:%s", buf);
+	}
+	else
+	{
+		//LOGD("no_closed!");
+	}
+}
+
 static void ParseDataCallBack(struct k_timer *timer_id)
 {
 	parse_data_flag = true;
@@ -2107,6 +2168,46 @@ static int configure_low_power(void)
 	}
 
 	return 0;
+}
+
+void GetNBSignal(void)
+{
+	uint8_t str_rsrp[128] = {0};
+
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CFUN?") == 0)
+	{
+	#ifdef NB_DEBUG	
+		LOGD("cfun:%s", str_rsrp);
+	#endif
+	}
+
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CPSMS?") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("cpsms:%s", str_rsrp);
+	#endif
+	}
+	
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CESQ) == 0)
+	{
+	#ifdef NB_DEBUG	
+		LOGD("cesq:%s", str_rsrp);
+	#endif
+	}
+
+    if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_APN) == 0)
+	{
+	#ifdef NB_DEBUG	
+		LOGD("apn:%s", str_rsrp);
+	#endif
+	}
+	
+	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CSQ) == 0)
+	{
+	#ifdef NB_DEBUG	
+		LOGD("csq:%s", str_rsrp);
+	#endif
+	}
 }
 
 void GetModemSignal(void)
@@ -2538,6 +2639,19 @@ void GetModemInfor(void)
 			k_timer_start(&get_modem_infor_timer, K_SECONDS(2), K_NO_WAIT);
 		}
 	}
+
+#if 0	//xb add 2023.07.25 外国无信号卡测试，在发射端(DK板或者另外一块手表上调用
+	{
+        if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%XRFTEST=1,1,20,8470,23,0,3,12,0,0,0,0,0") == 0)
+        {
+			LOGD("modem status:%s", tmpbuf);
+		}
+		else
+		{
+			LOGD("no_buf!");
+		}
+    }
+#endif
 }
 
 void GetModemStatus(void)
@@ -2798,62 +2912,44 @@ static void modem_off(struct k_work *work)
 
 static void nb_test(struct k_work *work)
 {
+	int err;
 	uint8_t buf[128] = {0};
 	
-	if(test_nb_flag)
-	{
-		strcpy(nb_test_info, "modem_configure");
-	#ifdef NB_SIGNAL_TEST	
-		TestNBUpdateINfor();
-	#endif
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-		FTNetStatusUpdate(0);
-	#endif
-	}
+	strcpy(nb_test_info, "modem_configure");
+#ifdef NB_SIGNAL_TEST	
+	TestNBUpdateINfor();
+#endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+	FTNetStatusUpdate(0);
+#endif
 
-#if defined(CONFIG_LTE_LINK_CONTROL)
-	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT))
-	{
-		/* Do nothing, modem is already turned on
-		 * and connected.
-		 */
-	}
-	else
-	{
-		int err;
+#ifdef NB_DEBUG
+	LOGD("LTE Link Connecting ...");
+#endif
 
-	#ifdef NB_DEBUG
-		LOGD("LTE Link Connecting ...");
-	#endif
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "LTE Link Connecting ...");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif
-		}
-		err = lte_lc_init_and_connect();
-		__ASSERT(err == 0, "LTE link could not be established.");
-	#ifdef NB_DEBUG
-		LOGD("LTE Link Connected!");
-	#endif
+	strcpy(nb_test_info, "LTE Link Connecting ...");
+#ifdef NB_SIGNAL_TEST
+	TestNBUpdateINfor();
+#endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+	FTNetStatusUpdate(0);
+#endif
 
-		if(test_nb_flag)
-		{
-			strcpy(nb_test_info, "LTE Link Connected!");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif	
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
-		}
-	}
-#endif /* defined(CONFIG_LTE_LINK_CONTROL) */
+	err = lte_lc_init_and_connect();
+	__ASSERT(err == 0, "LTE link could not be established.");
+#ifdef NB_DEBUG
+	LOGD("LTE Link Connected!");
+#endif
+
+	strcpy(nb_test_info, "LTE Link Connected!");
+#ifdef NB_SIGNAL_TEST
+	TestNBUpdateINfor();
+#endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+	FTNetStatusUpdate(0);
+#endif
+
+	k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
 }
 
 static void nb_link(struct k_work *work)
@@ -2962,44 +3058,22 @@ static void nb_link(struct k_work *work)
 	}
 }
 
-void GetNBSignal(void)
+bool nb_reconnect(void)
 {
-	uint8_t str_rsrp[128] = {0};
-
-	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CFUN?") == 0)
-	{
-	#ifdef NB_DEBUG	
-		LOGD("cfun:%s", str_rsrp);
-	#endif
-	}
-
-	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), "AT+CPSMS?") == 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("cpsms:%s", str_rsrp);
-	#endif
-	}
+	if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
+		k_timer_stop(&nb_reconnect_timer);
 	
-	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CESQ) == 0)
-	{
-	#ifdef NB_DEBUG	
-		LOGD("cesq:%s", str_rsrp);
-	#endif
-	}
+	nb_reconnect_flag = true;
+}
 
-    if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_APN) == 0)
-	{
-	#ifdef NB_DEBUG	
-		LOGD("apn:%s", str_rsrp);
-	#endif
-	}
-	
-	if(nrf_modem_at_cmd(str_rsrp, sizeof(str_rsrp), CMD_GET_CSQ) == 0)
-	{
-	#ifdef NB_DEBUG	
-		LOGD("csq:%s", str_rsrp);
-	#endif
-	}
+bool nb_is_chinese_sim(void)
+{
+	bool ret = false;
+
+	if(strncmp(g_imsi, "460", strlen("460")) == 0)
+		ret = true;
+
+	return ret;
 }
 
 bool nb_is_connecting(void)
@@ -3008,14 +3082,6 @@ bool nb_is_connecting(void)
 	LOGD("nb_connecting_flag:%d", nb_connecting_flag);
 #endif
 	return nb_connecting_flag;
-}
-
-bool nb_reconnect(void)
-{
-	if(k_timer_remaining_get(&nb_reconnect_timer) > 0)
-		k_timer_stop(&nb_reconnect_timer);
-	
-	nb_reconnect_flag = true;
 }
 
 bool nb_is_connected(void)
@@ -3042,34 +3108,32 @@ void NBMsgProcess(void)
 	#ifdef NB_DEBUG
 		LOGD("Start NB-IoT test!");
 	#endif
-	
-		if(nb_is_connected())
+
+		if(nb_is_chinese_sim())	//cmcc
 		{
-			strcpy(nb_test_info, "LTE Link Connected!");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif
-			k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
-		}
-		else if(nb_is_connecting())
-		{
-			strcpy(nb_test_info, "LTE Link Connecting ...");
-		#ifdef NB_SIGNAL_TEST
-			TestNBUpdateINfor();
-		#endif
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-			FTNetStatusUpdate(0);
-		#endif	
+			if(nb_is_connecting())
+			{
+				strcpy(nb_test_info, "LTE Link Connecting ...");
+			#ifdef NB_SIGNAL_TEST
+				TestNBUpdateINfor();
+			#endif
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+				FTNetStatusUpdate(0);
+			#endif	
+			}
+			else
+			{
+				SetModemTurnOff();
+				configure_normal_power();
+				k_delayed_work_submit_to_queue(app_work_q, &nb_test_work, K_NO_WAIT);
+			}
 		}
 		else
 		{
 			SetModemTurnOff();
-			configure_low_power();
-			k_delayed_work_submit_to_queue(app_work_q, &nb_test_work, K_NO_WAIT);
+			k_timer_start(&testNBRXPowert, K_SECONDS(5), K_SECONDS(5));
 		}
+		
 	}
 
 	if(get_modem_info_flag)
@@ -3245,6 +3309,12 @@ void NBMsgProcess(void)
 			net_retry_count = 0;
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
+	}
+
+	if(testNB_RX_Powert_flag)
+	{
+		receiveToAtWithNb();
+		testNB_RX_Powert_flag = false;
 	}
 
 	if(nb_connecting_flag)

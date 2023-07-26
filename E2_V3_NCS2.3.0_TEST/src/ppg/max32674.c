@@ -634,9 +634,9 @@ void PPGRedrawData(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
 	{
-		if(g_ppg_data == PPG_DATA_HR)
+		if(g_ppg_data == PPG_DATA_HR && get_hr_ok_flag)
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
-		else if(g_ppg_data == PPG_DATA_SPO2)
+		else if(g_ppg_data == PPG_DATA_SPO2 && get_spo2_ok_flag)
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}

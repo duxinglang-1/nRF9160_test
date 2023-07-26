@@ -300,7 +300,7 @@ uint8_t init_gpio(void)
 
 void imu_sensor_init(void)
 {
-#if 1	//xb add 2023-07-24 老的代码功耗较低
+#if 0	//xb add 2023-07-24 老的代码功耗较低
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
@@ -376,7 +376,7 @@ void imu_sensor_init(void)
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
 	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 	/* Enable interrupt generation on Inactivity INT1 pin */
-	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 
 	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);

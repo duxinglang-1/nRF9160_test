@@ -50,7 +50,7 @@
 #define FT_WIFI_NOTIFY_X			((LCD_WIDTH-FT_WIFI_NOTIFY_W)/2)
 #define FT_WIFI_NOTIFY_Y			100
 			
-#define FT_WIFI_TEST_TIMEROUT	10
+#define FT_WIFI_TEST_TIMEROUT	30
 		
 static bool ft_wifi_check_ok = false;
 static bool ft_wifi_checking = false;
@@ -229,7 +229,7 @@ void FTWifiStatusUpdate(uint8_t node_count)
 		if(node_count > 0)
 		{
 			count++;
-			if(count > 1)
+			if(count > 3)
 			{
 				count = 0;
 				ft_wifi_check_ok = true;

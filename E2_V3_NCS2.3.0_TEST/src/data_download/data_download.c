@@ -53,6 +53,7 @@ K_TIMER_DEFINE(dl_save_data_timer, DlSaveDataCallBack, NULL);
 static int modem_configure(void)
 {
 	int err;
+	uint8_t buf[128] = {0};
 
 	err = lte_lc_psm_req(false);
 	if(err)
@@ -67,6 +68,13 @@ static int modem_configure(void)
 	{
 	#ifdef DL_DEBUG
 		LOGD("lte_lc_edrx_req, error: %d", err);
+	#endif
+	}
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XEPCO=0") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("XEPCO:%s", buf);
 	#endif
 	}
 

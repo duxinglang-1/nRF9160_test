@@ -130,7 +130,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 	uint8_t reply[256] = {0};
 	uint32_t count=3,i;
 
-	if(wifi_data.count < 3)
+	if(wifi_data.count < WIFI_LOCAL_MIN_COUNT)
 	{
 		switch(global_settings.location_type)
 		{

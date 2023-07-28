@@ -601,7 +601,7 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 	}
 	else
 	{
-		if(flag && (wifi_data.count >= 3))	//扫描有效数据
+		if(flag && (wifi_data.count >= WIFI_LOCAL_MIN_COUNT))	//扫描有效数据
 		{
 			wifi_get_scanned_data();
 			wifi_off_flag = true;

@@ -746,7 +746,7 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
-
+	LogInit();
 	//log_read_from_flash();
 
 	NB_init(&nb_work_q);

@@ -545,6 +545,8 @@ void ResetFactoryDefault(void)
 	ClearAllTempRecData();
 #endif
 
+	LogClear();
+
 	if((screen_id == SCREEN_ID_SETTINGS) && (settings_menu.id == SETTINGS_MENU_FACTORY_RESET))
 	{
 		if(k_timer_remaining_get(&reset_timer) > 0)

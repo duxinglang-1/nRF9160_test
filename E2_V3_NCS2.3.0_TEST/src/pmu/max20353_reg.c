@@ -250,7 +250,7 @@ int MAX20353_Buck2Disable(void)
 	
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
-    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[1] = 0x34;     	//0x32    0.7V + (0.05V * number) = 3.3V;
     appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
     appdatainoutbuffer_[3] = 0x00;		//Disnable
     ret = MAX20353_AppWrite(4);
@@ -264,7 +264,7 @@ int MAX20353_Buck2Config(void)
 	
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
-    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[1] = 0x34;     	//0x32    0.7V + (0.05V * number) = 3.3V;
     appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  11 = 40mA, Use for Buck2Vset > 3V
     appdatainoutbuffer_[3] = 0x01;		//Enable
     ret = MAX20353_AppWrite(4);

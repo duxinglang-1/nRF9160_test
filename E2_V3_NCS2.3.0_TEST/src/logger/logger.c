@@ -110,11 +110,12 @@ void log_write_data_to_flash(uint8_t *buf, uint32_t len)
 void log_read_from_flash(void)
 {
 	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
-	
+
+#ifdef TEST_DEBUG
 	if((inforbuf.count == 0) || (inforbuf.count == 0xffffffff))
 		return;
 
-	LOG_INF("%d", inforbuf.count);
+	LOG_INF("log count:%d", inforbuf.count);
 
 	while(addr < LOG_DATA_END_ADDR)
 	{
@@ -135,6 +136,8 @@ void log_read_from_flash(void)
 					k++;
 					if(k == inforbuf.count)
 						return;
+
+					k_sleep(K_MSEC(10));
 				}
 				else
 				{
@@ -146,6 +149,8 @@ void log_read_from_flash(void)
 						k++;
 						if(k == inforbuf.count)
 							return;
+
+						k_sleep(K_MSEC(10));
 					}
 				}
 			}
@@ -153,6 +158,7 @@ void log_read_from_flash(void)
 				
 		addr += SPIFlash_SECTOR_SIZE;
 	}
+#endif	
 }
 
 void LOGDM(const char *fun_name, const char *fmt, ...)
@@ -251,20 +257,26 @@ void LogMsgProcess(void)
 void LogClear(void)
 {
 	uint32_t addr;
-	
+
+#ifdef TEST_DEBUG	
 	for(addr=LOG_COUNT_ADDR;addr<(LOG_DATA_END_ADDR);addr+=SPIFlash_SECTOR_SIZE)
 	{
 		SPIFlash_Erase_Sector(addr);
 	}
+#endif	
 }
 
 void LogInit(void)
 {
 	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
-	
+
+#ifdef TEST_DEBUG	
 	SpiFlash_Read((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
 	if(inforbuf.addr == 0xffffffff)
 		inforbuf.addr = 0;
 	if(inforbuf.count == 0xffffffff)
 		inforbuf.count = 0;
+
+	log_read_from_flash();
+#endif	
 }

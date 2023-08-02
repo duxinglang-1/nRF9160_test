@@ -263,6 +263,9 @@ void LogClear(void)
 	{
 		SPIFlash_Erase_Sector(addr);
 	}
+
+	memset(&inforbuf, 0, sizeof(LogFileHeadInfo));
+	SpiFlash_Write((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
 #endif	
 }
 

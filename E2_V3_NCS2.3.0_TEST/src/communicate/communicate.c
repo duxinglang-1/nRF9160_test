@@ -363,46 +363,46 @@ void SendMissingSportData(void)
 
 	for(i=0;i<7;i++)
 	{
+		bool flag = false;
 		uint8_t timemap[16] = {0};
 		uint16_t step_data[24] = {0};
 		sleep_data sleep[24] = {0};
 		step_rec2_data step_rec2 = {0};
 		sleep_rec2_data	sleep_rec2 = {0};
 
-	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)	
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+	  #if defined(CONFIG_STEP_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	  	//step
 		memcpy(&step_rec2, &stepbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
-		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)
-			||(step_rec2.month == 0xff || step_rec2.month == 0x00)
-			||(step_rec2.day == 0xff || step_rec2.day == 0x00)
+		if((step_rec2.year != 0xffff && step_rec2.year != 0x0000)
+			&&(step_rec2.month != 0xff && step_rec2.month != 0x00)
+			&&(step_rec2.day != 0xff && step_rec2.day != 0x00)
 			)
 		{
-			continue;
-		}
-		else
-		{
+			flag = true;
 			memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
-			if(strlen(timemap) == 0)
-				sprintf(timemap, "%04d%02d%02d230000", step_rec2.year,step_rec2.month,step_rec2.day);
+			sprintf(timemap, "%04d%02d%02d230000", step_rec2.year,step_rec2.month,step_rec2.day);
 		}
-	#endif
-
-	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+	  #endif
+	  #if defined(CONFIG_SLEEP_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+		//sleep
 		memcpy(&sleep_rec2, &sleepbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
-		if((sleep_rec2.year == 0xffff || sleep_rec2.year == 0x0000)
-			||(sleep_rec2.month == 0xff || sleep_rec2.month == 0x00)
-			||(sleep_rec2.day == 0xff || sleep_rec2.day == 0x00)
+	  	if((sleep_rec2.year != 0xffff && sleep_rec2.year != 0x0000)
+			&&(sleep_rec2.month != 0xff && sleep_rec2.month != 0x00)
+			&&(sleep_rec2.day != 0xff && sleep_rec2.day != 0x00)
 			)
 		{
-			continue;
-		}
-		else
-		{
+			flag = true;
 			memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
 			if(strlen(timemap) == 0)
 				sprintf(timemap, "%04d%02d%02d230000", sleep_rec2.year,sleep_rec2.month,sleep_rec2.day);
 		}
+	  #endif
 	#endif
-
+	
+		if(!flag)
+			continue;
+		
 		memset(databuf, 0, sizeof(databuf));
 		//step
 		for(j=0;j<24;j++)
@@ -450,6 +450,7 @@ void SendMissingSportData(void)
 }
 #endif
 
+#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
 /*****************************************************************************
  * FUNCTION
  *  SendMissingHealthData
@@ -479,6 +480,7 @@ void SendMissingHealthData(void)
 
 	for(i=0;i<7;i++)
 	{
+		bool flag = false;
 		uint8_t timemap[16] = {0};
 		uint8_t hr_data[24] = {0};
 		uint8_t spo2_data[24] = {0};
@@ -495,49 +497,66 @@ void SendMissingHealthData(void)
 		temp_rec2_data temp_rec2 = {0};
 	#endif
 	
-	#ifdef CONFIG_PPG_SUPPORT
+	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+	  #ifdef CONFIG_PPG_SUPPORT
 		//hr
 		memcpy(&hr_rec2, &hrbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));
-		if((hr_rec2.year == 0xffff || hr_rec2.year == 0x0000)
-			||(hr_rec2.month == 0xff || hr_rec2.month == 0x00)
-			||(hr_rec2.day == 0xff || hr_rec2.day == 0x00)
+	  	if((hr_rec2.year != 0xffff && hr_rec2.year != 0x0000)
+			&&(hr_rec2.month != 0xff && hr_rec2.month != 0x00)
+			&&(hr_rec2.day != 0xff && hr_rec2.day != 0x00)
 			)
 		{
-			continue;
-		}
-		else
-		{
+			flag = true;
 			memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
 			sprintf(timemap, "%04d%02d%02d230000", hr_rec2.year,hr_rec2.month,hr_rec2.day);
 		}
 		
 		//spo2
 		memcpy(&spo2_rec2, &spo2buf[i*sizeof(ppg_spo2_rec2_data)], sizeof(ppg_spo2_rec2_data));
-		memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+		if((spo2_rec2.year != 0xffff && spo2_rec2.year != 0x0000)
+			&&(spo2_rec2.month != 0xff && spo2_rec2.month != 0x00)
+			&&(spo2_rec2.day != 0xff && spo2_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+			if(strlen(timemap) == 0)
+				sprintf(timemap, "%04d%02d%02d230000", spo2_rec2.year,spo2_rec2.month,spo2_rec2.day);
+		}
 		
 		//bpt
 		memcpy(&bpt_rec2, &bptbuf[i*sizeof(ppg_bpt_rec2_data)], sizeof(ppg_bpt_rec2_data));
-		memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
-	#endif/*CONFIG_PPG_SUPPORT*/
-
-	#ifdef CONFIG_TEMP_SUPPORT
-		//body temp
-		memcpy(&temp_rec2, &tempbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
-		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)
-			||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)
-			||(temp_rec2.day == 0xff || temp_rec2.day == 0x00)
+		if((bpt_rec2.year != 0xffff && bpt_rec2.year != 0x0000)
+			&&(bpt_rec2.month != 0xff && bpt_rec2.month != 0x00)
+			&&(bpt_rec2.day != 0xff && bpt_rec2.day != 0x00)
 			)
 		{
-			continue;
+			flag = true;
+			memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
+			if(strlen(timemap) == 0)
+				sprintf(timemap, "%04d%02d%02d230000", bpt_rec2.year,bpt_rec2.month,bpt_rec2.day);
 		}
-		else
+	  #endif
+	  
+	  #ifdef CONFIG_TEMP_SUPPORT
+		//body temp
+		memcpy(&temp_rec2, &tempbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
+	  	if((temp_rec2.year != 0xffff && temp_rec2.year != 0x0000)
+			&&(temp_rec2.month != 0xff && temp_rec2.month != 0x00)
+			&&(temp_rec2.day != 0xff || temp_rec2.day != 0x00)
+			)
 		{
+			flag = true;
 			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
 			if(strlen(timemap) == 0)
 				sprintf(timemap, "%04d%02d%02d%230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
 		}
-	#endif/*CONFIG_TEMP_SUPPORT*/
+	  #endif
+	#endif
 
+		if(!flag)
+			continue;
+		
 		memset(databuf, 0, sizeof(databuf));
 		//hr
 		for(j=0;j<24;j++)
@@ -607,6 +626,7 @@ void SendMissingHealthData(void)
 		NBSendMissHealthData(databuf, strlen(databuf), timemap);
 	}
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION

@@ -21,7 +21,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-uint8_t g_fw_version[64] = "V3.3.2_20230726";
+uint8_t g_fw_version[64] = "V3.3.2_20230802";
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 

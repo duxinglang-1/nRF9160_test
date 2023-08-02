@@ -17,8 +17,8 @@
 //#define PMU_DEBUG
 
 #ifdef GPIO_ACT_I2C
-#define PMU_SCL		7
-#define PMU_SDA		6
+#define PMU_SCL		0
+#define PMU_SDA		1
 
 #else/*GPIO_ACT_I2C*/
 
@@ -29,8 +29,8 @@
 #define PMU_DEV	""
 #endif
 
-#define PMU_SCL			31
-#define PMU_SDA			30
+#define PMU_SCL			0
+#define PMU_SDA			1
 
 #endif/*GPIO_ACT_I2C*/
 

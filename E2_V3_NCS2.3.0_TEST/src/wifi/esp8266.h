@@ -26,7 +26,7 @@
 #define WIFI_DATA_VER_BIN		"Bin version"
 #define WIFI_DATA_END			"\r\n"
 
-#define WIFI_LOCAL_MIN_COUNT	1
+#define WIFI_LOCAL_MIN_COUNT	3
 
 typedef struct
 {

@@ -80,7 +80,6 @@ bool uart_wifi_is_waked = true;
 uint8_t wifi_test_info[256] = {0};
 
 static bool app_wifi_on = false;
-static bool wifi_check_ok_flag = false;
 static bool wifi_on_flag = false;
 static bool wifi_off_flag = false;
 static bool test_wifi_flag = false;
@@ -220,7 +219,7 @@ void APP_Ask_wifi_data(void)
 #ifdef WIFI_DEBUG
 	LOGD("begin");
 #endif
-	if(!app_wifi_on && wifi_check_ok_flag)
+	if(!app_wifi_on)
 	{
 		if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
 			k_timer_stop(&wifi_turn_off_timer);
@@ -315,12 +314,7 @@ void wifi_enable(void)
 ==============================================================================*/
 void wifi_disable(void)
 {
-#if 0
 	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
-#else
-	Send_Cmd_To_Esp8285(WIFI_SLEEP_CMD,30);
-	k_timer_start(&wifi_off_retry_timer, K_SECONDS(5), K_NO_WAIT);
-#endif
 }
 
 /*============================================================================
@@ -384,11 +378,9 @@ void wifi_turn_off(void)
 #endif
 	wifi_disable();
 
-#if 0
 	wifi_is_on = false;
 #ifdef CONFIG_PM_DEVICE	
 	uart_wifi_sleep_flag = true;
-#endif
 #endif
 }
 
@@ -474,7 +466,6 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 			}
 		}
 
-		wifi_check_ok_flag = true;
 		wifi_off_flag = true;
 		return;
 	}

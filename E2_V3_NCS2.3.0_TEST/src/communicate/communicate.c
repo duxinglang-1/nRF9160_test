@@ -348,7 +348,6 @@ void TimeCheckSendHealthData(void)
 void SendMissingSportData(void)
 {
 	uint8_t i,j,tmpbuf[20] = {0};
-	uint8_t reply[1024] = {0};
 	uint8_t stepbuf[STEP_REC2_DATA_SIZE] = {0};
 	uint8_t sleepbuf[SLEEP_REC2_DATA_SIZE] = {0};	
 
@@ -362,6 +361,7 @@ void SendMissingSportData(void)
 	for(i=0;i<7;i++)
 	{
 		bool flag = false;
+		uint8_t reply[1024] = {0};
 		uint8_t timemap[16] = {0};
 		uint16_t step_data[24] = {0};
 		sleep_data sleep[24] = {0};
@@ -461,7 +461,6 @@ void SendMissingSportData(void)
 void SendMissingHealthData(void)
 {
 	uint8_t i,j,tmpbuf[20] = {0};
-	uint8_t reply[1024] = {0};
 	uint8_t hrbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	uint8_t spo2buf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	uint8_t bptbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
@@ -479,6 +478,7 @@ void SendMissingHealthData(void)
 	for(i=0;i<7;i++)
 	{
 		bool flag = false;
+		uint8_t reply[1024] = {0};
 		uint8_t timemap[16] = {0};
 		uint8_t hr_data[24] = {0};
 		uint8_t spo2_data[24] = {0};

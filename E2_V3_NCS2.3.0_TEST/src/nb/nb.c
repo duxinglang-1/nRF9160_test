@@ -1780,7 +1780,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		else if(strcmp(strcmd, "S12") == 0)
 		{
 			uint8_t *ptr,*ptr1;
-			uint8_t strtmp[128] = {0};
+			uint8_t strtmp[256] = {0};
 			uint32_t copylen = 0;
 
 			//后台下发最新版本信息
@@ -1955,7 +1955,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			LOGD("%s", strdata);
 		#endif
 			uint8_t *ptr,*ptr1;
-			uint8_t strtmp[128] = {0};
+			uint8_t strtmp[256] = {0};
 		
 			//后台下发定位上报间隔
 			ptr = strstr(strdata, ",");

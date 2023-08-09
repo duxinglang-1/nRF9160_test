@@ -384,6 +384,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		}
 
 		mqtt_connected = true;
+		mqtt_connecting_flag = false;
+
 	#ifdef NB_DEBUG
 		LOGD("MQTT client connected!");		
 	#endif
@@ -658,8 +660,6 @@ static void mqtt_link(struct k_work_q *work_q)
 		goto link_over;
 	}
 
-	mqtt_connecting_flag = false;
-	
 	while(1)
 	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));

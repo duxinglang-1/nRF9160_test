@@ -34,8 +34,6 @@
 
 extern uint16_t g_last_steps;
 
-static uint8_t databuf[1024] = {0};
-
 #ifdef CONFIG_WIFI_SUPPORT
 /*****************************************************************************
  * FUNCTION
@@ -169,15 +167,15 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 void TimeCheckSendSportData(void)
 {
 	uint8_t i,tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
 	uint16_t step_data[24] = {0};
 	sleep_data sleep[24] = {0};
 
-	memset(databuf, 0, sizeof(databuf));
 	//wrist
 	if(is_wearing())
-		strcpy(databuf, "1,");
+		strcpy(reply, "1,");
 	else
-		strcpy(databuf, "0,");
+		strcpy(reply, "0,");
 	
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 	GetCurDayStepRecData(step_data);
@@ -200,7 +198,7 @@ void TimeCheckSendSportData(void)
 		else
 			strcat(tmpbuf,",");
 		
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
@@ -222,10 +220,10 @@ void TimeCheckSendSportData(void)
 
 		if(i<23)
 			strcat(tmpbuf,"|");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 
-	NBSendTimelySportData(databuf, strlen(databuf));
+	NBSendTimelySportData(reply, strlen(reply));
 }
 #endif
 
@@ -242,6 +240,7 @@ void TimeCheckSendSportData(void)
 void TimeCheckSendHealthData(void)
 {
 	uint8_t i,tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
 	uint8_t hr_data[24] = {0};
 	uint8_t spo2_data[24] = {0};
 #ifdef CONFIG_PPG_SUPPORT	
@@ -249,13 +248,11 @@ void TimeCheckSendHealthData(void)
 #endif
 	uint16_t temp_data[24] = {0};
 
-	memset(databuf, 0, sizeof(databuf));
-	
 	//wrist
 	if(is_wearing())
-		strcpy(databuf, "1,");
+		strcpy(reply, "1,");
 	else
-		strcpy(databuf, "0,");
+		strcpy(reply, "0,");
 	
 #ifdef CONFIG_PPG_SUPPORT
 	//hr
@@ -278,7 +275,7 @@ void TimeCheckSendHealthData(void)
 			strcat(tmpbuf,"|");
 		else
 			strcat(tmpbuf,",");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 	//spo2
 	for(i=0;i<24;i++)
@@ -293,7 +290,7 @@ void TimeCheckSendHealthData(void)
 			strcat(tmpbuf,"|");
 		else
 			strcat(tmpbuf,",");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 	//bpt
 	for(i=0;i<24;i++)
@@ -314,7 +311,7 @@ void TimeCheckSendHealthData(void)
 			strcat(tmpbuf,"|");
 		else
 			strcat(tmpbuf,",");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 	
 #ifdef CONFIG_TEMP_SUPPORT
@@ -331,10 +328,10 @@ void TimeCheckSendHealthData(void)
 
 		if(i<23)
 			strcat(tmpbuf,"|");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 
-	NBSendTimelyHealthData(databuf, strlen(databuf));
+	NBSendTimelyHealthData(reply, strlen(reply));
 }
 
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -351,6 +348,7 @@ void TimeCheckSendHealthData(void)
 void SendMissingSportData(void)
 {
 	uint8_t i,j,tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
 	uint8_t stepbuf[STEP_REC2_DATA_SIZE] = {0};
 	uint8_t sleepbuf[SLEEP_REC2_DATA_SIZE] = {0};	
 
@@ -403,7 +401,6 @@ void SendMissingSportData(void)
 		if(!flag)
 			continue;
 		
-		memset(databuf, 0, sizeof(databuf));
 		//step
 		for(j=0;j<24;j++)
 		{
@@ -423,7 +420,7 @@ void SendMissingSportData(void)
 			else
 				strcat(tmpbuf,",");
 			
-			strcat(databuf, tmpbuf);
+			strcat(reply, tmpbuf);
 		}
 		//sleep
 		for(j=0;j<24;j++)
@@ -442,10 +439,10 @@ void SendMissingSportData(void)
 
 			if(j<23)
 				strcat(tmpbuf,"|");
-			strcat(databuf, tmpbuf);
+			strcat(reply, tmpbuf);
 		}
 
-		NBSendMissSportData(databuf, strlen(databuf), timemap);
+		NBSendMissSportData(reply, strlen(reply), timemap);
 	}
 }
 #endif
@@ -464,6 +461,7 @@ void SendMissingSportData(void)
 void SendMissingHealthData(void)
 {
 	uint8_t i,j,tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
 	uint8_t hrbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	uint8_t spo2buf[PPG_SPO2_REC2_DATA_SIZE] = {0};
 	uint8_t bptbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
@@ -549,7 +547,7 @@ void SendMissingHealthData(void)
 			flag = true;
 			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
 			if(strlen(timemap) == 0)
-				sprintf(timemap, "%04d%02d%02d%230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
+				sprintf(timemap, "%04d%02d%02d230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
 		}
 	  #endif
 	#endif
@@ -557,7 +555,6 @@ void SendMissingHealthData(void)
 		if(!flag)
 			continue;
 		
-		memset(databuf, 0, sizeof(databuf));
 		//hr
 		for(j=0;j<24;j++)
 		{
@@ -571,7 +568,7 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,"|");
 			else
 				strcat(tmpbuf,",");
-			strcat(databuf, tmpbuf);
+			strcat(reply, tmpbuf);
 		}
 		//spo2
 		for(j=0;j<24;j++)
@@ -586,7 +583,7 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,"|");
 			else
 				strcat(tmpbuf,",");
-			strcat(databuf, tmpbuf);
+			strcat(reply, tmpbuf);
 		}
 		//bpt
 		for(j=0;j<24;j++)
@@ -607,7 +604,7 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,"|");
 			else
 				strcat(tmpbuf,",");
-			strcat(databuf, tmpbuf);
+			strcat(reply, tmpbuf);
 		}
 		
 		for(j=0;j<24;j++)
@@ -620,10 +617,10 @@ void SendMissingHealthData(void)
 
 			if(j<23)
 				strcat(tmpbuf,"|");
-			strcat(databuf, tmpbuf);
+			strcat(reply, tmpbuf);
 		}
 		
-		NBSendMissHealthData(databuf, strlen(databuf), timemap);
+		NBSendMissHealthData(reply, strlen(reply), timemap);
 	}
 }
 #endif
@@ -715,6 +712,7 @@ void SyncSendHealthData(void)
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;
 	uint8_t tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
   #ifdef CONFIG_STEP_SUPPORT
@@ -725,81 +723,79 @@ void SyncSendHealthData(void)
   #endif
 #endif
 
-	memset(databuf, 0, sizeof(databuf));
-
 	//steps
 	sprintf(tmpbuf, "%d,", steps);
-	strcpy(databuf, tmpbuf);
+	strcpy(reply, tmpbuf);
 	
 	//wrist
 	if(is_wearing())
-		strcat(databuf, "1,");
+		strcat(reply, "1,");
 	else
-		strcat(databuf, "0,");
+		strcat(reply, "0,");
 	
 	//sitdown time
-	strcat(databuf, "0,");
+	strcat(reply, "0,");
 	
 	//activity time
-	strcat(databuf, "0,");
+	strcat(reply, "0,");
 	
 	//light sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", light_sleep);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//deep sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", deep_sleep);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//move body
-	strcat(databuf, "0,");
+	strcat(reply, "0,");
 	
 	//calorie
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", calorie);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//distance
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", distance);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 
 #ifdef CONFIG_PPG_SUPPORT	
 	//systolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", g_bpt_menu.systolic);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//diastolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", g_bpt_menu.diastolic); 	
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//heart rate
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", g_hr_menu);		
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//SPO2
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", g_spo2_menu); 	
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 #else
-	strcat(databuf, "0,0,0,0,");
+	strcat(reply, "0,0,0,0,");
 #endif/*CONFIG_PPG_SUPPORT*/
 
 #ifdef CONFIG_TEMP_SUPPORT
 	//body temp
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%0.1f", g_temp_menu); 	
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 #else
-	strcat(databuf, "0.0");
+	strcat(reply, "0.0");
 #endif/*CONFIG_TEMP_SUPPORT*/
 
-	NBSendSingleHealthData(databuf, strlen(databuf));
+	NBSendSingleHealthData(reply, strlen(reply));
 }
 
 /*****************************************************************************
@@ -837,34 +833,33 @@ void SyncSendLocalData(void)
 void SendPowerOnData(void)
 {
 	uint8_t tmpbuf[10] = {0};
-
-	memset(databuf, 0, sizeof(databuf));
+	uint8_t reply[128] = {0};
 
 	//imsi
-	strcpy(databuf, g_imsi);
-	strcat(databuf, ",");
+	strcpy(reply, g_imsi);
+	strcat(reply, ",");
 	
 	//iccid
-	strcat(databuf, g_iccid);
-	strcat(databuf, ",");
+	strcat(reply, g_iccid);
+	strcat(reply, ",");
 
 	//nb rsrp
 	sprintf(tmpbuf, "%d,", g_rsrp);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//time zone
-	strcat(databuf, g_timezone);
-	strcat(databuf, ",");
+	strcat(reply, g_timezone);
+	strcat(reply, ",");
 	
 	//battery
 	GetBatterySocString(tmpbuf);
-	strcat(databuf, tmpbuf);
-	strcat(databuf, ",");
+	strcat(reply, tmpbuf);
+	strcat(reply, ",");
 
 	//mcu fw version
-	strcat(databuf, g_fw_version);	
+	strcat(reply, g_fw_version);	
 
-	NBSendPowerOnInfor(databuf, strlen(databuf));
+	NBSendPowerOnInfor(reply, strlen(reply));
 }
 
 /*****************************************************************************
@@ -880,23 +875,21 @@ void SendPowerOnData(void)
 void SendPowerOffData(uint8_t pwroff_mode)
 {
 	uint8_t tmpbuf[10] = {0};
-
-	memset(databuf, 0, sizeof(databuf));
+	uint8_t reply[128] = {0};
 
 	//pwr off mode
-	sprintf(databuf, "%d,", pwroff_mode);
+	sprintf(reply, "%d,", pwroff_mode);
 	
 	//nb rsrp
 	sprintf(tmpbuf, "%d,", g_rsrp);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//battery
 	GetBatterySocString(tmpbuf);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 			
-	NBSendPowerOffInfor(databuf, strlen(databuf));
+	NBSendPowerOffInfor(reply, strlen(reply));
 }
-
 
 /*****************************************************************************
  * FUNCTION
@@ -910,10 +903,10 @@ void SendPowerOffData(uint8_t pwroff_mode)
  *****************************************************************************/
 void SendSosAlarmData(void)
 {
-	uint8_t reply[256] = {0};
+	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
-	strcat(reply, "1");
+	strcpy(reply, "1");
 	NBSendAlarmData(reply, strlen(reply));
 }
 
@@ -929,10 +922,10 @@ void SendSosAlarmData(void)
  *****************************************************************************/
 void SendFallAlarmData(void)
 {
-	uint8_t reply[256] = {0};
+	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
-	strcat(reply, "2");
+	strcpy(reply, "2");
 	NBSendAlarmData(reply, strlen(reply));
 }
 

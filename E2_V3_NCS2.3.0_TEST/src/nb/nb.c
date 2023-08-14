@@ -2331,14 +2331,14 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 		//reg_status
 		GetStringInforBySepa(ptr, ",", 1, tmpbuf);
 		reg_status = atoi(tmpbuf);
-		//0 每 Not registered. UE is not currently searching for an operator to register to.
-		//1 每 Registered, home network.
-		//2 每 Not registered, but UE is currently trying to attach or searching an operator to register to.
-		//3 每 Registration denied.
-		//4 每 Unknown (e.g. out of E-UTRAN coverage).
-		//5 每 Registered, roaming.
-		//8 每 Attached for emergency bearer services only.
-		//90 每 Not registered due to UICC failure.
+		// 0 每 Not registered. UE is not currently searching for an operator to register to.
+		// 1 每 Registered, home network.
+		// 2 每 Not registered, but UE is currently trying to attach or searching an operator to register to.
+		// 3 每 Registration denied.
+		// 4 每 Unknown (e.g. out of E-UTRAN coverage).
+		// 5 每 Registered, roaming.
+		// 8 每 Attached for emergency bearer services only.
+		// 90 每 Not registered due to UICC failure.
 		if(reg_status == 1 || reg_status == 5)
 		{
 			uint8_t tau = 0;

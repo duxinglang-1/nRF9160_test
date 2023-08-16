@@ -1882,8 +1882,6 @@ void SettingsUpdateStatus(void)
 			LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, str_notify[global_settings.language]);
 		#endif/*CONFIG_QRCODE_SUPPORT*/
 		
-			SetLeftKeyUpHandler(settings_menu.sel_handler[0]);
-			SetRightKeyUpHandler(settings_menu.sel_handler[0]);
 		#ifdef CONFIG_TOUCH_SUPPORT
 			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, settings_menu.sel_handler[0]);
 			register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, settings_menu.sel_handler[0]);

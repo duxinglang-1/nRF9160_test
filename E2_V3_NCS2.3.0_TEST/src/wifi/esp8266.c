@@ -41,7 +41,7 @@
 #endif
 
 #define WIFI_RETRY_COUNT_MAX	5
-#define BUF_MAXSIZE	1024
+#define BUF_MAXSIZE	2048
 
 #define WIFI_AUTO_OFF_TIME_SEC	(1)
 
@@ -52,7 +52,6 @@ static uint8_t retry = 0;
 static uint32_t rece_len=0;
 static uint32_t send_len=0;
 static uint8_t rx_buf[BUF_MAXSIZE]={0};
-static uint8_t tx_buf[BUF_MAXSIZE]={0};
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
@@ -766,10 +765,13 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
+		if(rece_len >= BUF_MAXSIZE)
+			rece_len = 0;
+
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&wifi_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+			k_timer_start(&wifi_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
 		}
 	}
 	

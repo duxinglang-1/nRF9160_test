@@ -50,7 +50,7 @@
 #define BLE_INT_PIN		27
 #define BLE_WAKE_PIN	25
 
-#define BUF_MAXSIZE	1024
+#define BUF_MAXSIZE	2048
 
 #define PACKET_HEAD	0xAB
 #define PACKET_END	0x88
@@ -121,7 +121,6 @@ static ENUM_BLE_WORK_MODE ble_work_mode=BLE_WORK_NORMAL;
 static uint32_t rece_len=0;
 static uint32_t send_len=0;
 static uint8_t rx_buf[BUF_MAXSIZE]={0};
-static uint8_t tx_buf[BUF_MAXSIZE]={0};
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
@@ -2049,10 +2048,13 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
+		if(rece_len >= BUF_MAXSIZE)
+			rece_len = 0;
+
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&uart_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+			k_timer_start(&uart_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
 		}
 	}
 	

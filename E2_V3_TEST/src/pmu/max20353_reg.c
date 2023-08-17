@@ -250,7 +250,7 @@ int MAX20353_Buck2Disable(void)
 	
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
-    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[1] = 0x34;     	//0x32    0.7V + (0.05V * number) = 3.3V;
     appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
     appdatainoutbuffer_[3] = 0x00;		//Disnable
     ret = MAX20353_AppWrite(4);
@@ -264,7 +264,7 @@ int MAX20353_Buck2Config(void)
 	
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
-    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[1] = 0x34;     	//0x32    0.7V + (0.05V * number) = 3.3V;
     appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  11 = 40mA, Use for Buck2Vset > 3V
     appdatainoutbuffer_[3] = 0x01;		//Enable
     ret = MAX20353_AppWrite(4);
@@ -366,7 +366,7 @@ int MAX20353_BuckBoostConfig(void)
     int32_t ret = 0;
     appcmdoutvalue_ = 0x70;
     appdatainoutbuffer_[0] = 0x00;
-    appdatainoutbuffer_[1] = 0x04;		// 200ma
+    appdatainoutbuffer_[1] = 0x04;
     appdatainoutbuffer_[2] = 0x0f;		// 2.5V + (0.1V * number) = 4.0V
     appdatainoutbuffer_[3] = 0x41;     
     ret = MAX20353_AppWrite(4);
@@ -948,10 +948,10 @@ bool MAX20353_Init(void)
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();		//1.8V 350mA
-	MAX20353_Buck2Config(); 	//3.3V 350mA
-	MAX20353_LDO1Config();		//1.8V 50mA switch mode
+	MAX20353_Buck2Config(); 	//3.3V 350mA wifi ppg
+	MAX20353_LDO1Config();		//1.8V 50mA imu temp
 	MAX20353_LDO2Config();		//3.3V 100mA 给CTP供电
-	MAX20353_BoostConfig();		//5V
+	MAX20353_BoostConfig();		//5V led of ppg
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();

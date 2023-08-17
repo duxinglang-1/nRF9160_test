@@ -2159,7 +2159,7 @@ void ble_init(void)
 	if(!uart_ble)
 	{
 	#ifdef UART_DEBUG
-		LOGD("Could not get %s device", BLE_DEV);
+		LOGD("Could not get uart!");
 	#endif
 		return;
 	}
@@ -2171,7 +2171,7 @@ void ble_init(void)
 	if(!gpio_ble)
 	{
 	#ifdef UART_DEBUG
-		LOGD("Could not get %s port", BLE_PORT);
+		LOGD("Could not get gpio!");
 	#endif
 		return;
 	}	
@@ -2220,7 +2220,6 @@ void UartMsgProc(void)
 	
 	if(uart_rece_frame_flag)
 	{
-		//BleReceData(rx_buf, rece_len);
 		uart_receive_data_handle(rx_buf, rece_len);
 		rece_len = 0;
 		uart_rece_frame_flag = false;

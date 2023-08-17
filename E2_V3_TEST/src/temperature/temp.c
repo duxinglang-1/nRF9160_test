@@ -276,7 +276,7 @@ void TempStop(void)
 
 void TempRedrawData(void)
 {
-	if((screen_id == SCREEN_ID_IDLE)
+	if((screen_id == SCREEN_ID_IDLE && get_temp_ok_flag)
 		||(screen_id == SCREEN_ID_TEMP)
 		)
 	{

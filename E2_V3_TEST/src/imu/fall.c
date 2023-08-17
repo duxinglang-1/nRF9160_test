@@ -191,7 +191,7 @@ void fall_get_wifi_data_reply(wifi_infor wifi_data)
 	LOGD("begin");
 #endif
 
-	if(wifi_data.count < 3)
+	if(wifi_data.count < WIFI_LOCAL_MIN_COUNT)
 	{
 		switch(global_settings.location_type)
 		{

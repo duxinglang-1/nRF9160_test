@@ -19,18 +19,22 @@ LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
 //#define TEST_DEBUG
 
+typedef struct
+{
+	uint32_t addr;
+	uint32_t count;
+}LogFileHeadInfo;
+
 #define LOG_COUNT_ADDR		(0x160000)
-#define LOG_DATA_BEGIN_ADDR	(0x160000+4)
+#define LOG_DATA_BEGIN_ADDR	(0x160000+sizeof(LogFileHeadInfo))
 #define LOG_DATA_END_ADDR	(FONT_START_ADDR)
 
 static bool log_save_flag = false;
 
-static uint8_t countbuf[4] = {0};
-static uint32_t write_count = 0;
-static uint32_t write_len = 0;
 static uint8_t logbuf[SPIFlash_SECTOR_SIZE] = {0};
 static uint8_t buf[LOG_BUFF_SIZE] = {0};
 
+static LogFileHeadInfo inforbuf = {0};
 static CacheInfo log_save_cache = {0};
 
 static void LogWriteData(uint8_t *data, uint32_t datalen, DATA_TYPE type);
@@ -90,52 +94,28 @@ void log_write_data_to_flash(uint8_t *buf, uint32_t len)
 	int32_t cur_index;
 	uint32_t PageByteRemain,addr,datalen=len;
 
-	if((write_len >= LOG_DATA_END_ADDR) || (write_len + len >= LOG_DATA_END_ADDR))
+	addr = LOG_DATA_BEGIN_ADDR + inforbuf.addr;
+	if((addr >= LOG_DATA_END_ADDR) || (addr + len >= LOG_DATA_END_ADDR))
 		return;
 
-	addr = LOG_DATA_BEGIN_ADDR+write_len;
-	cur_index = addr/SPIFlash_SECTOR_SIZE;
-	if(cur_index > last_index)
-	{
-		last_index = cur_index;
-		SPIFlash_Erase_Sector(last_index*SPIFlash_SECTOR_SIZE);
-	}
-	
-	PageByteRemain = SPIFlash_SECTOR_SIZE - addr%SPIFlash_SECTOR_SIZE;
-	if(PageByteRemain < datalen)
-	{
-		datalen -= PageByteRemain;
-		while(1)
-		{
-			SPIFlash_Erase_Sector((++last_index)*SPIFlash_SECTOR_SIZE);
-			if(datalen > SPIFlash_SECTOR_SIZE)
-				datalen -= SPIFlash_SECTOR_SIZE;
-			else
-				break;
-		}
-	}
-	
-	SpiFlash_Write_Buf(buf, addr, len);
-	write_len += len;
+	addr = LOG_DATA_BEGIN_ADDR + inforbuf.addr;
+	SpiFlash_Write(buf, addr, len);
 
-	write_count++;
-	countbuf[0] = (uint8_t)(write_count>>0);
-	countbuf[1] = (uint8_t)(write_count>>8);
-	countbuf[2] = (uint8_t)(write_count>>16);
-	countbuf[3] = (uint8_t)(write_count>>24);
-	SpiFlash_Write(countbuf, LOG_COUNT_ADDR, sizeof(countbuf));
+	inforbuf.addr += len;
+	inforbuf.count++;
+	SpiFlash_Write((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
 	return 0;
 }
 
 void log_read_from_flash(void)
 {
 	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
-	uint32_t rec_count = 0;
-	
-	SpiFlash_Read(&countbuf, LOG_COUNT_ADDR, sizeof(countbuf));
-	rec_count = countbuf[0]+0x100*countbuf[1]+0x10000*countbuf[2]+0x1000000*countbuf[3];
-	if((rec_count == 0) || (rec_count == 0xffffffff))
+
+#ifdef TEST_DEBUG
+	if((inforbuf.count == 0) || (inforbuf.count == 0xffffffff))
 		return;
+
+	LOG_INF("log count:%d", inforbuf.count);
 
 	while(addr < LOG_DATA_END_ADDR)
 	{
@@ -154,8 +134,10 @@ void log_read_from_flash(void)
 					j = 0;
 					LOG_INF("%s", log_strdup(buf));
 					k++;
-					if(k == rec_count)
+					if(k == inforbuf.count)
 						return;
+
+					k_sleep(K_MSEC(10));
 				}
 				else
 				{
@@ -165,8 +147,10 @@ void log_read_from_flash(void)
 						j=0;
 						LOG_INF("%s", log_strdup(buf));
 						k++;
-						if(k == rec_count)
+						if(k == inforbuf.count)
 							return;
+
+						k_sleep(K_MSEC(10));
 					}
 				}
 			}
@@ -174,6 +158,7 @@ void log_read_from_flash(void)
 				
 		addr += SPIFlash_SECTOR_SIZE;
 	}
+#endif	
 }
 
 void LOGDM(const char *fun_name, const char *fmt, ...)
@@ -269,12 +254,32 @@ void LogMsgProcess(void)
 	}
 }
 
-void LogInit(void)
+void LogClear(void)
 {
 	uint32_t addr;
-	
+
+#ifdef TEST_DEBUG	
 	for(addr=LOG_COUNT_ADDR;addr<(LOG_DATA_END_ADDR);addr+=SPIFlash_SECTOR_SIZE)
 	{
 		SPIFlash_Erase_Sector(addr);
 	}
+
+	memset(&inforbuf, 0, sizeof(LogFileHeadInfo));
+	SpiFlash_Write((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
+#endif	
+}
+
+void LogInit(void)
+{
+	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
+
+#ifdef TEST_DEBUG	
+	SpiFlash_Read((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
+	if(inforbuf.addr == 0xffffffff)
+		inforbuf.addr = 0;
+	if(inforbuf.count == 0xffffffff)
+		inforbuf.count = 0;
+
+	log_read_from_flash();
+#endif	
 }

@@ -277,6 +277,9 @@ void fota_start_confirm(void)
 
 void fota_reboot_confirm(void)
 {
+	k_timer_stop(&fota_timer);
+
+	fota_cur_status = FOTA_STATUS_MAX;
 	fota_reboot_flag = true;
 }
 

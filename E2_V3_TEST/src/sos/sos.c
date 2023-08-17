@@ -131,7 +131,7 @@ void sos_get_wifi_data_reply(wifi_infor wifi_data)
 	uint8_t reply[256] = {0};
 	uint32_t count=3,i;
 
-	if(wifi_data.count < 3)
+	if(wifi_data.count < WIFI_LOCAL_MIN_COUNT)
 	{
 		switch(global_settings.location_type)
 		{
@@ -298,8 +298,10 @@ void SOSRecLocatNotify(uint8_t *strmsg)
 	uint8_t strtmp[512] = {0};
 	notify_infor infor = {0};
 
+#ifdef CONFIG_WIFI_SUPPORT
 	k_timer_stop(&sos_wait_wifi_addr_timer);
-	
+#endif
+
 	sos_state = SOS_STATUS_RECEIVED;
 	SOSStatusUpdate();
 	
@@ -348,12 +350,10 @@ bool SOSIsRunning(void)
 {
 	if(sos_state > SOS_STATUS_IDLE)
 	{
-		//LOGD("true");
 		return true;
 	}
 	else
 	{
-		//LOGD("false");
 		return false;
 	}
 }

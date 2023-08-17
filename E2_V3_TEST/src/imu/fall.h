@@ -10,7 +10,6 @@
 #define __FALL_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

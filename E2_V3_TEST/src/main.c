@@ -748,8 +748,7 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
-
-	//log_read_from_flash();
+	LogInit();
 
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
@@ -936,7 +935,6 @@ void system_pwron_infor(void)
 **************************************************************************/
 int main(void)
 {
-	//system_pwron_infor();
 	work_init();
 	system_init();
 
@@ -960,7 +958,6 @@ int main(void)
 //	test_bat_soc();
 //	test_notify();
 //	test_wifi();
-//	LogInit();
 
 	while(1)
 	{

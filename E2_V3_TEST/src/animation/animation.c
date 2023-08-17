@@ -130,6 +130,7 @@ void AnimaStopShow(void)
 #ifdef ANIMA_DEBUG
 	LOGD("001");
 #endif
+	k_timer_stop(&anima_redraw_timer);
 	delete_anima_info_link();
 }
 

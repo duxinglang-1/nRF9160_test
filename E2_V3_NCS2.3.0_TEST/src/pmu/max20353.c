@@ -664,6 +664,10 @@ void pmu_status_update(void)
 	#endif
 		if(g_bat_soc > 100)
 			g_bat_soc = 100;
+
+		if(g_bat_soc >= 95 && g_chg_status == BAT_CHARGING_FINISHED)
+			g_bat_soc = 100;
+		
 		last_bat_soc = g_bat_soc;
 		g_bat_level = BAT_LEVEL_NORMAL;
 	#endif

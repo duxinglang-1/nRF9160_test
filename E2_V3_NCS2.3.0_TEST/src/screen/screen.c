@@ -1401,8 +1401,9 @@ void SettingsUpdateStatus(void)
 				
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
+				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									settings_menu.name[global_settings.language][i+settings_menu.index]);
 
 				LCD_SetFontColor(green_clor);
@@ -1414,13 +1415,13 @@ void SettingsUpdateStatus(void)
 					case 0:
 						LCD_MeasureUniString(lang_sle_str[global_settings.language], &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
-												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												lang_sle_str[global_settings.language]);
 						break;
 					case 1:
 						LCD_MeasureUniString(level_str[global_settings.language][global_settings.backlight_level], &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
-												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												level_str[global_settings.language][global_settings.backlight_level]);
 						break;
 					case 2:
@@ -1437,14 +1438,14 @@ void SettingsUpdateStatus(void)
 					{
 						LCD_MeasureUniString(menu_sle_str[global_settings.language][i], &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
-												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												menu_sle_str[global_settings.language][i]);
 					}
 					break;
 				case 6:
 					LCD_MeasureUniString(menu_sle_str[global_settings.language][i], &w, &h);
 					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
-												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												menu_sle_str[global_settings.language][i]);
 					break;
 				}
@@ -1505,23 +1506,27 @@ void SettingsUpdateStatus(void)
 	case SETTINGS_MENU_LANGUAGE:
 		{
 			LCD_Clear(BLACK);
-				
-			for(i=0;i<settings_menu.count;i++)
+			
+			if(settings_menu.count > SETTINGS_SUB_MENU_MAX_PER_PG)
+				count = (settings_menu.count - settings_menu.index >= SETTINGS_SUB_MENU_MAX_PER_PG) ? SETTINGS_SUB_MENU_MAX_PER_PG : settings_menu.count - settings_menu.index;
+			else
+				count = settings_menu.count;
+			
+			for(i=0;i<count;i++)
 			{
 				LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), IMG_SET_INFO_BG_ADDR);
 
-				if(i == global_settings.language)
+				if((i+settings_menu.index) == global_settings.language)
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
 				else
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
-				
+
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
-			
+				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+7,
-										settings_menu.name[global_settings.language][i]
-										);
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+										settings_menu.name[global_settings.language][i+settings_menu.index]);
 			#endif
 
 			#ifdef CONFIG_TOUCH_SUPPORT
@@ -1530,8 +1535,7 @@ void SettingsUpdateStatus(void)
 											SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W, 
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), 
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_BG_H, 
-											settings_menu.sel_handler[i]
-											);
+											settings_menu.sel_handler[i+settings_menu.index]);
 			#endif
 			}
 		}
@@ -1772,9 +1776,9 @@ void SettingsUpdateStatus(void)
 				
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
-			
+				LCD_MeasureUniString(settings_menu.name[global_settings.language][i], &w, &h);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+7,
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[global_settings.language][i]);
 			#endif
 
@@ -1893,20 +1897,25 @@ void SettingsUpdateStatus(void)
 		break;
 	}
 
-	if(((settings_menu.id == SETTINGS_MENU_MAIN) && (settings_menu.count > SETTINGS_MAIN_MENU_MAX_PER_PG))
-		|| ((settings_menu.id != SETTINGS_MENU_MAIN) && (settings_menu.count > SETTINGS_SUB_MENU_MAX_PER_PG)))
+	if(settings_menu.count > SETTINGS_MAIN_MENU_MAX_PER_PG)
 	{		
-		if(settings_menu.id == SETTINGS_MENU_MAIN)
+		if(settings_menu.count > 3*SETTINGS_MAIN_MENU_MAX_PER_PG)
+		{
+			uint32_t page4_img[4] = {IMG_SET_PG4_1_ADDR,IMG_SET_PG4_2_ADDR,IMG_SET_PG4_3_ADDR,IMG_SET_PG4_4_ADDR};
+			
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page4_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+		}
+		else if(settings_menu.count > 2*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
 			uint32_t page3_img[3] = {IMG_SET_PG3_1_ADDR,IMG_SET_PG3_2_ADDR,IMG_SET_PG3_3_ADDR};
 			
 			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page3_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
-		else if(settings_menu.id != SETTINGS_MENU_MAIN)
+		else
 		{
-			uint32_t page4_img[4] = {IMG_SET_PG4_1_ADDR,IMG_SET_PG4_2_ADDR,IMG_SET_PG4_3_ADDR,IMG_SET_PG4_4_ADDR};
+			uint32_t page2_img[2] = {IMG_SET_PG2_1_ADDR,IMG_SET_PG2_2_ADDR};
 			
-			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page4_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page2_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 
 	#ifdef CONFIG_TOUCH_SUPPORT
@@ -1980,8 +1989,9 @@ void SettingsShowStatus(void)
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontColor(WHITE);
+		LCD_MeasureUniString(settings_menu.name[global_settings.language][i], &w, &h);
 		LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-								SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+								SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 								settings_menu.name[global_settings.language][i]);
 
 		LCD_SetFontColor(green_clor);
@@ -1990,13 +2000,13 @@ void SettingsShowStatus(void)
 		case 0:
 			LCD_MeasureUniString(menu_sle_str[global_settings.language][i], &w, &h);
 			LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
-									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									menu_sle_str[global_settings.language][i]);
 			break;
 		case 1:
 			LCD_MeasureUniString(level_str[global_settings.language][global_settings.backlight_level], &w, &h);
 			LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
-									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y,
+									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									level_str[global_settings.language][global_settings.backlight_level]);
 			break;
 		case 2:

@@ -6,11 +6,11 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	10
-#define MENU_NAME_MAX	20
+#define MENU_NAME_MAX	30
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
@@ -35,9 +35,18 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_EN,	//English
-	LANGUAGE_DE,	//Deutsch
-	LANGUAGE_CHN,	//Chinese
+	LANGUAGE_BEGIN,
+#ifndef FW_FOR_CN
+	LANGUAGE_EN = LANGUAGE_BEGIN,	//English
+	LANGUAGE_DE,					//Deutsch
+	LANGUAGE_FR,					//French
+	LANGUAGE_ITA,					//Italian
+	LANGUAGE_ES,					//Spanish
+	LANGUAGE_PT,					//Portuguese
+#else
+	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
+	LANGUAGE_EN,					//English
+#endif	
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 

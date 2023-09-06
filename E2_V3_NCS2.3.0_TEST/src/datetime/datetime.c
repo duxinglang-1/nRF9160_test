@@ -754,9 +754,11 @@ void GetSystemWeekStrings(uint8_t *str_week)
 
 	switch(global_settings.language)
 	{
+	#ifdef FW_FOR_CN
 	case LANGUAGE_CHN:
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
 		break;
+	#endif
 	case LANGUAGE_EN:
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
 		break;

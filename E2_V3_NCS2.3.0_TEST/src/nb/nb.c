@@ -1582,6 +1582,26 @@ void NBSendLocationData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+void NBSendSettingsData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T19:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("settings data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
 void NBSendPowerOnInfor(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};

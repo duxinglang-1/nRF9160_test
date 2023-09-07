@@ -893,6 +893,59 @@ void SendPowerOffData(uint8_t pwroff_mode)
 
 /*****************************************************************************
  * FUNCTION
+ *  SendSettingsData
+ * DESCRIPTION
+ *  发送终端设置项数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendSettingsData(void)
+{
+	uint8_t tmpbuf[10] = {0};
+	uint8_t reply[128] = {0};
+
+	//temp uint
+	sprintf(reply, "%d,", global_settings.temp_unit);
+	
+	//language
+	switch(global_settings.language)
+	{
+#ifndef FW_FOR_CN
+	case LANGUAGE_EN:	//English
+		strcat(reply, "en");
+		break;
+	case LANGUAGE_DE:	//Deutsch
+		strcat(reply, "de");
+		break;
+	case LANGUAGE_FR:	//French
+		strcat(reply, "fr");
+		break;
+	case LANGUAGE_ITA:	//Italian
+		strcat(reply, "it");
+		break;
+	case LANGUAGE_ES:	//Spanish
+		strcat(reply, "es");
+		break;
+	case LANGUAGE_PT:	//Portuguese
+		strcat(reply, "pt");
+		break;
+#else
+	case LANGUAGE_CHN:	//Chinese
+		strcat(reply, "zh");
+		break;
+	case LANGUAGE_EN:	//English
+		strcat(reply, "en");
+		break;
+#endif	
+	}
+	
+	NBSendSettingsData(reply, strlen(reply));
+}
+
+/*****************************************************************************
+ * FUNCTION
  *  SendSosAlarmData
  * DESCRIPTION
  *  发送SOS报警包(无地址信息)

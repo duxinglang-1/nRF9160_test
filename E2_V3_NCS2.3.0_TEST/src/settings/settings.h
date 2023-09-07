@@ -12,6 +12,14 @@
 #define MENU_MAX_COUNT	10
 #define MENU_NAME_MAX	30
 
+#define VERSION_STR	"V3.3.2_20230830"
+
+#ifdef FW_FOR_CN
+#define LANG_BRANCH	"_BC"
+#else
+#define LANG_BRANCH	"_BU"
+#endif
+
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
 #else

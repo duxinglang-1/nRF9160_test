@@ -100,6 +100,60 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
 
 /*****************************************************************************
  * FUNCTION
+ *  mmi_ucs2cpy
+ * DESCRIPTION
+ *  copies the one UCS2 encoded string to other
+ * PARAMETERS
+ *  strDestination      [OUT]       StrDest-> Destination array
+ *  strSource           [IN]  		StrSour-> Source array
+ *  len					[IN]		len-> copier count
+ * RETURNS
+ *  u8_t * -> pointer to destination string or NULL
+ *****************************************************************************/
+uint8_t *mmi_ucs2ncpy(uint8_t *strDestination, const uint8_t *strSource, uint32_t len)
+{
+    /*----------------------------------------------------------------*/
+    /* Local Variables                                                */
+    /*----------------------------------------------------------------*/
+    uint16_t count = 1;
+    uint8_t *temp = strDestination;
+
+    /*----------------------------------------------------------------*/
+    /* Code Body                                                      */
+    /*----------------------------------------------------------------*/
+    if (strSource == NULL)
+    {
+        if (strDestination)
+        {
+            *(strDestination + count - 1) = '\0';
+            *(strDestination + count) = '\0';
+        }
+        return temp;
+
+    }
+
+    if (strDestination == NULL || strSource == NULL)
+    {
+        return NULL;
+    }
+    while (!((*(strSource + count) == 0) && (*(strSource + count - 1) == 0)))
+    {
+
+        *(strDestination + count - 1) = *(strSource + count - 1);
+        *(strDestination + count) = *(strSource + count);
+        count += 2;
+		if(count == len)
+			break;
+    }
+
+    *(strDestination + count - 1) = '\0';
+    *(strDestination + count) = '\0';
+
+    return temp;
+}
+
+/*****************************************************************************
+ * FUNCTION
  *  mmi_ucs2cat
  * DESCRIPTION
  *  
@@ -126,6 +180,37 @@ uint8_t *mmi_ucs2cat(uint8_t *strDestination, const uint8_t *strSource)
 	dest = dest + mmi_ucs2strlen(strDestination) * 2;
 
 	mmi_ucs2cpy(dest, strSource);
+	return strDestination;
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  mmi_ucs2cat
+ * DESCRIPTION
+ *  
+ *  
+ *  User has to ensure that enough space is
+ *  available in destination
+ * PARAMETERS
+ *  strDestination      [OUT]         
+ *  strSource           [IN]        
+ * RETURNS
+ *  u8_t *
+ *****************************************************************************/
+uint8_t *mmi_ucs2ncat(uint8_t *strDestination, const uint8_t *strSource, uint32_t len)
+{
+	/*----------------------------------------------------------------*/
+	/* Local Variables												  */
+	/*----------------------------------------------------------------*/
+
+	int8_t *dest = strDestination;
+
+	/*----------------------------------------------------------------*/
+	/* Code Body													  */
+	/*----------------------------------------------------------------*/
+	dest = dest + mmi_ucs2strlen(strDestination) * 2;
+
+	mmi_ucs2ncpy(dest, strSource, len);
 	return strDestination;
 }
 

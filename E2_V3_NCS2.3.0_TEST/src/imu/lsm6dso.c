@@ -78,140 +78,6 @@ uint16_t g_steps = 0;
 uint16_t g_calorie = 0;
 uint16_t g_distance = 0;
 
-void ClearAllStepRecData(void)
-{
-	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
-
-	g_last_steps = 0;
-	g_steps = 0;
-	g_distance = 0;
-	g_calorie = 0;
-		
-	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-}
-
-void SetCurDayStepRecData(uint16_t data)
-{
-	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
-	step_rec2_data *p_step,tmp_step = {0};
-	sys_date_timer_t temp_date = {0};
-	
-	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
-
-	tmp_step.year = temp_date.year;
-	tmp_step.month = temp_date.month;
-	tmp_step.day = temp_date.day;
-	tmp_step.steps[temp_date.hour] = data;
-
-	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	p_step = tmpbuf;
-	if((p_step->year == 0xffff || p_step->year == 0x0000)
-		||(p_step->month == 0xff || p_step->month == 0x00)
-		||(p_step->day == 0xff || p_step->day == 0x00)
-		||((p_step->year == temp_date.year)&&(p_step->month == temp_date.month)&&(p_step->day == temp_date.day))
-		)
-	{
-		//直接覆盖写在第一条
-		p_step->year = temp_date.year;
-		p_step->month = temp_date.month;
-		p_step->day = temp_date.day;
-		p_step->steps[temp_date.hour] = data;
-		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	}
-	else if((temp_date.year < p_step->year)
-			||((temp_date.year == p_step->year)&&(temp_date.month < p_step->month))
-			||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day < p_step->day))
-			)
-	{
-		uint8_t databuf[STEP_REC2_DATA_SIZE] = {0};
-		
-		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
-		memcpy(&databuf[0*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
-		memcpy(&databuf[1*sizeof(step_rec2_data)], &tmpbuf[0*sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
-		SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	}
-	else
-	{
-		uint8_t databuf[STEP_REC2_DATA_SIZE] = {0};
-		
-		//寻找合适的插入位置
-		for(i=0;i<7;i++)
-		{
-			p_step = tmpbuf+i*sizeof(step_rec2_data);
-			if((p_step->year == 0xffff || p_step->year == 0x0000)
-				||(p_step->month == 0xff || p_step->month == 0x00)
-				||(p_step->day == 0xff || p_step->day == 0x00)
-				||((p_step->year == temp_date.year)&&(p_step->month == temp_date.month)&&(p_step->day == temp_date.day))
-				)
-			{
-				//直接覆盖写
-				p_step->year = temp_date.year;
-				p_step->month = temp_date.month;
-				p_step->day = temp_date.day;
-				p_step->steps[temp_date.hour] = data;
-				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-				return;
-			}
-			else if((temp_date.year > p_step->year)
-				||((temp_date.year == p_step->year)&&(temp_date.month > p_step->month))
-				||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day > p_step->day))
-				)
-			{
-				if(i < 6)
-				{
-					p_step++;
-					if((temp_date.year < p_step->year)
-						||((temp_date.year == p_step->year)&&(temp_date.month < p_step->month))
-						||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day < p_step->day))
-						)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		if(i<6)
-		{
-			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
-			memcpy(&databuf[0*sizeof(step_rec2_data)], &tmpbuf[0*sizeof(step_rec2_data)], (i+1)*sizeof(step_rec2_data));
-			memcpy(&databuf[(i+1)*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
-			memcpy(&databuf[(i+2)*sizeof(step_rec2_data)], &tmpbuf[(i+1)*sizeof(step_rec2_data)], (7-(i+2))*sizeof(step_rec2_data));
-			SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-		}
-		else
-		{
-			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
-			memcpy(&databuf[0*sizeof(step_rec2_data)], &tmpbuf[1*sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
-			memcpy(&databuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
-			SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-		}
-	}	
-}
-
-void GetCurDayStepRecData(uint16_t *databuf)
-{
-	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
-	step_rec2_data step_rec2 = {0};
-	
-	if(databuf == NULL)
-		return;
-
-	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	for(i=0;i<7;i++)
-	{
-		memcpy(&step_rec2, &tmpbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
-		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
-			continue;
-		
-		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
-		{
-			memcpy(databuf, step_rec2.steps, sizeof(step_rec2.steps));
-			break;
-		}
-	}
-}
-
 static uint8_t init_i2c(void)
 {
 	i2c_imu = DEVICE_DT_GET(IMU_DEV);
@@ -308,11 +174,11 @@ void imu_sensor_init(void)
 	//lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
 
-	lsm6dso_fifo_watermark_set(&imu_dev_ctx, PATTERN_LEN);
+	lsm6dso_fifo_watermark_set(&imu_dev_ctx, 104);
 	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	/* Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) */
+
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
-	/* Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) */
+
 	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_26Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_NOT_BATCHED);
 
@@ -342,6 +208,21 @@ void imu_sensor_init(void)
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+
+	// Activity enable
+	// Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) where ODR_XL = 26Hz
+	lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
+	// Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) where ODR_XL = 26Hz
+	lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
+	// Set Activity/Inactivity threshold to 31.25 mg (= 1 * FS_XL / 2^6) where FS_XL = 2g (most sensitive threshold)
+	lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01);
+	// Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down
+	lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
+	
+	// route inactivity to INT2 pin
+	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
+	int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE;
+	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
 }
@@ -378,141 +259,17 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 	*sensor_z = acceleration_mg[2];
 }
 
-void ReSetImuSteps(void)
-{
-	lsm6dso_steps_reset(&imu_dev_ctx);
-
-	g_last_steps = 0;
-	g_steps = 0;
-	g_distance = 0;
-	g_calorie = 0;
-	
-	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
-	last_sport.step_rec.timestamp.day = date_time.day;
-	last_sport.step_rec.timestamp.hour = date_time.hour;
-	last_sport.step_rec.timestamp.minute = date_time.minute;
-	last_sport.step_rec.timestamp.second = date_time.second;
-	last_sport.step_rec.timestamp.week = date_time.week;
-	last_sport.step_rec.steps = g_steps;
-	last_sport.step_rec.distance = g_distance;
-	last_sport.step_rec.calorie = g_calorie;
-	save_cur_sport_to_record(&last_sport);	
-}
-
-void GetImuSteps(uint16_t *steps)
-{
-	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
-}
-
-void UpdateIMUData(void)
-{
-	uint16_t steps;
-	
-	GetImuSteps(&steps);
-
-	g_steps = steps+g_last_steps;
-	g_distance = 0.7*g_steps;
-	g_calorie = (0.8214*60*g_distance)/1000;
-
-#ifdef IMU_DEBUG
-	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
-#endif
-
-	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
-	last_sport.step_rec.timestamp.day = date_time.day;
-	last_sport.step_rec.timestamp.hour = date_time.hour;
-	last_sport.step_rec.timestamp.minute = date_time.minute;
-	last_sport.step_rec.timestamp.second = date_time.second;
-	last_sport.step_rec.timestamp.week = date_time.week;
-	last_sport.step_rec.steps = g_steps;
-	last_sport.step_rec.distance = g_distance;
-	last_sport.step_rec.calorie = g_calorie;
-	save_cur_sport_to_record(&last_sport);
-	
-	//StepCheckSendLocationData(g_steps);
-}
-
-void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
-{
-	if(steps != NULL)
-		*steps = g_steps;
-	if(calorie != NULL)
-		*calorie = g_calorie;
-	if(distance != NULL)
-		*distance = g_distance;
-}
-
-/*@Set Sensor sensitivity
-*/
-void lsm6dso_sensitivity(void)
-{
-	//Set the debounce steps
-	uint8_t deb_step = 15;
-	lsm6dso_pedo_debounce_steps_set(&imu_dev_ctx, &deb_step);
-
-	//Set the sensitivity of the sensor
-	uint8_t delay_time[2] = {0x00U, 0x32U};
-	//Lower Limit is 0 and Upper Limit is 50(32 in Hex), the delay time is 320ms
-	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
-}
-
-uint8_t IMU_GetID(void)
-{
-	uint8_t sensor_id = 0;
-	
-	lsm6dso_device_id_get(&imu_dev_ctx, &sensor_id);
-	return sensor_id;
-}
-
-void StepsDataInit(bool reset_flag)
-{
-	bool flag = false;
-	
-	if((last_sport.step_rec.timestamp.year == date_time.year)
-		&&(last_sport.step_rec.timestamp.month == date_time.month)
-		&&(last_sport.step_rec.timestamp.day == date_time.day)
-		)
-	{
-		flag = true;
-	}
-
-	if(reset_flag)
-	{
-		if(!flag)
-		{
-			g_steps -= g_last_steps;
-			g_distance = 0.7*g_steps;
-			g_calorie = (0.8214*60*g_distance)/1000;
-			g_last_steps = 0;
-
-			imu_redraw_steps_flag = true;
-		}
-	}
-	else
-	{
-		if(flag)
-		{
-			g_last_steps = last_sport.step_rec.steps;
-			g_steps = last_sport.step_rec.steps;
-			g_distance = last_sport.step_rec.distance;
-			g_calorie = last_sport.step_rec.calorie;
-		}
-	}
-}
-
 void IMU_init(struct k_work_q *work_q)
 {
 #ifdef IMU_DEBUG
 	LOGD("IMU_init");
 #endif
 
-	get_cur_sport_from_record(&last_sport);
-#ifdef IMU_DEBUG
-	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
-#endif
-	StepsDataInit(false);
+	//get_cur_sport_from_record(&last_sport);
+//#ifdef IMU_DEBUG
+//	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
+//#endif
+	//StepsDataInit(false);
 
 	imu_work_q = work_q;
 
@@ -567,7 +324,7 @@ void IMUMsgProcess(void)
 		return;
 	}
 
-	if(int1_event)	//steps or tilt
+	if(int1_event)	//tilt
 	{
 	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");

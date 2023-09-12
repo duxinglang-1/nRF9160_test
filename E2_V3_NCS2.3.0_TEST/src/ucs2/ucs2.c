@@ -63,7 +63,7 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
     /*----------------------------------------------------------------*/
     /* Local Variables                                                */
     /*----------------------------------------------------------------*/
-    uint16_t count = 1;
+    uint16_t count = 0;
     uint8_t *temp = strDestination;
 
     /*----------------------------------------------------------------*/
@@ -73,8 +73,8 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
     {
         if (strDestination)
         {
-            *(strDestination + count - 1) = '\0';
             *(strDestination + count) = '\0';
+            *(strDestination + count + 1) = '\0';
         }
         return temp;
 
@@ -84,16 +84,16 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
     {
         return NULL;
     }
-    while (!((*(strSource + count) == 0) && (*(strSource + count - 1) == 0)))
+    while (!((*(strSource + count) == 0) && (*(strSource + count + 1) == 0)))
     {
 
-        *(strDestination + count - 1) = *(strSource + count - 1);
         *(strDestination + count) = *(strSource + count);
+        *(strDestination + count + 1) = *(strSource + count + 1);
         count += 2;
     }
 
-    *(strDestination + count - 1) = '\0';
     *(strDestination + count) = '\0';
+    *(strDestination + count + 1) = '\0';
 
     return temp;
 }
@@ -115,7 +115,7 @@ uint8_t *mmi_ucs2ncpy(uint8_t *strDestination, const uint8_t *strSource, uint32_
     /*----------------------------------------------------------------*/
     /* Local Variables                                                */
     /*----------------------------------------------------------------*/
-    uint16_t count = 1;
+    uint16_t count = 0;
     uint8_t *temp = strDestination;
 
     /*----------------------------------------------------------------*/
@@ -125,8 +125,8 @@ uint8_t *mmi_ucs2ncpy(uint8_t *strDestination, const uint8_t *strSource, uint32_
     {
         if (strDestination)
         {
-            *(strDestination + count - 1) = '\0';
             *(strDestination + count) = '\0';
+            *(strDestination + count + 1) = '\0';
         }
         return temp;
 
@@ -136,18 +136,18 @@ uint8_t *mmi_ucs2ncpy(uint8_t *strDestination, const uint8_t *strSource, uint32_
     {
         return NULL;
     }
-    while (!((*(strSource + count) == 0) && (*(strSource + count - 1) == 0)))
+    while (!((*(strSource + count) == 0) && (*(strSource + count + 1) == 0)))
     {
 
-        *(strDestination + count - 1) = *(strSource + count - 1);
         *(strDestination + count) = *(strSource + count);
+        *(strDestination + count + 1) = *(strSource + count + 1);
         count += 2;
-		if(count == len)
+		if(count == 2*len)
 			break;
     }
 
-    *(strDestination + count - 1) = '\0';
     *(strDestination + count) = '\0';
+    *(strDestination + count + 1) = '\0';
 
     return temp;
 }

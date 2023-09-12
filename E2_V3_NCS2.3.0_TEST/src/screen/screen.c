@@ -2053,10 +2053,9 @@ void SettingsUpdateStatus(void)
 			uint16_t modem_str[20] = {0x0000};	
 			uint16_t ppg_str[20] = {0x0000};
 			uint16_t wifi_str[20] = {0x0000};
-			uint16_t wifi_mac_str[64] = {0};
 			uint16_t ble_str[20] = {0x0000};
 			uint16_t ble_mac_str[64] = {0};
-			uint16_t *menu_sle_str[10] = {imei_str,imsi_str,iccid_str,mcu_str,modem_str,ppg_str,wifi_str,wifi_mac_str,ble_str,ble_mac_str};
+			uint16_t *menu_sle_str[9] = {imei_str,imsi_str,iccid_str,mcu_str,modem_str,ppg_str,wifi_str,ble_str,ble_mac_str};
 			uint16_t menu_color = 0x9CD3;
 
 			LCD_Clear(BLACK);
@@ -2074,10 +2073,8 @@ void SettingsUpdateStatus(void)
 			
 		#ifdef CONFIG_WIFI_SUPPORT
 			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_ver);
-			mmi_asc_to_ucs2((uint8_t*)wifi_mac_str, g_wifi_mac_addr);
 		#else
 			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
-			mmi_asc_to_ucs2((uint8_t*)wifi_mac_str, "NO");
 		#endif
 			mmi_asc_to_ucs2((uint8_t*)ble_str, &g_nrf52810_ver[15]);
 			mmi_asc_to_ucs2((uint8_t*)ble_mac_str, g_ble_mac_addr);

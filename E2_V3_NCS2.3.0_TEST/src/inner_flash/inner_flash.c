@@ -627,7 +627,7 @@ void clear_health_in_record(void)
 	clear_data_in_record(RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 void clear_sport_in_record(void)
 {
 	clear_data_in_record(RECORD_TYPE_SPORT);

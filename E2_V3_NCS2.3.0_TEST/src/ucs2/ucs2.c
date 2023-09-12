@@ -345,6 +345,38 @@ uint8_t *mmi_ucs2str(const uint8_t *str1, const uint8_t *str2)
 
 /*****************************************************************************
  * FUNCTION
+ *  mmi_ucs2smartcpy
+ * DESCRIPTION
+ *  Copy a string of no more than the specified length to another buffer (the excess is displayed with dots)
+ * PARAMETERS
+ *  strDestination      [OUT]       StrDest-> Destination array
+ *  strSource           [IN]  		StrSour-> Source array
+ *  maxlen					[IN]		len-> copier count
+ * RETURNS
+ *  u8_t * -> pointer to destination string or NULL
+ *****************************************************************************/
+uint8_t *mmi_ucs2smartcpy(uint8_t *strDestination, const uint8_t *strSource, uint32_t maxlen)
+{
+	uint8_t *temp = strDestination;
+	uint16_t dot_str[2] = {0x002e,0x0000};
+	uint32_t len;
+
+	len = mmi_ucs2strlen((uint8_t*)strSource);
+	if(len > maxlen)
+	{
+		mmi_ucs2ncpy((uint8_t*)strDestination, (uint8_t*)strSource, maxlen);
+		mmi_ucs2cat((uint8_t*)strDestination, (uint8_t*)dot_str);
+	}
+	else
+	{
+		mmi_ucs2cat((uint8_t*)strDestination, (uint8_t*)strSource);
+	}
+
+	return temp;
+}
+
+/*****************************************************************************
+ * FUNCTION
  *  unicode_to_ucs2encoding
  * DESCRIPTION
  *  convert unicode to UCS2 encoding

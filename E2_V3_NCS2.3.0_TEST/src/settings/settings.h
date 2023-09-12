@@ -10,9 +10,12 @@
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	10
-#define MENU_NAME_MAX	30
+#define MENU_NAME_MAX	25
+#define MENU_NAME_STR_MAX	13
+#define MENU_OPT_STR_MAX	7
+#define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.3.2_20230830"
+#define VERSION_STR	"V3.3.2_20230912"
 
 #ifdef FW_FOR_CN
 #define LANG_BRANCH	"_BC"

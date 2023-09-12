@@ -1483,7 +1483,6 @@ void SettingsUpdateStatus(void)
 	uint16_t x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
-	uint16_t dot_str[2] = {0x002e,0x0000};
 	
 	k_timer_stop(&mainmenu_timer);
 
@@ -1623,7 +1622,7 @@ void SettingsUpdateStatus(void)
 			for(i=0;i<SETTINGS_MAIN_MENU_MAX_PER_PG;i++)
 			{
 				uint16_t tmpbuf[128] = {0};
-				
+
 				if((settings_menu.index + i) >= settings_menu.count)
 					break;
 				
@@ -1631,10 +1630,12 @@ void SettingsUpdateStatus(void)
 				
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
-				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
+			
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], MENU_NAME_STR_MAX);
+				LCD_MeasureUniString(tmpbuf, &w, &h);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
-									settings_menu.name[global_settings.language][i+settings_menu.index]);
+									tmpbuf);
 
 				LCD_SetFontColor(green_clor);
 				switch(settings_menu.index)
@@ -1643,16 +1644,20 @@ void SettingsUpdateStatus(void)
 					switch(i)
 					{
 					case 0:
-						LCD_MeasureUniString(lang_sle_str[global_settings.language], &w, &h);
+						memset(tmpbuf, 0, sizeof(tmpbuf));
+						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)lang_sle_str[global_settings.language], MENU_OPT_STR_MAX);
+						LCD_MeasureUniString(tmpbuf, &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
-												lang_sle_str[global_settings.language]);
+												tmpbuf);
 						break;
 					case 1:
-						LCD_MeasureUniString(level_str[global_settings.language][global_settings.backlight_level], &w, &h);
+						memset(tmpbuf, 0, sizeof(tmpbuf));
+						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)level_str[global_settings.language][global_settings.backlight_level], MENU_OPT_STR_MAX+2);
+						LCD_MeasureUniString(tmpbuf, &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
-												level_str[global_settings.language][global_settings.backlight_level]);
+												tmpbuf);
 						break;
 					case 2:
 						LCD_ShowImg_From_Flash(SETTINGS_MENU_TEMP_UNIT_X, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
@@ -1666,19 +1671,8 @@ void SettingsUpdateStatus(void)
 					}
 					else
 					{
-						uint16_t len;
-						
-						len = mmi_ucs2strlen((uint8_t*)menu_sle_str[global_settings.language][i]);
-						if(len > 7)
-						{
-							mmi_ucs2ncpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 7);
-							mmi_ucs2cat((uint8_t*)tmpbuf, (uint8_t*)dot_str);
-						}
-						else
-						{
-							mmi_ucs2cat((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i]);
-						}
-						
+						memset(tmpbuf, 0, sizeof(tmpbuf));
+						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
@@ -1686,10 +1680,12 @@ void SettingsUpdateStatus(void)
 					}
 					break;
 				case 6:
-					LCD_MeasureUniString(menu_sle_str[global_settings.language][i], &w, &h);
+					memset(tmpbuf, 0, sizeof(tmpbuf));
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
+					LCD_MeasureUniString(tmpbuf, &w, &h);
 					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
-												menu_sle_str[global_settings.language][i]);
+												tmpbuf);
 					break;
 				}
 			#endif
@@ -1787,7 +1783,7 @@ void SettingsUpdateStatus(void)
 	case SETTINGS_MENU_FACTORY_RESET:
 		{
 			uint16_t tmpbuf[128] = {0};
-
+			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
 			
@@ -1813,8 +1809,11 @@ void SettingsUpdateStatus(void)
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_NO_X, SETTINGS_MENU_RESET_NO_Y, IMG_RESET_NO_ADDR);
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_YES_X, SETTINGS_MENU_RESET_YES_Y, IMG_RESET_YES_ADDR);
 
-					LCD_MeasureUniString(str_ready[global_settings.language], &w, &h);
-					LCD_ShowUniString(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2, SETTINGS_MENU_RESET_STR_Y+(SETTINGS_MENU_RESET_STR_H-h)/2, str_ready[global_settings.language]);
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_ready[global_settings.language], MENU_NOTIFY_STR_MAX);
+					LCD_MeasureUniString(tmpbuf, &w, &h);
+					LCD_ShowUniString(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2, 
+										SETTINGS_MENU_RESET_STR_Y+(SETTINGS_MENU_RESET_STR_H-h)/2, 
+										tmpbuf);
 				
 				#ifdef CONFIG_TOUCH_SUPPORT
 					register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -1858,9 +1857,12 @@ void SettingsUpdateStatus(void)
 											IMG_RESET_ANI_7_ADDR,
 											IMG_RESET_ANI_8_ADDR
 										};
-					
-					LCD_MeasureUniString(str_running[global_settings.language], &w, &h);
-					LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, str_running[global_settings.language]);
+
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_running[global_settings.language], MENU_NOTIFY_STR_MAX);
+					LCD_MeasureUniString(tmpbuf, &w, &h);
+					LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
+										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
+										tmpbuf);
 
 				#ifdef CONFIG_ANIMATION_SUPPORT
 					AnimaShow(SETTINGS_MENU_RESET_LOGO_X, SETTINGS_MENU_RESET_LOGO_Y, img_addr, ARRAY_SIZE(img_addr), 300, true, NULL);
@@ -1890,70 +1892,11 @@ void SettingsUpdateStatus(void)
 
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_LOGO_X, SETTINGS_MENU_RESET_LOGO_Y, IMG_RESET_SUCCESS_ADDR);
 
-					switch(global_settings.language)
-					{
-					#ifndef FW_FOR_CN	
-					case LANGUAGE_DE:
-						memcpy(tmpbuf, &str_success[global_settings.language][0], 2*19);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_success[global_settings.language][19], 2*(mmi_ucs2strlen(str_success[global_settings.language])-19));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_FR:
-						memcpy(tmpbuf, &str_success[global_settings.language][0], 2*19);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_success[global_settings.language][19], 2*(mmi_ucs2strlen(str_success[global_settings.language])-19));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_ITA:
-						memcpy(tmpbuf, &str_success[global_settings.language][0], 2*19);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_success[global_settings.language][19], 2*(mmi_ucs2strlen(str_success[global_settings.language])-19));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_ES:
-						memcpy(tmpbuf, &str_success[global_settings.language][0], 2*19);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_success[global_settings.language][19], 2*(mmi_ucs2strlen(str_success[global_settings.language])-19));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_PT:
-						memcpy(tmpbuf, &str_success[global_settings.language][0], 2*19);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_success[global_settings.language][19], 2*(mmi_ucs2strlen(str_success[global_settings.language])-19));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-					#endif
-				
-					default:
-						LCD_MeasureUniString(str_success[global_settings.language], &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, str_success[global_settings.language]);
-						break;
-					}
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_success[global_settings.language], MENU_NOTIFY_STR_MAX);
+					LCD_MeasureUniString(tmpbuf, &w, &h);
+					LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
+										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
+										tmpbuf);
 				}
 				break;
 				
@@ -1979,70 +1922,11 @@ void SettingsUpdateStatus(void)
 
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_LOGO_X, SETTINGS_MENU_RESET_LOGO_Y, IMG_RESET_FAIL_ADDR);
 
-					switch(global_settings.language)
-					{
-					#ifndef FW_FOR_CN	
-					case LANGUAGE_DE:
-						memcpy(tmpbuf, &str_fail[global_settings.language][0], 2*24);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_fail[global_settings.language][24], 2*(mmi_ucs2strlen(str_fail[global_settings.language])-24));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_FR:
-						memcpy(tmpbuf, &str_fail[global_settings.language][0], 2*24);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_fail[global_settings.language][24], 2*(mmi_ucs2strlen(str_fail[global_settings.language])-24));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_ITA:
-						memcpy(tmpbuf, &str_fail[global_settings.language][0], 2*24);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_fail[global_settings.language][24], 2*(mmi_ucs2strlen(str_fail[global_settings.language])-24));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_ES:
-						memcpy(tmpbuf, &str_fail[global_settings.language][0], 2*24);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_fail[global_settings.language][24], 2*(mmi_ucs2strlen(str_fail[global_settings.language])-24));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-						
-					case LANGUAGE_PT:
-						memcpy(tmpbuf, &str_fail[global_settings.language][0], 2*24);
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y, tmpbuf);
-						
-						memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-						memcpy(tmpbuf, &str_fail[global_settings.language][24], 2*(mmi_ucs2strlen(str_fail[global_settings.language])-24));
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+h+2, tmpbuf);
-						break;
-					#endif
-
-					default:
-						LCD_MeasureUniString(str_fail[global_settings.language], &w, &h);
-						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, str_fail[global_settings.language]);
-						break;
-					}
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_fail[global_settings.language], MENU_NOTIFY_STR_MAX);
+					LCD_MeasureUniString(tmpbuf, &w, &h);
+					LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
+										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
+										tmpbuf);
 				}
 				break;
 			}
@@ -2068,9 +1952,10 @@ void SettingsUpdateStatus(void)
 			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
-			
-			LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
-			LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, str_notify[global_settings.language]);
+
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
+			LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 
 		#ifdef CONFIG_TOUCH_SUPPORT
 			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -2235,6 +2120,7 @@ void SettingsUpdateStatus(void)
 		
 	case SETTINGS_MENU_CAREMATE_QR:
 		{
+			uint16_t tmpbuf[128] = {0};
 			uint16_t str_notify[LANGUAGE_MAX][35] = {
 													#ifndef FW_FOR_CN
 														{0x0049,0x0074,0x0020,0x0069,0x0073,0x0020,0x0062,0x0065,0x0069,0x006E,0x0067,0x0020,0x0064,0x0065,0x0076,0x0065,0x006C,0x006F,0x0070,0x0065,0x0064,0x002E,0x0000},//It is being developed.
@@ -2252,11 +2138,12 @@ void SettingsUpdateStatus(void)
 			LCD_ReSetFontBgColor();
 			LCD_ReSetFontColor();
 
-		#ifdef CONFIG_QRCODE_SUPPORT
+		#if 0//def CONFIG_QRCODE_SUPPORT
 			show_QR_code(strlen(SETTINGS_CAREMATE_URL), SETTINGS_CAREMATE_URL);
 		#else
-			LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
-			LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, str_notify[global_settings.language]);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
+			LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 		#endif/*CONFIG_QRCODE_SUPPORT*/
 		
 		#ifdef CONFIG_TOUCH_SUPPORT
@@ -2387,14 +2274,18 @@ void SettingsShowStatus(void)
 
 	for(i=0;i<SETTINGS_MAIN_MENU_MAX_PER_PG;i++)
 	{
+		uint16_t tmpbuf[128] = {0};
+		
 		LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), IMG_SET_INFO_BG_ADDR);
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontColor(WHITE);
-		LCD_MeasureUniString(settings_menu.name[global_settings.language][i], &w, &h);
+
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-								SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
-								settings_menu.name[global_settings.language][i]);
+							SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+							tmpbuf);
 
 		LCD_SetFontColor(green_clor);
 		switch(i)
@@ -2819,10 +2710,9 @@ void TempUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
-		x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
-		y = TEMP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_str[global_settings.language]);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		
 		MenuStartTemp();
 		g_temp_status = TEMP_STATUS_MEASURING;
@@ -2929,13 +2819,15 @@ void TempUpdateStatus(void)
 
 		temp_retry_left--;
 		if(temp_retry_left == 0)
-			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
 		else
-			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
-		y = TEMP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);		
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);		
 
 		k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -2949,10 +2841,9 @@ void TempUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
-		x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
-		y = TEMP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_retry_str[global_settings.language]);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -2963,7 +2854,7 @@ void TempUpdateStatus(void)
 void TempShowStatus(void)
 {
 	uint16_t x,y,w,h;
-	uint8_t i,tmpbuf[64] = {0};
+	uint8_t i,tmpbuf[128] = {0};
 	float temp_max = 0.0, temp_min = 0.0;
 	uint16_t temp[24] = {0};
 	uint16_t color = 0x05DF;
@@ -3030,9 +2921,7 @@ void TempShowStatus(void)
 	else
 		sprintf(tmpbuf, "%0.1f", 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = TEMP_NUM_X+(TEMP_NUM_W-w)/2;
-	y = TEMP_NUM_Y+(TEMP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
 
   #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_28);
@@ -3045,18 +2934,14 @@ void TempShowStatus(void)
 	else
 		sprintf(tmpbuf, "%0.1f", temp_max*1.8+32);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = TEMP_UP_NUM_X+(TEMP_UP_NUM_W-w)/2;
-	y = TEMP_UP_NUM_Y+(TEMP_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(TEMP_UP_NUM_X+(TEMP_UP_NUM_W-w)/2, TEMP_UP_NUM_Y+(TEMP_UP_NUM_H-h)/2, tmpbuf);
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
 		sprintf(tmpbuf, "%0.1f", temp_min);
 	else
 		sprintf(tmpbuf, "%0.1f", temp_min*1.8+32);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = TEMP_DOWN_NUM_X+(TEMP_DOWN_NUM_W-w)/2;
-	y = TEMP_DOWN_NUM_Y+(TEMP_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(TEMP_DOWN_NUM_X+(TEMP_DOWN_NUM_W-w)/2, TEMP_DOWN_NUM_Y+(TEMP_DOWN_NUM_H-h)/2, tmpbuf);
 
 #else/*UI_STYLE_HEALTH_BAR*/
 	uint8_t count=1;
@@ -3075,10 +2960,9 @@ void TempShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
-	x = (w > TEMP_NOTIFY_W) ? TEMP_NOTIFY_X : TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2;
-	y = TEMP_NOTIFY_Y;
-	LCD_ShowUniString(x, y, title_str[global_settings.language]);
+	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
 	GetCurDayTempRecData(temp);
 	for(i=0;i<24;i++)
@@ -3501,7 +3385,7 @@ static void PPGStatusTimerOutCallBack(struct k_timer *timer_id)
 void BPUpdateStatus(void)
 {
 	uint16_t x,y,w,h;
-	uint8_t tmpbuf[64] = {0};
+	uint8_t tmpbuf[128] = {0};
 	uint8_t strbuf[64] = {0};
 #ifdef UI_STYLE_HEALTH_BAR
 	uint32_t img_anima[3] = {IMG_BP_ICON_ANI_1_ADDR,IMG_BP_ICON_ANI_2_ADDR,IMG_BP_ICON_ANI_3_ADDR};
@@ -3550,10 +3434,10 @@ void BPUpdateStatus(void)
 	#else
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
-		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
-		x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
-		y = BP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_str[global_settings.language]);
+
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 		
 		MenuStartBpt();
 		g_ppg_status = PPG_STATUS_MEASURING;
@@ -3653,13 +3537,16 @@ void BPUpdateStatus(void)
 
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
-			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
 		else
-			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
-		y = BP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
+
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 		
@@ -3671,10 +3558,9 @@ void BPUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
-		x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
-		y = BP_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -3685,7 +3571,7 @@ void BPUpdateStatus(void)
 void BPShowStatus(void)
 {
 	uint16_t x,y,w,h;
-	uint8_t i,tmpbuf[64] = {0};
+	uint8_t i,tmpbuf[128] = {0};
 	bpt_data bpt_max={0},bpt_min={0},bpt[24] = {0};
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
@@ -3741,9 +3627,7 @@ void BPShowStatus(void)
   #endif
 	sprintf(tmpbuf, "%d/%d", 0, 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = BP_NUM_X+(BP_NUM_W-w)/2;
-	y = BP_NUM_Y+(BP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(BP_NUM_X+(BP_NUM_W-w)/2, BP_NUM_Y+(BP_NUM_H-h)/2, tmpbuf);
 	
   #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -3752,15 +3636,11 @@ void BPShowStatus(void)
   #endif
 	sprintf(tmpbuf, "%d/%d", bpt_max.systolic, bpt_max.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = BP_UP_NUM_X+(BP_UP_NUM_W-w)/2;
-	y = BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(BP_UP_NUM_X+(BP_UP_NUM_W-w)/2, BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2, tmpbuf);
 
 	sprintf(tmpbuf, "%d/%d", bpt_min.systolic, bpt_min.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2;
-	y = BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2, BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2, tmpbuf);
 
 #else/*UI_STYLE_HEALTH_BAR*/
 	uint8_t count1=1,count2=1;
@@ -3778,10 +3658,9 @@ void BPShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
-	x = (w > BP_NOTIFY_W) ? BP_NOTIFY_X : BP_NOTIFY_X+(BP_NOTIFY_W-w)/2;
-	y = BP_NOTIFY_Y;
-	LCD_ShowUniString(x, y, title_str[global_settings.language]);
+	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
 	GetCurDayBptRecData(bpt);
 	for(i=0;i<24;i++)
@@ -4043,9 +3922,10 @@ void EnterBPScreen(void)
 
 void SPO2UpdateStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint8_t tmpbuf[64] = {0};
 	uint8_t strbuf[64] = {0};
+	uint8_t tmpbuf[128] = {0};
+	uint16_t w,h,len;
+	uint16_t dot_str[2] = {0x002e,0x0000};
 #ifdef UI_STYLE_HEALTH_BAR
 	unsigned char *img_anima[3] = {IMG_SPO2_ANI_1_ADDR, IMG_SPO2_ANI_2_ADDR, IMG_SPO2_ANI_3_ADDR};
 #else
@@ -4066,10 +3946,8 @@ void SPO2UpdateStatus(void)
 
 	sprintf(tmpbuf, "%d%%", g_spo2);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_NUM_X+(SPO2_NUM_W-w)/2;
-	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
 	LCD_Fill(SPO2_NUM_X, SPO2_NUM_Y, SPO2_NUM_W, SPO2_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(SPO2_NUM_X+(SPO2_NUM_W-w)/2, SPO2_NUM_Y+(SPO2_NUM_H-h)/2, tmpbuf);
 
 	if(get_spo2_ok_flag)
 	{
@@ -4093,10 +3971,9 @@ void SPO2UpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
-		x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
-		y = SPO2_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_str[global_settings.language]);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
 		MenuStartSpo2();
 		g_ppg_status = PPG_STATUS_MEASURING;
@@ -4162,13 +4039,15 @@ void SPO2UpdateStatus(void)
 
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
-			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
 		else
-			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
-		y = SPO2_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -4181,10 +4060,9 @@ void SPO2UpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
-		x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
-		y = SPO2_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_retry_str[global_settings.language]);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -4194,9 +4072,9 @@ void SPO2UpdateStatus(void)
 
 void SPO2ShowStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint8_t i,tmpbuf[64] = {0};
+	uint8_t i,tmpbuf[128] = {0};
 	uint8_t spo2_max=0,spo2_min=0,spo2[24] = {0};
+	uint16_t w,h;
 	uint16_t title_str[LANGUAGE_MAX][25] = {
 											#ifndef FW_FOR_CN
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x004F,0x0078,0x0079,0x0067,0x0065,0x006E,0x0000},//Blood Oxygen
@@ -4246,21 +4124,15 @@ void SPO2ShowStatus(void)
   #endif
 	sprintf(tmpbuf, "%d%%", 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_NUM_X+(SPO2_NUM_W-w)/2;
-	y = SPO2_NUM_Y+(SPO2_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(SPO2_NUM_X+(SPO2_NUM_W-w)/2, SPO2_NUM_Y+(SPO2_NUM_H-h)/2, tmpbuf);
 
 	sprintf(tmpbuf, "%d", spo2_max);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2;
-	y = SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2, SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2, tmpbuf);
 
 	sprintf(tmpbuf, "%d", spo2_min);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2;
-	y = SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2, SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2, tmpbuf);
 
 #else/*UI_STYLE_HEALTH_BAR*/
 
@@ -4279,10 +4151,9 @@ void SPO2ShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
-	x = (w > SPO2_NOTIFY_W) ? SPO2_NOTIFY_X : SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2;
-	y = SPO2_NOTIFY_Y;
-	LCD_ShowUniString(x, y, title_str[global_settings.language]);
+	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
 	GetCurDaySpo2RecData(spo2);
 	for(i=0;i<24;i++)
@@ -4479,8 +4350,8 @@ void EnterSPO2Screen(void)
 
 void HRUpdateStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint8_t tmpbuf[64] = {0};
+	uint8_t tmpbuf[128] = {0};
+	uint16_t w,h;
 	uint8_t strbuf[64] = {0};
 	
 #ifdef UI_STYLE_HEALTH_BAR
@@ -4502,10 +4373,8 @@ void HRUpdateStatus(void)
   #endif
 	sprintf(tmpbuf, "%d", g_hr);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_NUM_X+(HR_NUM_W-w)/2;
-	y = HR_NUM_Y+(HR_NUM_H-h)/2;
 	LCD_Fill(HR_NUM_X, HR_NUM_Y, HR_NUM_W, HR_NUM_H, BLACK);
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(HR_NUM_X+(HR_NUM_W-w)/2, HR_NUM_Y+(HR_NUM_H-h)/2, tmpbuf);
 
 	if(get_hr_ok_flag)
 	{
@@ -4529,10 +4398,9 @@ void HRUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_str[global_settings.language],&w,&h);
-		x = (w > HR_NOTIFY_W) ? HR_NOTIFY_X : HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
-		y = HR_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_str[global_settings.language]);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 		
 		MenuStartHr();
 		g_ppg_status = PPG_STATUS_MEASURING;
@@ -4598,13 +4466,15 @@ void HRUpdateStatus(void)
 
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
-			mmi_ucs2cpy(tmpbuf, Incon_1_str[global_settings.language]);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
 		else
-			mmi_ucs2cpy(tmpbuf, Incon_2_str[global_settings.language]);
-		LCD_MeasureUniString(tmpbuf,&w,&h);
-		x = (w > HR_NOTIFY_W) ? HR_NOTIFY_X : HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
-		y = HR_NOTIFY_Y;
-		LCD_ShowUniString(x, y, tmpbuf);
+		{
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		}
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 			
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -4617,10 +4487,9 @@ void HRUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		LCD_MeasureUniString(still_retry_str[global_settings.language],&w,&h);
-		x = (w > HR_NOTIFY_W) ? HR_NOTIFY_X : HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
-		y = HR_NOTIFY_Y;
-		LCD_ShowUniString(x, y, still_retry_str[global_settings.language]);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
@@ -4630,9 +4499,9 @@ void HRUpdateStatus(void)
 
 void HRShowStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint8_t i,tmpbuf[64] = {0};
+	uint8_t i,tmpbuf[128] = {0};
 	uint8_t hr_max=0,hr_min=0,hr[24] = {0};
+	uint16_t w,h;
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
 												{0x0048,0x0065,0x0061,0x0072,0x0074,0x0020,0x0052,0x0061,0x0074,0x0065,0x0000},//Heart Rate
@@ -4683,21 +4552,15 @@ void HRShowStatus(void)
   #endif
 	sprintf(tmpbuf, "%d", 0);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_NUM_X+(HR_NUM_W-w)/2;
-	y = HR_NUM_Y+(HR_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(HR_NUM_X+(HR_NUM_W-w)/2, HR_NUM_Y+(HR_NUM_H-h)/2, tmpbuf);
 
 	sprintf(tmpbuf, "%d", hr_max);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_UP_NUM_X+(HR_UP_NUM_W-w)/2;
-	y = HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(HR_UP_NUM_X+(HR_UP_NUM_W-w)/2, HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2, tmpbuf);
 
 	sprintf(tmpbuf, "%d", hr_min);
 	LCD_MeasureString(tmpbuf,&w,&h);
-	x = HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2;
-	y = HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2;
-	LCD_ShowString(x,y,tmpbuf);
+	LCD_ShowString(HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2, HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2, tmpbuf);
 	
 #else/*UI_STYLE_HEALTH_BAR*/
 
@@ -4716,10 +4579,9 @@ void HRShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
 
-	LCD_MeasureUniString(title_str[global_settings.language],&w,&h);
-	x = HR_NOTIFY_X+(HR_NOTIFY_W-w)/2;
-	y = HR_NOTIFY_Y;
-	LCD_ShowUniString(x, y, title_str[global_settings.language]);
+	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+	LCD_MeasureUniString(tmpbuf,&w,&h);
+	LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
 	GetCurDayHrRecData(hr);
 	for(i=0;i<24;i++)
@@ -5680,7 +5542,7 @@ void FOTAShowStatus(void)
 											#ifndef FW_FOR_CN
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0065,0x0020,0x0074,0x006F,0x0020,0x0075,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0074,0x0068,0x0065,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continue to upgrade the firmware?
 												{0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x0073,0x0069,0x0065,0x0072,0x0075,0x006E,0x0067,0x0020,0x0064,0x0065,0x0072,0x0020,0x0046,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x0020,0x0066,0x006F,0x0072,0x0074,0x0066,0x0061,0x0068,0x0072,0x0065,0x006E,0x003F,0x0000},//Aktualisierung der Firmware fortfahren?
-												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0065,0x0072,0x0020,0x00E0,0x0020,0x006D,0x0065,0x0074,0x0074,0x0072,0x0065,0x0020,0x00E0,0x0020,0x006E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x006C,0x0065,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continuer ид mettre ид niveau le firmware?
+												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0065,0x0072,0x0020,0x006C,0x0061,0x0020,0x006D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006A,0x006F,0x0075,0x0072,0x0020,0x0064,0x0075,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continuer la mise ид jour du firmware?
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0061,0x0020,0x0061,0x0020,0x0061,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x0072,0x0065,0x0020,0x0069,0x006C,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continua a aggiornare il firmware?
 												{0x00BF,0x0053,0x0065,0x0067,0x0075,0x0069,0x0072,0x0020,0x0061,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x006E,0x0064,0x006F,0x0020,0x0065,0x006C,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//?Seguir actualizando el firmware?
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0061,0x0072,0x0020,0x0061,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x006E,0x0064,0x006F,0x0020,0x006F,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continuar atualizando o firmware?
@@ -5712,6 +5574,16 @@ void FOTAShowStatus(void)
 
   #ifndef FW_FOR_CN		
 	case LANGUAGE_DE:
+		memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*19);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
+		
+		memset(tmpbuf, 0x0000, sizeof(tmpbuf));
+		memcpy(tmpbuf, &str_notify[global_settings.language][19], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-19));
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
+		break;
+	case LANGUAGE_FR:
 		memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*20);
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
@@ -5721,33 +5593,23 @@ void FOTAShowStatus(void)
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
 		break;
-	case LANGUAGE_FR:
+	case LANGUAGE_ITA:
+		memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*11);
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
+		
+		memset(tmpbuf, 0x0000, sizeof(tmpbuf));
+		memcpy(tmpbuf, &str_notify[global_settings.language][11], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-11));
+		LCD_MeasureUniString(tmpbuf, &w, &h);
+		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
+		break;
+	case LANGUAGE_ES:
 		memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*21);
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
 		
 		memset(tmpbuf, 0x0000, sizeof(tmpbuf));
 		memcpy(tmpbuf, &str_notify[global_settings.language][21], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-21));
-		LCD_MeasureUniString(tmpbuf, &w, &h);
-		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-		break;
-	case LANGUAGE_ITA:
-		memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*22);
-		LCD_MeasureUniString(tmpbuf, &w, &h);
-		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-		
-		memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-		memcpy(tmpbuf, &str_notify[global_settings.language][22], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-22));
-		LCD_MeasureUniString(tmpbuf, &w, &h);
-		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-		break;
-	case LANGUAGE_ES:
-		memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*23);
-		LCD_MeasureUniString(tmpbuf, &w, &h);
-		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-		
-		memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-		memcpy(tmpbuf, &str_notify[global_settings.language][23], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-23));
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
 		break;
@@ -5819,8 +5681,9 @@ void FOTAUpdateStatus(void)
 			LCD_Fill(0, FOTA_START_STR_Y, LCD_WIDTH, FOTA_START_STR_H, BLACK);
 
 		#ifdef FONTMAKER_UNICODE_FONT
-			LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
-			LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, str_notify[global_settings.language]);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
+			LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 		#endif
 
 			ClearAllKeyHandler();
@@ -5848,73 +5711,10 @@ void FOTAUpdateStatus(void)
 			
 			LCD_Fill(0, FOTA_START_STR_Y, LCD_WIDTH, FOTA_START_STR_H, BLACK);
 
-		#ifdef FONTMAKER_UNICODE_FONT
-			switch(global_settings.language)
-			{
-		  #ifndef FW_FOR_CN
-			case LANGUAGE_DE:
-				memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*13);
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-				
-				memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-				memcpy(tmpbuf, &str_notify[global_settings.language][13], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-13));
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-				break;
-				
-			case LANGUAGE_FR:
-				memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*13);
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-				
-				memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-				memcpy(tmpbuf, &str_notify[global_settings.language][13], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-13));
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-				break;
-
-			case LANGUAGE_ITA:
-				memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*13);
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-				
-				memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-				memcpy(tmpbuf, &str_notify[global_settings.language][13], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-13));
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-				break;
-
-			case LANGUAGE_ES:
-				memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*13);
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-				
-				memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-				memcpy(tmpbuf, &str_notify[global_settings.language][13], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-13));
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-				break;
-
-			case LANGUAGE_PT:
-				memcpy(tmpbuf, &str_notify[global_settings.language][0], 2*13);
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf);
-				
-				memset(tmpbuf, 0x0000, sizeof(tmpbuf));
-				memcpy(tmpbuf, &str_notify[global_settings.language][13], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-13));
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf);
-				break;
-		  #endif
-
-		  	default:
-		  		LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
-				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, str_notify[global_settings.language]);
-				break;
-			}
-		#endif
-			
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
+			LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
+					
 			LCD_DrawRectangle(FOTA_PROGRESS_X, FOTA_PROGRESS_Y, FOTA_PROGRESS_W, FOTA_PROGRESS_H);
 			LCD_Fill(FOTA_PROGRESS_X+1, FOTA_PROGRESS_Y+1, FOTA_PROGRESS_W-1, FOTA_PROGRESS_H-1, BLACK);
 			
@@ -5968,8 +5768,9 @@ void FOTAUpdateStatus(void)
 			LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
 			
 		#ifdef FONTMAKER_UNICODE_FONT
-			LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
-			LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, str_notify[global_settings.language]);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
+			LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
 		#endif
 		
 			SetLeftKeyUpHandler(fota_reboot_confirm);
@@ -6002,8 +5803,9 @@ void FOTAUpdateStatus(void)
 			LCD_ShowImg_From_Flash(FOTA_FAIL_ICON_X, FOTA_FAIL_ICON_Y, IMG_OTA_FAILED_ICON_ADDR);
 			
 		#ifdef FONTMAKER_UNICODE_FONT
-			LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
-			LCD_ShowUniString(FOTA_FAIL_STR_X+(FOTA_FAIL_STR_W-w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, str_notify[global_settings.language]);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+			LCD_MeasureUniString(tmpbuf, &w, &h);
+			LCD_ShowUniString(FOTA_FAIL_STR_X+(FOTA_FAIL_STR_W-w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, tmpbuf);
 		#endif	
 
 			SetLeftKeyUpHandler(fota_exit);

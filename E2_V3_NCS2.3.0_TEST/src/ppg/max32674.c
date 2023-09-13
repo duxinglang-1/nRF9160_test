@@ -860,7 +860,6 @@ static void ppg_bpt_est_start_timerout(struct k_timer *timer_id)
 	LOGD("begin");
 #endif
 
-	g_ppg_trigger |= TRIGGER_BY_HOURLY;
 	g_ppg_alg_mode = ALG_MODE_BPT;
 	g_ppg_data = PPG_DATA_BPT;
 	g_ppg_bpt_status = BPT_STATUS_GET_EST;

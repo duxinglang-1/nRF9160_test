@@ -869,8 +869,11 @@ void SettingsMainMenu7Proc(void)
 
 void SettingsMenuLang1Proc(void)
 {
-	global_settings.language = LANGUAGE_BEGIN+0;
-	need_save_settings = true;
+	if(global_settings.language != LANGUAGE_BEGIN+0)
+	{
+		global_settings.language = LANGUAGE_BEGIN+0;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -883,8 +886,11 @@ void SettingsMenuLang1Proc(void)
 
 void SettingsMenuLang2Proc(void)
 {
-	global_settings.language = LANGUAGE_BEGIN+1;
-	need_save_settings = true;
+	if(global_settings.language != LANGUAGE_BEGIN+1)
+	{
+		global_settings.language = LANGUAGE_BEGIN+1;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -897,8 +903,11 @@ void SettingsMenuLang2Proc(void)
 
 void SettingsMenuLang3Proc(void)
 {
-	global_settings.language = LANGUAGE_BEGIN+2;
-	need_save_settings = true;
+	if(global_settings.language != LANGUAGE_BEGIN+2)
+	{
+		global_settings.language = LANGUAGE_BEGIN+2;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -911,8 +920,11 @@ void SettingsMenuLang3Proc(void)
 
 void SettingsMenuLang4Proc(void)
 {
-	global_settings.language = LANGUAGE_BEGIN+3;
-	need_save_settings = true;
+	if(global_settings.language != LANGUAGE_BEGIN+3)
+	{
+		global_settings.language = LANGUAGE_BEGIN+3;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -925,8 +937,11 @@ void SettingsMenuLang4Proc(void)
 
 void SettingsMenuLang5Proc(void)
 {
-	global_settings.language = LANGUAGE_BEGIN+4;
-	need_save_settings = true;
+	if(global_settings.language != LANGUAGE_BEGIN+4)
+	{
+		global_settings.language = LANGUAGE_BEGIN+4;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -939,8 +954,11 @@ void SettingsMenuLang5Proc(void)
 
 void SettingsMenuLang6Proc(void)
 {
-	global_settings.language = LANGUAGE_BEGIN+5;
-	need_save_settings = true;
+	if(global_settings.language != LANGUAGE_BEGIN+5)
+	{
+		global_settings.language = LANGUAGE_BEGIN+5;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -1039,8 +1057,11 @@ void SettingsMenuBrightness3Proc(void)
 
 void SettingsMenuTemp1Proc(void)
 {
-	global_settings.temp_unit = TEMP_UINT_C;
-	need_save_settings = true;
+	if(global_settings.temp_unit != TEMP_UINT_C)
+	{
+		global_settings.temp_unit = TEMP_UINT_C;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -1053,8 +1074,11 @@ void SettingsMenuTemp1Proc(void)
 
 void SettingsMenuTemp2Proc(void)
 {
-	global_settings.temp_unit = TEMP_UINT_F;
-	need_save_settings = true;
+	if(global_settings.temp_unit != TEMP_UINT_F)
+	{
+		global_settings.temp_unit = TEMP_UINT_F;
+		need_save_settings = true;
+	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
 	settings_menu.index = main_menu_index_bk;
@@ -1130,6 +1154,7 @@ void SettingsMsgPorcess(void)
 	{
 		need_save_settings = false;
 		SaveSystemSettings();
+		SendSettingsData();
 	}
 
 	if(need_reset_settings)

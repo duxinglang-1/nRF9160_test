@@ -394,6 +394,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		if(power_on_data_flag)
 		{
 			SendPowerOnData();
+			SendSettingsData();
 			power_on_data_flag = false;
 		}
 		if(nb_connect_ok_flag)

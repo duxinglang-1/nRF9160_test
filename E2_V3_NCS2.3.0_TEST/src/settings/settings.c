@@ -680,7 +680,10 @@ void InitSystemSettings(void)
 
 	ReadSettingsFromInnerFlash(&global_settings);
 
-	if(!global_settings.init || (global_settings.location_type < 1 || global_settings.location_type > 4))
+	if(!global_settings.init 
+		|| (global_settings.location_type < 1 || global_settings.location_type > 4)
+		|| (global_settings.language >= LANGUAGE_MAX)
+		)
 	{
 		ResetInnerFlash();
 
@@ -697,8 +700,7 @@ void InitSystemSettings(void)
 
 void ResetFactoryDefault(void)
 {
-	ResetSystemTime();
-	ResetSystemSettings();
+	ResetInnerFlash();
 
 	clear_cur_local_in_record();
 	clear_local_in_record();	

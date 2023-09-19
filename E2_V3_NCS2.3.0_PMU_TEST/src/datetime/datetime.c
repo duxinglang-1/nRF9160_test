@@ -467,7 +467,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#if 0//ndef NB_SIGNAL_TEST
+	#ifndef NB_SIGNAL_TEST
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -553,7 +553,7 @@ void UpdateSystemTime(void)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
-	#if 0//ndef NB_SIGNAL_TEST
+	#ifndef NB_SIGNAL_TEST
 		if(1
   			#ifdef CONFIG_FOTA_DOWNLOAD
 				&& (!fota_is_running())
@@ -754,9 +754,11 @@ void GetSystemWeekStrings(uint8_t *str_week)
 
 	switch(global_settings.language)
 	{
+	#ifdef FW_FOR_CN
 	case LANGUAGE_CHN:
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
 		break;
+	#endif
 	case LANGUAGE_EN:
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
 		break;

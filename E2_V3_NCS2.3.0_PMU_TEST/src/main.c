@@ -54,7 +54,7 @@
 #define PI 3.1415926
 
 static bool sys_pwron_completed_flag = false;
-static uint8_t show_pic_count = 0;//Í¼Æ¬ÏÔÊ¾Ë³Ğò
+static uint8_t show_pic_count = 0;//å›¾ç‰‡æ˜¾ç¤ºé¡ºåº
 
 /* Stack definition for application workqueue */
 K_THREAD_STACK_DEFINE(nb_stack_area,
@@ -151,12 +151,12 @@ void DrawAnalogMinPic(int hour, int minute)
 
 	if(minute<15)
 	{
-		if((hour%12)<3)							//·ÖÕëÊ±ÕëÓĞÖØµş£¬Í¸Ã÷ÏÔÊ¾
+		if((hour%12)<3)							//åˆ†é’ˆæ—¶é’ˆæœ‰é‡å ï¼Œé€æ˜æ˜¾ç¤º
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],BLACK,0);
 		}
-		else if((hour%12)==3)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
+		else if((hour%12)==3)		//ä¸´ç•Œç‚¹ï¼Œåˆ†é’ˆä¸é€æ˜æ˜¾ç¤ºï¼Œä½†æ˜¯ä¸èƒ½é®ç›–æ—¶é’ˆ
 		{
 			LCD_dis_pic_rotate(min_x-offset_x,min_y+offset_y-min_h,min_pic[minute%15],0);
 			DrawAnalogHourPic(hour);
@@ -166,12 +166,12 @@ void DrawAnalogMinPic(int hour, int minute)
 	}
 	else if((minute>=15) && (minute<30))
 	{
-		if(((hour%12)>=3) && ((hour%12)<6))	//·ÖÕëÊ±ÕëÓĞÖØµş£¬Í¸Ã÷ÏÔÊ¾
+		if(((hour%12)>=3) && ((hour%12)<6))	//åˆ†é’ˆæ—¶é’ˆæœ‰é‡å ï¼Œé€æ˜æ˜¾ç¤º
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],BLACK,90);
 		}
-		else if((hour%12)==6)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
+		else if((hour%12)==6)		//ä¸´ç•Œç‚¹ï¼Œåˆ†é’ˆä¸é€æ˜æ˜¾ç¤ºï¼Œä½†æ˜¯ä¸èƒ½é®ç›–æ—¶é’ˆ
 		{
 			LCD_dis_pic_rotate(min_x-offset_x,min_y-offset_y,min_pic[minute%15],90);
 			DrawAnalogHourPic(hour);
@@ -181,12 +181,12 @@ void DrawAnalogMinPic(int hour, int minute)
 	}
 	else if((minute>=30) && (minute<45))
 	{
-		if(((hour%12)>=6) && ((hour%12)<9))	//·ÖÕëÊ±ÕëÓĞÖØµş£¬Í¸Ã÷ÏÔÊ¾
+		if(((hour%12)>=6) && ((hour%12)<9))	//åˆ†é’ˆæ—¶é’ˆæœ‰é‡å ï¼Œé€æ˜æ˜¾ç¤º
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],BLACK,180);
 		}
-		else if((hour%12)==9)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
+		else if((hour%12)==9)		//ä¸´ç•Œç‚¹ï¼Œåˆ†é’ˆä¸é€æ˜æ˜¾ç¤ºï¼Œä½†æ˜¯ä¸èƒ½é®ç›–æ—¶é’ˆ
 		{
 			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y-offset_y,min_pic[minute%15],180);
 			DrawAnalogHourPic(hour);
@@ -196,12 +196,12 @@ void DrawAnalogMinPic(int hour, int minute)
 	}
 	else if((minute>=45) && (minute<60))
 	{
-		if((hour%12)>=9)	//·ÖÕëÊ±ÕëÓĞÖØµş£¬Í¸Ã÷ÏÔÊ¾
+		if((hour%12)>=9)	//åˆ†é’ˆæ—¶é’ˆæœ‰é‡å ï¼Œé€æ˜æ˜¾ç¤º
 		{
 			DrawAnalogHourPic(hour);
 			LCD_dis_pic_trans_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],BLACK,270);
 		}
-		else if((hour%12)==0)		//ÁÙ½çµã£¬·ÖÕë²»Í¸Ã÷ÏÔÊ¾£¬µ«ÊÇ²»ÄÜÕÚ¸ÇÊ±Õë
+		else if((hour%12)==0)		//ä¸´ç•Œç‚¹ï¼Œåˆ†é’ˆä¸é€æ˜æ˜¾ç¤ºï¼Œä½†æ˜¯ä¸èƒ½é®ç›–æ—¶é’ˆ
 		{
 			LCD_dis_pic_rotate(min_x+offset_x-min_w,min_y+offset_y-min_h,min_pic[minute%15],270);
 			DrawAnalogHourPic(hour);
@@ -213,9 +213,9 @@ void DrawAnalogMinPic(int hour, int minute)
 #endif
 
 /***************************************************************************
-* Ãè  Êö : idle_show_digit_clock ´ı»ú½çÃæÏÔÊ¾Êı×ÖÊ±ÖÓ
-* Èë  ²Î : ÎŞ 
-* ·µ»ØÖµ : ÎŞ
+* æ  è¿° : idle_show_digit_clock å¾…æœºç•Œé¢æ˜¾ç¤ºæ•°å­—æ—¶é’Ÿ
+* å…¥  å‚ : æ—  
+* è¿”å›å€¼ : æ— 
 **************************************************************************/
 void idle_show_digital_clock(void)
 {
@@ -229,26 +229,26 @@ void idle_show_digital_clock(void)
 		if(show_date_time_first)
 			show_date_time_first = false;
 		if((date_time_changed&0x38) != 0)
-			date_time_changed = date_time_changed&0xC7;//Çå¿ÕÈÕÆÚ±ä»¯±êÖ¾Î»
+			date_time_changed = date_time_changed&0xC7;//æ¸…ç©ºæ—¥æœŸå˜åŒ–æ ‡å¿—ä½
 	}
 }
 
 #ifdef ANALOG_CLOCK
 /***************************************************************************
-* Ãè  Êö : idle_show_analog_clock ´ı»ú½çÃæÏÔÊ¾Ä£ÄâÊ±ÖÓ
-* Èë  ²Î : ÎŞ 
-* ·µ»ØÖµ : ÎŞ
+* æ  è¿° : idle_show_analog_clock å¾…æœºç•Œé¢æ˜¾ç¤ºæ¨¡æ‹Ÿæ—¶é’Ÿ
+* å…¥  å‚ : æ—  
+* è¿”å›å€¼ : æ— 
 **************************************************************************/
 void idle_show_analog_clock(void)
 {
 	uint8_t str_date[20] = {0};
 	uint8_t str_week[20] = {0};
-	uint8_t *week_cn[7] = {"ÖÜÈÕ", "ÖÜÒ»", "ÖÜ¶ş", "ÖÜÈı", "ÖÜËÄ", "ÖÜÎå", "ÖÜÁù"};
+	uint8_t *week_cn[7] = {"å‘¨æ—¥", "å‘¨ä¸€", "å‘¨äºŒ", "å‘¨ä¸‰", "å‘¨å››", "å‘¨äº”", "å‘¨å…­"};
 	uint8_t *week_en[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 	uint16_t str_w,str_h;
 
-	POINT_COLOR=WHITE;								//»­±ÊÑÕÉ«
-	BACK_COLOR=BLACK;  								//±³¾°É« 
+	POINT_COLOR=WHITE;								//ç”»ç¬”é¢œè‰²
+	BACK_COLOR=BLACK;  								//èƒŒæ™¯è‰² 
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -281,7 +281,7 @@ void idle_show_analog_clock(void)
 			DrawAnalogHourPic(date_time.hour);
 			date_time_changed = date_time_changed&0xFB;
 		}	
-		if((date_time_changed&0x02) != 0)//·ÖÖÓÓĞ±ä»¯
+		if((date_time_changed&0x02) != 0)//åˆ†é’Ÿæœ‰å˜åŒ–
 		{
 			DrawAnalogHourPic(date_time.hour);
 			DrawAnalogMinPic(date_time.hour, date_time.minute);
@@ -295,7 +295,7 @@ void idle_show_analog_clock(void)
 			LCD_MeasureString(str_date, &str_w, &str_h);
 			LCD_ShowString((LCD_WIDTH-str_w)/2, 33, str_date);
 
-			date_time_changed = date_time_changed&0xC7;//Çå¿ÕÈÕÆÚ±ä»¯±êÖ¾Î»
+			date_time_changed = date_time_changed&0xC7;//æ¸…ç©ºæ—¥æœŸå˜åŒ–æ ‡å¿—ä½
 		}
 	}
 }
@@ -322,9 +322,9 @@ void idle_show_clock_background(void)
 }
 
 /***************************************************************************
-* Ãè  Êö : idle_show_time ´ı»ú½çÃæÏÔÊ¾Ê±¼ä
-* Èë  ²Î : ÎŞ 
-* ·µ»ØÖµ : ÎŞ
+* æ  è¿° : idle_show_time å¾…æœºç•Œé¢æ˜¾ç¤ºæ—¶é—´
+* å…¥  å‚ : æ—  
+* è¿”å›å€¼ : æ— 
 **************************************************************************/
 void idle_show_time(void)
 {	
@@ -333,11 +333,11 @@ void idle_show_time(void)
 	#ifdef ANALOG_CLOCK
 		if((date_time_changed&0x02) != 0)
 		{
-			ClearAnalogMinPic(date_time.minute);//²Á³ıÒÔÇ°µÄ·ÖÖÓ
+			ClearAnalogMinPic(date_time.minute);//æ“¦é™¤ä»¥å‰çš„åˆ†é’Ÿ
 		}
 		if((date_time_changed&0x04) != 0)
 		{
-			ClearAnalogHourPic(date_time.hour);//²Á³ıÒÔÇ°µÄÊ±ÖÓ
+			ClearAnalogHourPic(date_time.hour);//æ“¦é™¤ä»¥å‰çš„æ—¶é’Ÿ
 		}
 
 		idle_show_analog_clock();
@@ -349,17 +349,17 @@ void idle_show_time(void)
 		if((date_time_changed&0x01) != 0)
 		{
 			date_time_changed = date_time_changed&0xFE;
-			BlockWrite((LCD_WIDTH-8*8)/2+6*8,(LCD_HEIGHT-16)/2,2*8,16);//²Á³ıÒÔÇ°µÄÃëÖÓ
+			BlockWrite((LCD_WIDTH-8*8)/2+6*8,(LCD_HEIGHT-16)/2,2*8,16);//æ“¦é™¤ä»¥å‰çš„ç§’é’Ÿ
 		}
 		if((date_time_changed&0x02) != 0)
 		{
 			date_time_changed = date_time_changed&0xFD;
-			BlockWrite((LCD_WIDTH-8*8)/2+3*8,(LCD_HEIGHT-16)/2,2*8,16);//²Á³ıÒÔÇ°µÄ·ÖÖÓ
+			BlockWrite((LCD_WIDTH-8*8)/2+3*8,(LCD_HEIGHT-16)/2,2*8,16);//æ“¦é™¤ä»¥å‰çš„åˆ†é’Ÿ
 		}
 		if((date_time_changed&0x04) != 0)
 		{
 			date_time_changed = date_time_changed&0xFB;
-			BlockWrite((LCD_WIDTH-8*8)/2,(LCD_HEIGHT-16)/2,2*8,16);//²Á³ıÒÔÇ°µÄÊ±ÖÓ
+			BlockWrite((LCD_WIDTH-8*8)/2,(LCD_HEIGHT-16)/2,2*8,16);//æ“¦é™¤ä»¥å‰çš„æ—¶é’Ÿ
 		}
 		
 		if((date_time_changed&0x38) != 0)
@@ -458,7 +458,7 @@ void test_show_image(void)
 		if(i==23)
 			i = 0;
 		
-		k_sleep(K_MSEC(1000));								//Èí¼şÑÓÊ±1000ms
+		k_sleep(K_MSEC(1000));								//è½¯ä»¶å»¶æ—¶1000ms
 	}
 }
 
@@ -528,7 +528,7 @@ void test_show_color(void)
 		if(i>=12)
 			i=0;
 		
-		k_sleep(K_MSEC(1000));								//Èí¼şÑÓÊ±1000ms
+		k_sleep(K_MSEC(1000));								//è½¯ä»¶å»¶æ—¶1000ms
 	}
 }
 
@@ -545,8 +545,8 @@ void test_show_string(void)
 
 	LCD_Clear(BLACK);
 	
-	POINT_COLOR=WHITE;								//»­±ÊÑÕÉ«
-	BACK_COLOR=BLACK;  								//±³¾°É« 
+	POINT_COLOR=WHITE;								//ç”»ç¬”é¢œè‰²
+	BACK_COLOR=BLACK;  								//èƒŒæ™¯è‰² 
 
 	LCD_SetFontSize(FONT_SIZE_20);
 	LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
@@ -557,15 +557,15 @@ void test_show_string(void)
 
 #ifdef FONTMAKER_UNICODE_FONT
 #if 0//def FONT_64
-	LCD_SetFontSize(FONT_SIZE_64);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_64);					//è®¾ç½®å­—ä½“å¤§å°
 #elif 0//defined(FONT_48)
-	LCD_SetFontSize(FONT_SIZE_48);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_48);					//è®¾ç½®å­—ä½“å¤§å°
 #elif 0//defined(FONT_32)
-	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óĞ¡	
+	LCD_SetFontSize(FONT_SIZE_32);					//è®¾ç½®å­—ä½“å¤§å°	
 #elif 0//defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_24);					//è®¾ç½®å­—ä½“å¤§å°
 #elif defined(FONT_16)
-	LCD_SetFontSize(FONT_SIZE_16);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_16);					//è®¾ç½®å­—ä½“å¤§å°
 #endif
 	LCD_MeasureUniString(en_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -584,7 +584,7 @@ void test_show_string(void)
 
 #if 0
 #ifdef FONT_24
-	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_24);					//è®¾ç½®å­—ä½“å¤§å°
 #endif
 	LCD_MeasureUniString(cn_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -597,7 +597,7 @@ void test_show_string(void)
 	LCD_ShowUniString(x,y,en_unibuf);
 
 #ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_32);					//è®¾ç½®å­—ä½“å¤§å°
 #endif
 	LCD_MeasureUniString(cn_unibuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -611,15 +611,15 @@ void test_show_string(void)
 #endif
 #else
 	strcpy(enbuf, "August Shenzhen Digital Ltd");
-	strcpy(cnbuf, "ÉîÛÚÊĞ°Â¿ÆË¹ÊıÂëÓĞÏŞ¹«Ë¾");
-	strcpy(jpbuf, "Éî¥»¥óÊĞ¥ª©`¥³¥¹¥Ç¥¸¥¿¥ëÓĞÏŞ»áÉç");
+	strcpy(cnbuf, "æ·±åœ³å¸‚å¥¥ç§‘æ–¯æ•°ç æœ‰é™å…¬å¸");
+	strcpy(jpbuf, "æ·±ã‚»ãƒ³å¸‚ã‚ªãƒ¼ã‚³ã‚¹ãƒ‡ã‚¸ã‚¿ãƒ«æœ‰é™ä¼šç¤¾");
 
 #ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óĞ¡	
+	LCD_SetFontSize(FONT_SIZE_32);					//è®¾ç½®å­—ä½“å¤§å°	
 #elif defined(FONT_24)
-	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_24);					//è®¾ç½®å­—ä½“å¤§å°
 #elif defined(FONT_16)
-	LCD_SetFontSize(FONT_SIZE_16);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_16);					//è®¾ç½®å­—ä½“å¤§å°
 #endif
 
 	LCD_MeasureString(enbuf,&w,&h);
@@ -639,7 +639,7 @@ void test_show_string(void)
 
 #if 0
 #ifdef FONT_24
-	LCD_SetFontSize(FONT_SIZE_24);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_24);					//è®¾ç½®å­—ä½“å¤§å°
 #endif
 	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -652,7 +652,7 @@ void test_show_string(void)
 	LCD_ShowString(x,y,enbuf);
 
 #ifdef FONT_32
-	LCD_SetFontSize(FONT_SIZE_32);					//ÉèÖÃ×ÖÌå´óĞ¡
+	LCD_SetFontSize(FONT_SIZE_32);					//è®¾ç½®å­—ä½“å¤§å°
 #endif
 	LCD_MeasureString(cnbuf,&w,&h);
 	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
@@ -673,7 +673,7 @@ void test_notify(void)
 	uint16_t str_note[LANGUAGE_MAX][80] = {
 											{0x0054,0x0068,0x0065,0x0020,0x0074,0x0069,0x006D,0x0069,0x006E,0x0067,0x0020,0x006D,0x0065,0x0061,0x0073,0x0075,0x0072,0x0065,0x006D,0x0065,0x006E,0x0074,0x0020,0x0069,0x0073,0x0020,0x0061,0x0062,0x006F,0x0075,0x0074,0x0020,0x0074,0x006F,0x0020,0x0073,0x0074,0x0061,0x0072,0x0074,0x002C,0x0020,0x0061,0x006E,0x0064,0x0020,0x0074,0x0068,0x0069,0x0073,0x0020,0x006D,0x0065,0x0061,0x0073,0x0075,0x0072,0x0065,0x006D,0x0065,0x006E,0x0074,0x0020,0x0069,0x0073,0x0020,0x006F,0x0076,0x0065,0x0072,0x0021,0x0000},//The timing measurement is about to start, and this measurement is over!
 											{0x0044,0x0069,0x0065,0x0020,0x005A,0x0065,0x0069,0x0074,0x006D,0x0065,0x0073,0x0073,0x0075,0x006E,0x0067,0x0020,0x0073,0x0074,0x0065,0x0068,0x0074,0x0020,0x006B,0x0075,0x0072,0x007A,0x0020,0x0062,0x0065,0x0076,0x006F,0x0072,0x002C,0x0020,0x0075,0x006E,0x0064,0x0020,0x0064,0x0069,0x0065,0x0073,0x0065,0x0020,0x004D,0x0065,0x0073,0x0073,0x0075,0x006E,0x0067,0x0020,0x0069,0x0073,0x0074,0x0020,0x0076,0x006F,0x0072,0x0062,0x0065,0x0069,0x0021,0x0000},//Die Zeitmessung steht kurz bevor, und diese Messung ist vorbei!
-											{0x5B9A,0x65F6,0x6D4B,0x91CF,0x5373,0x5C06,0x5F00,0x59CB,0xFF0C,0x672C,0x6B21,0x6D4B,0x91CF,0x7ED3,0x675F,0xFF01,0x0000},//¶¨Ê±²âÁ¿¼´½«¿ªÊ¼£¬±¾´Î²âÁ¿½áÊø£¡
+											{0x5B9A,0x65F6,0x6D4B,0x91CF,0x5373,0x5C06,0x5F00,0x59CB,0xFF0C,0x672C,0x6B21,0x6D4B,0x91CF,0x7ED3,0x675F,0xFF01,0x0000},//å®šæ—¶æµ‹é‡å³å°†å¼€å§‹ï¼Œæœ¬æ¬¡æµ‹é‡ç»“æŸï¼
 										};
 
 #ifdef FONTMAKER_UNICODE_FONT
@@ -704,7 +704,7 @@ static void modem_init(void)
 
 void system_init(void)
 {
-	k_sleep(K_MSEC(500));//xb test 2022-03-11 Æô¶¯Ê±ºòÑÓ³Ù0.5S,µÈ´ıÆäËûÍâÉèÍêÈ«Æô¶¯
+	k_sleep(K_MSEC(500));//xb test 2022-03-11 å¯åŠ¨æ—¶å€™å»¶è¿Ÿ0.5S,ç­‰å¾…å…¶ä»–å¤–è®¾å®Œå…¨å¯åŠ¨
 
 	modem_init();
 
@@ -784,9 +784,9 @@ void system_init_completed(void)
 }
 
 /***************************************************************************
-* Ãè  Êö : mainº¯Êı 
-* Èë  ²Î : ÎŞ 
-* ·µ»ØÖµ : int ÀàĞÍ
+* æ  è¿° : mainå‡½æ•° 
+* å…¥  å‚ : æ—  
+* è¿”å›å€¼ : int ç±»å‹
 **************************************************************************/
 int main(void)
 {

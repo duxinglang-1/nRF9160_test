@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define TEST_DEBUG
+//#define TEST_DEBUG
 
 typedef struct
 {
@@ -72,7 +72,7 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 #endif /* WIN32 */
 	va_end(args);
 
-	//ÕâÀïN²Ù×÷100µÄ³¤¶ÈÖ±½ÓÍË³ö£¬´òÌ«³¤¿ÉÄÜ»áµ¼ÖÂÖØÆô
+	//è¿™é‡ŒNæ“ä½œ100çš„é•¿åº¦ç›´æŽ¥é€€å‡ºï¼Œæ‰“å¤ªé•¿å¯èƒ½ä¼šå¯¼è‡´é‡å¯
 	if(n > LOG_BUFF_SIZE - 4)
 	{
 		return;
@@ -192,7 +192,7 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 #endif /* WIN32 */
 	va_end(args);
 
-	//ÕâÀïN²Ù×÷100µÄ³¤¶ÈÖ±½ÓÍË³ö£¬´òÌ«³¤¿ÉÄÜ»áµ¼ÖÂÖØÆô
+	//è¿™é‡ŒNæ“ä½œ100çš„é•¿åº¦ç›´æŽ¥é€€å‡ºï¼Œæ‰“å¤ªé•¿å¯èƒ½ä¼šå¯¼è‡´é‡å¯
 	if(n > LOG_BUFF_SIZE - 4)
 	{
 		return;

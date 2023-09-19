@@ -384,6 +384,8 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		}
 
 		mqtt_connected = true;
+		mqtt_connecting_flag = false;
+
 	#ifdef NB_DEBUG
 		LOGD("MQTT client connected!");		
 	#endif
@@ -392,6 +394,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		if(power_on_data_flag)
 		{
 			SendPowerOnData();
+			SendSettingsData();
 			power_on_data_flag = false;
 		}
 		if(nb_connect_ok_flag)
@@ -658,8 +661,6 @@ static void mqtt_link(struct k_work_q *work_q)
 		goto link_over;
 	}
 
-	mqtt_connecting_flag = false;
-	
 	while(1)
 	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
@@ -917,11 +918,6 @@ void FTPreReadyNet(void)
 {
 	struct k_work_sync work_sync;
 
-	if(k_work_is_pending(&mqtt_link_work))
-		k_work_cancel(&mqtt_link_work);
-	if(k_work_is_pending(&nb_link_work))
-		k_work_cancel(&nb_link_work);
-
 	SetModemTurnOff();
 }
 #endif
@@ -984,30 +980,30 @@ void NBRedrawSignal(void)
 	{
 		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
 		//<n>
-		//	0 ¨C Disable unsolicited result codes
-		//	1 ¨C Enable unsolicited result codes +CEREG:<stat>
-		//	2 ¨C Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
-		//	3 ¨C Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
-		//	4 ¨C Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
-		//	5 ¨C Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
+		//	0 â€“ Disable unsolicited result codes
+		//	1 â€“ Enable unsolicited result codes +CEREG:<stat>
+		//	2 â€“ Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
+		//	3 â€“ Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
+		//	4 â€“ Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
+		//	5 â€“ Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
 		//<stat>
-		//	0 ¨C Not registered. UE is not currently searching for an operator to register to.
-		//	1 ¨C Registered, home network.
-		//	2 ¨C Not registered, but UE is currently trying to attach or searching an operator to register to.
-		//	3 ¨C Registration denied.
-		//	4 ¨C Unknown (e.g. out of E-UTRAN coverage).
-		//	5 ¨C Registered, roaming.
-		//	8 ¨C Attached for emergency bearer services only.
-		//	90 ¨C Not registered due to UICC failure.
+		//	0 â€“ Not registered. UE is not currently searching for an operator to register to.
+		//	1 â€“ Registered, home network.
+		//	2 â€“ Not registered, but UE is currently trying to attach or searching an operator to register to.
+		//	3 â€“ Registration denied.
+		//	4 â€“ Unknown (e.g. out of E-UTRAN coverage).
+		//	5 â€“ Registered, roaming.
+		//	8 â€“ Attached for emergency bearer services only.
+		//	90 â€“ Not registered due to UICC failure.
 		//<tac>
 		//	String. A 2-byte Tracking Area Code (TAC) in hexadecimal format.
 		//<ci>
 		//	String. A 4-byte E-UTRAN cell ID in hexadecimal format.
 		//<AcT>
-		//	7 ¨C E-UTRAN
-		//	9 ¨C E-UTRAN NB-S1
+		//	7 â€“ E-UTRAN
+		//	9 â€“ E-UTRAN NB-S1
 		//<cause_type>
-		//	0 ¨C <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
+		//	0 â€“ <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
 		//<reject_cause>
 		//	EMM cause value. See 3GPP TS 24.301 Annex A
 		//<Active-Time>
@@ -1026,7 +1022,7 @@ void NBRedrawSignal(void)
 		ptr = strstr(strbuf, "+CEREG: ");
 		if(ptr)
 		{
-			//Ö¸ÁîÍ·
+			//æŒ‡ä»¤å¤´
 			ptr += strlen("+CEREG: ");
 			//reg_status
 			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
@@ -1054,17 +1050,17 @@ void NBRedrawSignal(void)
 	{
 		//+CSCON: <n>,<mode>[,<state>[,<access]]
 		//<n>
-		//0 ¨C Unsolicited indications disabled
-		//1 ¨C Enabled: <mode>
-		//2 ¨C Enabled: <mode>[,<state>]
-		//3 ¨C Enabled: <mode>[,<state>[,<access>]]
+		//0 â€“ Unsolicited indications disabled
+		//1 â€“ Enabled: <mode>
+		//2 â€“ Enabled: <mode>[,<state>]
+		//3 â€“ Enabled: <mode>[,<state>[,<access>]]
 		//<mode>
-		//0 ¨C Idle
-		//1 ¨C Connected
+		//0 â€“ Idle
+		//1 â€“ Connected
 		//<state>
-		//7 ¨C E-UTRAN connected
+		//7 â€“ E-UTRAN connected
 		//<access>
-		//4 ¨C Radio access of type E-UTRAN FDD
+		//4 â€“ Radio access of type E-UTRAN FDD
 	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
 	#endif
@@ -1587,6 +1583,26 @@ void NBSendLocationData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
+void NBSendSettingsData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T19:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG
+	LOGD("settings data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf));
+}
+
 void NBSendPowerOnInfor(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
@@ -1697,7 +1713,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t *ptr,*ptr1;
 			uint8_t strtmp[128] = {0};
 
-			//ºóÌ¨ÏÂ·¢¶¨Î»ÉÏ±¨¼ä¸ô
+			//åå°ä¸‹å‘å®šä½ä¸ŠæŠ¥é—´éš”
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -1726,21 +1742,21 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S8") == 0)
 		{
-			//ºóÌ¨ÏÂ·¢½¡¿µ¼ì²â¼ä¸ô
+			//åå°ä¸‹å‘å¥åº·æ£€æµ‹é—´éš”
 			global_settings.health_interval = atoi(strdata);
 
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
-			//ºóÌ¨ÏÂ·¢Ì§ÍóÁÁÆÁÉèÖÃ
+			//åå°ä¸‹å‘æŠ¬è…•äº®å±è®¾ç½®
 			global_settings.wake_screen_by_wrist = atoi(strdata);
 			
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S10") == 0)
 		{
-			//ºóÌ¨ÏÂ·¢ÍÑÍó¼ì²âÉèÖÃ
+			//åå°ä¸‹å‘è„±è…•æ£€æµ‹è®¾ç½®
 			global_settings.wrist_off_check = atoi(strdata);
 
 			flag = true;			
@@ -1750,7 +1766,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t *ptr;
 			uint8_t strtmp[128] = {0};
 			
-			//ºóÌ¨ÏÂ·¢ÑªÑ¹Ğ£×¼Öµ
+			//åå°ä¸‹å‘è¡€å‹æ ¡å‡†å€¼
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -1780,10 +1796,10 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		else if(strcmp(strcmd, "S12") == 0)
 		{
 			uint8_t *ptr,*ptr1;
-			uint8_t strtmp[128] = {0};
+			uint8_t strtmp[256] = {0};
 			uint32_t copylen = 0;
 
-			//ºóÌ¨ÏÂ·¢×îĞÂ°æ±¾ĞÅÏ¢
+			//åå°ä¸‹å‘æœ€æ–°ç‰ˆæœ¬ä¿¡æ¯
 			//project dir
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
@@ -1858,7 +1874,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			sys_date_timer_t tmp_dt = {0};
 			uint32_t copylen = 0;
 
-			//ºóÌ¨ÏÂ·¢Ğ£Ê±Ö¸Áî
+			//åå°ä¸‹å‘æ ¡æ—¶æŒ‡ä»¤
 			//timezone
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
@@ -1950,14 +1966,14 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S29") == 0)
 		{
-			//ºóÌ¨ÏÂ·¢Î»ÖÃĞÅÏ¢
+			//åå°ä¸‹å‘ä½ç½®ä¿¡æ¯
 		#ifdef NB_DEBUG
 			LOGD("%s", strdata);
 		#endif
 			uint8_t *ptr,*ptr1;
-			uint8_t strtmp[128] = {0};
+			uint8_t strtmp[256] = {0};
 		
-			//ºóÌ¨ÏÂ·¢¶¨Î»ÉÏ±¨¼ä¸ô
+			//åå°ä¸‹å‘å®šä½ä¸ŠæŠ¥é—´éš”
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -2323,22 +2339,22 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 	ptr = strstr(buf, "%XMONITOR: ");
 	if(ptr)
 	{
-		//²¹ÉÏÒ»¸ö¶ººÅ×÷ÎªÄ©Î²µÄ·Ö¸ô·û,Ìæ»»ÒÔÇ°µÄ0x0d,0x0a
+		//è¡¥ä¸Šä¸€ä¸ªé€—å·ä½œä¸ºæœ«å°¾çš„åˆ†éš”ç¬¦,æ›¿æ¢ä»¥å‰çš„0x0d,0x0a
 		buf[len-2] = ',';
 		buf[len-1] = 0x00;
-		//Ö¸ÁîÍ·
+		//æŒ‡ä»¤å¤´
 		ptr += strlen("%XMONITOR: ");
 		//reg_status
 		GetStringInforBySepa(ptr, ",", 1, tmpbuf);
 		reg_status = atoi(tmpbuf);
-		//0 ¨C Not registered. UE is not currently searching for an operator to register to.
-		//1 ¨C Registered, home network.
-		//2 ¨C Not registered, but UE is currently trying to attach or searching an operator to register to.
-		//3 ¨C Registration denied.
-		//4 ¨C Unknown (e.g. out of E-UTRAN coverage).
-		//5 ¨C Registered, roaming.
-		//8 ¨C Attached for emergency bearer services only.
-		//90 ¨C Not registered due to UICC failure.
+		// 0 â€“ Not registered. UE is not currently searching for an operator to register to.
+		// 1 â€“ Registered, home network.
+		// 2 â€“ Not registered, but UE is currently trying to attach or searching an operator to register to.
+		// 3 â€“ Registration denied.
+		// 4 â€“ Unknown (e.g. out of E-UTRAN coverage).
+		// 5 â€“ Registered, roaming.
+		// 8 â€“ Attached for emergency bearer services only.
+		// 90 â€“ Not registered due to UICC failure.
 		if(reg_status == 1 || reg_status == 5)
 		{
 			uint8_t tau = 0;
@@ -2434,16 +2450,16 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
 			{
-			case 0://0 0 0 ¨C value is incremented in multiples of 2 seconds
+			case 0://0 0 0 â€“ value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 1://0 0 1 ¨C value is incremented in multiples of 1 minute
+			case 1://0 0 1 â€“ value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 2://0 1 0 ¨C value is incremented in multiples of 6 minutes
+			case 2://0 1 0 â€“ value is incremented in multiples of 6 minutes
 				flag = 6*60;
 				break;
-			case 3://0 1 1 ¨C value indicates that the timer is deactivated
+			case 3://0 1 1 â€“ value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2461,28 +2477,28 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
 			{
-			case 0://0 0 0 ¨C value is incremented in multiples of 10 minutes
+			case 0://0 0 0 â€“ value is incremented in multiples of 10 minutes
 				flag = 10*60;
 				break;
-			case 1://0 0 1 ¨C value is incremented in multiples of 1 hour
+			case 1://0 0 1 â€“ value is incremented in multiples of 1 hour
 				flag = 60*60;
 				break;
-			case 2://0 1 0 ¨C value is incremented in multiples of 10 hours
+			case 2://0 1 0 â€“ value is incremented in multiples of 10 hours
 				flag = 10*60*60;
 				break;
-			case 3://0 1 1 ¨C value is incremented in multiples of 2 seconds
+			case 3://0 1 1 â€“ value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 4://1 0 0 ¨C value is incremented in multiples of 30 seconds
+			case 4://1 0 0 â€“ value is incremented in multiples of 30 seconds
 				flag = 30;
 				break;
-			case 5://1 0 1 ¨C value is incremented in multiples of 1 minute
+			case 5://1 0 1 â€“ value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 6://1 1 0 ¨C value is incremented in multiples of 320 hours
+			case 6://1 1 0 â€“ value is incremented in multiples of 320 hours
 				flag = 320*60*60;
 				break;
-			case 7://1 1 1 ¨C value indicates that the timer is deactivated
+			case 7://1 1 1 â€“ value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2501,16 +2517,16 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			tau = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(tau>>5)
 			{
-			case 0://0 0 0 ¨C value is incremented in multiples of 2 seconds
+			case 0://0 0 0 â€“ value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 1://0 0 1 ¨C value is incremented in multiples of 1 minute
+			case 1://0 0 1 â€“ value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 2://0 1 0 ¨C value is incremented in multiples of 6 minute
+			case 2://0 1 0 â€“ value is incremented in multiples of 6 minute
 				flag = 6*60;
 				break;
-			case 7://1 1 1 ¨C value indicates that the timer is deactivated
+			case 7://1 1 1 â€“ value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2584,7 +2600,7 @@ void SetNetWorkParaByPlmn(uint8_t *imsi)
 
 void GetModemInfor(void)
 {
-	static uint8_t count = 1;
+	static uint8_t count = 3;
 	uint8_t tmpbuf[256] = {0};
 
 	if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), CMD_GET_MODEM_V) == 0)
@@ -2632,7 +2648,7 @@ void GetModemInfor(void)
 		}
 	}
 
-#if 0	//xb add 2023.07.25 Íâ¹úÎŞĞÅºÅ¿¨²âÊÔ£¬ÔÚ·¢Éä¶Ë(DK°å»òÕßÁíÍâÒ»¿éÊÖ±íÉÏµ÷ÓÃ
+#if 0	//xb add 2023.07.25 å¤–å›½æ— ä¿¡å·å¡æµ‹è¯•ï¼Œåœ¨å‘å°„ç«¯(DKæ¿æˆ–è€…å¦å¤–ä¸€å—æ‰‹è¡¨ä¸Šè°ƒç”¨
 	{
         if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%XRFTEST=1,1,20,8470,23,0,3,12,0,0,0,0,0") == 0)
         {
@@ -2881,7 +2897,7 @@ static void modem_link_init(struct k_work *work)
 	GetModemInfor();
 	SetModemTurnOff();
 
-	//k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
+	k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
 }
 
 static void modem_on(struct k_work *work)
@@ -2988,15 +3004,15 @@ static void nb_link(struct k_work *work)
 			nb_connected = false;
 
 			net_retry_count++;
-			if(net_retry_count <= 2)		//2´ÎÒÔÄÚÃ¿1·ÖÖÓÖØÁ¬Ò»´Î
+			if(net_retry_count <= 2)		//2æ¬¡ä»¥å†…æ¯1åˆ†é’Ÿé‡è¿ä¸€æ¬¡
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-			else if(net_retry_count <= 4)	//3µ½4´ÎÃ¿5·ÖÖÓÖØÁ¬Ò»´Î
+			else if(net_retry_count <= 4)	//3åˆ°4æ¬¡æ¯5åˆ†é’Ÿé‡è¿ä¸€æ¬¡
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-			else if(net_retry_count <= 6)	//5µ½6´ÎÃ¿10·ÖÖÓÖØÁ¬Ò»´Î
+			else if(net_retry_count <= 6)	//5åˆ°6æ¬¡æ¯10åˆ†é’Ÿé‡è¿ä¸€æ¬¡
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(net_retry_count <= 8)	//7µ½8´ÎÃ¿1Ğ¡Ê±ÖØÁ¬Ò»´Î
+			else if(net_retry_count <= 8)	//7åˆ°8æ¬¡æ¯1å°æ—¶é‡è¿ä¸€æ¬¡
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-			else							//8´ÎÒÔÉÏÃ¿6Ğ¡Ê±ÖØÁ¬Ò»´Î
+			else							//8æ¬¡ä»¥ä¸Šæ¯6å°æ—¶é‡è¿ä¸€æ¬¡
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 		}
 		else

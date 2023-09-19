@@ -132,6 +132,15 @@ static int32_t platform_read_word(uint16_t reg, uint8_t *bufp, uint16_t len)
 	return rslt;
 }
 
+static void tp_reset(void)
+{
+	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ctp, TP_RESET, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_set(gpio_ctp, TP_RESET, 1);
+	k_sleep(K_MSEC(50));
+}
+
 static int cst816s_enter_bootmode(void)
 {
 	uint8_t retryCnt = 50;
@@ -171,6 +180,9 @@ static int cst816s_update(uint16_t startAddr, uint16_t len, unsigned char *src)
 	uint8_t cmd[10] = {0};
 	uint32_t sum_len = 0;
 	uint32_t i,k_data=0,b_data=0;
+
+	if(cst816s_enter_bootmode() == -1)
+		return -1;
 
 	sum_len = 0;
 	k_data=len/PER_LEN;
@@ -286,6 +298,8 @@ bool ctp_hynitron_update(void)
 
 			LCD_ShowString(20,180,"complete update!");
 		}
+
+		tp_reset();
 
 		return true;
 	}
@@ -597,7 +611,7 @@ void tp_interrupt_proc(void)
 	platform_read(TP_REG_FINGER_NUM, &tp_temp[1], 1);//手指个数
 	platform_read(TP_REG_XPOS_H, &tp_temp[2], 1);//x坐标高位 (&0x0f,取低4位)
 	platform_read(TP_REG_XPOS_L, &tp_temp[3], 1);//x坐标低位
-	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
+	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标高位 (&0x0f,取低4位)
 	platform_read(TP_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
 #ifdef TP_DEBUG
@@ -692,11 +706,7 @@ void tp_init(void)
 	gpio_add_callback(gpio_ctp, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_EDGE_FALLING);
 
-	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ctp, TP_RESET, 0);
-	k_sleep(K_MSEC(10));
-	gpio_pin_set(gpio_ctp, TP_RESET, 1);
-	k_sleep(K_MSEC(50));
+	tp_reset();
 
 	tp_get_id(&tp_chip_id, &tp_fw_ver);
 	switch(tp_chip_id)
@@ -709,7 +719,11 @@ void tp_init(void)
 		break;
 
 	case TP_CST816T:
-		if(tp_fw_ver < 0x04)
+	#ifdef YKL_CST816T	
+		if(tp_fw_ver < 0x02)
+	#elif defined(ORC_CST816T)
+		if(tp_fw_ver < 0x05)
+	#endif
 		{
 			ctp_hynitron_update();
 		}
@@ -725,13 +739,18 @@ void test_tp(void)
 	uint16_t w,h;
 	uint8_t tmpbuf[128] = {0};
 
-	sprintf(tmpbuf, "TP_TEST");
-	
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf, "TP_TEST");
 	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2,20,tmpbuf);
+#else
+	sprintf(tmpbuf, "TP_TEST");
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
-
-	tp_init();
+#endif	
+	//tp_init();
 }
 #endif
 

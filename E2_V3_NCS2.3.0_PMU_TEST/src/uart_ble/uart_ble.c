@@ -50,7 +50,7 @@
 #define BLE_INT_PIN		27
 #define BLE_WAKE_PIN	25
 
-#define BUF_MAXSIZE	1024
+#define BUF_MAXSIZE	2048
 
 #define PACKET_HEAD	0xAB
 #define PACKET_END	0x88
@@ -121,7 +121,6 @@ static ENUM_BLE_WORK_MODE ble_work_mode=BLE_WORK_NORMAL;
 static uint32_t rece_len=0;
 static uint32_t send_len=0;
 static uint8_t rx_buf[BUF_MAXSIZE]={0};
-static uint8_t tx_buf[BUF_MAXSIZE]={0};
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
@@ -1360,39 +1359,6 @@ void MCU_get_ble_status(void)
 	BleSendData(reply, reply_len);
 }
 
-//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
-void MCU_set_ble_work_mode(uint8_t work_mode)
-{
-	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
-
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
-
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x06;
-	//data ID
-	reply[reply_len++] = (SET_BEL_WORK_MODE_ID>>8);		
-	reply[reply_len++] = (uint8_t)(SET_BEL_WORK_MODE_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = work_mode;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-
-	BleSendData(reply, reply_len);	
-}
-
 //手环查找手机
 void MCU_send_find_phone(void)
 {
@@ -1755,6 +1721,39 @@ void MCU_get_ble_mac_address(void)
 	BleSendData(reply, reply_len);
 }
 
+//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
+void MCU_set_ble_work_mode(ENUM_BLE_MODE work_mode)
+{
+	uint8_t reply[128] = {0};
+	uint32_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x06;
+	//data ID
+	reply[reply_len++] = (SET_BEL_WORK_MODE_ID>>8);		
+	reply[reply_len++] = (uint8_t)(SET_BEL_WORK_MODE_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = work_mode;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);	
+}
+
 /**********************************************************************************
 *Name: ble_receive_data_handle
 *Function:  处理蓝牙接收到的数据
@@ -2049,10 +2048,13 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
+		if(rece_len >= BUF_MAXSIZE)
+			rece_len = 0;
+
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&uart_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+			k_timer_start(&uart_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
 		}
 	}
 	
@@ -2271,11 +2273,15 @@ void UartMsgProc(void)
 			MCU_get_ble_mac_address();
 			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
 			break;
-		#ifdef CONFIG_BLE_SUPPORT	
+	#ifdef CONFIG_BLE_SUPPORT	
 		case 2:
 			MCU_get_ble_status();
 			break;
-		#endif	
+	#else
+		//case 2:
+		//	MCU_set_ble_work_mode(BLE_MODE_TURN_OFF);
+		//	break;
+	#endif	
 		}
 
 		get_ble_info_flag = false;

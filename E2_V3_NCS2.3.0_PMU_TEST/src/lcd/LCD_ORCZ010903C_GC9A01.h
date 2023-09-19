@@ -30,12 +30,12 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define LCD_PORT	""
 #endif
 
-#define CS		22
+#define CS		23
 #define	RST		24
 #define	RS		21
-#define	SCL		28
-#define	SDA		29
-#define VDD		20
+#define	SCL		22
+#define	SDA		20
+#define VDD		18
 
 //LEDK(LED背光)
 #define LEDK	31

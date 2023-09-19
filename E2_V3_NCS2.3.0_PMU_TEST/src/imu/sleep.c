@@ -322,15 +322,15 @@ void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, 
 
 			if(save_flag)
 			{
-				last_sport.timestamp.year = date_time.year;
-				last_sport.timestamp.month = date_time.month; 
-				last_sport.timestamp.day = date_time.day;
-				last_sport.timestamp.hour = date_time.hour;
-				last_sport.timestamp.minute = date_time.minute;
-				last_sport.timestamp.second = date_time.second;
-				last_sport.timestamp.week = date_time.week;
-				last_sport.deep_sleep = g_deep_sleep;
-				last_sport.light_sleep = g_light_sleep;
+				last_sport.sleep_rec.timestamp.year = date_time.year;
+				last_sport.sleep_rec.timestamp.month = date_time.month; 
+				last_sport.sleep_rec.timestamp.day = date_time.day;
+				last_sport.sleep_rec.timestamp.hour = date_time.hour;
+				last_sport.sleep_rec.timestamp.minute = date_time.minute;
+				last_sport.sleep_rec.timestamp.second = date_time.second;
+				last_sport.sleep_rec.timestamp.week = date_time.week;
+				last_sport.sleep_rec.deep_sleep = g_deep_sleep;
+				last_sport.sleep_rec.light_sleep = g_light_sleep;
 				save_cur_sport_to_record(&last_sport);	
 			}
 		}	
@@ -374,15 +374,15 @@ void SleepDataReset(void)
 	g_light_sleep = 0;
 	g_deep_sleep = 0;
 
-	last_sport.timestamp.year = date_time.year;
-	last_sport.timestamp.month = date_time.month; 
-	last_sport.timestamp.day = date_time.day;
-	last_sport.timestamp.hour = date_time.hour;
-	last_sport.timestamp.minute = date_time.minute;
-	last_sport.timestamp.second = date_time.second;
-	last_sport.timestamp.week = date_time.week;
-	last_sport.deep_sleep = g_deep_sleep;
-	last_sport.light_sleep = g_light_sleep;
+	last_sport.sleep_rec.timestamp.year = date_time.year;
+	last_sport.sleep_rec.timestamp.month = date_time.month; 
+	last_sport.sleep_rec.timestamp.day = date_time.day;
+	last_sport.sleep_rec.timestamp.hour = date_time.hour;
+	last_sport.sleep_rec.timestamp.minute = date_time.minute;
+	last_sport.sleep_rec.timestamp.second = date_time.second;
+	last_sport.sleep_rec.timestamp.week = date_time.week;
+	last_sport.sleep_rec.deep_sleep = g_deep_sleep;
+	last_sport.sleep_rec.light_sleep = g_light_sleep;
 	save_cur_sport_to_record(&last_sport);		
 }
 
@@ -390,21 +390,21 @@ void SleepDataInit(bool reset_flag)
 {
 	bool flag = false;
 		
-	if((last_sport.timestamp.year == date_time.year)
-		&&(last_sport.timestamp.month == date_time.month)
-		&&(last_sport.timestamp.day == date_time.day)
+	if((last_sport.sleep_rec.timestamp.year == date_time.year)
+		&&(last_sport.sleep_rec.timestamp.month == date_time.month)
+		&&(last_sport.sleep_rec.timestamp.day == date_time.day)
 		)
 	{
 		//The last record and current time are on the same day
-		if(((date_time.hour >= SLEEP_TIME_START)&&(last_sport.timestamp.hour >= SLEEP_TIME_START))
-			||((date_time.hour < SLEEP_TIME_END)&&(last_sport.timestamp.hour < SLEEP_TIME_END))
+		if(((date_time.hour >= SLEEP_TIME_START)&&(last_sport.sleep_rec.timestamp.hour >= SLEEP_TIME_START))
+			||((date_time.hour < SLEEP_TIME_END)&&(last_sport.sleep_rec.timestamp.hour < SLEEP_TIME_END))
 			)
 		{
 			//in the same sleep period.
 			flag = true;
 		}
 		else if(((date_time.hour >= SLEEP_TIME_END)&&(date_time.hour < SLEEP_TIME_START))
-				||((last_sport.timestamp.hour >= SLEEP_TIME_END)&&(last_sport.timestamp.hour < SLEEP_TIME_START))
+				||((last_sport.sleep_rec.timestamp.hour >= SLEEP_TIME_END)&&(last_sport.sleep_rec.timestamp.hour < SLEEP_TIME_START))
 				)
 		{
 			//in the same non-sleep time period.
@@ -415,7 +415,7 @@ void SleepDataInit(bool reset_flag)
 	{
 		sys_date_timer_t timestamp;
 
-		memcpy(&timestamp, &last_sport.timestamp, sizeof(sys_date_timer_t));
+		memcpy(&timestamp, &last_sport.sleep_rec.timestamp, sizeof(sys_date_timer_t));
 		DateIncreaseOne(&timestamp);
 
 		if((timestamp.year == date_time.year)
@@ -446,8 +446,8 @@ void SleepDataInit(bool reset_flag)
 	{
 		if(flag)
 		{
-			last_light_sleep = last_sport.light_sleep;
-			last_deep_sleep = last_sport.deep_sleep;
+			last_light_sleep = last_sport.sleep_rec.light_sleep;
+			last_deep_sleep = last_sport.sleep_rec.deep_sleep;
 			g_light_sleep = last_light_sleep;
 			g_deep_sleep = last_deep_sleep; 	
 		}

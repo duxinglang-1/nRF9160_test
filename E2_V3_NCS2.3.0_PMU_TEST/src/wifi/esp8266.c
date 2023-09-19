@@ -41,7 +41,7 @@
 #endif
 
 #define WIFI_RETRY_COUNT_MAX	5
-#define BUF_MAXSIZE	1024
+#define BUF_MAXSIZE	2048
 
 #define WIFI_AUTO_OFF_TIME_SEC	(1)
 
@@ -52,7 +52,6 @@ static uint8_t retry = 0;
 static uint32_t rece_len=0;
 static uint32_t send_len=0;
 static uint8_t rx_buf[BUF_MAXSIZE]={0};
-static uint8_t tx_buf[BUF_MAXSIZE]={0};
 
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
@@ -80,7 +79,6 @@ bool uart_wifi_is_waked = true;
 uint8_t wifi_test_info[256] = {0};
 
 static bool app_wifi_on = false;
-static bool wifi_check_ok_flag = false;
 static bool wifi_on_flag = false;
 static bool wifi_off_flag = false;
 static bool test_wifi_flag = false;
@@ -220,7 +218,7 @@ void APP_Ask_wifi_data(void)
 #ifdef WIFI_DEBUG
 	LOGD("begin");
 #endif
-	if(!app_wifi_on && wifi_check_ok_flag)
+	if(!app_wifi_on)
 	{
 		if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
 			k_timer_stop(&wifi_turn_off_timer);
@@ -315,12 +313,7 @@ void wifi_enable(void)
 ==============================================================================*/
 void wifi_disable(void)
 {
-#if 0
 	gpio_pin_set(gpio_wifi, WIFI_EN_PIN, 0);
-#else
-	Send_Cmd_To_Esp8285(WIFI_SLEEP_CMD,30);
-	k_timer_start(&wifi_off_retry_timer, K_SECONDS(5), K_NO_WAIT);
-#endif
 }
 
 /*============================================================================
@@ -384,11 +377,9 @@ void wifi_turn_off(void)
 #endif
 	wifi_disable();
 
-#if 0
 	wifi_is_on = false;
 #ifdef CONFIG_PM_DEVICE	
 	uart_wifi_sleep_flag = true;
-#endif
 #endif
 }
 
@@ -474,7 +465,6 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 			}
 		}
 
-		wifi_check_ok_flag = true;
 		wifi_off_flag = true;
 		return;
 	}
@@ -775,10 +765,13 @@ static void uart_cb(struct device *x)
 
 	if(uart_irq_rx_ready(x)) 
 	{
+		if(rece_len >= BUF_MAXSIZE)
+			rece_len = 0;
+
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&wifi_rece_frame_timer, K_MSEC(5), K_NO_WAIT);
+			k_timer_start(&wifi_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
 		}
 	}
 	

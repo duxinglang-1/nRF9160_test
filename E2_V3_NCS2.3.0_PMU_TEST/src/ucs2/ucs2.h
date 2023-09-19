@@ -23,7 +23,10 @@ extern "C" {
 
 extern int32_t mmi_ucs2strlen(const uint8_t *arrOut);
 extern uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource);
+extern uint8_t *mmi_ucs2ncpy(uint8_t *strDestination, const uint8_t *strSource, uint32_t len);
+extern uint8_t *mmi_ucs2smartcpy(uint8_t *strDestination, const uint8_t *strSource, uint32_t maxlen);
 extern uint8_t *mmi_ucs2cat(uint8_t *strDestination, const uint8_t *strSource);
+extern uint8_t *mmi_ucs2ncat(uint8_t *strDestination, const uint8_t *strSource, uint32_t len);
 extern int32_t mmi_ucs2cmp(const uint8_t *string1, const uint8_t *string2);
 extern uint8_t *mmi_ucs2chr(const uint8_t *strSrc, uint16_t c);
 extern uint8_t *mmi_ucs2str(const uint8_t *str1, const uint8_t *str2);

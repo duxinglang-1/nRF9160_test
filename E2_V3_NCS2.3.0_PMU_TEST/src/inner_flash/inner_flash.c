@@ -278,7 +278,7 @@ void clear_cur_health_in_record(void)
 	clear_current_data_in_record(RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 void clear_cur_sport_in_record(void)
 {
 	memset(&last_sport, 0, sizeof(last_sport));
@@ -349,7 +349,7 @@ bool save_cur_health_to_record(health_record_t *health_data)
 	return save_current_data_to_record(health_data, RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 bool save_cur_sport_to_record(sport_record_t *sport_data)
 {
 	return save_current_data_to_record(sport_data, RECORD_TYPE_SPORT);
@@ -418,7 +418,7 @@ bool get_cur_health_from_record(health_record_t *health_data)
 	return get_current_data_from_record(health_data, RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 bool get_cur_sport_from_record(sport_record_t *sport_data)
 {
 	return get_current_data_from_record(sport_data, RECORD_TYPE_SPORT);
@@ -627,7 +627,7 @@ void clear_health_in_record(void)
 	clear_data_in_record(RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 void clear_sport_in_record(void)
 {
 	clear_data_in_record(RECORD_TYPE_SPORT);

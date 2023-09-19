@@ -69,9 +69,9 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(SPIM_SCK,  0, 28)>,
-							<NRF_PSEL(SPIM_MOSI, 0, 29)>,
-							<NRF_PSEL(SPIM_MISO, 0, 30)>;
+			psels = <NRF_PSEL(SPIM_SCK,  0, 22)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 20)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
 		};
 	};
 
@@ -79,9 +79,9 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(SPIM_SCK,  0, 28)>,
-							<NRF_PSEL(SPIM_MOSI, 0, 29)>,
-							<NRF_PSEL(SPIM_MISO, 0, 30)>;
+			psels = <NRF_PSEL(SPIM_SCK,  0, 22)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 20)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
 			low-power-enable;
 		};
 	};
@@ -90,8 +90,8 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(TWIM_SDA, 0, 1)>,
-							<NRF_PSEL(TWIM_SCL, 0, 0)>;
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+							<NRF_PSEL(TWIM_SCL, 0, 31)>;
 		};
 	};
 
@@ -99,8 +99,8 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(TWIM_SDA, 0, 1)>,
-							<NRF_PSEL(TWIM_SCL, 0, 0)>;
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+							<NRF_PSEL(TWIM_SCL, 0, 31)>;
 			low-power-enable;
 		};
 	};
@@ -143,7 +143,7 @@
 
 &i2c1{
 	compatible = "nordic,nrf-twim";
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
@@ -157,10 +157,5 @@
 
 &interface_to_nrf52840{
 	compatible = "nordic,nrf9160dk-nrf52840-interface";
-	status = "disabled";
-};
-
-&arduino_header{
-	compatible = "arduino-header-r3";
 	status = "disabled";
 };

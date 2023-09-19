@@ -10,7 +10,17 @@
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	10
-#define MENU_NAME_MAX	20
+#define MENU_NAME_MAX	25
+#define MENU_NAME_STR_MAX	13
+#define MENU_OPT_STR_MAX	7
+#define MENU_NOTIFY_STR_MAX	28
+
+#define VERSION_STR	"V3.3.3_20230915"
+#ifdef FW_FOR_CN
+#define LANG_BRANCH	"_BC"
+#else
+#define LANG_BRANCH	"_BU"
+#endif
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
@@ -35,9 +45,18 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_EN,	//English
-	LANGUAGE_DE,	//Deutsch
-	LANGUAGE_CHN,	//Chinese
+	LANGUAGE_BEGIN,
+#ifndef FW_FOR_CN
+	LANGUAGE_EN = LANGUAGE_BEGIN,	//English
+	LANGUAGE_DE,					//Deutsch
+	LANGUAGE_FR,					//French
+	LANGUAGE_ITA,					//Italian
+	LANGUAGE_ES,					//Spanish
+	LANGUAGE_PT,					//Portuguese
+#else
+	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
+	LANGUAGE_EN,					//English
+#endif	
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 

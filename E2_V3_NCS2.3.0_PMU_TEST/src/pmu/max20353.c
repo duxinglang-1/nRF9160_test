@@ -29,8 +29,8 @@
 #define PMU_DEV	""
 #endif
 
-#define PMU_SCL			0
-#define PMU_SDA			1
+#define PMU_SCL			31
+#define PMU_SDA			30
 
 #endif/*GPIO_ACT_I2C*/
 
@@ -397,16 +397,16 @@ void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(0, (20*level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(0, (20*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED0(0, (14*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (14*level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(0, (20*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(0, (20*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED0(0, (14*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (14*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_Off(void)
@@ -664,6 +664,10 @@ void pmu_status_update(void)
 	#endif
 		if(g_bat_soc > 100)
 			g_bat_soc = 100;
+
+		if(g_bat_soc >= 95 && g_chg_status == BAT_CHARGING_FINISHED)
+			g_bat_soc = 100;
+		
 		last_bat_soc = g_bat_soc;
 		g_bat_level = BAT_LEVEL_NORMAL;
 	#endif
@@ -1139,8 +1143,6 @@ void pmu_init(void)
 #ifdef PMU_DEBUG
 	LOGD("pmu_init done!");
 #endif
-
-	test_soc();
 }
 
 void test_pmu(void)
@@ -1213,15 +1215,15 @@ void test_soc_status(void)
 	MAX20353_ReadReg(REG_STATUS0, &Status0);
 	Status0 = Status0&0x07;
 
-#if 1//def PMU_DEBUG	
-	sprintf(strbuf, "%02d/%02d/%04d-%02d:%02d:%02d %2.3f,%3.8f,0x%02X,%1.5f,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,%d", 
+#ifdef PMU_DEBUG	
+	sprintf(strbuf, "%02d/%02d/%04d-%02d:%02d:%02d %2.3f,%3.8f,0x%02X,%1.5f,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,0x%04X,%d\n", 
 				date_time.day,date_time.month,date_time.year,date_time.hour,date_time.minute,date_time.second,
 				(float)VCell/1000, (float)SOC/256.0,
 				RCOMP,
 				(float)CRate/1000/100,
 				MODE, Version, HIBRT, Config, Status, VALRT, VReset, CMD, OCV, Status0);
 
-	LOGM("%s", strbuf);
+	LOGD("%s", strbuf);
 #endif
 }
 
@@ -1232,7 +1234,7 @@ void test_soc_timerout(struct k_timer *timer_id)
 
 void test_soc(void)
 {
-	k_timer_start(&soc_timer, K_MSEC(60*1000), K_MSEC(60*1000));
+	k_timer_start(&soc_timer, K_MSEC(10*1000), K_MSEC(15*1000));
 }
 #endif/*BATTERY_SOC_GAUGE*/
 
@@ -1298,7 +1300,7 @@ void PMUMsgProcess(void)
 
 	if(lowbat_pwr_off_flag)
 	{
-		//system_power_off(1);
+		system_power_off(1);
 		lowbat_pwr_off_flag = false;
 	}
 	

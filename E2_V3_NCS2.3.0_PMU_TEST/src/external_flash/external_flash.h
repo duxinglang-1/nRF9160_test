@@ -29,10 +29,10 @@
 #endif
  
 #define FLASH_NAME 		"W25Q64FW"
-#define FLASH_CS_PIN		(31)
-#define FLASH_CLK_PIN		(28)
-#define FLASH_MOSI_PIN		(29)
-#define FLASH_MISO_PIN		(30)
+#define FLASH_CS_PIN		(2)
+#define FLASH_CLK_PIN		(22)
+#define FLASH_MOSI_PIN		(20)
+#define FLASH_MISO_PIN		(5)
 
 //W25Q64 ID
 #define	W25Q64_ID	0XEF16

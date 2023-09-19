@@ -470,17 +470,10 @@ void ExecKeyHandler(uint8_t keycode, uint8_t keytype)
 bool is_wearing(void)
 {
 #ifdef CONFIG_WRIST_CHECK_SUPPORT
-	if(charger_is_connected)
-	{
-		return false;
-	}
+	if(global_settings.wrist_off_check)
+		return touch_flag;
 	else
-	{
-		if(global_settings.wrist_off_check)
-			return touch_flag;
-		else
-			return true;
-	}
+		return true;
 #else
 	return true;
 #endif

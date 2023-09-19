@@ -2135,7 +2135,7 @@ void SettingsUpdateStatus(void)
 			LCD_ReSetFontBgColor();
 			LCD_ReSetFontColor();
 
-		#if 0//def CONFIG_QRCODE_SUPPORT
+		#ifdef CONFIG_QRCODE_SUPPORT
 			show_QR_code(strlen(SETTINGS_CAREMATE_URL), SETTINGS_CAREMATE_URL);
 		#else
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);

@@ -532,12 +532,12 @@ void pmu_battery_update(void)
 		else
 			last_bat_soc = g_bat_soc;
 
-		if(g_bat_soc < 5)
+		if(g_bat_soc < 4)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			pmu_battery_low_shutdown();
 		}
-		else if(g_bat_soc < 10)
+		else if(g_bat_soc < 7)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
 		}
@@ -698,12 +698,12 @@ void pmu_status_update(void)
 		else
 			last_bat_soc = g_bat_soc;
 
-		if(g_bat_soc < 5)
+		if(g_bat_soc < 4)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			pmu_battery_low_shutdown();
 		}
-		else if(g_bat_soc < 20)
+		else if(g_bat_soc < 7)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
 		}
@@ -831,12 +831,12 @@ bool pmu_interrupt_proc(void)
 			if(g_bat_soc > last_bat_soc)
 				g_bat_soc = last_bat_soc;
 			
-			if(g_bat_soc < 5)
+			if(g_bat_soc < 4)
 			{
 				g_bat_level = BAT_LEVEL_VERY_LOW;
 				pmu_battery_low_shutdown();
 			}
-			else if(g_bat_soc < 20)
+			else if(g_bat_soc < 7)
 			{
 				g_bat_level = BAT_LEVEL_LOW;
 			}
@@ -1027,11 +1027,11 @@ void MAX20353_InitData(void)
 
 		if(g_chg_status != BAT_CHARGING_PROGRESS)
 		{
-			if(g_bat_soc < 5)
+			if(g_bat_soc < 4)
 			{
 				g_bat_level = BAT_LEVEL_VERY_LOW;
 			}
-			else if(g_bat_soc < 20)
+			else if(g_bat_soc < 7)
 			{
 				g_bat_level = BAT_LEVEL_LOW;
 			}
@@ -1058,12 +1058,12 @@ void MAX20353_InitData(void)
 			g_bat_soc = 100;
 		last_bat_soc = g_bat_soc;
 
-		if(g_bat_soc < 5)
+		if(g_bat_soc < 4)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
 			pmu_battery_low_shutdown();
 		}
-		else if(g_bat_soc < 20)
+		else if(g_bat_soc < 7)
 		{
 			g_bat_level = BAT_LEVEL_LOW;
 		}

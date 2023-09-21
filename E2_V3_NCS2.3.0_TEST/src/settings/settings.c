@@ -680,13 +680,9 @@ void InitSystemSettings(void)
 
 	ReadSettingsFromInnerFlash(&global_settings);
 
-	if(!global_settings.init 
-		|| (global_settings.location_type < 1 || global_settings.location_type > 4)
-		|| (global_settings.language >= LANGUAGE_MAX)
-		)
+	if(!global_settings.init)
 	{
 		ResetInnerFlash();
-
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
 	}

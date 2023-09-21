@@ -447,7 +447,7 @@ void TempMsgProcess(void)
 
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) == TEMP_TRIGGER_BY_HOURLY)
 		{
-			k_timer_start(&temp_stop_timer, K_MSEC(TEMP_CHECK_TIMELY*60*1000), K_NO_WAIT);
+			k_timer_start(&temp_stop_timer, K_SECONDS(TEMP_CHECK_TIMELY), K_NO_WAIT);
 		}
 	#ifndef UI_STYLE_HEALTH_BAR	
 		else if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == TEMP_TRIGGER_BY_MENU)

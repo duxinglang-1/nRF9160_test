@@ -821,15 +821,15 @@ void StartSensorhubCallBack(void)
 		{
 			if(g_ppg_data == PPG_DATA_HR)
 			{
-				k_timer_start(&ppg_stop_timer, K_SECONDS(PPG_CHECK_HR_TIMELY), K_NO_WAIT);
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_HR_TIMELY*60*1000), K_NO_WAIT);
 			}
 			else if(g_ppg_data == PPG_DATA_SPO2)
 			{
-				k_timer_start(&ppg_stop_timer, K_SECONDS(PPG_CHECK_SPO2_TIMELY), K_NO_WAIT);
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_SPO2_TIMELY*60*1000), K_NO_WAIT);
 			}
 			else if(g_ppg_data == PPG_DATA_BPT)
 			{
-				k_timer_start(&ppg_stop_timer, K_SECONDS(PPG_CHECK_BPT_TIMELY), K_NO_WAIT);
+				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), K_NO_WAIT);
 			}
 		}
 	#ifndef UI_STYLE_HEALTH_BAR	
@@ -1985,14 +1985,12 @@ void PPGStopCheck(void)
 		{
 		case PPG_DATA_HR:
 			SetCurDayHrRecData(g_hr);
-			TimerStartBpt();
-			break;
-		case PPG_DATA_BPT:
-			SetCurDayBptRecData(g_bpt);
-			TimerStartSpo2();
 			break;
 		case PPG_DATA_SPO2:
 			SetCurDaySpo2RecData(g_spo2);
+			break;
+		case PPG_DATA_BPT:
+			SetCurDayBptRecData(g_bpt);
 			break;
 		}
 	}

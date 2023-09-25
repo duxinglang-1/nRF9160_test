@@ -518,15 +518,23 @@ void UpdateSystemTime(void)
 			if(check_flag == true)
 			{
 			#ifdef CONFIG_TEMP_SUPPORT
-				if(date_time.minute == 55)
+				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY+1+TEMP_CHECK_TIMELY))
 				{	
 					TimerStartTemp();
 				}
 			#endif
 			#ifdef CONFIG_PPG_SUPPORT
-				if(date_time.minute == 56)
+				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY))
 				{
 					TimerStartHr();
+				}
+				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY))
+				{
+					TimerStartBpt();
+				}
+				if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
+				{
+					TimerStartSpo2();
 				}
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}

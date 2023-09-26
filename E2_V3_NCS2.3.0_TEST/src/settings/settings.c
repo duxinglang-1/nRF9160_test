@@ -706,7 +706,8 @@ void InitSystemSettings(void)
 
 void ResetFactoryDefault(void)
 {
-	ResetInnerFlash();
+	ResetSystemTime();
+	ResetSystemSettings();
 
 	clear_cur_local_in_record();
 	clear_local_in_record();	

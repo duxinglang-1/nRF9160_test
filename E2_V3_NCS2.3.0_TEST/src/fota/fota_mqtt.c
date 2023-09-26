@@ -20,6 +20,7 @@
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
+#include "settings.h"
 #include "nb.h"
 #include "external_flash.h"
 #include "fota_mqtt.h"

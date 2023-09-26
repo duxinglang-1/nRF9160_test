@@ -85,7 +85,7 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
 {
-	true,					//system inited flag
+	SETTINGS_STATUS_NORMAL,	//status flag
 	false,					//heart rate turn on
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
@@ -680,11 +680,21 @@ void InitSystemSettings(void)
 
 	ReadSettingsFromInnerFlash(&global_settings);
 
-	if(!global_settings.init)
+	switch(global_settings.flag)
 	{
+	case SETTINGS_STATUS_INIT:
 		ResetInnerFlash();
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
+		break;
+
+	case SETTINGS_STATUS_OTA:
+		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
+		SaveSystemSettings();
+		break;
+		
+	case SETTINGS_STATUS_NORMAL:
+		break;		
 	}
 
 	InitSystemDateTime();

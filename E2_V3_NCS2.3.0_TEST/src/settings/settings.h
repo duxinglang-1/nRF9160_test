@@ -122,6 +122,14 @@ typedef enum
 	RESET_STATUS_MAX
 }RESET_STATUS;
 
+typedef enum
+{
+	SETTINGS_STATUS_INIT,
+	SETTINGS_STATUS_OTA,
+	SETTINGS_STATUS_NORMAL,
+	RESET_STATUS_MAX
+}SETTINGS_STATUS;
+
 typedef struct
 {
 	MENU_ID id;
@@ -160,10 +168,10 @@ typedef struct
 
 typedef struct
 {
-	bool init;		//system inited flag
-	bool hr_is_on;	//heart rate
-	bool bp_is_on;	//blood pressure
-	bool bo_is_on;	//blood oxygen
+	SETTINGS_STATUS flag;
+	bool hr_is_on;					//heart rate
+	bool bp_is_on;					//blood pressure
+	bool bo_is_on;					//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
 	uint8_t location_type;	//1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi

@@ -151,103 +151,80 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 	return index;
 }
 
-void DateIncreaseOne(sys_date_timer_t *date)
+int DateCompare(sys_date_timer_t date1, sys_date_timer_t date2)
 {
-	(*date).day++;
-	if((*date).month == 1 \
-	|| (*date).month == 3 \
-	|| (*date).month == 5 \
-	|| (*date).month == 7 \
-	|| (*date).month == 8 \
-	|| (*date).month == 10 \
-	|| (*date).month == 12)
-	{
-		if((*date).day > 31)
-		{
-			(*date).day = 1;
-			(*date).month++;
-			if((*date).month > 12)
-			{
-				(*date).month = 1;
-				(*date).year++;
-			}
-		}
-	}
-	else if((*date).month == 4 \
-		|| (*date).month == 6 \
-		|| (*date).month == 9 \
-		|| (*date).month == 11)
-	{
-		if((*date).day > 30)
-		{
-			(*date).day = 1;
-			(*date).month++;
-			if((*date).month > 12)
-			{
-				(*date).month = 1;
-				(*date).year++;
-			}
-		}
-	}
-	else
-	{
-		uint8_t Leap = 0;
+	uint8_t date1buf[128] = {0};
+	uint8_t date2buf[128] = {0};
 
-		if(CheckYearIsLeap((*date).year))
-			Leap = 1;
-		
-		if((*date).day > (28+Leap))
-		{
-			(*date).day = 1;
-			(*date).month++;
-			if((*date).month > 12)
-			{
-				(*date).month = 1;
-				(*date).year++;
-			}
-		}
-	}	
+	sprintf(date1buf, "%04d%02d%02d%02d%02d%02d",
+							date1.year,
+							date1.month,
+							date1.day,
+							date1.hour,
+							date1.minute,
+							date1.second
+							);
+	
+	sprintf(date2buf, "%04d%02d%02d%02d%02d%02d",
+							date2.year,
+							date2.month,
+							date2.day,
+							date2.hour,
+							date2.minute,
+							date2.second
+							);
 
-	(*date).week = GetWeekDayByDate((*date));
-
-	if(screen_id == SCREEN_ID_IDLE)
-		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+	return strcmp(date1buf, date2buf);
 }
 
-void DateDecreaseOne(sys_date_timer_t *date)
+void DateIncrease(sys_date_timer_t *date, uint32_t days)
 {
-	if((*date).day > 1)
-	{
-		(*date).day--;
-	}
-	else
+	(*date).day += days;
+
+	while(1)
 	{
 		if((*date).month == 1 \
-		|| (*date).month == 2 \
-		|| (*date).month == 4 \
-		|| (*date).month == 6 \
+		|| (*date).month == 3 \
+		|| (*date).month == 5 \
+		|| (*date).month == 7 \
 		|| (*date).month == 8 \
-		|| (*date).month == 9 \
-		|| (*date).month == 11)
+		|| (*date).month == 10 \
+		|| (*date).month == 12)
 		{
-			(*date).day = 31;
-			if((*date).month == 1)
+			if((*date).day > 31)
 			{
-				(*date).year--;
-				(*date).month = 12;
+				(*date).day -= 31;
+				(*date).month++;
+				if((*date).month > 12)
+				{
+					(*date).month = 1;
+					(*date).year++;
+				}
 			}
 			else
 			{
-				(*date).month--;
+				break;
 			}
 		}
-		else if((*date).month == 5 \
-			|| (*date).month == 7 \
-			|| (*date).month == 10 \
-			|| (*date).month == 12)
+		else if((*date).month == 4 \
+			|| (*date).month == 6 \
+			|| (*date).month == 9 \
+			|| (*date).month == 11)
 		{
-			(*date).day = 30;
-			(*date).month--;
+			if((*date).day > 30)
+			{
+				(*date).day -= 30;
+				(*date).month++;
+				if((*date).month > 12)
+				{
+					(*date).month = 1;
+					(*date).year++;
+				}
+			}
+			else
+			{
+				break;
+			}
 		}
 		else
 		{
@@ -255,10 +232,108 @@ void DateDecreaseOne(sys_date_timer_t *date)
 
 			if(CheckYearIsLeap((*date).year))
 				Leap = 1;
+			
+			if((*date).day > (28+Leap))
+			{
+				(*date).day -= (28+Leap);
+				(*date).month++;
+				if((*date).month > 12)
+				{
+					(*date).month = 1;
+					(*date).year++;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}	
+	}
 
-			(*date).day = (28+Leap);
-			(*date).month--;
-		}			
+	(*date).week = GetWeekDayByDate((*date));
+
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+}
+
+void DateDecrease(sys_date_timer_t *date, uint32_t days)
+{
+	if((*date).day > days)
+	{
+		(*date).day -= days;
+	}
+	else
+	{
+		while(1)
+		{
+			if((*date).month == 1 \
+			|| (*date).month == 2 \
+			|| (*date).month == 4 \
+			|| (*date).month == 6 \
+			|| (*date).month == 8 \
+			|| (*date).month == 9 \
+			|| (*date).month == 11)
+			{
+				if((*date).month == 1)
+				{
+					(*date).year--;
+					(*date).month = 12;
+				}
+				else
+				{
+					(*date).month--;
+				}
+
+				(*date).day += 31;
+				if((*date).day > days)
+				{
+					(*date).day -= days;
+					break;
+				}
+				else
+				{
+					days -= (*date).day;
+				}
+			}
+			else if((*date).month == 5 \
+				|| (*date).month == 7 \
+				|| (*date).month == 10 \
+				|| (*date).month == 12)
+			{
+				(*date).month--;
+
+				(*date).day += 30;
+				if((*date).day > days)
+				{
+					(*date).day -= days;
+					break;
+				}
+				else
+				{
+					days -= (*date).day;
+				}
+			}
+			else
+			{
+				uint8_t Leap = 0;
+
+				if(CheckYearIsLeap((*date).year))
+					Leap = 1;
+
+				(*date).month--;
+				
+				(*date).day += (28+Leap);
+				if((*date).day > days)
+				{
+					(*date).day -= days;
+					break;
+				}
+				else
+				{
+					days -= (*date).day;
+				}
+			}	
+		}		
 	}
 
 	(*date).week = GetWeekDayByDate((*date));
@@ -293,10 +368,9 @@ void TimeIncrease(sys_date_timer_t *date, uint32_t minutes)
 		day_add++;
 	}	
 	
-	while(day_add>0)
+	if(day_add > 0)
 	{
-		DateIncreaseOne(date);
-		day_add--;
+		DateIncrease(date, day_add);
 	}
 
 	(*date).week = GetWeekDayByDate((*date));
@@ -333,10 +407,9 @@ void TimeDecrease(sys_date_timer_t *date, uint32_t minutes)
 		day_dec++;
 	}
 	
-	while(day_dec>0)
+	if(day_dec > 0)
 	{
-		DateDecreaseOne(date);
-		day_dec--;
+		DateDecrease(date, day_dec);
 	}
 
 	(*date).week = GetWeekDayByDate((*date));

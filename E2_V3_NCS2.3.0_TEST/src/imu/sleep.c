@@ -416,7 +416,7 @@ void SleepDataInit(bool reset_flag)
 		sys_date_timer_t timestamp;
 
 		memcpy(&timestamp, &last_sport.sleep_rec.timestamp, sizeof(sys_date_timer_t));
-		DateIncreaseOne(&timestamp);
+		DateIncrease(&timestamp, 1);
 
 		if((timestamp.year == date_time.year)
 			&&(timestamp.month == date_time.month)

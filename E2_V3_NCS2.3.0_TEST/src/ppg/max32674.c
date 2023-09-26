@@ -2100,25 +2100,22 @@ void PPG_init(void)
 	LOGD("PPG_init");
 #endif
 
+	//Display the last record within 7 days.
 	get_cur_health_from_record(&last_health);
-	if((last_health.hr_rec.timestamp.year == date_time.year)
-		&&(last_health.hr_rec.timestamp.month == date_time.month)
-		&&(last_health.hr_rec.timestamp.day == date_time.day)
-		)
+	DateIncrease(&last_health.hr_rec.timestamp, 7);
+	if(DateCompare(last_health.hr_rec.timestamp, date_time) > 0)
 	{
 		g_hr = last_health.hr_rec.hr;
 	}
-	if((last_health.spo2_rec.timestamp.year == date_time.year)
-		&&(last_health.spo2_rec.timestamp.month == date_time.month)
-		&&(last_health.spo2_rec.timestamp.day == date_time.day)
-		)
+
+	DateIncrease(&last_health.spo2_rec.timestamp, 7);
+	if(DateCompare(last_health.spo2_rec.timestamp, date_time) > 0)
 	{
 		g_spo2 = last_health.spo2_rec.spo2;
 	}
-	if((last_health.bpt_rec.timestamp.year == date_time.year)
-		&&(last_health.bpt_rec.timestamp.month == date_time.month)
-		&&(last_health.bpt_rec.timestamp.day == date_time.day)
-		)
+
+	DateIncrease(&last_health.bpt_rec.timestamp, 7);
+	if(DateCompare(last_health.bpt_rec.timestamp, date_time) > 0)
 	{
 		g_bpt.systolic = last_health.bpt_rec.systolic;
 		g_bpt.diastolic = last_health.bpt_rec.diastolic;

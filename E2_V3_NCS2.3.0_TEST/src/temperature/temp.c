@@ -373,11 +373,10 @@ void FTStopTemp(void)
 
 void temp_init(void)
 {
+	//Display the last record within 7 days.
 	get_cur_health_from_record(&last_health);
-	if((last_health.temp_rec.timestamp.year == date_time.year)
-		&&(last_health.temp_rec.timestamp.month == date_time.month)
-		&&(last_health.temp_rec.timestamp.day == date_time.day)
-		)
+	DateIncrease(&last_health.temp_rec.timestamp, 7);
+	if(DateCompare(last_health.temp_rec.timestamp, date_time) > 0)
 	{
 		g_temp_body = (float)(last_health.temp_rec.deca_temp/10.0);
 	}

@@ -397,16 +397,16 @@ void Set_Screen_Backlight_Level(BACKLIGHT_LEVEL level)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(0, (14*level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(0, (14*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED0(0, (10*level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (10*level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_On(void)
 {
 	int ret = 0;
 
-	ret = MAX20353_LED0(0, (14*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
-	ret = MAX20353_LED1(0, (14*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED0(0, (10*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
+	ret = MAX20353_LED1(0, (10*global_settings.backlight_level)/BACKLIGHT_LEVEL_MAX, true);
 }
 
 void Set_Screen_Backlight_Off(void)

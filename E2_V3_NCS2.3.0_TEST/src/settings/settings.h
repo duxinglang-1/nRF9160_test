@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	7
 #define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.3.3_20230925"
+#define VERSION_STR	"V3.3.3_20230926"
 #ifdef FW_FOR_CN
 #define LANG_BRANCH	"_BC"
 #else

@@ -72,7 +72,7 @@ typedef enum
 	TRIGGER_BY_APP			=	0x04,
 	TRIGGER_BY_HOURLY		=	0x08,
 	TRIGGER_BY_FT			=	0x10,
-}PPG_TARGGER_SOUCE;
+}PPG_TRIGGER_SOURCE;
 
 typedef enum
 {

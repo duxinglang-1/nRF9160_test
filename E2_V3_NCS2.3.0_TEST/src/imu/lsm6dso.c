@@ -1,10 +1,3 @@
-/*
-Last Update: 9/03/2022 by Zabdiel
-ULTRA LOW POWER AND INACTIVITY MODE
--Functions: wrist tilt detection, step counter
--Fall detection disabled
--26Hz data rate
-*/
 #ifdef CONFIG_IMU_SUPPORT
 
 #include <nrf9160.h>

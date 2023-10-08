@@ -499,6 +499,14 @@ void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 }
 #endif
 
+uint8_t IMU_GetID(void)
+{
+	uint8_t sensor_id = 0;
+	
+	lsm6dso_device_id_get(&imu_dev_ctx, &sensor_id);
+	return sensor_id;
+}
+
 void IMU_init(struct k_work_q *work_q)
 {
 #ifdef IMU_DEBUG

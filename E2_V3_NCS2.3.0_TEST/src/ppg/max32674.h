@@ -175,13 +175,6 @@ extern void SetCurDaySpo2RecData(uint8_t spo2);
 extern void GetCurDaySpo2RecData(uint8_t *databuf);
 extern void SetCurDayHrRecData(uint8_t hr);
 extern void GetCurDayHrRecData(uint8_t *databuf);
-extern void APPStartHr(void);
-extern void APPStartSpo2(void);
-extern void APPStartBpt(void);
-extern void APPStartEcg(void);
-extern void TimerStartHr(void);
-extern void TimerStartSpo2(void);
-extern void TimerStartBpt(void);
-extern void TimerStartEcg(void);
+extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
 
 #endif/*__MAX32674_H__*/

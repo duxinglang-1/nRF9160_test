@@ -285,59 +285,47 @@ void TempRedrawData(void)
 	}
 }
 
-void TimerStartTemp(void)
+void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 {
-	g_temp_skin = 0.0;
-	g_temp_body = 0.0;
-	g_temp_menu = 0.0;
-	get_temp_ok_flag = false;
+	notify_infor infor = {0};
+			
+	infor.x = 0;
+	infor.y = 0;
+	infor.w = LCD_WIDTH;
+	infor.h = LCD_HEIGHT;
+	infor.align = NOTIFY_ALIGN_CENTER;
+	infor.type = NOTIFY_TYPE_POPUP;
 
-	if(is_wearing())
+	switch(trigger_type)
 	{
-		g_temp_trigger |= TEMP_TRIGGER_BY_HOURLY;
-		temp_start_flag = true;
-	}
-}
-
-void APPStartTemp(void)
-{
-	g_temp_skin = 0.0;
-	g_temp_body = 0.0;
-	get_temp_ok_flag = false;
-
-	if(is_wearing())
-	{
-		g_temp_trigger |= TEMP_TRIGGER_BY_APP;
-		temp_start_flag = true;
-	}
-}
-
-void MenuTriggerTemp(void)
-{
-	if(!is_wearing())
-	{
-		notify_infor infor = {0};
+	case TEMP_TRIGGER_BY_HOURLY:
+	case TEMP_TRIGGER_BY_APP:
+	case TEMP_TRIGGER_BY_FT:
+		if(!is_wearing())
+		{
+			return;
+		}
+		break;
 		
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
+	case TEMP_TRIGGER_BY_MENU:
+		if(!is_wearing())
+		{
+			infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+			infor.img_count = 1;
 
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
+			DisplayPopUp(infor);
+			return;
+		}
 
-		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-		infor.img_count = 1;
-
-		DisplayPopUp(infor);
-		
-		return;
+		g_temp_menu = 0.0;
+		break;
 	}
 
+	g_temp_trigger |= trigger_type;
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
 	get_temp_ok_flag = false;
-	g_temp_trigger |= TEMP_TRIGGER_BY_MENU;
+
 	temp_start_flag = true;
 }
 
@@ -354,15 +342,7 @@ void MenuStopTemp(void)
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 void FTStartTemp(void)
 {
-	g_temp_trigger |= TEMP_TRIGGER_BY_FT;
-	
-	if(!TempIsWorking())
-	{
-		g_temp_skin = 0.0;
-		g_temp_body = 0.0;
-		get_temp_ok_flag = false;
-		temp_start_flag = true;
-	}
+	ft_start_temp = true;
 }
 
 void FTStopTemp(void)
@@ -427,8 +407,14 @@ void TempMsgProcess(void)
 
 	if(menu_start_temp)
 	{
-		MenuTriggerTemp();
+		StartTemp(TEMP_TRIGGER_BY_MENU);
 		menu_start_temp = false;
+	}
+
+	if(ft_start_temp)
+	{
+		StartTemp(TEMP_TRIGGER_BY_FT);
+		ft_start_temp = false;
 	}
 	
 	if(temp_start_flag)

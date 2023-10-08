@@ -631,8 +631,7 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 
 	if(buf[6] == 1)//¿ªÆô
 	{
-		g_ppg_trigger |= TRIGGER_BY_APP_ONE_KEY; 
-		StartPPG(PPG_DATA_HR, TRIGGER_BY_APP);
+		StartPPG(PPG_DATA_HR, TRIGGER_BY_APP_ONE_KEY);
 	}
 	else
 	{

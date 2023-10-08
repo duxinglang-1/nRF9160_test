@@ -622,10 +622,10 @@ void GetPPGData(uint8_t *hr, uint8_t *spo2, uint8_t *systolic, uint8_t *diastoli
 		*spo2 = g_spo2;
 	
 	if(systolic != NULL)
-		*systolic = 120;
+		*systolic = g_bpt.systolic;
 	
 	if(diastolic != NULL)
-		*diastolic = 80;
+		*diastolic = g_bpt.diastolic;
 }
 
 bool IsInPPGScreen(void)
@@ -1361,6 +1361,7 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 			mmi_ucs2cpy(infor.text, (uint8_t*)&str_timing_note[global_settings.language]);
 			DisplayPopUp(infor);
 
+			g_ppg_data = data_type;
 			k_timer_start(&ppg_delay_start_timer, K_MSEC((NOTIFY_TIMER_INTERVAL+1)*1000), K_NO_WAIT);
 			return;
 		}
@@ -1398,6 +1399,23 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 		break;
 
 #ifdef CONFIG_BLE_SUPPORT
+	case TRIGGER_BY_APP_ONE_KEY:
+		if(!is_wearing())
+		{
+			MCU_send_app_one_key_measure_data();
+			return;
+		}
+		if(PPGIsWorking())
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+				g_ppg_trigger |= trigger_type;
+			else
+				MCU_send_app_one_key_measure_data();
+
+			return;
+		}
+		break;
+		
 	case TRIGGER_BY_APP:
 		if(!is_wearing())
 		{
@@ -1405,7 +1423,16 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 			
 			MCU_send_app_get_ppg_data(data_type, &hr);
 			return;
-		}	
+		}
+		if(PPGIsWorking())
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+				g_ppg_trigger |= trigger_type;
+			else
+				MCU_send_app_get_ppg_data(data_type, &g_hr);
+
+			return;
+		}
 		break;
 #endif
 

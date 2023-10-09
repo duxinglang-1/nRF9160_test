@@ -1516,7 +1516,7 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendMissHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
+void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1525,8 +1525,6 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
 	strcat(buf, g_imei);
 	strcat(buf, ":T17:");
 	strcat(buf, data);
-	strcat(buf, ",");
-	strcat(buf, timemap);
 	strcat(buf, "}");
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
@@ -1557,7 +1555,7 @@ void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf));
 }
 
-void NBSendMissSportData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
+void NBSendMissSportData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
@@ -1566,8 +1564,6 @@ void NBSendMissSportData(uint8_t *data, uint32_t datalen, uint8_t *timemap)
 	strcat(buf, g_imei);
 	strcat(buf, ":T18:");
 	strcat(buf, data);
-	strcat(buf, ",");
-	strcat(buf, timemap);
 	strcat(buf, "}");
 #ifdef NB_DEBUG
 	LOGD("sport data:%s", buf);

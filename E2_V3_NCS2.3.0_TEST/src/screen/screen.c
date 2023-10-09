@@ -6172,8 +6172,7 @@ void StepUpdateStatus(void)
 		break;
 	#endif
 
-	case LANGUAGE_EN:		
-	case LANGUAGE_DE:
+	default:
 		language = 0;
 		break;
 	}
@@ -6230,8 +6229,7 @@ void StepShowStatus(void)
 		break;
 	#endif
 
-	case LANGUAGE_EN:		
-	case LANGUAGE_DE:
+	default:
 		language = 0;
 		break;
 	}

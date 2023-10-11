@@ -17,9 +17,9 @@
 
 #define VERSION_STR	"V3.4.0_20231011"
 #ifdef FW_FOR_CN
-#define LANG_BRANCH	"_BC"
+#define LANG_BRANCH	"BC"
 #else
-#define LANG_BRANCH	"_BU"
+#define LANG_BRANCH	"BU"
 #endif
 
 #ifdef FW_FOR_CN

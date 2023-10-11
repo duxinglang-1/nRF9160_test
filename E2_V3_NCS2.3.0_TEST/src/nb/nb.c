@@ -3336,7 +3336,7 @@ void NBMsgProcess(void)
 		testNB_RX_Powert_flag = false;
 	}
 
-	if(nb_connecting_flag)
+	if(nb_connecting_flag || mqtt_connecting_flag)
 	{
 		k_sleep(K_MSEC(5));
 	}

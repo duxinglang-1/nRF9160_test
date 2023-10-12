@@ -16,6 +16,7 @@
 #include "nb.h"
 #include "gps.h"
 #include "external_flash.h"
+#include "uart_ble.h"
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
@@ -850,7 +851,7 @@ void SyncSendLocalData(void)
 void SendPowerOnData(void)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t reply[128] = {0};
+	uint8_t reply[256] = {0};
 
 	//imsi
 	strcpy(reply, g_imsi);
@@ -875,6 +876,36 @@ void SendPowerOnData(void)
 
 	//mcu fw version
 	strcat(reply, g_fw_version);	
+	strcat(reply, ",");
+
+	//modem fw version
+	strcat(reply, &g_modem[12]);	
+	strcat(reply, ",");
+
+	//ppg algo
+#ifdef CONFIG_PPG_SUPPORT	
+	strcat(reply, g_ppg_ver);
+#endif
+	strcat(reply, ",");
+
+	//wifi version
+#ifdef CONFIG_WIFI_SUPPORT
+	strcat(reply, g_wifi_ver);	
+#endif
+	strcat(reply, ",");
+
+	//wifi mac
+#ifdef CONFIG_WIFI_SUPPORT	
+	strcat(reply, g_wifi_mac_addr);	
+#endif
+	strcat(reply, ",");
+
+	//ble version
+	strcat(reply, &g_nrf52810_ver[15]);	
+	strcat(reply, ",");
+
+	//ble mac
+	strcat(reply, g_ble_mac_addr);	
 
 	NBSendPowerOnInfor(reply, strlen(reply));
 }

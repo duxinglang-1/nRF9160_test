@@ -3445,7 +3445,7 @@ void LCDMsgProcess(void)
 	}
 
 	if(lcd_sleep_out)
-	{	
+	{
 		lcd_sleep_out = false;
 	
 		LCD_SleepOut();

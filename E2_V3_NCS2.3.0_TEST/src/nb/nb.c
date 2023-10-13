@@ -444,6 +444,14 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 					LOGD("Could not disconnect: %d", err);
 				#endif
 				}
+
+				err = mqtt_live(c);
+				if(err != 0)
+				{
+				#ifdef NB_DEBUG
+					LOGD("ERROR: mqtt_live %d", err);
+				#endif
+				}
 			}
 		} 
 		break;
@@ -648,7 +656,7 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 
 	mqtt_connecting_flag = true;
-	k_timer_start(&mqtt_connect_timer, K_SECONDS(5), K_NO_WAIT);
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(CONFIG_MQTT_KEEPALIVE), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -730,6 +738,14 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
+	err = mqtt_live(&client);
+	if(err != 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("ERROR: mqtt_live %d", err);
+	#endif
+	}
+
 link_over:
 	mqtt_connecting_flag = false;
 }
@@ -794,6 +810,14 @@ void DisConnectMqttLink(void)
 			LOGD("Could not disconnect MQTT client. Error: %d", err);
 		#endif
 		}
+
+		err = mqtt_live(&client);
+		if(err != 0)
+		{
+		#ifdef NB_DEBUG
+			LOGD("ERROR: mqtt_live %d", err);
+		#endif
+		}
 		
 		mqtt_connected = false;
 	}
@@ -811,6 +835,14 @@ static void MqttDisConnect(void)
 	{
 	#ifdef NB_DEBUG
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
+	#endif
+	}
+
+	err = mqtt_live(&client);
+	if(err != 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("ERROR: mqtt_live %d", err);
 	#endif
 	}
 }
@@ -3254,16 +3286,19 @@ void NBMsgProcess(void)
 			)
 			return;
 
-	#ifdef NB_DEBUG
-		LOGD("nb_reconnect_flag 001");
-	#endif
 		if(!nb_connecting_flag)
 		{
+		#ifdef NB_DEBUG
+			LOGD("nb_reconnect_flag 001");
+		#endif
 			k_work_schedule_for_queue(app_work_q, &nb_link_work, K_SECONDS(2));
 		}
 		else
 		{
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		#ifdef NB_DEBUG
+			LOGD("nb_reconnect_flag 002");
+		#endif
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
 	}
 
@@ -3281,21 +3316,27 @@ void NBMsgProcess(void)
 			)
 			return;
 
-	#ifdef NB_DEBUG
-		LOGD("mqtt_reconnect_flag 001");
-	#endif
 		if(!mqtt_connecting_flag)
 		{
+		#ifdef NB_DEBUG
+			LOGD("mqtt_reconnect_flag 001");
+		#endif
 			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 		else
 		{
-			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		#ifdef NB_DEBUG
+			LOGD("mqtt_reconnect_flag 002");
+		#endif
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}		
 	}
 
 	if(mqtt_connect_timeout_flag)
 	{
+	#ifdef NB_DEBUG
+		LOGD("mqtt_connect_timeout_flag begin");
+	#endif
 		MqttDisConnect();
 		mqtt_connect_timeout_flag = false;
 	}
@@ -3314,19 +3355,22 @@ void NBMsgProcess(void)
 			)
 			return;
 
-	#ifdef NB_DEBUG
-		LOGD("mqtt_act_wait_timeout_flag 001");
-	#endif
 		DisConnectMqttLink();
 		mqtt_connected = false;
 
 		if(!mqtt_connecting_flag)
 		{
+		#ifdef NB_DEBUG
+			LOGD("mqtt_act_wait_timeout_flag 001");
+		#endif
 			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 		else
 		{
-			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+		#ifdef NB_DEBUG
+			LOGD("mqtt_act_wait_timeout_flag 002");
+		#endif		
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}	
 	}
 

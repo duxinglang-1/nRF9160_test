@@ -656,7 +656,6 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 
 	mqtt_connecting_flag = true;
-	k_timer_start(&mqtt_connect_timer, K_SECONDS(CONFIG_MQTT_KEEPALIVE), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -3098,6 +3097,9 @@ static void nb_link(struct k_work *work)
 		if(!err && !test_nb_flag)
 		{
 			SetNetWorkParaByPlmn(g_imsi);
+			if(mqtt_connecting_flag)
+				MqttDisConnect();
+
 			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif

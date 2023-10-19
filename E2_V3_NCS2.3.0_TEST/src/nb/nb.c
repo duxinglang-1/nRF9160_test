@@ -1082,9 +1082,11 @@ void NBRedrawSignal(void)
 			{
 				g_nw_registered = false;
 				nb_connected = false;
-				
+
+			#ifndef NB_SIGNAL_TEST	
 				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
 					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			#endif	
 			}
 		}
 	}

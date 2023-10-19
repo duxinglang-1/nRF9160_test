@@ -2687,14 +2687,6 @@ void GetModemInfor(void)
 			count--;
 			k_timer_start(&get_modem_infor_timer, K_SECONDS(2), K_NO_WAIT);
 		}
-		else if(strlen(g_imsi) > 0)
-		{
-			k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
-		}
-	}
-	else
-	{
-		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
 	}
 
 #if 0	//xb add 2023.07.25 外国无信号卡测试，在发射端(DK板或者另外一块手表上调用
@@ -2943,7 +2935,10 @@ static void modem_link_init(struct k_work *work)
 #endif
 
 	SetModemTurnOn();
-	k_timer_start(&get_modem_infor_timer, K_MSEC(1000), K_NO_WAIT);
+	GetModemInfor();
+	SetModemTurnOff();
+
+	k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
 }
 
 static void modem_on(struct k_work *work)

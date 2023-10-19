@@ -995,7 +995,6 @@ void MenuStartGPS(void)
 
 void MenuStopGPS(void)
 {
-	test_gps_flag = false;
 	gps_off_flag = true;
 }
 
@@ -1008,7 +1007,6 @@ void FTStartGPS(void)
 
 void FTStopGPS(void)
 {
-	test_gps_flag = false;
 	gps_off();
 }
 #endif
@@ -1022,6 +1020,15 @@ void GPS_init(struct k_work_q *work_q)
 void GPSTestInit(void)
 {
 	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+}
+
+void GPSTestUnInit(void)
+{
+#if IS_ENABLED(CONFIG_LTE_NETWORK_MODE_NBIOT_GPS)
+	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_NBIOT_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+#elif IS_ENABLED(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
+	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+#endif
 }
 
 void GPSMsgProcess(void)
@@ -1042,6 +1049,13 @@ void GPSMsgProcess(void)
 	{
 		gps_off_flag = false;
 		gps_off();
+		if(test_gps_flag)
+		{
+			SetModemTurnOff();
+			GPSTestUnInit();
+			SetModemTurnOn();
+			test_gps_flag = false;
+		}
 	}
 
 	if(gps_send_data_flag)

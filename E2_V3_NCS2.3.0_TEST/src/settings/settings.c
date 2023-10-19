@@ -8,7 +8,6 @@
 #include "screen.h"
 #include "settings.h"
 #include "datetime.h"
-#include "nb.h"
 #ifdef CONFIG_ALARM_SUPPORT
 #include "alarm.h"
 #endif
@@ -22,11 +21,7 @@ bool need_save_time = false;
 bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 
-#ifdef NB_SIGNAL_TEST
-uint8_t g_fw_version[64] = VERSION_STR "TEST";
-#else
 uint8_t g_fw_version[64] = VERSION_STR LANG_BRANCH;
-#endif
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 

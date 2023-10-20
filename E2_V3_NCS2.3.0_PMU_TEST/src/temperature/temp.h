@@ -53,7 +53,7 @@ typedef enum
 	TEMP_TRIGGER_BY_APP		=	0x02,
 	TEMP_TRIGGER_BY_HOURLY	=	0x04,
 	TEMP_TRIGGER_BY_FT		=	0x08,
-}TEMP_TARGGER_SOUCE;
+}TEMP_TRIGGER_SOUCE;
 
 //µ•¥Œ≤‚¡ø
 typedef struct
@@ -86,5 +86,6 @@ extern TEMP_WORK_STATUS g_temp_status;
 
 extern void SetCurDayTempRecData(float data);
 extern void GetCurDayTempRecData(uint16_t *databuf);
+extern void StartTemp(TEMP_TRIGGER_SOUCE trigger_type);
 #endif/*__TEMP_H__*/
 

@@ -631,8 +631,7 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 
 	if(buf[6] == 1)//开启
 	{
-		g_ppg_trigger |= TRIGGER_BY_APP_ONE_KEY; 
-		APPStartHr();
+		StartPPG(PPG_DATA_HR, TRIGGER_BY_APP_ONE_KEY);
 	}
 	else
 	{
@@ -1125,7 +1124,7 @@ void APP_get_hr(uint8_t *buf, uint32_t len)
 		switch(buf[5])
 		{
 		case 0x01://实时测量心率
-			APPStartHr();
+			StartPPG(PPG_DATA_HR, TRIGGER_BY_APP);;
 			break;
 
 		case 0x02://单次测量心率
@@ -1186,7 +1185,7 @@ void APP_get_spo2(uint8_t *buf, uint32_t len)
 		switch(buf[5])
 		{
 		case 0x01://实时测量血氧
-			APPStartSpo2();
+			StartPPG(PPG_DATA_SPO2, TRIGGER_BY_APP);;
 			break;
 
 		case 0x02://单次测量血氧
@@ -1248,7 +1247,7 @@ void APP_get_bpt(uint8_t *buf, uint32_t len)
 		switch(buf[5])
 		{
 		case 0x01://实时测量血压
-			APPStartHr();
+			StartPPG(PPG_DATA_BPT, TRIGGER_BY_APP);;
 			break;
 
 		case 0x02://单次测量血压

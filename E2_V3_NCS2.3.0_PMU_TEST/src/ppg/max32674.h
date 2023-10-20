@@ -24,7 +24,7 @@
 #define PPG_HR_MAX		150
 #define PPG_HR_MIN		30
 #define PPG_SPO2_MAX	100
-#define	PPG_SPO2_MIN	96
+#define	PPG_SPO2_MIN	95
 #define PPG_BPT_SYS_MAX	180
 #define PPG_BPT_SYS_MIN	30
 #define PPG_BPT_DIA_MAX	180
@@ -72,7 +72,7 @@ typedef enum
 	TRIGGER_BY_APP			=	0x04,
 	TRIGGER_BY_HOURLY		=	0x08,
 	TRIGGER_BY_FT			=	0x10,
-}PPG_TARGGER_SOUCE;
+}PPG_TRIGGER_SOURCE;
 
 typedef enum
 {
@@ -175,13 +175,6 @@ extern void SetCurDaySpo2RecData(uint8_t spo2);
 extern void GetCurDaySpo2RecData(uint8_t *databuf);
 extern void SetCurDayHrRecData(uint8_t hr);
 extern void GetCurDayHrRecData(uint8_t *databuf);
-extern void APPStartHr(void);
-extern void APPStartSpo2(void);
-extern void APPStartBpt(void);
-extern void APPStartEcg(void);
-extern void TimerStartHr(void);
-extern void TimerStartSpo2(void);
-extern void TimerStartBpt(void);
-extern void TimerStartEcg(void);
+extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
 
 #endif/*__MAX32674_H__*/

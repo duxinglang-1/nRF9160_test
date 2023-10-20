@@ -16,6 +16,7 @@
 #include "nb.h"
 #include "gps.h"
 #include "external_flash.h"
+#include "uart_ble.h"
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
@@ -362,9 +363,10 @@ void SendMissingSportData(void)
 	{
 		bool flag = false;
 		uint8_t reply[1024] = {0};
-		uint8_t timemap[16] = {0};
 		uint16_t step_data[24] = {0};
+		uint8_t step_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		sleep_data sleep[24] = {0};
+		uint8_t sleep_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		step_rec2_data step_rec2 = {0};
 		sleep_rec2_data	sleep_rec2 = {0};
 
@@ -379,7 +381,7 @@ void SendMissingSportData(void)
 		{
 			flag = true;
 			memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
-			sprintf(timemap, "%04d%02d%02d230000", step_rec2.year,step_rec2.month,step_rec2.day);
+			sprintf(step_time, "%04d%02d%02d230000", step_rec2.year,step_rec2.month,step_rec2.day);
 		}
 	  #endif
 	  #if defined(CONFIG_SLEEP_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
@@ -392,8 +394,7 @@ void SendMissingSportData(void)
 		{
 			flag = true;
 			memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
-			if(strlen(timemap) == 0)
-				sprintf(timemap, "%04d%02d%02d230000", sleep_rec2.year,sleep_rec2.month,sleep_rec2.day);
+			sprintf(sleep_time, "%04d%02d%02d230000", sleep_rec2.year,sleep_rec2.month,sleep_rec2.day);
 		}
 	  #endif
 	#endif
@@ -419,9 +420,11 @@ void SendMissingSportData(void)
 				strcat(tmpbuf,"|");
 			else
 				strcat(tmpbuf,",");
-			
 			strcat(reply, tmpbuf);
 		}
+		strcat(reply, step_time);
+		strcat(reply, ",");
+		
 		//sleep
 		for(j=0;j<24;j++)
 		{
@@ -439,10 +442,13 @@ void SendMissingSportData(void)
 
 			if(j<23)
 				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
 			strcat(reply, tmpbuf);
 		}
+		strcat(reply, sleep_time);
 
-		NBSendMissSportData(reply, strlen(reply), timemap);
+		NBSendMissSportData(reply, strlen(reply));
 	}
 }
 #endif
@@ -479,13 +485,16 @@ void SendMissingHealthData(void)
 	{
 		bool flag = false;
 		uint8_t reply[1024] = {0};
-		uint8_t timemap[16] = {0};
 		uint8_t hr_data[24] = {0};
+		uint8_t hr_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		uint8_t spo2_data[24] = {0};
+		uint8_t spo2_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 	#ifdef CONFIG_PPG_SUPPORT	
 		bpt_data bp_data[24] = {0};
 	#endif
+		uint8_t bp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		uint16_t temp_data[24] = {0};
+		uint8_t temp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 	#ifdef CONFIG_PPG_SUPPORT
 		ppg_hr_rec2_data hr_rec2 = {0};
 		ppg_spo2_rec2_data spo2_rec2 = {0};
@@ -506,7 +515,7 @@ void SendMissingHealthData(void)
 		{
 			flag = true;
 			memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
-			sprintf(timemap, "%04d%02d%02d230000", hr_rec2.year,hr_rec2.month,hr_rec2.day);
+			sprintf(hr_time, "%04d%02d%02d230000", hr_rec2.year,hr_rec2.month,hr_rec2.day);
 		}
 		
 		//spo2
@@ -518,8 +527,7 @@ void SendMissingHealthData(void)
 		{
 			flag = true;
 			memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
-			if(strlen(timemap) == 0)
-				sprintf(timemap, "%04d%02d%02d230000", spo2_rec2.year,spo2_rec2.month,spo2_rec2.day);
+			sprintf(spo2_time, "%04d%02d%02d230000", spo2_rec2.year,spo2_rec2.month,spo2_rec2.day);
 		}
 		
 		//bpt
@@ -531,8 +539,7 @@ void SendMissingHealthData(void)
 		{
 			flag = true;
 			memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
-			if(strlen(timemap) == 0)
-				sprintf(timemap, "%04d%02d%02d230000", bpt_rec2.year,bpt_rec2.month,bpt_rec2.day);
+			sprintf(bp_time, "%04d%02d%02d230000", bpt_rec2.year,bpt_rec2.month,bpt_rec2.day);
 		}
 	  #endif
 	  
@@ -546,8 +553,7 @@ void SendMissingHealthData(void)
 		{
 			flag = true;
 			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
-			if(strlen(timemap) == 0)
-				sprintf(timemap, "%04d%02d%02d230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
+			sprintf(temp_time, "%04d%02d%02d230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
 		}
 	  #endif
 	#endif
@@ -570,6 +576,9 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,",");
 			strcat(reply, tmpbuf);
 		}
+		strcat(reply, hr_time);
+		strcat(reply, ",");
+		
 		//spo2
 		for(j=0;j<24;j++)
 		{
@@ -585,6 +594,9 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,",");
 			strcat(reply, tmpbuf);
 		}
+		strcat(reply, spo2_time);
+		strcat(reply, ",");
+			
 		//bpt
 		for(j=0;j<24;j++)
 		{
@@ -606,7 +618,10 @@ void SendMissingHealthData(void)
 				strcat(tmpbuf,",");
 			strcat(reply, tmpbuf);
 		}
-		
+		strcat(reply, bp_time);
+		strcat(reply, ",");
+
+		//temp
 		for(j=0;j<24;j++)
 		{
 			memset(tmpbuf,0,sizeof(tmpbuf));
@@ -617,10 +632,13 @@ void SendMissingHealthData(void)
 
 			if(j<23)
 				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
 			strcat(reply, tmpbuf);
 		}
+		strcat(reply, temp_time);
 		
-		NBSendMissHealthData(reply, strlen(reply), timemap);
+		NBSendMissHealthData(reply, strlen(reply));
 	}
 }
 #endif
@@ -833,7 +851,7 @@ void SyncSendLocalData(void)
 void SendPowerOnData(void)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t reply[128] = {0};
+	uint8_t reply[256] = {0};
 
 	//imsi
 	strcpy(reply, g_imsi);
@@ -858,6 +876,36 @@ void SendPowerOnData(void)
 
 	//mcu fw version
 	strcat(reply, g_fw_version);	
+	strcat(reply, ",");
+
+	//modem fw version
+	strcat(reply, &g_modem[12]);	
+	strcat(reply, ",");
+
+	//ppg algo
+#ifdef CONFIG_PPG_SUPPORT	
+	strcat(reply, g_ppg_ver);
+#endif
+	strcat(reply, ",");
+
+	//wifi version
+#ifdef CONFIG_WIFI_SUPPORT
+	strcat(reply, g_wifi_ver);	
+#endif
+	strcat(reply, ",");
+
+	//wifi mac
+#ifdef CONFIG_WIFI_SUPPORT	
+	strcat(reply, g_wifi_mac_addr);	
+#endif
+	strcat(reply, ",");
+
+	//ble version
+	strcat(reply, &g_nrf52810_ver[15]);	
+	strcat(reply, ",");
+
+	//ble mac
+	strcat(reply, g_ble_mac_addr);	
 
 	NBSendPowerOnInfor(reply, strlen(reply));
 }

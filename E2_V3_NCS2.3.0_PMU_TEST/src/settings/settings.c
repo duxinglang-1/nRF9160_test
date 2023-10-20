@@ -85,7 +85,7 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
 {
-	true,					//system inited flag
+	SETTINGS_STATUS_NORMAL,	//status flag
 	false,					//heart rate turn on
 	false,					//blood pressure turn on
 	false,					//blood oxygen turn on		
@@ -680,15 +680,21 @@ void InitSystemSettings(void)
 
 	ReadSettingsFromInnerFlash(&global_settings);
 
-	if(!global_settings.init 
-		|| (global_settings.location_type < 1 || global_settings.location_type > 4)
-		|| (global_settings.language >= LANGUAGE_MAX)
-		)
+	switch(global_settings.flag)
 	{
+	case SETTINGS_STATUS_INIT:
 		ResetInnerFlash();
-
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
+		break;
+
+	case SETTINGS_STATUS_OTA:
+		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
+		SaveSystemSettings();
+		break;
+		
+	case SETTINGS_STATUS_NORMAL:
+		break;		
 	}
 
 	InitSystemDateTime();
@@ -700,7 +706,8 @@ void InitSystemSettings(void)
 
 void ResetFactoryDefault(void)
 {
-	ResetInnerFlash();
+	ResetSystemTime();
+	ResetSystemSettings();
 
 	clear_cur_local_in_record();
 	clear_local_in_record();	

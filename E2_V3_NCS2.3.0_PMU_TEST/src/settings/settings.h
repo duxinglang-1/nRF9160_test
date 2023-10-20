@@ -15,11 +15,11 @@
 #define MENU_OPT_STR_MAX	7
 #define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.3.3_20230915"
+#define VERSION_STR	"V3.4.0_20231014"
 #ifdef FW_FOR_CN
-#define LANG_BRANCH	"_BC"
+#define LANG_BRANCH	"BC"
 #else
-#define LANG_BRANCH	"_BU"
+#define LANG_BRANCH	"BU"
 #endif
 
 #ifdef FW_FOR_CN
@@ -122,6 +122,13 @@ typedef enum
 	RESET_STATUS_MAX
 }RESET_STATUS;
 
+typedef enum
+{
+	SETTINGS_STATUS_INIT,
+	SETTINGS_STATUS_OTA,
+	SETTINGS_STATUS_NORMAL
+}SETTINGS_STATUS;
+
 typedef struct
 {
 	MENU_ID id;
@@ -160,10 +167,10 @@ typedef struct
 
 typedef struct
 {
-	bool init;		//system inited flag
-	bool hr_is_on;	//heart rate
-	bool bp_is_on;	//blood pressure
-	bool bo_is_on;	//blood oxygen
+	SETTINGS_STATUS flag;
+	bool hr_is_on;					//heart rate
+	bool bp_is_on;					//blood pressure
+	bool bo_is_on;					//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
 	uint8_t location_type;	//1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi

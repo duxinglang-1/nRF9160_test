@@ -3,6 +3,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
+#include "logger.h"
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 #include "Max20353.h"
 #endif

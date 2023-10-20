@@ -622,10 +622,10 @@ void GetPPGData(uint8_t *hr, uint8_t *spo2, uint8_t *systolic, uint8_t *diastoli
 		*spo2 = g_spo2;
 	
 	if(systolic != NULL)
-		*systolic = 120;
+		*systolic = g_bpt.systolic;
 	
 	if(diastolic != NULL)
-		*diastolic = 80;
+		*diastolic = g_bpt.diastolic;
 }
 
 bool IsInPPGScreen(void)
@@ -1316,14 +1316,6 @@ void ppg_delay_start_timerout(struct k_timer *timer_id)
 }
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-void FTTrigger(void)
-{
-	g_ppg_trigger = TRIGGER_BY_FT;
-	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-	g_ppg_data = PPG_DATA_HR;
-	ppg_start_flag = true;
-}
-
 void FTStartPPG(void)
 {
 	ft_start_hr = true;
@@ -1335,137 +1327,153 @@ void FTStopPPG(void)
 }
 #endif
 
-void TimerStartHr(void)
+void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 {
-	g_hr = 0;
-	temp_hr_count = 0;
-	memset(&temp_hr, 0x00, sizeof(temp_hr));	
-	get_hr_ok_flag = false;
-	
-	if(is_wearing())
+	notify_infor infor = {0};
+
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+#else		
+	LCD_SetFontSize(FONT_SIZE_16);
+#endif
+	infor.x = 0;
+	infor.y = 0;
+	infor.w = LCD_WIDTH;
+	infor.h = LCD_HEIGHT;
+	infor.align = NOTIFY_ALIGN_CENTER;
+	infor.type = NOTIFY_TYPE_POPUP;
+
+	switch(trigger_type)
 	{
+	case TRIGGER_BY_HOURLY:
+		if(!is_wearing())
+		{
+			return;
+		}
+
 		if(IsInPPGScreen())
 		{
-			notify_infor infor = {0};
-			
 			PPGScreenStopTimer();
 			if(PPGIsWorking())
 				PPGStopCheck();
-		
-		#ifdef FONTMAKER_UNICODE_FONT
-			LCD_SetFontSize(FONT_SIZE_20);
-		#else		
-			LCD_SetFontSize(FONT_SIZE_16);
-		#endif
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_POPUP;
 
 			infor.img_count = 0;
 			mmi_ucs2cpy(infor.text, (uint8_t*)&str_timing_note[global_settings.language]);
-
 			DisplayPopUp(infor);
 
-			g_ppg_data = PPG_DATA_HR;
+			g_ppg_data = data_type;
 			k_timer_start(&ppg_delay_start_timer, K_MSEC((NOTIFY_TIMER_INTERVAL+1)*1000), K_NO_WAIT);
+			return;
 		}
-		else
+		break;
+		
+	case TRIGGER_BY_MENU:
+		if(!is_wearing())
 		{
-			g_ppg_trigger |= TRIGGER_BY_HOURLY;
-			g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-			g_ppg_data = PPG_DATA_HR;
-			ppg_start_flag = true;	
+			infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+			infor.img_count = 1;
+			DisplayPopUp(infor);
+			return;
 		}
-	}
-}
 
-void APPStartHr(void)
-{
-	uint8_t hr = 0;
-	
-	g_hr = 0;
-	temp_hr_count = 0;
-	memset(&temp_hr, 0x00, sizeof(temp_hr));
-	get_hr_ok_flag = false;
+		if(PPGIsWorkingTiming())
+		{
+			infor.img_count = 0;
+			mmi_ucs2cpy(infor.text, (uint8_t*)str_running_note[global_settings.language]);
+			DisplayPopUp(infor);
+			return;
+		}
 
-	if(is_wearing())
-	{
-		g_ppg_trigger |= TRIGGER_BY_APP;
+		switch(data_type)
+		{
+		case PPG_DATA_HR:
+			g_hr_menu = 0;
+			break;
+		case PPG_DATA_SPO2:
+			g_spo2_menu = 0;
+			break;
+		case PPG_DATA_BPT:
+			memset(&g_bpt_menu, 0x00, sizeof(bpt_data));
+			break;
+		}
+		break;
+
+#ifdef CONFIG_BLE_SUPPORT
+	case TRIGGER_BY_APP_ONE_KEY:
+		if(!is_wearing())
+		{
+			MCU_send_app_one_key_measure_data();
+			return;
+		}
+		if(PPGIsWorking())
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+				g_ppg_trigger |= trigger_type;
+			else
+				MCU_send_app_one_key_measure_data();
+
+			return;
+		}
+		break;
+		
+	case TRIGGER_BY_APP:
+		if(!is_wearing())
+		{
+			uint8_t hr = 0;
+			
+			MCU_send_app_get_ppg_data(data_type, &hr);
+			return;
+		}
+		if(PPGIsWorking())
+		{
+			if(g_ppg_data == PPG_DATA_HR)
+				g_ppg_trigger |= trigger_type;
+			else
+				MCU_send_app_get_ppg_data(data_type, &g_hr);
+
+			return;
+		}
+		break;
+#endif
+
+	case TRIGGER_BY_FT:
+		g_ppg_trigger = TRIGGER_BY_FT;
 		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 		g_ppg_data = PPG_DATA_HR;
-		ppg_start_flag = true;	
-	}
-	else
-	{
-		MCU_send_app_get_ppg_data(PPG_DATA_HR, &hr);
-	}
-}
-
-void MenuTriggerHr(void)
-{
-	if(!is_wearing())
-	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif	
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-		infor.img_count = 1;
-
-		DisplayPopUp(infor);
+		ppg_start_flag = true;
+		return;
 		
+	default:
 		return;
 	}
 
-	if(PPGIsWorkingTiming())
+	g_ppg_trigger |= trigger_type;
+	g_ppg_data = data_type;
+	switch(data_type)
 	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif	
+	case PPG_DATA_HR:
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		g_hr = 0;
+		temp_hr_count = 0;
+		memset(&temp_hr, 0x00, sizeof(temp_hr));	
+		get_hr_ok_flag = false;
+		break;
 		
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img_count = 0;
-		mmi_ucs2cpy(infor.text, (uint8_t*)str_running_note[global_settings.language]);
-
-		DisplayPopUp(infor);
-		return;
+	case PPG_DATA_SPO2:
+		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+		g_spo2 = 0;
+		temp_spo2_count	= 0;
+		memset(&temp_spo2, 0x00, sizeof(temp_spo2));
+		get_spo2_ok_flag = false;
+		break;
+		
+	case PPG_DATA_BPT:
+		g_ppg_alg_mode = ALG_MODE_BPT;
+		memset(&g_bpt, 0, sizeof(bpt_data));
+		get_bpt_ok_flag = false;
+		break;
 	}
 
-	g_hr = 0;
-	g_hr_menu = 0;
-	temp_hr_count = 0;
-	memset(&temp_hr, 0x00, sizeof(temp_hr));
-	get_hr_ok_flag = false;
-	
-	g_ppg_trigger |= TRIGGER_BY_MENU;
-	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-	g_ppg_data = PPG_DATA_HR;
 	ppg_start_flag = true;
 }
 
@@ -1479,141 +1487,6 @@ void MenuStopHr(void)
 	ppg_stop_flag = true;
 }
 
-void TimerStartSpo2(void)
-{
-	g_spo2 = 0;
-	temp_spo2_count	= 0;
-	memset(&temp_spo2, 0x00, sizeof(temp_spo2));
-	get_spo2_ok_flag = false;
-	
-	if(is_wearing())
-	{
-		if(IsInPPGScreen())
-		{
-			notify_infor infor = {0};
-
-			PPGScreenStopTimer();
-			if(PPGIsWorking())
-				PPGStopCheck();
-
-		#ifdef FONTMAKER_UNICODE_FONT
-			LCD_SetFontSize(FONT_SIZE_20);
-		#else		
-			LCD_SetFontSize(FONT_SIZE_16);
-		#endif
-		
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_POPUP;
-
-			infor.img_count = 0;
-			mmi_ucs2cpy(infor.text, (uint8_t*)str_timing_note[global_settings.language]);
-
-			DisplayPopUp(infor);
-
-			g_ppg_data = PPG_DATA_SPO2;
-			k_timer_start(&ppg_delay_start_timer, K_MSEC((NOTIFY_TIMER_INTERVAL+1)*1000), K_NO_WAIT);
-		}
-		else
-		{
-			g_ppg_trigger |= TRIGGER_BY_HOURLY;
-			g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-			g_ppg_data = PPG_DATA_SPO2;
-			ppg_start_flag = true;	
-		}
-	}
-}
-
-void APPStartSpo2(void)
-{
-	uint8_t spo2 = 0;
-	
-	g_spo2 = 0;
-	temp_spo2_count	= 0;
-	memset(&temp_spo2, 0x00, sizeof(temp_spo2));	
-	get_spo2_ok_flag = false;
-
-	if(is_wearing())
-	{
-		g_ppg_trigger |= TRIGGER_BY_APP;
-		g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-		g_ppg_data = PPG_DATA_SPO2;
-		ppg_start_flag = true;	
-	}
-	else
-	{
-		MCU_send_app_get_ppg_data(PPG_DATA_SPO2, &spo2);
-	}
-}
-
-void MenuTriggerSpo2(void)
-{
-	if(!is_wearing())
-	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-		infor.img_count = 1;
-
-		DisplayPopUp(infor);
-		
-		return;
-	}
-	
-	if(PPGIsWorkingTiming())
-	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif
-
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img_count = 0;
-		mmi_ucs2cpy(infor.text, (uint8_t*)str_running_note[global_settings.language]);
-
-		DisplayPopUp(infor);
-		return;
-	}
-
-	g_spo2 = 0;
-	g_spo2_menu = 0;
-	temp_spo2_count	= 0;
-	memset(&temp_spo2, 0x00, sizeof(temp_spo2));	
-	get_spo2_ok_flag = false;
-
-	g_ppg_trigger |= TRIGGER_BY_MENU;
-	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
-	g_ppg_data = PPG_DATA_SPO2;
-	ppg_start_flag = true;
-}
-
 void MenuStartSpo2(void)
 {
 	menu_start_spo2 = true;
@@ -1624,216 +1497,12 @@ void MenuStopSpo2(void)
 	ppg_stop_flag = true;
 }
 
-void TimerStartBpt(void)
-{
-	memset(&g_bpt, 0, sizeof(bpt_data));
-	memset(&g_bpt_menu, 0, sizeof(bpt_data));
-	get_bpt_ok_flag = false;
-
-	if(is_wearing())
-	{
-		if(IsInPPGScreen())
-		{
-			notify_infor infor = {0};
-
-			PPGScreenStopTimer();
-			if(PPGIsWorking())
-				PPGStopCheck();
-
-		#ifdef FONTMAKER_UNICODE_FONT
-			LCD_SetFontSize(FONT_SIZE_20);
-		#else		
-			LCD_SetFontSize(FONT_SIZE_16);
-		#endif
-
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_POPUP;
-
-			infor.img_count = 0;
-			mmi_ucs2cpy(infor.text, (uint8_t*)str_timing_note[global_settings.language]);
-
-			DisplayPopUp(infor);
-
-			g_ppg_data = PPG_DATA_BPT;
-			k_timer_start(&ppg_delay_start_timer, K_MSEC((NOTIFY_TIMER_INTERVAL+1)*1000), K_NO_WAIT);
-		}
-		else
-		{
-			g_ppg_trigger |= TRIGGER_BY_HOURLY;
-			g_ppg_alg_mode = ALG_MODE_BPT;
-			g_ppg_data = PPG_DATA_BPT;
-			ppg_start_flag = true;
-		}
-	}
-}
-
-void APPStartBpt(void)
-{
-	uint8_t tmpbuf[2] = {0};
-	
-	memset(&g_bpt, 0x00, sizeof(bpt_data));
-
-	get_bpt_ok_flag = false;
-	
-	if(is_wearing())
-	{
-		g_ppg_trigger |= TRIGGER_BY_APP;
-		g_ppg_alg_mode = ALG_MODE_BPT;
-		g_ppg_data = PPG_DATA_BPT;
-		ppg_start_flag = true;
-	}
-	else
-	{
-		MCU_send_app_get_ppg_data(PPG_DATA_BPT, tmpbuf);
-	}
-}
-
-void MenuTriggerBpt(void)
-{
-	if(!is_wearing())
-	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif
-		
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-		infor.img_count = 1;
-
-		DisplayPopUp(infor);
-		
-		return;
-	}
-	
-	if(PPGIsWorkingTiming())
-	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif
-	
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img_count = 0;
-		mmi_ucs2cpy(infor.text, (uint8_t*)str_running_note[global_settings.language]);
-
-		DisplayPopUp(infor);
-		return;
-	}
-
-	memset(&g_bpt, 0x00, sizeof(bpt_data));
-	get_bpt_ok_flag = false;
-	g_ppg_trigger |=TRIGGER_BY_MENU;
-	g_ppg_alg_mode = ALG_MODE_BPT;
-	g_ppg_data = PPG_DATA_BPT;
-	ppg_start_flag = true;
-}
-
 void MenuStartBpt(void)
 {
 	menu_start_bpt = true;
 }
 
 void MenuStopBpt(void)
-{
-	ppg_stop_flag = true;
-}
-
-void TimerStartEcg(void)
-{
-	g_ppg_trigger |= TRIGGER_BY_HOURLY;
-	g_ppg_alg_mode = ALG_MODE_ECG;
-	g_ppg_data = PPG_DATA_ECG;
-	ppg_start_flag = true;
-}
-
-void APPStartEcg(void)
-{
-	g_ppg_trigger |= TRIGGER_BY_APP;
-	g_ppg_alg_mode = ALG_MODE_ECG;
-	g_ppg_data = PPG_DATA_ECG;
-	ppg_start_flag = true;
-}
-
-void MenuStartEcg(void)
-{
-	if(!is_wearing())
-	{
-		notify_infor infor = {0};
-
-	#ifdef FONTMAKER_UNICODE_FONT
-		LCD_SetFontSize(FONT_SIZE_20);
-	#else		
-		LCD_SetFontSize(FONT_SIZE_16);
-	#endif
-		
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-		infor.img_count = 1;
-
-		DisplayPopUp(infor);
-		
-		return;
-	}
-	
-	if(PPGIsWorkingTiming())
-	{
-		notify_infor infor = {0};
-
-		infor.x = 0;
-		infor.y = 0;
-		infor.w = LCD_WIDTH;
-		infor.h = LCD_HEIGHT;
-
-		infor.align = NOTIFY_ALIGN_CENTER;
-		infor.type = NOTIFY_TYPE_POPUP;
-
-		infor.img_count = 0;
-		mmi_ucs2cpy(infor.text, (uint8_t*)str_running_note[global_settings.language]);
-
-		DisplayPopUp(infor);
-		return;
-	}
-
-	g_ppg_trigger |= TRIGGER_BY_MENU;
-	g_ppg_alg_mode = ALG_MODE_ECG;
-	g_ppg_data = PPG_DATA_ECG;
-	ppg_start_flag = true;
-}
-
-void MenuStopEcg(void)
 {
 	ppg_stop_flag = true;
 }
@@ -2100,25 +1769,22 @@ void PPG_init(void)
 	LOGD("PPG_init");
 #endif
 
+	//Display the last record within 7 days.
 	get_cur_health_from_record(&last_health);
-	if((last_health.hr_rec.timestamp.year == date_time.year)
-		&&(last_health.hr_rec.timestamp.month == date_time.month)
-		&&(last_health.hr_rec.timestamp.day == date_time.day)
-		)
+	DateIncrease(&last_health.hr_rec.timestamp, 7);
+	if(DateCompare(last_health.hr_rec.timestamp, date_time) > 0)
 	{
 		g_hr = last_health.hr_rec.hr;
 	}
-	if((last_health.spo2_rec.timestamp.year == date_time.year)
-		&&(last_health.spo2_rec.timestamp.month == date_time.month)
-		&&(last_health.spo2_rec.timestamp.day == date_time.day)
-		)
+
+	DateIncrease(&last_health.spo2_rec.timestamp, 7);
+	if(DateCompare(last_health.spo2_rec.timestamp, date_time) > 0)
 	{
 		g_spo2 = last_health.spo2_rec.spo2;
 	}
-	if((last_health.bpt_rec.timestamp.year == date_time.year)
-		&&(last_health.bpt_rec.timestamp.month == date_time.month)
-		&&(last_health.bpt_rec.timestamp.day == date_time.day)
-		)
+
+	DateIncrease(&last_health.bpt_rec.timestamp, 7);
+	if(DateCompare(last_health.bpt_rec.timestamp, date_time) > 0)
 	{
 		g_bpt.systolic = last_health.bpt_rec.systolic;
 		g_bpt.diastolic = last_health.bpt_rec.diastolic;
@@ -2148,26 +1814,26 @@ void PPGMsgProcess(void)
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	if(ft_start_hr)
 	{
-		FTTrigger();
+		StartPPG(PPG_DATA_HR, TRIGGER_BY_FT);
 		ft_start_hr = false;
 	}
 #endif
 
 	if(menu_start_hr)
 	{
-		MenuTriggerHr();
+		StartPPG(PPG_DATA_HR, TRIGGER_BY_MENU);
 		menu_start_hr = false;
 	}
 	
 	if(menu_start_spo2)
 	{
-		MenuTriggerSpo2();
+		StartPPG(PPG_DATA_SPO2, TRIGGER_BY_MENU);
 		menu_start_spo2 = false;
 	}
 	
 	if(menu_start_bpt)
 	{
-		MenuTriggerBpt();
+		StartPPG(PPG_DATA_BPT, TRIGGER_BY_MENU);
 		menu_start_bpt = false;
 	}
 	
@@ -2220,15 +1886,15 @@ void PPGMsgProcess(void)
 		switch(g_ppg_data)
 		{
 		case PPG_DATA_HR:
-			TimerStartHr();
+			StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
 			break;
 
 		case PPG_DATA_SPO2:
-			TimerStartSpo2();
+			StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
 			break;
 
 		case PPG_DATA_BPT:
-			TimerStartBpt();
+			StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
 			break;
 		}
 

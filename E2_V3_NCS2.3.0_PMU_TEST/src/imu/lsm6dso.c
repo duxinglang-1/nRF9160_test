@@ -1,10 +1,3 @@
-/*
-Last Update: 9/03/2022 by Zabdiel
-ULTRA LOW POWER AND INACTIVITY MODE
--Functions: wrist tilt detection, step counter
--Fall detection disabled
--26Hz data rate
-*/
 #ifdef CONFIG_IMU_SUPPORT
 
 #include <nrf9160.h>
@@ -498,6 +491,14 @@ void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 		*distance = g_distance;
 }
 #endif
+
+uint8_t IMU_GetID(void)
+{
+	uint8_t sensor_id = 0;
+	
+	lsm6dso_device_id_get(&imu_dev_ctx, &sensor_id);
+	return sensor_id;
+}
 
 void IMU_init(struct k_work_q *work_q)
 {

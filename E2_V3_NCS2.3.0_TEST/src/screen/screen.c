@@ -5721,6 +5721,7 @@ void FOTAUpdateStatus(void)
 		
 	case FOTA_STATUS_FINISHED:
 		{
+			static bool is_finished = false;
 			uint16_t str_notify[LANGUAGE_MAX][25] = {
 													#ifndef FW_FOR_CN
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0063,0x006F,0x006D,0x0070,0x006C,0x0065,0x0074,0x0065,0x0064,0x0000},//Upgrade completed
@@ -5736,21 +5737,26 @@ void FOTAUpdateStatus(void)
 													};
 			
 			flag = false;
-		
-			LCD_Clear(BLACK);
-			LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
+
+			if(!is_finished)
+			{
+				is_finished = true;
+				
+				LCD_Clear(BLACK);
+				LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
+				
+			#ifdef FONTMAKER_UNICODE_FONT
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+				LCD_MeasureUniString(tmpbuf, &w, &h);
+				LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
+			#endif
 			
-		#ifdef FONTMAKER_UNICODE_FONT
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
-			LCD_MeasureUniString(tmpbuf, &w, &h);
-			LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
-		#endif
-		
-			SetLeftKeyUpHandler(fota_reboot_confirm);
-			SetRightKeyUpHandler(fota_reboot_confirm);
-		#ifdef CONFIG_TOUCH_SUPPORT
-			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_reboot_confirm);
-		#endif
+				SetLeftKeyUpHandler(fota_reboot_confirm);
+				SetRightKeyUpHandler(fota_reboot_confirm);
+			#ifdef CONFIG_TOUCH_SUPPORT
+				register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_reboot_confirm);
+			#endif
+			}
 		}
 		break;
 		

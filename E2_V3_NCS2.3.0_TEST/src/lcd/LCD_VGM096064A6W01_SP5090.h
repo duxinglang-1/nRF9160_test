@@ -62,13 +62,13 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //------------------------------------------------------
 
-extern u8_t lcd_data_buffer[2*LCD_DATA_LEN];
+extern uint8_t lcd_data_buffer[2*LCD_DATA_LEN];
 
 extern void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h);
-extern void WriteOneDot(u16_t color);
-extern void Write_Data(u8_t i);
+extern void WriteOneDot(uint16_t color);
+extern void Write_Data(uint8_t i);
 extern void LCD_Init(void);
-extern void LCD_Clear(u16_t color);
+extern void LCD_Clear(uint16_t color);
 extern void LCD_SleepIn(void);
 extern void LCD_SleepOut(void);
 extern void LCD_ResetBL_Timer(void);

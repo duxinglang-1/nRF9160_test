@@ -349,11 +349,11 @@ bool sensor_init(void)
 
 	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
 
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_52Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
 
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_52Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 
 	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 
@@ -396,14 +396,14 @@ bool sensor_init(void)
 
 	/* route single tap, wrist tilt to INT2 pin*/
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	//int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
-	int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
+	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	//int2_route.fsm_int2_a.int2_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	/* route step counter to INT1 pin*/
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
-	//int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
@@ -430,14 +430,14 @@ void sensor_reset(void)
 	int1_route.int1_ctrl.int1_fifo_th = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);*/
 
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_52Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_52Hz);
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
 
 	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_52Hz);
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_52Hz);
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 }
 
 /*@brief Get real time X/Y/Z reading in mg
@@ -1064,7 +1064,6 @@ static void mt_fall_detection(struct k_work *work)
 		}
 	}
 
-#if 0	//xb add 2021-11-29 ∆¡±Œ¡ÀÀ§µπºÏ≤‚π¶ƒ‹
 	if(int2_event) //fall
 	{
 		LOGD("int2 evt!");
@@ -1097,8 +1096,7 @@ static void mt_fall_detection(struct k_work *work)
 			LOGD("Not Fall.");
         }
 	}
-#endif
-
+	
 	if(reset_steps)
 	{
 		reset_steps = false;
@@ -1280,94 +1278,6 @@ void IMUMsgProcess(void)
 		return;
 #endif
 
-	if(int1_event)	//steps
-	{
-		LOGD("int1 evt!");
-		int1_event = false;
-
-		if(!imu_check_ok)
-			return;
-		
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-		
-		LOGD("steps trigger!");
-		
-		UpdateIMUData();
-		imu_redraw_steps_flag = true;	
-	}
-		
-	if(int2_event) //tilt
-	{
-		LOGD("int2 evt!");
-		
-		int2_event = false;
-
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		if(!is_wearing())
-			return;
-
-		is_tilt();
-		if(wrist_tilt)
-		{
-			LOGD("tilt trigger!");
-			
-			wrist_tilt = false;
-
-			if(lcd_is_sleeping && global_settings.wake_screen_by_wrist)
-			{
-				sleep_out_by_wrist = true;
-				lcd_sleep_out = true;
-			}
-		}
-	}
-	
-	if(reset_steps)
-	{
-		reset_steps = false;
-
-		if(!imu_check_ok)
-			return;
-		
-		ReSetImuSteps();
-		imu_redraw_steps_flag = true;
-	}
-
-	if(imu_redraw_steps_flag)
-	{
-		imu_redraw_steps_flag = false;
-
-		if(!imu_check_ok)
-			return;
-		
-		IMURedrawSteps();
-	}
-
-	if(update_sleep_parameter)
-	{
-		update_sleep_parameter = false;
-
-		if(!imu_check_ok)
-			return;
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(PPGIsWorking())
-			return;
-	#endif
-
-		UpdateSleepPara();
-	}
+	k_work_submit_to_queue(imu_work_q, &imu_work);
 }
 #endif/*CONFIG_IMU_SUPPORT*/

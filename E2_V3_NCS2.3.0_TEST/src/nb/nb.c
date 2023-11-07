@@ -444,14 +444,6 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 					LOGD("Could not disconnect: %d", err);
 				#endif
 				}
-
-				err = mqtt_live(c);
-				if(err != 0)
-				{
-				#ifdef NB_DEBUG
-					LOGD("ERROR: mqtt_live %d", err);
-				#endif
-				}
 			}
 		} 
 		break;
@@ -470,7 +462,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		
 		k_timer_stop(&mqtt_act_wait_timer);
 		delete_data_from_cache(&nb_send_cache);
-		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
+		k_timer_start(&send_data_timer, K_MSEC(100), K_NO_WAIT);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -677,6 +669,8 @@ static void mqtt_link(struct k_work_q *work_q)
 		goto link_over;
 	}
 
+	mqtt_connecting_flag = false;
+	
 	while(1)
 	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
@@ -737,14 +731,6 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
-	err = mqtt_live(&client);
-	if(err != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("ERROR: mqtt_live %d", err);
-	#endif
-	}
-
 link_over:
 	mqtt_connecting_flag = false;
 }
@@ -769,7 +755,7 @@ static void NbSendData(void)
 	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
-	
+
 	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
@@ -779,9 +765,6 @@ static void NbSendData(void)
 		
 		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
 		
-		if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
-			k_timer_stop(&mqtt_act_wait_timer);
-		k_timer_start(&mqtt_act_wait_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME-5), K_NO_WAIT);
 	}
 }
 
@@ -809,14 +792,6 @@ void DisConnectMqttLink(void)
 			LOGD("Could not disconnect MQTT client. Error: %d", err);
 		#endif
 		}
-
-		err = mqtt_live(&client);
-		if(err != 0)
-		{
-		#ifdef NB_DEBUG
-			LOGD("ERROR: mqtt_live %d", err);
-		#endif
-		}
 		
 		mqtt_connected = false;
 	}
@@ -834,14 +809,6 @@ static void MqttDisConnect(void)
 	{
 	#ifdef NB_DEBUG
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
-	#endif
-	}
-
-	err = mqtt_live(&client);
-	if(err != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("ERROR: mqtt_live %d", err);
 	#endif
 	}
 }
@@ -3099,9 +3066,6 @@ static void nb_link(struct k_work *work)
 		if(!err && !test_nb_flag)
 		{
 			SetNetWorkParaByPlmn(g_imsi);
-			if(mqtt_connecting_flag)
-				MqttDisConnect();
-
 			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif
@@ -3302,7 +3266,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("nb_reconnect_flag 002");
 		#endif
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
 
@@ -3332,7 +3296,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("mqtt_reconnect_flag 002");
 		#endif
-			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}		
 	}
 
@@ -3384,7 +3348,7 @@ void NBMsgProcess(void)
 		testNB_RX_Powert_flag = false;
 	}
 
-	if(nb_connecting_flag || mqtt_connecting_flag)
+	if(nb_connecting_flag)
 	{
 		k_sleep(K_MSEC(5));
 	}

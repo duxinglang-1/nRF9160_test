@@ -43,7 +43,7 @@
 
 //#define NB_DEBUG
 
-#define MQTT_CONNECTED_KEEP_TIME	(30)
+#define MQTT_CONNECTED_KEEP_TIME	(60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -94,6 +94,7 @@ static bool nb_reconnect_flag = false;
 static bool mqtt_connecting_flag = false;
 static bool mqtt_connect_timeout_flag = false;
 static bool mqtt_disconnect_flag = false;
+static bool mqtt_disconnect_req_flag = false;
 static bool mqtt_reconnect_flag = false;
 static bool mqtt_act_wait_timeout_flag = false;
 static bool mqtt_send_miss_data_flag = false;
@@ -270,13 +271,23 @@ static void at_handler_modem_notify(const char *response)
 /**@brief Function to publish data on the configured topic
  */
 static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
-	uint8_t *data, size_t len)
+	uint8_t *data, size_t len, DATA_TYPE type)
 {
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = CONFIG_MQTT_PUB_TOPIC;
-	param.message.topic.topic.size = strlen(CONFIG_MQTT_PUB_TOPIC);
+	switch(type)
+	{
+	case DATA_TRANSFER:
+		param.message.topic.topic.utf8 = CONFIG_MQTT_PUB_TOPIC;
+		param.message.topic.topic.size = strlen(CONFIG_MQTT_PUB_TOPIC);
+		break;
+		
+	case DATA_LOG:
+		param.message.topic.topic.utf8 = CONFIG_MQTT_LOG_PUB_TOPIC;
+		param.message.topic.topic.size = strlen(CONFIG_MQTT_LOG_PUB_TOPIC);
+		break;
+	}
 	param.message.payload.data = data;
 	param.message.payload.len = len;
 	param.message_id = sys_rand32_get();
@@ -386,13 +397,14 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
+	#ifdef NB_DEBUG
+		LOGD("MQTT client connected!"); 	
+	#endif
+
 		mqtt_connected = true;
 		mqtt_connecting_flag = false;
 		k_timer_stop(&mqtt_connect_timer);
 
-	#ifdef NB_DEBUG
-		LOGD("MQTT client connected!");		
-	#endif
 		subscribe();
 
 		if(power_on_data_flag)
@@ -648,6 +660,7 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 
 	mqtt_connecting_flag = true;
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(60), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -669,8 +682,6 @@ static void mqtt_link(struct k_work_q *work_q)
 		goto link_over;
 	}
 
-	mqtt_connecting_flag = false;
-	
 	while(1)
 	{
 		err = poll(&fds, 1, mqtt_keepalive_time_left(&client));
@@ -718,6 +729,18 @@ static void mqtt_link(struct k_work_q *work_q)
 		#endif
 			break;
 		}
+
+		if(mqtt_disconnect_req_flag)
+		{
+		#ifdef NB_DEBUG
+			LOGD("mqtt_disconnect_req_flag");
+		#endif
+			break;
+		}
+
+	#ifdef NB_DEBUG
+		LOGD("run while");
+	#endif
 	}
 #ifdef NB_DEBUG	
 	LOGD("Disconnecting MQTT client...");
@@ -732,7 +755,9 @@ static void mqtt_link(struct k_work_q *work_q)
 	}
 
 link_over:
+	mqtt_connected = false;
 	mqtt_connecting_flag = false;
+	mqtt_disconnect_req_flag = false;
 }
 
 static void SendDataCallBack(struct k_timer *timer)
@@ -763,8 +788,11 @@ static void NbSendData(void)
 			k_timer_stop(&mqtt_disconnect_timer);
 		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
 		
-		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
+		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len, data_type);
 		
+		if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
+			k_timer_stop(&mqtt_act_wait_timer);
+		k_timer_start(&mqtt_act_wait_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME-5), K_NO_WAIT);
 	}
 }
 
@@ -779,7 +807,10 @@ bool MqttIsConnected(void)
 void DisConnectMqttLink(void)
 {
 	int err;
-		
+
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 		k_timer_stop(&mqtt_disconnect_timer);
 
@@ -794,6 +825,7 @@ void DisConnectMqttLink(void)
 		}
 		
 		mqtt_connected = false;
+		mqtt_disconnect_req_flag = true;
 	}
 }
 
@@ -804,6 +836,8 @@ static void MqttDisConnect(void)
 #ifdef NB_DEBUG
 	LOGD("begin");
 #endif
+
+	mqtt_disconnect_req_flag = true;
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
@@ -1311,11 +1345,11 @@ void GetModemDateTime(void)
 #endif
 }
 
-static void MqttSendData(uint8_t *data, uint32_t datalen)
+static void MqttSendData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
 {
 	int ret;
 
-	ret = add_data_into_cache(&nb_send_cache, data, datalen, DATA_TRANSFER);
+	ret = add_data_into_cache(&nb_send_cache, data, datalen, type);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -1372,7 +1406,7 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("eply data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendAlarmData(uint8_t *data, uint32_t datalen)
@@ -1391,7 +1425,7 @@ void NBSendAlarmData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("alarm data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendSosWifiData(uint8_t *data, uint32_t datalen)
@@ -1410,7 +1444,7 @@ void NBSendSosWifiData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("sos wifi data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
@@ -1428,7 +1462,7 @@ void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("sos gps data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 #ifdef CONFIG_IMU_SUPPORT
@@ -1448,7 +1482,7 @@ void NBSendFallWifiData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("fall wifi data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendFallGpsData(uint8_t *data, uint32_t datalen)
@@ -1466,7 +1500,7 @@ void NBSendFallGpsData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("fall gps data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 #endif
 
@@ -1490,7 +1524,7 @@ void NBSendSingleHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
@@ -1513,7 +1547,7 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
@@ -1529,7 +1563,7 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
@@ -1552,7 +1586,7 @@ void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("sport data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendMissSportData(uint8_t *data, uint32_t datalen)
@@ -1568,7 +1602,7 @@ void NBSendMissSportData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("sport data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendLocationData(uint8_t *data, uint32_t datalen)
@@ -1588,7 +1622,7 @@ void NBSendLocationData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("location data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendSettingsData(uint8_t *data, uint32_t datalen)
@@ -1608,7 +1642,7 @@ void NBSendSettingsData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("settings data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendPowerOnInfor(uint8_t *data, uint32_t datalen)
@@ -1628,7 +1662,7 @@ void NBSendPowerOnInfor(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("pwr on infor:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendPowerOffInfor(uint8_t *data, uint32_t datalen)
@@ -1648,7 +1682,7 @@ void NBSendPowerOffInfor(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("pwr off infor:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 bool GetParaFromString(uint8_t *rece, uint32_t rece_len, uint8_t *cmd, uint8_t *data)
@@ -3066,6 +3100,9 @@ static void nb_link(struct k_work *work)
 		if(!err && !test_nb_flag)
 		{
 			SetNetWorkParaByPlmn(g_imsi);
+			if(mqtt_connecting_flag)
+				MqttDisConnect();
+
 			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif
@@ -3217,7 +3254,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("002");
 		#endif
-			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5), K_NO_WAIT);
+			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 		
 		mqtt_disconnect_flag = false;
@@ -3254,6 +3291,9 @@ void NBMsgProcess(void)
 			)
 			return;
 
+		if(mqtt_connecting_flag)
+			MqttDisConnect();
+
 		if(!nb_connecting_flag)
 		{
 		#ifdef NB_DEBUG
@@ -3266,7 +3306,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("nb_reconnect_flag 002");
 		#endif
-			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			k_timer_start(&nb_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
 	}
 
@@ -3296,7 +3336,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("mqtt_reconnect_flag 002");
 		#endif
-			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			k_timer_start(&mqtt_reconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}		
 	}
 
@@ -3348,7 +3388,7 @@ void NBMsgProcess(void)
 		testNB_RX_Powert_flag = false;
 	}
 
-	if(nb_connecting_flag)
+	if(nb_connecting_flag || mqtt_connecting_flag || mqtt_connected)
 	{
 		k_sleep(K_MSEC(5));
 	}

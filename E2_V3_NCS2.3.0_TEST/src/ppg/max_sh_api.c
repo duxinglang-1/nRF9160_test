@@ -78,6 +78,13 @@ static ss_instance_parser_t parsers[SH_NUM_CURRENT_ALGOS] =
 		{RAW_ALGO_DATA,          SSRAW_ALGO_DATASIZE,		            raw_algo_data_rx		            },
 };
 
+int sensorhub_get_output_scd_state(uint8_t *databuf, uint8_t *status)
+{
+	whrm_wspo2_suite_sensorhub_data *sample = (whrm_wspo2_suite_sensorhub_data *) databuf;
+
+	*status = databuf[19];
+}
+
 int sensorhub_get_output_sample_number(int * p_number_of_sample)
 {
 	int ret = 0;

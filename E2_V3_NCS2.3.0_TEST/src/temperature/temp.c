@@ -296,6 +296,8 @@ void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 	infor.align = NOTIFY_ALIGN_CENTER;
 	infor.type = NOTIFY_TYPE_POPUP;
 
+	StartSCC();
+
 	switch(trigger_type)
 	{
 	case TEMP_TRIGGER_BY_HOURLY:
@@ -382,6 +384,28 @@ void TempMsgProcess(void)
 		if(!temp_check_ok)
 			return;
 
+		if(!CheckSCC())
+		{
+			notify_infor infor = {0};
+			
+			infor.x = 0;
+			infor.y = 0;
+			infor.w = LCD_WIDTH;
+			infor.h = LCD_HEIGHT;
+			infor.align = NOTIFY_ALIGN_CENTER;
+			infor.type = NOTIFY_TYPE_POPUP;
+
+			if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == TEMP_TRIGGER_BY_MENU)
+			{
+				infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+				infor.img_count = 1;
+				DisplayPopUp(infor);
+			}
+			
+			temp_stop_flag = true;
+			return;
+		}
+		
 		ret = GetTemperature(&temp_1, &temp_2);
 		if(temp_1 > 0.0)
 		{

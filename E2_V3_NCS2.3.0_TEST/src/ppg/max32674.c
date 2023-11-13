@@ -29,10 +29,11 @@
 
 //#define PPG_DEBUG
 
-#define PPG_HR_COUNT_MAX		30
+#define PPG_HR_COUNT_MAX		20
 #define PPG_HR_DEL_MIN_NUM		5
 #define PPG_SPO2_COUNT_MAX		3
 #define PPG_SPO2_DEL_MIN_NUM	1
+#define PPG_SCC_COUNT_MAX		3
 
 bool ppg_int_event = false;
 bool ppg_bpt_is_calbraed = false;
@@ -40,6 +41,7 @@ bool ppg_bpt_cal_need_update = false;
 bool get_bpt_ok_flag = false;
 bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
+bool ppg_skin_contacted_flag = false;
 
 PPG_WORK_STATUS g_ppg_status = PPG_STATUS_PREPARE;
 
@@ -78,6 +80,9 @@ uint8_t g_spo2 = 0;
 uint8_t g_spo2_menu = 0;
 bpt_data g_bpt = {0};
 bpt_data g_bpt_menu = {0};
+
+static uint8_t scc_check_sum = 0;
+static uint8_t SCC_COMPARE_MAX = PPG_SCC_COUNT_MAX;
 
 static uint8_t temp_hr_count = 0;
 static uint8_t temp_spo2_count = 0;
@@ -122,6 +127,8 @@ static void ppg_delay_start_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_delay_start_timer, ppg_delay_start_timerout, NULL);
 static void ppg_bpt_est_start_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(ppg_bpt_est_start_timer, ppg_bpt_est_start_timerout, NULL);
+static void ppg_skin_check_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(ppg_skin_check_timer, ppg_skin_check_timerout, NULL);
 
 void ClearAllBptRecData(void)
 {
@@ -908,6 +915,18 @@ void PPGGetSensorHubData(void)
 	bpt_sensorhub_data bpt = {0};
 	accel_data accel = {0};
 	max86176_data max86176 = {0};
+	notify_infor infor = {0};
+#ifdef FONTMAKER_UNICODE_FONT
+    LCD_SetFontSize(FONT_SIZE_20);
+#else		
+    LCD_SetFontSize(FONT_SIZE_16);
+#endif	
+    infor.x = 0;
+	infor.y = 0;
+	infor.w = LCD_WIDTH;
+	infor.h = LCD_HEIGHT;
+	infor.align = NOTIFY_ALIGN_CENTER;
+	infor.type = NOTIFY_TYPE_POPUP;
 
 	ret = sh_get_sensorhub_status(&hubStatus);
 #ifdef PPG_DEBUG	
@@ -966,6 +985,8 @@ void PPGGetSensorHubData(void)
 		{
 			uint16_t heart_rate=0,blood_oxy=0;
 			uint32_t i,j,index = 0;
+			uint8_t scd_status = 0;
+			static uint8_t count=0;
 
 			for(i=0,j=0;i<u32_sampleCnt;i++)
 			{
@@ -1091,7 +1112,6 @@ void PPGGetSensorHubData(void)
 				}
 				else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 				{
-					//accel_data_rx(&accel, &databuf[index+SS_PACKET_COUNTERSIZE]);
 				#ifdef CONFIG_FACTORY_TEST_SUPPORT
 					if(IsFTPPGTesting())
 						max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
@@ -1131,6 +1151,59 @@ void PPGGetSensorHubData(void)
 			}
 		#endif
 
+			if(u32_sampleCnt > 1)
+				index = (u32_sampleCnt-1) * num_bytes_to_read + 1;
+			else
+				index = 1;
+			sensorhub_get_output_scd_state(&databuf[index + SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE], &scd_status);
+		#ifdef PPG_DEBUG
+			LOGD("scd_status:%d", scd_status);
+		#endif
+			if(!ppg_stop_flag)
+			{
+				if(scd_status == 3)
+					scc_check_sum = SCC_COMPARE_MAX;
+				else
+					scc_check_sum--;
+
+				count++;
+				if(count >= SCC_COMPARE_MAX)
+				{
+					count = 0;
+					if(scc_check_sum != 0)
+						ppg_skin_contacted_flag = true;
+					else
+						ppg_skin_contacted_flag = false;
+
+					scc_check_sum = SCC_COMPARE_MAX;
+				#ifdef PPG_DEBUG
+					LOGD("scc check completed! scc_check_sum:%d,flag:%d", scc_check_sum,ppg_skin_contacted_flag);
+				#endif
+					if((g_ppg_trigger&TRIGGER_BY_SCC) != 0)
+					{	
+						ppg_stop_flag = true;
+						return;
+					}
+					else
+					{
+						if(!ppg_skin_contacted_flag)
+						{
+						#ifdef PPG_DEBUG
+							LOGD("No Skin Contact - PPG Stopped");
+						#endif
+							ppg_stop_flag = true;
+							if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
+							{
+								infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+								infor.img_count = 1;
+								DisplayPopUp(infor);
+							}
+							return;
+						}
+					}
+				}
+			}
+			
 			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
 				if(j > 0)
@@ -1326,6 +1399,22 @@ void FTStopPPG(void)
 	ppg_stop_flag = true;
 }
 #endif
+
+void StartSCC(void)
+{
+	g_ppg_trigger = TRIGGER_BY_SCC;
+	g_ppg_data = PPG_DATA_HR;
+	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
+
+	ppg_skin_contacted_flag = true;
+    ppg_start_flag = true;
+	k_timer_start(&ppg_skin_check_timer, K_SECONDS(10), K_NO_WAIT);
+}
+
+bool CheckSCC(void)
+{
+	return ppg_skin_contacted_flag;
+}
 
 void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 {
@@ -1529,6 +1618,12 @@ void PPGStartCheck(void)
 	if(ppg_power_flag > 0)
 		return;
 
+	if(g_ppg_alg_mode == ALG_MODE_BPT)
+		SCC_COMPARE_MAX = 3*PPG_SCC_COUNT_MAX;
+	else
+		SCC_COMPARE_MAX = PPG_SCC_COUNT_MAX;
+	scc_check_sum = SCC_COMPARE_MAX;
+	
 	PPG_Enable();
 	PPG_Power_On();
 	PPG_i2c_on();
@@ -1552,6 +1647,7 @@ void PPGStopCheck(void)
 	k_timer_stop(&ppg_get_hr_timer);
 	k_timer_stop(&ppg_delay_start_timer);
 	k_timer_stop(&ppg_bpt_est_start_timer);
+	k_timer_stop(&ppg_skin_check_timer);
 
 	if(ppg_power_flag == 0)
 		return;
@@ -1664,6 +1760,11 @@ void PPGStopCheck(void)
 		}
 	}
 
+	if((g_ppg_trigger&TRIGGER_BY_SCC) != 0)
+	{
+		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_SCC);
+	}
+
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	if((g_ppg_trigger&TRIGGER_BY_FT) != 0)
 	{
@@ -1737,6 +1838,11 @@ void PPGStopBptCal(void)
 }
 
 static void ppg_auto_stop_timerout(struct k_timer *timer_id)
+{
+	ppg_stop_flag = true;
+}
+
+static void ppg_skin_check_timerout(struct k_timer *timer_id)
 {
 	ppg_stop_flag = true;
 }

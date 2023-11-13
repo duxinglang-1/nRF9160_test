@@ -72,6 +72,7 @@ typedef enum
 	TRIGGER_BY_APP			=	0x04,
 	TRIGGER_BY_HOURLY		=	0x08,
 	TRIGGER_BY_FT			=	0x10,
+	TRIGGER_BY_SCC			=	0x20,
 }PPG_TRIGGER_SOURCE;
 
 typedef enum
@@ -176,5 +177,7 @@ extern void GetCurDaySpo2RecData(uint8_t *databuf);
 extern void SetCurDayHrRecData(uint8_t hr);
 extern void GetCurDayHrRecData(uint8_t *databuf);
 extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
+extern void StartSCC(void);
+extern bool CheckSCC(void);
 
 #endif/*__MAX32674_H__*/

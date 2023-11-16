@@ -71,6 +71,8 @@ static void MqttSendMissDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_send_miss_timer, MqttSendMissDataCallBack, NULL);
 static void TestNBRXPowertCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(testNBRXPowert, TestNBRXPowertCallBack, NULL);
+static void SendLogCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(send_log_timer, SendLogCallBack, NULL);
 
 static struct k_work_q *app_work_q;
 static struct k_work_delayable modem_init_work;
@@ -101,6 +103,7 @@ static bool mqtt_send_miss_data_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
 static bool testNB_RX_Powert_flag = false;
+static bool send_log_flag = false;
 
 static CacheInfo nb_send_cache = {0};
 static CacheInfo nb_rece_cache = {0};
@@ -274,6 +277,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	uint8_t *data, size_t len, DATA_TYPE type)
 {
 	struct mqtt_publish_param param;
+	static uint32_t msg_id = 1;
 
 	param.message.topic.qos = qos;
 	switch(type)
@@ -290,7 +294,7 @@ static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	}
 	param.message.payload.data = data;
 	param.message.payload.len = len;
-	param.message_id = sys_rand32_get();
+	param.message_id = msg_id++;
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
@@ -409,14 +413,18 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 
 		if(power_on_data_flag)
 		{
+			power_on_data_flag = false;
 			SendPowerOnData();
 			SendSettingsData();
-			power_on_data_flag = false;
+		#ifdef TEST_DEBUG
+			k_timer_start(&send_log_timer, K_MSEC(5*1000), K_NO_WAIT);
+		#endif
+			
 		}
 		if(nb_connect_ok_flag)
 		{
-			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(5), K_NO_WAIT);
 			nb_connect_ok_flag = false;
+			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		NbSendDataStart();
 		MqttDicConnectStart();
@@ -474,7 +482,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		
 		k_timer_stop(&mqtt_act_wait_timer);
 		delete_data_from_cache(&nb_send_cache);
-		k_timer_start(&send_data_timer, K_MSEC(100), K_NO_WAIT);
+		k_timer_start(&send_data_timer, K_MSEC(10), K_NO_WAIT);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -739,7 +747,7 @@ static void mqtt_link(struct k_work_q *work_q)
 		}
 
 	#ifdef NB_DEBUG
-		LOGD("run while");
+		//LOGD("run while");
 	#endif
 	}
 #ifdef NB_DEBUG	
@@ -767,7 +775,7 @@ static void SendDataCallBack(struct k_timer *timer)
 
 static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
+	k_timer_start(&send_data_timer, K_MSEC(100), K_NO_WAIT);
 }
 
 static void NbSendDataStop(void)
@@ -1388,6 +1396,19 @@ static void MqttSendData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
+}
+
+void NBSendLogData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{");
+	strcat(buf, g_imei);
+	strcat(buf, ":T20:");
+	strcat(buf, data);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_LOG);
 }
 
 void NBSendSettingReply(uint8_t *data, uint32_t datalen)
@@ -2364,6 +2385,11 @@ static void GetModemStatusCallBack(struct k_timer *timer_id)
 	get_modem_status_flag = true;
 }
 
+static void SendLogCallBack(struct k_timer *timer_id)
+{
+	send_log_flag = true;
+}
+
 void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 {
 	uint8_t reg_status = 0;
@@ -3234,6 +3260,18 @@ void NBMsgProcess(void)
 		send_data_flag = false;
 	}
 
+	if(send_log_flag)
+	{
+		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(20), K_NO_WAIT);
+		
+		if(SendLogData())
+			k_timer_start(&send_log_timer, K_MSEC(20*1000), K_NO_WAIT);
+		
+		send_log_flag = false;
+	}
+	
 	if(parse_data_flag)
 	{
 		ParseReceData();
@@ -3254,7 +3292,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("002");
 		#endif
-			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
 		
 		mqtt_disconnect_flag = false;

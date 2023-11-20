@@ -71,8 +71,10 @@ static void MqttSendMissDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_send_miss_timer, MqttSendMissDataCallBack, NULL);
 static void TestNBRXPowertCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(testNBRXPowert, TestNBRXPowertCallBack, NULL);
+#ifdef TEST_DEBUG
 static void SendLogCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_log_timer, SendLogCallBack, NULL);
+#endif
 
 static struct k_work_q *app_work_q;
 static struct k_work_delayable modem_init_work;
@@ -103,7 +105,9 @@ static bool mqtt_send_miss_data_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
 static bool testNB_RX_Powert_flag = false;
+#ifdef TEST_DEBUG
 static bool send_log_flag = false;
+#endif
 
 static CacheInfo nb_send_cache = {0};
 static CacheInfo nb_rece_cache = {0};
@@ -424,7 +428,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		if(nb_connect_ok_flag)
 		{
 			nb_connect_ok_flag = false;
-			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(5), K_NO_WAIT);
+			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(1), K_NO_WAIT);
 		}
 		NbSendDataStart();
 		MqttDicConnectStart();
@@ -745,10 +749,6 @@ static void mqtt_link(struct k_work_q *work_q)
 		#endif
 			break;
 		}
-
-	#ifdef NB_DEBUG
-		//LOGD("run while");
-	#endif
 	}
 #ifdef NB_DEBUG	
 	LOGD("Disconnecting MQTT client...");
@@ -1398,11 +1398,12 @@ static void MqttSendData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
 	}
 }
 
+#ifdef TEST_DEBUG
 void NBSendLogData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
-	
+
 	strcpy(buf, "{");
 	strcat(buf, g_imei);
 	strcat(buf, ":T20:");
@@ -1410,6 +1411,7 @@ void NBSendLogData(uint8_t *data, uint32_t datalen)
 	strcat(buf, "}");
 	MqttSendData(buf, strlen(buf), DATA_LOG);
 }
+#endif
 
 void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 {
@@ -2385,10 +2387,12 @@ static void GetModemStatusCallBack(struct k_timer *timer_id)
 	get_modem_status_flag = true;
 }
 
+#ifdef TEST_DEBUG
 static void SendLogCallBack(struct k_timer *timer_id)
 {
 	send_log_flag = true;
 }
+#endif
 
 void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 {
@@ -3260,6 +3264,7 @@ void NBMsgProcess(void)
 		send_data_flag = false;
 	}
 
+#ifdef TEST_DEBUG
 	if(send_log_flag)
 	{
 		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
@@ -3271,7 +3276,8 @@ void NBMsgProcess(void)
 		
 		send_log_flag = false;
 	}
-	
+#endif
+
 	if(parse_data_flag)
 	{
 		ParseReceData();
@@ -3283,14 +3289,14 @@ void NBMsgProcess(void)
 		if(cache_is_empty(&nb_send_cache))
 		{
 		#ifdef NB_DEBUG
-			LOGD("001");
+			LOGD("mqtt_disconnect_flag 001");
 		#endif
 			MqttDisConnect();
 		}
 		else
 		{
 		#ifdef NB_DEBUG
-			LOGD("002");
+			LOGD("mqtt_disconnect_flag 002");
 		#endif
 			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}

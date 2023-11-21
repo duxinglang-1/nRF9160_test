@@ -2089,7 +2089,7 @@ void receiveToAtWithNb(void)
 			uint8_t cvalue[5] = {0};
 			itoa(dbmint, cvalue, 10);
 			uint8_t lastValue[30] = {0};
-			strcpy(lastValue, "\nRXpower:- ");
+			strcpy(lastValue, "\nRXpower: -");
 			strcat(lastValue, cvalue);
 			strcat(lastValue, " dbm");
 			sprintf(nb_test_info, lastValue);
@@ -3214,7 +3214,7 @@ void NBMsgProcess(void)
 		else
 		{
 			SetModemTurnOff();
-			k_timer_start(&testNBRXPowert, K_SECONDS(5), K_SECONDS(5));
+			k_timer_start(&testNBRXPowert, K_SECONDS(1), K_SECONDS(1));
 		}
 		
 	}

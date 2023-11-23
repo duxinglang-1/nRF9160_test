@@ -338,7 +338,7 @@ void LogInit(void)
 {
 	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
 
-#ifdef TEST_DEBUG	
+#ifdef TEST_DEBUG
 	SpiFlash_Read((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
 	if(inforbuf.addr == 0xffffffff)
 		inforbuf.addr = 0;

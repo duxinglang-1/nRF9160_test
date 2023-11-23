@@ -1155,55 +1155,63 @@ void PPGGetSensorHubData(void)
 				index = (u32_sampleCnt-1) * num_bytes_to_read + 1;
 			else
 				index = 1;
-			sensorhub_get_output_scd_state(&databuf[index + SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE], &scd_status);
-		#ifdef PPG_DEBUG
-			LOGD("scd_status:%d", scd_status);
-		#endif
-			if(!ppg_stop_flag)
-			{
-				if(scd_status == 3)
-					scc_check_sum = SCC_COMPARE_MAX;
-				else
-					scc_check_sum--;
 
-				count++;
-				if(count >= SCC_COMPARE_MAX)
-				{
-					count = 0;
-					if(scc_check_sum != 0)
-						ppg_skin_contacted_flag = true;
-					else
-						ppg_skin_contacted_flag = false;
-
-					scc_check_sum = SCC_COMPARE_MAX;
-				#ifdef PPG_DEBUG
-					LOGD("scc check completed! scc_check_sum:%d,flag:%d", scc_check_sum,ppg_skin_contacted_flag);
+			if(1
+				#ifdef CONFIG_FACTORY_TEST_SUPPORT
+					&& !IsFTPPGTesting()
 				#endif
-					if((g_ppg_trigger&TRIGGER_BY_SCC) != 0)
-					{	
-						ppg_stop_flag = true;
-						return;
-					}
+				)
+			{
+				sensorhub_get_output_scd_state(&databuf[index + SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE], &scd_status);
+			#ifdef PPG_DEBUG
+				LOGD("scd_status:%d", scd_status);
+			#endif
+				if(!ppg_stop_flag)
+				{
+					if(scd_status == 3)
+						scc_check_sum = SCC_COMPARE_MAX;
 					else
+						scc_check_sum--;
+
+					count++;
+					if(count >= SCC_COMPARE_MAX)
 					{
-						if(!ppg_skin_contacted_flag)
-						{
-						#ifdef PPG_DEBUG
-							LOGD("No Skin Contact - PPG Stopped");
-						#endif
+						count = 0;
+						if(scc_check_sum != 0)
+							ppg_skin_contacted_flag = true;
+						else
+							ppg_skin_contacted_flag = false;
+
+						scc_check_sum = SCC_COMPARE_MAX;
+					#ifdef PPG_DEBUG
+						LOGD("scc check completed! scc_check_sum:%d,flag:%d", scc_check_sum,ppg_skin_contacted_flag);
+					#endif
+						if((g_ppg_trigger&TRIGGER_BY_SCC) != 0)
+						{	
 							ppg_stop_flag = true;
-							if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
-							{
-								infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-								infor.img_count = 1;
-								DisplayPopUp(infor);
-							}
 							return;
+						}
+						else
+						{
+							if(!ppg_skin_contacted_flag)
+							{
+							#ifdef PPG_DEBUG
+								LOGD("No Skin Contact - PPG Stopped");
+							#endif
+								ppg_stop_flag = true;
+								if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
+								{
+									infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+									infor.img_count = 1;
+									DisplayPopUp(infor);
+								}
+								return;
+							}
 						}
 					}
 				}
 			}
-			
+
 			if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 			{
 				if(j > 0)

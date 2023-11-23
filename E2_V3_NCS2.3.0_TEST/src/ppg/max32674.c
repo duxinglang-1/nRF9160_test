@@ -1157,9 +1157,9 @@ void PPGGetSensorHubData(void)
 				index = 1;
 
 			if(1
-				#ifdef CONFIG_FACTORY_TEST_SUPPORT
-					&& !IsFTPPGTesting()
-				#endif
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+				&& !IsFTPPGTesting()
+			#endif
 				)
 			{
 				sensorhub_get_output_scd_state(&databuf[index + SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE], &scd_status);

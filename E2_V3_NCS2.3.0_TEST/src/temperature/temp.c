@@ -296,10 +296,15 @@ void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 	infor.align = NOTIFY_ALIGN_CENTER;
 	infor.type = NOTIFY_TYPE_POPUP;
 
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(!IsFTTempTesting())
+
+	if(1
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		&& !IsFTTempTesting()
+	#endif
+		)
+	{
 		StartSCC();
-#endif
+	}
 
 	switch(trigger_type)
 	{

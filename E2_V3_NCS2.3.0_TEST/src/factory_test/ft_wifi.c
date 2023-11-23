@@ -67,10 +67,10 @@ const ft_menu_t FT_MENU_WIFI =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuWifiDumpProc,
+		{
+			{0x0000},
+			FTMenuWifiDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -83,7 +83,7 @@ const ft_menu_t FT_MENU_WIFI =
 
 static void FTMenuWifiSle1Hander(void)
 {
-	FTMainMenu15Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuWifiSle2Hander(void)

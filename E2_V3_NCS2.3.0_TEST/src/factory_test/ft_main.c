@@ -56,157 +56,107 @@ void FTMainDumpProc(void)
 {
 }
 
-void FTMainMenu1Proc(void)
+void FTMainMenuCurProc(void)
 {
-	ft_main_menu_index = 0;
+	ft_main_menu_index = FT_CURRENT;
 	EnterFTMenuCur();
 }
 
-void FTMainMenu2Proc(void)
+void FTMainMenuKeyProc(void)
 {
-	ft_main_menu_index = 1;
+	ft_main_menu_index = FT_KEY;
 	EnterFTMenuKey();
 }
 
-void FTMainMenu3Proc(void)
+void FTMainMenuLcdProc(void)
 {
-	ft_main_menu_index = 2;
+	ft_main_menu_index = FT_LCD;
 	EnterFTMenuLcd();
 }
 
-void FTMainMenu4Proc(void)
+void FTMainMenuTouchProc(void)
 {
-	ft_main_menu_index = 3;
+	ft_main_menu_index = FT_TOUCH;
 	EnterFTMenuTouch();
 }
 
-void FTMainMenu5Proc(void)
+void FTMainMenuTempProc(void)
 {
-	ft_main_menu_index = 4;
+	ft_main_menu_index = FT_TEMP;
 	EnterFTMenuTemp();
 }
 
-void FTMainMenu6Proc(void)
+void FTMainMenuWristProc(void)
 {
-	ft_main_menu_index = 5;
+	ft_main_menu_index = FT_WRIST;
 	EnterFTMenuWrist();
 }
 
-void FTMainMenu7Proc(void)
+void FTMainMenuIMUProc(void)
 {
-	ft_main_menu_index = 6;
+	ft_main_menu_index = FT_IMU;
 	EnterFTMenuIMU();
 }
 
-void FTMainMenu8Proc(void)
+void FTMainMenuFlashProc(void)
 {
-	ft_main_menu_index = 7;
+	ft_main_menu_index = FT_FLASH;
 	EnterFTMenuFlash();
 }
 
-void FTMainMenu9Proc(void)
+void FTMainMenuSIMProc(void)
 {
-	ft_main_menu_index = 8;
+	ft_main_menu_index = FT_SIM;
 	EnterFTMenuSIM();
 }
 
-void FTMainMenu10Proc(void)
+void FTMainMenuBleProc(void)
 {
-	ft_main_menu_index = 9;
+	ft_main_menu_index = FT_BLE;
 	EnterFTMenuBle();
 }
 
-void FTMainMenu11Proc(void)
+void FTMainMenuPPGProc(void)
 {
-	ft_main_menu_index = 10;
+	ft_main_menu_index = FT_PPG;
 	EnterFTMenuPPG();
 }
 
-void FTMainMenu12Proc(void)
+void FTMainMenuPMUProc(void)
 {
-	ft_main_menu_index = 11;
+	ft_main_menu_index = FT_PMU;
 	EnterFTMenuPMU();
 }
 
-void FTMainMenu13Proc(void)
+void FTMainMenuVibrateProc(void)
 {
-	ft_main_menu_index = 12;
+	ft_main_menu_index = FT_VIBRATE;
 	EnterFTMenuVibrate();
 }
 
-void FTMainMenu14Proc(void)
+void FTMainMenuWifiProc(void)
 {
 #ifdef CONFIG_WIFI_SUPPORT
-	ft_main_menu_index = 13;
+	ft_main_menu_index = FT_WIFI;
 	EnterFTMenuWifi();	
 #endif
 }
 
-void FTMainMenu15Proc(void)
+void FTMainMenuNetProc(void)
 {
-	ft_main_menu_index = 14;
+	ft_main_menu_index = FT_NET;
 	EnterFTMenuNet();
 }
 
-void FTMainMenu16Proc(void)
+void FTMainMenuGPSProc(void)
 {
-	ft_main_menu_index = 15;
+	ft_main_menu_index = FT_GPS;
 	EnterFTMenuGPS();
 }
 
 static void FTMainMenuProcess(void)
 {
-	switch(ft_menu.index)
-	{
-	case 0:
-		FTMainMenu1Proc();
-		break;
-	case 1:
-		FTMainMenu2Proc();
-		break;
-	case 2:
-		FTMainMenu3Proc();
-		break;
-	case 3:
-		FTMainMenu4Proc();
-		break;
-	case 4:
-		FTMainMenu5Proc();
-		break;
-	case 5:
-		FTMainMenu6Proc();
-		break;
-	case 6:
-		FTMainMenu7Proc();
-		break;
-	case 7:
-		FTMainMenu8Proc();
-		break;
-	case 8:
-		FTMainMenu9Proc();
-		break;
-	case 9:
-		FTMainMenu10Proc();
-		break;
-	case 10:
-		FTMainMenu11Proc();
-		break;
-	case 11:
-		FTMainMenu12Proc();
-		break;
-	case 12:
-		FTMainMenu13Proc();
-		break;
-	case 13:
-		FTMainMenu14Proc();
-		break;
-	case 14:
-		FTMainMenu15Proc();
-		break;
-	case 15:
-		FTMainMenu16Proc();
-		break;
-	}
+	ft_menu.item[ft_menu.index].sel_handler();
 }
 
 void FTMainMenuPgUpProc(void)
@@ -237,43 +187,89 @@ const ft_menu_t FT_MENU_MAIN =
 {
 	FT_MAIN,
 	0,
-	16,
+	15,
 	{
-		{0x7535,0x6D41,0x6D4B,0x8BD5,0x0000},//µÁ¡˜≤‚ ‘
-		{0x6309,0x952E,0x6D4B,0x8BD5,0x0000},//∞¥º¸≤‚ ‘
-		{0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000},//∆¡ƒª≤‚ ‘
-		{0x89E6,0x6478,0x6D4B,0x8BD5,0x0000},//¥•√˛≤‚ ‘
-		{0x6E29,0x5EA6,0x6D4B,0x8BD5,0x0000},//Œ¬∂»≤‚ ‘
-		{0x8131,0x8155,0x6D4B,0x8BD5,0x0000},//Õ—ÕÛ≤‚ ‘
-		{0x0049,0x004D,0x0055,0x6D4B,0x8BD5,0x0000},				//IMU≤‚ ‘
-		{0x0046,0x004C,0x0041,0x0053,0x0048,0x6D4B,0x8BD5,0x0000},	//FLASH≤‚ ‘
-		{0x0053,0x0049,0x004D,0x5361,0x6D4B,0x8BD5,0x0000},			//SIMø®≤‚ ‘
-		{0x0042,0x004C,0x0045,0x6D4B,0x8BD5,0x0000},				//BLE≤‚ ‘
-		{0x0050,0x0050,0x0047,0x6D4B,0x8BD5,0x0000},				//PPG≤‚ ‘
-		{0x5145,0x7535,0x6D4B,0x8BD5,0x0000},						//≥‰µÁ≤‚ ‘
-		{0x9707,0x52A8,0x6D4B,0x8BD5,0x0000},						//’∂Ø≤‚ ‘
-		{0x0057,0x0069,0x0046,0x0069,0x6D4B,0x8BD5,0x0000},			//WiFi≤‚ ‘
-		{0x7F51,0x7EDC,0x6D4B,0x8BD5,0x0000},						//Õ¯¬Á≤‚ ‘
-		{0x0047,0x0050,0x0053,0x6D4B,0x8BD5,0x0000},				//GPS≤‚ ‘
+		//µÁ¡˜≤‚ ‘
+		{
+			{0x7535,0x6D41,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuCurProc,
+		},
+		//∞¥º¸≤‚ ‘
+		{
+			{0x6309,0x952E,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuKeyProc,
+		},
+		//∆¡ƒª≤‚ ‘
+		{
+			{0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuLcdProc,
+		},
+		//¥•√˛≤‚ ‘
+		{
+			{0x89E6,0x6478,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuTouchProc,
+		},
+		//Œ¬∂»≤‚ ‘
+		{
+			{0x6E29,0x5EA6,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuTempProc,
+		},
+		//Õ—ÕÛ≤‚ ‘
+		//{
+		//	{0x8131,0x8155,0x6D4B,0x8BD5,0x0000},
+		//	FTMainMenuWristProc,
+		//},
+		//IMU≤‚ ‘
+		{
+			{0x0049,0x004D,0x0055,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuIMUProc,
+		},
+		//FLASH≤‚ ‘
+		{
+			{0x0046,0x004C,0x0041,0x0053,0x0048,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuFlashProc,
+		},
+		//SIMø®≤‚ ‘
+		{
+			{0x0053,0x0049,0x004D,0x5361,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuSIMProc,
+		},
+		//BLE≤‚ ‘
+		{
+			{0x0042,0x004C,0x0045,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuBleProc,
+		},
+		//PPG≤‚ ‘
+		{
+			{0x0050,0x0050,0x0047,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuPPGProc,
+		},
+		//≥‰µÁ≤‚ ‘
+		{
+			{0x5145,0x7535,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuPMUProc,
+		},
+		//’∂Ø≤‚ ‘
+		{
+			{0x9707,0x52A8,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuVibrateProc,
+		},
+		//WiFi≤‚ ‘
+		{
+			{0x0057,0x0069,0x0046,0x0069,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuWifiProc,
+		},
+		//Õ¯¬Á≤‚ ‘
+		{
+			{0x7F51,0x7EDC,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuNetProc,
+		},
+		//GPS≤‚ ‘
+		{
+			{0x0047,0x0050,0x0053,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuGPSProc,
+		},
 	},	
-	{
-		FTMainMenu1Proc,
-		FTMainMenu2Proc,
-		FTMainMenu3Proc,
-		FTMainMenu4Proc,
-		FTMainMenu5Proc,
-		FTMainMenu6Proc,
-		FTMainMenu7Proc,
-		FTMainMenu8Proc,
-		FTMainMenu9Proc,
-		FTMainMenu10Proc,
-		FTMainMenu11Proc,
-		FTMainMenu12Proc,
-		FTMainMenu13Proc,
-		FTMainMenu14Proc,
-		FTMainMenu15Proc,
-		FTMainMenu16Proc,
-	},
 	{	
 		//page proc func
 		FTMainMenuPgUpProc,
@@ -301,10 +297,12 @@ static void FactoryTestMainUpdate(void)
 
 	for(i=0;i<4;i++)
 	{
+		if((4*(ft_menu.index/4) + i) >= ft_menu.count)
+			break;
 		LCD_ShowImg_From_Flash(FT_MENU_BG_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), IMG_SET_BG_ADDR);
 		LCD_SetFontColor(WHITE);
 	
-		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.name[i+4*(ft_menu.index/4)]);
+		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.item[i+4*(ft_menu.index/4)].name);
 		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+4*(ft_menu.index/4)]]);
 	
 	#ifdef CONFIG_TOUCH_SUPPORT
@@ -313,7 +311,7 @@ static void FactoryTestMainUpdate(void)
 									FT_MENU_BG_X+FT_MENU_BG_W, 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_BG_H, 
-									ft_menu.sel_handler[i+4*(ft_menu.index/4)]);
+									ft_menu.item[i+4*(ft_menu.index/4)].sel_handler);
 	#endif
 	}	
 
@@ -349,9 +347,11 @@ static void FactoryTestMainShow(void)
 
 	for(i=0;i<4;i++)
 	{
+		if((4*(ft_menu.index/4) + i) >= ft_menu.count)
+			break;
 		LCD_ShowImg_From_Flash(FT_MENU_BG_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), IMG_SET_BG_ADDR);
 		LCD_SetFontColor(WHITE);
-		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.name[i+4*(ft_menu.index/4)]);
+		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.item[i+4*(ft_menu.index/4)].name);
 		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+4*(ft_menu.index/4)]]);
 		
 	#ifdef CONFIG_TOUCH_SUPPORT
@@ -360,7 +360,7 @@ static void FactoryTestMainShow(void)
 									FT_MENU_BG_X+FT_MENU_BG_W, 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_BG_H, 
-									ft_menu.sel_handler[i+4*(ft_menu.index/4)]);
+									ft_menu.item[i+4*(ft_menu.index/4)].sel_handler);
 	#endif
 	}
 

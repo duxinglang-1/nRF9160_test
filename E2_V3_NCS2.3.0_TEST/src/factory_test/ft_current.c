@@ -62,12 +62,16 @@ const ft_menu_t FT_MENU_CURRENT =
 	0,
 	2,
 	{
-		{0x6309,0x4EFB,0x610F,0x952E,0x8FDB,0x5165,0x4F11,0x7720,0x72B6,0x6001,0x0000},		//按任意键进入休眠状态
-		{0x4F11,0x7720,0x540E,0x6309,0x4EFB,0x610F,0x952E,0x5524,0x9192,0x0000},			//休眠后按任意键唤醒
-	},
-	{
-		FTMenuCurDumpProc,
-		FTMenuCurDumpProc,
+		//按任意键进入休眠状态
+		{
+			{0x6309,0x4EFB,0x610F,0x952E,0x8FDB,0x5165,0x4F11,0x7720,0x72B6,0x6001,0x0000},
+			FTMenuCurDumpProc,
+		},
+		//休眠后按任意键唤醒
+		{
+			{0x4F11,0x7720,0x540E,0x6309,0x4EFB,0x610F,0x952E,0x5524,0x9192,0x0000},
+			FTMenuCurDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -81,18 +85,20 @@ const ft_menu_t FT_MENU_CURRENT =
 static void FTMenuCurPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
-	FTMainMenu2Proc();
+
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuCurFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
-	FTMainMenu2Proc();
+
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuCurSle1Hander(void)
 {
-	FTMainMenu2Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuCurSle2Hander(void)
@@ -188,8 +194,8 @@ static void FTMenuCurShow(void)
 	LCD_SetFontSize(FONT_SIZE_20);
 	for(i=0;i<ft_menu.count;i++)
 	{
-		LCD_MeasureUniString(ft_menu.name[i], &w, &h);
-		LCD_ShowUniString(FT_CUR_MENU_STR_X+(FT_CUR_MENU_STR_W-w)/2, FT_CUR_MENU_STR_Y+(FT_CUR_MENU_STR_H-h)/2+i*(FT_CUR_MENU_STR_H+FT_CUR_MENU_STR_OFFSET_Y), ft_menu.name[i]);
+		LCD_MeasureUniString(ft_menu.item[i].name, &w, &h);
+		LCD_ShowUniString(FT_CUR_MENU_STR_X+(FT_CUR_MENU_STR_W-w)/2, FT_CUR_MENU_STR_Y+(FT_CUR_MENU_STR_H-h)/2+i*(FT_CUR_MENU_STR_H+FT_CUR_MENU_STR_OFFSET_Y), ft_menu.item[i].name);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -197,7 +203,7 @@ static void FTMenuCurShow(void)
 									FT_CUR_MENU_STR_X+FT_CUR_MENU_STR_W, 
 									FT_CUR_MENU_STR_Y+i*(FT_CUR_MENU_STR_H+FT_CUR_MENU_STR_OFFSET_Y), 
 									FT_CUR_MENU_STR_Y+i*(FT_CUR_MENU_STR_H+FT_CUR_MENU_STR_OFFSET_Y)+FT_CUR_MENU_STR_H, 
-									ft_menu.sel_handler[i]);
+									ft_menu.item[i].sel_handler);
 	#endif
 	}
 

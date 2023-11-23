@@ -58,13 +58,17 @@ const ft_menu_t FT_MENU_KEY =
 	0,
 	2,
 	{
-		{0x0050,0x004F,0x0057,0x0045,0x0052,0x952E,0x0000},//POWER¼ü
-		{0x0053,0x004F,0x0053,0x952E,0x0000},//SOS¼ü
+		//POWER¼ü
+		{
+			{0x0050,0x004F,0x0057,0x0045,0x0052,0x952E,0x0000},
+			FTMenuKeyDumpProc,
+		},
+		//SOS¼ü
+		{
+			{0x0053,0x004F,0x0053,0x952E,0x0000},
+			FTMenuKeyDumpProc,
+		},
 	},	
-	{
-		FTMenuKeyDumpProc,
-		FTMenuKeyDumpProc,
-	},
 	{	
 		//page proc func
 		FTMenuKeyDumpProc,
@@ -76,7 +80,7 @@ const ft_menu_t FT_MENU_KEY =
 
 static void FTMenuKeySle1Hander(void)
 {
-	FTMainMenu3Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuKeySle2Hander(void)
@@ -216,8 +220,8 @@ static void FTMenuKeyShow(void)
 	LCD_SetFontSize(FONT_SIZE_28);
 	for(i=0;i<ft_menu.count;i++)
 	{
-		LCD_MeasureUniString(ft_menu.name[i], &w, &h);
-		LCD_ShowUniString(FT_KEY_MENU_STR_X+(FT_KEY_MENU_STR_W-w)/2, FT_KEY_MENU_STR_Y+(FT_KEY_MENU_STR_H-h)/2+i*(FT_KEY_MENU_STR_H+FT_KEY_MENU_STR_OFFSET_Y), ft_menu.name[i]);
+		LCD_MeasureUniString(ft_menu.item[i].name, &w, &h);
+		LCD_ShowUniString(FT_KEY_MENU_STR_X+(FT_KEY_MENU_STR_W-w)/2, FT_KEY_MENU_STR_Y+(FT_KEY_MENU_STR_H-h)/2+i*(FT_KEY_MENU_STR_H+FT_KEY_MENU_STR_OFFSET_Y), ft_menu.item[i].name);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -225,7 +229,7 @@ static void FTMenuKeyShow(void)
 									FT_KEY_MENU_STR_X+FT_KEY_MENU_STR_W, 
 									FT_KEY_MENU_STR_Y+i*(FT_KEY_MENU_STR_H+FT_KEY_MENU_STR_OFFSET_Y), 
 									FT_KEY_MENU_STR_Y+i*(FT_KEY_MENU_STR_H+FT_KEY_MENU_STR_OFFSET_Y)+FT_KEY_MENU_STR_H, 
-									ft_menu.sel_handler[i]);
+									ft_menu.item[i].sel_handler);
 	#endif
 	}
 
@@ -317,11 +321,11 @@ const ft_menu_t FT_MENU_WRIST =
 	0,
 	0,
 	{
-		{0x0000},
+		{
+			{0x0000},
+			FTMenuWristDumpProc,
+		},
 	},	
-	{
-		FTMenuWristDumpProc,
-	},
 	{	
 		//page proc func
 		FTMenuWristDumpProc,
@@ -333,7 +337,7 @@ const ft_menu_t FT_MENU_WRIST =
 
 static void FTMenuWristSle1Hander(void)
 {
-	FTMainMenu7Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuWristSle2Hander(void)

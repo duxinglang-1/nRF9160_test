@@ -64,10 +64,10 @@ const ft_menu_t FT_MENU_FLASH =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuFlashDumpProc,
+		{
+			{0x0000},
+			FTMenuFlashDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -80,7 +80,7 @@ const ft_menu_t FT_MENU_FLASH =
 
 static void FTMenuFlashSle1Hander(void)
 {
-	FTMainMenu9Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuFlashSle2Hander(void)

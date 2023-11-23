@@ -69,10 +69,10 @@ const ft_menu_t FT_MENU_PPG =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuPPGDumpProc,
+		{
+			{0x0000},
+			FTMenuPPGDumpProc,
+		},
 	},
 	{
 		//page proc func
@@ -85,7 +85,7 @@ const ft_menu_t FT_MENU_PPG =
 
 static void FTMenuPPGSle1Hander(void)
 {
-	FTMainMenu12Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuPPGSle2Hander(void)

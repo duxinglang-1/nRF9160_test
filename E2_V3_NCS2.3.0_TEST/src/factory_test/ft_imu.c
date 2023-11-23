@@ -64,10 +64,10 @@ const ft_menu_t FT_MENU_IMU =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuIMUDumpProc,
+		{
+			{0x0000},
+			FTMenuIMUDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -80,7 +80,7 @@ const ft_menu_t FT_MENU_IMU =
 
 static void FTMenuIMUSle1Hander(void)
 {
-	FTMainMenu8Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuIMUSle2Hander(void)

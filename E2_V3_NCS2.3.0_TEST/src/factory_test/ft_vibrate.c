@@ -73,12 +73,16 @@ const ft_menu_t FT_MENU_VIB =
 	0,
 	2,
 	{
-		{0x6309,0x4EFB,0x610F,0x952E,0x542F,0x52A8,0x6D4B,0x8BD5,0x0000},		//按任意键启动
-		{0x6D4B,0x8BD5,0x65F6,0x6309,0x4EFB,0x610F,0x952E,0x9000,0x51FA,0x0000},//测试时按任意键退出
-	},
-	{
-		FTMenuVibDumpProc,
-		FTMenuVibDumpProc,
+		//按任意键启动
+		{
+			{0x6309,0x4EFB,0x610F,0x952E,0x542F,0x52A8,0x6D4B,0x8BD5,0x0000},
+			FTMenuVibDumpProc,
+		},
+		//测试时按任意键退出
+		{
+			{0x6D4B,0x8BD5,0x65F6,0x6309,0x4EFB,0x610F,0x952E,0x9000,0x51FA,0x0000},
+			FTMenuVibDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -93,20 +97,23 @@ static void FTMenuVibPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
 	vibrate_off();
-	FTMainMenu14Proc();
+	
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuVibFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
 	vibrate_off();
-	FTMainMenu14Proc();
+	
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuVibSle1Hander(void)
 {
 	vibrate_off();
-	FTMainMenu14Proc();
+
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuVibSle2Hander(void)
@@ -227,8 +234,8 @@ static void FTMenuVibShow(void)
 	LCD_SetFontSize(FONT_SIZE_20);
 	for(i=0;i<ft_menu.count;i++)
 	{
-		LCD_MeasureUniString(ft_menu.name[i], &w, &h);
-		LCD_ShowUniString(FT_VIB_MENU_STR_X+(FT_VIB_MENU_STR_W-w)/2, FT_VIB_MENU_STR_Y+(FT_VIB_MENU_STR_H-h)/2+i*(FT_VIB_MENU_STR_H+FT_VIB_MENU_STR_OFFSET_Y), ft_menu.name[i]);
+		LCD_MeasureUniString(ft_menu.item[i].name, &w, &h);
+		LCD_ShowUniString(FT_VIB_MENU_STR_X+(FT_VIB_MENU_STR_W-w)/2, FT_VIB_MENU_STR_Y+(FT_VIB_MENU_STR_H-h)/2+i*(FT_VIB_MENU_STR_H+FT_VIB_MENU_STR_OFFSET_Y), ft_menu.item[i].name);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -236,7 +243,7 @@ static void FTMenuVibShow(void)
 									FT_VIB_MENU_STR_X+FT_VIB_MENU_STR_W, 
 									FT_VIB_MENU_STR_Y+i*(FT_VIB_MENU_STR_H+FT_VIB_MENU_STR_OFFSET_Y), 
 									FT_VIB_MENU_STR_Y+i*(FT_VIB_MENU_STR_H+FT_VIB_MENU_STR_OFFSET_Y)+FT_VIB_MENU_STR_H, 
-									ft_menu.sel_handler[i]);
+									ft_menu.item[i].sel_handler);
 	#endif
 	}
 

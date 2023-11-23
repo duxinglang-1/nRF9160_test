@@ -66,10 +66,10 @@ const ft_menu_t FT_MENU_BLE =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuBleDumpProc,
+		{
+			{0x0000},
+			FTMenuBleDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -82,7 +82,7 @@ const ft_menu_t FT_MENU_BLE =
 
 static void FTMenuBleSle1Hander(void)
 {
-	FTMainMenu11Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuBleSle2Hander(void)

@@ -67,10 +67,10 @@ const ft_menu_t FT_MENU_TEMP =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuTempDumpProc,
+		{
+			{0x0000},
+			FTMenuTempDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -91,7 +91,7 @@ bool IsFTTempTesting(void)
 
 static void FTMenuTempSle1Hander(void)
 {
-	FTMainMenu6Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuTempSle2Hander(void)

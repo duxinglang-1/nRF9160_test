@@ -72,10 +72,10 @@ const ft_menu_t FT_MENU_GPS =
 	0,
 	0,
 	{
-		{0x0000},
-	},
-	{
-		FTMenuGPSDumpProc,
+		{
+			{0x0000},
+			FTMenuGPSDumpProc,
+		},
 	},
 	{	
 		//page proc func

@@ -173,7 +173,7 @@ void TimeCheckSendSportData(void)
 	sleep_data sleep[24] = {0};
 
 	//wrist
-	if(is_wearing())
+	if(ppg_skin_contacted_flag)
 		strcpy(reply, "1,");
 	else
 		strcpy(reply, "0,");
@@ -250,7 +250,7 @@ void TimeCheckSendHealthData(void)
 	uint16_t temp_data[24] = {0};
 
 	//wrist
-	if(is_wearing())
+	if(ppg_skin_contacted_flag)
 		strcpy(reply, "1,");
 	else
 		strcpy(reply, "0,");
@@ -746,7 +746,7 @@ void SyncSendHealthData(void)
 	strcpy(reply, tmpbuf);
 	
 	//wrist
-	if(is_wearing())
+	if(ppg_skin_contacted_flag)
 		strcat(reply, "1,");
 	else
 		strcat(reply, "0,");

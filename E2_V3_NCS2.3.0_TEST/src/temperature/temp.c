@@ -27,6 +27,9 @@
 #elif defined(TEMP_CT1711)
 #include "ct1711.h"
 #endif
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif
 
 static bool temp_check_ok = false;
 static bool temp_get_data_flag = false;
@@ -93,9 +96,6 @@ void SetCurDayTempRecData(float data)
 	uint16_t deca_temp = data*10;
 	temp_rec2_data *p_temp,tmp_temp = {0};
 	sys_date_timer_t temp_date = {0};
-
-	if((deca_temp > TEMP_MAX) || (deca_temp < TEMP_MIN))
-		deca_temp = 0;
 
 	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
 	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
@@ -536,8 +536,13 @@ void TempMsgProcess(void)
 		}
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{
+			float tmp_temp_body;
+			
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
-			SetCurDayTempRecData(g_temp_body);
+			tmp_temp_body = g_temp_body;
+			if(!ppg_skin_contacted_flag)
+				tmp_temp_body = 254.0;
+			SetCurDayTempRecData(tmp_temp_body);
 		}
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
 		if((g_temp_trigger&TEMP_TRIGGER_BY_FT) != 0)

@@ -672,7 +672,7 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 
 	mqtt_connecting_flag = true;
-	k_timer_start(&mqtt_connect_timer, K_SECONDS(60), K_NO_WAIT);
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(2*60), K_NO_WAIT);
 	
 	client_init(&client);
 

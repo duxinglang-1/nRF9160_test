@@ -83,6 +83,7 @@ static struct k_work_delayable modem_on_work;
 static struct k_work_delayable nb_link_work;
 static struct k_work_delayable nb_test_work;
 static struct k_work_delayable mqtt_link_work;
+static struct k_work_delayable mqtt_unlink_work;
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
@@ -658,6 +659,19 @@ void mqtt_is_connecting(void)
 	return mqtt_connecting_flag;
 }
 
+static void mqtt_unlink(struct k_work_q *work_q)
+{
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
+	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+
+	mqtt_connected = false;
+	mqtt_connecting_flag = false;
+	mqtt_disconnect(&client);
+}
+
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err;
@@ -670,6 +684,9 @@ static void mqtt_link(struct k_work_q *work_q)
 	if(FactryTestActived())
 		return;
 #endif
+
+	if(mqtt_connected)
+		return;
 
 	mqtt_connecting_flag = true;
 	k_timer_start(&mqtt_connect_timer, K_SECONDS(2*60), K_NO_WAIT);
@@ -741,14 +758,6 @@ static void mqtt_link(struct k_work_q *work_q)
 		#endif
 			break;
 		}
-
-		if(mqtt_disconnect_req_flag)
-		{
-		#ifdef NB_DEBUG
-			LOGD("mqtt_disconnect_req_flag");
-		#endif
-			break;
-		}
 	}
 #ifdef NB_DEBUG	
 	LOGD("Disconnecting MQTT client...");
@@ -810,49 +819,6 @@ bool MqttIsConnected(void)
 	LOGD("mqtt_connected:%d", mqtt_connected);
 #endif
 	return mqtt_connected;
-}
-
-void DisConnectMqttLink(void)
-{
-	int err;
-
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
-	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
-		k_timer_stop(&mqtt_disconnect_timer);
-
-	if(mqtt_connected)
-	{
-		err = mqtt_disconnect(&client);
-		if(err)
-		{
-		#ifdef NB_DEBUG
-			LOGD("Could not disconnect MQTT client. Error: %d", err);
-		#endif
-		}
-		
-		mqtt_connected = false;
-		mqtt_disconnect_req_flag = true;
-	}
-}
-
-static void MqttDisConnect(void)
-{
-	int err;
-
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
-
-	mqtt_disconnect_req_flag = true;
-	err = mqtt_disconnect(&client);
-	if(err)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Could not disconnect MQTT client. Error: %d", err);
-	#endif
-	}
 }
 
 static void MqttConnectCallBack(struct k_timer *timer_id)
@@ -2821,7 +2787,7 @@ void SetModemTurnOff(void)
 	}
 	
 	if(mqtt_connected)
-		DisConnectMqttLink();
+		k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
 
 	nb_connected = false;
 	mqtt_connected = false;
@@ -3130,9 +3096,6 @@ static void nb_link(struct k_work *work)
 		if(!err && !test_nb_flag)
 		{
 			SetNetWorkParaByPlmn(g_imsi);
-			if(mqtt_connecting_flag)
-				MqttDisConnect();
-
 			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif
@@ -3291,7 +3254,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("mqtt_disconnect_flag 001");
 		#endif
-			MqttDisConnect();
+			k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
 		}
 		else
 		{
@@ -3336,7 +3299,7 @@ void NBMsgProcess(void)
 			return;
 
 		if(mqtt_connecting_flag)
-			MqttDisConnect();
+			k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
 
 		if(!nb_connecting_flag)
 		{
@@ -3389,8 +3352,9 @@ void NBMsgProcess(void)
 	#ifdef NB_DEBUG
 		LOGD("mqtt_connect_timeout_flag begin");
 	#endif
-		MqttDisConnect();
 		mqtt_connect_timeout_flag = false;
+	
+		k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
 	}
 	
 	if(mqtt_act_wait_timeout_flag)
@@ -3407,8 +3371,7 @@ void NBMsgProcess(void)
 			)
 			return;
 
-		DisConnectMqttLink();
-		mqtt_connected = false;
+		k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
 
 		if(!mqtt_connecting_flag)
 		{
@@ -3450,6 +3413,8 @@ void NB_init(struct k_work_q *work_q)
 	k_work_init_delayable(&nb_link_work, nb_link);
 	k_work_init_delayable(&nb_test_work, nb_test);
 	k_work_init_delayable(&mqtt_link_work, mqtt_link);
+	k_work_init_delayable(&mqtt_unlink_work, mqtt_unlink);
+	
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);
 #endif

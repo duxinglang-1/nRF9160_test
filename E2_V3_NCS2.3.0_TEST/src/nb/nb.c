@@ -83,7 +83,6 @@ static struct k_work_delayable modem_on_work;
 static struct k_work_delayable nb_link_work;
 static struct k_work_delayable nb_test_work;
 static struct k_work_delayable mqtt_link_work;
-static struct k_work_delayable mqtt_unlink_work;
 
 NB_SIGNL_LEVEL g_nb_sig = NB_SIG_LEVEL_NO;
 
@@ -659,13 +658,17 @@ void mqtt_is_connecting(void)
 	return mqtt_connecting_flag;
 }
 
-static void mqtt_unlink(struct k_work_q *work_q)
+static void mqtt_unlink(void)
 {
 #ifdef NB_DEBUG
 	LOGD("begin");
 #endif
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
-			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_stop(&mqtt_disconnect_timer);
+	if(k_timer_remaining_get(&mqtt_connect_timer) > 0)
+		k_timer_stop(&mqtt_connect_timer);
+	if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
+		k_timer_stop(&mqtt_act_wait_timer);
 
 	mqtt_connected = false;
 	mqtt_connecting_flag = false;
@@ -2787,7 +2790,7 @@ void SetModemTurnOff(void)
 	}
 	
 	if(mqtt_connected)
-		k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
+		mqtt_unlink();
 
 	nb_connected = false;
 	mqtt_connected = false;
@@ -3254,7 +3257,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("mqtt_disconnect_flag 001");
 		#endif
-			k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
+			mqtt_unlink();
 		}
 		else
 		{
@@ -3299,7 +3302,7 @@ void NBMsgProcess(void)
 			return;
 
 		if(mqtt_connecting_flag)
-			k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
+			mqtt_unlink();
 
 		if(!nb_connecting_flag)
 		{
@@ -3353,8 +3356,7 @@ void NBMsgProcess(void)
 		LOGD("mqtt_connect_timeout_flag begin");
 	#endif
 		mqtt_connect_timeout_flag = false;
-	
-		k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
+		mqtt_unlink();
 	}
 	
 	if(mqtt_act_wait_timeout_flag)
@@ -3371,7 +3373,7 @@ void NBMsgProcess(void)
 			)
 			return;
 
-		k_work_schedule_for_queue(app_work_q, &mqtt_unlink_work, K_NO_WAIT);
+		mqtt_unlink();
 
 		if(!mqtt_connecting_flag)
 		{
@@ -3413,7 +3415,6 @@ void NB_init(struct k_work_q *work_q)
 	k_work_init_delayable(&nb_link_work, nb_link);
 	k_work_init_delayable(&nb_test_work, nb_test);
 	k_work_init_delayable(&mqtt_link_work, mqtt_link);
-	k_work_init_delayable(&mqtt_unlink_work, mqtt_unlink);
 	
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);

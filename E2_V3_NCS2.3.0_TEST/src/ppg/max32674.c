@@ -33,7 +33,7 @@
 #define PPG_HR_DEL_MIN_NUM		5
 #define PPG_SPO2_COUNT_MAX		3
 #define PPG_SPO2_DEL_MIN_NUM	1
-#define PPG_SCC_COUNT_MAX		3
+#define PPG_SCC_COUNT_MAX		5
 
 bool ppg_int_event = false;
 bool ppg_bpt_is_calbraed = false;

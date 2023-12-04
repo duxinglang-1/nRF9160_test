@@ -485,8 +485,6 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#endif
 		
 		k_timer_stop(&mqtt_act_wait_timer);
-		delete_data_from_cache(&nb_send_cache);
-		k_timer_start(&send_data_timer, K_MSEC(10), K_NO_WAIT);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -808,7 +806,12 @@ static void NbSendData(void)
 			k_timer_stop(&mqtt_disconnect_timer);
 		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
 		
-		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len, data_type);
+		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len, data_type);
+		if(!ret)
+		{
+			delete_data_from_cache(&nb_send_cache);
+		}
+		k_timer_start(&send_data_timer, K_MSEC(50), K_NO_WAIT);
 		
 		if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
 			k_timer_stop(&mqtt_act_wait_timer);
@@ -3235,10 +3238,10 @@ void NBMsgProcess(void)
 	{
 		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 			k_timer_stop(&mqtt_disconnect_timer);
-		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(20), K_NO_WAIT);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		
 		if(SendLogData())
-			k_timer_start(&send_log_timer, K_MSEC(20*1000), K_NO_WAIT);
+			k_timer_start(&send_log_timer, K_SECONDS(10), K_NO_WAIT);
 		
 		send_log_flag = false;
 	}

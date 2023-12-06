@@ -14,13 +14,13 @@
 #include <zephyr/types.h>
 #include <string.h>
 
-#define NODE_CACHE_MAX	50
+#define NODE_CACHE_MAX	100
 
 typedef enum
 {
 	DATA_TRANSFER,
-	DATA_RESOURCE,
 	DATA_RESOURCE_VER,
+	DATA_LOG,
 	DATA_MAX
 }DATA_TYPE;
 

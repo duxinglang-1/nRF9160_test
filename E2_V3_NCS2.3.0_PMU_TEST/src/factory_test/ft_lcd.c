@@ -70,12 +70,16 @@ const ft_menu_t FT_MENU_LCD =
 	0,
 	2,
 	{
-		{0x6309,0x4EFB,0x610F,0x952E,0x542F,0x52A8,0x6D4B,0x8BD5,0x0000},		//按任意键启动
-		{0x6D4B,0x8BD5,0x65F6,0x6309,0x4EFB,0x610F,0x952E,0x9000,0x51FA,0x0000},//测试时按任意键退出
-	},
-	{
-		FTMenuLcdDumpProc,
-		FTMenuLcdDumpProc,
+		//按任意键启动
+		{
+			{0x6309,0x4EFB,0x610F,0x952E,0x542F,0x52A8,0x6D4B,0x8BD5,0x0000},
+			FTMenuLcdDumpProc,
+		},
+		//测试时按任意键退出
+		{
+			{0x6D4B,0x8BD5,0x65F6,0x6309,0x4EFB,0x610F,0x952E,0x9000,0x51FA,0x0000},
+			FTMenuLcdDumpProc,
+		},
 	},
 	{	
 		//page proc func
@@ -89,18 +93,20 @@ const ft_menu_t FT_MENU_LCD =
 static void FTMenuLcdPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
-	FTMainMenu4Proc();
+
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuLcdFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
-	FTMainMenu4Proc();
+
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuLcdSle1Hander(void)
 {
-	FTMainMenu4Proc();
+	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuLcdSle2Hander(void)
@@ -250,8 +256,8 @@ static void FTMenuLcdShow(void)
 	LCD_SetFontSize(FONT_SIZE_20);
 	for(i=0;i<ft_menu.count;i++)
 	{
-		LCD_MeasureUniString(ft_menu.name[i], &w, &h);
-		LCD_ShowUniString(FT_LCD_MENU_STR_X+(FT_LCD_MENU_STR_W-w)/2, FT_LCD_MENU_STR_Y+(FT_LCD_MENU_STR_H-h)/2+i*(FT_LCD_MENU_STR_H+FT_LCD_MENU_STR_OFFSET_Y), ft_menu.name[i]);
+		LCD_MeasureUniString(ft_menu.item[i].name, &w, &h);
+		LCD_ShowUniString(FT_LCD_MENU_STR_X+(FT_LCD_MENU_STR_W-w)/2, FT_LCD_MENU_STR_Y+(FT_LCD_MENU_STR_H-h)/2+i*(FT_LCD_MENU_STR_H+FT_LCD_MENU_STR_OFFSET_Y), ft_menu.item[i].name);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -259,7 +265,7 @@ static void FTMenuLcdShow(void)
 									FT_LCD_MENU_STR_X+FT_LCD_MENU_STR_W, 
 									FT_LCD_MENU_STR_Y+i*(FT_LCD_MENU_STR_H+FT_LCD_MENU_STR_OFFSET_Y), 
 									FT_LCD_MENU_STR_Y+i*(FT_LCD_MENU_STR_H+FT_LCD_MENU_STR_OFFSET_Y)+FT_LCD_MENU_STR_H, 
-									ft_menu.sel_handler[i]);
+									ft_menu.item[i].sel_handler);
 	#endif
 	}
 

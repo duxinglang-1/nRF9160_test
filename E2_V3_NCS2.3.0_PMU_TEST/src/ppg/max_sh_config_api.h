@@ -210,7 +210,7 @@ int sh_set_cfg_wearablesuite_spo2cal( const uint32_t val[3] );
  *
  * @return	1 byte status (SS_STATUS) : 0x00 (SS_SUCCESS) on success
  */
-int sh_get_cfg_wearablesuite_spo2cal( int32_t val[3]);
+int sh_get_cfg_wearablesuite_spo2cal( int32_t* val);
 
 /**
  * @brief	function to set Motion Threshold for Sensorhub

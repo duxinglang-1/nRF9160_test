@@ -2048,37 +2048,16 @@ void SettingsUpdateStatus(void)
 		{
 			uint16_t imei_str[IMEI_MAX_LEN+1] = {0};
 			uint16_t imsi_str[IMSI_MAX_LEN+1] = {0};
-			uint16_t iccid_str[ICCID_MAX_LEN+1] = {0};
 			uint16_t mcu_str[20] = {0x0000};
-			uint16_t modem_str[20] = {0x0000};	
-			uint16_t ppg_str[20] = {0x0000};
-			uint16_t wifi_str[20] = {0x0000};
-			uint16_t ble_str[20] = {0x0000};
-			uint16_t ble_mac_str[64] = {0};
-			uint16_t *menu_sle_str[9] = {imei_str,imsi_str,iccid_str,mcu_str,modem_str,ppg_str,wifi_str,ble_str,ble_mac_str};
+			uint16_t *menu_sle_str[3] = {imei_str,imsi_str,mcu_str};
 			uint16_t menu_color = 0x9CD3;
 
 			LCD_Clear(BLACK);
 
 			mmi_asc_to_ucs2((uint8_t*)imei_str, g_imei);
 			mmi_asc_to_ucs2((uint8_t*)imsi_str, g_imsi);
-			mmi_asc_to_ucs2((uint8_t*)iccid_str, g_iccid);
 			mmi_asc_to_ucs2((uint8_t*)mcu_str, g_fw_version);
-			mmi_asc_to_ucs2((uint8_t*)modem_str, &g_modem[12]);	
-		#ifdef CONFIG_PPG_SUPPORT	
-			mmi_asc_to_ucs2((uint8_t*)ppg_str, g_ppg_ver);
-		#else
-			mmi_asc_to_ucs2((uint8_t*)ppg_str, "NO");
-		#endif
 			
-		#ifdef CONFIG_WIFI_SUPPORT
-			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_ver);
-		#else
-			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
-		#endif
-			mmi_asc_to_ucs2((uint8_t*)ble_str, &g_nrf52810_ver[15]);
-			mmi_asc_to_ucs2((uint8_t*)ble_mac_str, g_ble_mac_addr);
-
 			if(settings_menu.count > SETTINGS_SUB_MENU_MAX_PER_PG)
 				count = (settings_menu.count - settings_menu.index >= SETTINGS_SUB_MENU_MAX_PER_PG) ? SETTINGS_SUB_MENU_MAX_PER_PG : settings_menu.count - settings_menu.index;
 			else
@@ -2090,14 +2069,11 @@ void SettingsUpdateStatus(void)
 
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(menu_color);
-				LCD_SetFontSize(FONT_SIZE_20);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
 
 				LCD_SetFontColor(WHITE);
-				if((settings_menu.index == 0) && (i == 2))
-					LCD_SetFontSize(FONT_SIZE_16);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
 										menu_sle_str[i+settings_menu.index]);
@@ -5745,6 +5721,7 @@ void FOTAUpdateStatus(void)
 		
 	case FOTA_STATUS_FINISHED:
 		{
+			static bool is_finished = false;
 			uint16_t str_notify[LANGUAGE_MAX][25] = {
 													#ifndef FW_FOR_CN
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0063,0x006F,0x006D,0x0070,0x006C,0x0065,0x0074,0x0065,0x0064,0x0000},//Upgrade completed
@@ -5760,21 +5737,26 @@ void FOTAUpdateStatus(void)
 													};
 			
 			flag = false;
-		
-			LCD_Clear(BLACK);
-			LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
+
+			if(!is_finished)
+			{
+				is_finished = true;
+				
+				LCD_Clear(BLACK);
+				LCD_ShowImg_From_Flash(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
+				
+			#ifdef FONTMAKER_UNICODE_FONT
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
+				LCD_MeasureUniString(tmpbuf, &w, &h);
+				LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
+			#endif
 			
-		#ifdef FONTMAKER_UNICODE_FONT
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
-			LCD_MeasureUniString(tmpbuf, &w, &h);
-			LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
-		#endif
-		
-			SetLeftKeyUpHandler(fota_reboot_confirm);
-			SetRightKeyUpHandler(fota_reboot_confirm);
-		#ifdef CONFIG_TOUCH_SUPPORT
-			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_reboot_confirm);
-		#endif
+				SetLeftKeyUpHandler(fota_reboot_confirm);
+				SetRightKeyUpHandler(fota_reboot_confirm);
+			#ifdef CONFIG_TOUCH_SUPPORT
+				register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, fota_reboot_confirm);
+			#endif
+			}
 		}
 		break;
 		

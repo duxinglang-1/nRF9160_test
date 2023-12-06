@@ -43,7 +43,7 @@
 
 //#define NB_DEBUG
 
-#define MQTT_CONNECTED_KEEP_TIME	(30)
+#define MQTT_CONNECTED_KEEP_TIME	(60)
 
 static void SendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(send_data_timer, SendDataCallBack, NULL);
@@ -71,6 +71,10 @@ static void MqttSendMissDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(mqtt_send_miss_timer, MqttSendMissDataCallBack, NULL);
 static void TestNBRXPowertCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(testNBRXPowert, TestNBRXPowertCallBack, NULL);
+#ifdef TEST_DEBUG
+static void SendLogCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(send_log_timer, SendLogCallBack, NULL);
+#endif
 
 static struct k_work_q *app_work_q;
 static struct k_work_delayable modem_init_work;
@@ -94,12 +98,16 @@ static bool nb_reconnect_flag = false;
 static bool mqtt_connecting_flag = false;
 static bool mqtt_connect_timeout_flag = false;
 static bool mqtt_disconnect_flag = false;
+static bool mqtt_disconnect_req_flag = false;
 static bool mqtt_reconnect_flag = false;
 static bool mqtt_act_wait_timeout_flag = false;
 static bool mqtt_send_miss_data_flag = false;
 static bool get_modem_status_flag = false;
 static bool server_has_timed_flag = false;
 static bool testNB_RX_Powert_flag = false;
+#ifdef TEST_DEBUG
+static bool send_log_flag = false;
+#endif
 
 static CacheInfo nb_send_cache = {0};
 static CacheInfo nb_rece_cache = {0};
@@ -270,16 +278,27 @@ static void at_handler_modem_notify(const char *response)
 /**@brief Function to publish data on the configured topic
  */
 static int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
-	uint8_t *data, size_t len)
+	uint8_t *data, size_t len, DATA_TYPE type)
 {
 	struct mqtt_publish_param param;
+	static uint32_t msg_id = 1;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = CONFIG_MQTT_PUB_TOPIC;
-	param.message.topic.topic.size = strlen(CONFIG_MQTT_PUB_TOPIC);
+	switch(type)
+	{
+	case DATA_TRANSFER:
+		param.message.topic.topic.utf8 = CONFIG_MQTT_PUB_TOPIC;
+		param.message.topic.topic.size = strlen(CONFIG_MQTT_PUB_TOPIC);
+		break;
+		
+	case DATA_LOG:
+		param.message.topic.topic.utf8 = CONFIG_MQTT_LOG_PUB_TOPIC;
+		param.message.topic.topic.size = strlen(CONFIG_MQTT_LOG_PUB_TOPIC);
+		break;
+	}
 	param.message.payload.data = data;
 	param.message.payload.len = len;
-	param.message_id = sys_rand32_get();
+	param.message_id = msg_id++;
 	param.dup_flag = 0;
 	param.retain_flag = 0;
 
@@ -386,25 +405,30 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
+	#ifdef NB_DEBUG
+		LOGD("MQTT client connected!"); 	
+	#endif
+
 		mqtt_connected = true;
 		mqtt_connecting_flag = false;
 		k_timer_stop(&mqtt_connect_timer);
 
-	#ifdef NB_DEBUG
-		LOGD("MQTT client connected!");		
-	#endif
 		subscribe();
 
 		if(power_on_data_flag)
 		{
+			power_on_data_flag = false;
 			SendPowerOnData();
 			SendSettingsData();
-			power_on_data_flag = false;
+		#ifdef TEST_DEBUG
+			k_timer_start(&send_log_timer, K_MSEC(5*1000), K_NO_WAIT);
+		#endif
+			
 		}
 		if(nb_connect_ok_flag)
 		{
-			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(5), K_NO_WAIT);
 			nb_connect_ok_flag = false;
+			k_timer_start(&mqtt_send_miss_timer, K_SECONDS(1), K_NO_WAIT);
 		}
 		NbSendDataStart();
 		MqttDicConnectStart();
@@ -444,14 +468,6 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 					LOGD("Could not disconnect: %d", err);
 				#endif
 				}
-
-				err = mqtt_live(c);
-				if(err != 0)
-				{
-				#ifdef NB_DEBUG
-					LOGD("ERROR: mqtt_live %d", err);
-				#endif
-				}
 			}
 		} 
 		break;
@@ -470,7 +486,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		
 		k_timer_stop(&mqtt_act_wait_timer);
 		delete_data_from_cache(&nb_send_cache);
-		k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
+		k_timer_start(&send_data_timer, K_MSEC(10), K_NO_WAIT);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -656,6 +672,7 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 
 	mqtt_connecting_flag = true;
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(60), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -724,6 +741,14 @@ static void mqtt_link(struct k_work_q *work_q)
 		#endif
 			break;
 		}
+
+		if(mqtt_disconnect_req_flag)
+		{
+		#ifdef NB_DEBUG
+			LOGD("mqtt_disconnect_req_flag");
+		#endif
+			break;
+		}
 	}
 #ifdef NB_DEBUG	
 	LOGD("Disconnecting MQTT client...");
@@ -737,16 +762,10 @@ static void mqtt_link(struct k_work_q *work_q)
 	#endif
 	}
 
-	err = mqtt_live(&client);
-	if(err != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("ERROR: mqtt_live %d", err);
-	#endif
-	}
-
 link_over:
+	mqtt_connected = false;
 	mqtt_connecting_flag = false;
+	mqtt_disconnect_req_flag = false;
 }
 
 static void SendDataCallBack(struct k_timer *timer)
@@ -756,7 +775,7 @@ static void SendDataCallBack(struct k_timer *timer)
 
 static void NbSendDataStart(void)
 {
-	k_timer_start(&send_data_timer, K_MSEC(500), K_NO_WAIT);
+	k_timer_start(&send_data_timer, K_MSEC(100), K_NO_WAIT);
 }
 
 static void NbSendDataStop(void)
@@ -769,7 +788,7 @@ static void NbSendData(void)
 	uint8_t data_type,*p_data;
 	uint32_t data_len;
 	int ret;
-	
+
 	ret = get_data_from_cache(&nb_send_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
@@ -777,7 +796,7 @@ static void NbSendData(void)
 			k_timer_stop(&mqtt_disconnect_timer);
 		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
 		
-		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len);
+		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len, data_type);
 		
 		if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
 			k_timer_stop(&mqtt_act_wait_timer);
@@ -796,7 +815,10 @@ bool MqttIsConnected(void)
 void DisConnectMqttLink(void)
 {
 	int err;
-		
+
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 		k_timer_stop(&mqtt_disconnect_timer);
 
@@ -809,16 +831,9 @@ void DisConnectMqttLink(void)
 			LOGD("Could not disconnect MQTT client. Error: %d", err);
 		#endif
 		}
-
-		err = mqtt_live(&client);
-		if(err != 0)
-		{
-		#ifdef NB_DEBUG
-			LOGD("ERROR: mqtt_live %d", err);
-		#endif
-		}
 		
 		mqtt_connected = false;
+		mqtt_disconnect_req_flag = true;
 	}
 }
 
@@ -829,19 +844,13 @@ static void MqttDisConnect(void)
 #ifdef NB_DEBUG
 	LOGD("begin");
 #endif
+
+	mqtt_disconnect_req_flag = true;
 	err = mqtt_disconnect(&client);
 	if(err)
 	{
 	#ifdef NB_DEBUG
 		LOGD("Could not disconnect MQTT client. Error: %d", err);
-	#endif
-	}
-
-	err = mqtt_live(&client);
-	if(err != 0)
-	{
-	#ifdef NB_DEBUG
-		LOGD("ERROR: mqtt_live %d", err);
 	#endif
 	}
 }
@@ -1023,30 +1032,30 @@ void NBRedrawSignal(void)
 	{
 		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
 		//<n>
-		//	0 â€“ Disable unsolicited result codes
-		//	1 â€“ Enable unsolicited result codes +CEREG:<stat>
-		//	2 â€“ Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
-		//	3 â€“ Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
-		//	4 â€“ Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
-		//	5 â€“ Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
+		//	0 ¨C Disable unsolicited result codes
+		//	1 ¨C Enable unsolicited result codes +CEREG:<stat>
+		//	2 ¨C Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
+		//	3 ¨C Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
+		//	4 ¨C Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
+		//	5 ¨C Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
 		//<stat>
-		//	0 â€“ Not registered. UE is not currently searching for an operator to register to.
-		//	1 â€“ Registered, home network.
-		//	2 â€“ Not registered, but UE is currently trying to attach or searching an operator to register to.
-		//	3 â€“ Registration denied.
-		//	4 â€“ Unknown (e.g. out of E-UTRAN coverage).
-		//	5 â€“ Registered, roaming.
-		//	8 â€“ Attached for emergency bearer services only.
-		//	90 â€“ Not registered due to UICC failure.
+		//	0 ¨C Not registered. UE is not currently searching for an operator to register to.
+		//	1 ¨C Registered, home network.
+		//	2 ¨C Not registered, but UE is currently trying to attach or searching an operator to register to.
+		//	3 ¨C Registration denied.
+		//	4 ¨C Unknown (e.g. out of E-UTRAN coverage).
+		//	5 ¨C Registered, roaming.
+		//	8 ¨C Attached for emergency bearer services only.
+		//	90 ¨C Not registered due to UICC failure.
 		//<tac>
 		//	String. A 2-byte Tracking Area Code (TAC) in hexadecimal format.
 		//<ci>
 		//	String. A 4-byte E-UTRAN cell ID in hexadecimal format.
 		//<AcT>
-		//	7 â€“ E-UTRAN
-		//	9 â€“ E-UTRAN NB-S1
+		//	7 ¨C E-UTRAN
+		//	9 ¨C E-UTRAN NB-S1
 		//<cause_type>
-		//	0 â€“ <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
+		//	0 ¨C <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
 		//<reject_cause>
 		//	EMM cause value. See 3GPP TS 24.301 Annex A
 		//<Active-Time>
@@ -1065,7 +1074,7 @@ void NBRedrawSignal(void)
 		ptr = strstr(strbuf, "+CEREG: ");
 		if(ptr)
 		{
-			//æŒ‡ä»¤å¤´
+			//Ö¸ÁîÍ·
 			ptr += strlen("+CEREG: ");
 			//reg_status
 			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
@@ -1095,17 +1104,17 @@ void NBRedrawSignal(void)
 	{
 		//+CSCON: <n>,<mode>[,<state>[,<access]]
 		//<n>
-		//0 â€“ Unsolicited indications disabled
-		//1 â€“ Enabled: <mode>
-		//2 â€“ Enabled: <mode>[,<state>]
-		//3 â€“ Enabled: <mode>[,<state>[,<access>]]
+		//0 ¨C Unsolicited indications disabled
+		//1 ¨C Enabled: <mode>
+		//2 ¨C Enabled: <mode>[,<state>]
+		//3 ¨C Enabled: <mode>[,<state>[,<access>]]
 		//<mode>
-		//0 â€“ Idle
-		//1 â€“ Connected
+		//0 ¨C Idle
+		//1 ¨C Connected
 		//<state>
-		//7 â€“ E-UTRAN connected
+		//7 ¨C E-UTRAN connected
 		//<access>
-		//4 â€“ Radio access of type E-UTRAN FDD
+		//4 ¨C Radio access of type E-UTRAN FDD
 	#ifdef NB_DEBUG
 		LOGD("%s", strbuf);
 	#endif
@@ -1344,11 +1353,11 @@ void GetModemDateTime(void)
 #endif
 }
 
-static void MqttSendData(uint8_t *data, uint32_t datalen)
+static void MqttSendData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
 {
 	int ret;
 
-	ret = add_data_into_cache(&nb_send_cache, data, datalen, DATA_TRANSFER);
+	ret = add_data_into_cache(&nb_send_cache, data, datalen, type);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
 #endif
@@ -1389,6 +1398,21 @@ static void MqttSendData(uint8_t *data, uint32_t datalen)
 	}
 }
 
+#ifdef TEST_DEBUG
+void NBSendLogData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[1024] = {0};
+	uint8_t tmpbuf[32] = {0};
+
+	strcpy(buf, "{");
+	strcat(buf, g_imei);
+	strcat(buf, ":T20:");
+	strcat(buf, data);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_LOG);
+}
+#endif
+
 void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
@@ -1400,12 +1424,12 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 	strcat(buf, data);
 	strcat(buf, ":");
 	GetSystemTimeSecString(tmpbuf);
-	strcat(buf, tmpbuf);	
+	strcat(buf, tmpbuf);
 	strcat(buf, "}");
 #ifdef NB_DEBUG
 	LOGD("eply data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendAlarmData(uint8_t *data, uint32_t datalen)
@@ -1424,7 +1448,7 @@ void NBSendAlarmData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("alarm data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendSosWifiData(uint8_t *data, uint32_t datalen)
@@ -1443,7 +1467,7 @@ void NBSendSosWifiData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("sos wifi data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
@@ -1461,7 +1485,7 @@ void NBSendSosGpsData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("sos gps data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 #ifdef CONFIG_IMU_SUPPORT
@@ -1481,7 +1505,7 @@ void NBSendFallWifiData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG	
 	LOGD("fall wifi data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendFallGpsData(uint8_t *data, uint32_t datalen)
@@ -1499,7 +1523,7 @@ void NBSendFallGpsData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("fall gps data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 #endif
 
@@ -1523,7 +1547,8 @@ void NBSendSingleHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	//MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+	wifi_send_payload(buf, strlen(buf));
 }
 
 void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
@@ -1546,7 +1571,7 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
@@ -1562,7 +1587,7 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
@@ -1585,7 +1610,7 @@ void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("sport data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendMissSportData(uint8_t *data, uint32_t datalen)
@@ -1601,7 +1626,7 @@ void NBSendMissSportData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("sport data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendLocationData(uint8_t *data, uint32_t datalen)
@@ -1621,7 +1646,7 @@ void NBSendLocationData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("location data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendSettingsData(uint8_t *data, uint32_t datalen)
@@ -1641,7 +1666,7 @@ void NBSendSettingsData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("settings data:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendPowerOnInfor(uint8_t *data, uint32_t datalen)
@@ -1661,7 +1686,7 @@ void NBSendPowerOnInfor(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("pwr on infor:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendPowerOffInfor(uint8_t *data, uint32_t datalen)
@@ -1681,7 +1706,7 @@ void NBSendPowerOffInfor(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("pwr off infor:%s", buf);
 #endif
-	MqttSendData(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 bool GetParaFromString(uint8_t *rece, uint32_t rece_len, uint8_t *cmd, uint8_t *data)
@@ -1754,7 +1779,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t *ptr,*ptr1;
 			uint8_t strtmp[128] = {0};
 
-			//åå°ä¸‹å‘å®šä½ä¸ŠæŠ¥é—´éš”
+			//ºóÌ¨ÏÂ·¢¶¨Î»ÉÏ±¨¼ä¸ô
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -1783,21 +1808,21 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S8") == 0)
 		{
-			//åå°ä¸‹å‘å¥åº·æ£€æµ‹é—´éš”
+			//ºóÌ¨ÏÂ·¢½¡¿µ¼ì²â¼ä¸ô
 			global_settings.health_interval = atoi(strdata);
 
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
-			//åå°ä¸‹å‘æŠ¬è…•äº®å±è®¾ç½®
+			//ºóÌ¨ÏÂ·¢Ì§ÍóÁÁÆÁÉèÖÃ
 			global_settings.wake_screen_by_wrist = atoi(strdata);
 			
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S10") == 0)
 		{
-			//åå°ä¸‹å‘è„±è…•æ£€æµ‹è®¾ç½®
+			//ºóÌ¨ÏÂ·¢ÍÑÍó¼ì²âÉèÖÃ
 			global_settings.wrist_off_check = atoi(strdata);
 
 			flag = true;			
@@ -1807,7 +1832,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t *ptr;
 			uint8_t strtmp[128] = {0};
 			
-			//åå°ä¸‹å‘è¡€å‹æ ¡å‡†å€¼
+			//ºóÌ¨ÏÂ·¢ÑªÑ¹Ğ£×¼Öµ
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -1840,7 +1865,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t strtmp[256] = {0};
 			uint32_t copylen = 0;
 
-			//åå°ä¸‹å‘æœ€æ–°ç‰ˆæœ¬ä¿¡æ¯
+			//ºóÌ¨ÏÂ·¢×îĞÂ°æ±¾ĞÅÏ¢
 			//project dir
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
@@ -1915,7 +1940,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			sys_date_timer_t tmp_dt = {0};
 			uint32_t copylen = 0;
 
-			//åå°ä¸‹å‘æ ¡æ—¶æŒ‡ä»¤
+			//ºóÌ¨ÏÂ·¢Ğ£Ê±Ö¸Áî
 			//timezone
 			ptr = strstr(strdata, ",");
 			if(ptr == NULL)
@@ -2007,14 +2032,14 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S29") == 0)
 		{
-			//åå°ä¸‹å‘ä½ç½®ä¿¡æ¯
+			//ºóÌ¨ÏÂ·¢Î»ÖÃĞÅÏ¢
 		#ifdef NB_DEBUG
 			LOGD("%s", strdata);
 		#endif
 			uint8_t *ptr,*ptr1;
 			uint8_t strtmp[256] = {0};
 		
-			//åå°ä¸‹å‘å®šä½ä¸ŠæŠ¥é—´éš”
+			//ºóÌ¨ÏÂ·¢¶¨Î»ÉÏ±¨¼ä¸ô
 			ptr = strstr(strdata, ",");
 			if(ptr != NULL)
 			{
@@ -2065,7 +2090,7 @@ void receiveToAtWithNb(void)
 			uint8_t cvalue[5] = {0};
 			itoa(dbmint, cvalue, 10);
 			uint8_t lastValue[30] = {0};
-			strcpy(lastValue, "\nRXpower:- ");
+			strcpy(lastValue, "\nRXpower: -");
 			strcat(lastValue, cvalue);
 			strcat(lastValue, " dbm");
 			sprintf(nb_test_info, lastValue);
@@ -2363,6 +2388,13 @@ static void GetModemStatusCallBack(struct k_timer *timer_id)
 	get_modem_status_flag = true;
 }
 
+#ifdef TEST_DEBUG
+static void SendLogCallBack(struct k_timer *timer_id)
+{
+	send_log_flag = true;
+}
+#endif
+
 void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 {
 	uint8_t reg_status = 0;
@@ -2380,22 +2412,22 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 	ptr = strstr(buf, "%XMONITOR: ");
 	if(ptr)
 	{
-		//è¡¥ä¸Šä¸€ä¸ªé€—å·ä½œä¸ºæœ«å°¾çš„åˆ†éš”ç¬¦,æ›¿æ¢ä»¥å‰çš„0x0d,0x0a
+		//²¹ÉÏÒ»¸ö¶ººÅ×÷ÎªÄ©Î²µÄ·Ö¸ô·û,Ìæ»»ÒÔÇ°µÄ0x0d,0x0a
 		buf[len-2] = ',';
 		buf[len-1] = 0x00;
-		//æŒ‡ä»¤å¤´
+		//Ö¸ÁîÍ·
 		ptr += strlen("%XMONITOR: ");
 		//reg_status
 		GetStringInforBySepa(ptr, ",", 1, tmpbuf);
 		reg_status = atoi(tmpbuf);
-		// 0 â€“ Not registered. UE is not currently searching for an operator to register to.
-		// 1 â€“ Registered, home network.
-		// 2 â€“ Not registered, but UE is currently trying to attach or searching an operator to register to.
-		// 3 â€“ Registration denied.
-		// 4 â€“ Unknown (e.g. out of E-UTRAN coverage).
-		// 5 â€“ Registered, roaming.
-		// 8 â€“ Attached for emergency bearer services only.
-		// 90 â€“ Not registered due to UICC failure.
+		// 0 ¨C Not registered. UE is not currently searching for an operator to register to.
+		// 1 ¨C Registered, home network.
+		// 2 ¨C Not registered, but UE is currently trying to attach or searching an operator to register to.
+		// 3 ¨C Registration denied.
+		// 4 ¨C Unknown (e.g. out of E-UTRAN coverage).
+		// 5 ¨C Registered, roaming.
+		// 8 ¨C Attached for emergency bearer services only.
+		// 90 ¨C Not registered due to UICC failure.
 		if(reg_status == 1 || reg_status == 5)
 		{
 			uint8_t tau = 0;
@@ -2491,16 +2523,16 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
 			{
-			case 0://0 0 0 â€“ value is incremented in multiples of 2 seconds
+			case 0://0 0 0 ¨C value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 1://0 0 1 â€“ value is incremented in multiples of 1 minute
+			case 1://0 0 1 ¨C value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 2://0 1 0 â€“ value is incremented in multiples of 6 minutes
+			case 2://0 1 0 ¨C value is incremented in multiples of 6 minutes
 				flag = 6*60;
 				break;
-			case 3://0 1 1 â€“ value indicates that the timer is deactivated
+			case 3://0 1 1 ¨C value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2518,28 +2550,28 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			act = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(act>>5)
 			{
-			case 0://0 0 0 â€“ value is incremented in multiples of 10 minutes
+			case 0://0 0 0 ¨C value is incremented in multiples of 10 minutes
 				flag = 10*60;
 				break;
-			case 1://0 0 1 â€“ value is incremented in multiples of 1 hour
+			case 1://0 0 1 ¨C value is incremented in multiples of 1 hour
 				flag = 60*60;
 				break;
-			case 2://0 1 0 â€“ value is incremented in multiples of 10 hours
+			case 2://0 1 0 ¨C value is incremented in multiples of 10 hours
 				flag = 10*60*60;
 				break;
-			case 3://0 1 1 â€“ value is incremented in multiples of 2 seconds
+			case 3://0 1 1 ¨C value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 4://1 0 0 â€“ value is incremented in multiples of 30 seconds
+			case 4://1 0 0 ¨C value is incremented in multiples of 30 seconds
 				flag = 30;
 				break;
-			case 5://1 0 1 â€“ value is incremented in multiples of 1 minute
+			case 5://1 0 1 ¨C value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 6://1 1 0 â€“ value is incremented in multiples of 320 hours
+			case 6://1 1 0 ¨C value is incremented in multiples of 320 hours
 				flag = 320*60*60;
 				break;
-			case 7://1 1 1 â€“ value indicates that the timer is deactivated
+			case 7://1 1 1 ¨C value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2558,16 +2590,16 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 			tau = (strbuf[0]-0x30)*0x80+(strbuf[1]-0x30)*0x40+(strbuf[2]-0x30)*0x20;
 			switch(tau>>5)
 			{
-			case 0://0 0 0 â€“ value is incremented in multiples of 2 seconds
+			case 0://0 0 0 ¨C value is incremented in multiples of 2 seconds
 				flag = 2;
 				break;
-			case 1://0 0 1 â€“ value is incremented in multiples of 1 minute
+			case 1://0 0 1 ¨C value is incremented in multiples of 1 minute
 				flag = 60;
 				break;
-			case 2://0 1 0 â€“ value is incremented in multiples of 6 minute
+			case 2://0 1 0 ¨C value is incremented in multiples of 6 minute
 				flag = 6*60;
 				break;
-			case 7://1 1 1 â€“ value indicates that the timer is deactivated
+			case 7://1 1 1 ¨C value indicates that the timer is deactivated
 				flag = 0;
 				break;
 			}
@@ -2689,7 +2721,7 @@ void GetModemInfor(void)
 		}
 	}
 
-#if 0	//xb add 2023.07.25 å¤–å›½æ— ä¿¡å·å¡æµ‹è¯•ï¼Œåœ¨å‘å°„ç«¯(DKæ¿æˆ–è€…å¦å¤–ä¸€å—æ‰‹è¡¨ä¸Šè°ƒç”¨
+#if 0	//xb add 2023.07.25 Íâ¹úÎŞĞÅºÅ¿¨²âÊÔ£¬ÔÚ·¢Éä¶Ë(DK°å»òÕßÁíÍâÒ»¿éÊÖ±íÉÏµ÷ÓÃ
 	{
         if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%XRFTEST=1,1,20,8470,23,0,3,12,0,0,0,0,0") == 0)
         {
@@ -3045,15 +3077,15 @@ static void nb_link(struct k_work *work)
 			nb_connected = false;
 
 			net_retry_count++;
-			if(net_retry_count <= 2)		//2æ¬¡ä»¥å†…æ¯1åˆ†é’Ÿé‡è¿ä¸€æ¬¡
+			if(net_retry_count <= 2)		//2´ÎÒÔÄÚÃ¿1·ÖÖÓÖØÁ¬Ò»´Î
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-			else if(net_retry_count <= 4)	//3åˆ°4æ¬¡æ¯5åˆ†é’Ÿé‡è¿ä¸€æ¬¡
+			else if(net_retry_count <= 4)	//3µ½4´ÎÃ¿5·ÖÖÓÖØÁ¬Ò»´Î
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-			else if(net_retry_count <= 6)	//5åˆ°6æ¬¡æ¯10åˆ†é’Ÿé‡è¿ä¸€æ¬¡
+			else if(net_retry_count <= 6)	//5µ½6´ÎÃ¿10·ÖÖÓÖØÁ¬Ò»´Î
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(net_retry_count <= 8)	//7åˆ°8æ¬¡æ¯1å°æ—¶é‡è¿ä¸€æ¬¡
+			else if(net_retry_count <= 8)	//7µ½8´ÎÃ¿1Ğ¡Ê±ÖØÁ¬Ò»´Î
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-			else							//8æ¬¡ä»¥ä¸Šæ¯6å°æ—¶é‡è¿ä¸€æ¬¡
+			else							//8´ÎÒÔÉÏÃ¿6Ğ¡Ê±ÖØÁ¬Ò»´Î
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 		}
 		else
@@ -3183,7 +3215,7 @@ void NBMsgProcess(void)
 		else
 		{
 			SetModemTurnOff();
-			k_timer_start(&testNBRXPowert, K_SECONDS(5), K_SECONDS(5));
+			k_timer_start(&testNBRXPowert, K_SECONDS(1), K_SECONDS(1));
 		}
 		
 	}
@@ -3233,6 +3265,20 @@ void NBMsgProcess(void)
 		send_data_flag = false;
 	}
 
+#ifdef TEST_DEBUG
+	if(send_log_flag)
+	{
+		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+			k_timer_stop(&mqtt_disconnect_timer);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(20), K_NO_WAIT);
+		
+		if(SendLogData())
+			k_timer_start(&send_log_timer, K_MSEC(20*1000), K_NO_WAIT);
+		
+		send_log_flag = false;
+	}
+#endif
+
 	if(parse_data_flag)
 	{
 		ParseReceData();
@@ -3244,16 +3290,16 @@ void NBMsgProcess(void)
 		if(cache_is_empty(&nb_send_cache))
 		{
 		#ifdef NB_DEBUG
-			LOGD("001");
+			LOGD("mqtt_disconnect_flag 001");
 		#endif
 			MqttDisConnect();
 		}
 		else
 		{
 		#ifdef NB_DEBUG
-			LOGD("002");
+			LOGD("mqtt_disconnect_flag 002");
 		#endif
-			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(5), K_NO_WAIT);
+			k_timer_start(&mqtt_disconnect_timer, K_SECONDS(30), K_NO_WAIT);
 		}
 		
 		mqtt_disconnect_flag = false;
@@ -3289,6 +3335,9 @@ void NBMsgProcess(void)
 		#endif
 			)
 			return;
+
+		if(mqtt_connecting_flag)
+			MqttDisConnect();
 
 		if(!nb_connecting_flag)
 		{
@@ -3384,7 +3433,7 @@ void NBMsgProcess(void)
 		testNB_RX_Powert_flag = false;
 	}
 
-	if(nb_connecting_flag || mqtt_connecting_flag)
+	if(nb_connecting_flag || mqtt_connecting_flag || mqtt_connected)
 	{
 		k_sleep(K_MSEC(5));
 	}

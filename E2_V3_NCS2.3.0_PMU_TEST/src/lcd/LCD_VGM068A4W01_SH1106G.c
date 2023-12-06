@@ -34,10 +34,10 @@ static struct spi_cs_control spi_cs_ctr;
 
 static LCD_BL_MODE bl_mode = LCD_BL_AUTO;
 
-static u8_t tx_buffer[SPI_BUF_LEN] = {0};
-static u8_t rx_buffer[SPI_BUF_LEN] = {0};
+static uint8_t tx_buffer[SPI_BUF_LEN] = {0};
+static uint8_t rx_buffer[SPI_BUF_LEN] = {0};
 
-u8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
+uint8_t lcd_data_buffer[2*LCD_DATA_LEN] = {0};	//xb add 20200702 a pix has 2 byte data
 
 static void LCD_SPI_Init(void)
 {
@@ -52,7 +52,7 @@ static void LCD_SPI_Init(void)
 	spi_cfg.slave = 0;
 }
 
-static void LCD_SPI_Transceive(u8_t *txbuf, u32_t txbuflen, u8_t *rxbuf, u32_t rxbuflen)
+static void LCD_SPI_Transceive(uint8_t *txbuf, uint32_t txbuflen, uint8_t *rxbuf, uint32_t rxbuflen)
 {
 	int err;
 	
@@ -96,51 +96,51 @@ void Write_Data(uint8_t i)
 //----------------------------------------------------------------------
 //写寄存器函数
 //i:寄存器值
-void WriteComm(u8_t i)
+void WriteComm(uint8_t i)
 {
-	gpio_pin_write(gpio_lcd, CS, 0);
-	gpio_pin_write(gpio_lcd, RS, 0);
+	gpio_pin_set(gpio_lcd, CS, 0);
+	gpio_pin_set(gpio_lcd, RS, 0);
 
 	Write_Data(i);
 
-	gpio_pin_write(gpio_lcd, CS, 1);
+	gpio_pin_set(gpio_lcd, CS, 1);
 }
 
 //写LCD数据
 //i:要写入的值
-void WriteData(u8_t i)
+void WriteData(uint8_t i)
 {
-	gpio_pin_write(gpio_lcd, CS, 0);
-	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_set(gpio_lcd, CS, 0);
+	gpio_pin_set(gpio_lcd, RS, 1);
 
 	Write_Data(i);
 
-	gpio_pin_write(gpio_lcd, CS, 1);
+	gpio_pin_set(gpio_lcd, CS, 1);
 }
 
-void WriteDispData(u8_t Data)
+void WriteDispData(uint8_t Data)
 {
-	gpio_pin_write(gpio_lcd, CS, 0);
-	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_set(gpio_lcd, CS, 0);
+	gpio_pin_set(gpio_lcd, RS, 1);
 
 	lcd_data_buffer[0] = Data;
 	
 	LCD_SPI_Transceive(lcd_data_buffer, 1, NULL, 0);
 
-	gpio_pin_write(gpio_lcd, CS, 1);
+	gpio_pin_set(gpio_lcd, CS, 1);
 }
 
 //LCD画点函数
 //color:要填充的颜色 1为点亮，0为熄灭
-void WriteOneDot(u16_t color)
+void WriteOneDot(uint16_t color)
 { 
-	WriteDispData((u8_t)(0x00ff&color));
+	WriteDispData((uint8_t)(0x00ff&color));
 }
 
 ////////////////////////////////////////////////测试函数//////////////////////////////////////////
 void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
 {
-	u8_t x0;
+	uint8_t x0;
 	
 	if(x >= COL)
 		x = 0;
@@ -154,12 +154,12 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	WriteComm(x0&0x0f);  
 }
 
-void DispColor(u32_t total, u8_t color)
+void DispColor(uint32_t total, uint8_t color)
 {
-	u32_t i,remain;      
+	uint32_t i,remain;      
 
-	gpio_pin_write(gpio_lcd, CS, 0);
-	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_set(gpio_lcd, CS, 0);
+	gpio_pin_set(gpio_lcd, RS, 1);
 	
 	while(1)
 	{
@@ -181,15 +181,15 @@ void DispColor(u32_t total, u8_t color)
 		total -= remain;
 	}
 
-	gpio_pin_write(gpio_lcd, CS, 1);
+	gpio_pin_set(gpio_lcd, CS, 1);
 }
 
-void DispData(u32_t total, u8_t *data)
+void DispData(uint32_t total, uint8_t *data)
 {
-	u32_t i,remain;      
+	uint32_t i,remain;      
 
-	gpio_pin_write(gpio_lcd, CS, 0);
-	gpio_pin_write(gpio_lcd, RS, 1);
+	gpio_pin_set(gpio_lcd, CS, 0);
+	gpio_pin_set(gpio_lcd, RS, 1);
 	
 	while(1)
 	{
@@ -211,13 +211,13 @@ void DispData(u32_t total, u8_t *data)
 		total -= remain;
 	}
 
-	gpio_pin_write(gpio_lcd, CS, 1);
+	gpio_pin_set(gpio_lcd, CS, 1);
 }
 
 //测试函数（显示RGB条纹）
 void DispBand(void)	 
 {
-	u32_t i;
+	uint32_t i;
 	unsigned int color[8]={0xf800,0x07e0,0x001f,0xFFE0,0XBC40,0X8430,0x0000,0xffff};//0x94B2
 
 	for(i=0;i<8;i++)
@@ -280,9 +280,9 @@ bool LCD_CheckID(void)
 
 //清屏函数
 //color:要清屏的填充色
-void LCD_Clear(u16_t color)
+void LCD_Clear(uint16_t color)
 {
-	u8_t page,data;
+	uint8_t page,data;
 
 	if(color==BLACK)
 		data = 0x00;
@@ -305,7 +305,7 @@ void LCD_BL_On(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
-	gpio_pin_write(gpio_lcd, LEDA, 1);																										   
+	gpio_pin_set(gpio_lcd, LEDA, 1);																										   
 #endif
 }
 
@@ -315,7 +315,7 @@ void LCD_BL_Off(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_Off();
 #else
-	gpio_pin_write(gpio_lcd, LEDA, 0);
+	gpio_pin_set(gpio_lcd, LEDA, 0);
 #endif
 }
 
@@ -333,7 +333,7 @@ void LCD_SleepIn(void)
 //屏幕唤醒
 void LCD_SleepOut(void)
 {
-	u16_t bk_time;
+	uint16_t bk_time;
 	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
@@ -378,7 +378,7 @@ void LCD_ResetBL_Timer(void)
 		k_timer_stop(&backlight_timer);
 	
 	if(global_settings.backlight_time != 0)
-		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), K_NO_WAIT);
 }
 
 //获取屏幕当前背光模式
@@ -431,17 +431,17 @@ void LCD_Init(void)
 		return;
 	}
 
-	gpio_pin_configure(gpio_lcd, LEDA, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_lcd, CS, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_lcd, RST, GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_lcd, RS, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio_lcd, LEDA, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_lcd, CS, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_lcd, RST, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_lcd, RS, GPIO_OUTPUT);
 	
 	LCD_SPI_Init();
 
-	gpio_pin_write(gpio_lcd, CS, 1);
-	gpio_pin_write(gpio_lcd, RST, 0);
+	gpio_pin_set(gpio_lcd, CS, 1);
+	gpio_pin_set(gpio_lcd, RST, 0);
 	Delay(30);
-	gpio_pin_write(gpio_lcd, RST, 1);
+	gpio_pin_set(gpio_lcd, RST, 1);
 	Delay(30);
 
 	WriteComm(0xAE); //Set Display Off
@@ -477,8 +477,8 @@ void LCD_Init(void)
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();
 #else
-	//gpio_pin_write(gpio_lcd, LEDK, 0);
-	gpio_pin_write(gpio_lcd, LEDA, 1);
+	//gpio_pin_set(gpio_lcd, LEDK, 0);
+	gpio_pin_set(gpio_lcd, LEDA, 1);
 #endif
 
 	lcd_is_sleeping = false;
@@ -486,7 +486,7 @@ void LCD_Init(void)
 	k_timer_init(&backlight_timer, backlight_timer_handler, NULL);
 
 	if(global_settings.backlight_time != 0)
-		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), NULL);
+		k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), K_NO_WAIT);
 }
 
 #endif/*LCD_R108101_GC9307*/

@@ -17,8 +17,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
-//#define TEST_DEBUG
-
 typedef struct
 {
 	uint32_t addr;
@@ -72,7 +70,7 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 #endif /* WIN32 */
 	va_end(args);
 
-	//è¿™é‡ŒNæ“ä½œ100çš„é•¿åº¦ç›´æŽ¥é€€å‡ºï¼Œæ‰“å¤ªé•¿å¯èƒ½ä¼šå¯¼è‡´é‡å¯
+	//ÕâÀïN²Ù×÷100µÄ³¤¶ÈÖ±½ÓÍË³ö£¬´òÌ«³¤¿ÉÄÜ»áµ¼ÖÂÖØÆô
 	if(n > LOG_BUFF_SIZE - 4)
 	{
 		return;
@@ -107,9 +105,76 @@ void log_write_data_to_flash(uint8_t *buf, uint32_t len)
 	return 0;
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  SendLogData
+ * DESCRIPTION
+ *  ÁªÍøÖ®ºó·¢ËÍ´æÔÚflashÀïÃæµÄlogÊý¾ÝÖÁºóÌ¨
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+bool SendLogData(void)
+{
+	uint32_t i;
+	static uint8_t tmpbuf[LOG_BUFF_SIZE] = {0};
+	static uint32_t j=0,count=0;
+	static uint32_t addr=LOG_DATA_BEGIN_ADDR;
+
+#ifdef TEST_DEBUG
+	if((inforbuf.count == 0) || (inforbuf.count == 0xffffffff))
+		return false;
+
+	if(addr < LOG_DATA_END_ADDR)
+	{
+		SpiFlash_Read(logbuf, addr, SPIFlash_SECTOR_SIZE);
+		for(i=0;i<SPIFlash_SECTOR_SIZE;)
+		{
+			uint8_t tmpdata;
+
+			tmpdata = logbuf[i++];
+			if(tmpdata > 0x00 && tmpdata < 0x7f)
+			{
+				tmpbuf[j++] = tmpdata;
+				if(tmpbuf[j-1] == '\n')
+				{
+					tmpbuf[j-1] = 0x00;
+					j = 0;
+					NBSendLogData(tmpbuf, strlen(tmpbuf));
+					count++;
+					if(count == inforbuf.count)
+						return false;
+
+					k_sleep(K_MSEC(10));
+				}
+				else
+				{
+					if(j == (sizeof(tmpbuf) - 1))
+					{
+						tmpbuf[j] = 0x00;
+						j=0;
+						NBSendLogData(tmpbuf, strlen(tmpbuf));
+						count++;
+						if(count == inforbuf.count)
+							return false;
+
+						k_sleep(K_MSEC(10));
+					}
+				}
+			}
+		}
+		addr += SPIFlash_SECTOR_SIZE;
+		return true;
+	}
+#endif
+
+	return false;
+}
+
 void log_read_from_flash(void)
 {
-	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
+	uint32_t i,j=0,k=0,addr = LOG_DATA_BEGIN_ADDR;
 
 #ifdef TEST_DEBUG
 	if((inforbuf.count == 0) || (inforbuf.count == 0xffffffff))
@@ -120,7 +185,7 @@ void log_read_from_flash(void)
 	while(addr < LOG_DATA_END_ADDR)
 	{
 		SpiFlash_Read(logbuf, addr, SPIFlash_SECTOR_SIZE);
-		for(i=0,j=0;i<SPIFlash_SECTOR_SIZE;)
+		for(i=0;i<SPIFlash_SECTOR_SIZE;)
 		{
 			uint8_t tmpdata;
 
@@ -192,7 +257,7 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 #endif /* WIN32 */
 	va_end(args);
 
-	//è¿™é‡ŒNæ“ä½œ100çš„é•¿åº¦ç›´æŽ¥é€€å‡ºï¼Œæ‰“å¤ªé•¿å¯èƒ½ä¼šå¯¼è‡´é‡å¯
+	//ÕâÀïN²Ù×÷100µÄ³¤¶ÈÖ±½ÓÍË³ö£¬´òÌ«³¤¿ÉÄÜ»áµ¼ÖÂÖØÆô
 	if(n > LOG_BUFF_SIZE - 4)
 	{
 		return;
@@ -204,7 +269,7 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 		*(buf + n) = '\n';
 		n++;
 
-		LogWriteData(buf, n, DATA_TRANSFER);
+		LogWriteData(buf, n, DATA_LOG);
 	}
 #endif	
 }
@@ -273,13 +338,13 @@ void LogInit(void)
 {
 	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
 
-#ifdef TEST_DEBUG	
+#ifdef TEST_DEBUG
 	SpiFlash_Read((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
 	if(inforbuf.addr == 0xffffffff)
 		inforbuf.addr = 0;
 	if(inforbuf.count == 0xffffffff)
 		inforbuf.count = 0;
 
-	log_read_from_flash();
+	//log_read_from_flash();
 #endif	
 }

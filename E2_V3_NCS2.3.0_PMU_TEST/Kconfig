@@ -185,9 +185,13 @@ config APPLICATION_WORKQUEUE_PRIORITY
 	int "Application workqueue priority"
 	default SYSTEM_WORKQUEUE_PRIORITY
 	
+config MQTT_LOG_PUB_TOPIC
+	string "MQTT log publish topic"
+	default "device/e2/pushlog"
+
 config MQTT_PUB_TOPIC
 	string "MQTT publish topic"
-	default "my/publish/topic"
+	default "device/e2/pushdata"
 
 config MQTT_SUB_TOPIC
 	string "MQTT subscribe topic"

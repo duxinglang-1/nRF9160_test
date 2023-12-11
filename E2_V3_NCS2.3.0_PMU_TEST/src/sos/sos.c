@@ -40,9 +40,12 @@ static bool sos_start_wifi_flag = false;
 static bool sos_wait_wifi_addr_flag = false;
 #endif
 static bool sos_status_change_flag = false;
+static bool sos_ask_wifi_flag = false;
 
 uint8_t sos_trigger_time[16] = {0};
 
+static void SOSAskWifiTimerOutCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(sos_ask_wifi_timer, SOSAskWifiTimerOutCallBack, NULL);
 static void SOSTimerOutCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_timer, SOSTimerOutCallBack, NULL);
 static void SOSStartGPSCallBack(struct k_timer *timer_id);
@@ -53,6 +56,11 @@ K_TIMER_DEFINE(sos_wifi_timer, SOSStartWifiCallBack, NULL);
 static void SOSWaitWifiAddrCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(sos_wait_wifi_addr_timer, SOSWaitWifiAddrCallBack, NULL);
 #endif
+
+static void SOSAskWifiTimerOutCallBack(struct k_timer *timer_id)
+{
+	sos_ask_wifi_flag = true;
+}
 
 void SOSTimerOutCallBack(struct k_timer *timer_id)
 {
@@ -423,8 +431,7 @@ void SOSStart(void)
 	case 1://only wifi
 	case 3://wifi+gps
 	#ifdef CONFIG_WIFI_SUPPORT
-		sos_wait_wifi = true;
-		APP_Ask_wifi_data();
+		k_timer_start(&sos_ask_wifi_timer, K_SECONDS(10), K_NO_WAIT);
 	#endif
 		break;
 
@@ -478,6 +485,13 @@ void SOSMsgProc(void)
 	{
 		SOSStatusUpdate();
 		sos_status_change_flag = false;
+	}
+
+	if(sos_ask_wifi_flag)
+	{
+		sos_wait_wifi = true;
+		APP_Ask_wifi_data();
+		sos_ask_wifi_flag = false;
 	}
 }
 

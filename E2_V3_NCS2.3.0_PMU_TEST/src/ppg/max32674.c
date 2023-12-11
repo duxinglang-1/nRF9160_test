@@ -33,7 +33,7 @@
 #define PPG_HR_DEL_MIN_NUM		5
 #define PPG_SPO2_COUNT_MAX		3
 #define PPG_SPO2_DEL_MIN_NUM	1
-#define PPG_SCC_COUNT_MAX		3
+#define PPG_SCC_COUNT_MAX		5
 
 bool ppg_int_event = false;
 bool ppg_bpt_is_calbraed = false;
@@ -145,13 +145,6 @@ void SetCurDayBptRecData(bpt_data bpt)
 	uint8_t i,tmpbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
 	ppg_bpt_rec2_data *p_bpt,tmp_bpt = {0};
 	sys_date_timer_t temp_date = {0};
-
-	if((bpt.systolic > PPG_BPT_SYS_MAX) || (bpt.systolic < PPG_BPT_SYS_MIN) 
-		|| (bpt.diastolic > PPG_BPT_DIA_MAX) || (bpt.diastolic < PPG_BPT_DIA_MIN)
-		)
-	{
-		memset(&bpt, 0, sizeof(bpt_data));
-	}
 
 	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
 	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
@@ -312,9 +305,6 @@ void SetCurDaySpo2RecData(uint8_t spo2)
 	ppg_spo2_rec2_data *p_spo2,tmp_spo2 = {0};
 	sys_date_timer_t temp_date = {0};
 	
-	if((spo2 > PPG_SPO2_MAX) || (spo2 < PPG_SPO2_MIN))
-		spo2 = 0;
-
 	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
 	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
 	TimeIncrease(&temp_date, 60);
@@ -474,9 +464,6 @@ void SetCurDayHrRecData(uint8_t hr)
 	ppg_hr_rec2_data *p_hr,tmp_hr = {0};
 	sys_date_timer_t temp_date = {0};
 	
-	if((hr > PPG_HR_MAX) || (hr < PPG_HR_MIN))
-		hr = 0;
-
 	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
 	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
 	TimeIncrease(&temp_date, 60);
@@ -1753,17 +1740,29 @@ void PPGStopCheck(void)
 	}
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
+		uint8_t tmp_hr,tmp_spo2;
+		bpt_data tmp_bpt;
+		
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
 		switch(g_ppg_data)
 		{
 		case PPG_DATA_HR:
-			SetCurDayHrRecData(g_hr);
+			tmp_hr = g_hr;
+			if(!ppg_skin_contacted_flag)
+				tmp_hr = 0xFE;
+			SetCurDayHrRecData(tmp_hr);
 			break;
 		case PPG_DATA_SPO2:
-			SetCurDaySpo2RecData(g_spo2);
+			tmp_spo2 = g_spo2;
+			if(!ppg_skin_contacted_flag)
+				tmp_spo2 = 0xFE;
+			SetCurDaySpo2RecData(tmp_spo2);
 			break;
 		case PPG_DATA_BPT:
-			SetCurDayBptRecData(g_bpt);
+			memcpy(&tmp_bpt, &g_bpt, sizeof(bpt_data));
+			if(!ppg_skin_contacted_flag)
+				memset(&tmp_bpt, 0xFE, sizeof(bpt_data));
+			SetCurDayBptRecData(tmp_bpt);
 			break;
 		}
 	}

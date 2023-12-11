@@ -666,7 +666,6 @@ void dl_start_confirm(void)
 	dl_redraw_pro_flag = true;
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	//DisConnectMqttLink();
 	modem_configure();
 	k_work_schedule_for_queue(app_work_q, &dl_work, K_SECONDS(2));
 }

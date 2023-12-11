@@ -588,7 +588,7 @@ void UpdateSystemTime(void)
 				break;
 			}
 
-			if(0)//(check_flag == true)
+			if(check_flag == true)
 			{
 			#ifdef CONFIG_TEMP_SUPPORT
 				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY+1+TEMP_CHECK_TIMELY))
@@ -676,7 +676,7 @@ void UpdateSystemTime(void)
 				|| (date_time.hour == 00) //xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
 				)
 			{
-				//send_timing_data_flag = true;
+				send_timing_data_flag = true;
 			}
 		}
 

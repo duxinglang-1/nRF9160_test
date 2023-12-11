@@ -20,10 +20,13 @@
 #include "lcd.h"
 #include "logger.h"
 #include "transfer_cache.h"
+#ifdef CONFIG_SYNC_SUPPORT
+#include "sync.h"
+#endif
 
 #define WIFI_DEBUG
 
-#define WIFI_EN_PIN		4	//WIFI EN£¬Ê¹ÓÃWIFIÐèÒªÀ­µÍ´Ë½Å
+#define WIFI_EN_PIN		4	//WIFI ENï¼Œä½¿ç”¨WIFIéœ€è¦æ‹‰ä½Žæ­¤è„š
 #define WIFI_RST_PIN	3
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
@@ -51,8 +54,9 @@ uint8_t g_wifi_ver[20] = {0};
 static uint8_t retry = 0;
 static uint32_t rece_len=0;
 static uint32_t send_len=0;
-static uint8_t rx_buf[BUF_MAXSIZE]={0};
+static uint8_t data_buf[BUF_MAXSIZE] = {0};
 
+static uint8_t rx_buf[BUF_MAXSIZE]={0};
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
 
@@ -95,9 +99,11 @@ static bool wifi_send_cmd_flag = false;
 static bool wifi_send_data_flag = false;
 static bool wifi_rece_data_flag = false;
 static bool wifi_rece_frame_flag = false;
+static bool wifi_parse_data_flag = false;
 
 static CacheInfo wifi_send_cmd_cache = {0};
 static CacheInfo wifi_send_data_cache = {0};
+static CacheInfo wifi_rece_data_cache = {0};
 static CacheInfo wifi_rece_cache = {0};
 
 static wifi_infor wifi_data = {0};
@@ -112,6 +118,8 @@ static void WifiSendDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_send_data_timer, WifiSendDataCallBack, NULL);
 static void WifiReceDataCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_rece_data_timer, WifiReceDataCallBack, NULL);
+static void WifiParseDataCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(wifi_parse_data_timer, WifiParseDataCallBack, NULL);
 static void WifiReceFrameCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_rece_frame_timer, WifiReceFrameCallBack, NULL);
 static void WifiGetInforCallBack(struct k_timer *timer_id);
@@ -126,7 +134,10 @@ static void wifi_turn_off_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(wifi_turn_off_timer, wifi_turn_off_timerout, NULL);
 
 static void WifiSendCmdStart(void);
+static void WifiSendCmdStop(void);
 static void WifiSendDataStart(void);
+static void WifiSendDataStop(void);
+static void WifiReceData(uint8_t *data, uint32_t datalen);
 
 static void WifiConnectApCallBack(struct k_timer *timer_id)
 {
@@ -146,6 +157,11 @@ static void WifiSendCmdCallBack(struct k_timer *timer_id)
 static void WifiSendDataCallBack(struct k_timer *timer)
 {
 	wifi_send_data_flag = true;
+}
+
+static void WifiParseDataCallBack(struct k_timer *timer_id)
+{
+	wifi_parse_data_flag = true;
 }
 
 static void WifiReceDataCallBack(struct k_timer *timer_id)
@@ -263,24 +279,24 @@ void APP_Ask_wifi_data(void)
 
 /*============================================================================
 * Function Name  : Send_Cmd_To_Esp8285
-* Description    : ÏòESP8265ËÍÃüÁî
-* Input          : cmd:·¢ËÍµÄÃüÁî×Ö·û´®;waittime:µÈ´ýÊ±¼ä(µ¥Î»:10ms)
+* Description    : å‘ESP8265é€å‘½ä»¤
+* Input          : cmd:å‘é€çš„å‘½ä»¤å­—ç¬¦ä¸²;waittime:ç­‰å¾…æ—¶é—´(å•ä½:10ms)
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 void Send_Cmd_To_Esp8285(uint8_t *cmd, uint32_t WaitTime)
 {
-	WifiSendCmd(cmd, strlen(cmd));//·¢ËÍÃüÁî
+	WifiSendCmd(cmd, strlen(cmd));//å‘é€å‘½ä»¤
 }
 
 /*============================================================================
 * Function Name  : IsInWifiScreen
-* Description    : ´¦ÓÚwifi²âÊÔ½çÃæ
+* Description    : å¤„äºŽwifiæµ‹è¯•ç•Œé¢
 * Input          : None
 * Output         : None
 * Return         : bool
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 bool IsInWifiScreen(void)
 {
@@ -292,11 +308,11 @@ bool IsInWifiScreen(void)
 
 /*============================================================================
 * Function Name  : wifi_is_working
-* Description    : wifi¹¦ÄÜÕýÔÚÔËÐÐ
+* Description    : wifiåŠŸèƒ½æ­£åœ¨è¿è¡Œ
 * Input          : None
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 bool wifi_is_working(void)
 {
@@ -316,11 +332,11 @@ bool wifi_is_working(void)
 
 /*============================================================================
 * Function Name  : wifi_enable
-* Description    : Esp8285_ENÊ¹ÄÜ£¬¸ßµçÆ½ÓÐÐ§
+* Description    : Esp8285_ENä½¿èƒ½ï¼Œé«˜ç”µå¹³æœ‰æ•ˆ
 * Input          : None
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 void wifi_enable(void)
 {
@@ -336,11 +352,11 @@ void wifi_enable(void)
 
 /*============================================================================
 * Function Name  : wifi_disable
-* Description    : Esp8285_ENÊ¹ÄÜ½ûÖ¹£¬¸ßµçÆ½ÓÐÐ§
+* Description    : Esp8285_ENä½¿èƒ½ç¦æ­¢ï¼Œé«˜ç”µå¹³æœ‰æ•ˆ
 * Input          : None
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 void wifi_disable(void)
 {
@@ -351,19 +367,19 @@ void wifi_disable(void)
 
 /*============================================================================
 * Function Name  : wifi_start_scanning
-* Description    : ESP8285Ä£¿éÆô¶¯WiFiÐÅºÅÉ¨Ãè
+* Description    : ESP8285æ¨¡å—å¯åŠ¨WiFiä¿¡å·æ‰«æ
 * Input          : None
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/ 	
 void wifi_start_scanning(void)
 {
-	//ÉèÖÃ¹¤×÷Ä£Ê½ 1:stationÄ£Ê½ 2:APÄ£Ê½ 3:¼æÈÝAP+stationÄ£Ê½
+	//è®¾ç½®å·¥ä½œæ¨¡å¼ 1:stationæ¨¡å¼ 2:APæ¨¡å¼ 3:å…¼å®¹AP+stationæ¨¡å¼
 	WifiSendCmd("AT+CWMODE=1\r\n", strlen("AT+CWMODE=1\r\n"));
-	//ÉèÖÃAT+CWLAPÐÅºÅµÄÅÅÐò·½Ê½£º°´RSSIÅÅÐò£¬Ö»ÏÔÊ¾ÐÅºÅÇ¿¶ÈºÍMACÄ£Ê½
+	//è®¾ç½®AT+CWLAPä¿¡å·çš„æŽ’åºæ–¹å¼ï¼šæŒ‰RSSIæŽ’åºï¼Œåªæ˜¾ç¤ºä¿¡å·å¼ºåº¦å’ŒMACæ¨¡å¼
 	WifiSendCmd("AT+CWLAPOPT=1,12\r\n", strlen("AT+CWLAPOPT=1,12\r\n"));
-	//Æô¶¯É¨Ãè
+	//å¯åŠ¨æ‰«æ
 	WifiSendCmd("AT+CWLAP\r\n", strlen("AT+CWLAP\r\n"));
 }
 
@@ -373,7 +389,7 @@ void wifi_start_scanning(void)
 * Input          : None
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 void wifi_turn_on_and_scanning(void)
 {
@@ -414,6 +430,7 @@ void wifi_turn_off(void)
 #ifdef CONFIG_PM_DEVICE	
 	uart_wifi_sleep_flag = true;
 #endif
+	wifi_work_status = WIFI_STATUS_OFF;
 }
 
 void wifi_rescanning(void)
@@ -421,22 +438,28 @@ void wifi_rescanning(void)
 	if(!wifi_is_on)
 		return;
 
-	//ÉèÖÃAT+CWLAPÐÅºÅµÄÅÅÐò·½Ê½£º°´RSSIÅÅÐò£¬Ö»ÏÔÊ¾ÐÅºÅÇ¿¶ÈºÍMACÄ£Ê½
+	//è®¾ç½®AT+CWLAPä¿¡å·çš„æŽ’åºæ–¹å¼ï¼šæŒ‰RSSIæŽ’åºï¼Œåªæ˜¾ç¤ºä¿¡å·å¼ºåº¦å’ŒMACæ¨¡å¼
 	WifiSendCmd("AT+CWLAPOPT=1,12\r\n", strlen("AT+CWLAPOPT=1,12\r\n"));
 	WifiSendCmd("AT+CWLAP\r\n", strlen("AT+CWLAP\r\n"));
 }
 
-void wifi_payload_packet_http(uint8_t *data, uint32_t datalen)
+void *wifi_payload_packet_http(uint8_t *data, uint32_t datalen, uint8_t *httpdata, uint32_t *httpdata_len)
 {
-	//POST /search HTTP/1.1  
-	//Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/vnd.ms-excel, application/vnd.ms-powerpoint, 
-	//application/msword, application/x-silverlight, application/x-shockwave-flash, */*  
-	//Referer: http://www.google.cn/  
-	//Accept-Language: zh-cn  
-	//Accept-Encoding: gzip, deflate  
-	//User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727; TheWorld)  
-	//Host: www.google.cn 
-	//Connection: Keep-Alive 
+	uint8_t tmpbuf[1024] = {0};
+	uint32_t len = 0;
+
+	memset(data_buf, 0x00, sizeof(data_buf));
+	sprintf(tmpbuf, "{\"data\":\"%s\"}", data);
+	len = strlen(tmpbuf);
+	sprintf(data_buf, "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: %s\r\nContent-length: %d\r\n\r\n",
+						WIFI_SERVER_HTTP_URL, 
+						WIFI_SERVER_HTTP_HOST, 
+						WIFI_SERVER_HTTP_TYPE, 
+						len);
+
+	strcat(data_buf, tmpbuf);
+	strcpy(httpdata, data_buf);
+	*httpdata_len = strlen(httpdata);
 }
 
 void wifi_send_payload(uint8_t *data, uint32_t datalen)
@@ -452,54 +475,84 @@ void wifi_send_payload(uint8_t *data, uint32_t datalen)
 	}
 	else if(wifi_work_status == WIFI_STATUS_ON)
 	{
+		wifi_work_status = WIFI_STATUS_CONNECTING_TO_AP;
 		WifiSendCmd(WIFI_CMD_CONNECT_AP, strlen(WIFI_CMD_CONNECT_AP));
 	}
 	else if(wifi_work_status != WIFI_STATUS_CONNECTED_TO_SERVER)
 	{
+		wifi_work_status = WIFI_STATUS_CONNECTING_TO_SERVER;
 		WifiSendCmd(WIFI_CMD_CONNECT_SERVER, strlen(WIFI_CMD_CONNECT_SERVER));
 	}
 
 	WifiSendData(data, datalen);
+	if(wifi_work_status == WIFI_STATUS_CONNECTED_TO_SERVER)
+		WifiSendDataStart();
 
 	k_timer_start(&wifi_turn_off_timer, K_SECONDS(30), K_NO_WAIT);	
 }
 
-void wifi_payload_prase_http(uint8_t *data, uint32_t datalen)
-{
-	//HTTP/1.1 200 OK
-	//Date: Mon, 23 May 2005 22:38:34 GMT
-	//Content-Type: text/html; charset=UTF-8
-	//Content-Encoding: UTF-8
-	//Content-Length: 138
-	//Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT
-	//Server: Apache/1.3.3.7 (Unix) (Red-Hat/Linux)
-	//ETag: "3f80f-1b6-3e1cb03b"
-	//Accept-Ranges: bytes
-	//Connection: close
-}
-
 void wifi_get_payload(uint8_t *data, uint32_t datalen)
 {
-#ifdef WIFI_DEBUG
-	LOGD("payload:%d, %s", datalen, data);
-#endif
+	//HTTP/1.1 200 
+	//Content-Type: text/plain;charset=UTF-8
+	//Content-Length: 32
+	//Date: Fri, 08 Dec 2023 07:33:31 GMT
+	//
+	//context
+	uint8_t *ptr1,*ptr2;
+	uint8_t tmpbuf[128] = {0};
+	uint32_t len = 0;
+
+	if(strstr(data, WIFI_HTTP_RSP_OK))
+	{
+	#ifdef CONFIG_SYNC_SUPPORT
+		SyncNetWorkCallBack(SYNC_STATUS_SENT);
+	#endif
+	}
+	
+	ptr1 = strstr(data, WIFI_HTTP_RSP_LENGTH);
+	if(ptr1)
+	{
+		ptr1 += (strlen(WIFI_HTTP_RSP_LENGTH));
+		ptr2 = strstr(ptr1, "\r\n");
+		if(ptr2)
+		{
+			memcpy(tmpbuf, ptr1, ptr2-ptr1);
+			len = atoi(tmpbuf);
+		}
+	}
+
+	if(len > 0)
+	{
+		ptr1 = strstr(data, WIFI_HTTP_HEAD_ENDING);
+		if(ptr1)
+		{
+			ptr1 += strlen(WIFI_HTTP_HEAD_ENDING);
+		#ifdef WIFI_DEBUG
+			LOGD("payload:%d, %s", len, ptr1);
+		#endif
+			WifiReceData(ptr1, len);
+		}
+	}
 }
 
 /*============================================================================
 * Function Name  : wifi_receive_data_handle
-* Description    : NRF9160 ½ÓÊÕ ESP8285·¢À´µÄAPÉ¨ÃèÐÅÏ¢½øÐÐ´¦Àí
-* Input          : buf:Êý¾Ý»º´æ len:Êý¾Ý³¤¶È
+* Description    : NRF9160 æŽ¥æ”¶ ESP8285å‘æ¥çš„APæ‰«æä¿¡æ¯è¿›è¡Œå¤„ç†
+* Input          : buf:æ•°æ®ç¼“å­˜ len:æ•°æ®é•¿åº¦
 * Output         : None
 * Return         : None
-* CALL           : ¿É±»Íâ²¿µ÷ÓÃ
+* CALL           : å¯è¢«å¤–éƒ¨è°ƒç”¨
 ==============================================================================*/
 void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 {
+	int ret;
 	uint8_t count = 0;
 	uint8_t tmpbuf[256] = {0};
 	uint8_t *ptr = buf;
 	uint8_t *ptr1 = NULL;
 	uint8_t *ptr2 = NULL;
+	uint8_t okbuf[] = "\r\nOK";
 	bool flag = false;
 
 #ifdef WIFI_DEBUG
@@ -508,12 +561,33 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	if(strstr(ptr, WIFI_SLEEP_REPLY))
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("sleep reply");
+	#endif
 		wifi_off_ok_flag = true;
+		return;
+	}
+
+	if(strstr(ptr, WIFI_CMD_SET_CWMODE))
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("set cwmode");
+	#endif
+		//AT+CWMODE=1
+		//
+		//OK
+		
+		if(!cache_is_empty(&wifi_send_data_cache))
+			k_timer_start(&wifi_connect_ap_timer, K_MSEC(50), K_NO_WAIT);
+		
 		return;
 	}
 
 	if(strstr(ptr, WIFI_GET_MAC_REPLY))
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("mac reply");
+	#endif
 		//AT+CIPAPMAC_DEF?
 		//+CIPAPMAC_DEF:"ff:ff:ff:ff:ff:ff"
 		//\r\n
@@ -532,20 +606,11 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 		return;
 	}
 
-	if(strstr(ptr, WIFI_CMD_SET_CWMODE))
-	{
-		//AT+CWMODE=1
-		//
-		//OK
-		
-		if(!cache_is_empty(&wifi_send_data_cache))
-			k_timer_start(&wifi_connect_ap_timer, K_MSEC(50), K_NO_WAIT);
-		
-		return;
-	}
-
 	if(strstr(ptr, WIFI_CMD_GET_VER))
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("ver reply");
+	#endif
 		//AT+GMR
 		//AT version:1.6.2.0(Apr 13 2018 11:10:59)
 		//SDK version:2.2.1(6ab97e9)
@@ -575,6 +640,9 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	if(strstr(ptr,WIFI_DATA_HEAD))
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("cwlap reply");
+	#endif
 		//+CWLAP:(-61,"f4:84:8d:8e:9f:eb")
 		//+CWLAP:(-67,"da:f1:5b:ff:f2:bc")
 		//+CWLAP:(-67,"e2:c1:13:2d:9e:47")
@@ -603,7 +671,7 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 			
 			//rssi
 			ptr += strlen(WIFI_DATA_HEAD);
-			ptr1 = strstr(ptr,WIFI_DATA_RSSI_BEGIN);         //È¡×Ö·û´®ÖÐµÄÖ®ºóµÄ×Ö·û
+			ptr1 = strstr(ptr,WIFI_DATA_RSSI_BEGIN);         //å–å­—ç¬¦ä¸²ä¸­çš„ä¹‹åŽçš„å­—ç¬¦
 		#if 0	
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr,",");         //ecn
@@ -683,81 +751,119 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 			if(*ptr == 0x00)
 				break;
 		}
+
+		if(test_wifi_flag)
+		{
+			if(count > 0)
+			{
+				memset(wifi_test_info,0,sizeof(wifi_test_info));
+				sprintf(wifi_test_info, "%d\n", count);
+				strcat(wifi_test_info, tmpbuf);
+				wifi_test_update_flag = true;
+
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+				FTWifiStatusUpdate(count);
+			#endif
+			}
+		}
+		else
+		{
+			if(flag && (wifi_data.count >= WIFI_LOCAL_MIN_COUNT))	//æ‰«ææœ‰æ•ˆæ•°æ®
+			{
+				wifi_get_scanned_data();
+				wifi_off_flag = true;
+			}
+		}
 	}	
-
-	if(strstr(ptr,WIFI_RECEIVE_DATA))
-	{
-		//+IPD,n:xxxxxxxxxx				//	received	n	bytes,		data=xxxxxxxxxxx
-		uint8_t tmpbuf[8] = {0};
-		uint32_t datelen = 0;
-		
-		ptr1 = strstr(ptr,WIFI_RECEIVE_DATA);
-		ptr1 += strlen(WIFI_RECEIVE_DATA);
-		ptr2 = strstr(ptr1, ":");
-		memcpy(tmpbuf, ptr1, ptr2-ptr1);
-		datelen = atoi(tmpbuf);
-		wifi_get_payload(ptr2+1, datelen);
-
-		return;
-	}
-
-	if(strstr(ptr,WIFI_CMD_SEND_START)
-		||strstr(ptr,WIFI_SEND_DATA_OK))
-	{
-		delete_data_from_cache(&wifi_send_data_cache);
-		k_timer_start(&wifi_send_data_timer, K_MSEC(10), K_NO_WAIT);
-		return;
-	}
 
 	if(strstr(ptr,WIFI_GOT_IP))
 	{
 		//WIFI CONNECTED
 		//WIFI GOT IP
-		
+
+	#ifdef WIFI_DEBUG
+		LOGD("got ip reply");
+	#endif
 		wifi_work_status = WIFI_STATUS_CONNECTED_TO_AP;
-		
+
 		if(!cache_is_empty(&wifi_send_data_cache))
-			k_timer_start(&wifi_connect_server_timer, K_MSEC(200), K_NO_WAIT);
+			k_timer_start(&wifi_connect_server_timer, K_MSEC(1000), K_NO_WAIT);
 		
 		return;
 	}
 
 	if(strstr(ptr,WIFI_DISCONNECT_AP))
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("disconnect ap");
+	#endif
 		wifi_work_status = WIFI_STATUS_ON;
-		return;
 	}
 	
 	if(strstr(ptr,WIFI_CONNECTED_SERVER))
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("connected server");
+	#endif
 		wifi_work_status = WIFI_STATUS_CONNECTED_TO_SERVER;
 		
 		if(!cache_is_empty(&wifi_send_data_cache))
 			WifiSendDataStart();
+	}
 
+	if(strstr(ptr,WIFI_DISCONNECTED_SERVER))
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("disconnect server");
+	#endif
+		wifi_work_status = WIFI_STATUS_CONNECTED_TO_AP;
+
+		WifiSendDataStop();
 		return;
 	}
-	
-	if(test_wifi_flag)
-	{
-		if(count > 0)
-		{
-			memset(wifi_test_info,0,sizeof(wifi_test_info));
-			sprintf(wifi_test_info, "%d\n", count);
-			strcat(wifi_test_info, tmpbuf);
-			wifi_test_update_flag = true;
 
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			FTWifiStatusUpdate(count);
-		#endif
-		}
-	}
-	else
+	if(strstr(ptr,WIFI_RECEIVE_DATA))
 	{
-		if(flag && (wifi_data.count >= WIFI_LOCAL_MIN_COUNT))	//É¨ÃèÓÐÐ§Êý¾Ý
+		//+IPD,n:xxxxxxxxxx				//	received	n	bytes,		data=xxxxxxxxxxx
+		uint8_t tmpbuf[8] = {0};
+		uint32_t datelen = 0;
+
+	#ifdef WIFI_DEBUG
+		LOGD("IPD reply");
+	#endif	
+		ptr1 = strstr(ptr,WIFI_RECEIVE_DATA);
+		ptr1 += strlen(WIFI_RECEIVE_DATA);
+		ptr2 = strstr(ptr1, ":");
+		memcpy(tmpbuf, ptr1, ptr2-ptr1);
+		datelen = atoi(tmpbuf);
+		wifi_get_payload(ptr2+1, datelen);
+	}
+
+	if(strstr(ptr,WIFI_CMD_SEND_START)
+		||strstr(ptr,WIFI_SEND_DATA_OK))
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("continue send data");
+	#endif
+		delete_data_from_cache(&wifi_send_data_cache);
+		k_timer_start(&wifi_send_data_timer, K_MSEC(100), K_NO_WAIT);
+	}
+
+	if(strstr(ptr,WIFI_IS_BUSY))
+	{
+	#ifdef WIFI_DEBUG
+		LOGD("busy p...");
+	#endif
+		if(wifi_work_status == WIFI_STATUS_CONNECTING_TO_AP)
 		{
-			wifi_get_scanned_data();
-			wifi_off_flag = true;
+			if(!cache_is_empty(&wifi_send_data_cache))
+				k_timer_start(&wifi_connect_ap_timer, K_MSEC(100), K_NO_WAIT);
+		}
+
+		if(wifi_work_status == WIFI_STATUS_CONNECTING_TO_SERVER)
+		{
+			if(!cache_is_empty(&wifi_send_data_cache))
+				k_timer_start(&wifi_connect_server_timer, K_MSEC(100), K_NO_WAIT);
 		}
 	}
 }
@@ -850,12 +956,64 @@ void wifi_send_data_handle(uint8_t *buf, uint32_t len)
 	LOGD("cmd:%s", buf);
 #endif
 
+	if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
+		k_timer_stop(&wifi_turn_off_timer);
+	k_timer_start(&wifi_turn_off_timer, K_SECONDS(30), K_NO_WAIT);	
+
 #ifdef CONFIG_PM_DEVICE
 	uart_wifi_sleep_out();
 #endif
 
 	uart_fifo_fill(uart_wifi, buf, len);
 	uart_irq_tx_enable(uart_wifi);
+}
+
+static void WifiParseReceData(void)
+{
+	uint8_t data_type,*p_data;
+	uint32_t data_len;
+	int ret;
+
+	ret = get_data_from_cache(&wifi_rece_data_cache, &p_data, &data_len, &data_type);
+	if(ret)
+	{
+		ParseData(p_data, data_len);
+		delete_data_from_cache(&wifi_rece_data_cache);
+		
+		k_timer_start(&wifi_parse_data_timer, K_MSEC(50), K_NO_WAIT);
+	}
+}
+
+static void WifiParseReceDataStart(void)
+{
+	k_timer_start(&wifi_parse_data_timer, K_MSEC(500), K_NO_WAIT);
+}
+
+static void WifiReceData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t *ptr=data,*ptr1,*ptr2;
+	uint8_t begin[] = "{";
+	uint8_t end[] = "}";
+	
+	while(1)
+	{
+		uint8_t tmpbuf[1024] = {0};
+		
+		ptr1 = strstr(ptr, begin);
+		if(ptr1 == NULL)
+			break;
+
+		ptr2 = strstr(ptr1, end);
+		if(ptr2 == NULL)
+			continue;
+
+		memcpy(tmpbuf, ptr1, ptr2-ptr1+1);
+		add_data_into_cache(&wifi_rece_data_cache, tmpbuf, ptr2-ptr1+1, DATA_TRANSFER);
+
+		ptr = ptr2+1;
+	}
+	
+	WifiParseReceDataStart();
 }
 
 static void WifiSendCmdProc(void)
@@ -879,6 +1037,11 @@ static void WifiSendCmdStart(void)
 	k_timer_start(&wifi_send_cmd_timer, K_MSEC(100), K_NO_WAIT);
 }
 
+static void WifiSendCmdStop(void)
+{
+	k_timer_stop(&wifi_send_cmd_timer);
+}
+
 void WifiSendCmd(uint8_t *data, uint32_t datalen)
 {
 	int ret;
@@ -896,6 +1059,9 @@ static void WifiSendDataProc(void)
 	ret = get_data_from_cache(&wifi_send_data_cache, &p_data, &data_len, &data_type);
 	if(ret)
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("send");
+	#endif
 		wifi_send_data_handle(p_data, data_len);
 	}
 }
@@ -905,13 +1071,24 @@ static void WifiSendDataStart(void)
 	k_timer_start(&wifi_send_data_timer, K_MSEC(100), K_NO_WAIT);
 }
 
+static void WifiSendDataStop(void)
+{
+#ifdef WIFI_DEBUG
+	LOGD("begin");
+#endif
+	k_timer_stop(&wifi_send_data_timer);
+}
+
 void WifiSendData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t send_cmd[32] = {0};
+	uint8_t cmdbuf[32] = {0};
+	uint8_t databuf[2048] = {0};
+	uint32_t len = 0;
 
-	sprintf(send_cmd, "%s%d\r\n", WIFI_CMD_SEND_START, datalen);
-	add_data_into_cache(&wifi_send_data_cache, send_cmd, strlen(send_cmd), DATA_TRANSFER);
-	add_data_into_cache(&wifi_send_data_cache, data, datalen, DATA_TRANSFER);
+	wifi_payload_packet_http(data, datalen, databuf, &len);
+	sprintf(cmdbuf, "%s%d\r\n", WIFI_CMD_SEND_START, len);
+	add_data_into_cache(&wifi_send_data_cache, cmdbuf, strlen(cmdbuf), DATA_TRANSFER);
+	add_data_into_cache(&wifi_send_data_cache, databuf, len, DATA_TRANSFER);
 }
 
 static void WifiReceDataProc(void)
@@ -961,7 +1138,7 @@ static void uart_cb(struct device *x)
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&wifi_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
+			k_timer_start(&wifi_rece_frame_timer, K_MSEC(20), K_NO_WAIT);
 		}
 	}
 	
@@ -1025,12 +1202,14 @@ void WifiMsgProcess(void)
 
 	if(wifi_connect_ap_flag)
 	{
+		wifi_work_status = WIFI_STATUS_CONNECTING_TO_AP;
 		WifiSendCmd(WIFI_CMD_CONNECT_AP, strlen(WIFI_CMD_CONNECT_AP));
 		wifi_connect_ap_flag = false;
 	}
 
 	if(wifi_connect_server_flag)
 	{
+		wifi_work_status = WIFI_STATUS_CONNECTING_TO_SERVER;
 		WifiSendCmd(WIFI_CMD_CONNECT_SERVER, strlen(WIFI_CMD_CONNECT_SERVER));
 		wifi_connect_server_flag = false;
 	}
@@ -1040,9 +1219,18 @@ void WifiMsgProcess(void)
 		WifiSendCmdProc();
 		wifi_send_cmd_flag = false;
 	}
+
+	if(wifi_parse_data_flag)
+	{
+		WifiParseReceData();
+		wifi_parse_data_flag = false;
+	}
 	
 	if(wifi_send_data_flag)
 	{
+	#ifdef WIFI_DEBUG
+		LOGD("wifi_send_data_flag");
+	#endif
 		WifiSendDataProc();
 		wifi_send_data_flag = false;
 	}
@@ -1086,8 +1274,8 @@ void WifiMsgProcess(void)
 	{
 		wifi_off_flag = false;
 
-		if(1)//(cache_is_empty(&wifi_send_cmd_cache)
-			//&&cache_is_empty(&wifi_send_data_cache))
+		if(cache_is_empty(&wifi_send_cmd_cache)
+			&&cache_is_empty(&wifi_send_data_cache))
 		{
 		#ifdef WIFI_DEBUG
 			LOGD("wifi_off_flag 001");
@@ -1152,45 +1340,55 @@ void wifi_get_infor(void)
 	switch(count)
 	{
 	case 1:
-		//ÉèÖÃ¹¤×÷Ä£Ê½ 1:stationÄ£Ê½ 2:APÄ£Ê½ 3:¼æÈÝAP+stationÄ£Ê½
+		//ï¿½ï¿½ï¿½Ã¹ï¿½ï¿½ï¿½Ä£Ê½ 1:stationÄ£Ê½ 2:APÄ£Ê½ 3:ï¿½ï¿½ï¿½ï¿½AP+stationÄ£Ê½
 		WifiSendCmd(WIFI_CMD_SET_CWMODE, strlen(WIFI_CMD_SET_CWMODE));
-		//»ñÈ¡MacµØÖ·
+		//ï¿½ï¿½È¡Macï¿½ï¿½Ö·
 		WifiSendCmd(WIFI_CMD_GET_MAC, strlen(WIFI_CMD_GET_MAC));
-		//»ñÈ¡°æ±¾ÐÅÏ¢
+		//ï¿½ï¿½È¡ï¿½æ±¾ï¿½ï¿½Ï¢
 		WifiSendCmd(WIFI_CMD_GET_VER, strlen(WIFI_CMD_GET_VER));
-		//k_timer_start(&wifi_get_infor_timer, K_SECONDS(3), K_NO_WAIT);
+		k_timer_start(&wifi_get_infor_timer, K_SECONDS(3), K_NO_WAIT);
 		break;
 	case 2:
-		//ËÑË÷Â·ÓÉÆ÷
+		//ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½
 		//WifiSendCmd("AT+CWLAP=\"HUAWEI-3YN3AN\"\r\n", strlen("AT+CWLAP=\"HUAWEI-3YN3AN\"\r\n"));
 		WifiSendCmd(WIFI_CMD_SEARCH_AP, strlen(WIFI_CMD_SEARCH_AP));
 		k_timer_start(&wifi_get_infor_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 	case 3:
-		//Á¬½ÓÂ·ÓÉÆ÷
+		//ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½
 		//WifiSendCmd("AT+CWJAP=\"HUAWEI-3YN3AN\",\"km320000\"\r\n", strlen("AT+CWJAP=\"HUAWEI-3YN3AN\",\"km320000\"\r\n"));
 		WifiSendCmd(WIFI_CMD_CONNECT_AP, strlen(WIFI_CMD_CONNECT_AP));
 		k_timer_start(&wifi_get_infor_timer, K_SECONDS(10), K_NO_WAIT);
 		break;
 	case 4:
-		//²éÑ¯Éè±¸IP
+		//ï¿½ï¿½Ñ¯ï¿½è±¸IP
 		//WifiSendCmd("AT+CIFSR\r\n", strlen("AT+CIFSR\r\n"));
 		WifiSendCmd(WIFI_CMD_CHECK_STA_IP, strlen(WIFI_CMD_CHECK_STA_IP));
 		k_timer_start(&wifi_get_infor_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 	case 5:
-		//Á¬½Ó·þÎñÆ÷IP
+		//ï¿½ï¿½ï¿½Ó·ï¿½ï¿½ï¿½ï¿½ï¿½IP
 		//WifiSendCmd("AT+CIPSTART=\"TCP\",\"192.168.3.30\",60000\r\n", strlen("AT+CIPSTART=\"TCP\",\"192.168.3.30\",60000\r\n"));
 		WifiSendCmd(WIFI_CMD_CONNECT_SERVER, strlen(WIFI_CMD_CONNECT_SERVER));
 		k_timer_start(&wifi_get_infor_timer, K_SECONDS(5), K_NO_WAIT);
 		break;
 	case 6:
-		//Íù·þÎñÆ÷·¢ËÍµÄ×Ö½ÚÄÚÈÝ
-		WifiSendData("abcd0123456789", strlen("abcd0123456789"));
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+		//WifiSendData("{1:1:0:0:351358811149555:T12:460082515704981,898604A52121C0114981,72,+8,100,V3.4.1_20231123BC,1.3.5,50.5.57,1.7.4,ff:ff:ff:ff:ff:ff,V1.0.3_20230322,D9:9F:3B:71:E1:2C,20231208112905}", 
+		//				strlen("{1:1:0:0:351358811149555:T12:460082515704981,898604A52121C0114981,72,+8,100,V3.4.1_20231123BC,1.3.5,50.5.57,1.7.4,ff:ff:ff:ff:ff:ff,V1.0.3_20230322,D9:9F:3B:71:E1:2C,20231208112905}")
+		//				);
+		SendPowerOnData();
+		SendSettingsData();
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)) 
+		SendMissingSportData();
+	#endif
+	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+		SendMissingHealthData();
+	#endif
 		break;
 	}
 	
-	k_timer_start(&wifi_turn_off_timer, K_SECONDS(5), K_NO_WAIT);	
+	k_timer_start(&wifi_turn_off_timer, K_SECONDS(10), K_NO_WAIT);	
 }
 
 void wifi_init(void)

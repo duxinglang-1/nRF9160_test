@@ -139,3 +139,32 @@ bool delete_data_from_cache(CacheInfo *data_cache)
 		return true;
 	}
 }
+
+bool delete_all_from_cache(CacheInfo *data_cache)
+{
+	if(data_cache->cache == NULL || data_cache->count == 0)
+	{
+		return false;
+	}
+	else
+	{
+		while(1)
+		{
+			data_cache->head = data_cache->cache->next;
+
+			k_free(data_cache->cache->data);
+			data_cache->cache->data = NULL;
+			data_cache->cache->len = 0;
+			k_free(data_cache->cache);
+			data_cache->cache = NULL;
+
+			data_cache->count--;
+			data_cache->cache = data_cache->head;
+
+			if(data_cache->cache == NULL || data_cache->count == 0)
+				break;
+		}
+
+		return true;
+	}
+}

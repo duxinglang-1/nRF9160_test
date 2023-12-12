@@ -485,8 +485,6 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#endif
 		
 		k_timer_stop(&mqtt_act_wait_timer);
-		delete_data_from_cache(&nb_send_cache);
-		k_timer_start(&send_data_timer, K_MSEC(10), K_NO_WAIT);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -658,6 +656,23 @@ void mqtt_is_connecting(void)
 	return mqtt_connecting_flag;
 }
 
+static void mqtt_unlink(void)
+{
+#ifdef NB_DEBUG
+	LOGD("begin");
+#endif
+	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
+		k_timer_stop(&mqtt_disconnect_timer);
+	if(k_timer_remaining_get(&mqtt_connect_timer) > 0)
+		k_timer_stop(&mqtt_connect_timer);
+	if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
+		k_timer_stop(&mqtt_act_wait_timer);
+
+	mqtt_connected = false;
+	mqtt_connecting_flag = false;
+	mqtt_disconnect(&client);
+}
+
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err;
@@ -671,8 +686,11 @@ static void mqtt_link(struct k_work_q *work_q)
 		return;
 #endif
 
+	if(mqtt_connected)
+		return;
+
 	mqtt_connecting_flag = true;
-	k_timer_start(&mqtt_connect_timer, K_SECONDS(60), K_NO_WAIT);
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(2*60), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -741,14 +759,6 @@ static void mqtt_link(struct k_work_q *work_q)
 		#endif
 			break;
 		}
-
-		if(mqtt_disconnect_req_flag)
-		{
-		#ifdef NB_DEBUG
-			LOGD("mqtt_disconnect_req_flag");
-		#endif
-			break;
-		}
 	}
 #ifdef NB_DEBUG	
 	LOGD("Disconnecting MQTT client...");
@@ -796,7 +806,12 @@ static void NbSendData(void)
 			k_timer_stop(&mqtt_disconnect_timer);
 		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
 		
-		data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len, data_type);
+		ret = data_publish(&client, MQTT_QOS_1_AT_LEAST_ONCE, p_data, data_len, data_type);
+		if(!ret)
+		{
+			delete_data_from_cache(&nb_send_cache);
+		}
+		k_timer_start(&send_data_timer, K_MSEC(50), K_NO_WAIT);
 		
 		if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
 			k_timer_stop(&mqtt_act_wait_timer);
@@ -810,49 +825,6 @@ bool MqttIsConnected(void)
 	LOGD("mqtt_connected:%d", mqtt_connected);
 #endif
 	return mqtt_connected;
-}
-
-void DisConnectMqttLink(void)
-{
-	int err;
-
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
-	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
-		k_timer_stop(&mqtt_disconnect_timer);
-
-	if(mqtt_connected)
-	{
-		err = mqtt_disconnect(&client);
-		if(err)
-		{
-		#ifdef NB_DEBUG
-			LOGD("Could not disconnect MQTT client. Error: %d", err);
-		#endif
-		}
-		
-		mqtt_connected = false;
-		mqtt_disconnect_req_flag = true;
-	}
-}
-
-static void MqttDisConnect(void)
-{
-	int err;
-
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
-
-	mqtt_disconnect_req_flag = true;
-	err = mqtt_disconnect(&client);
-	if(err)
-	{
-	#ifdef NB_DEBUG
-		LOGD("Could not disconnect MQTT client. Error: %d", err);
-	#endif
-	}
 }
 
 static void MqttConnectCallBack(struct k_timer *timer_id)
@@ -1357,6 +1329,9 @@ static void MqttSendData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
 {
 	int ret;
 
+#if 1	//xb test 2023-1208
+	wifi_send_payload(data, datalen);
+#else
 	ret = add_data_into_cache(&nb_send_cache, data, datalen, type);
 #ifdef NB_DEBUG
 	LOGD("data add ret:%d", ret);
@@ -1396,6 +1371,7 @@ static void MqttSendData(uint8_t *data, uint32_t datalen, DATA_TYPE type)
 			k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		}
 	}
+#endif	
 }
 
 #ifdef TEST_DEBUG
@@ -1547,8 +1523,7 @@ void NBSendSingleHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
-	//MqttSendData(buf, strlen(buf), DATA_TRANSFER);
-	wifi_send_payload(buf, strlen(buf));
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
 void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
@@ -2822,7 +2797,7 @@ void SetModemTurnOff(void)
 	}
 	
 	if(mqtt_connected)
-		DisConnectMqttLink();
+		mqtt_unlink();
 
 	nb_connected = false;
 	mqtt_connected = false;
@@ -3131,10 +3106,7 @@ static void nb_link(struct k_work *work)
 		if(!err && !test_nb_flag)
 		{
 			SetNetWorkParaByPlmn(g_imsi);
-			if(mqtt_connecting_flag)
-				MqttDisConnect();
-
-			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+			//k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
 		}
 	#endif
 
@@ -3270,10 +3242,10 @@ void NBMsgProcess(void)
 	{
 		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 			k_timer_stop(&mqtt_disconnect_timer);
-		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(20), K_NO_WAIT);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(10), K_NO_WAIT);
 		
 		if(SendLogData())
-			k_timer_start(&send_log_timer, K_MSEC(20*1000), K_NO_WAIT);
+			k_timer_start(&send_log_timer, K_SECONDS(10), K_NO_WAIT);
 		
 		send_log_flag = false;
 	}
@@ -3292,7 +3264,7 @@ void NBMsgProcess(void)
 		#ifdef NB_DEBUG
 			LOGD("mqtt_disconnect_flag 001");
 		#endif
-			MqttDisConnect();
+			mqtt_unlink();
 		}
 		else
 		{
@@ -3337,7 +3309,7 @@ void NBMsgProcess(void)
 			return;
 
 		if(mqtt_connecting_flag)
-			MqttDisConnect();
+			mqtt_unlink();
 
 		if(!nb_connecting_flag)
 		{
@@ -3390,8 +3362,8 @@ void NBMsgProcess(void)
 	#ifdef NB_DEBUG
 		LOGD("mqtt_connect_timeout_flag begin");
 	#endif
-		MqttDisConnect();
 		mqtt_connect_timeout_flag = false;
+		mqtt_unlink();
 	}
 	
 	if(mqtt_act_wait_timeout_flag)
@@ -3408,8 +3380,7 @@ void NBMsgProcess(void)
 			)
 			return;
 
-		DisConnectMqttLink();
-		mqtt_connected = false;
+		mqtt_unlink();
 
 		if(!mqtt_connecting_flag)
 		{
@@ -3451,6 +3422,7 @@ void NB_init(struct k_work_q *work_q)
 	k_work_init_delayable(&nb_link_work, nb_link);
 	k_work_init_delayable(&nb_test_work, nb_test);
 	k_work_init_delayable(&mqtt_link_work, mqtt_link);
+	
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_work_init(work_q);
 #endif

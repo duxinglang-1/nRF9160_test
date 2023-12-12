@@ -269,7 +269,7 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 		*(buf + n) = '\n';
 		n++;
 
-		LogWriteData(buf, n, DATA_LOG);
+		LogWriteData(buf, n, DATA_TRANSFER);
 	}
 #endif	
 }
@@ -323,7 +323,9 @@ void LogClear(void)
 {
 	uint32_t addr;
 
-#ifdef TEST_DEBUG	
+	if(inforbuf.addr == 0 || inforbuf.count == 0)
+		return;
+	
 	for(addr=LOG_COUNT_ADDR;addr<(LOG_DATA_END_ADDR);addr+=SPIFlash_SECTOR_SIZE)
 	{
 		SPIFlash_Erase_Sector(addr);
@@ -331,20 +333,19 @@ void LogClear(void)
 
 	memset(&inforbuf, 0, sizeof(LogFileHeadInfo));
 	SpiFlash_Write((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
-#endif	
 }
 
 void LogInit(void)
 {
 	uint32_t i,j,k=0,len,addr = LOG_DATA_BEGIN_ADDR;
 
-#ifdef TEST_DEBUG
 	SpiFlash_Read((uint8_t*)&inforbuf, LOG_COUNT_ADDR, sizeof(LogFileHeadInfo));
 	if(inforbuf.addr == 0xffffffff)
 		inforbuf.addr = 0;
 	if(inforbuf.count == 0xffffffff)
 		inforbuf.count = 0;
 
-	//log_read_from_flash();
+#ifdef TEST_DEBUG
+	log_read_from_flash();
 #endif	
 }

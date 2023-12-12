@@ -800,7 +800,8 @@ void wifi_receive_data_handle(uint8_t *buf, uint32_t len)
 		wifi_work_status = WIFI_STATUS_ON;
 	}
 	
-	if(strstr(ptr,WIFI_CONNECTED_SERVER))
+	if(strstr(ptr,WIFI_CONNECTED_SERVER)
+		||strstr(ptr,WIFI_ALREAY_CONNECTED_SERVER))
 	{
 	#ifdef WIFI_DEBUG
 		LOGD("connected server");
@@ -1274,11 +1275,19 @@ void WifiMsgProcess(void)
 	{
 		wifi_off_flag = false;
 
-		if(cache_is_empty(&wifi_send_cmd_cache)
-			&&cache_is_empty(&wifi_send_data_cache))
+		if(!cache_is_empty(&wifi_send_cmd_cache)
+			|| (!cache_is_empty(&wifi_send_data_cache)&&(wifi_work_status == WIFI_STATUS_CONNECTED_TO_SERVER))
+			)
 		{
 		#ifdef WIFI_DEBUG
 			LOGD("wifi_off_flag 001");
+		#endif
+			k_timer_start(&wifi_turn_off_timer, K_SECONDS(10), K_NO_WAIT);	
+		}
+		else
+		{
+		#ifdef WIFI_DEBUG
+			LOGD("wifi_off_flag 002");
 		#endif
 			wifi_turn_off();
 		
@@ -1286,13 +1295,6 @@ void WifiMsgProcess(void)
 				k_timer_stop(&wifi_rescan_timer);
 			if(k_timer_remaining_get(&wifi_turn_off_timer) > 0)
 				k_timer_stop(&wifi_turn_off_timer);
-		}
-		else
-		{
-		#ifdef WIFI_DEBUG
-			LOGD("wifi_off_flag 002");
-		#endif
-			k_timer_start(&wifi_turn_off_timer, K_SECONDS(10), K_NO_WAIT);	
 		}
 	}
 

@@ -53,6 +53,9 @@ uint8_t ft_main_menu_index = 0;
 bool ft_menu_checked[FT_MENU_MAX_COUNT] = {false};
 ft_menu_t ft_menu = {0};
 
+static void FactoryTestNextExit(void);
+static void FactoryTestPreExit(void);
+
 void FTMainDumpProc(void)
 {
 }
@@ -319,8 +322,8 @@ static void FactoryTestMainUpdate(void)
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[0]);
 	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[1]);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestExit);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestExit);	
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestNextExit);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestPreExit);	
 #endif		
 
 	LCD_ReSetFontBgColor();
@@ -365,14 +368,14 @@ static void FactoryTestMainShow(void)
 	#endif
 	}
 
-	SetLeftKeyUpHandler(FactoryTestExit);
+	SetLeftKeyUpHandler(FactoryTestNextExit);
 	SetRightKeyUpHandler(FTMainMenuProcess);
 	
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[0]);
 	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[1]);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestExit);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestExit);	
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestNextExit);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestPreExit);	
 #endif		
 
 	LCD_ReSetFontBgColor();
@@ -405,12 +408,20 @@ static void FactoryTestMainProcess(void)
 	}
 }
 
-void FactoryTestExit(void)
+static void FactoryTestPreExit(void)
 {
 	ft_running_flag = false;
 	
 	SetModemTurnOn();
-	FTAgingTest();
+	EnterSettingsScreen();
+}
+
+static void FactoryTestNextExit(void)
+{
+	ft_running_flag = false;
+	
+	SetModemTurnOn();
+	EnterFTAgingTest();
 }
 
 void EnterFactoryTestScreen(void)

@@ -60,6 +60,7 @@
 #endif/*CONFIG_TEMP_SUPPORT*/
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #include "ft_main.h"
+#include "ft_aging.h"
 #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 #include "logger.h"
 
@@ -1421,6 +1422,8 @@ void PowerOffShowStatus(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+ #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAgingTest);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
   	if((strlen(g_ui_ver) == 0) 
@@ -2095,11 +2098,16 @@ void SettingsUpdateStatus(void)
 
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(menu_color);
+				LCD_SetFontSize(FONT_SIZE_20);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
 
 				LCD_SetFontColor(WHITE);
+			  #ifdef CONFIG_FACTORY_TEST_SUPPORT	
+				if((settings_menu.index == 0) && (i == 2))
+					LCD_SetFontSize(FONT_SIZE_16);
+			  #endif	
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
 										menu_sle_str[i+settings_menu.index]);

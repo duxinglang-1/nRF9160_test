@@ -19,4 +19,4 @@ typedef enum
 }FT_AGING_STATUS;
 
 extern void FTAgingTestProcess(void);
-extern void FTAgingTest(void);
+extern void EnterFTAgingTest(void);

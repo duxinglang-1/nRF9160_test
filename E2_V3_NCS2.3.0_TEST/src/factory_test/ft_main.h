@@ -58,7 +58,6 @@ extern bool ft_menu_checked[FT_MENU_MAX_COUNT];
 extern ft_menu_t ft_menu;
 extern const ft_menu_t FT_MENU_MAIN;
 
-extern void FactoryTestExit(void);
 extern bool FactryTestActived(void);
 extern void FactoryTestProccess(void);
 extern void EnterFactoryTest(void);

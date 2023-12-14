@@ -88,6 +88,10 @@ const ft_menu_t FT_MENU_AGING =
 static void FtAgingChangeCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(ft_aging_change_timer, FtAgingChangeCallBack, NULL);
 
+static void AgingStartTest(void);
+static void AgingTestPreExit(void);
+static void AgingTestNextExit(void);
+
 bool IsFTPPGAging(void)
 {
 	if((screen_id == SCREEN_ID_AGING_TEST)&&(aging_status == AGING_PPG))
@@ -146,7 +150,13 @@ static void AgingStartTest(void)
 	ft_aging_change_flag = true;
 }
 
-static void AgingTestExit(void)
+static void AgingTestPreExit(void)
+{
+	AgingStopTest();
+	EnterFactoryTest();
+}
+
+static void AgingTestNextExit(void)
 {
 	AgingStopTest();
 	EnterPoweroffScreen();
@@ -180,7 +190,7 @@ static void AgingTestUpdate(void)
 			LCD_Fill(FT_AGING_MENU_STR_X, FT_AGING_MENU_STR_Y, FT_AGING_MENU_STR_W, 2*(FT_AGING_MENU_STR_H+FT_AGING_MENU_STR_OFFSET_Y), BLACK);
 			
 			ClearAllKeyHandler();
-			SetLeftKeyUpHandler(AgingTestExit);
+			SetLeftKeyUpHandler(AgingTestNextExit);
 			SetRightKeyUpHandler(AgingStopTest);
 		}
 
@@ -220,7 +230,7 @@ static void AgingTestUpdate(void)
 		LCD_ShowUniString(FT_AGING_STATUS_STR_X+(FT_AGING_STATUS_STR_W-w)/2, FT_AGING_STATUS_STR_Y+(FT_AGING_STATUS_STR_H-h)/2, status_str[0]);
 
 		ClearAllKeyHandler();
-		SetLeftKeyUpHandler(AgingTestExit);
+		SetLeftKeyUpHandler(AgingTestNextExit);
 		SetRightKeyUpHandler(AgingStartTest);
 	}
 }
@@ -258,8 +268,13 @@ static void AgingTestShow(void)
 	#endif
 	}
 
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, AgingTestNextExit);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, AgingTestPreExit);	
+#endif	
+
 	ClearAllKeyHandler();
-	SetLeftKeyUpHandler(AgingTestExit);
+	SetLeftKeyUpHandler(AgingTestNextExit);
 	SetRightKeyUpHandler(AgingStartTest);
 }
 
@@ -324,7 +339,7 @@ void FTAgingTestProcess(void)
 	}
 }
 
-void FTAgingTest(void)
+void EnterFTAgingTest(void)
 {
 #ifdef CONFIG_ANIMATION_SUPPORT	
 	AnimaStop();

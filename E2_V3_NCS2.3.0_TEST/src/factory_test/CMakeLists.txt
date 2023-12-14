@@ -15,6 +15,7 @@ target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_pmu.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_sim.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_vibrate.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_ble.c)
+target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_aging.c)
 
 target_sources_ifdef(CONFIG_AUDIO_SUPPORT app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_audio.c)
 target_sources_ifdef(CONFIG_GPS_SUPPORT app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ft_gps.c)

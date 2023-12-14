@@ -96,7 +96,7 @@ static void FTMenuGPSSle2Hander(void)
 	ExitFTMenuGPS();
 }
 
-static void FTMenuGPSInit(void)
+void FTMenuGPSInit(void)
 {
 	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
 }

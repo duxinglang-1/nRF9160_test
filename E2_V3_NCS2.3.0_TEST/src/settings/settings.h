@@ -16,11 +16,15 @@
 #define MENU_NOTIFY_STR_MAX	28
 
 #define VERSION_STR	"V3.4.1_20231205"
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#define LANG_BRANCH	"TEST"
+#else
 #ifdef FW_FOR_CN
 #define LANG_BRANCH	"BC"
 #else
 #define LANG_BRANCH	"BU"
 #endif
+#endif
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"

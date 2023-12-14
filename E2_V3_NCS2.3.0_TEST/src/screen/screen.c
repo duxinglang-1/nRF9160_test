@@ -2049,7 +2049,17 @@ void SettingsUpdateStatus(void)
 			uint16_t imei_str[IMEI_MAX_LEN+1] = {0};
 			uint16_t imsi_str[IMSI_MAX_LEN+1] = {0};
 			uint16_t mcu_str[20] = {0x0000};
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			uint16_t iccid_str[ICCID_MAX_LEN+1] = {0};
+			uint16_t modem_str[20] = {0x0000};	
+			uint16_t ppg_str[20] = {0x0000};
+			uint16_t wifi_str[20] = {0x0000};
+			uint16_t ble_str[20] = {0x0000};
+			uint16_t ble_mac_str[64] = {0};
+			uint16_t *menu_sle_str[9] = {imei_str,imsi_str,iccid_str,mcu_str,modem_str,ppg_str,wifi_str,ble_str,ble_mac_str};
+		#else
 			uint16_t *menu_sle_str[3] = {imei_str,imsi_str,mcu_str};
+		#endif
 			uint16_t menu_color = 0x9CD3;
 
 			LCD_Clear(BLACK);
@@ -2057,7 +2067,23 @@ void SettingsUpdateStatus(void)
 			mmi_asc_to_ucs2((uint8_t*)imei_str, g_imei);
 			mmi_asc_to_ucs2((uint8_t*)imsi_str, g_imsi);
 			mmi_asc_to_ucs2((uint8_t*)mcu_str, g_fw_version);
-			
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			mmi_asc_to_ucs2((uint8_t*)iccid_str, g_iccid);
+			mmi_asc_to_ucs2((uint8_t*)modem_str, &g_modem[12]);	
+		  #ifdef CONFIG_PPG_SUPPORT	
+			mmi_asc_to_ucs2((uint8_t*)ppg_str, g_ppg_ver);
+		  #else
+			mmi_asc_to_ucs2((uint8_t*)ppg_str, "NO");
+		  #endif
+		  #ifdef CONFIG_WIFI_SUPPORT
+			mmi_asc_to_ucs2((uint8_t*)wifi_str, g_wifi_ver);
+		  #else
+			mmi_asc_to_ucs2((uint8_t*)wifi_str, "NO");
+		  #endif
+			mmi_asc_to_ucs2((uint8_t*)ble_str, &g_nrf52810_ver[15]);
+			mmi_asc_to_ucs2((uint8_t*)ble_mac_str, g_ble_mac_addr);
+		#endif
+		
 			if(settings_menu.count > SETTINGS_SUB_MENU_MAX_PER_PG)
 				count = (settings_menu.count - settings_menu.index >= SETTINGS_SUB_MENU_MAX_PER_PG) ? SETTINGS_SUB_MENU_MAX_PER_PG : settings_menu.count - settings_menu.index;
 			else
@@ -2363,7 +2389,11 @@ void EnterSettingsScreen(void)
 	scr_msg[SCREEN_ID_SETTINGS].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_SETTINGS].status = SCREEN_STATUS_CREATING;
 
-#ifndef NB_SIGNAL_TEST
+#ifdef NB_SIGNAL_TEST
+	SetLeftKeyUpHandler(EnterPoweroffScreen);
+#elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+	SetLeftKeyUpHandler(EnterFactoryTest);
+#else
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
  	if((strlen(g_ui_ver) == 0) 
 		|| (strlen(g_font_ver) == 0)
@@ -2389,17 +2419,20 @@ void EnterSettingsScreen(void)
   #endif
   	else
  #endif
-#endif
   	{
   		SetLeftKeyUpHandler(EnterPoweroffScreen);
   	}
-
+#endif
 	SetRightKeyUpHandler(ExitSettingsScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 
- #ifndef NB_SIGNAL_TEST
+ #ifdef NB_SIGNAL_TEST
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+ #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
+ #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
@@ -2416,13 +2449,21 @@ void EnterSettingsScreen(void)
 	}
    #endif
 	else
-  #endif
- #endif 
+  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  	}
+ #endif/*NB_SIGNAL_TEST*/
 
- #ifndef NB_SIGNAL_TEST
+ #ifdef NB_SIGNAL_TEST
+  #ifdef CONFIG_WIFI_SUPPORT
+  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterWifiTestScreen);
+  #else
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
+  #endif
+ #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+ #else
   #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
   #elif defined(CONFIG_PPG_SUPPORT)
@@ -2437,14 +2478,8 @@ void EnterSettingsScreen(void)
    #endif
   #else
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
-  #endif
- #else
-  #ifdef CONFIG_WIFI_SUPPORT
-  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterWifiTestScreen);
-  #else
- 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
-  #endif
- #endif
+  #endif/*CONFIG_SYNC_SUPPORT*/
+ #endif/*NB_SIGNAL_TEST*/
 #endif
 }
 
@@ -6407,6 +6442,8 @@ void EnterIdleScreen(void)
 
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterNBTestScreen);
+#elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+	SetLeftKeyUpHandler(EnterSettings);
 #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_STEP_SUPPORT
@@ -6432,6 +6469,9 @@ void EnterIdleScreen(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
+ 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+ #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))

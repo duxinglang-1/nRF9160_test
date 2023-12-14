@@ -21,6 +21,7 @@
 #include "logger.h"
 #include "ft_main.h"
 #include "ft_gpio.h"
+#include "ft_aging.h"
 
 #define FT_MAIN_MENU_MAX_PER_PG	4
 #define FT_SUB_MENU_MAX_PER_PG	3
@@ -364,8 +365,8 @@ static void FactoryTestMainShow(void)
 	#endif
 	}
 
-	SetLeftKeyUpHandler(FTMainMenuProcess);
-	SetRightKeyUpHandler(FactoryTestExit);
+	SetLeftKeyUpHandler(FactoryTestExit);
+	SetRightKeyUpHandler(FTMainMenuProcess);
 	
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[0]);
@@ -409,7 +410,7 @@ void FactoryTestExit(void)
 	ft_running_flag = false;
 	
 	SetModemTurnOn();
-	EntryIdleScr();
+	FTAgingTest();
 }
 
 void EnterFactoryTestScreen(void)
@@ -463,9 +464,6 @@ bool FactryTestActived(void)
 
 void FactoryTestProccess(void)
 {
-	if(!ft_running_flag)
-		return;
-
 	switch(ft_menu.id)
 	{
 	case FT_MAIN:
@@ -522,6 +520,9 @@ void FactoryTestProccess(void)
 	case FT_WIFI:
 		FTMenuWifiProcess();
 		break;
-	#endif		
+	#endif
+	case FT_AGING:
+		FTAgingTestProcess();
+		break;
 	}
 }

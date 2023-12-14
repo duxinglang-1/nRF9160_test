@@ -34,6 +34,7 @@ typedef enum
 	FT_MAIN,
 	FT_AUDIO,
 	FT_WRIST,
+	FT_AGING,
 	FT_MAX
 }FT_MENU_ID;
 

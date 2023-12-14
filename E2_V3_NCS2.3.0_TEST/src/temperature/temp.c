@@ -395,6 +395,7 @@ void TempMsgProcess(void)
 		if(!CheckSCC()
 		#ifdef CONFIG_FACTORY_TEST_SUPPORT
 			&& !IsFTTempTesting()
+			&& !IsFTTempAging()
 		#endif
 			)
 		{

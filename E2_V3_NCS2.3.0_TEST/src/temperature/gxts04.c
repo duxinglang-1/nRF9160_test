@@ -127,9 +127,10 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	uint8_t databuf[10] = {0};
 	uint16_t trans_temp = 0;
 
-	if(!is_wearing()
+	if(!CheckSCC()
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-		&& !IsFTTempTesting()	
+		&& !IsFTTempTesting()
+		&& !IsFTTempAging()
 	#endif
 		)
 	{
@@ -215,7 +216,10 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 		else
 			t_body = t_sensor;
 
-		flag = true;
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		if(!IsFTTempAging())
+	#endif
+			flag = true;
 	}
 
 	*body_temp = t_body;

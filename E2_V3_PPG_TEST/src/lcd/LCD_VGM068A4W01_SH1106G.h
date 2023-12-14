@@ -28,8 +28,19 @@ extern uint16_t  POINT_COLOR;//默认红色
 extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //LCM
-#define LCD_PORT	"GPIO_0"
-#define LCD_DEV 	"SPI_3"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)
+#define LCD_DEV DT_NODELABEL(spi3)
+#else
+#error "spi3 devicetree node is disabled"
+#define LCD_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define LCD_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define LCD_PORT	""
+#endif
 
 #define CS		23
 #define	RST		24
@@ -51,13 +62,13 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 
 //------------------------------------------------------
 
-extern u8_t lcd_data_buffer[2*LCD_DATA_LEN];
+extern uint8_t lcd_data_buffer[2*LCD_DATA_LEN];
 
 extern void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h);
-extern void WriteOneDot(u16_t color);
-extern void Write_Data(u8_t i);
+extern void WriteOneDot(uint16_t color);
+extern void Write_Data(uint8_t i);
 extern void LCD_Init(void);
-extern void LCD_Clear(u16_t color);
+extern void LCD_Clear(uint16_t color);
 extern void LCD_SleepIn(void);
 extern void LCD_SleepOut(void);
 extern void LCD_ResetBL_Timer(void);

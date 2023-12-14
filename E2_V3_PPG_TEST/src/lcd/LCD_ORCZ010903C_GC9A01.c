@@ -1,12 +1,12 @@
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
+#include "logger.h"
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 #include "Max20353.h"
 #endif
-
 #ifdef LCD_ORCZ010903C_GC9A01
 #include "LCD_ORCZ010903C_GC9A01.h"
 
@@ -45,7 +45,7 @@ void LCD_CS_HIGH(void)
 
 static void LCD_SPI_Init(void)
 {
-	spi_lcd = device_get_binding(LCD_DEV);
+	spi_lcd = DEVICE_DT_GET(LCD_DEV);
 	if(!spi_lcd) 
 	{
 		return;
@@ -56,7 +56,7 @@ static void LCD_SPI_Init(void)
 	spi_cfg.slave = 0;
 
 #ifndef SPI_MUIT_BY_CS
-	spi_cs_ctr.gpio_dev = device_get_binding(LCD_PORT);
+	spi_cs_ctr.gpio_dev = DEVICE_DT_GET(LCD_PORT);
 	if (!spi_cs_ctr.gpio_dev)
 	{
 		printk("Unable to get GPIO SPI CS device\n");
@@ -324,8 +324,6 @@ void LCD_SleepIn(void)
 	if(lcd_is_sleeping)
 		return;
 
-
-
 	WriteComm(0x28);	
 	WriteComm(0x10);  		//Sleep in	
 	Delay(120);             //延时120ms
@@ -340,7 +338,7 @@ void LCD_SleepOut(void)
 
 	if(k_timer_remaining_get(&backlight_timer) > 0)
 		k_timer_stop(&backlight_timer);
-	
+
 	if(global_settings.backlight_time != 0)
 	{
 		bk_time = global_settings.backlight_time;
@@ -351,7 +349,16 @@ void LCD_SleepOut(void)
 			bk_time = 5;
 		}
 
-		k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_NO_WAIT);
+		switch(bl_mode)
+		{
+		case LCD_BL_ALWAYS_ON:
+		case LCD_BL_OFF:
+			break;
+
+		case LCD_BL_AUTO:
+			k_timer_start(&backlight_timer, K_SECONDS(bk_time), K_NO_WAIT);
+			break;
+		}
 	}
 
 	if(!lcd_is_sleeping)
@@ -367,7 +374,7 @@ void LCD_SleepOut(void)
 //屏幕重置背光延时
 void LCD_ResetBL_Timer(void)
 {
-	if(bl_mode == LCD_BL_ALWAYS_ON)
+	if((bl_mode == LCD_BL_ALWAYS_ON) || (bl_mode == LCD_BL_OFF))
 		return;
 	
 	if(k_timer_remaining_get(&backlight_timer) > 0)
@@ -392,20 +399,20 @@ void LCD_Set_BL_Mode(LCD_BL_MODE mode)
 	switch(mode)
 	{
 	case LCD_BL_ALWAYS_ON:
+		k_timer_stop(&backlight_timer);
 		if(lcd_is_sleeping)
 			LCD_SleepOut();
-		if(k_timer_remaining_get(&backlight_timer) > 0)
-			k_timer_stop(&backlight_timer);
 		break;
 
 	case LCD_BL_AUTO:
-		if(k_timer_remaining_get(&backlight_timer) > 0)
-			k_timer_stop(&backlight_timer);
+		k_timer_stop(&backlight_timer);
 		if(global_settings.backlight_time != 0)
 			k_timer_start(&backlight_timer, K_SECONDS(global_settings.backlight_time), K_NO_WAIT);
 		break;
 
 	case LCD_BL_OFF:
+		k_timer_stop(&backlight_timer);
+		LCD_BL_Off();
 		if(!lcd_is_sleeping)
 			LCD_SleepIn();
 		break;
@@ -420,7 +427,7 @@ void LCD_Init(void)
 	int err;
 
   	//端口初始化
-  	gpio_lcd = device_get_binding(LCD_PORT);
+  	gpio_lcd = DEVICE_DT_GET(LCD_PORT);
 	if(!gpio_lcd)
 	{
 		return;

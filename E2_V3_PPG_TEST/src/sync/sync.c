@@ -9,13 +9,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
 #include <soc.h>
-#include <device.h>
 #include <nrf_socket.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
 #include <nrfx.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include "lcd.h"
 #include "sync.h"
 #ifdef CONFIG_WIFI_SUPPORT
@@ -81,7 +80,7 @@ void SyncDataStop(void)
 {
 	k_timer_stop(&sync_timer);
 #ifdef CONFIG_ANIMATION_SUPPORT	
-	AnimaStopShow();
+	AnimaStop();
 #endif
 	sync_state = SYNC_STATUS_IDLE;
 }
@@ -130,7 +129,7 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 		case SYNC_STATUS_FAIL:
 			k_timer_stop(&sync_timer);
 		#ifdef CONFIG_ANIMATION_SUPPORT 
-			AnimaStopShow();
+			AnimaStop();
 		#endif
 			if(screen_id == SCREEN_ID_SYNC)
 			{

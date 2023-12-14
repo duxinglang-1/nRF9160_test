@@ -9,8 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
 #include <nrfx.h>
 #include "logger.h"
 
@@ -64,7 +63,7 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
     /*----------------------------------------------------------------*/
     /* Local Variables                                                */
     /*----------------------------------------------------------------*/
-    uint16_t count = 1;
+    uint16_t count = 0;
     uint8_t *temp = strDestination;
 
     /*----------------------------------------------------------------*/
@@ -74,8 +73,8 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
     {
         if (strDestination)
         {
-            *(strDestination + count - 1) = '\0';
             *(strDestination + count) = '\0';
+            *(strDestination + count + 1) = '\0';
         }
         return temp;
 
@@ -85,16 +84,70 @@ uint8_t *mmi_ucs2cpy(uint8_t *strDestination, const uint8_t *strSource)
     {
         return NULL;
     }
-    while (!((*(strSource + count) == 0) && (*(strSource + count - 1) == 0)))
+    while (!((*(strSource + count) == 0) && (*(strSource + count + 1) == 0)))
     {
 
-        *(strDestination + count - 1) = *(strSource + count - 1);
         *(strDestination + count) = *(strSource + count);
+        *(strDestination + count + 1) = *(strSource + count + 1);
         count += 2;
     }
 
-    *(strDestination + count - 1) = '\0';
     *(strDestination + count) = '\0';
+    *(strDestination + count + 1) = '\0';
+
+    return temp;
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  mmi_ucs2cpy
+ * DESCRIPTION
+ *  copies the one UCS2 encoded string to other
+ * PARAMETERS
+ *  strDestination      [OUT]       StrDest-> Destination array
+ *  strSource           [IN]  		StrSour-> Source array
+ *  len					[IN]		len-> copier count
+ * RETURNS
+ *  u8_t * -> pointer to destination string or NULL
+ *****************************************************************************/
+uint8_t *mmi_ucs2ncpy(uint8_t *strDestination, const uint8_t *strSource, uint32_t len)
+{
+    /*----------------------------------------------------------------*/
+    /* Local Variables                                                */
+    /*----------------------------------------------------------------*/
+    uint16_t count = 0;
+    uint8_t *temp = strDestination;
+
+    /*----------------------------------------------------------------*/
+    /* Code Body                                                      */
+    /*----------------------------------------------------------------*/
+    if (strSource == NULL)
+    {
+        if (strDestination)
+        {
+            *(strDestination + count) = '\0';
+            *(strDestination + count + 1) = '\0';
+        }
+        return temp;
+
+    }
+
+    if (strDestination == NULL || strSource == NULL)
+    {
+        return NULL;
+    }
+    while (!((*(strSource + count) == 0) && (*(strSource + count + 1) == 0)))
+    {
+
+        *(strDestination + count) = *(strSource + count);
+        *(strDestination + count + 1) = *(strSource + count + 1);
+        count += 2;
+		if(count == 2*len)
+			break;
+    }
+
+    *(strDestination + count) = '\0';
+    *(strDestination + count + 1) = '\0';
 
     return temp;
 }
@@ -127,6 +180,37 @@ uint8_t *mmi_ucs2cat(uint8_t *strDestination, const uint8_t *strSource)
 	dest = dest + mmi_ucs2strlen(strDestination) * 2;
 
 	mmi_ucs2cpy(dest, strSource);
+	return strDestination;
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  mmi_ucs2cat
+ * DESCRIPTION
+ *  
+ *  
+ *  User has to ensure that enough space is
+ *  available in destination
+ * PARAMETERS
+ *  strDestination      [OUT]         
+ *  strSource           [IN]        
+ * RETURNS
+ *  u8_t *
+ *****************************************************************************/
+uint8_t *mmi_ucs2ncat(uint8_t *strDestination, const uint8_t *strSource, uint32_t len)
+{
+	/*----------------------------------------------------------------*/
+	/* Local Variables												  */
+	/*----------------------------------------------------------------*/
+
+	int8_t *dest = strDestination;
+
+	/*----------------------------------------------------------------*/
+	/* Code Body													  */
+	/*----------------------------------------------------------------*/
+	dest = dest + mmi_ucs2strlen(strDestination) * 2;
+
+	mmi_ucs2ncpy(dest, strSource, len);
 	return strDestination;
 }
 
@@ -257,6 +341,38 @@ uint8_t *mmi_ucs2str(const uint8_t *str1, const uint8_t *str2)
 	}
 	
 	return NULL;	
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  mmi_ucs2smartcpy
+ * DESCRIPTION
+ *  Copy a string of no more than the specified length to another buffer (the excess is displayed with dots)
+ * PARAMETERS
+ *  strDestination      [OUT]       StrDest-> Destination array
+ *  strSource           [IN]  		StrSour-> Source array
+ *  maxlen					[IN]		len-> copier count
+ * RETURNS
+ *  u8_t * -> pointer to destination string or NULL
+ *****************************************************************************/
+uint8_t *mmi_ucs2smartcpy(uint8_t *strDestination, const uint8_t *strSource, uint32_t maxlen)
+{
+	uint8_t *temp = strDestination;
+	uint16_t dot_str[2] = {0x002e,0x0000};
+	uint32_t len;
+
+	len = mmi_ucs2strlen((uint8_t*)strSource);
+	if(len > maxlen)
+	{
+		mmi_ucs2ncpy((uint8_t*)strDestination, (uint8_t*)strSource, maxlen);
+		mmi_ucs2cat((uint8_t*)strDestination, (uint8_t*)dot_str);
+	}
+	else
+	{
+		mmi_ucs2cat((uint8_t*)strDestination, (uint8_t*)strSource);
+	}
+
+	return temp;
 }
 
 /*****************************************************************************

@@ -10,7 +10,7 @@
 #define __KEY_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +64,6 @@ typedef enum
 
 typedef struct
 {
-	const char * const port;
 	const uint8_t number;
 	const uint8_t active_flag;
 }key_cfg;
@@ -75,50 +74,15 @@ typedef struct
 	FuncPtr func[KEY_MAX][KEY_EVENT_MAX];
 }key_event_msg;
 
-/**
- * @typedef button_handler_t
- * @brief Callback that is executed when a button state change is detected.
- *
- * @param button_state Bitmask of button states.
- * @param has_changed Bitmask that shows which buttons have changed.
- */
 typedef void (*button_handler_t)(uint32_t button_state, uint32_t has_changed);
 
-/** Button handler list entry. */
-struct button_handler {
+struct button_handler
+{
 	button_handler_t cb; /**< Callback function. */
 	sys_snode_t node; /**< Linked list node, for internal use. */
 };
 
-/** @brief Initialize the library to read the button state.
- *
- *  @param  button_handler Callback handler for button state changes.
- *
- *  @retval 0           If the operation was successful.
- *                      Otherwise, a (negative) error code is returned.
- */
-int dk_buttons_init(button_handler_t button_handler);
-
-/** @brief Read current button states.
- *
- *  @param button_state Bitmask of button states.
- *  @param has_changed Bitmask that shows which buttons have changed.
- */
-void dk_read_buttons(uint32_t *button_state, uint32_t *has_changed);
-
-/** @brief Get current button state from internal variable.
- *
- *  @return Bitmask of button states.
- */
-uint32_t dk_get_buttons(void);
-
-/** @brief Set value of LED pins as specified in one bitmask.
- *
- *  @param  leds Bitmask that defines which LEDs to turn on and off.
- *
- *  @retval 0           If the operation was successful.
- *                      Otherwise, a (negative) error code is returned.
- */
+extern bool touch_flag;
 
 extern void ClearAllKeyHandler(void);
 extern void ClearKeyHandler(uint8_t keycode, uint8_t keytype);

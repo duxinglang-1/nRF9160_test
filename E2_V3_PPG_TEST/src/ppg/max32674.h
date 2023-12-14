@@ -10,8 +10,12 @@
 #define __MAX32674_H__
 
 #include <nrf9160.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+
+#define PPG_CHECK_HR_MENU			60
+#define PPG_CHECK_SPO2_MENU			150
+#define PPG_CHECK_BPT_MENU			150
 
 #define PPG_CHECK_HR_TIMELY			1
 #define PPG_CHECK_SPO2_TIMELY		2
@@ -20,7 +24,7 @@
 #define PPG_HR_MAX		150
 #define PPG_HR_MIN		30
 #define PPG_SPO2_MAX	100
-#define	PPG_SPO2_MIN	80
+#define	PPG_SPO2_MIN	95
 #define PPG_BPT_SYS_MAX	180
 #define PPG_BPT_SYS_MIN	30
 #define PPG_BPT_DIA_MAX	180
@@ -45,6 +49,16 @@ typedef enum
 
 typedef enum
 {
+	PPG_STATUS_PREPARE,
+	PPG_STATUS_MEASURING,
+	PPG_STATUS_MEASURE_FAIL,
+	PPG_STATUS_MEASURE_OK,
+	PPG_STATUS_NOTIFY,
+	PPG_STATUS_MAX
+}PPG_WORK_STATUS;
+
+typedef enum
+{
 	BPT_STATUS_GET_CAL,		//从SH获取校验数据
 	BPT_STATUS_SET_CAL,		//设置校验数据到SH
 	BPT_STATUS_GET_EST,		//从SH获取血压数据
@@ -57,7 +71,9 @@ typedef enum
 	TRIGGER_BY_APP_ONE_KEY	=	0x02,
 	TRIGGER_BY_APP			=	0x04,
 	TRIGGER_BY_HOURLY		=	0x08,
-}PPG_TARGGER_SOUCE;
+	TRIGGER_BY_FT			=	0x10,
+	TRIGGER_BY_SCC			=	0x20,
+}PPG_TRIGGER_SOURCE;
 
 typedef enum
 {
@@ -136,16 +152,20 @@ extern bool get_hr_ok_flag;
 extern bool get_spo2_ok_flag;
 extern bool ppg_bpt_is_calbraed;
 extern bool ppg_bpt_cal_need_update;
+extern bool ppg_skin_contacted_flag;
 
 extern uint8_t g_ppg_trigger;
 extern uint8_t g_ppg_ver[64];
+extern uint8_t ppg_test_info[256];
 
 extern uint8_t g_hr;
-extern uint8_t g_hr_timing;
+extern uint8_t g_hr_menu;
 extern uint8_t g_spo2;
-extern uint8_t g_spo2_timing;
+extern uint8_t g_spo2_menu;
 extern bpt_data g_bpt;
-extern bpt_data g_bpt_timing;
+extern bpt_data g_bpt_menu;
+
+extern PPG_WORK_STATUS g_ppg_status;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
@@ -157,15 +177,9 @@ extern void SetCurDaySpo2RecData(uint8_t spo2);
 extern void GetCurDaySpo2RecData(uint8_t *databuf);
 extern void SetCurDayHrRecData(uint8_t hr);
 extern void GetCurDayHrRecData(uint8_t *databuf);
-extern void GetHeartRate(uint8_t *HR);
-extern void APPStartHr(void);
-extern void APPStartSpo2(void);
-extern void APPStartBpt(void);
-extern void APPStartEcg(void);
-extern void TimerStartHr(void);
-extern void TimerStartSpo2(void);
-extern void TimerStartBpt(void);
-extern void TimerStartEcg(void);
+extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
+extern void StartSCC(void);
+extern bool CheckSCC(void);
 
 //xb test 2022-06-29
 typedef void (*sh_read_fifo_callback)(uint32_t cnt, uint32_t u32_sampleSize, uint8_t *buf);

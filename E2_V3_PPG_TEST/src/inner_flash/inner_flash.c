@@ -6,10 +6,10 @@
 ** Modified Date:      		2021-07-12
 ** Version:			    	V1.1
 ******************************************************************************************************/
-#include <fs/nvs.h>
-#include <drivers/flash.h>
+#include <zephyr/fs/nvs.h>
 #include <flash_map_pm.h>
-#include <device.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,6 +22,9 @@
 //#define INNER_FLASH_DEBUG
 
 #define STORAGE_NODE_LABEL storage
+#define NVS_PARTITION		storage_partition
+#define NVS_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(NVS_PARTITION)
+#define NVS_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(NVS_PARTITION)
 
 #define value1  "53.760241,-5.147095,1.023,11:20:22"
 #define value2  "53.760241,-5.147095,1.023,11:20:23"
@@ -51,16 +54,17 @@ static int nvs_setup(void)
     struct device *flash_dev;
 	int err;	
 
-	flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
-	if(!device_is_ready(flash_dev))
+	//flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
+	fs.flash_device = NVS_PARTITION_DEVICE;
+	if(!device_is_ready(fs.flash_device))
 	{
 	#ifdef INNER_FLASH_DEBUG
-		LOGD("Flash device %s is not ready", flash_dev->name);
+		LOGD("Flash device %s is not ready", fs.flash_device->name);
 	#endif	
 		return;
 	}
-	fs.offset = FLASH_AREA_OFFSET(STORAGE_NODE_LABEL);
-	err = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
+	fs.offset = NVS_PARTITION_OFFSET;
+	err = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (err)
 	{		
 	#ifdef INNER_FLASH_DEBUG
@@ -72,7 +76,7 @@ static int nvs_setup(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 6U;
 
-    err = nvs_init(&fs, flash_dev->name);
+    err = nvs_mount(&fs);
 	if(err)
 	{
 	#ifdef INNER_FLASH_DEBUG
@@ -106,6 +110,22 @@ void ReadSettingsFromInnerFlash(global_settings_t *settings)
 	#ifdef INNER_FLASH_DEBUG
 		LOGD("get settins err:%d", err);
 	#endif
+	}
+}
+
+void ResetInnerFlash(void)
+{
+	int err;
+	
+	nvs_clear(&fs);
+
+	err = nvs_setup();
+	if(err)
+	{
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("Flash Init failed, return!");
+	#endif
+		return;
 	}
 }
 
@@ -258,7 +278,7 @@ void clear_cur_health_in_record(void)
 	clear_current_data_in_record(RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 void clear_cur_sport_in_record(void)
 {
 	memset(&last_sport, 0, sizeof(last_sport));
@@ -329,7 +349,7 @@ bool save_cur_health_to_record(health_record_t *health_data)
 	return save_current_data_to_record(health_data, RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 bool save_cur_sport_to_record(sport_record_t *sport_data)
 {
 	return save_current_data_to_record(sport_data, RECORD_TYPE_SPORT);
@@ -398,7 +418,7 @@ bool get_cur_health_from_record(health_record_t *health_data)
 	return get_current_data_from_record(health_data, RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 bool get_cur_sport_from_record(sport_record_t *sport_data)
 {
 	return get_current_data_from_record(sport_data, RECORD_TYPE_SPORT);
@@ -607,7 +627,7 @@ void clear_health_in_record(void)
 	clear_data_in_record(RECORD_TYPE_HEALTH);
 }
 
-#ifdef CONFIG_IMU_SUPPORT
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 void clear_sport_in_record(void)
 {
 	clear_data_in_record(RECORD_TYPE_SPORT);
@@ -816,7 +836,7 @@ bool get_last_sport_from_record(sport_record_t *sport_data)
 	return get_last_data_from_record(sport_data, RECORD_TYPE_SPORT);
 }
 
-bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time, uint32_t index, ENUM_RECORD_TYPE record_type)
+bool get_data_from_record_by_time_and_index(void *databuf, uint8_t data_type, sys_date_timer_t time, uint32_t index, ENUM_RECORD_TYPE record_type)
 {
 	uint16_t nvs_rx=0;
 	ssize_t bytes_read;
@@ -907,7 +927,17 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 					local_record_t* local_data;
 
 					local_data = (local_record_t*)databuf;
-					p_time = (sys_date_timer_t*)&(local_data->timestamp);
+					switch(data_type)
+					{
+					case RECORD_LOCATION_GPS:
+						p_time = (sys_date_timer_t*)&(local_data->gps_rec.timestamp);
+						break;
+					case RECORD_LOCATION_WIFI:
+					#ifdef CONFIG_WIFI_SUPPORT	
+						p_time = (sys_date_timer_t*)&(local_data->wifi_rec.timestamp);
+					#endif
+						break;
+					}
 				}
 				break;
 				
@@ -916,7 +946,21 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 					health_record_t* health_data;
 
 					health_data = (health_record_t*)databuf;
-					p_time = (sys_date_timer_t*)&(health_data->timestamp);
+					switch(data_type)
+					{
+					case RECORD_HEALTH_HR:
+						p_time = (sys_date_timer_t*)&(health_data->hr_rec.timestamp);
+						break;
+					case RECORD_HEALTH_SPO2:
+						p_time = (sys_date_timer_t*)&(health_data->spo2_rec.timestamp);
+						break;
+					case RECORD_HEALTH_BPT:
+						p_time = (sys_date_timer_t*)&(health_data->bpt_rec.timestamp);
+						break;
+					case RECORD_HEALTH_ECG:
+						break;
+					}
+					
 				}
 				break;
 
@@ -925,7 +969,15 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 					sport_record_t* sport_data;
 
 					sport_data = (sport_record_t*)databuf;
-					p_time = (sys_date_timer_t*)&(sport_data->timestamp);
+					switch(data_type)
+					{
+					case RECORD_SPORT_STEP:
+						p_time = (sys_date_timer_t*)&(sport_data->step_rec.timestamp);
+						break;
+					case RECORD_SPORT_SLEEP:
+						p_time = (sys_date_timer_t*)&(sport_data->sleep_rec.timestamp);
+						break;
+					}
 				}
 				break;
 			}
@@ -1014,7 +1066,17 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 					local_record_t* local_data;
 
 					local_data = (local_record_t*)databuf;
-					p_time = (sys_date_timer_t*)&(local_data->timestamp);
+					switch(data_type)
+					{
+					case RECORD_LOCATION_GPS:
+						p_time = (sys_date_timer_t*)&(local_data->gps_rec.timestamp);
+						break;
+					case RECORD_LOCATION_WIFI:
+					#ifdef CONFIG_WIFI_SUPPORT	
+						p_time = (sys_date_timer_t*)&(local_data->wifi_rec.timestamp);
+					#endif
+						break;
+					}
 				}
 				break;
 				
@@ -1023,7 +1085,20 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 					health_record_t* health_data;
 
 					health_data = (health_record_t*)databuf;
-					p_time = (sys_date_timer_t*)&(health_data->timestamp);
+					switch(data_type)
+					{
+					case RECORD_HEALTH_HR:
+						p_time = (sys_date_timer_t*)&(health_data->hr_rec.timestamp);
+						break;
+					case RECORD_HEALTH_SPO2:
+						p_time = (sys_date_timer_t*)&(health_data->spo2_rec.timestamp);
+						break;
+					case RECORD_HEALTH_BPT:
+						p_time = (sys_date_timer_t*)&(health_data->bpt_rec.timestamp);
+						break;
+					case RECORD_HEALTH_ECG:
+						break;
+					}
 				}
 				break;
 
@@ -1032,7 +1107,15 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 					sport_record_t* sport_data;
 
 					sport_data = (sport_record_t*)databuf;
-					p_time = (sys_date_timer_t*)&(sport_data->timestamp);
+					switch(data_type)
+					{
+					case RECORD_SPORT_STEP:
+						p_time = (sys_date_timer_t*)&(sport_data->step_rec.timestamp);
+						break;
+					case RECORD_SPORT_SLEEP:
+						p_time = (sys_date_timer_t*)&(sport_data->sleep_rec.timestamp);
+						break;
+					}
 				}
 				break;
 			}
@@ -1097,18 +1180,18 @@ bool get_data_from_record_by_time_and_index(void *databuf, sys_date_timer_t time
 	return true;	
 }
 
-bool get_local_from_record_by_time(local_record_t *local_data, sys_date_timer_t begin_time, uint32_t index)
+bool get_local_from_record_by_time(local_record_t *local_data, ENUM_RECORD_LOCATION_TYPE type, sys_date_timer_t begin_time, uint32_t index)
 {
-	return get_data_from_record_by_time_and_index(local_data, begin_time, index, RECORD_TYPE_LOCATION);
+	return get_data_from_record_by_time_and_index(local_data, type, begin_time, index, RECORD_TYPE_LOCATION);
 }
 
-bool get_health_from_record_by_time(health_record_t *health_data, sys_date_timer_t begin_time, uint32_t index)
+bool get_health_from_record_by_time(health_record_t *health_data, ENUM_RECORD_HEALTH_TYPE type, sys_date_timer_t begin_time, uint32_t index)
 {
-	return get_data_from_record_by_time_and_index(health_data, begin_time, index, RECORD_TYPE_HEALTH);
+	return get_data_from_record_by_time_and_index(health_data, type, begin_time, index, RECORD_TYPE_HEALTH);
 }
 
-bool get_sport_from_record_by_time(sport_record_t *sport_data, sys_date_timer_t begin_time, uint32_t index)
+bool get_sport_from_record_by_time(sport_record_t *sport_data, ENUM_RECORD_SPORT_TYPE type, sys_date_timer_t begin_time, uint32_t index)
 {	
-	return get_data_from_record_by_time_and_index(sport_data, begin_time, index, RECORD_TYPE_SPORT);
+	return get_data_from_record_by_time_and_index(sport_data, type, begin_time, index, RECORD_TYPE_SPORT);
 }
 

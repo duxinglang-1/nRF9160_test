@@ -7,24 +7,29 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <nrf9160.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "settings.h"
 #include "nb.h"
 #include "gps.h"
+#include "external_flash.h"
+#include "uart_ble.h"
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif
 #include "datetime.h"
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
-#endif/*CONFIG_PPG_SUPPORT*/
+#endif
 #ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
-#endif/*CONFIG_TEMP_SUPPORT*/
+#endif
+#ifdef CONFIG_IMU_SUPPORT
+#include "Lsm6dso.h"
+#endif
 #include "communicate.h"
 #include "logger.h"
 
@@ -149,57 +154,30 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 	NBSendLocationData(reply, strlen(reply));
 }
 
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 /*****************************************************************************
  * FUNCTION
- *  TimeCheckSendHealthData
+ *  TimeCheckSendSportData
  * DESCRIPTION
- *  定时检测并上传健康数据包
+ *  定时检测并上传运动数据包
  * PARAMETERS
  *	Nothing
  * RETURNS
  *  Nothing
  *****************************************************************************/
-void TimeCheckSendHealthData(void)
+void TimeCheckSendSportData(void)
 {
-	uint16_t light_sleep=0,deep_sleep=0;
 	uint8_t i,tmpbuf[20] = {0};
-	uint8_t databuf[1024] = {0};
-	uint8_t hr_data[24] = {0};
-	uint8_t spo2_data[24] = {0};
-#ifdef CONFIG_PPG_SUPPORT	
-	bpt_data bp_data[24] = {0};
-#endif
-	uint16_t temp_data[24] = {0};
+	uint8_t reply[1024] = {0};
 	uint16_t step_data[24] = {0};
-	
+	sleep_data sleep[24] = {0};
+
 	//wrist
-	if(is_wearing())
-		strcat(databuf, "1,");
+	if(ppg_skin_contacted_flag)
+		strcpy(reply, "1,");
 	else
-		strcat(databuf, "0,");
+		strcpy(reply, "0,");
 	
-	//sitdown time
-	strcat(databuf, "0,");
-	
-	//activity time
-	strcat(databuf, "0,");
-
-#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
-	GetSleepTimeData(&deep_sleep, &light_sleep);
-#endif
-	//light sleep time
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", light_sleep);
-	strcat(databuf, tmpbuf);
-	
-	//deep sleep time
-	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", deep_sleep);
-	strcat(databuf, tmpbuf);
-	
-	//move body
-	strcat(databuf, "0,");
-
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 	GetCurDayStepRecData(step_data);
 #endif
@@ -221,9 +199,62 @@ void TimeCheckSendHealthData(void)
 		else
 			strcat(tmpbuf,",");
 		
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+	GetCurDaySleepRecData((uint8_t*)&sleep);
+#endif
+	for(i=0;i<24;i++)
+	{
+		uint16_t total_sleep;
+		
+		memset(tmpbuf,0,sizeof(tmpbuf));
+		
+		if(sleep[i].deep == 0xffff)
+			sleep[i].deep = 0;
+		if(sleep[i].light == 0xffff)
+			sleep[i].light = 0;
+
+		total_sleep = sleep[i].deep+sleep[i].light;
+		sprintf(tmpbuf, "%d&%d&%d", total_sleep, sleep[i].light, sleep[i].deep);
+
+		if(i<23)
+			strcat(tmpbuf,"|");
+		strcat(reply, tmpbuf);
+	}
+
+	NBSendTimelySportData(reply, strlen(reply));
+}
+#endif
+
+/*****************************************************************************
+ * FUNCTION
+ *  TimeCheckSendHealthData
+ * DESCRIPTION
+ *  定时检测并上传健康数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void TimeCheckSendHealthData(void)
+{
+	uint8_t i,tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
+	uint8_t hr_data[24] = {0};
+	uint8_t spo2_data[24] = {0};
+#ifdef CONFIG_PPG_SUPPORT	
+	bpt_data bp_data[24] = {0};
+#endif
+	uint16_t temp_data[24] = {0};
+
+	//wrist
+	if(ppg_skin_contacted_flag)
+		strcpy(reply, "1,");
+	else
+		strcpy(reply, "0,");
+	
 #ifdef CONFIG_PPG_SUPPORT
 	//hr
 	GetCurDayHrRecData(hr_data);
@@ -245,7 +276,7 @@ void TimeCheckSendHealthData(void)
 			strcat(tmpbuf,"|");
 		else
 			strcat(tmpbuf,",");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 	//spo2
 	for(i=0;i<24;i++)
@@ -260,7 +291,7 @@ void TimeCheckSendHealthData(void)
 			strcat(tmpbuf,"|");
 		else
 			strcat(tmpbuf,",");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 	//bpt
 	for(i=0;i<24;i++)
@@ -281,7 +312,7 @@ void TimeCheckSendHealthData(void)
 			strcat(tmpbuf,"|");
 		else
 			strcat(tmpbuf,",");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 	
 #ifdef CONFIG_TEMP_SUPPORT
@@ -298,11 +329,319 @@ void TimeCheckSendHealthData(void)
 
 		if(i<23)
 			strcat(tmpbuf,"|");
-		strcat(databuf, tmpbuf);
+		strcat(reply, tmpbuf);
 	}
 
-	NBSendTimelyHealthData(databuf, strlen(databuf));
+	NBSendTimelyHealthData(reply, strlen(reply));
 }
+
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+/*****************************************************************************
+ * FUNCTION
+ *  SendMissingSportData
+ * DESCRIPTION
+ *  补发漏传的运动数据包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendMissingSportData(void)
+{
+	uint8_t i,j,tmpbuf[20] = {0};
+	uint8_t stepbuf[STEP_REC2_DATA_SIZE] = {0};
+	uint8_t sleepbuf[SLEEP_REC2_DATA_SIZE] = {0};	
+
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	SpiFlash_Read(stepbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+#endif
+#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+	SpiFlash_Read(sleepbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+#endif
+
+	for(i=0;i<7;i++)
+	{
+		bool flag = false;
+		uint8_t reply[1024] = {0};
+		uint16_t step_data[24] = {0};
+		uint8_t step_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+		sleep_data sleep[24] = {0};
+		uint8_t sleep_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+		step_rec2_data step_rec2 = {0};
+		sleep_rec2_data	sleep_rec2 = {0};
+
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+	  #if defined(CONFIG_STEP_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	  	//step
+		memcpy(&step_rec2, &stepbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
+		if((step_rec2.year != 0xffff && step_rec2.year != 0x0000)
+			&&(step_rec2.month != 0xff && step_rec2.month != 0x00)
+			&&(step_rec2.day != 0xff && step_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(step_data, step_rec2.steps, sizeof(step_rec2.steps));
+			sprintf(step_time, "%04d%02d%02d230000", step_rec2.year,step_rec2.month,step_rec2.day);
+		}
+	  #endif
+	  #if defined(CONFIG_SLEEP_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
+		//sleep
+		memcpy(&sleep_rec2, &sleepbuf[i*sizeof(sleep_rec2_data)], sizeof(sleep_rec2_data));
+	  	if((sleep_rec2.year != 0xffff && sleep_rec2.year != 0x0000)
+			&&(sleep_rec2.month != 0xff && sleep_rec2.month != 0x00)
+			&&(sleep_rec2.day != 0xff && sleep_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(sleep, sleep_rec2.sleep, sizeof(sleep_rec2.sleep));
+			sprintf(sleep_time, "%04d%02d%02d230000", sleep_rec2.year,sleep_rec2.month,sleep_rec2.day);
+		}
+	  #endif
+	#endif
+	
+		if(!flag)
+			continue;
+		
+		//step
+		for(j=0;j<24;j++)
+		{
+			uint16_t calorie,distance;
+			
+			memset(tmpbuf,0,sizeof(tmpbuf));
+			
+			if(step_data[j] == 0xffff)
+				step_data[j] = 0;
+
+			distance = 0.7*step_data[j];
+			calorie = (0.8214*60*distance)/1000;
+			sprintf(tmpbuf, "%d&%d&%d", step_data[j], distance, calorie);
+
+			if(j<23)
+				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
+			strcat(reply, tmpbuf);
+		}
+		strcat(reply, step_time);
+		strcat(reply, ",");
+		
+		//sleep
+		for(j=0;j<24;j++)
+		{
+			uint16_t total_sleep;
+			
+			memset(tmpbuf,0,sizeof(tmpbuf));
+			
+			if(sleep[j].deep == 0xffff)
+				sleep[j].deep = 0;
+			if(sleep[j].light == 0xffff)
+				sleep[j].light = 0;
+
+			total_sleep = sleep[j].deep+sleep[j].light;
+			sprintf(tmpbuf, "%d&%d&%d", total_sleep, sleep[j].light, sleep[j].deep);
+
+			if(j<23)
+				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
+			strcat(reply, tmpbuf);
+		}
+		strcat(reply, sleep_time);
+
+		NBSendMissSportData(reply, strlen(reply));
+	}
+}
+#endif
+
+#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+/*****************************************************************************
+ * FUNCTION
+ *  SendMissingHealthData
+ * DESCRIPTION
+ *  补发漏传的健康数据包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendMissingHealthData(void)
+{
+	uint8_t i,j,tmpbuf[20] = {0};
+	uint8_t hrbuf[PPG_HR_REC2_DATA_SIZE] = {0};
+	uint8_t spo2buf[PPG_SPO2_REC2_DATA_SIZE] = {0};
+	uint8_t bptbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
+	uint8_t tempbuf[TEMP_REC2_DATA_SIZE] = {0};	
+
+#ifdef CONFIG_PPG_SUPPORT
+	SpiFlash_Read(hrbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	SpiFlash_Read(spo2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	SpiFlash_Read(bptbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	SpiFlash_Read(tempbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+#endif
+
+	for(i=0;i<7;i++)
+	{
+		bool flag = false;
+		uint8_t reply[1024] = {0};
+		uint8_t hr_data[24] = {0};
+		uint8_t hr_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+		uint8_t spo2_data[24] = {0};
+		uint8_t spo2_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+	#ifdef CONFIG_PPG_SUPPORT	
+		bpt_data bp_data[24] = {0};
+	#endif
+		uint8_t bp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+		uint16_t temp_data[24] = {0};
+		uint8_t temp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+	#ifdef CONFIG_PPG_SUPPORT
+		ppg_hr_rec2_data hr_rec2 = {0};
+		ppg_spo2_rec2_data spo2_rec2 = {0};
+		ppg_bpt_rec2_data bpt_rec2 = {0};
+	#endif	
+	#ifdef CONFIG_TEMP_SUPPORT	
+		temp_rec2_data temp_rec2 = {0};
+	#endif
+	
+	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+	  #ifdef CONFIG_PPG_SUPPORT
+		//hr
+		memcpy(&hr_rec2, &hrbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));
+	  	if((hr_rec2.year != 0xffff && hr_rec2.year != 0x0000)
+			&&(hr_rec2.month != 0xff && hr_rec2.month != 0x00)
+			&&(hr_rec2.day != 0xff && hr_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
+			sprintf(hr_time, "%04d%02d%02d230000", hr_rec2.year,hr_rec2.month,hr_rec2.day);
+		}
+		
+		//spo2
+		memcpy(&spo2_rec2, &spo2buf[i*sizeof(ppg_spo2_rec2_data)], sizeof(ppg_spo2_rec2_data));
+		if((spo2_rec2.year != 0xffff && spo2_rec2.year != 0x0000)
+			&&(spo2_rec2.month != 0xff && spo2_rec2.month != 0x00)
+			&&(spo2_rec2.day != 0xff && spo2_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
+			sprintf(spo2_time, "%04d%02d%02d230000", spo2_rec2.year,spo2_rec2.month,spo2_rec2.day);
+		}
+		
+		//bpt
+		memcpy(&bpt_rec2, &bptbuf[i*sizeof(ppg_bpt_rec2_data)], sizeof(ppg_bpt_rec2_data));
+		if((bpt_rec2.year != 0xffff && bpt_rec2.year != 0x0000)
+			&&(bpt_rec2.month != 0xff && bpt_rec2.month != 0x00)
+			&&(bpt_rec2.day != 0xff && bpt_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
+			sprintf(bp_time, "%04d%02d%02d230000", bpt_rec2.year,bpt_rec2.month,bpt_rec2.day);
+		}
+	  #endif
+	  
+	  #ifdef CONFIG_TEMP_SUPPORT
+		//body temp
+		memcpy(&temp_rec2, &tempbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
+	  	if((temp_rec2.year != 0xffff && temp_rec2.year != 0x0000)
+			&&(temp_rec2.month != 0xff && temp_rec2.month != 0x00)
+			&&(temp_rec2.day != 0xff || temp_rec2.day != 0x00)
+			)
+		{
+			flag = true;
+			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
+			sprintf(temp_time, "%04d%02d%02d230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
+		}
+	  #endif
+	#endif
+
+		if(!flag)
+			continue;
+		
+		//hr
+		for(j=0;j<24;j++)
+		{
+			memset(tmpbuf,0,sizeof(tmpbuf));
+
+			if(hr_data[j] == 0xff)
+				hr_data[j] = 0;		
+			sprintf(tmpbuf, "%d", hr_data[j]);
+
+			if(j<23)
+				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
+			strcat(reply, tmpbuf);
+		}
+		strcat(reply, hr_time);
+		strcat(reply, ",");
+		
+		//spo2
+		for(j=0;j<24;j++)
+		{
+			memset(tmpbuf,0,sizeof(tmpbuf));
+
+			if(spo2_data[j] == 0xff)
+				spo2_data[j] = 0;	
+			sprintf(tmpbuf, "%d", spo2_data[j]);
+
+			if(j<23)
+				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
+			strcat(reply, tmpbuf);
+		}
+		strcat(reply, spo2_time);
+		strcat(reply, ",");
+			
+		//bpt
+		for(j=0;j<24;j++)
+		{
+			memset(tmpbuf,0,sizeof(tmpbuf));
+
+		#ifdef CONFIG_PPG_SUPPORT
+			if(bp_data[j].systolic == 0xff)
+				bp_data[j].systolic = 0;
+			if(bp_data[j].diastolic == 0xff)
+				bp_data[j].diastolic = 0;
+			sprintf(tmpbuf, "%d&%d", bp_data[j].systolic,bp_data[j].diastolic);
+		#else
+			strcpy(tmpbuf, "0&0");
+		#endif
+		
+			if(j<23)
+				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
+			strcat(reply, tmpbuf);
+		}
+		strcat(reply, bp_time);
+		strcat(reply, ",");
+
+		//temp
+		for(j=0;j<24;j++)
+		{
+			memset(tmpbuf,0,sizeof(tmpbuf));
+
+			if(temp_data[j] == 0xffff)
+				temp_data[j] = 0;
+			sprintf(tmpbuf, "%0.1f", (float)temp_data[j]/10.0);
+
+			if(j<23)
+				strcat(tmpbuf,"|");
+			else
+				strcat(tmpbuf,",");
+			strcat(reply, tmpbuf);
+		}
+		strcat(reply, temp_time);
+		
+		NBSendMissHealthData(reply, strlen(reply));
+	}
+}
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -391,7 +730,7 @@ void SyncSendHealthData(void)
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;
 	uint8_t tmpbuf[20] = {0};
-	uint8_t databuf[128] = {0};
+	uint8_t reply[1024] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
   #ifdef CONFIG_STEP_SUPPORT
@@ -404,77 +743,77 @@ void SyncSendHealthData(void)
 
 	//steps
 	sprintf(tmpbuf, "%d,", steps);
-	strcpy(databuf, tmpbuf);
+	strcpy(reply, tmpbuf);
 	
 	//wrist
-	if(is_wearing())
-		strcat(databuf, "1,");
+	if(ppg_skin_contacted_flag)
+		strcat(reply, "1,");
 	else
-		strcat(databuf, "0,");
+		strcat(reply, "0,");
 	
 	//sitdown time
-	strcat(databuf, "0,");
+	strcat(reply, "0,");
 	
 	//activity time
-	strcat(databuf, "0,");
+	strcat(reply, "0,");
 	
 	//light sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", light_sleep);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//deep sleep time
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", deep_sleep);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//move body
-	strcat(databuf, "0,");
+	strcat(reply, "0,");
 	
 	//calorie
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", calorie);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//distance
 	memset(tmpbuf,0,sizeof(tmpbuf));
 	sprintf(tmpbuf, "%d,", distance);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 
 #ifdef CONFIG_PPG_SUPPORT	
 	//systolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bpt.systolic);
-	strcat(databuf, tmpbuf);
+	sprintf(tmpbuf, "%d,", g_bpt_menu.systolic);
+	strcat(reply, tmpbuf);
 	
 	//diastolic
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_bpt.diastolic); 	
-	strcat(databuf, tmpbuf);
+	sprintf(tmpbuf, "%d,", g_bpt_menu.diastolic); 	
+	strcat(reply, tmpbuf);
 	
 	//heart rate
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_hr);		
-	strcat(databuf, tmpbuf);
+	sprintf(tmpbuf, "%d,", g_hr_menu);		
+	strcat(reply, tmpbuf);
 	
 	//SPO2
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%d,", g_spo2); 	
-	strcat(databuf, tmpbuf);
+	sprintf(tmpbuf, "%d,", g_spo2_menu); 	
+	strcat(reply, tmpbuf);
 #else
-	strcat(databuf, "0,0,0,0,");
+	strcat(reply, "0,0,0,0,");
 #endif/*CONFIG_PPG_SUPPORT*/
 
 #ifdef CONFIG_TEMP_SUPPORT
 	//body temp
 	memset(tmpbuf,0,sizeof(tmpbuf));
-	sprintf(tmpbuf, "%0.1f", g_temp_body); 	
-	strcat(databuf, tmpbuf);
+	sprintf(tmpbuf, "%0.1f", g_temp_menu); 	
+	strcat(reply, tmpbuf);
 #else
-	strcat(databuf, "0.0");
+	strcat(reply, "0.0");
 #endif/*CONFIG_TEMP_SUPPORT*/
 
-	NBSendSingleHealthData(databuf, strlen(databuf));
+	NBSendSingleHealthData(reply, strlen(reply));
 }
 
 /*****************************************************************************
@@ -512,33 +851,63 @@ void SyncSendLocalData(void)
 void SendPowerOnData(void)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t databuf[128] = {0};
-	
+	uint8_t reply[256] = {0};
+
 	//imsi
-	strcpy(databuf, g_imsi);
-	strcat(databuf, ",");
+	strcpy(reply, g_imsi);
+	strcat(reply, ",");
 	
 	//iccid
-	strcat(databuf, g_iccid);
-	strcat(databuf, ",");
+	strcat(reply, g_iccid);
+	strcat(reply, ",");
 
 	//nb rsrp
 	sprintf(tmpbuf, "%d,", g_rsrp);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//time zone
-	strcat(databuf, g_timezone);
-	strcat(databuf, ",");
+	strcat(reply, g_timezone);
+	strcat(reply, ",");
 	
 	//battery
 	GetBatterySocString(tmpbuf);
-	strcat(databuf, tmpbuf);
-	strcat(databuf, ",");
+	strcat(reply, tmpbuf);
+	strcat(reply, ",");
 
 	//mcu fw version
-	strcat(databuf, g_fw_version);	
+	strcat(reply, g_fw_version);	
+	strcat(reply, ",");
 
-	NBSendPowerOnInfor(databuf, strlen(databuf));
+	//modem fw version
+	strcat(reply, &g_modem[12]);	
+	strcat(reply, ",");
+
+	//ppg algo
+#ifdef CONFIG_PPG_SUPPORT	
+	strcat(reply, g_ppg_ver);
+#endif
+	strcat(reply, ",");
+
+	//wifi version
+#ifdef CONFIG_WIFI_SUPPORT
+	strcat(reply, g_wifi_ver);	
+#endif
+	strcat(reply, ",");
+
+	//wifi mac
+#ifdef CONFIG_WIFI_SUPPORT	
+	strcat(reply, g_wifi_mac_addr);	
+#endif
+	strcat(reply, ",");
+
+	//ble version
+	strcat(reply, &g_nrf52810_ver[15]);	
+	strcat(reply, ",");
+
+	//ble mac
+	strcat(reply, g_ble_mac_addr);	
+
+	NBSendPowerOnInfor(reply, strlen(reply));
 }
 
 /*****************************************************************************
@@ -554,22 +923,74 @@ void SendPowerOnData(void)
 void SendPowerOffData(uint8_t pwroff_mode)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t databuf[128] = {0};
-	
+	uint8_t reply[128] = {0};
+
 	//pwr off mode
-	sprintf(databuf, "%d,", pwroff_mode);
+	sprintf(reply, "%d,", pwroff_mode);
 	
 	//nb rsrp
 	sprintf(tmpbuf, "%d,", g_rsrp);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 	
 	//battery
 	GetBatterySocString(tmpbuf);
-	strcat(databuf, tmpbuf);
+	strcat(reply, tmpbuf);
 			
-	NBSendPowerOffInfor(databuf, strlen(databuf));
+	NBSendPowerOffInfor(reply, strlen(reply));
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  SendSettingsData
+ * DESCRIPTION
+ *  发送终端设置项数据包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendSettingsData(void)
+{
+	uint8_t tmpbuf[10] = {0};
+	uint8_t reply[128] = {0};
+
+	//temp uint
+	sprintf(reply, "%d,", global_settings.temp_unit);
+	
+	//language
+	switch(global_settings.language)
+	{
+#ifndef FW_FOR_CN
+	case LANGUAGE_EN:	//English
+		strcat(reply, "en");
+		break;
+	case LANGUAGE_DE:	//Deutsch
+		strcat(reply, "de");
+		break;
+	case LANGUAGE_FR:	//French
+		strcat(reply, "fr");
+		break;
+	case LANGUAGE_ITA:	//Italian
+		strcat(reply, "it");
+		break;
+	case LANGUAGE_ES:	//Spanish
+		strcat(reply, "es");
+		break;
+	case LANGUAGE_PT:	//Portuguese
+		strcat(reply, "pt");
+		break;
+#else
+	case LANGUAGE_CHN:	//Chinese
+		strcat(reply, "zh");
+		break;
+	case LANGUAGE_EN:	//English
+		strcat(reply, "en");
+		break;
+#endif	
+	}
+	
+	NBSendSettingsData(reply, strlen(reply));
+}
 
 /*****************************************************************************
  * FUNCTION
@@ -583,20 +1004,29 @@ void SendPowerOffData(uint8_t pwroff_mode)
  *****************************************************************************/
 void SendSosAlarmData(void)
 {
-	uint8_t reply[256] = {0};
+	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
-	strcat(reply, "3,");
-	for(i=0;i<count;i++)
-	{
-		strcat(reply, "");
-		strcat(reply, "&");
-		strcat(reply, "");
-		strcat(reply, "&");
-		if(i < (count-1))
-			strcat(reply, "|");
-	}
+	strcpy(reply, "1");
+	NBSendAlarmData(reply, strlen(reply));
+}
 
-	NBSendSosWifiData(reply, strlen(reply));
+/*****************************************************************************
+ * FUNCTION
+ *  SendFallAlarmData
+ * DESCRIPTION
+ *  发送Fall报警包(无地址信息)
+ * PARAMETERS
+ *	
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendFallAlarmData(void)
+{
+	uint8_t reply[8] = {0};
+	uint32_t i,count=1;
+
+	strcpy(reply, "2");
+	NBSendAlarmData(reply, strlen(reply));
 }
 

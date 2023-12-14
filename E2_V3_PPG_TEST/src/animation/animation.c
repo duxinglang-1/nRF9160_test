@@ -6,9 +6,9 @@
 ** Modified Date:      		2021-09-17 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
 #include <stdio.h>
-#include <drivers/uart.h>
 #include <string.h>
 #include "lcd.h"
 #include "font.h"
@@ -60,11 +60,13 @@ void delete_anima_info_link(void)
 		anima_show.cache = anima_head;
 	}
 
+	anima_show.count = 0;
 	anima_show.x = 0;
 	anima_show.y = 0;
 	anima_show.interval = 0;
 	anima_show.loop = false;
 	anima_show.callback = NULL;
+	anima_show.cache = NULL;
 }
 
 /*****************************************************************************
@@ -130,7 +132,6 @@ void AnimaStopShow(void)
 #ifdef ANIMA_DEBUG
 	LOGD("001");
 #endif
-	k_timer_stop(&anima_redraw_timer);
 	delete_anima_info_link();
 }
 
@@ -217,7 +218,8 @@ void AnimaStop(void)
 #ifdef ANIMA_DEBUG
 	LOGD("001");
 #endif
-	anima_stop_flag = true;
+	k_timer_stop(&anima_redraw_timer);
+	AnimaStopShow();
 }
 
 /*****************************************************************************
@@ -285,9 +287,12 @@ void AnimaShow(uint16_t x, uint16_t y, uint32_t *anima_img, uint8_t anima_count,
  *****************************************************************************/
 static void AnimaShowNextImg(void)
 {
+	if(anima_show.cache == NULL || anima_show.count == 0)
+		return;
+	
 	anima_head = anima_head->next;
 	if(anima_head == NULL)
-	{		
+	{
 		if(anima_show.loop)	//Ñ­»·²¥·Å
 		{
 		#ifdef ANIMA_DEBUG
@@ -337,15 +342,16 @@ static void AnimaShowNextImg(void)
  *****************************************************************************/
 void AnimaMsgProcess(void)
 {
-	if(anima_redraw_flag)
-	{
-		AnimaShowNextImg();
-		anima_redraw_flag = false;
-	}
 	if(anima_stop_flag)
 	{
 		AnimaStopShow();
 		anima_stop_flag = false;
+	}
+
+	if(anima_redraw_flag)
+	{
+		AnimaShowNextImg();
+		anima_redraw_flag = false;
 	}
 }
 

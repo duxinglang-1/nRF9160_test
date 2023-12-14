@@ -11,6 +11,8 @@
 
 #include "lcd.h"
 
+//#define DL_DEBUG
+
 #define DL_NOTIFY_OFFSET_W		10
 #define DL_NOTIFY_OFFSET_H		10
 

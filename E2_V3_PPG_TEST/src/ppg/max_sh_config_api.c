@@ -173,14 +173,14 @@ int sh_set_cfg_wearablesuite_spo2cal(const uint32_t val[3])
 	return status;
 }
 
-int sh_get_cfg_wearablesuite_spo2cal(int32_t val[3])
+int sh_get_cfg_wearablesuite_spo2cal(int32_t* val)
 {
 	uint8_t rxBuff[12+1];  // first byte is status
     int status = sh_get_algo_cfg(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SS_CFGIDX_WHRM_WSPO2_SUITE_SPO2_CAL, &rxBuff[0], sizeof(rxBuff));
 
-    val[0] = (rxBuff[1] << 24) + (rxBuff[2] << 16) + (rxBuff[3] << 8) + (rxBuff[4] );
-    val[1] = (rxBuff[5] << 24) + (rxBuff[6] << 16) + (rxBuff[7] << 8) + (rxBuff[8] );
-    val[2] = (rxBuff[9] << 24) + (rxBuff[10] << 16) + (rxBuff[11] << 8) + (rxBuff[12] );
+    *(val++) = (rxBuff[1] << 24) + (rxBuff[2] << 16) + (rxBuff[3] << 8) + (rxBuff[4] );
+    *(val++) = (rxBuff[5] << 24) + (rxBuff[6] << 16) + (rxBuff[7] << 8) + (rxBuff[8] );
+    *(val++) = (rxBuff[9] << 24) + (rxBuff[10] << 16) + (rxBuff[11] << 8) + (rxBuff[12] );
 
 	return status;
 }

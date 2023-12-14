@@ -5,11 +5,12 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <net/socket.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/socket.h>
 #include <supl_os_client.h>
 #include <supl_session.h>
 #include <logger.h>
+
 #include "assistance.h"
 
 //#define AGPS_DEBUG
@@ -28,9 +29,12 @@ static ssize_t supl_read(void *p_buff, size_t nbytes, void *user_data)
 
 	ssize_t rc = recv(supl_fd, p_buff, nbytes, 0);
 
-	if(rc < 0 && (errno == ETIMEDOUT))
-	{
-		return 0;
+	if(rc < 0 && (errno == ETIMEDOUT)){
+		/* Return 0 to indicate a timeout. */
+		rc = 0;
+	} else if (rc == 0) {
+		/* Peer closed the socket, return an error. */
+		rc = -1;
 	}
 
 	return rc;

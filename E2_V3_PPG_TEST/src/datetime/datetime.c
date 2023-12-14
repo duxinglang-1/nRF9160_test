@@ -11,13 +11,15 @@
 ******************************************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
-#include <drivers/flash.h>
 #include "datetime.h"
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"
 #ifdef CONFIG_IMU_SUPPORT
-#include "lsm6dso.h"
+#include "Lsm6dso.h"
+#ifdef CONFIG_IMU_SUPPORT
+#include "Sleep.h"
+#endif
 #endif
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
@@ -27,6 +29,7 @@
 #include "temp.h"
 #endif
 #include "screen.h"
+#include "uart_ble.h"
 #include "nb.h"
 #include "ucs2.h"
 #include "logger.h"
@@ -57,7 +60,14 @@ bool sys_time_count = false;
 bool show_date_time_first = true;
 
 static bool send_timing_data_flag = false;
-static bool save_timing_data_flag = false;
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+static bool save_step_data_flag = false;
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
+static bool save_sleep_data_flag = false;
+#endif
+#endif
 
 uint8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
 uint64_t laststamp = 0;
@@ -141,103 +151,80 @@ uint8_t GetWeekDayByDate(sys_date_timer_t date)
 	return index;
 }
 
-void DateIncreaseOne(sys_date_timer_t *date)
+int DateCompare(sys_date_timer_t date1, sys_date_timer_t date2)
 {
-	(*date).day++;
-	if((*date).month == 1 \
-	|| (*date).month == 3 \
-	|| (*date).month == 5 \
-	|| (*date).month == 7 \
-	|| (*date).month == 8 \
-	|| (*date).month == 10 \
-	|| (*date).month == 12)
-	{
-		if((*date).day > 31)
-		{
-			(*date).day = 1;
-			(*date).month++;
-			if((*date).month > 12)
-			{
-				(*date).month = 1;
-				(*date).year++;
-			}
-		}
-	}
-	else if((*date).month == 4 \
-		|| (*date).month == 6 \
-		|| (*date).month == 9 \
-		|| (*date).month == 11)
-	{
-		if((*date).day > 30)
-		{
-			(*date).day = 1;
-			(*date).month++;
-			if((*date).month > 12)
-			{
-				(*date).month = 1;
-				(*date).year++;
-			}
-		}
-	}
-	else
-	{
-		uint8_t Leap = 0;
+	uint8_t date1buf[128] = {0};
+	uint8_t date2buf[128] = {0};
 
-		if(CheckYearIsLeap((*date).year))
-			Leap = 1;
-		
-		if((*date).day > (28+Leap))
-		{
-			(*date).day = 1;
-			(*date).month++;
-			if((*date).month > 12)
-			{
-				(*date).month = 1;
-				(*date).year++;
-			}
-		}
-	}	
+	sprintf(date1buf, "%04d%02d%02d%02d%02d%02d",
+							date1.year,
+							date1.month,
+							date1.day,
+							date1.hour,
+							date1.minute,
+							date1.second
+							);
+	
+	sprintf(date2buf, "%04d%02d%02d%02d%02d%02d",
+							date2.year,
+							date2.month,
+							date2.day,
+							date2.hour,
+							date2.minute,
+							date2.second
+							);
 
-	(*date).week = GetWeekDayByDate((*date));
-
-	if(screen_id == SCREEN_ID_IDLE)
-		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+	return strcmp(date1buf, date2buf);
 }
 
-void DateDecreaseOne(sys_date_timer_t *date)
+void DateIncrease(sys_date_timer_t *date, uint32_t days)
 {
-	if((*date).day > 1)
-	{
-		(*date).day--;
-	}
-	else
+	(*date).day += days;
+
+	while(1)
 	{
 		if((*date).month == 1 \
-		|| (*date).month == 2 \
-		|| (*date).month == 4 \
-		|| (*date).month == 6 \
+		|| (*date).month == 3 \
+		|| (*date).month == 5 \
+		|| (*date).month == 7 \
 		|| (*date).month == 8 \
-		|| (*date).month == 9 \
-		|| (*date).month == 11)
+		|| (*date).month == 10 \
+		|| (*date).month == 12)
 		{
-			(*date).day = 31;
-			if((*date).month == 1)
+			if((*date).day > 31)
 			{
-				(*date).year--;
-				(*date).month = 12;
+				(*date).day -= 31;
+				(*date).month++;
+				if((*date).month > 12)
+				{
+					(*date).month = 1;
+					(*date).year++;
+				}
 			}
 			else
 			{
-				(*date).month--;
+				break;
 			}
 		}
-		else if((*date).month == 5 \
-			|| (*date).month == 7 \
-			|| (*date).month == 10 \
-			|| (*date).month == 12)
+		else if((*date).month == 4 \
+			|| (*date).month == 6 \
+			|| (*date).month == 9 \
+			|| (*date).month == 11)
 		{
-			(*date).day = 30;
-			(*date).month--;
+			if((*date).day > 30)
+			{
+				(*date).day -= 30;
+				(*date).month++;
+				if((*date).month > 12)
+				{
+					(*date).month = 1;
+					(*date).year++;
+				}
+			}
+			else
+			{
+				break;
+			}
 		}
 		else
 		{
@@ -245,10 +232,108 @@ void DateDecreaseOne(sys_date_timer_t *date)
 
 			if(CheckYearIsLeap((*date).year))
 				Leap = 1;
+			
+			if((*date).day > (28+Leap))
+			{
+				(*date).day -= (28+Leap);
+				(*date).month++;
+				if((*date).month > 12)
+				{
+					(*date).month = 1;
+					(*date).year++;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}	
+	}
 
-			(*date).day = (28+Leap);
-			(*date).month--;
-		}			
+	(*date).week = GetWeekDayByDate((*date));
+
+	if(screen_id == SCREEN_ID_IDLE)
+		scr_msg[screen_id].para |= (SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK);
+}
+
+void DateDecrease(sys_date_timer_t *date, uint32_t days)
+{
+	if((*date).day > days)
+	{
+		(*date).day -= days;
+	}
+	else
+	{
+		while(1)
+		{
+			if((*date).month == 1 \
+			|| (*date).month == 2 \
+			|| (*date).month == 4 \
+			|| (*date).month == 6 \
+			|| (*date).month == 8 \
+			|| (*date).month == 9 \
+			|| (*date).month == 11)
+			{
+				if((*date).month == 1)
+				{
+					(*date).year--;
+					(*date).month = 12;
+				}
+				else
+				{
+					(*date).month--;
+				}
+
+				(*date).day += 31;
+				if((*date).day > days)
+				{
+					(*date).day -= days;
+					break;
+				}
+				else
+				{
+					days -= (*date).day;
+				}
+			}
+			else if((*date).month == 5 \
+				|| (*date).month == 7 \
+				|| (*date).month == 10 \
+				|| (*date).month == 12)
+			{
+				(*date).month--;
+
+				(*date).day += 30;
+				if((*date).day > days)
+				{
+					(*date).day -= days;
+					break;
+				}
+				else
+				{
+					days -= (*date).day;
+				}
+			}
+			else
+			{
+				uint8_t Leap = 0;
+
+				if(CheckYearIsLeap((*date).year))
+					Leap = 1;
+
+				(*date).month--;
+				
+				(*date).day += (28+Leap);
+				if((*date).day > days)
+				{
+					(*date).day -= days;
+					break;
+				}
+				else
+				{
+					days -= (*date).day;
+				}
+			}	
+		}		
 	}
 
 	(*date).week = GetWeekDayByDate((*date));
@@ -283,10 +368,9 @@ void TimeIncrease(sys_date_timer_t *date, uint32_t minutes)
 		day_add++;
 	}	
 	
-	while(day_add>0)
+	if(day_add > 0)
 	{
-		DateIncreaseOne(date);
-		day_add--;
+		DateIncrease(date, day_add);
 	}
 
 	(*date).week = GetWeekDayByDate((*date));
@@ -323,10 +407,9 @@ void TimeDecrease(sys_date_timer_t *date, uint32_t minutes)
 		day_dec++;
 	}
 	
-	while(day_dec>0)
+	if(day_dec > 0)
 	{
-		DateDecreaseOne(date);
-		day_dec--;
+		DateDecrease(date, day_dec);
 	}
 
 	(*date).week = GetWeekDayByDate((*date));
@@ -352,7 +435,7 @@ void UpdateSystemTime(void)
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME;
 
 	timestamp = k_uptime_get();
-	timeskip = timestamp - laststamp;
+	timeskip = abs(timestamp-laststamp);
 	laststamp = timestamp;
 
 	timeoffset += (timeskip%1000);
@@ -457,14 +540,17 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#ifndef NB_SIGNAL_TEST
-		if(1
+	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
+		if(0
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
 		  #endif/*CONFIG_FOTA_DOWNLOAD*/
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+		  #ifdef CONFIG_FACTORY_TEST_SUPPORT
+			&& (!FactryTestActived())
+		  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 		)
 		{
 			//The sensor needs to be turned on in advance. 
@@ -507,38 +593,40 @@ void UpdateSystemTime(void)
 			#ifdef CONFIG_TEMP_SUPPORT
 				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY+1+TEMP_CHECK_TIMELY))
 				{	
-					//TimerStartTemp();
+					StartTemp(TEMP_TRIGGER_BY_HOURLY);
 				}
 			#endif
 			#ifdef CONFIG_PPG_SUPPORT
 				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY))
 				{
-					//TimerStartHr();
+					StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
 				}
 				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY))
 				{
-					//TimerStartBpt();
+					StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
 				}
 				if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
 				{
-					//TimerStartSpo2();
+					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
 				}
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}
-			
+
+		#ifdef CONFIG_ALARM_SUPPORT	
 			AlarmRemindCheck(date_time);
+		#endif
 			//TimeCheckSendLocationData();
 		}
 	#endif
 
-		pmu_battery_update();
+		pmu_status_update();
 	}
 
 	if((date_time_changed&0x04) != 0)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
-	#ifndef NB_SIGNAL_TEST
+	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
 		if(1
   			#ifdef CONFIG_FOTA_DOWNLOAD
 				&& (!fota_is_running())
@@ -546,12 +634,13 @@ void UpdateSystemTime(void)
 			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 				&& (!dl_is_running())
 			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			  	&& (!FactryTestActived())
+			#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 			)
 		{
 			bool send_flag = false;
 
-			save_timing_data_flag = true;
-			
 			switch(global_settings.health_interval)
 			{
 			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
@@ -587,16 +676,31 @@ void UpdateSystemTime(void)
 				|| (date_time.hour == 00) //xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
 				)
 			{
-				send_timing_data_flag = true;
+				//send_timing_data_flag = true;
 			}
 		}
-	#endif		
+
+	 #ifdef CONFIG_IMU_SUPPORT
+	  #ifdef CONFIG_STEP_SUPPORT
+		save_step_data_flag = true;
+	  #endif
+	  #ifdef CONFIG_SLEEP_SUPPORT
+		save_sleep_data_flag = true;
+	  	if(date_time.hour == SLEEP_TIME_START)
+	  	{
+	  		reset_sleep_data = true;
+	  	}
+	  #endif
+	 #endif
+	#endif
 	}
 
 	if((date_time_changed&0x08) != 0)
 	{
 		date_time_changed = date_time_changed&0xF7;
-	#ifdef CONFIG_IMU_SUPPORT
+
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+		g_steps = 0;
 		reset_steps = true;
 	#endif
 	}
@@ -723,9 +827,11 @@ void GetSystemWeekStrings(uint8_t *str_week)
 
 	switch(global_settings.language)
 	{
+	#ifdef FW_FOR_CN
 	case LANGUAGE_CHN:
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
 		break;
+	#endif
 	case LANGUAGE_EN:
 		strcpy((char*)str_week, (const char*)week_en[date_time.week]);
 		break;
@@ -742,42 +848,59 @@ void TimeMsgProcess(void)
 		if(lcd_is_sleeping)
 			return;
 		
-		if(screen_id == SCREEN_ID_IDLE)
+		if((screen_id == SCREEN_ID_IDLE)
+			||(screen_id == SCREEN_ID_HR)
+			||(screen_id == SCREEN_ID_SPO2)
+			||(screen_id == SCREEN_ID_BP)
+			||(screen_id == SCREEN_ID_TEMP)
+			||(screen_id == SCREEN_ID_STEPS)
+			||(screen_id == SCREEN_ID_SLEEP)
+			)
 		{
 			if(charger_is_connected&&(g_chg_status == BAT_CHARGING_PROGRESS))
 				scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BAT;
-			
+
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
 	}
 
-	if(save_timing_data_flag)
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+	if(save_step_data_flag)
 	{
-	#ifdef CONFIG_TEMP_SUPPORT
-		SetCurDayTempRecData(g_temp_timing);
-		g_temp_timing = 0.0;
-	#endif
-	#ifdef CONFIG_PPG_SUPPORT
-		SetCurDayHrRecData(g_hr_timing);
-		g_hr_timing = 0;
-		SetCurDaySpo2RecData(g_spo2_timing);
-		g_spo2_timing = 0;
-		SetCurDayBptRecData(g_bpt_timing);
-		memset(&g_bpt_timing, 0, sizeof(g_bpt_timing));
-	#endif		
-	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-		if((date_time_changed&0x08) != 0)
-			g_steps = 0;
 		SetCurDayStepRecData(g_steps);
-		g_steps = 0;
-	#endif
-		
-		save_timing_data_flag = false;
+		save_step_data_flag = false;
 	}
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT	
+	if(save_sleep_data_flag)
+	{
+		sleep_data sleep = {0};
+		
+		sleep.deep = g_deep_sleep;
+		sleep.light = g_light_sleep;
+		SetCurDaySleepRecData(sleep);
+		save_sleep_data_flag = false;
+	}
+#endif
+#endif
 
 	if(send_timing_data_flag)
 	{
 		TimeCheckSendHealthData();
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+		TimeCheckSendSportData();
+	#endif
+
+	#ifdef CONFIG_BLE_SUPPORT	
+		if(g_ble_connected)
+		{
+			APP_get_cur_hour_health(date_time);
+		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+			APP_get_cur_hour_sport(date_time);
+		#endif
+		}
+	#endif	
 		send_timing_data_flag = false;
 	}
 }

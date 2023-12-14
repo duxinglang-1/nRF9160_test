@@ -8,18 +8,19 @@
 ******************************************************************************************************/
 #ifdef CONFIG_FOTA_DOWNLOAD
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/flash.h>
-#include <sys/reboot.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/dfu/mcuboot.h>
 #include <modem/lte_lc.h>
 #include <modem/nrf_modem_lib.h>
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
-#include <dfu/mcuboot.h>
 #ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h"
 #endif
+#include "settings.h"
 #include "nb.h"
 #include "external_flash.h"
 #include "fota_mqtt.h"
@@ -42,7 +43,7 @@ uint8_t g_fota_progress = 0;
 static struct device *gpiob;
 static struct gpio_callback gpio_cb;
 static struct k_work_q *app_work_q;
-static struct k_delayed_work fota_work;
+static struct k_work_delayable fota_work;
 static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
 static void fota_timer_handler(struct k_timer *timer_id);
@@ -59,6 +60,7 @@ void bsd_recoverable_error_handler(uint32_t err)
 static int modem_configure(void)
 {
 	int err;
+	uint8_t buf[128] = {0};
 
 	err = lte_lc_psm_req(false);
 	if(err)
@@ -73,6 +75,13 @@ static int modem_configure(void)
 	{
 	#ifdef FOTA_DEBUG
 		LOGD("lte_lc_edrx_req, error: %d", err);
+	#endif
+	}
+
+	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XEPCO=0") == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("XEPCO:%s", buf);
 	#endif
 	}
 
@@ -212,7 +221,7 @@ void fota_work_init(struct k_work_q *work_q)
 {
 	app_work_q = work_q;
 
-	k_delayed_work_init(&fota_work, app_dfu_transfer_start);
+	k_work_init_delayable(&fota_work, app_dfu_transfer_start);
 }
 
 FOTA_STATUS_ENUM get_fota_status(void)
@@ -243,16 +252,34 @@ void fota_start(void)
 
 void fota_start_confirm(void)
 {
+#ifdef CONFIG_ANIMATION_SUPPORT	
+	AnimaStop();
+#endif
+#ifdef CONFIG_TEMP_SUPPORT
+	if(TempIsWorking()&&!TempIsWorkingTiming())
+		MenuStopTemp();
+#endif
+#ifdef CONFIG_PPG_SUPPORT
+	if(IsInPPGScreen()&&!PPGIsWorkingTiming())
+		MenuStopPPG();
+#endif
+#ifdef CONFIG_WIFI_SUPPORT
+	if(wifi_is_working())
+		MenuStopWifi();
+#endif
+
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-	//DisConnectMqttLink();
 	modem_configure();
-	k_delayed_work_submit_to_queue(app_work_q, &fota_work, K_SECONDS(2));
+	k_work_schedule_for_queue(app_work_q, &fota_work, K_SECONDS(2));
 }
 
 void fota_reboot_confirm(void)
 {
+	k_timer_stop(&fota_timer);
+
+	fota_cur_status = FOTA_STATUS_MAX;
 	fota_reboot_flag = true;
 }
 
@@ -312,54 +339,6 @@ void fota_init(void)
 	LOGD("begin");
 #endif
 
-#if !defined(CONFIG_NRF_MODEM_LIB_SYS_INIT)
-	err = nrf_modem_lib_init(NORMAL_MODE);
-#else
-	err = nrf_modem_lib_get_init_ret();
-#endif
-	switch(err)
-	{
-	case 0:
-		/* Initialization successful, no action required. */
-	#ifdef FOTA_DEBUG
-		LOGD("Initialization successful");
-	#endif		
-		break;
-
-	case MODEM_DFU_RESULT_OK:
-	#ifdef FOTA_DEBUG	
-		LOGD("Modem firmware update successful!");
-		LOGD("Modem will run the new firmware after reboot");
-	#endif
-		k_thread_suspend(k_current_get());
-		break;
-		
-	case MODEM_DFU_RESULT_UUID_ERROR:
-	case MODEM_DFU_RESULT_AUTH_ERROR:
-	#ifdef FOTA_DEBUG
-		LOGD("Modem firmware update failed");
-		LOGD("Modem will run non-updated firmware on reboot.");
-	#endif
-		break;
-		
-	case MODEM_DFU_RESULT_HARDWARE_ERROR:
-	case MODEM_DFU_RESULT_INTERNAL_ERROR:
-	#ifdef FOTA_DEBUG
-		LOGD("Modem firmware update failed");
-		LOGD("Fatal error.");
-	#endif
-		break;
-		return;
-		
-	default:
-	#ifdef FOTA_DEBUG	
-		LOGD("Could not initialize modem library, fatal error: %d", err);
-	#endif
-		break;
-	}
-
-	boot_write_img_confirmed();
-
 	err = application_init();
 	if(err != 0)
 	{
@@ -413,7 +392,10 @@ void FotaMsgProc(void)
 	if(fota_reboot_flag)
 	{
 		fota_reboot_flag = false;
+		global_settings.flag = SETTINGS_STATUS_OTA;
+		SaveSystemSettings();
 
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 		if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0))
 		{
 			dl_img_start();
@@ -428,7 +410,8 @@ void FotaMsgProc(void)
 			dl_ppg_start();
 		}
 	#endif
-		else	
+		else
+	#endif		
 		{
 			LCD_Clear(BLACK);
 			sys_reboot(1);

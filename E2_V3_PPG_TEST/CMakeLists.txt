@@ -20,24 +20,20 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.conf")
   )
 endif()
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/spm.overlay")
-  set(spm_DTC_OVERLAY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/spm.overlay")
-endif()
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.overlay")
-  set(mcuboot_DTC_OVERLAY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.overlay")
-endif()
-
-#include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(E2)
+zephyr_compile_definitions(PROJECT_NAME=${PROJECT_NAME})
 
-#FILE(GLOB app_sources src/*.c)
+# NORDIC SDK APP START
 target_sources(app PRIVATE src/main.c)
+# NORDIC SDK APP END
+
+# Include source directory
+target_include_directories(app PRIVATE src)
 target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/fs/nvs)
 
+# Application directories
 add_subdirectory(src/datetime)
-add_subdirectory(src/alarm)
 add_subdirectory(src/font)
 add_subdirectory(src/image)
 add_subdirectory(src/lcd)
@@ -46,7 +42,6 @@ add_subdirectory(src/settings)
 add_subdirectory(src/inner_flash)
 add_subdirectory(src/external_flash)
 add_subdirectory(src/uart_ble)
-add_subdirectory(src/imei)
 add_subdirectory(src/gps)
 add_subdirectory(src/nb)
 add_subdirectory(src/screen)
@@ -58,6 +53,7 @@ add_subdirectory(src/communicate)
 add_subdirectory(src/logger)
 #add_subdirectory(src/cryptoauthentication)
 
+add_subdirectory_ifdef(CONFIG_ALARM_SUPPORT src/alarm)
 add_subdirectory_ifdef(CONFIG_ANIMATION_SUPPORT src/animation)
 add_subdirectory_ifdef(CONFIG_TOUCH_SUPPORT src/tp)
 add_subdirectory_ifdef(CONFIG_IMU_SUPPORT src/imu)
@@ -70,3 +66,6 @@ add_subdirectory_ifdef(CONFIG_WIFI_SUPPORT src/wifi)
 add_subdirectory_ifdef(CONFIG_WATCHDOG src/watchdog)
 add_subdirectory_ifdef(CONFIG_FOTA_DOWNLOAD src/fota)
 add_subdirectory_ifdef(CONFIG_DATA_DOWNLOAD_SUPPORT src/data_download)
+add_subdirectory_ifdef(CONFIG_BARCODE_SUPPORT src/barcode)
+add_subdirectory_ifdef(CONFIG_QRCODE_SUPPORT src/qrcode)
+add_subdirectory_ifdef(CONFIG_FACTORY_TEST_SUPPORT src/factory_test)

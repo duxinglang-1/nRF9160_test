@@ -5,8 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
 #include <modem/modem_info.h>
 #include <modem/modem_jwt.h>
 #include <net/nrf_cloud_rest.h>
@@ -14,7 +13,7 @@
 #include <net/nrf_cloud_agps.h>
 #endif /* CONFIG_NRF_CLOUD_AGPS */
 #if defined(CONFIG_NRF_CLOUD_PGPS)
-#include <pm_config.h>
+//#include <pm_config.h> 
 #include <net/nrf_cloud_pgps.h>
 #endif /* CONFIG_NRF_CLOUD_PGPS */
 

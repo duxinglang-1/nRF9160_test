@@ -8,8 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include "max20353_reg.h"
 #include "max20353.h"
 #include "NTC_table.h"
@@ -237,7 +237,7 @@ int MAX20353_Buck1Config(void)
     appcmdoutvalue_ = 0x35;
     appdatainoutbuffer_[0] = 0x00;  	//
     appdatainoutbuffer_[1] = 0x2C;  	//0x28    	0.7+(0.025V * number)    0x48*0.025 =1.8v     //0.7V to 2.275V, Linear Scale, 25mV increments
-    appdatainoutbuffer_[2] = 0x1F;  	//0x2F  	01 = 20mA, Use for 1V < Buck1VSet < 1.8V
+    appdatainoutbuffer_[2] = 0x1F;  	//0x2F 375ma  01 = 20mA, Use for 1V < Buck1VSet < 1.8V
     appdatainoutbuffer_[3] = 0x01;  	//Enable
     ret = MAX20353_AppWrite(4);
 	
@@ -250,7 +250,7 @@ int MAX20353_Buck2Disable(void)
 	
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
-    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[1] = 0x34;     	//0x32    0.7V + (0.05V * number) = 3.3V;
     appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
     appdatainoutbuffer_[3] = 0x00;		//Disnable
     ret = MAX20353_AppWrite(4);
@@ -264,8 +264,8 @@ int MAX20353_Buck2Config(void)
 	
     appcmdoutvalue_ = 0x3A;
     appdatainoutbuffer_[0] = 0x01;      //
-    appdatainoutbuffer_[1] = 0x32;     	//0x32    0.7V + (0.05V * number) = 3.3V;
-    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  01 = 20mA, Use for 1V < Buck2VSet < 1.8V
+    appdatainoutbuffer_[1] = 0x34;     	//0x32    0.7V + (0.05V * number) = 3.3V;
+    appdatainoutbuffer_[2] = 0x3F;		//0x3F 375mA  11 = 40mA, Use for Buck2Vset > 3V
     appdatainoutbuffer_[3] = 0x01;		//Enable
     ret = MAX20353_AppWrite(4);
 
@@ -841,7 +841,7 @@ int MAX20353_ChargerCfg(void)
 
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
-	appdatainoutbuffer_[1] = 0x60; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.05IFChg 
+	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.1IFChg 
 	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0111:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
@@ -893,7 +893,7 @@ int InitCharger(void)
 
 	appcmdoutvalue_ = 0x14; 
 	appdatainoutbuffer_[0] = 0x04; // Maintain charge b00:0min, FastCharge b00:150min, for 1C charging, PreCharge b00: 30min for dead battery 
-	appdatainoutbuffer_[1] = 0x60; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b00: 0.05IFChg 
+	appdatainoutbuffer_[1] = 0x61; // Precharge to b110:3.0V, b00:0.05IFChg for dead battery, ChgDone b01: 0.1IFChg 
 	appdatainoutbuffer_[2] = 0xD7; // Auto Stop, Auto ReStart, ReChg Threshold b01:120mV, Bat Volt b0111:4.40V 
 	appdatainoutbuffer_[3] = 0x07; // System min volt = 4.3V 
 	ret |= MAX20353_AppWrite(4);
@@ -948,10 +948,10 @@ bool MAX20353_Init(void)
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();		//1.8V 350mA
-	MAX20353_Buck2Config(); 	//3.3V 350mA
-	MAX20353_LDO1Config();		//1.8V 50mA switch mode
+	MAX20353_Buck2Config(); 	//3.3V 350mA wifi ppg
+	MAX20353_LDO1Config();		//1.8V 50mA imu temp
 	MAX20353_LDO2Config();		//3.3V 100mA 给CTP供电
-	MAX20353_BoostConfig();		//5V
+	MAX20353_BoostConfig();		//5V led of ppg
 
 	//电荷泵及BUCK/BOOST配置
 	//MAX20353_ChargePumpConfig();
@@ -1388,10 +1388,10 @@ void load_model(void)
 		// Fill in RCOMP data 0x0080
 		// 0x##, 0x##, ..., 0x##
 		0x80,
-		0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,
-		0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,
-		0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,0x04,0x00,
-		0x04,0x00
+		0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,
+		0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,
+		0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,
+		0x01,0x00
 	};
 
 	/******************************************************************************

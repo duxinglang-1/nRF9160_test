@@ -5,14 +5,14 @@
 */
 
 #include <nrf9160.h>
-#include <zephyr.h>
-#include <kernel_structs.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <stdio.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <power/reboot.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <modem/nrf_modem_lib.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "datetime.h"
@@ -29,7 +29,9 @@
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #endif
+#ifdef CONFIG_ALARM_SUPPORT
 #include "Alarm.h"
+#endif
 #include "gps.h"
 #include "screen.h"
 #include "codetrans.h"
@@ -395,15 +397,13 @@ void test_show_image(void)
 	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
 	
-	LOGD("test_show_image");
-	
 	LCD_Clear(BLACK);
 	
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_BP_BG_ADDR, &w, &h);
-	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_BP_BG_ADDR);
+	LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
+	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
 	while(0)
@@ -535,6 +535,7 @@ void test_show_color(void)
 void test_show_string(void)
 {
 	uint16_t x,y,w,h;
+	uint8_t tmpbuf[256] = {0};
 	uint8_t enbuf[64] = {0};
 	uint8_t cnbuf[64] = {0};
 	uint8_t jpbuf[64] = {0};
@@ -546,6 +547,13 @@ void test_show_string(void)
 	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
+
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
+ 	mmi_asc_to_ucs2(tmpbuf, " G:153853,160004\nIR:401502,403683\n R:425776,428105\nhr:0 spo2:0");
+ 	LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
+
+	return;
 
 #ifdef FONTMAKER_UNICODE_FONT
 #if 0//def FONT_64
@@ -688,10 +696,18 @@ void test_notify(void)
 	DisplayPopUp(infor);
 }
 
+static void modem_init(void)
+{
+	nrf_modem_lib_init(NORMAL_MODE);
+	boot_write_img_confirmed();
+}
+
 void system_init(void)
 {
 	k_sleep(K_MSEC(500));//xb test 2022-03-11 启动时候延迟0.5S,等待其他外设完全启动
-	
+
+	modem_init();
+
 #ifdef CONFIG_FOTA_DOWNLOAD
 	fota_init();
 #endif
@@ -705,12 +721,12 @@ void system_init(void)
 	PPG_i2c_off();
 #endif
 	pmu_init();
-	flash_init();
+	key_init();
 	LCD_Init();
+	flash_init();
 	
 	ShowBootUpLogo();
-
-	key_init();
+	
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
 #endif
@@ -730,23 +746,25 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
+	LogInit();
+
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
 }
 
 void work_init(void)
 {
-	k_work_q_start(&nb_work_q, nb_stack_area,
+	k_work_queue_start(&nb_work_q, nb_stack_area,
 					K_THREAD_STACK_SIZEOF(nb_stack_area),
-					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY,NULL);
 #ifdef CONFIG_IMU_SUPPORT	
-	k_work_q_start(&imu_work_q, imu_stack_area,
+	k_work_queue_start(&imu_work_q, imu_stack_area,
 					K_THREAD_STACK_SIZEOF(imu_stack_area),
-					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY,NULL);
 #endif
-	k_work_q_start(&gps_work_q, gps_stack_area,
+	k_work_queue_start(&gps_work_q, gps_stack_area,
 					K_THREAD_STACK_SIZEOF(gps_stack_area),
-					CONFIG_APPLICATION_WORKQUEUE_PRIORITY);	
+					CONFIG_APPLICATION_WORKQUEUE_PRIORITY,NULL);	
 	
 	if(IS_ENABLED(CONFIG_WATCHDOG))
 	{
@@ -787,7 +805,7 @@ int main(void)
 //	test_sensor();
 //	test_pmu();
 //	test_crypto();
-//	test_imei();
+//	test_imei_for_qr();
 //	test_tp();
 //	test_gps_on();
 //	test_nb();
@@ -795,6 +813,7 @@ int main(void)
 //	test_bat_soc();
 //	test_notify();
 //	test_wifi();
+//	LogInit();
 
 	while(1)
 	{
@@ -816,7 +835,9 @@ int main(void)
 	#ifdef CONFIG_TOUCH_SUPPORT
 		TPMsgProcess();
 	#endif
+	#ifdef CONFIG_ALARM_SUPPORT
 		AlarmMsgProcess();
+	#endif
 		SettingsMsgPorcess();
 		SOSMsgProc();
 	#ifdef CONFIG_WIFI_SUPPORT
@@ -842,6 +863,10 @@ int main(void)
 	#ifdef CONFIG_TEMP_SUPPORT
 		TempMsgProcess();
 	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		FactoryTestProccess();
+	#endif
+		LogMsgProcess();
 		system_init_completed();
 		k_cpu_idle();
 	}

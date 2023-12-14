@@ -4,12 +4,33 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+
+#define FW_FOR_CN	//中文版本
 
 #define ALARM_MAX	8
-#define MENU_MAX_COUNT	8
-#define MENU_NAME_MAX	20
+#define MENU_MAX_COUNT	10
+#define MENU_NAME_MAX	25
+#define MENU_NAME_STR_MAX	13
+#define MENU_OPT_STR_MAX	7
+#define MENU_NOTIFY_STR_MAX	28
+
+#define VERSION_STR	"V3.4.1_20231205"
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#define LANG_BRANCH	"TEST"
+#else
+#ifdef FW_FOR_CN
+#define LANG_BRANCH	"BC"
+#else
+#define LANG_BRANCH	"BU"
+#endif
+#endif
+
+#ifdef FW_FOR_CN
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
+#else
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login"
+#endif
 
 typedef void(*menu_handler)(void);
 
@@ -28,9 +49,18 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_EN,	//English
-	LANGUAGE_DE,	//Deutsch
-	LANGUAGE_CHN,	//Chinese
+	LANGUAGE_BEGIN,
+#ifndef FW_FOR_CN
+	LANGUAGE_EN = LANGUAGE_BEGIN,	//English
+	LANGUAGE_DE,					//Deutsch
+	LANGUAGE_FR,					//French
+	LANGUAGE_ITA,					//Italian
+	LANGUAGE_ES,					//Spanish
+	LANGUAGE_PT,					//Portuguese
+#else
+	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
+	LANGUAGE_EN,					//English
+#endif	
 	LANGUAGE_MAX
 }LANGUAGE_SET;
 
@@ -77,6 +107,7 @@ typedef enum
 	SETTINGS_MENU_MAIN,
 	SETTINGS_MENU_LANGUAGE,
 	SETTINGS_MENU_FACTORY_RESET,
+	SETTINGS_MENU_CAREMATE_QR,
 	SETTINGS_MENU_OTA,
 	SETTINGS_MENU_BRIGHTNESS,
 	SETTINGS_MENU_TEMP,
@@ -95,12 +126,12 @@ typedef enum
 	RESET_STATUS_MAX
 }RESET_STATUS;
 
-typedef struct
+typedef enum
 {
-	uint16_t en[MENU_MAX_COUNT][MENU_NAME_MAX];
-	uint16_t chn[MENU_MAX_COUNT][MENU_NAME_MAX];
-	uint16_t deu[MENU_MAX_COUNT][MENU_NAME_MAX];
-}menu_name_t;
+	SETTINGS_STATUS_INIT,
+	SETTINGS_STATUS_OTA,
+	SETTINGS_STATUS_NORMAL
+}SETTINGS_STATUS;
 
 typedef struct
 {
@@ -112,35 +143,41 @@ typedef struct
 	menu_handler pg_handler[4];
 }settings_menu_t;
 
-typedef struct{
+typedef struct
+{
 	bool is_on;
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t repeat;	//全是1就是每天提醒，全是0就是只提醒一次，0x1111100就是工作日提醒，其他就是自定义
 }alarm_infor_t;
 
-typedef struct{
+typedef struct
+{
 	bool is_on;
 	uint8_t interval;
 }phd_measure_t;		//整点测量
 
-typedef struct{
+typedef struct
+{
 	uint32_t steps;
 	uint32_t time;
 }location_interval_t;
 
-typedef struct{
+typedef struct
+{
 	uint8_t systolic;		//收缩压
 	uint8_t diastolic;		//舒张压
 }bp_calibra_t;
 
-typedef struct{
-	bool init;		//system inited flag
-	bool hr_is_on;	//heart rate
-	bool bp_is_on;	//blood pressure
-	bool bo_is_on;	//blood oxygen
+typedef struct
+{
+	SETTINGS_STATUS flag;
+	bool hr_is_on;					//heart rate
+	bool bp_is_on;					//blood pressure
+	bool bo_is_on;					//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
+	uint8_t location_type;	//1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	uint16_t target_steps;
 	uint32_t health_interval;
 	TEMP_UNIT temp_unit;

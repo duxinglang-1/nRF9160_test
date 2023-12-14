@@ -9,33 +9,42 @@
 #ifndef __TRANSFER_CACHE_H__
 #define __TRANSFER_CACHE_H__
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <string.h>
 
-#define SEND_NODE_CACHE_MAX	20
+#define NODE_CACHE_MAX	200
 
-struct node
+typedef enum
+{
+	DATA_TRANSFER,
+	DATA_RESOURCE,
+	DATA_RESOURCE_VER,
+	DATA_LOG,
+	DATA_MAX
+}DATA_TYPE;
+
+struct datanode
 {
 	uint32_t len;
+	DATA_TYPE type;
 	void *data;
-	struct node *next;
+	struct datanode *next;
 };
 
 typedef struct
 {
 	uint32_t count;
-	struct node *cache;
+	struct datanode *cache;
+	struct datanode *head;
+	struct datanode *tail;
 }CacheInfo;
 
-typedef struct node DataNode;
+typedef struct datanode DataNode;
 
-extern bool add_data_into_send_cache(uint8_t *data, uint32_t len);
-extern bool get_data_from_send_cache(uint8_t **buf, uint32_t *len);
-extern bool delete_data_from_send_cache(void);
-extern bool add_data_into_rece_cache(uint8_t *data, uint32_t len);
-extern bool get_data_from_rece_cache(uint8_t **buf, uint32_t *len);
-extern bool delete_data_from_rece_cache(void);
+extern bool add_data_into_cache(CacheInfo *data_cache, uint8_t *data, uint32_t len, DATA_TYPE type);
+extern bool get_data_from_cache(CacheInfo *data_cache, uint8_t **buf, uint32_t *len, DATA_TYPE *type);
+extern bool delete_data_from_cache(CacheInfo *data_cache);
 
 #endif/*__TRANSFER_CACHE_H__*/

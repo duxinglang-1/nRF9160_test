@@ -7,10 +7,10 @@
 ** Version:			    1.0
 ** Descriptions:		外挂flash驱动源文件
 ******************************************************************************************************/
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <stdio.h>
 #include <string.h>
 #include "img.h"
@@ -622,7 +622,7 @@ void SPIFlash_Read_DataVer(uint8_t *ui_ver, uint8_t *font_ver, uint8_t *ppg_ver)
 ******************************************************************************/
 void SPI_Flash_Init(void)
 {
-	spi_flash = device_get_binding(FLASH_DEVICE);
+	spi_flash = DEVICE_DT_GET(FLASH_DEVICE);
 	if (!spi_flash) 
 	{
 	#ifdef FLASH_DEBUG
@@ -642,7 +642,7 @@ void flash_init(void)
 	LOGD("flash_init");
 #endif
 
-	gpio_flash = device_get_binding(FLASH_PORT);
+	gpio_flash = DEVICE_DT_GET(FLASH_PORT);
 	if(!gpio_flash)
 	{
 	#ifdef FLASH_DEBUG
@@ -711,6 +711,13 @@ void test_flash(void)
 	SPIFlash_Erase_Chip();
 	//SPIFlash_Erase_Sector(0);
 	LCD_ShowString(0,60,"FLASH擦除成功!");
+#endif
+
+#if 0
+	LCD_ShowString(0,40,"FLASH开始擦除块...");
+	for(addr=IMG_START_ADDR;addr<FONT_START_ADDR;addr+=SPIFlash_BLOCK_SIZE)
+		SPIFlash_Erase_Block(addr);
+	LCD_ShowString(0,60,"FLASH擦除块成功!");
 #endif
 
 #if 0	

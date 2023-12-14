@@ -9,9 +9,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include "temp.h"
 #include "gxts04.h"
 #include "logger.h"
@@ -35,7 +35,7 @@ static float t_temp80 = 0.0;		//预测的人体温度值
 
 static uint8_t init_i2c(void)
 {
-	i2c_temp = device_get_binding(TEMP_DEV);
+	i2c_temp = DEVICE_DT_GET(TEMP_DEV);
 	if(!i2c_temp)
 	{
 		return -1;
@@ -127,8 +127,15 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 	uint8_t databuf[10] = {0};
 	uint16_t trans_temp = 0;
 
-	if(!is_wearing())
-		return;
+	if(!CheckSCC()
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		&& !IsFTTempTesting()
+		&& !IsFTTempAging()
+	#endif
+		)
+	{
+		return false;
+	}
 	
 	gxts04_write_data(CMD_WAKEUP);
 	gxts04_read_data(CMD_MEASURE_LOW_POWER, &databuf, 10);
@@ -209,7 +216,10 @@ bool GetTemperature(float *skin_temp, float *body_temp)
 		else
 			t_body = t_sensor;
 
-		flag = true;
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		if(!IsFTTempAging())
+	#endif
+			flag = true;
 	}
 
 	*body_temp = t_body;

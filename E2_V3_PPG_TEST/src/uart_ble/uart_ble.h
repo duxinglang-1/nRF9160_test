@@ -9,8 +9,6 @@
 #ifndef __UART_BLE_H__
 #define __UART_BLE_H__
 
-#include <drivers/gps.h>
-
 //0:关闭 1:休眠 2:广播 3:连接
 typedef enum
 {

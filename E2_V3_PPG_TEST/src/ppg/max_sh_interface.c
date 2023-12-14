@@ -6,10 +6,10 @@
 ** Modified Date:      		2021-06-21 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include "max_sh_interface.h"
 
 #include "max_sh_api.h"
@@ -42,24 +42,27 @@
 #define SH_MFIO_PIN            		14
 #endif
 
-#define I2C1_NODE DT_NODELABEL(i2c1)
-#if DT_NODE_HAS_STATUS(I2C1_NODE, okay)
-#define PPG_DEV	DT_LABEL(I2C1_NODE)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define PPG_DEV DT_NODELABEL(i2c1)
 #else
-/* A build error here means your board does not have I2C enabled. */
 #error "i2c1 devicetree node is disabled"
 #define PPG_DEV	""
 #endif
 
-#define PPG_PORT 	"GPIO_0"
-	
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define PPG_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define PPG_PORT	""
+#endif
+
 #define PPG_SDA_PIN		11
 #define PPG_SCL_PIN		12
 #define PPG_INT_PIN		13
 #define PPG_MFIO_PIN	14
 #define PPG_RST_PIN		16
 #define PPG_EN_PIN		17
-#define PPG_I2C_EN_PIN	3
+#define PPG_I2C_EN_PIN	29
 
 #define MAX32674_I2C_ADD     0x55
 	
@@ -101,42 +104,47 @@ void wait_ms(int ms)
 void PPG_i2c_on(void)
 {
 	if(gpio_ppg == NULL)
-		gpio_ppg = device_get_binding(PPG_PORT);
+		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 1);
-
-	gpio_pin_configure(gpio_ppg, 29, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ppg, 29, 1);
 }
 
 void PPG_i2c_off(void)
 {
 	if(gpio_ppg == NULL)
-		gpio_ppg = device_get_binding(PPG_PORT);
+		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 0);
-
-	gpio_pin_configure(gpio_ppg, 29, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ppg, 29, 0);
 }
 
 void PPG_Enable(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
+	
+	k_sleep(K_MSEC(10));
+
+	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 1);
 }
 
 void PPG_Disable(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 0);
+
+	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_MFIO_PIN, 0);
 }
 
 static void sh_init_i2c(void)
 {
-	i2c_ppg = device_get_binding(PPG_DEV);
+	i2c_ppg = DEVICE_DT_GET(PPG_DEV);
 	if(!i2c_ppg)
 	{
 	#ifdef MAX_DEBUG
@@ -156,18 +164,21 @@ static void interrupt_event(struct device *interrupt, struct gpio_callback *cb, 
 
 static void sh_init_gpio(void)
 {
-	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_DOWN;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 
 	if(gpio_ppg == NULL)
-		gpio_ppg = device_get_binding(PPG_PORT);
-	
+		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
+
+#if 0	//xb add 20230228 Set the PPG interrupt pin as input to prevent leakage.
 	//interrupt
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, flag);
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, interrupt_event, BIT(PPG_INT_PIN));
 	gpio_add_callback(gpio_ppg, &gpio_cb);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
-
+	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
+#else
+	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
+#endif	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	k_sleep(K_MSEC(10));
@@ -1328,11 +1339,12 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("Read MCU type fail, %x", s32_status);
 	#endif
-
-		PPG_i2c_off();
-		PPG_Power_Off();
-		PPG_Disable();
-		return false;
+		goto need_update;
+	
+		//PPG_i2c_off();
+		//PPG_Power_Off();
+		//PPG_Disable();
+		//return false;
 	}
 #ifdef MAX_DEBUG	
 	LOGD("MCU type = %d", u8_rxbuf[0]);
@@ -1345,11 +1357,12 @@ bool sh_init_interface(void)
 	#ifdef MAX_DEBUG
 		LOGD("read FW version fail %x", s32_status);
 	#endif
+		goto need_update;
 	
-		PPG_i2c_off();
-		PPG_Power_Off();
-		PPG_Disable();
-		return false;
+		//PPG_i2c_off();
+		//PPG_Power_Off();
+		//PPG_Disable();
+		//return false;
 	}
 	else
 	{
@@ -1361,6 +1374,7 @@ bool sh_init_interface(void)
 
 	if((mcu_type != 1) || ((strcmp(g_ppg_ver, g_ppg_algo_ver) != 0)&&(strlen(g_ppg_algo_ver) > 0)))
 	{
+need_update:
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontSize(FONT_SIZE_20);
 	#else	

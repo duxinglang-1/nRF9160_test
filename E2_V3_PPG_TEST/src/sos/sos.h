@@ -10,14 +10,13 @@
 #define __SOS_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define SOS_IDLE_TIMEOUT	2
-#define SOS_SENDING_TIMEOUT 4
+#define SOS_SENDING_TIMEOUT 2
 #define SOS_SENT_TIMEOUT	2
 
 #define SOS_ICON_W			156

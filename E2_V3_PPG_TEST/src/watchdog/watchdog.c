@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/watchdog.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/watchdog.h>
 #include "logger.h"
 
 //#define WATCHDOG_DEBUG
@@ -17,7 +17,7 @@ struct wdt_data_storage
 {
 	struct device *wdt_drv;
 	int wdt_channel_id;
-	struct k_delayed_work system_workqueue_work;
+	struct k_work_delayable system_workqueue_work;
 	struct k_work second_workqueue_work;
 };
 
@@ -43,7 +43,7 @@ static void secondary_feed_worker(struct k_work *work_desc)
 	}
 	else
 	{
-		k_delayed_work_submit(&wdt_data.system_workqueue_work, K_MSEC(WDT_FEED_WORKER_DELAY_MS));
+		k_work_schedule(&wdt_data.system_workqueue_work, K_MSEC(WDT_FEED_WORKER_DELAY_MS));
 	}
 }
 
@@ -102,7 +102,7 @@ static int watchdog_feed_enable(struct wdt_data_storage *data)
 {
 	__ASSERT_NO_MSG(data != NULL);
 
-	k_delayed_work_init(&data->system_workqueue_work, primary_feed_worker);
+	k_work_init_delayable(&data->system_workqueue_work, primary_feed_worker);
 	k_work_init(&data->second_workqueue_work, secondary_feed_worker);
 
 	int err = wdt_feed(data->wdt_drv, data->wdt_channel_id);
@@ -114,7 +114,7 @@ static int watchdog_feed_enable(struct wdt_data_storage *data)
 		return err;
 	}
 
-	err = k_delayed_work_submit(&data->system_workqueue_work, K_MSEC(WDT_FEED_WORKER_DELAY_MS));
+	err = k_work_schedule(&data->system_workqueue_work, K_MSEC(WDT_FEED_WORKER_DELAY_MS));
 	if(err)
 	{
 	#ifdef WATCHDOG_DEBUG
@@ -137,7 +137,7 @@ static int watchdog_enable(struct wdt_data_storage *data)
 
 	int err = -ENXIO;
 
-	data->wdt_drv = device_get_binding(DT_LABEL(DT_NODELABEL(wdt)));
+	data->wdt_drv = DEVICE_DT_GET(DT_NODELABEL(wdt));
 	if(data->wdt_drv == NULL)
 	{
 	#ifdef WATCHDOG_DEBUG

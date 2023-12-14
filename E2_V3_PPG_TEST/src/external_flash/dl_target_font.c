@@ -7,8 +7,7 @@
 ** Version:			    	V1.0
 ******************************************************************************************************/
 #include <string.h>
-#include <zephyr.h>
-#include <drivers/flash.h>
+#include <zephyr/kernel.h>
 #include <pm_config.h>
 #include "external_flash.h"
 #include "dl_target.h"
@@ -78,11 +77,15 @@ int dl_target_font_done(bool successful)
 
 	if(successful)
 	{
+	#ifdef DL_DEBUG
 		LOGD("font data upgrade scheduled. Reset the device to apply");
+	#endif
 	}
 	else
 	{
+	#ifdef DL_DEBUG
 		LOGD("ui data upgrade aborted.");
+	#endif
 	}
 
 	return err;

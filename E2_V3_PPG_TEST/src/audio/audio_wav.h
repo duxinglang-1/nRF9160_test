@@ -10,8 +10,8 @@
 #define __AUDIO_WAV_H__
 	
 #include <nrf9160.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 //wav文件的数据结构，其中数据头共44bytes
 /********************************************************************************************************************
@@ -54,44 +54,44 @@
 
 typedef struct
 {
-	u8_t riff_mark[4];	//riff id "RIFF"
-	u32_t wav_size;		//wav_size+8=file_size
-	u8_t wav_str[4];	//wave文件格式 "WAVE"
+	uint8_t riff_mark[4];	//riff id "RIFF"
+	uint32_t wav_size;		//wav_size+8=file_size
+	uint8_t wav_str[4];	//wave文件格式 "WAVE"
 }wav_riff_chunk;
 
 typedef struct
 {
-	u8_t fmt_mark[4];			//fmt id "fmt "
-	u32_t fmt_size;				//fmt块长度
-	u16_t pcm_encode;			//编码格式（WAVE_FORMAT_PCM格式一般用的是这个）
-	u16_t sound_channel;		//声道数 1:单声道 2:双声道。
-	u32_t pcm_sample_freq;		//采样频率 
-	u32_t byte_freq;			//码率 = 采样频率*音频通道数*每次采样得到的样本位数/8
-	u16_t block_alin;			//块对齐 = 通道数*每次采样得到的样本位数/8
-	u16_t sample_bits;			//样本的数据位数
+	uint8_t fmt_mark[4];			//fmt id "fmt "
+	uint32_t fmt_size;				//fmt块长度
+	uint16_t pcm_encode;			//编码格式（WAVE_FORMAT_PCM格式一般用的是这个）
+	uint16_t sound_channel;		//声道数 1:单声道 2:双声道。
+	uint32_t pcm_sample_freq;		//采样频率 
+	uint32_t byte_freq;			//码率 = 采样频率*音频通道数*每次采样得到的样本位数/8
+	uint16_t block_alin;			//块对齐 = 通道数*每次采样得到的样本位数/8
+	uint16_t sample_bits;			//样本的数据位数
 }wav_fmt_chunk;
 
 //可选项
 typedef struct
 {
-	u8_t fact_mark[4];			//fact id "fact"
-	u32_t fact_size;			//fact块长度
-	u32_t fact_data;			//fact块数据
+	uint8_t fact_mark[4];			//fact id "fact"
+	uint32_t fact_size;			//fact块长度
+	uint32_t fact_data;			//fact块数据
 }wav_fact_chunk;
 
 //一般在格式转换后出现
 typedef struct
 {
-	u8_t list_mark[4];			//list id "LIST"
-	u32_t list_size;			//list块长度
-	u8_t *list_info;			//list块数据指针
+	uint8_t list_mark[4];			//list id "LIST"
+	uint32_t list_size;			//list块长度
+	uint8_t *list_info;			//list块数据指针
 }wav_list_chunk;
 
 typedef struct
 {
-	u8_t data_mark[4];			//data id "data"
-	u32_t data_size;			//data块长度
-	u8_t *data_pcm;				//data块数据指针
+	uint8_t data_mark[4];			//data id "data"
+	uint32_t data_size;			//data块长度
+	uint8_t *data_pcm;				//data块数据指针
 }wav_data_chunk;
 
 typedef struct

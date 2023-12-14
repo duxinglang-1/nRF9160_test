@@ -9,11 +9,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/i2c.h>
-#include <drivers/i2s.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/gpio.h>
 #include <nrfx.h>
 #include <nrfx_i2s.h>
 //#include "audio_wav.h"
@@ -29,8 +29,8 @@
 #define I2S_DO		17
 
 #define I2S_DATA_BLOCK_WORDS    512
-static u32_t m_buffer_rx[2][I2S_DATA_BLOCK_WORDS];
-static u32_t m_buffer_tx[2][I2S_DATA_BLOCK_WORDS];
+static uint32_t m_buffer_rx[2][I2S_DATA_BLOCK_WORDS];
+static uint32_t m_buffer_tx[2][I2S_DATA_BLOCK_WORDS];
 
 // Delay time between consecutive I2S transfers performed in the main loop
 // (in milliseconds).
@@ -38,17 +38,23 @@ static u32_t m_buffer_tx[2][I2S_DATA_BLOCK_WORDS];
 // Number of blocks of data to be contained in each transfer.
 #define BLOCKS_TO_TRANSFER  20
 
-static u8_t volatile m_blocks_transferred     = 0;
-static u8_t          m_zero_samples_to_ignore = 0;
-static u16_t         m_sample_value_to_send;
-static u16_t         m_sample_value_expected;
+static uint8_t volatile m_blocks_transferred     = 0;
+static uint8_t          m_zero_samples_to_ignore = 0;
+static uint16_t         m_sample_value_to_send;
+static uint16_t         m_sample_value_expected;
 static bool             m_error_encountered;
 
-static u32_t       * volatile mp_block_to_fill  = NULL;
-static u32_t const * volatile mp_block_to_check = NULL;
+static uint32_t       * volatile mp_block_to_fill  = NULL;
+static uint32_t const * volatile mp_block_to_check = NULL;
 #endif
 
-#define AUDIO_PORT	"GPIO_0"
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define AUDIO_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define AUDIO_PORT	""
+#endif
+
 #define WTN_DATA	13      //接 13脚
 #define WTN_BUSY	14		//busy脚,音频播放之后由低变高
 
@@ -58,45 +64,45 @@ static struct device *gpio_audio;
 static struct gpio_callback gpio_cb;
 
 //延时函数
-void Delay_ms(unsigned int dly)
+static void Delay_ms(unsigned int dly)
 {
-	k_sleep(dly);
+	k_sleep(K_MSEC(dly));
 }
 
-void Delay_us(unsigned int dly)
+static void Delay_us(unsigned int dly)
 {
-	k_usleep(dly);
+	k_sleep(K_USEC(dly));
 }
 
 //发送一个字节数据
-void Audio_Send_ByteData(u8_t data)
+void Audio_Send_ByteData(uint8_t data)
 {
-	u8_t j;
+	uint8_t j;
 	
-	gpio_pin_write(gpio_audio, WTN_DATA, 0);
+	gpio_pin_set(gpio_audio, WTN_DATA, 0);
 	Delay_ms(5);
 	
 	for(j=0;j<8;j++)
 	{
 		if(data&0x01)
 		{
-			gpio_pin_write(gpio_audio, WTN_DATA, 1);
+			gpio_pin_set(gpio_audio, WTN_DATA, 1);
 			Delay_us(600);
-			gpio_pin_write(gpio_audio, WTN_DATA, 0);
+			gpio_pin_set(gpio_audio, WTN_DATA, 0);
 			Delay_us(200);
 		}
 		else
 		{
-			gpio_pin_write(gpio_audio, WTN_DATA, 1);
+			gpio_pin_set(gpio_audio, WTN_DATA, 1);
 			Delay_us(200);
-			gpio_pin_write(gpio_audio, WTN_DATA, 0);
+			gpio_pin_set(gpio_audio, WTN_DATA, 0);
 			Delay_us(600);
 			
 		}
 		data >>= 1;
 	}
 	
-	gpio_pin_write(gpio_audio, WTN_DATA, 1);
+	gpio_pin_set(gpio_audio, WTN_DATA, 1);
 }
 
 //控制音量
@@ -107,7 +113,7 @@ void Volume_Control(unsigned char vol)  //E0  ------  EF
 }
 
 //播放语音
-void Voice_Start(u8_t voice_addr)  //0  -----------  6
+void Voice_Start(uint8_t voice_addr)  //0  -----------  6
 {
 	Audio_Send_ByteData(voice_addr);
 }
@@ -188,21 +194,21 @@ void AudioInterruptHandle(void)
 //io口初始化 
 void audio_init(void)
 {
-	int flag = GPIO_DIR_IN|GPIO_INT|GPIO_INT_EDGE|GPIO_PUD_PULL_UP|GPIO_INT_ACTIVE_HIGH|GPIO_INT_DEBOUNCE;
+	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 	
 	Set_Audio_Power_On();
 	
-	gpio_audio = device_get_binding(AUDIO_PORT);
-	
-	gpio_pin_configure(gpio_audio, WTN_DATA, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_audio, WTN_DATA, 1);
+	gpio_audio = DEVICE_DT_GET(AUDIO_PORT);
+
+	gpio_pin_configure(gpio_audio, WTN_DATA, GPIO_OUTPUT);
+	gpio_pin_set(gpio_audio, WTN_DATA, 1);
 
 	//busy interrupt
 	gpio_pin_configure(gpio_audio, WTN_BUSY, flag);
-	gpio_pin_disable_callback(gpio_audio, WTN_BUSY);
+    gpio_pin_interrupt_configure(gpio_audio, WTN_BUSY, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, AudioInterruptHandle, BIT(WTN_BUSY));
 	gpio_add_callback(gpio_audio, &gpio_cb);
-	gpio_pin_enable_callback(gpio_audio, WTN_BUSY);
+    gpio_pin_interrupt_configure(gpio_audio, WTN_BUSY, GPIO_INT_ENABLE|GPIO_INT_EDGE_RISING);
 
 	Delay_ms(100);
 
@@ -218,15 +224,15 @@ void AudioMsgProcess(void)
 }
 
 #if 0
-void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk *info_fmt, wav_data_chunk *info_data)
+void audio_get_wav_info(uint32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk *info_fmt, wav_data_chunk *info_data)
 {
-	u32_t index;
+	uint32_t index;
 	wav_riff_chunk riff_data = {0};
 	wav_fmt_chunk fmt_data = {0};
 	wav_data_chunk pcm_data = {0};
 
 	index = aud_addr;
-	SpiFlash_Read((u8_t*)&riff_data, index, (u32_t)sizeof(wav_riff_chunk));
+	SpiFlash_Read((uint8_t*)&riff_data, index, (uint32_t)sizeof(wav_riff_chunk));
 	if(memcmp(riff_data.riff_mark, WAV_RIFF_ID, 4) != 0)
 	{
 		LOGD("get wav riff fail!");
@@ -234,12 +240,12 @@ void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk
 	}
 
 	index += sizeof(wav_riff_chunk);
-	SpiFlash_Read((u8_t*)&fmt_data, index, (u32_t)sizeof(wav_fmt_chunk));
+	SpiFlash_Read((uint8_t*)&fmt_data, index, (uint32_t)sizeof(wav_fmt_chunk));
 
 	index += (fmt_data.fmt_size+8);
 	while(1)
 	{
-		SpiFlash_Read((u8_t*)&pcm_data, index, (u32_t)sizeof(wav_data_chunk));
+		SpiFlash_Read((uint8_t*)&pcm_data, index, (uint32_t)sizeof(wav_data_chunk));
 		if(strcmp(pcm_data.data_mark, "data") == 0)
 			break;
 		else
@@ -248,31 +254,31 @@ void audio_get_wav_info(u32_t aud_addr, wav_riff_chunk *info_riff, wav_fmt_chunk
 
 	if(info_riff)
 	{
-		memcpy(info_riff, (void*)&riff_data, (u32_t)sizeof(wav_riff_chunk));
+		memcpy(info_riff, (void*)&riff_data, (uint32_t)sizeof(wav_riff_chunk));
 	}
 	
 	if(info_fmt)
 	{
-		memcpy(info_fmt, (void*)&fmt_data, (u32_t)sizeof(wav_fmt_chunk));
+		memcpy(info_fmt, (void*)&fmt_data, (uint32_t)sizeof(wav_fmt_chunk));
 	}
 	
 	if(info_data)
 	{
-		memcpy(info_data, (void*)&pcm_data, (u32_t)sizeof(wav_data_chunk));
+		memcpy(info_data, (void*)&pcm_data, (uint32_t)sizeof(wav_data_chunk));
 	}
 
 	LOGD("get audio wav success");
 }
 
-void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
+void audio_get_wav_pcm_info(uint32_t aud_addr, uint32_t *pcmaddr, uint32_t *pcmlen)
 {
-	u32_t index;
+	uint32_t index;
 	wav_riff_chunk riff_data = {0};
 	wav_fmt_chunk fmt_data = {0};
 	wav_data_chunk pcm_data = {0};
 
 	index = aud_addr;
-	SpiFlash_Read((u8_t*)&riff_data, index, (u32_t)sizeof(wav_riff_chunk));
+	SpiFlash_Read((uint8_t*)&riff_data, index, (uint32_t)sizeof(wav_riff_chunk));
 	if(memcmp(riff_data.riff_mark, WAV_RIFF_ID, 4) != 0)
 	{
 		LOGD("get wav riff fail");
@@ -281,13 +287,13 @@ void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
 	}
 
 	index += sizeof(wav_riff_chunk);
-	SpiFlash_Read((u8_t*)&fmt_data, index, (u32_t)sizeof(wav_fmt_chunk));
+	SpiFlash_Read((uint8_t*)&fmt_data, index, (uint32_t)sizeof(wav_fmt_chunk));
 
 	index += (fmt_data.fmt_size+8);
 
 	while(1)
 	{
-		SpiFlash_Read((u8_t*)&pcm_data, index, (u32_t)sizeof(wav_data_chunk));
+		SpiFlash_Read((uint8_t*)&pcm_data, index, (uint32_t)sizeof(wav_data_chunk));
 		if(strcmp(pcm_data.data_mark, "data") == 0)
 			break;
 		else
@@ -298,9 +304,9 @@ void audio_get_wav_pcm_info(u32_t aud_addr, u32_t *pcmaddr, u32_t *pcmlen)
 	*pcmlen = pcm_data.data_size;
 }
 
-u32_t audio_get_wav_pcm_data(u32_t aud_addr, u8_t *buffer, u32_t start, u32_t buflen)
+uint32_t audio_get_wav_pcm_data(uint32_t aud_addr, uint8_t *buffer, uint32_t start, uint32_t buflen)
 {
-	u32_t pcm_addr,pcm_len,read_len;
+	uint32_t pcm_addr,pcm_len,read_len;
 	
 	audio_get_wav_pcm_info(aud_addr, &pcm_addr, &pcm_len);
 		
@@ -318,7 +324,7 @@ u32_t audio_get_wav_pcm_data(u32_t aud_addr, u8_t *buffer, u32_t start, u32_t bu
 	return read_len;
 }
 
-void audio_get_wav_size(u32_t aud_addr, u32_t *filelen)
+void audio_get_wav_size(uint32_t aud_addr, uint32_t *filelen)
 {
 	wav_riff_chunk riff_data = {0};
 	
@@ -330,7 +336,7 @@ void audio_get_wav_size(u32_t aud_addr, u32_t *filelen)
 		*filelen = 0;
 }
 
-void audio_get_wav_time(u32_t aud_addr, u32_t *time)
+void audio_get_wav_time(uint32_t aud_addr, uint32_t *time)
 {
 	wav_fmt_chunk fmt_data = {0};
 	wav_data_chunk pcm_data = {0};
@@ -345,7 +351,7 @@ void audio_get_wav_time(u32_t aud_addr, u32_t *time)
 
 void test_audio_wav(void)
 {
-	u32_t pcmaddr,pcmlen,filelen,time;
+	uint32_t pcmaddr,pcmlen,filelen,time;
 	wav_riff_chunk riff_data = {0};
 	wav_fmt_chunk fmt_data = {0};
 	wav_data_chunk pcm_data = {0};
@@ -365,7 +371,7 @@ ISR_DIRECT_DECLARE(i2s_isr_handler)
 	return 1;
 }
 
-static void prepare_tx_data(u32_t * p_block)
+static void prepare_tx_data(uint32_t * p_block)
 {
     // These variables will be both zero only at the very beginning of each
     // transfer, so we use them as the indication that the re-initialization

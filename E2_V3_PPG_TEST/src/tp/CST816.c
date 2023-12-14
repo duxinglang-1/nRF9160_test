@@ -10,9 +10,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "CST816.h"
@@ -22,6 +22,27 @@
 
 //#define TP_DEBUG
 //#define TP_TEST
+
+#if defined(TP_DEBUG)||defined(TP_TEST)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define TP_DEV DT_NODELABEL(i2c1)
+#else
+#error "i2c1 devicetree node is disabled"
+#define TP_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define TP_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define TP_PORT	""
+#endif
+
+#define TP_RESET		16
+#define TP_EINT			25
+#define TP_SCL			1
+#define TP_SDA			0
+#endif
 
 bool tp_int_flag = false;
 bool tp_trige_flag = false;
@@ -40,9 +61,10 @@ static struct gpio_callback gpio_cb;
 static TPInfo tp_event_info = {0};
 static TpEventNode *tp_event_tail = NULL;
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
 static uint8_t init_i2c(void)
 {
-	i2c_ctp = device_get_binding(TP_DEV);
+	i2c_ctp = DEVICE_DT_GET(TP_DEV);
 	if(!i2c_ctp)
 	{
 	#ifdef TP_DEBUG
@@ -110,6 +132,15 @@ static int32_t platform_read_word(uint16_t reg, uint8_t *bufp, uint16_t len)
 	return rslt;
 }
 
+static void tp_reset(void)
+{
+	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ctp, TP_RESET, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_set(gpio_ctp, TP_RESET, 1);
+	k_sleep(K_MSEC(50));
+}
+
 static int cst816s_enter_bootmode(void)
 {
 	uint8_t retryCnt = 50;
@@ -149,6 +180,9 @@ static int cst816s_update(uint16_t startAddr, uint16_t len, unsigned char *src)
 	uint8_t cmd[10] = {0};
 	uint32_t sum_len = 0;
 	uint32_t i,k_data=0,b_data=0;
+
+	if(cst816s_enter_bootmode() == -1)
+		return -1;
 
 	sum_len = 0;
 	k_data=len/PER_LEN;
@@ -265,10 +299,13 @@ bool ctp_hynitron_update(void)
 			LCD_ShowString(20,180,"complete update!");
 		}
 
+		tp_reset();
+
 		return true;
 	}
 	return false;
 }
+#endif
 
 void clear_all_touch_event_handle(void)
 {
@@ -276,9 +313,6 @@ void clear_all_touch_event_handle(void)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -292,10 +326,6 @@ void clear_all_touch_event_handle(void)
 			k_free(pnext);
 			pnext = tp_event_info.cache;
 		}while(pnext != NULL);
-
-	#ifdef TP_DEBUG
-		LOGD("002");
-	#endif
 	}
 }
 
@@ -305,9 +335,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return;
 	}
 	else
@@ -323,18 +350,12 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 			{
 				if(pnext == tp_event_info.cache)
 				{
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					tp_event_info.cache = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
 				}
 				else if(pnext == tp_event_tail)
 				{
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					tp_event_tail = ppre;
 					tp_event_tail->next = NULL;
 					tp_event_info.count--;
@@ -342,9 +363,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					ppre = pnext->next;
 					tp_event_info.count--;
 					k_free(pnext);
@@ -359,9 +377,6 @@ void unregister_touch_event_handle(TP_EVENT tp_type, uint16_t x_start, uint16_t 
 			}
 				
 		}while(pnext != NULL);
-	#ifdef TP_DEBUG
-		LOGD("005");
-	#endif
 	}
 }
 
@@ -440,9 +455,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	
 	if(tp_event_info.cache == NULL || tp_event_info.count == 0)
 	{
-	#ifdef TP_DEBUG
-		LOGD("001");
-	#endif
 		return false;
 	}
 	else
@@ -460,9 +472,6 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("002");
-				#endif
 					return true;
 				}
 				else if((x_pos >= pnew->x_begin)
@@ -472,31 +481,19 @@ bool check_touch_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 				{
 					if(pnew->func != NULL)
 						pnew->func();
-				#ifdef TP_DEBUG
-					LOGD("003");
-				#endif
 					return true;
 				}
 				else
 				{
-				#ifdef TP_DEBUG
-					LOGD("004");
-				#endif
 					pnew = pnew->next;
 				}
 			}
 			else
 			{
-			#ifdef TP_DEBUG
-				LOGD("005");
-			#endif
 				pnew = pnew->next;
 			}
 				
 		}while(pnew != NULL);
-	#ifdef TP_DEBUG
-		LOGD("006");
-	#endif
 		return false;
 	}
 }
@@ -506,7 +503,11 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	uint8_t strbuf[128] = {0};
 	uint16_t x,y,w,h;
 
-	if(lcd_is_sleeping)
+	if(lcd_is_sleeping
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT
+		&&!IsFTCurrentTest()
+	#endif
+		)
 	{
 		sleep_out_by_wrist = false;
 		lcd_sleep_out = true;
@@ -594,6 +595,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	tp_trige_flag = true;
 }
 
+#if defined(TP_DEBUG)||defined(TP_TEST)
 void CaptouchInterruptHandle(void)
 {
 	tp_int_flag = true;
@@ -609,7 +611,7 @@ void tp_interrupt_proc(void)
 	platform_read(TP_REG_FINGER_NUM, &tp_temp[1], 1);//手指个数
 	platform_read(TP_REG_XPOS_H, &tp_temp[2], 1);//x坐标高位 (&0x0f,取低4位)
 	platform_read(TP_REG_XPOS_L, &tp_temp[3], 1);//x坐标低位
-	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标低位 (&0x0f,取低4位)
+	platform_read(TP_REG_YPOS_H, &tp_temp[4], 1);//y坐标高位 (&0x0f,取低4位)
 	platform_read(TP_REG_YPOS_L, &tp_temp[5], 1);//y坐标低位
 
 #ifdef TP_DEBUG
@@ -687,7 +689,7 @@ void tp_init(void)
 	gpio_flags_t flag = GPIO_INPUT|GPIO_PULL_UP;
 	
   	//端口初始化
-  	gpio_ctp = device_get_binding(TP_PORT);
+  	gpio_ctp = DEVICE_DT_GET(TP_PORT);
 	if(!gpio_ctp)
 	{
 	#ifdef TP_DEBUG
@@ -704,11 +706,7 @@ void tp_init(void)
 	gpio_add_callback(gpio_ctp, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_EDGE_FALLING);
 
-	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ctp, TP_RESET, 0);
-	k_sleep(K_MSEC(10));
-	gpio_pin_set(gpio_ctp, TP_RESET, 1);
-	k_sleep(K_MSEC(50));
+	tp_reset();
 
 	tp_get_id(&tp_chip_id, &tp_fw_ver);
 	switch(tp_chip_id)
@@ -721,7 +719,11 @@ void tp_init(void)
 		break;
 
 	case TP_CST816T:
-		if(tp_fw_ver < 0x04)
+	#ifdef YKL_CST816T	
+		if(tp_fw_ver < 0x02)
+	#elif defined(ORC_CST816T)
+		if(tp_fw_ver < 0x05)
+	#endif
 		{
 			ctp_hynitron_update();
 		}
@@ -737,14 +739,20 @@ void test_tp(void)
 	uint16_t w,h;
 	uint8_t tmpbuf[128] = {0};
 
-	sprintf(tmpbuf, "TP_TEST");
-	
+#ifdef FONTMAKER_UNICODE_FONT
+	mmi_asc_to_ucs2(tmpbuf, "TP_TEST");
 	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_MeasureUniString(tmpbuf, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2,20,tmpbuf);
+#else
+	sprintf(tmpbuf, "TP_TEST");
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
-
-	tp_init();
+#endif	
+	//tp_init();
 }
+#endif
 
 void tp_show_infor(void)
 {
@@ -791,12 +799,13 @@ void tp_show_infor(void)
 
 void TPMsgProcess(void)
 {
+#if defined(TP_DEBUG)||defined(TP_TEST)
 	if(tp_int_flag)
 	{
 		tp_int_flag = false;
 		tp_interrupt_proc();
 	}
-
+#endif
 	if(tp_trige_flag)
 	{
 		tp_trige_flag = false;

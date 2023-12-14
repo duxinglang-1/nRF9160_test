@@ -10,13 +10,24 @@
 #define __NAU88C10_H__
 
 #include <nrf9160.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 extern struct device *nau88c10_I2C;
-	
-#define AUDIO_DEV 	"I2C_1"
-#define AUDIO_PORT	"GPIO_0"
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#define AUDIO_DEV DT_NODELABEL(i2c1)
+#else
+#error "spi3 devicetree node is disabled"
+#define AUDIO_DEV	""
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#define AUDIO_PORT DT_NODELABEL(gpio0)
+#else
+#error "gpio0 devicetree node is disabled"
+#define AUDIO_PORT	""
+#endif
 	
 #define AUDIO_SCL	31
 #define AUDIO_SDA	30

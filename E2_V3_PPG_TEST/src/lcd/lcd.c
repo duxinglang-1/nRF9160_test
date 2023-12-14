@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <nrf9160.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <math.h>
 #include "lcd.h"
 #include "settings.h"
@@ -77,8 +77,6 @@ bool lcd_sleep_in = false;
 bool lcd_sleep_out = false;
 bool lcd_is_sleeping = true;
 bool sleep_out_by_wrist = false;
-
-static uint8_t imgbuf[LCD_DATA_LEN] = {0};
 
 #ifdef FONTMAKER_UNICODE_FONT
 font_uni_infor uni_infor = {0};
@@ -1541,7 +1539,6 @@ void LCD_dis_pic_angle_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, uns
 	if(show_w < w)
 		readlen = 2*show_w;
 
-	//LOGD("c_x:%d, c_y:%d", c_x, c_y);
 	while(datelen)
 	{
 		if(datelen < readlen)
@@ -1569,7 +1566,6 @@ void LCD_dis_pic_angle_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, uns
 			{
 				offset_y = j*sin(angle*PI/180);
 				offset_x = j*cos(angle*PI/180);
-				//LOGD("i:%d,angle:%d,c_r:%d,offset_x:%d,offset_y:%d", i,angle,c_r,offset_x,offset_y);
 				BlockWrite(c_x+offset_x, c_y-offset_y, 1, 1);	//设置刷新位置
 				j++;
 			}
@@ -3231,12 +3227,13 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 	str_h = height+y;
 	while(*p)
 	{       
-		w = LCD_Measure_Uni_Byte(*p);
-		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(str_x>=str_w){str_x=x;str_y+=system_font;}
 		if(*p==end){str_x=x;str_y+=system_font;p++;}
 		if(str_y>=str_h)break;//退出
 		if(*p==0x0000)break;//退出
-
+		w = LCD_Measure_Uni_Byte(*p);
+		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(str_y>=str_h)break;//退出
 		w = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
 		str_x += w;
 		p++;
@@ -3263,6 +3260,7 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 }
 #endif/*FONTMAKER_UNICODE_FONT*/
 
+#if 0
 //m^n函数
 //返回值:m^n次方.
 uint32_t LCD_Pow(uint8_t m,uint8_t n)
@@ -3355,6 +3353,7 @@ void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
 	#endif
 	}
 } 
+#endif
 
 //根据字体测量字符串的长度和高度
 //p:字符串指针
@@ -3429,30 +3428,35 @@ void LCDMsgProcess(void)
 	if(lcd_sleep_in)
 	{
 		lcd_sleep_in = false;
-		
-		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
-			return;
-		
-		LCD_BL_Off();
-		LCD_SleepIn();
+
+		if(LCD_Get_BL_Mode() != LCD_BL_ALWAYS_ON)
+		{
+			LCD_BL_Off();
+
+			if((screen_id == SCREEN_ID_STEPS)
+				||(screen_id == SCREEN_ID_SLEEP)
+				)
+			{
+				EnterIdleScreen();
+			}
+			
+			LCD_SleepIn();
+		}
 	}
 
 	if(lcd_sleep_out)
-	{	
+	{
 		lcd_sleep_out = false;
-		
-		if(LCD_Get_BL_Mode() != LCD_BL_AUTO)
-			return;
-		
+	
 		LCD_SleepOut();
-		pmu_battery_update();
+		
 		if(IsInIdleScreen())
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TIME|SCREEN_EVENT_UPDATE_DATE|SCREEN_EVENT_UPDATE_WEEK|SCREEN_EVENT_UPDATE_SIG|SCREEN_EVENT_UPDATE_NET_MODE|SCREEN_EVENT_UPDATE_BAT;
 			IdleScreenProcess();
 		}
-		
+
 		LCD_BL_On();
 	}
 }

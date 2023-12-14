@@ -9,9 +9,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <zephyr.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include "nau88c10.h"
 #include "Lcd.h"
 #include "datetime.h"
@@ -56,7 +56,7 @@ static s32_t platform_read(struct device *handle, u8_t reg, u8_t *bufp, u16_t le
 
 static bool init_i2c(void)
 {
-	i2c_audio = device_get_binding(AUDIO_DEV);
+	i2c_audio = DEVICE_DT_GET(AUDIO_DEV);
 	if(!i2c_audio)
 	{
 		LOGD("ERROR SETTING UP I2C");
@@ -71,7 +71,7 @@ static bool init_i2c(void)
 
 static void init_gpio(void)
 {
-	gpio_audio = device_get_binding(AUDIO_PORT);
+	gpio_audio = DEVICE_DT_GET(AUDIO_PORT);
 	gpio_pin_configure(gpio_audio, AUDIO_LDO_EN, GPIO_DIR_OUT);
 	gpio_pin_write(gpio_audio, AUDIO_LDO_EN, 1);
 

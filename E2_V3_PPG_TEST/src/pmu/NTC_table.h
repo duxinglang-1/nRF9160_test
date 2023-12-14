@@ -10,7 +10,7 @@
 #ifndef __NTC_TABLE_H__
 #define __NTC_TABLE_H__
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/types.h>
 

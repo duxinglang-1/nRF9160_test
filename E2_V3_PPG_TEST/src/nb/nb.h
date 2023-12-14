@@ -7,23 +7,23 @@
 ** Version:			    1.0
 ** Descriptions:		NB-IoTÍ·ÎÄ¼þ
 ******************************************************************************************************/
-#define CMD_GET_IMEI	"AT+CGSN"
-#define CMD_GET_IMSI	"AT+CIMI"
-#define CMD_GET_ICCID	"AT%%XICCID"
-#define CMD_GET_CRSM	"AT+CRSM=176,12258,0,0,10"
-#define CMD_GET_MODEM_V "AT+CGMR"
-#define CMD_GET_CESQ	"AT+CESQ"
-#define CMD_GET_SNR		"AT%%XSNRSQ?"
-#define CMD_GET_APN		"AT+CGDCONT?"
-#define CMD_GET_CSQ		"AT+CSQ"
-#define CMD_GET_MODEM_PARA	"AT%%XMONITOR"
-#define CMD_GET_CUR_BAND	"AT%%XCBAND"
-#define CMD_GET_SUPPORT_BAND	"AT%%XCBAND=?"
-#define CMD_GET_LOCKED_BAND		"AT%%XBANDLOCK?"
-#define CMD_GET_REG_STATUS	"AT+CEREG?"
-#define CMD_SET_CREG	 	"AT+CEREG=5"
+#define CMD_GET_IMEI				"AT+CGSN"
+#define CMD_GET_IMSI				"AT+CIMI"
+#define CMD_GET_ICCID				"AT%%XICCID"
+#define CMD_GET_CRSM				"AT+CRSM=176,12258,0,0,10"
+#define CMD_GET_MODEM_V 			"AT+CGMR"
+#define CMD_GET_CESQ				"AT+CESQ"
+#define CMD_GET_SNR					"AT%%XSNRSQ?"
+#define CMD_GET_APN					"AT+CGDCONT?"
+#define CMD_GET_CSQ					"AT+CSQ"
+#define CMD_GET_MODEM_PARA			"AT%%XMONITOR"
+#define CMD_GET_CUR_BAND			"AT%%XCBAND"
+#define CMD_GET_SUPPORT_BAND		"AT%%XCBAND=?"
+#define CMD_GET_LOCKED_BAND			"AT%%XBANDLOCK?"
+#define CMD_GET_REG_STATUS			"AT+CEREG?"
+#define CMD_SET_CREG	 			"AT+CEREG=5"
 #if defined(CONFIG_LTE_LEGACY_PCO_MODE)
-#define CMD_SET_EPCO_MODE	"AT%%XEPCO=0"
+#define CMD_SET_EPCO_MODE			"AT%%XEPCO=0"
 #endif
 
 #define CMD_SET_NW_MODE_NB			"AT%%XSYSTEMMODE=0,1,0,0"	//Preferred network mode: Narrowband-IoT
@@ -32,8 +32,8 @@
 #define CMD_SET_NW_MODE_LTE_M_GPS	"AT%%XSYSTEMMODE=1,0,1,0"	//Preferred network mode: LTE-M and GPS
 #define CMD_SET_NW_MODE_GPS			"AT%%XSYSTEMMODE=0,0,1,0"	//Preferred network mode: GPS
 
-#define CMD_SET_FUN_MODE 	"AT+CFUN=1"					//Set the modem to Normal mode
-#define CMD_SET_RAI		 	"AT%%XRAI=3"					//Set the modem rai parament
+#define CMD_SET_FUN_MODE 			"AT+CFUN=1"						//Set the modem to Normal mode
+#define CMD_SET_RAI		 			"AT%%XRAI=3"					//Set the modem rai parament
 
 #define IMEI_MAX_LEN	(15)
 #define IMSI_MAX_LEN	(15)

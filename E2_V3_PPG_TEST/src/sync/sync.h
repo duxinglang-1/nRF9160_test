@@ -10,7 +10,6 @@
 #define __SYNC_H__
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
 #include "lcd.h"
 
 #ifdef __cplusplus

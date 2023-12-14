@@ -5,11 +5,11 @@
 extern "C" {
 #endif
 #include <nrf9160.h>
-#include <zephyr.h>
-#include <device.h>
-#include <sys/printk.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

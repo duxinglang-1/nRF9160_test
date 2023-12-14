@@ -1146,6 +1146,7 @@ void PPGGetSensorHubData(void)
 			if(1
 			#ifdef CONFIG_FACTORY_TEST_SUPPORT
 				&& !IsFTPPGTesting()
+				&& !IsFTPPGAging()
 			#endif
 				)
 			{

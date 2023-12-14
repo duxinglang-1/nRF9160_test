@@ -540,7 +540,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#ifndef NB_SIGNAL_TEST
+	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -626,7 +626,7 @@ void UpdateSystemTime(void)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
-	#ifndef NB_SIGNAL_TEST
+	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
 		if(1
   			#ifdef CONFIG_FOTA_DOWNLOAD
 				&& (!fota_is_running())

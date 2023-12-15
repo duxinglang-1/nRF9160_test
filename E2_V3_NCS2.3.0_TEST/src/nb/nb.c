@@ -411,6 +411,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 
 		mqtt_connected = true;
 		mqtt_connecting_flag = false;
+		mqtt_disconnect_req_flag = false;
 		k_timer_stop(&mqtt_connect_timer);
 
 		subscribe();
@@ -439,6 +440,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		LOGD("MQTT client disconnected %d", evt->result);
 	#endif
 		mqtt_connected = false;
+		mqtt_disconnect_req_flag = false;
 		
 		NbSendDataStop();
 		MqttDicConnectStop();
@@ -670,6 +672,7 @@ static void mqtt_unlink(void)
 
 	mqtt_connected = false;
 	mqtt_connecting_flag = false;
+	mqtt_disconnect_req_flag = true;
 	mqtt_disconnect(&client);
 }
 
@@ -690,7 +693,7 @@ static void mqtt_link(struct k_work_q *work_q)
 		return;
 
 	mqtt_connecting_flag = true;
-	k_timer_start(&mqtt_connect_timer, K_SECONDS(2*60), K_NO_WAIT);
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(3*60), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -731,7 +734,7 @@ static void mqtt_link(struct k_work_q *work_q)
 		#endif
 			break;
 		}
-
+		
 		if((fds.revents & POLLIN) == POLLIN)
 		{
 			err = mqtt_input(&client);
@@ -757,6 +760,12 @@ static void mqtt_link(struct k_work_q *work_q)
 		#ifdef NB_DEBUG
 			LOGD("POLLNVAL");
 		#endif
+			break;
+		}
+
+		if(mqtt_disconnect_req_flag)
+		{
+			LOGM("disconnect req");
 			break;
 		}
 	}
@@ -942,7 +951,7 @@ void FTPreReadyNet(void)
 {
 	struct k_work_sync work_sync;
 
-	SetModemTurnOff();
+	//SetModemTurnOff();
 }
 #endif
 
@@ -2797,6 +2806,8 @@ void SetModemTurnOff(void)
 
 	nb_connected = false;
 	mqtt_connected = false;
+	nb_connecting_flag = false;
+	mqtt_connecting_flag = false;
 
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=0") == 0)
 	{

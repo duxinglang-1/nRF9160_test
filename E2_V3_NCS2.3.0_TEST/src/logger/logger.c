@@ -220,7 +220,7 @@ void log_read_from_flash(void)
 				}
 			}
 		}
-				
+
 		addr += SPIFlash_SECTOR_SIZE;
 	}
 #endif	

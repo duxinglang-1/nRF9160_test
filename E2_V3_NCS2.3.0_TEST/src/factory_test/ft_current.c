@@ -138,7 +138,9 @@ static void FTMenuCurUpdate(void)
 		SetRightKeyUpHandler(FTMenuCurStopTest);
 	#ifdef CONFIG_TOUCH_SUPPORT
 		clear_all_touch_event_handle();
-	#endif	
+	#endif
+
+		SetModemTurnOff();
 	}
 	else
 	{
@@ -166,7 +168,9 @@ static void FTMenuCurUpdate(void)
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_SLE2_STR_X, FT_CUR_SLE2_STR_X+FT_CUR_SLE2_STR_W, FT_CUR_SLE2_STR_Y, FT_CUR_SLE2_STR_Y+FT_CUR_SLE2_STR_H, FTMenuCurSle2Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_PASS_STR_X, FT_CUR_PASS_STR_X+FT_CUR_PASS_STR_W, FT_CUR_PASS_STR_Y, FT_CUR_PASS_STR_Y+FT_CUR_PASS_STR_H, FTMenuCurPassHander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_CUR_FAIL_STR_X, FT_CUR_FAIL_STR_X+FT_CUR_FAIL_STR_W, FT_CUR_FAIL_STR_Y, FT_CUR_FAIL_STR_Y+FT_CUR_FAIL_STR_H, FTMenuCurFailHander);
-	#endif		
+	#endif
+
+		SetModemTurnOn();
 	}
 }
 

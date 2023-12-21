@@ -2194,7 +2194,9 @@ void SettingsUpdateStatus(void)
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
 
+#ifndef CONFIG_FACTORY_TEST_SUPPORT
 	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
+#endif
 }
 
 void SettingsShowStatus(void)
@@ -2339,8 +2341,10 @@ void SettingsShowStatus(void)
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
 
+#ifndef CONFIG_FACTORY_TEST_SUPPORT
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
+#endif
 }
 
 void SettingsScreenProcess(void)

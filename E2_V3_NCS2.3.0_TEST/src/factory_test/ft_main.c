@@ -411,7 +411,7 @@ static void FactoryTestPreExit(void)
 	ft_running_flag = false;
 	
 	SetModemTurnOn();
-	EnterSettingsScreen();
+	EnterSettings();
 }
 
 static void FactoryTestNextExit(void)

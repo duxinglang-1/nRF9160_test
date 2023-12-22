@@ -1705,6 +1705,11 @@ void SettingsUpdateStatus(void)
 			}
 
 		#ifdef CONFIG_TOUCH_SUPPORT
+		 #ifdef NB_SIGNAL_TEST
+			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
+		 #else
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 			{
@@ -1714,34 +1719,43 @@ void SettingsUpdateStatus(void)
 			{
 				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 			}
-		  #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
+		   #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 			else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 			{
 				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
 			}
-		  #endif
+		   #endif
 			else
-		  #endif
+		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/		
 			{
 				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
-			}
+			}	
+		 #endif/*NB_SIGNAL_TEST*/
 
-		  #ifdef CONFIG_SYNC_SUPPORT
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
-		  #elif defined(CONFIG_PPG_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
-		  #elif defined(CONFIG_TEMP_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
-		  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-		   #ifdef CONFIG_SLEEP_SUPPORT
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
-		   #elif defined(CONFIG_STEP_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
-		   #endif
+		 #ifdef NB_SIGNAL_TEST
+		  #ifdef CONFIG_WIFI_SUPPORT
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterWifiTestScreen);
 		  #else
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
 		  #endif
-		#endif
+		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+		 #elif defined(CONFIG_SYNC_SUPPORT)
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+		 #elif defined(CONFIG_PPG_SUPPORT)
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+		 #elif defined(CONFIG_TEMP_SUPPORT)
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+		 #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+		  #ifdef CONFIG_SLEEP_SUPPORT
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+		  #elif defined(CONFIG_STEP_SUPPORT)
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+		  #endif
+		 #else
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+		 #endif/*NB_SIGNAL_TEST*/
+		#endif/*CONFIG_TOUCH_SUPPORT*/
 		}
 		break;
 		
@@ -2430,11 +2444,11 @@ void EnterSettingsScreen(void)
 	}
   #endif
   	else
- #endif
+ #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
   	{
   		SetLeftKeyUpHandler(EnterPoweroffScreen);
   	}
-#endif
+#endif/*NB_SIGNAL_TEST*/
 	SetRightKeyUpHandler(ExitSettingsScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT

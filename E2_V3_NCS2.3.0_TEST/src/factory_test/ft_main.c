@@ -165,11 +165,11 @@ static void FTMainMenuProcess(void)
 
 void FTMainMenuPgUpProc(void)
 {
-	uint8_t count = FT_MAIN_MENU_MAX_PER_PG;
-	
-	if(ft_menu.index < (ft_menu.count - count))
+	if(ft_menu.index < FT_MAIN_MENU_MAX_PER_PG*((ft_menu.count-1)/FT_MAIN_MENU_MAX_PER_PG))
 	{
-		ft_menu.index += count;
+		ft_menu.index += FT_MAIN_MENU_MAX_PER_PG;
+		if(ft_menu.index > (ft_menu.count-1))
+			ft_menu.index = FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG);
 		if(screen_id == SCREEN_ID_FACTORY_TEST)
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
@@ -177,11 +177,9 @@ void FTMainMenuPgUpProc(void)
 
 void FTMainMenuPgDownProc(void)
 {
-	uint8_t count = FT_MAIN_MENU_MAX_PER_PG;
-
-	if(ft_menu.index >= count)
+	if(ft_menu.index >= FT_MAIN_MENU_MAX_PER_PG)
 	{
-		ft_menu.index -= count;
+		ft_menu.index -= FT_MAIN_MENU_MAX_PER_PG;
 		if(screen_id == SCREEN_ID_FACTORY_TEST)
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
@@ -299,15 +297,15 @@ static void FactoryTestMainUpdate(void)
 	clear_all_touch_event_handle();
 #endif
 
-	for(i=0;i<4;i++)
+	for(i=0;i<FT_MAIN_MENU_MAX_PER_PG;i++)
 	{
-		if((4*(ft_menu.index/4) + i) >= ft_menu.count)
+		if((FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG) + i) >= ft_menu.count)
 			break;
 		LCD_ShowImg_From_Flash(FT_MENU_BG_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), IMG_SET_BG_ADDR);
 		LCD_SetFontColor(WHITE);
 	
-		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.item[i+4*(ft_menu.index/4)].name);
-		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+4*(ft_menu.index/4)]]);
+		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.item[i+FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG)].name);
+		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG)]]);
 	
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -315,7 +313,7 @@ static void FactoryTestMainUpdate(void)
 									FT_MENU_BG_X+FT_MENU_BG_W, 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_BG_H, 
-									ft_menu.item[i+4*(ft_menu.index/4)].sel_handler);
+									ft_menu.item[i+FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG)].sel_handler);
 	#endif
 	}	
 
@@ -349,14 +347,14 @@ static void FactoryTestMainShow(void)
 	clear_all_touch_event_handle();
 #endif
 
-	for(i=0;i<4;i++)
+	for(i=0;i<FT_MAIN_MENU_MAX_PER_PG;i++)
 	{
-		if((4*(ft_menu.index/4) + i) >= ft_menu.count)
+		if((FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG) + i) >= ft_menu.count)
 			break;
 		LCD_ShowImg_From_Flash(FT_MENU_BG_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), IMG_SET_BG_ADDR);
 		LCD_SetFontColor(WHITE);
-		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.item[i+4*(ft_menu.index/4)].name);
-		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+4*(ft_menu.index/4)]]);
+		LCD_ShowUniString(FT_MENU_STR_X, FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_STR_OFFSET_Y, ft_menu.item[i+FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG)].name);
+		LCD_ShowImg_From_Flash(FT_MENU_CHECKED_X, FT_MENU_CHECKED_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), img_addr[ft_menu_checked[i+FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG)]]);
 		
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
@@ -364,7 +362,7 @@ static void FactoryTestMainShow(void)
 									FT_MENU_BG_X+FT_MENU_BG_W, 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y), 
 									FT_MENU_BG_Y+i*(FT_MENU_BG_H+FT_MENU_BG_OFFSET_Y)+FT_MENU_BG_H, 
-									ft_menu.item[i+4*(ft_menu.index/4)].sel_handler);
+									ft_menu.item[i+FT_MAIN_MENU_MAX_PER_PG*(ft_menu.index/FT_MAIN_MENU_MAX_PER_PG)].sel_handler);
 	#endif
 	}
 

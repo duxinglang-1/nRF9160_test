@@ -693,7 +693,7 @@ static void mqtt_link(struct k_work_q *work_q)
 		return;
 
 	mqtt_connecting_flag = true;
-	k_timer_start(&mqtt_connect_timer, K_SECONDS(3*60), K_NO_WAIT);
+	//k_timer_start(&mqtt_connect_timer, K_SECONDS(3*60), K_NO_WAIT);
 	
 	client_init(&client);
 
@@ -819,12 +819,16 @@ static void NbSendData(void)
 		if(!ret)
 		{
 			delete_data_from_cache(&nb_send_cache);
+			
+			if(data_type == DATA_LOG)
+				k_timer_start(&send_data_timer, K_MSEC(50), K_NO_WAIT);
+			else
+				k_timer_start(&send_data_timer, K_MSEC(200), K_NO_WAIT);
+			
+			if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
+				k_timer_stop(&mqtt_act_wait_timer);
+			k_timer_start(&mqtt_act_wait_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME-5), K_NO_WAIT);
 		}
-		k_timer_start(&send_data_timer, K_MSEC(50), K_NO_WAIT);
-		
-		if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
-			k_timer_stop(&mqtt_act_wait_timer);
-		k_timer_start(&mqtt_act_wait_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME-5), K_NO_WAIT);
 	}
 }
 
@@ -2697,10 +2701,20 @@ void GetModemInfor(void)
 		if(count > 0)
 		{
 			count--;
-			k_timer_start(&get_modem_infor_timer, K_SECONDS(2), K_NO_WAIT);
+			k_timer_start(&get_modem_infor_timer, K_SECONDS(1), K_NO_WAIT);
+			return;
 		}
 	}
 
+	SetModemTurnOff();
+
+	if(strlen(g_imsi) > 0)
+	{
+	#ifndef CONFIG_FACTORY_TEST_SUPPORT
+		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
+	#endif
+	}
+	
 #if 0	//xb add 2023.07.25 外国无信号卡测试，在发射端(DK板或者另外一块手表上调用
 	{
         if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%XRFTEST=1,1,20,8470,23,0,3,12,0,0,0,0,0") == 0)
@@ -2943,16 +2957,9 @@ void SetModemAPN(void)
 
 static void modem_link_init(struct k_work *work)
 {
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactryTestActived()&&!IsFTNetTesting())
-		return;
-#endif
-
+	lte_lc_init();
 	SetModemTurnOn();
 	GetModemInfor();
-	SetModemTurnOff();
-
-	k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
 }
 
 static void modem_on(struct k_work *work)
@@ -2998,7 +3005,7 @@ static void nb_test(struct k_work *work)
 	FTNetStatusUpdate(0);
 #endif
 
-	err = lte_lc_init_and_connect();
+	err = lte_lc_connect();
 	__ASSERT(err == 0, "LTE link could not be established.");
 #ifdef NB_DEBUG
 	LOGD("LTE Link Connected!");
@@ -3045,7 +3052,7 @@ static void nb_link(struct k_work *work)
 		else
 			configure_low_power();
 
-		err = lte_lc_init_and_connect();
+		err = lte_lc_connect();
 		if(err)
 		{
 		#ifdef NB_DEBUG

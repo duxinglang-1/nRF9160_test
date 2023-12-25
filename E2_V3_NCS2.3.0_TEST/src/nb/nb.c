@@ -660,9 +660,6 @@ void mqtt_is_connecting(void)
 
 static void mqtt_unlink(void)
 {
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 		k_timer_stop(&mqtt_disconnect_timer);
 	if(k_timer_remaining_get(&mqtt_connect_timer) > 0)
@@ -847,17 +844,11 @@ static void MqttConnectCallBack(struct k_timer *timer_id)
 
 static void MqttDisConnectCallBack(struct k_timer *timer_id)
 {
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
 	mqtt_disconnect_flag = true;
 }
 
 static void MqttDicConnectStart(void)
 {
-#ifdef NB_DEBUG
-	LOGD("begin");
-#endif
 	k_timer_start(&mqtt_disconnect_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME), K_NO_WAIT);
 }
 

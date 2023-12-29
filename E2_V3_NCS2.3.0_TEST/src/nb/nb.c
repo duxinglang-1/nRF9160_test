@@ -762,7 +762,6 @@ static void mqtt_link(struct k_work_q *work_q)
 
 		if(mqtt_disconnect_req_flag)
 		{
-			LOGM("disconnect req");
 			break;
 		}
 	}

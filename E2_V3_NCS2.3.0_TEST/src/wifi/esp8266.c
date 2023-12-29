@@ -707,13 +707,13 @@ static void WifiSendDataProc(void)
 		wifi_send_data_handle(p_data, data_len);
 		delete_data_from_cache(&wifi_send_cache);
 
-		k_timer_start(&wifi_send_data_timer, K_MSEC(50), K_NO_WAIT);
+		k_timer_start(&wifi_send_data_timer, K_MSEC(100), K_NO_WAIT);
 	}
 }
 
 static void WifiSendDataStart(void)
 {
-	k_timer_start(&wifi_send_data_timer, K_MSEC(50), K_NO_WAIT);
+	k_timer_start(&wifi_send_data_timer, K_MSEC(100), K_NO_WAIT);
 }
 
 void WifiSendData(uint8_t *data, uint32_t datalen)
@@ -771,7 +771,7 @@ static void uart_cb(struct device *x)
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&wifi_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
+			k_timer_start(&wifi_rece_frame_timer, K_MSEC(20), K_NO_WAIT);
 		}
 	}
 	

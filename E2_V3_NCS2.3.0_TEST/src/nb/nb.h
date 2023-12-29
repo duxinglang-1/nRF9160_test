@@ -34,6 +34,7 @@
 
 #define CMD_SET_FUN_MODE 			"AT+CFUN=1"						//Set the modem to Normal mode
 #define CMD_SET_RAI		 			"AT%%XRAI=3"					//Set the modem rai parament
+#define CMD_SET_CSCON		 		"AT+CSCON=3"					//Signaling connection status notification
 
 #define IMEI_MAX_LEN	(15)
 #define IMSI_MAX_LEN	(15)

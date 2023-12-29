@@ -886,6 +886,7 @@ static void modem_rsrp_handler(char rsrp_value)
 void modem_data_init(void)
 {
 	int err;
+	uint8_t strbuf[128] = {0};
 
 	err = modem_info_init();
 	if(err)
@@ -898,6 +899,8 @@ void modem_data_init(void)
 
 	modem_info_params_init(&modem_param);
 	modem_info_rsrp_register(modem_rsrp_handler);
+
+	nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_SET_CSCON);
 }
 #endif /* CONFIG_MODEM_INFO */
 

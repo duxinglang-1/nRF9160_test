@@ -150,7 +150,7 @@ bool SendLogData(void)
 				}
 				else
 				{
-					if(j == (sizeof(tmpbuf) - 1))
+					if(j == (sizeof(tmpbuf)-1))
 					{
 						tmpbuf[j] = 0x00;
 						j=0;
@@ -162,6 +162,16 @@ bool SendLogData(void)
 						k_sleep(K_MSEC(10));
 					}
 				}
+			}
+			else
+			{
+				if((j > 0) && (j <= (sizeof(tmpbuf)-1)))
+				{
+					tmpbuf[j] = 0x00;
+					NBSendLogData(tmpbuf, strlen(tmpbuf));
+				}
+
+				return false;
 			}
 		}
 		addr += SPIFlash_SECTOR_SIZE;
@@ -206,7 +216,7 @@ void log_read_from_flash(void)
 				}
 				else
 				{
-					if(j == (sizeof(buf) - 1))
+					if(j == (sizeof(buf)-1))
 					{
 						buf[j] = 0x00;
 						j=0;
@@ -218,6 +228,16 @@ void log_read_from_flash(void)
 						k_sleep(K_MSEC(10));
 					}
 				}
+			}
+			else
+			{
+				if((j > 0) && (j <= (sizeof(buf)-1)))
+				{
+					buf[j] = 0x00;
+					LOG_INF("%s", buf);
+				}
+
+				return;
 			}
 		}
 

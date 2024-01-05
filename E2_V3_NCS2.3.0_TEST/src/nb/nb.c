@@ -148,6 +148,7 @@ bool get_modem_cclk_flag = false;
 bool test_nb_flag = false;
 bool nb_test_update_flag = false;
 bool g_nw_registered = false;
+bool g_nw_connected = false;
 
 uint8_t g_imsi[IMSI_MAX_LEN+1] = {0};
 uint8_t g_imei[IMEI_MAX_LEN+1] = {0};
@@ -216,62 +217,51 @@ static NB_APN_PARAMENT nb_apn_table[] =
 	},
 };
 
+static void NbSendData(void);
 static void NbSendDataStart(void);
 static void NbSendDataStop(void);
 static void MqttReceData(uint8_t *data, uint32_t datalen);
 static void MqttDicConnectStart(void);
 static void MqttDicConnectStop(void);
 
-//AT_MONITOR(at_cereg_info_mon, "CEREG", at_handler, PAUSED);
-//AT_MONITOR(ltelc_atmon_cereg_info, "+CEREG", at_handler_cereg, PAUSED);
-AT_MONITOR(ltelc_atmon_modem_info, "%XMODEMSLEEP", at_handler_modem_notify, PAUSED);
+AT_MONITOR(ltelc_atmon_cscon, "+CSCON", at_handler_cscon, ACTIVE);
 
-static void at_handler_modem_notify(const char *response)
+static void at_handler_cscon(const char *response)
 {
 	int err;
+	uint8_t *ptr;
+	uint8_t tmpbuf[128] = {0};
 	struct lte_lc_evt evt = {0};
 
 	__ASSERT_NO_MSG(response != NULL);
 
 #ifdef NB_DEBUG
-	LOGD("%%XMODEMSLEEP notification");
+	LOGD("%s", response);
 #endif
 
-	err = parse_xmodemsleep(response, &evt.modem_sleep);
+	ptr = strstr(response, "\r\n");
+	memcpy(tmpbuf, response, ptr-(uint8_t*)response);
+	LOGD("%s", tmpbuf);
+	
+	err = parse_rrc_mode(response, &evt.rrc_mode, 1);
 	if(err)
 	{
 	#ifdef NB_DEBUG
-		LOGD("Can't parse modem sleep pre-warning notification, error: %d", err);
+		LOGD("Can't parse signalling mode, error: %d", err);
 	#endif
 		return;
 	}
 
-	/* Link controller only supports PSM, RF inactivity and flight mode
-	 * modem sleep types.
-	 */
-	if((evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_PSM) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_RF_INACTIVITY) &&
-		(evt.modem_sleep.type != LTE_LC_MODEM_SLEEP_FLIGHT_MODE))
+	if(evt.rrc_mode == LTE_LC_RRC_MODE_IDLE)
 	{
-		return;
+		g_nw_connected = false;
+	}
+	else if(evt.rrc_mode == LTE_LC_RRC_MODE_CONNECTED)
+	{
+		g_nw_connected = true;
 	}
 
-	/* Propagate the appropriate event depending on the parsed time parameter. */
-	if(evt.modem_sleep.time == CONFIG_LTE_LC_MODEM_SLEEP_PRE_WARNING_TIME_MS)
-	{
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING;
-	}
-	else if(evt.modem_sleep.time == 0)
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_EXIT);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_EXIT;
-	}
-	else
-	{
-		LTE_LC_TRACE(LTE_LC_TRACE_MODEM_SLEEP_ENTER);
-		evt.type = LTE_LC_EVT_MODEM_SLEEP_ENTER;
-	}
-
+	evt.type = LTE_LC_EVT_RRC_UPDATE;
 	event_handler_list_dispatch(&evt);
 }
 
@@ -421,10 +411,6 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			power_on_data_flag = false;
 			SendPowerOnData();
 			SendSettingsData();
-		#ifdef TEST_DEBUG
-			k_timer_start(&send_log_timer, K_MSEC(5*1000), K_NO_WAIT);
-		#endif
-			
 		}
 		if(nb_connect_ok_flag)
 		{
@@ -485,8 +471,9 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#ifdef NB_DEBUG	
 		LOGD("PUBACK packet id: %u", evt->param.puback.message_id);
 	#endif
-		
+
 		k_timer_stop(&mqtt_act_wait_timer);
+		NbSendData();
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);
@@ -676,7 +663,8 @@ static void mqtt_unlink(void)
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err;
-
+	static bool init_flag = false;
+	
 #ifdef NB_DEBUG
 	LOGD("begin");
 #endif
@@ -691,8 +679,12 @@ static void mqtt_link(struct k_work_q *work_q)
 
 	mqtt_connecting_flag = true;
 	//k_timer_start(&mqtt_connect_timer, K_SECONDS(3*60), K_NO_WAIT);
-	
-	client_init(&client);
+
+	if(!init_flag)
+	{
+		client_init(&client);
+		init_flag = true;
+	}
 
 	err = mqtt_connect(&client);
 	if(err != 0)
@@ -816,16 +808,22 @@ static void NbSendData(void)
 		{
 			delete_data_from_cache(&nb_send_cache);
 			
-			if(data_type == DATA_LOG)
-				k_timer_start(&send_data_timer, K_MSEC(50), K_NO_WAIT);
-			else
-				k_timer_start(&send_data_timer, K_MSEC(200), K_NO_WAIT);
-			
 			if(k_timer_remaining_get(&mqtt_act_wait_timer) > 0)
 				k_timer_stop(&mqtt_act_wait_timer);
 			k_timer_start(&mqtt_act_wait_timer, K_SECONDS(MQTT_CONNECTED_KEEP_TIME-5), K_NO_WAIT);
 		}
 	}
+#ifdef TEST_DEBUG
+	else
+	{
+		if(SendLogData())
+		{
+			if(k_timer_remaining_get(&send_log_timer) > 0)
+				k_timer_stop(&send_log_timer);
+			k_timer_start(&send_log_timer, K_SECONDS(1), K_NO_WAIT);
+		}
+	}
+#endif
 }
 
 bool MqttIsConnected(void)
@@ -996,143 +994,29 @@ void NBRedrawNetMode(void)
 
 void NBRedrawSignal(void)
 {
-	uint8_t *ptr;
-	bool flag=false;
-	uint8_t strbuf[128] = {0};
-	uint8_t tmpbuf[128] = {0};
+	bool flag = false;
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	if(FactryTestActived())
 		return;
 #endif
 
-	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), CMD_GET_REG_STATUS) == 0)
+	if(g_nw_connected)
 	{
-		//+CEREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU>]]]]
-		//<n>
-		//	0 – Disable unsolicited result codes
-		//	1 – Enable unsolicited result codes +CEREG:<stat>
-		//	2 – Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>]
-		//	3 – Enable unsolicited result codes +CEREG:<stat>[,<tac>,<ci>,<AcT>[,<cause_type>,<reject_cause>]]
-		//	4 – Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active-Time>],[<Periodic-TAU>]]]]
-		//	5 – Enable unsolicited result codes +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_cause>][,[<ActiveTime>],[<Periodic-TAU>]]]]
-		//<stat>
-		//	0 – Not registered. UE is not currently searching for an operator to register to.
-		//	1 – Registered, home network.
-		//	2 – Not registered, but UE is currently trying to attach or searching an operator to register to.
-		//	3 – Registration denied.
-		//	4 – Unknown (e.g. out of E-UTRAN coverage).
-		//	5 – Registered, roaming.
-		//	8 – Attached for emergency bearer services only.
-		//	90 – Not registered due to UICC failure.
-		//<tac>
-		//	String. A 2-byte Tracking Area Code (TAC) in hexadecimal format.
-		//<ci>
-		//	String. A 4-byte E-UTRAN cell ID in hexadecimal format.
-		//<AcT>
-		//	7 – E-UTRAN
-		//	9 – E-UTRAN NB-S1
-		//<cause_type>
-		//	0 – <reject_cause> contains an EPS Mobility Management (EMM) cause value. See 3GPP TS 24.301 Annex A.
-		//<reject_cause>
-		//	EMM cause value. See 3GPP TS 24.301 Annex A
-		//<Active-Time>
-		//	String. One byte in an 8-bit format.
-		//	Indicates the Active Time value (T3324) allocated to the device in E-UTRAN. For the coding and value range, see the GPRS Timer 2 IE in 3GPP TS 24.008 Table 10.5.163/3GPP TS 24.008.
-		//<Periodic-TAU>
-		//	String. One byte in an 8-bit format.
-		//	Indicates the extended periodic TAU value (T3412) allocated to the device in EUTRAN. For the coding and value range, see the GPRS Timer 3 IE in 3GPP TS 24.008 Table 10.5.163a/3GPP TS 24.008.
-		uint8_t *ptr;
-		uint8_t reg_status;
-		
-	#ifdef NB_DEBUG
-		LOGD("%s", strbuf);
-	#endif
-
-		ptr = strstr(strbuf, "+CEREG: ");
-		if(ptr)
+		flag = true;
+	}
+	else
+	{
+		if(g_nw_registered) 			//registered
 		{
-			//指令头
-			ptr += strlen("+CEREG: ");
-			//reg_status
-			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
-			reg_status = atoi(tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("reg_status:%d", reg_status);
-		#endif
-			
-			if(reg_status == 1 || reg_status == 5)
-			{
-				g_nw_registered = true;
-			}
-			else
-			{
-				g_nw_registered = false;
-				nb_connected = false;
-
-			#ifndef NB_SIGNAL_TEST	
-				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
-					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
-			#endif	
-			}
+			flag = false;				//don't show no signal when ue is psm idle mode in registered, 
+		}
+		else							//not registered
+		{
+			flag = true;	
 		}
 	}
-
-	if(nrf_modem_at_cmd(strbuf, sizeof(strbuf), "AT+CSCON?") == 0)
-	{
-		//+CSCON: <n>,<mode>[,<state>[,<access]]
-		//<n>
-		//0 – Unsolicited indications disabled
-		//1 – Enabled: <mode>
-		//2 – Enabled: <mode>[,<state>]
-		//3 – Enabled: <mode>[,<state>[,<access>]]
-		//<mode>
-		//0 – Idle
-		//1 – Connected
-		//<state>
-		//7 – E-UTRAN connected
-		//<access>
-		//4 – Radio access of type E-UTRAN FDD
-	#ifdef NB_DEBUG
-		LOGD("%s", strbuf);
-	#endif
-		ptr = strstr(strbuf, "+CSCON: ");
-		if(ptr)
-		{
-			uint8_t mode;
-			uint16_t len;
-
-			len = strlen(strbuf);
-			strbuf[len-2] = ',';
-			strbuf[len-1] = 0x00;
-			
-			ptr += strlen("+CSCON: ");
-			GetStringInforBySepa(ptr,",",2,tmpbuf);
-			mode = atoi(tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("mode:%d", mode);
-		#endif
-			if(mode == 1)//connected
-			{
-				flag = true;	
-			}
-			else if(mode == 0)//idle
-			{
-			#ifdef NB_DEBUG
-				LOGD("reg stat:%d", g_nw_registered);
-			#endif
-				if(g_nw_registered) 			//registered
-				{
-					flag = false;				//don't show no signal when ue is psm idle mode in registered, 
-				}
-				else							//not registered
-				{
-					flag = true;	
-				}
-			}
-		}
-	}
-
+	
 	if(g_rsrp > 97)
 	{
 		if(flag)
@@ -2409,87 +2293,22 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 		{
 			uint8_t tau = 0;
 			uint8_t act = 0;
+			uint8_t tmp_rsrp = 0;
 			uint16_t flag;
 
 			g_nw_registered = true;
 
-		#if 0
-			//full name
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 2, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("full name:%s", tmpbuf);
-		#endif
-			//short name
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 3, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("short name:%s", tmpbuf);
-		#endif
-			//plmn
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 4, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("plmn:%s", tmpbuf);
-		#endif
-			//tac
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 5, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("tac:%s", tmpbuf);
-		#endif
-			//AcT
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 6, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("AcT:%s", tmpbuf);
-		#endif
-			//band
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 7, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("band:%s",  tmpbuf);
-		#endif
-			//cell_id
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 8, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("cell_id:%s", tmpbuf);
-		#endif
-			//phys_cell_id
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 9, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("phys_cell_id:%s", tmpbuf);
-		#endif
-			//EARFCN
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 10, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("EARFCN:%s", tmpbuf);
-		#endif
-		#endif	
 			//rsrp
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 11, tmpbuf);
 		#ifdef NB_DEBUG
 			LOGD("rsrp:%s", tmpbuf);
 		#endif
-			modem_rsrp_handler(atoi(tmpbuf));
-		#if 0	
-			//snr
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 12, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("snr:%s", tmpbuf);
-		#endif
-			//NW-provided_eDRX_value
-			memset(tmpbuf, 0, sizeof(tmpbuf));
-			GetStringInforBySepa(ptr, ",", 13, tmpbuf);
-		#ifdef NB_DEBUG
-			LOGD("NW-provided_eDRX_value:%s", tmpbuf);
-		#endif
-		#endif
+			tmp_rsrp = atoi(tmpbuf);
+			if(tmp_rsrp > 0)
+				modem_rsrp_handler(tmp_rsrp);
+
+		#if 0	//xb add 2024-01-02 屏蔽多余的数据解析
 			//Active-Time
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			GetStringInforBySepa(ptr, ",", 14, tmpbuf);
@@ -2584,9 +2403,18 @@ void DecodeModemMonitor(uint8_t *buf, uint32_t len)
 		#ifdef NB_DEBUG
 			LOGD("g_tau_time:%d", g_tau_time);
 		#endif
+		#endif
 		}
 		else
 		{
+			if(g_nw_registered)
+			{
+			#ifndef NB_SIGNAL_TEST	
+				if(k_timer_remaining_get(&nb_reconnect_timer) == 0)
+					k_timer_start(&nb_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
+			#endif	
+			}
+			
 			g_nw_registered = false;
 			nb_connected = false;
 			modem_rsrp_handler(255);
@@ -2784,6 +2612,9 @@ void SetModemTurnOff(void)
 {
 	uint8_t buf[128] = {0};
 
+	if(k_timer_remaining_get(&get_modem_status_timer) > 0)
+		k_timer_stop(&get_modem_status_timer);
+
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN?") == 0)
 	{
 		uint8_t *ptr,ret,tmpbuf[10] = {0};
@@ -2807,7 +2638,7 @@ void SetModemTurnOff(void)
 			}
 		}
 	}
-	
+
 	if(mqtt_connected)
 		mqtt_unlink();
 
@@ -3104,7 +2935,7 @@ static void nb_link(struct k_work *work)
 			NBRedrawNetMode();
 		}
 
-		GetModemStatus();
+		k_timer_start(&get_modem_status_timer, K_MSEC(100), K_SECONDS(60));
 
 	#ifndef NB_SIGNAL_TEST
 		if(!nb_connected)
@@ -3249,10 +3080,9 @@ void NBMsgProcess(void)
 	{
 		if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 			k_timer_stop(&mqtt_disconnect_timer);
-		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(10), K_NO_WAIT);
-		
-		if(SendLogData())
-			k_timer_start(&send_log_timer, K_SECONDS(10), K_NO_WAIT);
+		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(20), K_NO_WAIT);
+
+		//SendLogData();
 		
 		send_log_flag = false;
 	}
@@ -3315,8 +3145,8 @@ void NBMsgProcess(void)
 			)
 			return;
 
-		if(mqtt_connecting_flag)
-			mqtt_unlink();
+		//if(mqtt_connecting_flag)
+		//	mqtt_unlink();
 
 		if(!nb_connecting_flag)
 		{

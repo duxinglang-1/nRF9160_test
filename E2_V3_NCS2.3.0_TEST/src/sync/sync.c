@@ -108,7 +108,7 @@ void SyncDataStart(void)
 
 void SyncNetWorkCallBack(SYNC_STATUS status)
 {
-	if(sync_state != SYNC_STATUS_IDLE)
+	if((sync_state != SYNC_STATUS_IDLE) && (sync_state != status))
 	{
 		sync_state = status;
 
@@ -134,8 +134,10 @@ void SyncNetWorkCallBack(SYNC_STATUS status)
 			if(screen_id == SCREEN_ID_SYNC)
 			{
 				sync_redraw_flag = true;
-			}	
-			k_timer_start(&sync_timer, K_SECONDS(3), K_NO_WAIT);
+			}
+
+			if(k_timer_remaining_get(&sync_timer) == 0)
+				k_timer_start(&sync_timer, K_SECONDS(3), K_NO_WAIT);
 			break;
 		}
 	}

@@ -473,7 +473,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 	#endif
 
 		k_timer_stop(&mqtt_act_wait_timer);
-		NbSendData();
+		k_timer_start(&send_data_timer, K_MSEC(10), K_NO_WAIT);
 
 	#ifdef CONFIG_SYNC_SUPPORT
 		SyncNetWorkCallBack(SYNC_STATUS_SENT);

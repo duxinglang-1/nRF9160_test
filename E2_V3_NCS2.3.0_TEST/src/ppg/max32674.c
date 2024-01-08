@@ -29,7 +29,7 @@
 
 //#define PPG_DEBUG
 
-#define PPG_HR_COUNT_MAX		10
+#define PPG_HR_COUNT_MAX		15
 #define PPG_HR_DEL_MIN_NUM		5
 #define PPG_SPO2_COUNT_MAX		3
 #define PPG_SPO2_DEL_MIN_NUM	1

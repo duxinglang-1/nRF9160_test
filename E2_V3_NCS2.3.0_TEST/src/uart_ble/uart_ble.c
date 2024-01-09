@@ -2053,7 +2053,7 @@ static void uart_cb(struct device *x)
 		while((len = uart_fifo_read(x, &rx_buf[rece_len], BUF_MAXSIZE-rece_len)) > 0)
 		{
 			rece_len += len;
-			k_timer_start(&uart_rece_frame_timer, K_MSEC(10), K_NO_WAIT);
+			k_timer_start(&uart_rece_frame_timer, K_MSEC(20), K_NO_WAIT);
 		}
 	}
 	

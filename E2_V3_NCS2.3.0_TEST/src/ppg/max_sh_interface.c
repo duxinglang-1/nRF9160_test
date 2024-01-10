@@ -124,7 +124,7 @@ void PPG_Enable(void)
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	
-	k_sleep(K_MSEC(10));
+	k_sleep(K_MSEC(20));
 
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_RST_PIN, 1);
@@ -181,7 +181,7 @@ static void sh_init_gpio(void)
 #endif	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
-	k_sleep(K_MSEC(10));
+	k_sleep(K_MSEC(20));
 
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 1);

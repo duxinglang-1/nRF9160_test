@@ -1170,11 +1170,12 @@ void PPGGetSensorHubData(void)
 						else
 							ppg_skin_contacted_flag = false;
 
+						k_timer_stop(&ppg_skin_check_timer);
 						scc_check_sum = SCC_COMPARE_MAX;
 					#ifdef PPG_DEBUG
 						LOGD("scc check completed! scc_check_sum:%d,flag:%d", scc_check_sum,ppg_skin_contacted_flag);
 					#endif
-						if((g_ppg_trigger&TRIGGER_BY_SCC) != 0)
+						if(g_ppg_trigger == TRIGGER_BY_SCC)
 						{	
 							ppg_stop_flag = true;
 							return;
@@ -1398,7 +1399,7 @@ void FTStopPPG(void)
 
 void StartSCC(void)
 {
-	g_ppg_trigger = TRIGGER_BY_SCC;
+	g_ppg_trigger |= TRIGGER_BY_SCC;
 	g_ppg_data = PPG_DATA_HR;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
 
@@ -1776,6 +1777,7 @@ void PPGStopCheck(void)
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 	if((g_ppg_trigger&TRIGGER_BY_FT) != 0)
 	{
+		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_FT);
 		FTPPGStatusUpdate(0, 0);
 		return;
 	}
@@ -1852,7 +1854,8 @@ static void ppg_auto_stop_timerout(struct k_timer *timer_id)
 
 static void ppg_skin_check_timerout(struct k_timer *timer_id)
 {
-	ppg_stop_flag = true;
+	if(g_ppg_trigger == TRIGGER_BY_SCC)
+		ppg_stop_flag = true;
 }
 
 static void ppg_menu_stop_timerout(struct k_timer *timer_id)
@@ -2021,4 +2024,3 @@ void PPGMsgProcess(void)
 		ppg_appmode_init_flag = false;
 	}
 }
-

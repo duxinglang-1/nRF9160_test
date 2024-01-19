@@ -924,7 +924,7 @@ void SendMissingTempData(void)
 			memset(tmpbuf,0,sizeof(tmpbuf));
 			sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_temp->year, p_temp->month, p_temp->day, p_temp->hour, p_temp->min);
 			strcat(reply, tmpbuf);
-			sprintf(tmpbuf, "%d|", p_temp->deca_temp);
+			sprintf(tmpbuf, "%0.1f|", (float)p_temp->deca_temp/10.0);
 			strcat(reply, tmpbuf);
 			
 			p_temp++;

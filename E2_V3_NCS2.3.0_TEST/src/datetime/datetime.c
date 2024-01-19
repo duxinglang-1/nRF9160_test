@@ -556,34 +556,141 @@ void UpdateSystemTime(void)
 			//The sensor needs to be turned on in advance. 
 			//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
 			bool check_flag = false;
+		#ifdef CONFIG_TEMP_SUPPORT
+			uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY+TEMP_CHECK_TIMELY);
+		#elif defined(CONFIG_PPG_SUPPORT)	
+			uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY);
+		#endif/*CONFIG_PPG_SUPPORT*/
 			
 			switch(global_settings.health_interval)
 			{
+			case 15://XX:00/XX:15/XX:30/XX:45
+				switch(date_time.minute+offset_time)
+				{
+				case 15:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 15;
+					check_flag = true;
+					break;
+				case 30:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 30;
+					check_flag = true;
+					break;
+				case 45:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 45;
+					check_flag = true;
+					break;
+				case 60:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+					break;
+				}
+				switch(date_time.minute)
+				{
+				case 00:
+				case 15:
+				case 30:
+				case 45:
+					send_timing_data_flag = true;
+					break;
+				}
+				break;
+				
+			case 30://XX:00/XX:30
+				switch(date_time.minute+offset_time)
+				{
+				case 30:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 30;
+					check_flag = true;
+					break;
+				case 60:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+					break;
+				}
+				switch(date_time.minute)
+				{
+				case 00:
+				case 30:
+					send_timing_data_flag = true;
+					break;
+				}
+				break;
+				
 			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
-				check_flag = true;
+				if(date_time.minute+offset_time == 60)
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+				}
+				if(date_time.minute == 00)
+				{
+					send_timing_data_flag = true;
+				}
 				break;
+				
 			case 120://1/3/5/7/9/11/13/15/17/19/21/23
-				if(date_time.hour%2 == 0)
+				if((date_time.hour%2 == 0)&&(date_time.minute+offset_time == 60))
 				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
+				if((date_time.hour%2 == 0)&&(date_time.minute == 60))
+				{
+					send_timing_data_flag = true;
+				}
 				break;
+				
 			case 180://2/5/8/11/14/17/20/23
-				if(date_time.hour%3 == 1)
+				if((date_time.hour%3 == 1)&&(date_time.minute+offset_time == 60))
 				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
+				if((date_time.hour%3 == 1)&&(date_time.minute == 00))
+				{
+					send_timing_data_flag = true;
+				}
 				break;
+				
 			case 240://3/7/11/15/19/23
-				if(date_time.hour%4 == 2)
+				if((date_time.hour%4 == 2)&&(date_time.minute+offset_time == 60))
 				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				break;
-			case 360://5/11/17/23
-				if(date_time.hour%6 == 4)
+				if((date_time.hour%4 == 2)&&(date_time.minute == 00))
 				{
+					send_timing_data_flag = true;
+				}
+				break;
+				
+			case 360://5/11/17/23
+				if((date_time.hour%6 == 4)&&(date_time.minute+offset_time == 60))
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
 					check_flag = true;
+				}
+				if((date_time.hour%6 == 4)&&(date_time.minute == 00))
+				{
+					send_timing_data_flag = true;
 				}
 				break;
 			}
@@ -591,24 +698,9 @@ void UpdateSystemTime(void)
 			if(check_flag == true)
 			{
 			#ifdef CONFIG_TEMP_SUPPORT
-				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY+1+TEMP_CHECK_TIMELY))
-				{	
-					StartTemp(TEMP_TRIGGER_BY_HOURLY);
-				}
-			#endif
-			#ifdef CONFIG_PPG_SUPPORT
-				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY+1+PPG_CHECK_HR_TIMELY))
-				{
-					StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
-				}
-				if(date_time.minute == 59-(PPG_CHECK_SPO2_TIMELY+1+PPG_CHECK_BPT_TIMELY))
-				{
-					StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
-				}
-				if(date_time.minute == 59-PPG_CHECK_SPO2_TIMELY)
-				{
-					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
-				}
+				StartTemp(TEMP_TRIGGER_BY_HOURLY);
+			#elif defined(CONFIG_PPG_SUPPORT)	
+				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}
 
@@ -627,59 +719,6 @@ void UpdateSystemTime(void)
 		date_time_changed = date_time_changed&0xFB;
 
 	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
-		if(1
-  			#ifdef CONFIG_FOTA_DOWNLOAD
-				&& (!fota_is_running())
- 			#endif/*CONFIG_FOTA_DOWNLOAD*/
-			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
-				&& (!dl_is_running())
-			#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
-			#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			  	&& (!FactryTestActived())
-			#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
-			)
-		{
-			bool send_flag = false;
-
-			switch(global_settings.health_interval)
-			{
-			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
-				send_flag = true;
-				break;
-			case 120://1/3/5/7/9/11/13/15/17/19/21/23
-				if(date_time.hour%2 == 1)
-				{
-					send_flag = true;
-				}
-				break;
-			case 180://2/5/8/11/14/17/20/23
-				if(date_time.hour%3 == 2)
-				{
-					send_flag = true;
-				}
-				break;
-			case 240://3/7/11/15/19/23
-				if(date_time.hour%4 == 3)
-				{
-					send_flag = true;
-				}
-				break;
-			case 360://5/11/17/23
-				if(date_time.hour%6 == 5)
-				{
-					send_flag = true;
-				}
-				break;
-			}
-
-			if(send_flag 
-				|| (date_time.hour == 00) //xb add 2022-05-25 Before the date changes, the data of the current day is forced to be uploaded to prevent data loss.
-				)
-			{
-				send_timing_data_flag = true;
-			}
-		}
-
 	 #ifdef CONFIG_IMU_SUPPORT
 	  #ifdef CONFIG_STEP_SUPPORT
 		save_step_data_flag = true;

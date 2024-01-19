@@ -241,7 +241,6 @@ static void at_handler_cscon(const char *response)
 
 	ptr = strstr(response, "\r\n");
 	memcpy(tmpbuf, response, ptr-(uint8_t*)response);
-	LOGD("%s", tmpbuf);
 	
 	err = parse_rrc_mode(response, &evt.rrc_mode, 1);
 	if(err)
@@ -1435,6 +1434,82 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
+void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T21:");
+	strcat(buf, data);
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T22:");
+	strcat(buf, data);
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T23:");
+	strcat(buf, data);
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T24:");
+	strcat(buf, data);
+	GetBatterySocString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, ",");
+	memset(tmpbuf, 0, sizeof(tmpbuf));
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
 void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[1024] = {0};
@@ -1448,6 +1523,54 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 #ifdef NB_DEBUG
 	LOGD("health data:%s", buf);
 #endif
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendMissHrData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T30:");
+	strcat(buf, data);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T31:");
+	strcat(buf, data);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendMissBptData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T32:");
+	strcat(buf, data);
+	strcat(buf, "}");
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
+void NBSendMissTempData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[2048] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T33:");
+	strcat(buf, data);
+	strcat(buf, "}");
 	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 

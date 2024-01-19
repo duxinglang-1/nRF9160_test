@@ -33,6 +33,8 @@
 #include "communicate.h"
 #include "logger.h"
 
+static uint8_t reply[2048] = {0};
+
 extern uint16_t g_last_steps;
 
 #ifdef CONFIG_WIFI_SUPPORT
@@ -48,9 +50,10 @@ extern uint16_t g_last_steps;
  *****************************************************************************/
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
-	uint8_t reply[256] = {0};
 	uint32_t i,count=3;
 
+	memset(&reply, 0x00, sizeof(reply));
+	
 	if(wifi_data.count > 0)
 		count = wifi_data.count;
 		
@@ -82,7 +85,6 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
  *****************************************************************************/
 void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_data)
 {
-	uint8_t reply[128] = {0};
 	uint8_t tmpbuf[8] = {0};
 	uint32_t tmp1;
 	double tmp2;
@@ -95,6 +97,8 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 	#endif
 		return;
 	}
+
+	memset(&reply, 0x00, sizeof(reply));
 	
 	strcpy(reply, "4,");
 	
@@ -168,10 +172,11 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 void TimeCheckSendSportData(void)
 {
 	uint8_t i,tmpbuf[20] = {0};
-	uint8_t reply[1024] = {0};
 	uint16_t step_data[24] = {0};
 	sleep_data sleep[24] = {0};
 
+	memset(&reply, 0x00, sizeof(reply));
+	
 	//wrist
 	if(ppg_skin_contacted_flag)
 		strcpy(reply, "1,");
@@ -230,6 +235,210 @@ void TimeCheckSendSportData(void)
 
 /*****************************************************************************
  * FUNCTION
+ *  TimeCheckSendHrData
+ * DESCRIPTION
+ *  定时检测并上传健康数据心率包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+uint8_t hr_data[sizeof(ppg_hr_rec2_data)] = {0};
+void TimeCheckSendHrData(void)
+{
+	uint16_t i,len;
+	uint8_t tmpbuf[32] = {0};
+	hr_rec2_nod *p_hr;
+
+	memset(&reply, 0x00, sizeof(reply));
+	memset(&hr_data, 0x00, sizeof(hr_data));
+	GetCurDayHrRecData(&hr_data);
+	p_hr = (hr_rec2_nod*)hr_data;
+
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if((p_hr->year == 0xffff || p_hr->year == 0x0000)
+			||(p_hr->month == 0xff || p_hr->month == 0x00)
+			||(p_hr->day == 0xff || p_hr->day == 0x00)
+			||(p_hr->hour == 0xff || p_hr->min == 0xff)
+			)
+		{
+			break;
+		}
+		
+		sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_hr->year, p_hr->month, p_hr->day, p_hr->hour, p_hr->min);
+		strcat(reply, tmpbuf);
+		sprintf(tmpbuf, "%d|", p_hr->hr);
+		strcat(reply, tmpbuf);
+
+		p_hr++;
+	}
+
+	len = strlen(reply);
+	if(len > 0)
+		reply[len-1] = ',';
+	else
+		reply[len] = ',';
+	NBSendTimelyHrData(reply, strlen(reply));
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  TimeCheckSendSpo2Data
+ * DESCRIPTION
+ *  定时检测并上传健康数据血氧包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+uint8_t spo2_data[sizeof(ppg_spo2_rec2_data)] = {0};
+void TimeCheckSendSpo2Data(void)
+{
+	uint16_t i,len;
+	uint8_t tmpbuf[32] = {0};
+	spo2_rec2_nod *p_spo2;
+
+	memset(&reply, 0x00, sizeof(reply));
+	memset(&spo2_data, 0x00, sizeof(spo2_data));
+	GetCurDaySpo2RecData(&spo2_data);
+	p_spo2 = (spo2_rec2_nod*)spo2_data;
+
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
+			||(p_spo2->month == 0xff || p_spo2->month == 0x00)
+			||(p_spo2->day == 0xff || p_spo2->day == 0x00)
+			||(p_spo2->hour == 0xff || p_spo2->min == 0xff)
+			)
+		{
+			break;
+		}
+		
+		sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_spo2->year, p_spo2->month, p_spo2->day, p_spo2->hour, p_spo2->min);
+		strcat(reply, tmpbuf);
+		sprintf(tmpbuf, "%d|", p_spo2->spo2);
+		strcat(reply, tmpbuf);
+
+		p_spo2++;
+	}
+
+	len = strlen(reply);
+	if(len > 0)
+		reply[len-1] = ',';
+	else
+		reply[len] = ',';
+	NBSendTimelySpo2Data(reply, strlen(reply));
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  TimeCheckSendBptData
+ * DESCRIPTION
+ *  定时检测并上传健康数据血压包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+uint8_t bp_data[sizeof(ppg_bpt_rec2_data)] = {0};
+void TimeCheckSendBptData(void)
+{
+	uint16_t i,len;
+	uint8_t tmpbuf[32] = {0};
+	bpt_rec2_nod *p_bpt;
+
+	memset(&reply, 0x00, sizeof(reply));
+	memset(&bp_data, 0x00, sizeof(bp_data));
+	GetCurDayBptRecData(&bp_data);
+	p_bpt = (bpt_rec2_nod*)bp_data;
+
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
+			||(p_bpt->month == 0xff || p_bpt->month == 0x00)
+			||(p_bpt->day == 0xff || p_bpt->day == 0x00)
+			||(p_bpt->hour == 0xff || p_bpt->min == 0xff)
+			)
+		{
+			break;
+		}
+		
+		sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_bpt->year, p_bpt->month, p_bpt->day, p_bpt->hour, p_bpt->min);
+		strcat(reply, tmpbuf);
+		sprintf(tmpbuf, "%d&%d|", p_bpt->bpt.systolic, p_bpt->bpt.diastolic);
+		strcat(reply, tmpbuf);
+
+		p_bpt++;
+	}
+
+	len = strlen(reply);
+	if(len > 0)
+		reply[len-1] = ',';
+	else
+		reply[len] = ',';
+	NBSendTimelyBptData(reply, strlen(reply));
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  TimeCheckSendTempData
+ * DESCRIPTION
+ *  定时检测并上传健康数据体温包
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+uint8_t temp_data[sizeof(temp_rec2_data)] = {0};
+void TimeCheckSendTempData(void)
+{
+	uint16_t i,len;
+	uint8_t tmpbuf[32] = {0};
+	temp_rec2_nod *p_temp;
+
+	memset(&reply, 0x00, sizeof(reply));
+	memset(&temp_data, 0x00, sizeof(temp_data));
+	GetCurDayTempRecData(&temp_data);
+	p_temp = (temp_rec2_nod*)temp_data;
+	
+	for(i=0;i<TEMP_REC2_MAX_DAILY;i++)
+	{
+		memset(tmpbuf,0,sizeof(tmpbuf));
+
+		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+			||(p_temp->month == 0xff || p_temp->month == 0x00)
+			||(p_temp->day == 0xff || p_temp->day == 0x00)
+			||(p_temp->hour == 0xff || p_temp->min == 0xff)
+			)
+		{
+			break;
+		}
+		
+		sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_temp->year, p_temp->month, p_temp->day, p_temp->hour, p_temp->min);
+		strcat(reply, tmpbuf);
+		sprintf(tmpbuf, "%0.1f|", (float)p_temp->deca_temp/10.0);
+		strcat(reply, tmpbuf);
+
+		p_temp++;
+	}
+
+	len = strlen(reply);
+	if(len > 0)
+		reply[len-1] = ',';
+	else
+		reply[len] = ',';
+	NBSendTimelyTempData(reply, strlen(reply));
+}
+
+/*****************************************************************************
+ * FUNCTION
  *  TimeCheckSendHealthData
  * DESCRIPTION
  *  定时检测并上传健康数据包
@@ -237,11 +446,16 @@ void TimeCheckSendSportData(void)
  *	Nothing
  * RETURNS
  *  Nothing
- *****************************************************************************/
+ *****************************************************************************/ 
 void TimeCheckSendHealthData(void)
 {
+#if 1	//xb add 2024-01-17 修改定时健康数据分开上传
+	TimeCheckSendHrData();
+	TimeCheckSendSpo2Data();
+	TimeCheckSendBptData();
+	TimeCheckSendTempData();
+#else
 	uint8_t i,tmpbuf[20] = {0};
-	uint8_t reply[1024] = {0};
 	uint8_t hr_data[24] = {0};
 	uint8_t spo2_data[24] = {0};
 #ifdef CONFIG_PPG_SUPPORT	
@@ -249,6 +463,8 @@ void TimeCheckSendHealthData(void)
 #endif
 	uint16_t temp_data[24] = {0};
 
+	memset(&reply, 0x00, sizeof(reply));
+	
 	//wrist
 	if(ppg_skin_contacted_flag)
 		strcpy(reply, "1,");
@@ -333,6 +549,7 @@ void TimeCheckSendHealthData(void)
 	}
 
 	NBSendTimelyHealthData(reply, strlen(reply));
+#endif
 }
 
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -362,7 +579,6 @@ void SendMissingSportData(void)
 	for(i=0;i<7;i++)
 	{
 		bool flag = false;
-		uint8_t reply[1024] = {0};
 		uint16_t step_data[24] = {0};
 		uint8_t step_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		sleep_data sleep[24] = {0};
@@ -370,6 +586,8 @@ void SendMissingSportData(void)
 		step_rec2_data step_rec2 = {0};
 		sleep_rec2_data	sleep_rec2 = {0};
 
+		memset(&reply, 0x00, sizeof(reply));
+		
 	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 	  #if defined(CONFIG_STEP_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 	  	//step
@@ -454,6 +672,276 @@ void SendMissingSportData(void)
 #endif
 
 #if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+static uint8_t databuf[PPG_REC2_MAX_DAILY*sizeof(bpt_rec2_nod)] = {0};
+/*****************************************************************************
+ * FUNCTION
+ *  SendMissingHrData
+ * DESCRIPTION
+ *  补发漏传的健康数据心率包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendMissingHrData(void)
+{
+	uint16_t i,j,len;
+	uint8_t tmpbuf[32] = {0};
+	hr_rec2_nod *p_hr;
+	sys_date_timer_t temp_date = {0};
+
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	DateDecrease(&temp_date, 6);
+	
+	for(i=0;i<7;i++)
+	{
+		bool flag = false;
+		uint8_t hr_time[15] = {0x30};
+
+		memset(&reply, 0x00, sizeof(reply));
+		memset(&databuf, 0x00, sizeof(databuf));
+		GetGivenDayHrRecData(temp_date, &databuf);
+		p_hr = (hr_rec2_nod*)databuf;
+		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
+		{
+		  	if((p_hr->year == 0xffff || p_hr->year == 0x0000)
+				||(p_hr->month == 0xff || p_hr->month == 0x00)
+				||(p_hr->day == 0xff || p_hr->day == 0x00)
+				||(p_hr->hour == 0xff || p_hr->min == 0xff)
+				)
+			{
+				break;
+			}
+
+			if(!flag)
+			{
+				flag = true;
+				sprintf(hr_time, "%04d%02d%02d230000", p_hr->year, p_hr->month, p_hr->day);
+			}
+
+			memset(tmpbuf,0,sizeof(tmpbuf));
+			sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_hr->year, p_hr->month, p_hr->day, p_hr->hour, p_hr->min);
+			strcat(reply, tmpbuf);
+			sprintf(tmpbuf, "%d|", p_hr->hr);
+			strcat(reply, tmpbuf);
+			
+			p_hr++;
+		}
+
+		len = strlen(reply);
+		if(len > 0)
+		{
+			reply[len-1] = ',';
+			strcat(reply, hr_time);
+			NBSendMissHrData(reply, strlen(reply));
+		}
+
+		DateIncrease(&temp_date, 1);
+	}
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendMissingSpo2Data
+ * DESCRIPTION
+ *  补发漏传的健康数据血氧包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendMissingSpo2Data(void)
+{
+	uint16_t i,j,len;
+	uint8_t tmpbuf[32] = {0};
+	spo2_rec2_nod *p_spo2;
+	sys_date_timer_t temp_date = {0};
+
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	DateDecrease(&temp_date, 6);
+	
+	for(i=0;i<7;i++)
+	{
+		bool flag = false;
+		uint8_t spo2_time[15] = {0x30};
+
+		memset(&reply, 0x00, sizeof(reply));
+		memset(&databuf, 0x00, sizeof(databuf));
+		GetGivenDaySpo2RecData(temp_date, &databuf);
+		p_spo2 = (spo2_rec2_nod*)databuf;
+		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
+		{
+			if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
+				||(p_spo2->month == 0xff || p_spo2->month == 0x00)
+				||(p_spo2->day == 0xff || p_spo2->day == 0x00)
+				||(p_spo2->hour == 0xff || p_spo2->min == 0xff)
+				)
+			{
+				break;
+			}
+
+			if(!flag)
+			{
+				flag = true;
+				sprintf(spo2_time, "%04d%02d%02d230000", p_spo2->year, p_spo2->month, p_spo2->day);
+			}
+
+			memset(tmpbuf,0,sizeof(tmpbuf));
+			sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_spo2->year, p_spo2->month, p_spo2->day, p_spo2->hour, p_spo2->min);
+			strcat(reply, tmpbuf);
+			sprintf(tmpbuf, "%d|", p_spo2->spo2);
+			strcat(reply, tmpbuf);
+			
+			p_spo2++;
+		}
+
+		len = strlen(reply);
+		if(len > 0)
+		{
+			reply[len-1] = ',';
+			strcat(reply, spo2_time);
+			NBSendMissSpo2Data(reply, strlen(reply));
+		}
+
+		DateIncrease(&temp_date, 1);
+	}
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendMissingBptData
+ * DESCRIPTION
+ *  补发漏传的健康数据血压包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendMissingBptData(void)
+{
+	uint16_t i,j,len;
+	uint8_t tmpbuf[32] = {0};
+	bpt_rec2_nod *p_bpt;
+	sys_date_timer_t temp_date = {0};
+
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	DateDecrease(&temp_date, 6);
+
+	for(i=0;i<7;i++)
+	{
+		bool flag = false;
+		uint8_t bpt_time[15] = {0x30};
+
+		memset(&reply, 0x00, sizeof(reply));
+		memset(&databuf, 0x00, sizeof(databuf));
+		GetGivenDayBptRecData(temp_date, &databuf);
+		p_bpt = (bpt_rec2_nod*)databuf;
+		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
+		{
+			if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
+				||(p_bpt->month == 0xff || p_bpt->month == 0x00)
+				||(p_bpt->day == 0xff || p_bpt->day == 0x00)
+				||(p_bpt->hour == 0xff || p_bpt->min == 0xff)
+				)
+			{
+				break;
+			}
+
+			if(!flag)
+			{
+				flag = true;
+				sprintf(bpt_time, "%04d%02d%02d230000", p_bpt->year, p_bpt->month, p_bpt->day);
+			}
+
+			memset(tmpbuf,0,sizeof(tmpbuf));
+			sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_bpt->year, p_bpt->month, p_bpt->day, p_bpt->hour, p_bpt->min);
+			strcat(reply, tmpbuf);
+			sprintf(tmpbuf, "%d&%d|", p_bpt->bpt.systolic, p_bpt->bpt.diastolic);
+			strcat(reply, tmpbuf);
+			
+			p_bpt++;
+		}
+
+		len = strlen(reply);
+		if(len > 0)
+		{
+			reply[len-1] = ',';
+			strcat(reply, bpt_time);
+			NBSendMissBptData(reply, strlen(reply));
+		}
+
+		DateIncrease(&temp_date, 1);
+	}
+}
+
+
+/*****************************************************************************
+ * FUNCTION
+ *  SendMissingTempData
+ * DESCRIPTION
+ *  补发漏传的健康数据体温包(不补发当天的数据，防止固定的23点的时间戳造成当天数据混乱)
+ * PARAMETERS
+ *	Nothing
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendMissingTempData(void)
+{
+	uint16_t i,j,len;
+	uint8_t tmpbuf[32] = {0};
+	temp_rec2_nod *p_temp;
+	sys_date_timer_t temp_date = {0};
+
+	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
+	DateDecrease(&temp_date, 6);	
+
+	for(i=0;i<7;i++)
+	{
+		bool flag = false;
+		uint8_t temp_time[15] = {0x30};
+
+		memset(&reply, 0x00, sizeof(reply));
+		memset(&databuf, 0x00, sizeof(databuf));
+		GetGivenDayTempRecData(temp_date, &databuf);
+		p_temp = (temp_rec2_nod*)databuf;
+		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
+		{
+			if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+				||(p_temp->month == 0xff || p_temp->month == 0x00)
+				||(p_temp->day == 0xff || p_temp->day == 0x00)
+				||(p_temp->hour == 0xff || p_temp->min == 0xff)
+				)
+			{
+				break;
+			}
+
+			if(!flag)
+			{
+				flag = true;
+				sprintf(temp_time, "%04d%02d%02d230000", p_temp->year, p_temp->month, p_temp->day);
+			}
+
+			memset(tmpbuf,0,sizeof(tmpbuf));
+			sprintf(tmpbuf, "%04d%02d%02d%02d%02d;", p_temp->year, p_temp->month, p_temp->day, p_temp->hour, p_temp->min);
+			strcat(reply, tmpbuf);
+			sprintf(tmpbuf, "%d|", p_temp->deca_temp);
+			strcat(reply, tmpbuf);
+			
+			p_temp++;
+		}
+
+		len = strlen(reply);
+		if(len > 0)
+		{
+			reply[len-1] = ',';
+			strcat(reply, temp_time);
+			NBSendMissTempData(reply, strlen(reply));
+		}
+
+		DateIncrease(&temp_date, 1);
+	}
+}
+
 /*****************************************************************************
  * FUNCTION
  *  SendMissingHealthData
@@ -466,6 +954,12 @@ void SendMissingSportData(void)
  *****************************************************************************/
 void SendMissingHealthData(void)
 {
+#if 1	//xb add 2024-01-17 修改补传数据单独上传
+	SendMissingHrData();
+	SendMissingSpo2Data();
+	SendMissingBptData();
+	SendMissingTempData();
+#else
 	uint8_t i,j,tmpbuf[20] = {0};
 	uint8_t hrbuf[PPG_HR_REC2_DATA_SIZE] = {0};
 	uint8_t spo2buf[PPG_SPO2_REC2_DATA_SIZE] = {0};
@@ -484,12 +978,11 @@ void SendMissingHealthData(void)
 	for(i=0;i<7;i++)
 	{
 		bool flag = false;
-		uint8_t reply[1024] = {0};
 		uint8_t hr_data[24] = {0};
 		uint8_t hr_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		uint8_t spo2_data[24] = {0};
 		uint8_t spo2_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
-	#ifdef CONFIG_PPG_SUPPORT	
+	#ifdef CONFIG_PPG_SUPPORT
 		bpt_data bp_data[24] = {0};
 	#endif
 		uint8_t bp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
@@ -499,11 +992,12 @@ void SendMissingHealthData(void)
 		ppg_hr_rec2_data hr_rec2 = {0};
 		ppg_spo2_rec2_data spo2_rec2 = {0};
 		ppg_bpt_rec2_data bpt_rec2 = {0};
-	#endif	
-	#ifdef CONFIG_TEMP_SUPPORT	
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
 		temp_rec2_data temp_rec2 = {0};
 	#endif
-	
+
+		memset(&reply, 0x00, sizeof(reply));
 	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
 	  #ifdef CONFIG_PPG_SUPPORT
 		//hr
@@ -640,6 +1134,7 @@ void SendMissingHealthData(void)
 		
 		NBSendMissHealthData(reply, strlen(reply));
 	}
+#endif	
 }
 #endif
 
@@ -730,7 +1225,6 @@ void SyncSendHealthData(void)
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;
 	uint8_t tmpbuf[20] = {0};
-	uint8_t reply[1024] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
   #ifdef CONFIG_STEP_SUPPORT
@@ -740,6 +1234,8 @@ void SyncSendHealthData(void)
 	GetSleepTimeData(&deep_sleep, &light_sleep);
   #endif
 #endif
+
+	memset(&reply, 0x00, sizeof(reply));
 
 	//steps
 	sprintf(tmpbuf, "%d,", steps);
@@ -851,8 +1347,9 @@ void SyncSendLocalData(void)
 void SendPowerOnData(void)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t reply[256] = {0};
 
+	memset(&reply, 0x00, sizeof(reply));
+	
 	//imsi
 	strcpy(reply, g_imsi);
 	strcat(reply, ",");
@@ -923,8 +1420,9 @@ void SendPowerOnData(void)
 void SendPowerOffData(uint8_t pwroff_mode)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t reply[128] = {0};
 
+	memset(&reply, 0x00, sizeof(reply));
+	
 	//pwr off mode
 	sprintf(reply, "%d,", pwroff_mode);
 	
@@ -952,8 +1450,9 @@ void SendPowerOffData(uint8_t pwroff_mode)
 void SendSettingsData(void)
 {
 	uint8_t tmpbuf[10] = {0};
-	uint8_t reply[128] = {0};
 
+	memset(&reply, 0x00, sizeof(reply));
+	
 	//temp uint
 	sprintf(reply, "%d,", global_settings.temp_unit);
 	
@@ -1004,9 +1503,9 @@ void SendSettingsData(void)
  *****************************************************************************/
 void SendSosAlarmData(void)
 {
-	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
+	memset(&reply, 0x00, sizeof(reply));
 	strcpy(reply, "1");
 	NBSendAlarmData(reply, strlen(reply));
 }
@@ -1023,9 +1522,9 @@ void SendSosAlarmData(void)
  *****************************************************************************/
 void SendFallAlarmData(void)
 {
-	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
+	memset(&reply, 0x00, sizeof(reply));
 	strcpy(reply, "2");
 	NBSendAlarmData(reply, strlen(reply));
 }

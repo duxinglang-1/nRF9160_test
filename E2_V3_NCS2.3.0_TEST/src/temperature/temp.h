@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <stdio.h>
+#include "datetime.h"
 
 //sensor mode
 #define TEMP_GXTS04
@@ -33,6 +34,10 @@
 
 #define TEMP_MAX			420
 #define TEMP_MIN			340
+
+#define TEMP_REC2_MAX_HOURLY	(4)
+#define TEMP_REC2_MAX_DAILY		(TEMP_REC2_MAX_HOURLY*24)
+#define TEMP_REC2_MAX_COUNT		(TEMP_REC2_MAX_DAILY*7)
 
 //#define TEMP_DEBUG
 
@@ -67,13 +72,20 @@ typedef struct
 	uint16_t deca_temp;	//实际温度放大10倍(36.5*10)
 }temp_rec1_data;
 
-//整点测量
+//定时测量
 typedef struct
 {
 	uint16_t year;
 	uint8_t month;
 	uint8_t day;
-	uint16_t deca_temp[24];	//实际温度放大10倍(36.5*10)
+	uint8_t hour;
+	uint8_t min;
+	uint16_t deca_temp;	//实际温度放大10倍(36.5*10)
+}temp_rec2_nod;
+
+typedef struct
+{
+	temp_rec2_nod data[TEMP_REC2_MAX_DAILY];
 }temp_rec2_data;
 
 extern bool get_temp_ok_flag;
@@ -83,9 +95,11 @@ extern float g_temp_body;
 extern float g_temp_menu;
 
 extern TEMP_WORK_STATUS g_temp_status;
-
-extern void SetCurDayTempRecData(float data);
-extern void GetCurDayTempRecData(uint16_t *databuf);
+#ifndef CONFIG_PPG_SUPPORT
+extern sys_date_timer_t g_health_check_time;
+#endif
+extern void SetCurDayTempRecData(sys_date_timer_t time_stamp, float data);
+extern void GetCurDayTempRecData(uint8_t *databuf);
 extern void StartTemp(TEMP_TRIGGER_SOUCE trigger_type);
 #endif/*__TEMP_H__*/
 

@@ -13,7 +13,6 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include "external_flash.h"
-#include "datetime.h"
 #include "lcd.h"
 #include "screen.h"
 #include "uart_ble.h"
@@ -41,8 +40,14 @@ static bool temp_power_flag = false;
 static bool menu_start_temp = false;
 static bool ft_start_temp = false;
 
+static uint8_t rec2buf[TEMP_REC2_DATA_SIZE] = {0};
+static uint8_t databuf[TEMP_REC2_DATA_SIZE] = {0};
+
 bool get_temp_ok_flag = false;
 
+#ifndef CONFIG_PPG_SUPPORT
+sys_date_timer_t g_health_check_time = {0};
+#endif
 TEMP_WORK_STATUS g_temp_status = TEMP_STATUS_PREPARE;
 
 uint8_t g_temp_trigger = 0;
@@ -81,92 +86,95 @@ static void temp_get_timerout(struct k_timer *timer_id)
 
 void ClearAllTempRecData(void)
 {
-	uint8_t tmpbuf[TEMP_REC2_DATA_SIZE] = {0xff};
-
 	g_temp_skin = 0.0;
 	g_temp_body = 0.0;
 	g_temp_menu = 0.0;
+	memset(&rec2buf, 0xff, sizeof(rec2buf));
 
-	SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	SpiFlash_Write(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 }
 
-void SetCurDayTempRecData(float data)
+void SetCurDayTempRecData(sys_date_timer_t time_stamp, float data)
 {
-	uint8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
-	uint16_t deca_temp = data*10;
-	temp_rec2_data *p_temp,tmp_temp = {0};
-	sys_date_timer_t temp_date = {0};
+	uint16_t i,deca_temp = data*10;
+	temp_rec2_nod *p_temp,tmp_temp = {0};
 
-	//It is saved before the hour, but recorded as the hour data, so hour needs to be increased by 1
-	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
-	TimeIncrease(&temp_date, 60);
+	tmp_temp.year = time_stamp.year;
+	tmp_temp.month = time_stamp.month;
+	tmp_temp.day = time_stamp.day;
+	tmp_temp.hour = time_stamp.hour;
+	tmp_temp.min = time_stamp.minute;
+	tmp_temp.deca_temp = deca_temp;
+
+	memset(&databuf, 0x00, sizeof(databuf));
+	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	
-	tmp_temp.year = temp_date.year;
-	tmp_temp.month = temp_date.month;
-	tmp_temp.day = temp_date.day;
-	tmp_temp.deca_temp[temp_date.hour] = deca_temp;
-	
-	
-	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	p_temp = tmpbuf;
+	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)&rec2buf;
 	if((p_temp->year == 0xffff || p_temp->year == 0x0000)
 		||(p_temp->month == 0xff || p_temp->month == 0x00)
 		||(p_temp->day == 0xff || p_temp->day == 0x00)
-		||((p_temp->year == temp_date.year)&&(p_temp->month == temp_date.month)&&(p_temp->day == temp_date.day))
+		||(p_temp->hour == 0xff || p_temp->min == 0xff)
+		||((p_temp->year == tmp_temp.year)
+			&&(p_temp->month == tmp_temp.month)
+			&&(p_temp->day == tmp_temp.day)
+			&&(p_temp->hour == tmp_temp.hour)
+			&&(p_temp->min == tmp_temp.min))
 		)
 	{
 		//直接覆盖写在第一条
-		p_temp->year = temp_date.year;
-		p_temp->month = temp_date.month;
-		p_temp->day = temp_date.day;
-		p_temp->deca_temp[temp_date.hour] = deca_temp;
-		SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+		memcpy(p_temp, &tmp_temp, sizeof(temp_rec2_nod));
+		SpiFlash_Write(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	}
-	else if((temp_date.year < p_temp->year)
-			||((temp_date.year == p_temp->year)&&(temp_date.month < p_temp->month))
-			||((temp_date.year == p_temp->year)&&(temp_date.month == p_temp->month)&&(temp_date.day < p_temp->day))
+	else if((tmp_temp.year < p_temp->year)
+			||((tmp_temp.year == p_temp->year)&&(tmp_temp.month < p_temp->month))
+			||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day < p_temp->day))
+			||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day == p_temp->day)&&(tmp_temp.hour < p_temp->hour))
+			||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day == p_temp->day)&&(tmp_temp.hour == p_temp->hour)&&(tmp_temp.min < p_temp->min))
 			)
 	{
-		uint8_t databuf[TEMP_REC2_DATA_SIZE] = {0};
-		
-		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
-		memcpy(&databuf[0*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
-		memcpy(&databuf[1*sizeof(temp_rec2_data)], &tmpbuf[0*sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
+		//插入新的数据,旧的数据往后挪，丢掉最后一个
+		memcpy(&databuf[0*sizeof(temp_rec2_nod)], &tmp_temp, sizeof(temp_rec2_nod));
+		memcpy(&databuf[1*sizeof(temp_rec2_nod)], &rec2buf[0*sizeof(temp_rec2_nod)], TEMP_REC2_DATA_SIZE-sizeof(temp_rec2_nod));
 		SpiFlash_Write(databuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	}
 	else
 	{
-		uint8_t databuf[TEMP_REC2_DATA_SIZE] = {0};
-		
 		//寻找合适的插入位置
-		for(i=0;i<7;i++)
+		for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 		{
-			p_temp = tmpbuf+i*sizeof(temp_rec2_data);
+			p_temp = rec2buf+i*sizeof(temp_rec2_nod);
 			if((p_temp->year == 0xffff || p_temp->year == 0x0000)
 				||(p_temp->month == 0xff || p_temp->month == 0x00)
 				||(p_temp->day == 0xff || p_temp->day == 0x00)
-				||((p_temp->year == temp_date.year)&&(p_temp->month == temp_date.month)&&(p_temp->day == temp_date.day))
+				||(p_temp->hour == 0xff || p_temp->min == 0xff)
+				||((p_temp->year == tmp_temp.year)
+					&&(p_temp->month == tmp_temp.month)
+					&&(p_temp->day == tmp_temp.day)
+					&&(p_temp->hour == tmp_temp.hour)
+					&&(p_temp->min == tmp_temp.min))
 				)
 			{
 				//直接覆盖写
-				p_temp->year = temp_date.year;
-				p_temp->month = temp_date.month;
-				p_temp->day = temp_date.day;
-				p_temp->deca_temp[temp_date.hour] = deca_temp;
-				SpiFlash_Write(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+				memcpy(p_temp, &tmp_temp, sizeof(temp_rec2_nod));
+				SpiFlash_Write(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 				return;
 			}
-			else if((temp_date.year > p_temp->year)
-				||((temp_date.year == p_temp->year)&&(temp_date.month > p_temp->month))
-				||((temp_date.year == p_temp->year)&&(temp_date.month == p_temp->month)&&(temp_date.day > p_temp->day))
-				)
+			else if((tmp_temp.year > p_temp->year)
+					||((tmp_temp.year == p_temp->year)&&(tmp_temp.month > p_temp->month))
+					||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day > p_temp->day))
+					||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day == p_temp->day)&&(tmp_temp.hour > p_temp->hour))
+					||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day == p_temp->day)&&(tmp_temp.hour == p_temp->hour)&&(tmp_temp.min > p_temp->min))
+					)
 			{
-				if(i < 6)
+				if(i < (TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod)-1))
 				{
 					p_temp++;
-					if((temp_date.year < p_temp->year)
-						||((temp_date.year == p_temp->year)&&(temp_date.month < p_temp->month))
-						||((temp_date.year == p_temp->year)&&(temp_date.month == p_temp->month)&&(temp_date.day < p_temp->day))
+					if((tmp_temp.year < p_temp->year)
+						||((tmp_temp.year == p_temp->year)&&(tmp_temp.month < p_temp->month))
+						||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day < p_temp->day))
+						||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day == p_temp->day)&&(tmp_temp.hour < p_temp->hour))
+						||((tmp_temp.year == p_temp->year)&&(tmp_temp.month == p_temp->month)&&(tmp_temp.day == p_temp->day)&&(tmp_temp.hour == p_temp->hour)&&(tmp_temp.min < p_temp->min))
 						)
 					{
 						break;
@@ -175,69 +183,154 @@ void SetCurDayTempRecData(float data)
 			}
 		}
 
-		if(i<6)
+		if(i < (TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod)-1))
 		{
 			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
-			memcpy(&databuf[0*sizeof(temp_rec2_data)], &tmpbuf[0*sizeof(temp_rec2_data)], (i+1)*sizeof(temp_rec2_data));
-			memcpy(&databuf[(i+1)*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
-			memcpy(&databuf[(i+2)*sizeof(temp_rec2_data)], &tmpbuf[(i+1)*sizeof(temp_rec2_data)], (7-(i+2))*sizeof(temp_rec2_data));
+			memcpy(&databuf[0*sizeof(temp_rec2_nod)], &rec2buf[0*sizeof(temp_rec2_nod)], (i+1)*sizeof(temp_rec2_nod));
+			memcpy(&databuf[(i+1)*sizeof(temp_rec2_nod)], &tmp_temp, sizeof(temp_rec2_nod));
+			memcpy(&databuf[(i+2)*sizeof(temp_rec2_nod)], &rec2buf[(i+1)*sizeof(temp_rec2_nod)], TEMP_REC2_DATA_SIZE-(i+1)*sizeof(temp_rec2_nod));
 			SpiFlash_Write(databuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
-			memcpy(&databuf[0*sizeof(temp_rec2_data)], &tmpbuf[1*sizeof(temp_rec2_data)], 6*sizeof(temp_rec2_data));
-			memcpy(&databuf[6*sizeof(temp_rec2_data)], &tmp_temp, sizeof(temp_rec2_data));
+			memcpy(&databuf[0*sizeof(temp_rec2_nod)], &rec2buf[1*sizeof(temp_rec2_nod)], TEMP_REC2_DATA_SIZE-sizeof(temp_rec2_nod));
+			memcpy(&databuf[TEMP_REC2_DATA_SIZE-sizeof(temp_rec2_nod)], &tmp_temp, sizeof(temp_rec2_nod));
 			SpiFlash_Write(databuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 		}
 	}
 }
 
-void GetCurDayTempRecData(uint16_t *databuf)
+void GetCurDayTempRecData(uint8_t *databuf)
 {
-	uint8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
-	temp_rec2_data temp_rec2 = {0};
+	uint16_t i,j=0;
+	temp_rec2_nod *p_temp;
 	
 	if(databuf == NULL)
 		return;
 
-	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	for(i=0;i<7;i++)
+	memset(&rec2buf, 0x00, sizeof(rec2buf));
+	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)&rec2buf;
+	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 	{
-		memcpy(&temp_rec2, &tmpbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
-		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)||(temp_rec2.day == 0xff || temp_rec2.day == 0x00))
-			continue;
-		
-		if((temp_rec2.year == date_time.year)&&(temp_rec2.month == date_time.month)&&(temp_rec2.day == date_time.day))
+		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+			||(p_temp->month == 0xff || p_temp->month == 0x00)
+			||(p_temp->day == 0xff || p_temp->day == 0x00)
+			||(p_temp->hour == 0xff || p_temp->min == 0xff)
+			)
 		{
-			memcpy(databuf, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
 			break;
 		}
+		else if((p_temp->year < date_time.year)
+			||((p_temp->year == date_time.year)&&(p_temp->month < date_time.month))
+			||((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day < date_time.day))
+			)
+		{
+			p_temp++;
+			continue;
+		}
+		else if((p_temp->year > date_time.year)
+				||((p_temp->year == date_time.year)&&(p_temp->month > date_time.month))
+				||((p_temp->year == date_time.year)&&(p_temp->month == date_time.month)&&(p_temp->day > date_time.day))
+				)
+		{
+			break;
+		}
+		else
+		{
+			memcpy(&databuf[j*sizeof(temp_rec2_nod)], p_temp, sizeof(temp_rec2_nod));
+			j++;
+		}
+
+		p_temp++;
+	}
+}
+
+void GetGivenDayTempRecData(sys_date_timer_t date, uint8_t *databuf)
+{
+	uint16_t i,j=0;
+	temp_rec2_nod *p_temp;
+
+	if(!CheckSystemDateTimeIsValid(date))
+		return;
+	if(databuf == NULL)
+		return;
+
+	memset(&rec2buf, 0x00, sizeof(rec2buf));
+	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)&rec2buf;
+	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(hr_rec2_nod);i++)
+	{
+		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+			||(p_temp->month == 0xff || p_temp->month == 0x00)
+			||(p_temp->day == 0xff || p_temp->day == 0x00)
+			||(p_temp->hour == 0xff || p_temp->min == 0xff)
+			)
+		{
+			break;
+		}
+		else if((p_temp->year < date.year)
+			||((p_temp->year == date.year)&&(p_temp->month < date.month))
+			||((p_temp->year == date.year)&&(p_temp->month == date.month)&&(p_temp->day < date.day))
+			)
+		{
+			p_temp++;
+			continue;
+		}
+		else if((p_temp->year > date.year)
+				||((p_temp->year == date.year)&&(p_temp->month > date.month))
+				||((p_temp->year == date.year)&&(p_temp->month == date.month)&&(p_temp->day > date.day))
+				)
+		{
+			break;
+		}
+		else
+		{
+			memcpy(&databuf[j*sizeof(temp_rec2_nod)], p_temp, sizeof(temp_rec2_nod));
+			j++;
+		}
+
+		p_temp++;
 	}
 }
 
 void GetGivenTimeTempRecData(sys_date_timer_t date, uint16_t *temp)
 {
-	uint8_t i,tmpbuf[TEMP_REC2_DATA_SIZE] = {0};
-	temp_rec2_data temp_rec2 = {0};
+	uint16_t i;
+	temp_rec2_nod *p_temp;
 
 	if(!CheckSystemDateTimeIsValid(date))
 		return;	
 	if(temp == NULL)
 		return;
 
-	SpiFlash_Read(tmpbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	for(i=0;i<7;i++)
+	memset(&rec2buf, 0x00, sizeof(rec2buf));
+	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)&rec2buf;
+	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 	{
-		memcpy(&temp_rec2, &tmpbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
-		if((temp_rec2.year == 0xffff || temp_rec2.year == 0x0000)||(temp_rec2.month == 0xff || temp_rec2.month == 0x00)||(temp_rec2.day == 0xff || temp_rec2.day == 0x00))
-			continue;
-		
-		if((temp_rec2.year == date.year)&&(temp_rec2.month == date.month)&&(temp_rec2.day == date.day))
+		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
+			||(p_temp->month == 0xff || p_temp->month == 0x00)
+			||(p_temp->day == 0xff || p_temp->day == 0x00)
+			||(p_temp->hour == 0xff || p_temp->min == 0xff)
+			)
 		{
-			*temp = temp_rec2.deca_temp[date.hour];
 			break;
 		}
+		
+		if((p_temp->year == date.year)
+			&&(p_temp->month == date.month)
+			&&(p_temp->day == date.day)
+			&&(p_temp->hour == date.hour)
+			&&(p_temp->min == date.minute)
+			)
+		{
+			*temp = p_temp->deca_temp;
+			break;
+		}
+
+		p_temp++;
 	}
 }
 
@@ -288,7 +381,7 @@ void TempRedrawData(void)
 void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 {
 	notify_infor infor = {0};
-			
+
 	infor.x = 0;
 	infor.y = 0;
 	infor.w = LCD_WIDTH;
@@ -543,7 +636,10 @@ void TempMsgProcess(void)
 			tmp_temp_body = g_temp_body;
 			if(!ppg_skin_contacted_flag)
 				tmp_temp_body = 254.0;
-			SetCurDayTempRecData(tmp_temp_body);
+			SetCurDayTempRecData(g_health_check_time, tmp_temp_body);
+		#ifdef CONFIG_PPG_SUPPORT
+			StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+		#endif
 		}
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
 		if((g_temp_trigger&TEMP_TRIGGER_BY_FT) != 0)

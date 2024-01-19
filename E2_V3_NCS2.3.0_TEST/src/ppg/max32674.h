@@ -12,6 +12,7 @@
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include "datetime.h"
 
 #define PPG_CHECK_HR_MENU			60
 #define PPG_CHECK_SPO2_MENU			150
@@ -29,6 +30,10 @@
 #define PPG_BPT_SYS_MIN	30
 #define PPG_BPT_DIA_MAX	180
 #define PPG_BPT_DIA_MIN	30
+
+#define PPG_REC2_MAX_HOURLY	(4)
+#define PPG_REC2_MAX_DAILY	(PPG_REC2_MAX_HOURLY*24)
+#define PPG_REC2_MAX_COUNT	(PPG_REC2_MAX_DAILY*7)
 
 typedef enum
 {
@@ -122,13 +127,20 @@ typedef struct
 	bpt_data bpt;
 }ppg_bpt_rec1_data;
 
-//整点测量
+//定时测量(最低5分钟间隔)
 typedef struct
 {
 	uint16_t year;
 	uint8_t month;
 	uint8_t day;
-	uint8_t hr[24];
+	uint8_t hour;
+	uint8_t min;
+	uint8_t hr;
+}hr_rec2_nod;
+
+typedef struct
+{
+	hr_rec2_nod data[PPG_REC2_MAX_DAILY];
 }ppg_hr_rec2_data;
 
 typedef struct
@@ -136,7 +148,14 @@ typedef struct
 	uint16_t year;
 	uint8_t month;
 	uint8_t day;
-	uint8_t spo2[24];
+	uint8_t hour;
+	uint8_t min;
+	uint8_t spo2;
+}spo2_rec2_nod;
+
+typedef struct
+{
+	spo2_rec2_nod data[PPG_REC2_MAX_DAILY];
 }ppg_spo2_rec2_data;
 
 typedef struct
@@ -144,7 +163,14 @@ typedef struct
 	uint16_t year;
 	uint8_t month;
 	uint8_t day;
-	bpt_data bpt[24];
+	uint8_t hour;
+	uint8_t min;
+	bpt_data bpt;
+}bpt_rec2_nod;
+
+typedef struct
+{
+	bpt_rec2_nod data[PPG_REC2_MAX_DAILY];
 }ppg_bpt_rec2_data;
 
 extern bool get_bpt_ok_flag;
@@ -165,17 +191,18 @@ extern uint8_t g_spo2_menu;
 extern bpt_data g_bpt;
 extern bpt_data g_bpt_menu;
 
+extern sys_date_timer_t g_health_check_time;
 extern PPG_WORK_STATUS g_ppg_status;
 
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
 /*heart rate*/
-extern void SetCurDayBptRecData(bpt_data bpt);
+extern void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt);
 extern void GetCurDayBptRecData(uint8_t *databuf);
-extern void SetCurDaySpo2RecData(uint8_t spo2);
+extern void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2);
 extern void GetCurDaySpo2RecData(uint8_t *databuf);
-extern void SetCurDayHrRecData(uint8_t hr);
+extern void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr);
 extern void GetCurDayHrRecData(uint8_t *databuf);
 extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
 extern void StartSCC(void);

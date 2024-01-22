@@ -2641,6 +2641,7 @@ void SyncScreenProcess(void)
 #ifdef CONFIG_TEMP_SUPPORT
 static uint8_t img_flag = 0;
 static uint8_t temp_retry_left = 2;
+static uint8_t tempdata[TEMP_REC2_MAX_DAILY*sizeof(temp_rec2_nod)] = {0};
 
 void TempScreenStopTimer(void)
 {
@@ -2887,8 +2888,9 @@ void TempUpdateStatus(void)
 
 void TempShowStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint8_t i,tmpbuf[128] = {0};
+	uint16_t i,x,y,w,h;
+	uint8_t tmpbuf[128] = {0};
+	temp_rec2_nod *p_temp;
 	float temp_max = 0.0, temp_min = 0.0;
 	uint16_t temp[24] = {0};
 	uint16_t color = 0x05DF;
@@ -2922,26 +2924,38 @@ void TempShowStatus(void)
 	LCD_ShowImg_From_Flash(TEMP_UP_ARRAW_X, TEMP_UP_ARRAW_Y, IMG_TEMP_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(TEMP_DOWN_ARRAW_X, TEMP_DOWN_ARRAW_Y, IMG_TEMP_DOWN_ARRAW_ADDR);
 
-	GetCurDayTempRecData(temp);
-	for(i=0;i<24;i++)
+	memset(&tempdata, 0x00, sizeof(tempdata));
+	GetCurDayTempRecData(&tempdata);
+	p_temp = (temp_rec2_nod*)&tempdata;
+	for(i=0;i<TEMP_REC2_MAX_DAILY;i++)
 	{
-		if((temp[i] >= TEMP_MIN) && (temp[i] <= TEMP_MAX))
+		if(p_temp->year == 0x0000
+			|| p_temp->month == 0x00
+			|| p_temp->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_temp->deca_temp >= TEMP_MIN) && (p_temp->deca_temp <= TEMP_MAX))
 		{
 			if((temp_max == 0.0) && (temp_min == 0.0))
 			{
-				temp_max = (float)temp[i]/10.0;
-				temp_min = (float)temp[i]/10.0;
+				temp_max = (float)p_temp->deca_temp/10.0;
+				temp_min = (float)p_temp->deca_temp/10.0;
 			}
 			else
 			{
-				if(temp[i]/10.0 > temp_max)
-					temp_max = (float)temp[i]/10.0;
-				if(temp[i]/10.0 < temp_min)
-					temp_min = (float)temp[i]/10.0;
+				if(p_temp->deca_temp/10.0 > temp_max)
+					temp_max = (float)p_temp->deca_temp/10.0;
+				if(p_temp->deca_temp/10.0 < temp_min)
+					temp_min = (float)p_temp->deca_temp/10.0;
 			}
 
 			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(temp[i]/10.0-32.0)*15/2, TEMP_REC_DATA_W, (temp[i]/10.0-32.0)*15/2, color);
 		}
+
+		p_temp++;
 	}
 
   #ifdef FONTMAKER_UNICODE_FONT
@@ -2998,24 +3012,36 @@ void TempShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
-	GetCurDayTempRecData(temp);
-	for(i=0;i<24;i++)
+	memset(&tempdata, 0x00, sizeof(tempdata));
+	GetCurDayTempRecData(&tempdata);
+	p_temp = (temp_rec2_nod*)&tempdata;
+	for(i=0;i<TEMP_REC2_MAX_DAILY;i++)
 	{
-		if((temp[i] >= TEMP_MIN) && (temp[i] <= TEMP_MAX))
+		if(p_temp->year == 0x0000
+			|| p_temp->month == 0x00
+			|| p_temp->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_temp->deca_temp >= TEMP_MIN) && (p_temp->deca_temp <= TEMP_MAX))
 		{
 			if((temp_max == 0.0) && (temp_min == 0.0))
 			{
-				temp_max = (float)temp[i]/10.0;
-				temp_min = (float)temp[i]/10.0;
+				temp_max = (float)p_temp->deca_temp/10.0;
+				temp_min = (float)p_temp->deca_temp/10.0;
 			}
 			else
 			{
-				if(temp[i]/10.0 > temp_max)
-					temp_max = (float)temp[i]/10.0;
-				if(temp[i]/10.0 < temp_min)
-					temp_min = (float)temp[i]/10.0;
+				if(p_temp->deca_temp/10.0 > temp_max)
+					temp_max = (float)p_temp->deca_temp/10.0;
+				if(p_temp->deca_temp/10.0 < temp_min)
+					temp_min = (float)p_temp->deca_temp/10.0;
 			}
 		}
+
+		p_temp++;
 	}
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
@@ -3271,6 +3297,7 @@ void EnterTempScreen(void)
 #ifdef CONFIG_PPG_SUPPORT
 static uint8_t img_index = 0;
 static uint8_t ppg_retry_left = 2;
+static uint8_t ppgdata[PPG_REC2_MAX_DAILY*sizeof(bpt_rec2_nod)] = {0};
 
 void PPGScreenStopTimer(void)
 {
@@ -3604,9 +3631,10 @@ void BPUpdateStatus(void)
 
 void BPShowStatus(void)
 {
-	uint16_t x,y,w,h;
-	uint8_t i,tmpbuf[128] = {0};
-	bpt_data bpt_max={0},bpt_min={0},bpt[24] = {0};
+	uint16_t i,x,y,w,h;
+	uint8_t tmpbuf[128] = {0};
+	bpt_rec2_nod *p_bpt;
+	bpt_data bpt_max={0},bpt_min={0};
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x0050,0x0072,0x0065,0x0073,0x0073,0x0075,0x0072,0x0065,0x0000},//Blood Pressure
@@ -3628,30 +3656,42 @@ void BPShowStatus(void)
 	LCD_ShowImg_From_Flash(BP_UP_ARRAW_X, BP_UP_ARRAW_Y, IMG_BP_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(BP_DOWN_ARRAW_X, BP_DOWN_ARRAW_Y, IMG_BP_DOWN_ARRAW_ADDR);
 
-	GetCurDayBptRecData(bpt);
-	for(i=0;i<24;i++)
+	memset(&ppgdata, 0x00, sizeof(ppgdata));
+	GetCurDayBptRecData(&ppgdata);
+	p_bpt = (bpt_rec2_nod*)&ppgdata;
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
 	{
-		if((bpt[i].systolic >= PPG_BPT_SYS_MIN) && (bpt[i].systolic <= PPG_BPT_SYS_MAX)
-			&& (bpt[i].diastolic >= PPG_BPT_DIA_MIN) && (bpt[i].diastolic >= PPG_BPT_DIA_MIN)
+		if(p_bpt->year == 0x0000 
+			|| p_bpt->month == 0x00 
+			|| p_bpt->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_bpt->bpt.systolic >= PPG_BPT_SYS_MIN) && (p_bpt->bpt.systolic <= PPG_BPT_SYS_MAX)
+			&& (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN) && (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
 			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
 				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
 			{
-				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
-				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
+				memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
+				memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
 			}
 			else
 			{	
-				if(bpt[i].systolic > bpt_max.systolic)
-					memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
-				if(bpt[i].systolic < bpt_min.systolic)
-					memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
+				if(p_bpt->bpt.systolic > bpt_max.systolic)
+					memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
+				if(p_bpt->bpt.systolic < bpt_min.systolic)
+					memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
 			}
 
-			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].systolic-30)*15/30, BP_REC_DATA_W, (bpt[i].systolic-30)*15/30, YELLOW);
-			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(bpt[i].diastolic-30)*15/30, BP_REC_DATA_W, (bpt[i].diastolic-30)*15/30, RED);
-		}		
+			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(p_bpt->bpt.systolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.systolic-30)*15/30, YELLOW);
+			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(p_bpt->bpt.diastolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.diastolic-30)*15/30, RED);
+		}
+
+		p_bpt++;
 	}
 
   #ifdef FONTMAKER_UNICODE_FONT
@@ -3696,29 +3736,41 @@ void BPShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
-	GetCurDayBptRecData(bpt);
-	for(i=0;i<24;i++)
+	memset(&ppgdata, 0x00, sizeof(ppgdata));
+	GetCurDayBptRecData(&ppgdata);
+	p_bpt = (bpt_rec2_nod*)&ppgdata;
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
 	{
-		if((bpt[i].systolic >= PPG_BPT_SYS_MIN) && (bpt[i].systolic <= PPG_BPT_SYS_MAX)
-			&& (bpt[i].diastolic >= PPG_BPT_DIA_MIN) && (bpt[i].diastolic >= PPG_BPT_DIA_MIN)
+		if(p_bpt->year == 0x0000 
+			|| p_bpt->month == 0x00 
+			|| p_bpt->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_bpt->bpt.systolic >= PPG_BPT_SYS_MIN) && (p_bpt->bpt.systolic <= PPG_BPT_SYS_MAX)
+			&& (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN) && (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
 			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
 				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
 			{
-				memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
-				memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
+				memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
+				memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
 			}
 			else
 			{	
-				if(bpt[i].systolic > bpt_max.systolic)
-					memcpy(&bpt_max, &bpt[i], sizeof(bpt_data));
-				if(bpt[i].systolic < bpt_min.systolic)
-					memcpy(&bpt_min, &bpt[i], sizeof(bpt_data));
+				if(p_bpt->bpt.systolic > bpt_max.systolic)
+					memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
+				if(p_bpt->bpt.systolic < bpt_min.systolic)
+					memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
 			}
-		}		
-	}
+		}
 
+		p_bpt++;
+	}
+	
 	while(1)
 	{
 		if(bpt_max.systolic/divisor1 > 0)
@@ -4106,9 +4158,10 @@ void SPO2UpdateStatus(void)
 
 void SPO2ShowStatus(void)
 {
-	uint8_t i,tmpbuf[128] = {0};
-	uint8_t spo2_max=0,spo2_min=0,spo2[24] = {0};
-	uint16_t w,h;
+	uint8_t tmpbuf[128] = {0};
+	spo2_rec2_nod *p_spo2;
+	uint8_t spo2_max=0,spo2_min=0;
+	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][25] = {
 											#ifndef FW_FOR_CN
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x004F,0x0078,0x0079,0x0067,0x0065,0x006E,0x0000},//Blood Oxygen
@@ -4128,27 +4181,39 @@ void SPO2ShowStatus(void)
 	LCD_ShowImg_From_Flash(SPO2_BG_X, SPO2_BG_Y, IMG_SPO2_BG_ADDR);
 	LCD_ShowImg_From_Flash(SPO2_UP_ARRAW_X, SPO2_UP_ARRAW_Y, IMG_SPO2_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(SPO2_DOWN_ARRAW_X, SPO2_DOWN_ARRAW_Y, IMG_SPO2_DOWN_ARRAW_ADDR);
-
-	GetCurDaySpo2RecData(spo2);
-	for(i=0;i<24;i++)
+	
+	memset(&ppgdata, 0x00, sizeof(ppgdata));
+	GetCurDaySpo2RecData(&ppgdata);
+	p_spo2 = (spo2_rec2_nod*)&ppgdata;
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
 	{
-		if((spo2[i] >= PPG_SPO2_MIN) && (spo2[i] <= PPG_SPO2_MAX))
+		if(p_spo2->year == 0x0000
+			|| p_spo2->month == 0x00
+			|| p_spo2->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_spo2->spo2 >= PPG_SPO2_MIN) && (p_spo2->spo2 <= PPG_SPO2_MAX))
 		{
 			if((spo2_max == 0) && (spo2_min == 0))
 			{
-				spo2_max = spo2[i];
-				spo2_min = spo2[i];
+				spo2_max = p_spo2->spo2;
+				spo2_min = p_spo2->spo2;
 			}
 			else
 			{
-				if(spo2[i] > spo2_max)
-					spo2_max = spo2[i];
-				if(spo2[i] < spo2_min)
-					spo2_min = spo2[i];
+				if(p_spo2->spo2 > spo2_max)
+					spo2_max = p_spo2->spo2;
+				if(p_spo2->spo2 < spo2_min)
+					spo2_min = p_spo2->spo2;
 			}
 			
-			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(spo2[i]-80)*3, SPO2_REC_DATA_W, (spo2[i]-80)*3, BLUE);
+			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(p_spo2->spo2-80)*3, SPO2_REC_DATA_W, (p_spo2->spo2-80)*3, BLUE);
 		}
+
+		p_spo2++;
 	}
 
   #ifdef FONTMAKER_UNICODE_FONT
@@ -4189,24 +4254,36 @@ void SPO2ShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
-	GetCurDaySpo2RecData(spo2);
-	for(i=0;i<24;i++)
+	memset(&ppgdata, 0x00, sizeof(ppgdata));
+	GetCurDaySpo2RecData(&ppgdata);
+	p_spo2 = (spo2_rec2_nod*)&ppgdata;
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
 	{
-		if((spo2[i] >= PPG_SPO2_MIN) && (spo2[i] <= PPG_SPO2_MAX))
+		if(p_spo2->year == 0x0000
+			|| p_spo2->month == 0x00
+			|| p_spo2->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_spo2->spo2 >= PPG_SPO2_MIN) && (p_spo2->spo2 <= PPG_SPO2_MAX))
 		{
 			if((spo2_max == 0) && (spo2_min == 0))
 			{
-				spo2_max = spo2[i];
-				spo2_min = spo2[i];
+				spo2_max = p_spo2->spo2;
+				spo2_min = p_spo2->spo2;
 			}
 			else
 			{
-				if(spo2[i] > spo2_max)
-					spo2_max = spo2[i];
-				if(spo2[i] < spo2_min)
-					spo2_min = spo2[i];
+				if(p_spo2->spo2 > spo2_max)
+					spo2_max = p_spo2->spo2;
+				if(p_spo2->spo2 < spo2_min)
+					spo2_min = p_spo2->spo2;
 			}
 		}
+
+		p_spo2++;
 	}
 
 	while(1)
@@ -4533,9 +4610,10 @@ void HRUpdateStatus(void)
 
 void HRShowStatus(void)
 {
-	uint8_t i,tmpbuf[128] = {0};
+	uint8_t tmpbuf[128] = {0};
+	hr_rec2_nod *p_hr;
 	uint8_t hr_max=0,hr_min=0,hr[24] = {0};
-	uint16_t w,h;
+	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
 												{0x0048,0x0065,0x0061,0x0072,0x0074,0x0020,0x0052,0x0061,0x0074,0x0065,0x0000},//Heart Rate
@@ -4556,27 +4634,39 @@ void HRShowStatus(void)
 	LCD_ShowImg_From_Flash(HR_BG_X, HR_BG_Y, IMG_HR_BG_ADDR);
 	LCD_ShowImg_From_Flash(HR_UP_ARRAW_X, HR_UP_ARRAW_Y, IMG_HR_UP_ARRAW_ADDR);
 	LCD_ShowImg_From_Flash(HR_DOWN_ARRAW_X, HR_DOWN_ARRAW_Y, IMG_HR_DOWN_ARRAW_ADDR);
-
-	GetCurDayHrRecData(hr);
-	for(i=0;i<24;i++)
+	
+	memset(&ppgdata, 0x00, sizeof(ppgdata));
+	GetCurDayHrRecData(&ppgdata);
+	p_hr = (hr_rec2_nod*)&ppgdata;
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
 	{
-		if((hr[i] >= PPG_HR_MIN) && (hr[i] <= PPG_HR_MAX))
+		if(p_hr->year == 0x0000
+			|| p_hr->month == 0x00
+			|| p_hr->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_hr->hr >= PPG_HR_MIN) && (p_hr->hr <= PPG_HR_MAX))
 		{
 			if((hr_max == 0) && (hr_min == 0))
 			{
-				hr_max = hr[i];
-				hr_min = hr[i];
+				hr_max = p_hr->hr;
+				hr_min = p_hr->hr;
 			}
 			else
 			{
-				if(hr[i] > hr_max)
-					hr_max = hr[i];
-				if(hr[i] < hr_min)
-					hr_min = hr[i];
+				if(p_hr->hr > hr_max)
+					hr_max = p_hr->hr;
+				if(p_hr->hr < hr_min)
+					hr_min = p_hr->hr;
 			}
 
-			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-hr[i]*20/50, HR_REC_DATA_W, hr[i]*20/50, RED);
+			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-p_hr->hr*20/50, HR_REC_DATA_W, p_hr->hr*20/50, RED);
 		}
+
+		p_hr++;
 	}
 
   #ifdef FONTMAKER_UNICODE_FONT
@@ -4617,24 +4707,36 @@ void HRShowStatus(void)
 	LCD_MeasureUniString(tmpbuf,&w,&h);
 	LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
-	GetCurDayHrRecData(hr);
-	for(i=0;i<24;i++)
+	memset(&ppgdata, 0x00, sizeof(ppgdata));
+	GetCurDayHrRecData(&ppgdata);
+	p_hr = (hr_rec2_nod*)&ppgdata;
+	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
 	{
-		if((hr[i] >= PPG_HR_MIN) && (hr[i] <= PPG_HR_MAX))
+		if(p_hr->year == 0x0000
+			|| p_hr->month == 0x00
+			|| p_hr->day == 0x00
+			)
+		{
+			break;
+		}
+		
+		if((p_hr->hr >= PPG_HR_MIN) && (p_hr->hr <= PPG_HR_MAX))
 		{
 			if((hr_max == 0) && (hr_min == 0))
 			{
-				hr_max = hr[i];
-				hr_min = hr[i];
+				hr_max = p_hr->hr;
+				hr_min = p_hr->hr;
 			}
 			else
 			{
-				if(hr[i] > hr_max)
-					hr_max = hr[i];
-				if(hr[i] < hr_min)
-					hr_min = hr[i];
+				if(p_hr->hr > hr_max)
+					hr_max = p_hr->hr;
+				if(p_hr->hr < hr_min)
+					hr_min = p_hr->hr;
 			}
 		}
+
+		p_hr++;
 	}
 
 	while(1)

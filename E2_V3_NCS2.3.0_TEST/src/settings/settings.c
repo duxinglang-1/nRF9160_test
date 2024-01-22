@@ -739,6 +739,7 @@ void InitSystemSettings(void)
 		break;
 
 	case SETTINGS_STATUS_OTA:
+		ResetHealthData();
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
 		break;
@@ -754,27 +755,17 @@ void InitSystemSettings(void)
 	mmi_chset_init();
 }
 
-void ResetFactoryDefault(void)
+void ResetLocalData(void)
 {
-	ResetSystemTime();
-	ResetSystemSettings();
-
 	clear_cur_local_in_record();
-	clear_local_in_record();	
+	clear_local_in_record();
+}
+
+void ResetHealthData(void)
+{
+#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
 	clear_cur_health_in_record();
 	clear_health_in_record();
-#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-	clear_cur_sport_in_record();
-	clear_sport_in_record();
-#endif
-
-#ifdef CONFIG_IMU_SUPPORT
-#ifdef CONFIG_STEP_SUPPORT
-	ClearAllStepRecData();
-#endif
-#ifdef CONFIG_SLEEP_SUPPORT
-	ClearAllSleepRecData();
-#endif
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
@@ -787,6 +778,34 @@ void ResetFactoryDefault(void)
 #ifdef CONFIG_TEMP_SUPPORT
 	ClearAllTempRecData();
 #endif
+}
+
+void ResetSportData(void)
+{
+#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+	clear_cur_sport_in_record();
+	clear_sport_in_record();
+#endif
+
+#ifdef CONFIG_IMU_SUPPORT
+#ifdef CONFIG_STEP_SUPPORT
+	ClearAllStepRecData();
+#endif
+
+#ifdef CONFIG_SLEEP_SUPPORT
+	ClearAllSleepRecData();
+#endif
+#endif
+}
+
+void ResetFactoryDefault(void)
+{
+	ResetSystemTime();
+	ResetSystemSettings();
+
+	ResetLocalData();
+	ResetHealthData();
+	ResetSportData();
 
 	LogClear();
 

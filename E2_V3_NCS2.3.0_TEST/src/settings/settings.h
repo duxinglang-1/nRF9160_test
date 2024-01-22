@@ -209,4 +209,7 @@ extern void SaveSystemSettings(void);
 extern void SettingMenuInit(void);
 extern void EnterSettings(void);
 extern void ResetFactoryDefault(void);
+extern void ResetLocalData(void);
+extern void ResetHealthData(void);
+extern void ResetSportData(void);
 #endif/*__SETTINGS_H__*/

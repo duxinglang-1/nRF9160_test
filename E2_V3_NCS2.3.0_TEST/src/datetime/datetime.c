@@ -646,7 +646,7 @@ void UpdateSystemTime(void)
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%2 == 0)&&(date_time.minute == 60))
+				if((date_time.hour%2 == 1)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}
@@ -660,7 +660,7 @@ void UpdateSystemTime(void)
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%3 == 1)&&(date_time.minute == 00))
+				if((date_time.hour%3 == 2)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}
@@ -674,7 +674,7 @@ void UpdateSystemTime(void)
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%4 == 2)&&(date_time.minute == 00))
+				if((date_time.hour%4 == 3)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}
@@ -688,7 +688,7 @@ void UpdateSystemTime(void)
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%6 == 4)&&(date_time.minute == 00))
+				if((date_time.hour%6 == 5)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}

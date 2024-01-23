@@ -739,7 +739,6 @@ void InitSystemSettings(void)
 		break;
 
 	case SETTINGS_STATUS_OTA:
-		ResetHealthData();
 		memcpy(&global_settings, &FACTORY_DEFAULT_SETTINGS, sizeof(global_settings_t));
 		SaveSystemSettings();
 		break;

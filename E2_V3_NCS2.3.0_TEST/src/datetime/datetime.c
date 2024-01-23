@@ -939,7 +939,7 @@ void TimeMsgProcess(void)
 			APP_get_cur_hour_sport(date_time);
 		#endif
 		}
-	#endif	
+	#endif
 		send_timing_data_flag = false;
 	}
 }

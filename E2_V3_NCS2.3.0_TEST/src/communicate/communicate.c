@@ -33,8 +33,6 @@
 #include "communicate.h"
 #include "logger.h"
 
-static uint8_t reply[2048] = {0};
-
 extern uint16_t g_last_steps;
 
 #ifdef CONFIG_WIFI_SUPPORT
@@ -50,10 +48,9 @@ extern uint16_t g_last_steps;
  *****************************************************************************/
 void location_get_wifi_data_reply(wifi_infor wifi_data)
 {
+	uint8_t reply[256] = {0};
 	uint32_t i,count=3;
 
-	memset(&reply, 0x00, sizeof(reply));
-	
 	if(wifi_data.count > 0)
 		count = wifi_data.count;
 		
@@ -85,6 +82,7 @@ void location_get_wifi_data_reply(wifi_infor wifi_data)
  *****************************************************************************/
 void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_data)
 {
+	uint8_t reply[128] = {0};
 	uint8_t tmpbuf[8] = {0};
 	uint32_t tmp1;
 	double tmp2;
@@ -97,8 +95,6 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 	#endif
 		return;
 	}
-
-	memset(&reply, 0x00, sizeof(reply));
 	
 	strcpy(reply, "4,");
 	
@@ -248,9 +244,9 @@ void TimeCheckSendHrData(void)
 {
 	uint16_t i,len;
 	uint8_t tmpbuf[32] = {0};
+	uint8_t reply[2048] = {0};
 	hr_rec2_nod *p_hr;
 
-	memset(&reply, 0x00, sizeof(reply));
 	memset(&hr_data, 0x00, sizeof(hr_data));
 	GetCurDayHrRecData(&hr_data);
 	p_hr = (hr_rec2_nod*)hr_data;
@@ -299,9 +295,9 @@ void TimeCheckSendSpo2Data(void)
 {
 	uint16_t i,len;
 	uint8_t tmpbuf[32] = {0};
+	uint8_t reply[2048] = {0};
 	spo2_rec2_nod *p_spo2;
 
-	memset(&reply, 0x00, sizeof(reply));
 	memset(&spo2_data, 0x00, sizeof(spo2_data));
 	GetCurDaySpo2RecData(&spo2_data);
 	p_spo2 = (spo2_rec2_nod*)spo2_data;
@@ -350,9 +346,9 @@ void TimeCheckSendBptData(void)
 {
 	uint16_t i,len;
 	uint8_t tmpbuf[32] = {0};
+	uint8_t reply[2048] = {0};
 	bpt_rec2_nod *p_bpt;
 
-	memset(&reply, 0x00, sizeof(reply));
 	memset(&bp_data, 0x00, sizeof(bp_data));
 	GetCurDayBptRecData(&bp_data);
 	p_bpt = (bpt_rec2_nod*)bp_data;
@@ -401,9 +397,9 @@ void TimeCheckSendTempData(void)
 {
 	uint16_t i,len;
 	uint8_t tmpbuf[32] = {0};
+	uint8_t reply[2048] = {0};
 	temp_rec2_nod *p_temp;
 
-	memset(&reply, 0x00, sizeof(reply));
 	memset(&temp_data, 0x00, sizeof(temp_data));
 	GetCurDayTempRecData(&temp_data);
 	p_temp = (temp_rec2_nod*)temp_data;
@@ -579,6 +575,7 @@ void SendMissingSportData(void)
 	for(i=0;i<7;i++)
 	{
 		bool flag = false;
+		uint8_t reply[2048] = {0};
 		uint16_t step_data[24] = {0};
 		uint8_t step_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
 		sleep_data sleep[24] = {0};
@@ -586,8 +583,6 @@ void SendMissingSportData(void)
 		step_rec2_data step_rec2 = {0};
 		sleep_rec2_data	sleep_rec2 = {0};
 
-		memset(&reply, 0x00, sizeof(reply));
-		
 	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 	  #if defined(CONFIG_STEP_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 	  	//step
@@ -697,8 +692,8 @@ void SendMissingHrData(void)
 	{
 		bool flag = false;
 		uint8_t hr_time[15] = {0x30};
+		uint8_t reply[2048] = {0};
 
-		memset(&reply, 0x00, sizeof(reply));
 		memset(&databuf, 0x00, sizeof(databuf));
 		GetGivenDayHrRecData(temp_date, &databuf);
 		p_hr = (hr_rec2_nod*)databuf;
@@ -764,8 +759,8 @@ void SendMissingSpo2Data(void)
 	{
 		bool flag = false;
 		uint8_t spo2_time[15] = {0x30};
+		uint8_t reply[2048] = {0};
 
-		memset(&reply, 0x00, sizeof(reply));
 		memset(&databuf, 0x00, sizeof(databuf));
 		GetGivenDaySpo2RecData(temp_date, &databuf);
 		p_spo2 = (spo2_rec2_nod*)databuf;
@@ -831,8 +826,8 @@ void SendMissingBptData(void)
 	{
 		bool flag = false;
 		uint8_t bpt_time[15] = {0x30};
+		uint8_t reply[2048] = {0};
 
-		memset(&reply, 0x00, sizeof(reply));
 		memset(&databuf, 0x00, sizeof(databuf));
 		GetGivenDayBptRecData(temp_date, &databuf);
 		p_bpt = (bpt_rec2_nod*)databuf;
@@ -899,8 +894,8 @@ void SendMissingTempData(void)
 	{
 		bool flag = false;
 		uint8_t temp_time[15] = {0x30};
+		uint8_t reply[2048] = {0};
 
-		memset(&reply, 0x00, sizeof(reply));
 		memset(&databuf, 0x00, sizeof(databuf));
 		GetGivenDayTempRecData(temp_date, &databuf);
 		p_temp = (temp_rec2_nod*)databuf;
@@ -1225,6 +1220,7 @@ void SyncSendHealthData(void)
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;
 	uint8_t tmpbuf[20] = {0};
+	uint8_t reply[1024] = {0};
 
 #ifdef CONFIG_IMU_SUPPORT
   #ifdef CONFIG_STEP_SUPPORT
@@ -1234,8 +1230,6 @@ void SyncSendHealthData(void)
 	GetSleepTimeData(&deep_sleep, &light_sleep);
   #endif
 #endif
-
-	memset(&reply, 0x00, sizeof(reply));
 
 	//steps
 	sprintf(tmpbuf, "%d,", steps);
@@ -1347,9 +1341,8 @@ void SyncSendLocalData(void)
 void SendPowerOnData(void)
 {
 	uint8_t tmpbuf[10] = {0};
+	uint8_t reply[256] = {0};
 
-	memset(&reply, 0x00, sizeof(reply));
-	
 	//imsi
 	strcpy(reply, g_imsi);
 	strcat(reply, ",");
@@ -1420,9 +1413,8 @@ void SendPowerOnData(void)
 void SendPowerOffData(uint8_t pwroff_mode)
 {
 	uint8_t tmpbuf[10] = {0};
+	uint8_t reply[128] = {0};
 
-	memset(&reply, 0x00, sizeof(reply));
-	
 	//pwr off mode
 	sprintf(reply, "%d,", pwroff_mode);
 	
@@ -1450,9 +1442,8 @@ void SendPowerOffData(uint8_t pwroff_mode)
 void SendSettingsData(void)
 {
 	uint8_t tmpbuf[10] = {0};
+	uint8_t reply[128] = {0};
 
-	memset(&reply, 0x00, sizeof(reply));
-	
 	//temp uint
 	sprintf(reply, "%d,", global_settings.temp_unit);
 	
@@ -1503,9 +1494,9 @@ void SendSettingsData(void)
  *****************************************************************************/
 void SendSosAlarmData(void)
 {
+	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
-	memset(&reply, 0x00, sizeof(reply));
 	strcpy(reply, "1");
 	NBSendAlarmData(reply, strlen(reply));
 }
@@ -1522,9 +1513,9 @@ void SendSosAlarmData(void)
  *****************************************************************************/
 void SendFallAlarmData(void)
 {
+	uint8_t reply[8] = {0};
 	uint32_t i,count=1;
 
-	memset(&reply, 0x00, sizeof(reply));
 	strcpy(reply, "2");
 	NBSendAlarmData(reply, strlen(reply));
 }

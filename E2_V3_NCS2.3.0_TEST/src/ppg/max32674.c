@@ -28,8 +28,8 @@
 
 //#define PPG_DEBUG
 
-#define PPG_HR_COUNT_MAX		15
-#define PPG_HR_DEL_MIN_NUM		5
+#define PPG_HR_COUNT_MAX		10
+#define PPG_HR_DEL_MIN_NUM		6
 #define PPG_SPO2_COUNT_MAX		3
 #define PPG_SPO2_DEL_MIN_NUM	1
 #define PPG_SCC_COUNT_MAX		5
@@ -914,6 +914,18 @@ bool PPGIsWorkingTiming(void)
 	}
 }
 
+bool PPGIsSccCheck(void)
+{
+	if((g_ppg_trigger&TRIGGER_BY_SCC) != 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool PPGIsWorking(void)
 {
 	if(ppg_power_flag == 0)
@@ -1495,7 +1507,6 @@ void PPGGetSensorHubData(void)
 
 					if(hr > PPG_HR_MIN)
 					{
-					#if 0	//xb test 2023.04.03 Modify the hr measurement data filtering mode. 
 						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
 						{
 							uint8_t k;
@@ -1505,6 +1516,7 @@ void PPGGetSensorHubData(void)
 								temp_hr[i] = hr;
 								break;
 							}
+						#if 0	//xb add 2024-02-01 The heart rate is no longer sorted, and the first few sets of data are directly filtered
 							else if(temp_hr[i] >= hr)
 							{
 								for(k=sizeof(temp_hr)/sizeof(temp_hr[0])-1;k>=i+1;k--)
@@ -1514,6 +1526,7 @@ void PPGGetSensorHubData(void)
 								temp_hr[i] = hr;
 								break;
 							}
+						#endif	
 						}
 
 					#ifdef PPG_DEBUG
@@ -1543,20 +1556,6 @@ void PPGGetSensorHubData(void)
 							LOGD("get hr success! hr:%d", g_hr);
 						#endif
 						}
-					#else
-						temp_hr_count++;
-						if(temp_hr_count >= sizeof(temp_hr)/sizeof(temp_hr[0]))
-						{
-							temp_hr_count = 0;
-
-							g_hr = hr;
-							get_hr_ok_flag = true;
-							ppg_stop_flag = true;
-						#ifdef PPG_DEBUG
-							LOGD("get hr success! hr:%d", g_hr);
-						#endif
-						}
-					#endif
 					}
 				}
 				else if(g_ppg_data == PPG_DATA_SPO2)
@@ -1671,6 +1670,9 @@ void FTStopPPG(void)
 
 void StartSCC(void)
 {
+	if(PPGIsWorking())
+		return;
+
 	g_ppg_trigger |= TRIGGER_BY_SCC;
 	g_ppg_data = PPG_DATA_HR;
 	g_ppg_alg_mode = ALG_MODE_HR_SPO2;
@@ -1692,6 +1694,9 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 #ifdef PPG_DEBUG	
 	LOGD("data:%d, type:%d", data_type, trigger_type);
 #endif
+
+	if(PPGIsSccCheck())
+		PPGStopCheck();
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);

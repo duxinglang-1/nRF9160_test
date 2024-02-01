@@ -21,6 +21,9 @@
 #define PPG_CHECK_HR_TIMELY			1
 #define PPG_CHECK_SPO2_TIMELY		2
 #define PPG_CHECK_BPT_TIMELY		3
+#ifndef CONFIG_TEMP_SUPPORT
+#define TEMP_CHECK_TIMELY			0
+#endif
 
 #define PPG_HR_MAX		150
 #define PPG_HR_MIN		30

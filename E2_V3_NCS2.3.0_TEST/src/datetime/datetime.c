@@ -556,11 +556,7 @@ void UpdateSystemTime(void)
 			//The sensor needs to be turned on in advance. 
 			//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
 			bool check_flag = false;
-		#ifdef CONFIG_TEMP_SUPPORT
 			uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY+TEMP_CHECK_TIMELY);
-		#elif defined(CONFIG_PPG_SUPPORT)	
-			uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY);
-		#endif/*CONFIG_PPG_SUPPORT*/
 			
 			switch(global_settings.health_interval)
 			{

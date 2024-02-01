@@ -861,6 +861,8 @@ bool pmu_interrupt_proc(void)
 	#endif
 
 	#ifdef CONFIG_IMU_SUPPORT
+		MAX20353_LDO1Disable();
+		MAX20353_LDO1Config();
 		imu_sensor_init();
 	#endif
 	}

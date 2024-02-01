@@ -81,13 +81,10 @@ static int32_t gxts04_write_data(uint16_t cmd)
 	return rslt;
 }
 
-bool gxts04_init(void)
+static void temp_sensor_init(void)
 {
 	uint8_t databuf[2] = {0};
 	uint16_t HardwareID = 0;
-
-	if(init_i2c() != 0)
-		return;
 
 	gxts04_write_data(CMD_RESET);
 	k_usleep(200);
@@ -100,6 +97,14 @@ bool gxts04_init(void)
 #ifdef TEMP_DEBUG	
 	LOGD("temp id:%x", HardwareID);
 #endif
+}
+
+bool gxts04_init(void)
+{
+	if(init_i2c() != 0)
+		return;
+
+	temp_sensor_init();
 	//if(HardwareID != GXTS04_ID)
 	//	return false;
 	//else
@@ -108,6 +113,9 @@ bool gxts04_init(void)
 
 void gxts04_start(void)
 {
+	MAX20353_LDO1Config();
+	temp_sensor_init();
+	
 	measure_count = 0;
 	t_sensor = 0.0;
 	t_body = 0.0;

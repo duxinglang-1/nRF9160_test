@@ -493,7 +493,7 @@ void TempMsgProcess(void)
 			)
 		{
 			notify_infor infor = {0};
-			
+
 			infor.x = 0;
 			infor.y = 0;
 			infor.w = LCD_WIDTH;

@@ -296,7 +296,7 @@ int MAX20353_LDO1Config(void)
     return ret;
 }
 
-int MAX20353_LDO2Disbale(void)
+int MAX20353_LDO2Disable(void)
 {
     int32_t ret = 0;
 	

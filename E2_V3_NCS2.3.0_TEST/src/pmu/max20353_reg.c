@@ -945,6 +945,9 @@ bool MAX20353_Init(void)
 	MAX20353_GetDeviceID(&HardwareID);
 	if(HardwareID != MAX20353_HARDWARE_ID)
 		return false;
+
+	//xb add 2024-02-19 After restarting, power on the IMU again to prevent it from not entering sleep mode.
+	MAX20353_LDO1Disable();
 	
 	//供电电压及电流配置
 	MAX20353_Buck1Config();		//1.8V 350mA

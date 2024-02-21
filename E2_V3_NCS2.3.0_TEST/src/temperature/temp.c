@@ -630,16 +630,23 @@ void TempMsgProcess(void)
 		}
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{
-			float tmp_temp_body;
-			
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
-			tmp_temp_body = g_temp_body;
 			if(!ppg_skin_contacted_flag)
-				tmp_temp_body = 254.0;
-			SetCurDayTempRecData(g_health_check_time, tmp_temp_body);
-		#ifdef CONFIG_PPG_SUPPORT
-			StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
-		#endif
+			{
+				bpt_data tmp_bpt = {0xFE};
+				
+				SetCurDayTempRecData(g_health_check_time, 254.0);
+				SetCurDayHrRecData(g_health_check_time, 254);
+				SetCurDaySpo2RecData(g_health_check_time, 254);
+				SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+			}
+			else
+			{
+				SetCurDayTempRecData(g_health_check_time, g_temp_body);
+			#ifdef CONFIG_PPG_SUPPORT
+				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+			#endif
+			}
 		}
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
 		if((g_temp_trigger&TEMP_TRIGGER_BY_FT) != 0)

@@ -154,6 +154,18 @@ void location_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame
 	NBSendLocationData(reply, strlen(reply));
 }
 
+void TimeCheckSendWristOffData(void)
+{
+	uint8_t reply[8] = {0};
+
+	if(CheckSCC())
+		strcpy(reply, "1");
+	else
+		strcpy(reply, "0");
+	
+	NBSendTimelyWristOffData(reply, strlen(reply));
+}
+
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 /*****************************************************************************
  * FUNCTION
@@ -446,10 +458,17 @@ void TimeCheckSendTempData(void)
 void TimeCheckSendHealthData(void)
 {
 #if 1	//xb add 2024-01-17 修改定时健康数据分开上传
-	TimeCheckSendHrData();
-	TimeCheckSendSpo2Data();
-	TimeCheckSendBptData();
-	TimeCheckSendTempData();
+	if(CheckSCC())
+	{
+		TimeCheckSendHrData();
+		TimeCheckSendSpo2Data();
+		TimeCheckSendBptData();
+		TimeCheckSendTempData();
+	}
+	else
+	{
+		TimeCheckSendWristOffData();
+	}
 #else
 	uint8_t i,tmpbuf[20] = {0};
 	uint8_t hr_data[24] = {0};

@@ -1878,6 +1878,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr == NULL)
 				return;
 			copylen = (ptr-strdata) < sizeof(g_prj_dir) ? (ptr-strdata) : sizeof(g_prj_dir);
+			memset(g_prj_dir, 0x00, sizeof(g_prj_dir));
 			memcpy(g_prj_dir, strdata, copylen);
 
 			//9160 fw ver
@@ -1886,6 +1887,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr1 == NULL)
 				return;
 			copylen = (ptr1-ptr) < sizeof(g_new_fw_ver) ? (ptr1-ptr) : sizeof(g_new_fw_ver);
+			memset(g_new_fw_ver, 0x00, sizeof(g_new_fw_ver));
 			memcpy(g_new_fw_ver, ptr, copylen);
 
 			//9160 modem ver
@@ -1894,6 +1896,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr1 == NULL)
 				return;
 			copylen = (ptr1-ptr) < sizeof(g_new_modem_ver) ? (ptr1-ptr) : sizeof(g_new_modem_ver);
+			memset(g_new_modem_ver, 0x00, sizeof(g_new_modem_ver));
 			memcpy(g_new_modem_ver, ptr, copylen);
 
 			//52810 fw ver
@@ -1902,6 +1905,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr1 == NULL)
 				return;
 			copylen = (ptr1-ptr) < sizeof(g_new_ble_ver) ? (ptr1-ptr) : sizeof(g_new_ble_ver);
+			memset(g_new_ble_ver, 0x00, sizeof(g_new_ble_ver));
 			memcpy(g_new_ble_ver, ptr, copylen);
 
 			//ppg ver
@@ -1910,6 +1914,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr1 == NULL)
 				return;
 			copylen = (ptr1-ptr) < sizeof(g_new_ppg_ver) ? (ptr1-ptr) : sizeof(g_new_ppg_ver);
+			memset(g_new_ppg_ver, 0x00, sizeof(g_new_ppg_ver));
 			memcpy(g_new_ppg_ver, ptr, copylen);
 
 			//wifi ver
@@ -1918,6 +1923,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr1 == NULL)
 				return;
 			copylen = (ptr1-ptr) < sizeof(g_new_wifi_ver) ? (ptr1-ptr) : sizeof(g_new_wifi_ver);
+			memset(g_new_wifi_ver, 0x00, sizeof(g_new_wifi_ver));
 			memcpy(g_new_wifi_ver, ptr, copylen);
 
 			//ui ver
@@ -1926,6 +1932,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			if(ptr1 == NULL)
 				return;
 			copylen = (ptr1-ptr) < sizeof(g_new_ui_ver) ? (ptr1-ptr) : sizeof(g_new_ui_ver);
+			memset(g_new_ui_ver, 0x00, sizeof(g_new_ui_ver));
 			memcpy(g_new_ui_ver, ptr, copylen);
 
 			//font ver
@@ -1935,6 +1942,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_font_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_font_ver);
 			else
 				copylen = (ptr1-ptr) < sizeof(g_new_font_ver) ? (ptr1-ptr) : sizeof(g_new_font_ver);
+			memset(g_new_font_ver, 0x00, sizeof(g_new_font_ver));
 			memcpy(g_new_font_ver, ptr, copylen);
 		}
 		else if(strcmp(strcmd, "S15") == 0)

@@ -3236,8 +3236,6 @@ void NBMsgProcess(void)
 			k_timer_stop(&mqtt_disconnect_timer);
 		k_timer_start(&mqtt_disconnect_timer, K_SECONDS(20), K_NO_WAIT);
 
-		//SendLogData();
-		
 		send_log_flag = false;
 	}
 #endif

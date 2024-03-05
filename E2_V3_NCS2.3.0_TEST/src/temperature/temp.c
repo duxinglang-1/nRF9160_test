@@ -633,7 +633,7 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
 			if(!ppg_skin_contacted_flag)
 			{
-				bpt_data tmp_bpt = {0xFE};
+				bpt_data tmp_bpt = {254,254};
 				
 				SetCurDayTempRecData(g_health_check_time, 254.0);
 				SetCurDayHrRecData(g_health_check_time, 254);

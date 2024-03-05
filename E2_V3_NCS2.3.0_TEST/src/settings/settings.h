@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	7
 #define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.4.2_20240223"
+#define VERSION_STR	"V3.4.2_20240305"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else
@@ -138,7 +138,7 @@ typedef struct
 	MENU_ID id;
 	uint8_t index;
 	uint8_t count;
-	uint16_t name[LANGUAGE_MAX][MENU_MAX_COUNT][MENU_NAME_MAX];;
+	uint16_t name[LANGUAGE_MAX][MENU_MAX_COUNT][MENU_NAME_MAX];
 	menu_handler sel_handler[MENU_MAX_COUNT];
 	menu_handler pg_handler[4];
 }settings_menu_t;

@@ -3044,15 +3044,13 @@ static void nb_link(struct k_work *work)
 			nb_connected = false;
 
 			net_retry_count++;
-			if(net_retry_count <= 2)		//2次以内每1分钟重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(60), K_NO_WAIT);
-			else if(net_retry_count <= 4)	//3到4次每5分钟重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(300), K_NO_WAIT);
-			else if(net_retry_count <= 6)	//5到6次每10分钟重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(600), K_NO_WAIT);
-			else if(net_retry_count <= 8)	//7到8次每1小时重连一次
-				k_timer_start(&nb_reconnect_timer, K_SECONDS(3600), K_NO_WAIT);
-			else							//8次以上每6小时重连一次
+			if(net_retry_count <= 1)		//第1次每15分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(15*60), K_NO_WAIT);
+			else if(net_retry_count <= 2)	//第2次每30分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(30*60), K_NO_WAIT);
+			else if(net_retry_count <= 3)	//第3次每60分钟重连一次
+				k_timer_start(&nb_reconnect_timer, K_SECONDS(60*60), K_NO_WAIT);
+			else							//第3次以上每6小时重连一次
 				k_timer_start(&nb_reconnect_timer, K_SECONDS(6*3600), K_NO_WAIT);	
 		}
 		else

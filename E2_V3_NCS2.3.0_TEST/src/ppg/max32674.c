@@ -1427,7 +1427,7 @@ void PPGGetSensorHubData(void)
 			else
 				index = 1;
 
-			if(1
+			if((((g_ppg_trigger&TRIGGER_BY_SCC) != 0) || (g_ppg_trigger == TRIGGER_BY_MENU))
 			#ifdef CONFIG_FACTORY_TEST_SUPPORT
 				&& !IsFTPPGTesting()
 				&& !IsFTPPGAging()

@@ -3048,16 +3048,28 @@ void TempShowStatus(void)
 	if(g_temp_menu > 0.0)
 	{
 		if(g_temp_menu > temp_max)
+		{
+			if(temp_min == 0.0)
+				temp_min = temp_max;
 			temp_max = g_temp_menu;
-		else if(g_temp_menu < temp_min)
+		}
+		else if(((g_temp_menu < temp_min) && (temp_min > 0.0)) || (temp_min == 0.0))
+		{
 			temp_min = g_temp_menu;
+		}
 	}
 	else if(last_health.temp_rec.deca_temp/10.0 > 0.0)
 	{
 		if(last_health.temp_rec.deca_temp/10.0 > temp_max)
+		{
+			if(temp_min == 0.0)
+				temp_min = temp_max;
 			temp_max = last_health.temp_rec.deca_temp/10.0;
-		else if(last_health.temp_rec.deca_temp/10.0 < temp_min)
+		}
+		else if(((last_health.temp_rec.deca_temp/10.0 < temp_min) && (temp_min > 0.0)) || (temp_min == 0.0))
+		{
 			temp_min = last_health.temp_rec.deca_temp/10.0;
+		}
 	}
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
@@ -3791,18 +3803,26 @@ void BPShowStatus(void)
 	if(g_bpt_menu.systolic > 0)
 	{
 		if(g_bpt_menu.systolic > bpt_max.systolic)
-			memcpy(&bpt_max, &(g_bpt_menu), sizeof(bpt_data));
-		else if(g_bpt_menu.systolic < bpt_min.systolic)
-			memcpy(&bpt_min, &(g_bpt_menu), sizeof(bpt_data));
+		{
+			if(bpt_min.systolic == 0)
+				memcpy(&bpt_min, &bpt_max, sizeof(bpt_data));
+			memcpy(&bpt_max, &g_bpt_menu, sizeof(bpt_data));
+		}
+		else if(((g_bpt_menu.systolic < bpt_min.systolic) && (bpt_min.systolic > 0)) || (bpt_min.systolic == 0))
+		{
+			memcpy(&bpt_min, &g_bpt_menu, sizeof(bpt_data));
+		}
 	}
 	else if(last_health.bpt_rec.systolic > 0)
 	{
 		if(last_health.bpt_rec.systolic > bpt_max.systolic)
 		{
+			if(bpt_min.systolic == 0)
+				memcpy(&bpt_min, &bpt_max, sizeof(bpt_data));
 			bpt_max.systolic = last_health.bpt_rec.systolic;
 			bpt_max.diastolic = last_health.bpt_rec.diastolic;
 		}
-		else if(last_health.bpt_rec.systolic < bpt_min.systolic)
+		else if(((last_health.bpt_rec.systolic < bpt_min.systolic) && (bpt_min.systolic > 0)) || (bpt_min.systolic == 0))
 		{
 			bpt_min.systolic = last_health.bpt_rec.systolic;
 			bpt_min.diastolic = last_health.bpt_rec.diastolic;
@@ -4328,16 +4348,28 @@ void SPO2ShowStatus(void)
 	if(g_spo2_menu > 0)
 	{
 		if(g_spo2_menu > spo2_max)
+		{
+			if(spo2_min == 0)
+				spo2_min = spo2_max;
 			spo2_max = g_spo2_menu;
-		else if(g_spo2_menu < spo2_min)
+		}
+		else if(((g_spo2_menu < spo2_min) && (spo2_min > 0)) || (spo2_min == 0))
+		{
 			spo2_min = g_spo2_menu;
+		}
 	}
 	else if(last_health.spo2_rec.spo2 > 0)
 	{
 		if(last_health.spo2_rec.spo2 > spo2_max)
+		{
+			if(spo2_min == 0)
+				spo2_min = spo2_max;
 			spo2_max = last_health.spo2_rec.spo2;
-		else if(last_health.spo2_rec.spo2 < spo2_min)
+		}
+		else if(((last_health.spo2_rec.spo2 < spo2_min) && (spo2_min > 0)) || (spo2_min == 0))
+		{
 			spo2_min = last_health.spo2_rec.spo2;
+		}
 	}
 
 	while(1)
@@ -4797,16 +4829,28 @@ void HRShowStatus(void)
 	if(g_hr_menu > 0)
 	{
 		if(g_hr_menu > hr_max)
+		{
+			if(hr_min == 0)
+				hr_min = hr_max;
 			hr_max = g_hr_menu;
-		else if(g_hr_menu < hr_min)
+		}
+		else if(((g_hr_menu < hr_min) && (hr_min > 0)) || (hr_min == 0))
+		{
 			hr_min = g_hr_menu;
+		}
 	}
 	else if(last_health.hr_rec.hr > 0)
 	{
 		if(last_health.hr_rec.hr > hr_max)
+		{
+			if(hr_min == 0)
+				hr_min = hr_max;
 			hr_max = last_health.hr_rec.hr;
-		else if(last_health.hr_rec.hr < hr_min)
+		}
+		else if(((last_health.hr_rec.hr < hr_min) && (hr_min > 0)) || (hr_min == 0))
+		{
 			hr_min = last_health.hr_rec.hr;
+		}
 	}
 	
 	while(1)

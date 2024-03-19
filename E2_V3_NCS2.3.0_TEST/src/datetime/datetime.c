@@ -708,11 +708,6 @@ void UpdateSystemTime(void)
 	#endif
 
 		pmu_status_update();
-
-		if(date_time.hour == 0 && date_time.minute == 10)	//xba ddd 2024-03-14 Upload a synchronization packet at 00:10 for the backend to calibrate the watch's time.
-		{
-			SyncSendHealthData();
-		}
 	}
 
 	if((date_time_changed&0x04) != 0)
@@ -733,6 +728,11 @@ void UpdateSystemTime(void)
 	  #endif
 	 #endif
 	#endif
+	
+		if(date_time.hour == 3)	//xba ddd 2024-03-14 Upload a synchronization packet at 03:00 for the backend to calibrate the watch's time.
+		{
+			SyncSendHealthData();
+		}
 	}
 
 	if((date_time_changed&0x08) != 0)

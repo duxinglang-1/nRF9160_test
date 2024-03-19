@@ -852,6 +852,7 @@ int main(void)
 		DlMsgProc();
 	#endif
 	#ifdef CONFIG_FOTA_DOWNLOAD
+		VerCheckMsgProc();
 		FotaMsgProc();
 	#endif
 	#ifdef CONFIG_AUDIO_SUPPORT

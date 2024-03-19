@@ -1293,6 +1293,25 @@ void NBSendSettingReply(uint8_t *data, uint32_t datalen)
 	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
 }
 
+void NBSendVerCheckData(uint8_t *data, uint32_t datalen)
+{
+	uint8_t buf[256] = {0};
+	uint8_t tmpbuf[32] = {0};
+	
+	strcpy(buf, "{1:1:0:0:");
+	strcat(buf, g_imei);
+	strcat(buf, ":T80:");
+	strcat(buf, data);
+	strcat(buf, ",");
+	GetSystemTimeSecString(tmpbuf);
+	strcat(buf, tmpbuf);
+	strcat(buf, "}");
+#ifdef NB_DEBUG	
+	LOGD("ver check data:%s", buf);
+#endif
+	MqttSendData(buf, strlen(buf), DATA_TRANSFER);
+}
+
 void NBSendAlarmData(uint8_t *data, uint32_t datalen)
 {
 	uint8_t buf[256] = {0};
@@ -1944,6 +1963,10 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				copylen = (ptr1-ptr) < sizeof(g_new_font_ver) ? (ptr1-ptr) : sizeof(g_new_font_ver);
 			memset(g_new_font_ver, 0x00, sizeof(g_new_font_ver));
 			memcpy(g_new_font_ver, ptr, copylen);
+
+		#ifdef CONFIG_FOTA_DOWNLOAD
+			VerCheckExit();
+		#endif
 		}
 		else if(strcmp(strcmd, "S15") == 0)
 		{

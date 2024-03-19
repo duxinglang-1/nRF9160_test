@@ -37,6 +37,7 @@ static bool fota_start_flag = false;
 static bool fota_run_flag = false;
 static bool fota_reboot_flag = false;
 static bool fota_redraw_pro_flag = false;
+static bool ver_check_timeout_flag = false;
 
 uint8_t g_fota_progress = 0;
 
@@ -48,6 +49,8 @@ static FOTA_STATUS_ENUM fota_cur_status = FOTA_STATUS_ERROR;
 
 static void fota_timer_handler(struct k_timer *timer_id);
 K_TIMER_DEFINE(fota_timer, fota_timer_handler, NULL);
+static void VerCheckkTimerOutCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(ver_check_timer, VerCheckkTimerOutCallBack, NULL);
 
 /**@brief Recoverable BSD library error. */
 void bsd_recoverable_error_handler(uint32_t err)
@@ -186,6 +189,11 @@ void fota_exit(void)
 	fota_cur_status = FOTA_STATUS_MAX;
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	ExitFOTAScreen();
+}
+
+static void VerCheckkTimerOutCallBack(struct k_timer *timer_id)
+{
+	ver_check_timeout_flag = true;
 }
 
 static void fota_timer_handler(struct k_timer *timer)
@@ -421,6 +429,44 @@ void FotaMsgProc(void)
 	if(fota_run_flag)
 	{
 		k_sleep(K_MSEC(50));
+	}
+}
+
+void VerCheckStart(void)
+{
+	SendVerCheckAskData();
+	k_timer_start(&ver_check_timer, K_SECONDS(30), K_NO_WAIT);
+}
+
+void VerCheckExit(void)
+{
+	if(k_timer_remaining_get(&ver_check_timer) > 0)
+	{
+		k_timer_stop(&ver_check_timer);
+		
+		if((strcmp(g_new_fw_ver,g_fw_version) != 0)
+			#ifdef NB_SIGNAL_TEST
+			 || 1
+			#endif
+			)
+		{
+			fota_start();
+		}
+		else
+		{
+			ReturnFTFotaMenu();
+		}
+	}
+}
+
+void VerCheckMsgProc(void)
+{
+	if(ver_check_timeout_flag)
+	{
+		LOGD("ver_check_timeout_flag");
+		ver_check_timeout_flag = false;
+
+		ReturnFTFotaMenu();
 	}
 }
 

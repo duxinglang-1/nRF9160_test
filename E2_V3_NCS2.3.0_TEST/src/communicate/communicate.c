@@ -1539,3 +1539,22 @@ void SendFallAlarmData(void)
 	NBSendAlarmData(reply, strlen(reply));
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  SendVerCheckAskData
+ * DESCRIPTION
+ *  发送FOTA版本信息请求包
+ * PARAMETERS
+ *	
+ * RETURNS
+ *  Nothing
+ *****************************************************************************/
+void SendVerCheckAskData(void)
+{
+	uint8_t reply[8] = {0};
+	uint32_t i,count=1;
+
+	strcpy(reply, "1");
+	NBSendVerCheckData(reply, strlen(reply));
+}
+

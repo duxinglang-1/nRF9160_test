@@ -842,6 +842,18 @@ void ResetUpdateStatus(void)
 	}
 }
 
+void ReturnFTFotaMenu(void)
+{
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	
+	main_menu_index_bk = settings_menu.index;
+	memcpy(&settings_menu, &SETTING_MENU_OTA_UPDATE, sizeof(settings_menu_t));
+
+	screen_id = SCREEN_ID_SETTINGS;
+	scr_msg[screen_id].status = SCREEN_STATUS_CREATED;
+	scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+}
+
 void SettingsMenuDumpProc(void)
 {
 }
@@ -934,6 +946,9 @@ void SettingsMainMenu7Proc(void)
 	else
 #endif		
 	{
+	#if 1	//xb add 2024-03-19 再强制请求更新一次版本信息
+		EnterVerCheckScreen();
+	#else
 		main_menu_index_bk = settings_menu.index;
 		memcpy(&settings_menu, &SETTING_MENU_OTA_UPDATE, sizeof(settings_menu_t));
 
@@ -941,6 +956,7 @@ void SettingsMainMenu7Proc(void)
 		{
 			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 		}
+	#endif
 	}
 }
 

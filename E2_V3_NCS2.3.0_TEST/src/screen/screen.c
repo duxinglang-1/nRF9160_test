@@ -2643,6 +2643,68 @@ static uint8_t img_flag = 0;
 static uint8_t temp_retry_left = 2;
 static uint8_t tempdata[TEMP_REC2_MAX_DAILY*sizeof(temp_rec2_nod)] = {0};
 
+void TempShowNumByImg(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t num_img_w, uint32_t *img_addr, uint32_t separa_img_addr, float data)
+{
+	uint8_t i,count=1;
+	uint16_t x1,temp_body;
+	uint32_t divisor=10;
+	uint16_t img_w,img_h;
+	
+	if(global_settings.temp_unit == TEMP_UINT_C)
+	{
+		temp_body = (data*10);
+	}
+	else
+	{
+		temp_body = (uint16_t)((32+1.8*data)*10);
+	}
+
+	while(1)
+	{
+		if(temp_body/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	LCD_Fill(x, y, w, h, BLACK);
+	LCD_get_pic_size_from_flash(separa_img_addr, &img_w, &img_h);
+	x1 = x;
+	if(count == 1)
+	{
+		x1 = x+(w-2*num_img_w-img_w)/2;
+		LCD_ShowImg_From_Flash(x1, y, img_addr[temp_body/10]);
+		x1 += num_img_w;
+		LCD_ShowImg_From_Flash(x1, y, separa_img_addr);
+		x1 += img_w;
+		LCD_ShowImg_From_Flash(x1, y, img_addr[temp_body%10]);
+	}
+	else
+	{
+		for(i=0;i<(count+1);i++)
+		{
+			if(i == count-1)
+			{
+				LCD_ShowImg_From_Flash(x1, y, separa_img_addr);
+				x1 += img_w;
+			}
+			else
+			{
+				LCD_ShowImg_From_Flash(x1, y, img_addr[temp_body/divisor]);
+				temp_body = temp_body%divisor;
+				divisor = divisor/10;
+				x1 += num_img_w;
+			}
+		}
+	}
+}
+
 void TempScreenStopTimer(void)
 {
 	k_timer_stop(&mainmenu_timer);
@@ -2733,6 +2795,8 @@ void TempUpdateStatus(void)
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
 							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
+	uint32_t img_small_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+								IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
 
 	switch(g_temp_status)
 	{
@@ -2837,6 +2901,8 @@ void TempUpdateStatus(void)
 		
 	case TEMP_STATUS_MEASURE_OK:
 		LCD_ShowImg_From_Flash(TEMP_ICON_X, TEMP_ICON_Y, IMG_TEMP_BIG_ICON_3_ADDR);
+		TempShowNumByImg(TEMP_UP_STR_X, TEMP_UP_STR_Y, TEMP_UP_STR_W, TEMP_UP_STR_H, TEMP_UP_NUM_W, img_small_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_max/10.0);
+		TempShowNumByImg(TEMP_DOWN_STR_X, TEMP_DOWN_STR_Y, TEMP_DOWN_STR_W, TEMP_DOWN_STR_H, TEMP_DOWN_NUM_W, img_small_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_min/10.0);
 		k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -3012,6 +3078,7 @@ void TempShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
+#if 0	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
 	memset(&tempdata, 0x00, sizeof(tempdata));
 	GetCurDayTempRecData(&tempdata);
 	p_temp = (temp_rec2_nod*)&tempdata;
@@ -3043,142 +3110,12 @@ void TempShowStatus(void)
 
 		p_temp++;
 	}
-
-	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	if(g_temp_menu > 0.0)
-	{
-		if(g_temp_menu > temp_max)
-		{
-			if(temp_min == 0.0)
-				temp_min = temp_max;
-			temp_max = g_temp_menu;
-		}
-		else if(((g_temp_menu < temp_min) && (temp_min > 0.0)) || (temp_min == 0.0))
-		{
-			temp_min = g_temp_menu;
-		}
-	}
-	else if(last_health.temp_rec.deca_temp/10.0 > 0.0)
-	{
-		if(last_health.temp_rec.deca_temp/10.0 > temp_max)
-		{
-			if(temp_min == 0.0)
-				temp_min = temp_max;
-			temp_max = last_health.temp_rec.deca_temp/10.0;
-		}
-		else if(((last_health.temp_rec.deca_temp/10.0 < temp_min) && (temp_min > 0.0)) || (temp_min == 0.0))
-		{
-			temp_min = last_health.temp_rec.deca_temp/10.0;
-		}
-	}
-
-	if(global_settings.temp_unit == TEMP_UINT_C)
-	{
-		temp_body = (uint16_t)(temp_max*10);
-	}
-	else
-	{
-		temp_body = (uint16_t)((32+1.8*temp_max)*10);
-	}
-
-	while(1)
-	{
-		if(temp_body/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	x = TEMP_UP_STR_X;
-	y = TEMP_UP_STR_Y;
-	if(count == 1)
-	{
-		x = TEMP_UP_STR_X+(TEMP_UP_STR_W-2*TEMP_UP_NUM_W-TEMP_UP_DOT_W)/2;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
-		x += TEMP_UP_NUM_W;
-		LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
-		x += TEMP_UP_DOT_W;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
-	}
-	else
-	{
-		for(i=0;i<(count+1);i++)
-		{
-			if(i == count-1)
-			{
-				LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
-				x += TEMP_UP_DOT_W;
-			}
-			else
-			{
-				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
-				temp_body = temp_body%divisor;
-				divisor = divisor/10;
-				x += TEMP_UP_NUM_W;
-			}
-		}
-	}
-	
-	if(global_settings.temp_unit == TEMP_UINT_C)
-	{
-		temp_body = (uint16_t)(temp_min*10);
-	}
-	else
-	{
-		temp_body = (uint16_t)((32+1.8*temp_min)*10);
-	}
-
-	count = 1;
-	divisor = 10;
-	while(1)
-	{
-		if(temp_body/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	x = TEMP_DOWN_STR_X;
-	y = TEMP_DOWN_STR_Y;
-	if(count == 1)
-	{
-		x = TEMP_DOWN_STR_X+(TEMP_DOWN_STR_W-2*TEMP_DOWN_NUM_W-TEMP_DOWN_DOT_W)/2;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body/10]);
-		x += TEMP_DOWN_NUM_W;
-		LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
-		x += TEMP_DOWN_DOT_W;
-		LCD_ShowImg_From_Flash(x, y, img_num[temp_body%10]);
-	}
-	else
-	{
-		for(i=0;i<(count+1);i++)
-		{
-			if(i == count-1)
-			{
-				LCD_ShowImg_From_Flash(x, y, IMG_FONT_24_DOT_ADDR);
-				x += TEMP_DOWN_DOT_W;
-			}
-			else
-			{
-				LCD_ShowImg_From_Flash(x, y, img_num[temp_body/divisor]);
-				temp_body = temp_body%divisor;
-				divisor = divisor/10;
-				x += TEMP_DOWN_NUM_W;
-			}
-		}
-	}
+	TempShowNumByImg(TEMP_UP_STR_X, TEMP_UP_STR_Y, TEMP_UP_STR_W, TEMP_UP_STR_H, TEMP_UP_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, temp_max);
+	TempShowNumByImg(TEMP_DOWN_STR_X, TEMP_DOWN_STR_Y, TEMP_DOWN_STR_W, TEMP_DOWN_STR_H, TEMP_DOWN_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, temp_min);
+#else
+	TempShowNumByImg(TEMP_UP_STR_X, TEMP_UP_STR_Y, TEMP_UP_STR_W, TEMP_UP_STR_H, TEMP_UP_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_max/10.0);
+	TempShowNumByImg(TEMP_DOWN_STR_X, TEMP_DOWN_STR_Y, TEMP_DOWN_STR_W, TEMP_DOWN_STR_H, TEMP_DOWN_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_min/10.0);
+#endif
 
 	k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -3326,6 +3263,128 @@ void EnterTempScreen(void)
 static uint8_t img_index = 0;
 static uint8_t ppg_retry_left = 2;
 static uint8_t ppgdata[PPG_REC2_MAX_DAILY*sizeof(bpt_rec2_nod)] = {0};
+
+void PPGShowNumByImg(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t num_img_w, uint32_t *img_addr, uint8_t data)
+{
+	uint8_t i,count=1;
+	uint32_t divisor=10;
+
+	while(1)
+	{
+		if(data/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	LCD_Fill(x, y, w, h, BLACK);
+	
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(x+i*num_img_w, y, img_addr[data/divisor]);
+		data = data%divisor;
+		divisor = divisor/10;
+	}
+}
+
+void PPGShowBpNumByImg(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t num_img_w, uint32_t *num_img_addr, uint32_t separa_img_addr, bpt_data data)
+{
+	uint8_t i,count1=1,count2=1;
+	uint16_t x1;
+	uint32_t divisor1=10,divisor2=10;
+
+	while(1)
+	{
+		if(data.systolic/divisor1 > 0)
+		{
+			count1++;
+			divisor1 = divisor1*10;
+		}
+		else
+		{
+			divisor1 = divisor1/10;
+			break;
+		}
+	}
+	while(1)
+	{
+		if(data.diastolic/divisor2 > 0)
+		{
+			count2++;
+			divisor2 = divisor2*10;
+		}
+		else
+		{
+			divisor2 = divisor2/10;
+			break;
+		}
+	}
+
+	LCD_Fill(x, y, w, h, BLACK);
+	
+	x1 = x;
+	for(i=0;i<(count1+count2+1);i++)
+	{
+		if(i < count1)
+		{
+			LCD_ShowImg_From_Flash(x1, y, num_img_addr[data.systolic/divisor1]);
+			x1 += num_img_w;
+			data.systolic = data.systolic%divisor1;
+			divisor1 = divisor1/10;
+		}
+		else if(i == count1)
+		{
+			uint16_t img_w,img_h;
+			
+			LCD_get_pic_size_from_flash(separa_img_addr, &img_w, &img_h);
+			LCD_ShowImg_From_Flash(x1, y, separa_img_addr);
+			x1 += img_w;
+		}
+		else
+		{
+			LCD_ShowImg_From_Flash(x1, y, num_img_addr[data.diastolic/divisor2]);
+			x1 += num_img_w;
+			data.diastolic = data.diastolic%divisor2;
+			divisor2 = divisor2/10;
+		}
+	}
+}
+
+void PPGShowNumWithUnitByImg(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t num_img_w, uint32_t *num_img_addr, uint32_t unit_img_addr, uint8_t data)
+{
+	uint8_t i,count=1;
+	uint32_t divisor=10;
+
+	while(1)
+	{
+		if(data/divisor > 0)
+		{
+			count++;
+			divisor = divisor*10;
+		}
+		else
+		{
+			divisor = divisor/10;
+			break;
+		}
+	}
+
+	LCD_Fill(x, y, w, h, BLACK);
+
+	for(i=0;i<count;i++)
+	{
+		LCD_ShowImg_From_Flash(x+i*num_img_w, y, num_img_addr[data/divisor]);
+		data = data%divisor;
+		divisor = divisor/10;
+	}
+	LCD_ShowImg_From_Flash(x+i*num_img_w, y, unit_img_addr);
+}
 
 void PPGScreenStopTimer(void)
 {
@@ -3512,6 +3571,8 @@ void BPUpdateStatus(void)
 	uint32_t divisor1=10,divisor2=10;
 	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
 							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
+	uint32_t img_small_num[10] = {IMG_FONT_16_NUM_0_ADDR,IMG_FONT_16_NUM_1_ADDR,IMG_FONT_16_NUM_2_ADDR,IMG_FONT_16_NUM_3_ADDR,IMG_FONT_16_NUM_4_ADDR,
+								IMG_FONT_16_NUM_5_ADDR,IMG_FONT_16_NUM_6_ADDR,IMG_FONT_16_NUM_7_ADDR,IMG_FONT_16_NUM_8_ADDR,IMG_FONT_16_NUM_9_ADDR};
 
 	switch(g_ppg_status)
 	{
@@ -3610,6 +3671,8 @@ void BPUpdateStatus(void)
 		
 	case PPG_STATUS_MEASURE_OK:
 		LCD_ShowImg_From_Flash(BP_ICON_X, BP_ICON_Y, IMG_BP_BIG_ICON_3_ADDR);
+		PPGShowBpNumByImg(BP_UP_STR_X, BP_UP_STR_Y, BP_UP_STR_W, BP_UP_STR_H, BP_UP_NUM_W, img_small_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_max);
+		PPGShowBpNumByImg(BP_DOWN_STR_X, BP_DOWN_STR_Y, BP_DOWN_STR_W, BP_DOWN_STR_H, BP_DOWN_NUM_W, img_small_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_min);
 		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -3662,7 +3725,7 @@ void BPShowStatus(void)
 	uint16_t i,x,y,w,h;
 	uint8_t tmpbuf[128] = {0};
 	bpt_rec2_nod *p_bpt;
-	bpt_data bpt_max={0},bpt_min={0};
+	static bpt_data bpt_max={0},bpt_min={0};
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x0050,0x0072,0x0065,0x0073,0x0073,0x0075,0x0072,0x0065,0x0000},//Blood Pressure
@@ -3764,6 +3827,7 @@ void BPShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
+#if 0 //xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
 	memset(&ppgdata, 0x00, sizeof(ppgdata));
 	GetCurDayBptRecData(&ppgdata);
 	p_bpt = (bpt_rec2_nod*)&ppgdata;
@@ -3797,145 +3861,13 @@ void BPShowStatus(void)
 		}
 
 		p_bpt++;
-	}
-
-	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	if(g_bpt_menu.systolic > 0)
-	{
-		if(g_bpt_menu.systolic > bpt_max.systolic)
-		{
-			if(bpt_min.systolic == 0)
-				memcpy(&bpt_min, &bpt_max, sizeof(bpt_data));
-			memcpy(&bpt_max, &g_bpt_menu, sizeof(bpt_data));
-		}
-		else if(((g_bpt_menu.systolic < bpt_min.systolic) && (bpt_min.systolic > 0)) || (bpt_min.systolic == 0))
-		{
-			memcpy(&bpt_min, &g_bpt_menu, sizeof(bpt_data));
-		}
-	}
-	else if(last_health.bpt_rec.systolic > 0)
-	{
-		if(last_health.bpt_rec.systolic > bpt_max.systolic)
-		{
-			if(bpt_min.systolic == 0)
-				memcpy(&bpt_min, &bpt_max, sizeof(bpt_data));
-			bpt_max.systolic = last_health.bpt_rec.systolic;
-			bpt_max.diastolic = last_health.bpt_rec.diastolic;
-		}
-		else if(((last_health.bpt_rec.systolic < bpt_min.systolic) && (bpt_min.systolic > 0)) || (bpt_min.systolic == 0))
-		{
-			bpt_min.systolic = last_health.bpt_rec.systolic;
-			bpt_min.diastolic = last_health.bpt_rec.diastolic;
-		}
-	}
-	
-	while(1)
-	{
-		if(bpt_max.systolic/divisor1 > 0)
-		{
-			count1++;
-			divisor1 = divisor1*10;
-		}
-		else
-		{
-			divisor1 = divisor1/10;
-			break;
-		}
-	}
-	while(1)
-	{
-		if(bpt_max.diastolic/divisor2 > 0)
-		{
-			count2++;
-			divisor2 = divisor2*10;
-		}
-		else
-		{
-			divisor2 = divisor2/10;
-			break;
-		}
-	}
-
-	x = BP_UP_STR_X;
-	y = BP_UP_STR_Y;
-	for(i=0;i<(count1+count2+1);i++)
-	{
-		if(i < count1)
-		{
-			LCD_ShowImg_From_Flash(x, y, img_num[bpt_max.systolic/divisor1]);
-			x += BP_UP_NUM_W;
-			bpt_max.systolic = bpt_max.systolic%divisor1;
-			divisor1 = divisor1/10;
-		}
-		else if(i == count1)
-		{
-			LCD_ShowImg_From_Flash(x, y, IMG_FONT_16_SLASH_ADDR);
-			x += BP_UP_SLASH_W;
-		}
-		else
-		{
-			LCD_ShowImg_From_Flash(x, y, img_num[bpt_max.diastolic/divisor2]);
-			x += BP_UP_NUM_W;
-			bpt_max.diastolic = bpt_max.diastolic%divisor2;
-			divisor2 = divisor2/10;
-		}
-	}
-
-	count1 = 1;
-	count2 = 1;
-	divisor1 = 10;
-	divisor2 = 10;
-	while(1)
-	{
-		if(bpt_min.systolic/divisor1 > 0)
-		{
-			count1++;
-			divisor1 = divisor1*10;
-		}
-		else
-		{
-			divisor1 = divisor1/10;
-			break;
-		}
-	}
-	while(1)
-	{
-		if(bpt_min.diastolic/divisor2 > 0)
-		{
-			count2++;
-			divisor2 = divisor2*10;
-		}
-		else
-		{
-			divisor2 = divisor2/10;
-			break;
-		}
-	}
-
-	x = BP_DOWN_STR_X;
-	y = BP_DOWN_STR_Y;
-	for(i=0;i<(count1+count2+1);i++)
-	{
-		if(i < count1)
-		{
-			LCD_ShowImg_From_Flash(x, y, img_num[bpt_min.systolic/divisor1]);
-			x += BP_DOWN_NUM_W;
-			bpt_min.systolic = bpt_min.systolic%divisor1;
-			divisor1 = divisor1/10;
-		}
-		else if(i == count1)
-		{
-			LCD_ShowImg_From_Flash(x, y, IMG_FONT_16_SLASH_ADDR);
-			x += BP_DOWN_SLASH_W;
-		}
-		else
-		{
-			LCD_ShowImg_From_Flash(x, y, img_num[bpt_min.diastolic/divisor2]);
-			x += BP_DOWN_NUM_W;
-			bpt_min.diastolic = bpt_min.diastolic%divisor2;
-			divisor2 = divisor2/10;
-		}
-	}
+	}	
+	PPGShowBpNumByImg(BP_UP_STR_X, BP_UP_STR_Y, BP_UP_STR_W, BP_UP_STR_H, BP_UP_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, bpt_max);
+	PPGShowBpNumByImg(BP_DOWN_STR_X, BP_DOWN_STR_Y, BP_DOWN_STR_W, BP_DOWN_STR_H, BP_DOWN_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, bpt_min);
+#else
+	PPGShowBpNumByImg(BP_UP_STR_X, BP_UP_STR_Y, BP_UP_STR_W, BP_UP_STR_H, BP_UP_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_max);
+	PPGShowBpNumByImg(BP_DOWN_STR_X, BP_DOWN_STR_Y, BP_DOWN_STR_W, BP_DOWN_STR_H, BP_DOWN_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_min);
+#endif
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -4103,6 +4035,8 @@ void SPO2UpdateStatus(void)
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
 							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
+	uint32_t img_small_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+									IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
 
 	switch(g_ppg_status)
 	{
@@ -4167,6 +4101,8 @@ void SPO2UpdateStatus(void)
 		
 	case PPG_STATUS_MEASURE_OK:
 		LCD_ShowImg_From_Flash(SPO2_ICON_X, SPO2_ICON_Y, IMG_SPO2_BIG_ICON_3_ADDR);
+		PPGShowNumWithUnitByImg(SPO2_UP_STR_X, SPO2_UP_STR_Y, SPO2_UP_STR_W, SPO2_UP_STR_H, SPO2_UP_NUM_W, img_small_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_max);
+		PPGShowNumWithUnitByImg(SPO2_DOWN_STR_X, SPO2_DOWN_STR_Y, SPO2_DOWN_STR_W, SPO2_DOWN_STR_H, SPO2_DOWN_NUM_W, img_small_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_min);
 		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -4218,7 +4154,7 @@ void SPO2ShowStatus(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	spo2_rec2_nod *p_spo2;
-	uint8_t spo2_max=0,spo2_min=0;
+	static uint8_t spo2_max=0,spo2_min=0;
 	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][25] = {
 											#ifndef FW_FOR_CN
@@ -4312,6 +4248,7 @@ void SPO2ShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
+#if 0	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
 	memset(&ppgdata, 0x00, sizeof(ppgdata));
 	GetCurDaySpo2RecData(&ppgdata);
 	p_spo2 = (spo2_rec2_nod*)&ppgdata;
@@ -4344,80 +4281,13 @@ void SPO2ShowStatus(void)
 		p_spo2++;
 	}
 
-	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	if(g_spo2_menu > 0)
-	{
-		if(g_spo2_menu > spo2_max)
-		{
-			if(spo2_min == 0)
-				spo2_min = spo2_max;
-			spo2_max = g_spo2_menu;
-		}
-		else if(((g_spo2_menu < spo2_min) && (spo2_min > 0)) || (spo2_min == 0))
-		{
-			spo2_min = g_spo2_menu;
-		}
-	}
-	else if(last_health.spo2_rec.spo2 > 0)
-	{
-		if(last_health.spo2_rec.spo2 > spo2_max)
-		{
-			if(spo2_min == 0)
-				spo2_min = spo2_max;
-			spo2_max = last_health.spo2_rec.spo2;
-		}
-		else if(((last_health.spo2_rec.spo2 < spo2_min) && (spo2_min > 0)) || (spo2_min == 0))
-		{
-			spo2_min = last_health.spo2_rec.spo2;
-		}
-	}
+	PPGShowNumWithUnitByImg(SPO2_UP_STR_X, SPO2_UP_STR_Y, SPO2_UP_STR_W, SPO2_UP_STR_H, SPO2_UP_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, spo2_max);
+	PPGShowNumWithUnitByImg(SPO2_DOWN_STR_X, SPO2_DOWN_STR_Y, SPO2_DOWN_STR_W, SPO2_DOWN_STR_H, SPO2_DOWN_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, spo2_min);
+#else
+	PPGShowNumWithUnitByImg(SPO2_UP_STR_X, SPO2_UP_STR_Y, SPO2_UP_STR_W, SPO2_UP_STR_H, SPO2_UP_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_max);
+	PPGShowNumWithUnitByImg(SPO2_DOWN_STR_X, SPO2_DOWN_STR_Y, SPO2_DOWN_STR_W, SPO2_DOWN_STR_H, SPO2_DOWN_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_min);
+#endif
 
-	while(1)
-	{
-		if(spo2_max/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(SPO2_UP_STR_X+i*SPO2_UP_NUM_W, SPO2_UP_STR_Y, img_num[spo2_max/divisor]);
-		spo2_max = spo2_max%divisor;
-		divisor = divisor/10;
-	}
-	LCD_ShowImg_From_Flash(SPO2_UP_STR_X+i*SPO2_UP_NUM_W, SPO2_UP_STR_Y, IMG_FONT_24_PERC_ADDR);
-	
-	count = 1;
-	divisor = 10;
-	while(1)
-	{
-		if(spo2_min/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(SPO2_DOWN_STR_X+i*SPO2_DOWN_NUM_W, SPO2_DOWN_STR_Y, img_num[spo2_min/divisor]);
-		spo2_min = spo2_min%divisor;
-		divisor = divisor/10;
-	}
-	LCD_ShowImg_From_Flash(SPO2_DOWN_STR_X+i*SPO2_DOWN_NUM_W, SPO2_DOWN_STR_Y, IMG_FONT_24_PERC_ADDR);
-	
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
 }
@@ -4583,6 +4453,8 @@ void HRUpdateStatus(void)
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_42_NUM_0_ADDR,IMG_FONT_42_NUM_1_ADDR,IMG_FONT_42_NUM_2_ADDR,IMG_FONT_42_NUM_3_ADDR,IMG_FONT_42_NUM_4_ADDR,
 							IMG_FONT_42_NUM_5_ADDR,IMG_FONT_42_NUM_6_ADDR,IMG_FONT_42_NUM_7_ADDR,IMG_FONT_42_NUM_8_ADDR,IMG_FONT_42_NUM_9_ADDR};
+	uint32_t img_small_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
+								IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
 
 	switch(g_ppg_status)
 	{
@@ -4639,14 +4511,17 @@ void HRUpdateStatus(void)
 				divisor = divisor/10;
 			}
 			LCD_ShowImg_From_Flash(HR_STR_X+(HR_STR_W-count*HR_NUM_W)/2+i*HR_NUM_W, HR_UNIT_Y, IMG_HR_BPM_ADDR);
-		
+
 			MenuStopHr();
+
 			k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
 		}
 		break;
 		
 	case PPG_STATUS_MEASURE_OK:
 		LCD_ShowImg_From_Flash(HR_ICON_X, HR_ICON_Y, IMG_HR_BIG_ICON_2_ADDR);
+		PPGShowNumByImg(HR_UP_STR_X, HR_UP_STR_Y, HR_UP_STR_W, HR_UP_STR_H, HR_UP_NUM_W, img_small_num, last_health.hr_max);
+		PPGShowNumByImg(HR_DOWN_STR_X, HR_DOWN_STR_Y, HR_DOWN_STR_W, HR_DOWN_STR_H, HR_DOWN_NUM_W, img_small_num, last_health.hr_min);
 		k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 		break;
 		
@@ -4698,7 +4573,7 @@ void HRShowStatus(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	hr_rec2_nod *p_hr;
-	uint8_t hr_max=0,hr_min=0,hr[24] = {0};
+	uint8_t hr_max,hr_min;
 	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
@@ -4793,6 +4668,7 @@ void HRShowStatus(void)
 	LCD_MeasureUniString(tmpbuf,&w,&h);
 	LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
+#if 0	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
 	memset(&ppgdata, 0x00, sizeof(ppgdata));
 	GetCurDayHrRecData(&ppgdata);
 	p_hr = (hr_rec2_nod*)&ppgdata;
@@ -4824,78 +4700,12 @@ void HRShowStatus(void)
 
 		p_hr++;
 	}
-
-	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	if(g_hr_menu > 0)
-	{
-		if(g_hr_menu > hr_max)
-		{
-			if(hr_min == 0)
-				hr_min = hr_max;
-			hr_max = g_hr_menu;
-		}
-		else if(((g_hr_menu < hr_min) && (hr_min > 0)) || (hr_min == 0))
-		{
-			hr_min = g_hr_menu;
-		}
-	}
-	else if(last_health.hr_rec.hr > 0)
-	{
-		if(last_health.hr_rec.hr > hr_max)
-		{
-			if(hr_min == 0)
-				hr_min = hr_max;
-			hr_max = last_health.hr_rec.hr;
-		}
-		else if(((last_health.hr_rec.hr < hr_min) && (hr_min > 0)) || (hr_min == 0))
-		{
-			hr_min = last_health.hr_rec.hr;
-		}
-	}
-	
-	while(1)
-	{
-		if(hr_max/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(HR_UP_STR_X+i*HR_UP_NUM_W, HR_UP_STR_Y, img_num[hr_max/divisor]);
-		hr_max = hr_max%divisor;
-		divisor = divisor/10;
-	}
-
-	count = 1;
-	divisor = 10;
-	while(1)
-	{
-		if(hr_min/divisor > 0)
-		{
-			count++;
-			divisor = divisor*10;
-		}
-		else
-		{
-			divisor = divisor/10;
-			break;
-		}
-	}
-
-	for(i=0;i<count;i++)
-	{
-		LCD_ShowImg_From_Flash(HR_DOWN_STR_X+i*HR_DOWN_NUM_W, HR_DOWN_STR_Y, img_num[hr_min/divisor]);
-		hr_min = hr_min%divisor;
-		divisor = divisor/10;
-	}
+	PPGShowNumByImg(HR_UP_STR_X, HR_UP_STR_Y, HR_UP_STR_W, HR_UP_STR_H, HR_UP_NUM_W, img_num, hr_max);
+	PPGShowNumByImg(HR_DOWN_STR_X, HR_DOWN_STR_Y, HR_DOWN_STR_W, HR_DOWN_STR_H, HR_UP_NUM_W, img_num, hr_min);
+#else
+	PPGShowNumByImg(HR_UP_STR_X, HR_UP_STR_Y, HR_UP_STR_W, HR_UP_STR_H, HR_UP_NUM_W, img_num, last_health.hr_max);
+	PPGShowNumByImg(HR_DOWN_STR_X, HR_DOWN_STR_Y, HR_DOWN_STR_W, HR_DOWN_STR_H, HR_UP_NUM_W, img_num, last_health.hr_min);
+#endif
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 

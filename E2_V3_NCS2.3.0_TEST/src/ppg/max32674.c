@@ -2080,6 +2080,22 @@ void PPGStopCheck(void)
 			last_health.hr_rec.timestamp.second = date_time.second;
 			last_health.hr_rec.timestamp.week = date_time.week;
 			last_health.hr_rec.hr = g_hr;
+			if(g_hr > last_health.hr_max)
+			{
+				if(last_health.hr_min == 0)
+				{
+					if(last_health.hr_max > 0)
+						last_health.hr_min = last_health.hr_max;
+					else
+						last_health.hr_min = g_hr;
+				}
+				last_health.hr_max = g_hr;
+			}
+			else if(g_hr < last_health.hr_min)
+			{
+				last_health.hr_min = g_hr;
+			}
+			
 			save_flag = true;
 		}
 		else if((g_ppg_data == PPG_DATA_SPO2)&&(g_spo2 > 0))
@@ -2092,6 +2108,22 @@ void PPGStopCheck(void)
 			last_health.spo2_rec.timestamp.second = date_time.second;
 			last_health.spo2_rec.timestamp.week = date_time.week;
 			last_health.spo2_rec.spo2 = g_spo2;
+			if(g_spo2 > last_health.spo2_max)
+			{
+				if(last_health.spo2_min == 0)
+				{
+					if(last_health.spo2_max > 0)
+						last_health.spo2_min = last_health.spo2_max;
+					else
+						last_health.spo2_min = g_spo2;
+				}
+				last_health.spo2_max = g_spo2;
+			}
+			else if(g_spo2 < last_health.spo2_min)
+			{
+				last_health.spo2_min = g_spo2;
+			}
+			
 			save_flag = true;
 		}
 	}
@@ -2106,8 +2138,23 @@ void PPGStopCheck(void)
 			last_health.bpt_rec.timestamp.minute = date_time.minute;
 			last_health.bpt_rec.timestamp.second = date_time.second;
 			last_health.bpt_rec.timestamp.week = date_time.week;
-			last_health.bpt_rec.systolic = g_bpt.systolic;
-			last_health.bpt_rec.diastolic = g_bpt.diastolic;
+			memcpy(&last_health.bpt_rec.bpt, &g_bpt, sizeof(bpt_data));
+			if(g_bpt.systolic > last_health.bpt_max.systolic)
+			{
+				if(last_health.bpt_min.systolic == 0)
+				{
+					if(last_health.bpt_max.systolic > 0)
+						memcpy(&last_health.bpt_min, &last_health.bpt_max, sizeof(bpt_data));
+					else
+						memcpy(&last_health.bpt_min, &g_bpt, sizeof(bpt_data));
+				}
+				memcpy(&last_health.bpt_max, &g_bpt, sizeof(bpt_data));
+			}
+			else if(g_bpt.systolic < last_health.bpt_min.systolic)
+			{
+				memcpy(&last_health.bpt_min, &g_bpt, sizeof(bpt_data));
+			}
+			
 			save_flag = true;
 		}
 	}
@@ -2188,8 +2235,8 @@ void PPG_init(void)
 	DateIncrease(&last_health.bpt_rec.timestamp, 7);
 	if(DateCompare(last_health.bpt_rec.timestamp, date_time) > 0)
 	{
-		g_bpt.systolic = last_health.bpt_rec.systolic;
-		g_bpt.diastolic = last_health.bpt_rec.diastolic;
+		g_bpt.systolic = last_health.bpt_rec.bpt.systolic;
+		g_bpt.diastolic = last_health.bpt_rec.bpt.diastolic;
 	}
 
 	if(!sh_init_interface())

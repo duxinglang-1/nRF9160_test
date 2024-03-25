@@ -666,6 +666,22 @@ void TempMsgProcess(void)
 			last_health.temp_rec.timestamp.second = date_time.second;
 			last_health.temp_rec.timestamp.week = date_time.week;
 			last_health.temp_rec.deca_temp = (uint16_t)(g_temp_body*10);
+			if((uint16_t)(g_temp_body*10) > last_health.deca_temp_max)
+			{
+				if(last_health.deca_temp_min == 0)
+				{
+					if(last_health.deca_temp_max > 0)
+						last_health.deca_temp_min = last_health.deca_temp_max;
+					else
+						last_health.deca_temp_min = (uint16_t)(g_temp_body*10);
+				}
+				last_health.deca_temp_max = (uint16_t)(g_temp_body*10);
+			}
+			else if((uint16_t)(g_temp_body*10) < last_health.deca_temp_min)
+			{
+				last_health.deca_temp_min = (uint16_t)(g_temp_body*10);
+			}
+				
 			save_cur_health_to_record(&last_health);
 		}
 	}

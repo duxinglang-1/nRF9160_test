@@ -1939,6 +1939,117 @@ void PPGStopCheck(void)
 
 	ppg_power_flag = 0;
 
+	if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
+	{
+		if((g_ppg_data == PPG_DATA_HR)&&(g_hr > 0))
+		{
+			last_health.hr_rec.timestamp.year = date_time.year;
+			last_health.hr_rec.timestamp.month = date_time.month; 
+			last_health.hr_rec.timestamp.day = date_time.day;
+			last_health.hr_rec.timestamp.hour = date_time.hour;
+			last_health.hr_rec.timestamp.minute = date_time.minute;
+			last_health.hr_rec.timestamp.second = date_time.second;
+			last_health.hr_rec.timestamp.week = date_time.week;
+			last_health.hr_rec.hr = g_hr;
+			if(g_hr > last_health.hr_max)
+			{
+				if(last_health.hr_min == 0)
+				{
+					if(last_health.hr_max > 0)
+						last_health.hr_min = last_health.hr_max;
+					else
+						last_health.hr_min = g_hr;
+				}
+				last_health.hr_max = g_hr;
+			}
+			else if(g_hr < last_health.hr_min)
+			{
+				last_health.hr_min = g_hr;
+			}
+
+			save_flag = true;
+		}
+		else if((g_ppg_data == PPG_DATA_SPO2)&&(g_spo2 > 0))
+		{
+			last_health.spo2_rec.timestamp.year = date_time.year;
+			last_health.spo2_rec.timestamp.month = date_time.month; 
+			last_health.spo2_rec.timestamp.day = date_time.day;
+			last_health.spo2_rec.timestamp.hour = date_time.hour;
+			last_health.spo2_rec.timestamp.minute = date_time.minute;
+			last_health.spo2_rec.timestamp.second = date_time.second;
+			last_health.spo2_rec.timestamp.week = date_time.week;
+			last_health.spo2_rec.spo2 = g_spo2;
+			if(g_spo2 > last_health.spo2_max)
+			{
+				if(last_health.spo2_min == 0)
+				{
+					if(last_health.spo2_max > 0)
+						last_health.spo2_min = last_health.spo2_max;
+					else
+						last_health.spo2_min = g_spo2;
+				}
+				last_health.spo2_max = g_spo2;
+			}
+			else if(g_spo2 < last_health.spo2_min)
+			{
+				last_health.spo2_min = g_spo2;
+			}
+
+			save_flag = true;
+		}
+	}
+	else if((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
+	{
+		if((g_bpt.systolic > 0)&&(g_bpt.diastolic > 0))
+		{
+			last_health.bpt_rec.timestamp.year = date_time.year;
+			last_health.bpt_rec.timestamp.month = date_time.month; 
+			last_health.bpt_rec.timestamp.day = date_time.day;
+			last_health.bpt_rec.timestamp.hour = date_time.hour;
+			last_health.bpt_rec.timestamp.minute = date_time.minute;
+			last_health.bpt_rec.timestamp.second = date_time.second;
+			last_health.bpt_rec.timestamp.week = date_time.week;
+			memcpy(&last_health.bpt_rec.bpt, &g_bpt, sizeof(bpt_data));
+			if(g_bpt.systolic > last_health.bpt_max.systolic)
+			{
+				if(last_health.bpt_min.systolic == 0)
+				{
+					if(last_health.bpt_max.systolic > 0)
+						last_health.bpt_min.systolic = last_health.bpt_max.systolic;
+					else
+						last_health.bpt_min.systolic = g_bpt.systolic;
+				}
+				last_health.bpt_max.systolic = g_bpt.systolic;
+			}
+			else if(g_bpt.systolic < last_health.bpt_min.systolic)
+			{
+				last_health.bpt_min.systolic = g_bpt.systolic;
+			}
+			
+			if(g_bpt.diastolic > last_health.bpt_max.diastolic)
+			{
+				if(last_health.bpt_min.diastolic == 0)
+				{
+					if(last_health.bpt_max.diastolic > 0)
+						last_health.bpt_min.diastolic = last_health.bpt_max.diastolic;
+					else
+						last_health.bpt_min.diastolic = g_bpt.diastolic;
+				}
+				last_health.bpt_max.diastolic = g_bpt.diastolic;
+			}
+			else if(g_bpt.diastolic < last_health.bpt_min.diastolic)
+			{
+				last_health.bpt_min.diastolic = g_bpt.diastolic;
+			}
+
+			save_flag = true;
+		}
+	}
+	if(save_flag)
+	{
+		save_cur_health_to_record(&last_health);
+	}
+
 #ifdef CONFIG_BLE_SUPPORT
 	if((g_ppg_trigger&TRIGGER_BY_APP_ONE_KEY) != 0)
 	{
@@ -2067,102 +2178,6 @@ void PPGStopCheck(void)
 		return;
 	}
 #endif
-
-	if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
-	{
-		if((g_ppg_data == PPG_DATA_HR)&&(g_hr > 0))
-		{
-			last_health.hr_rec.timestamp.year = date_time.year;
-			last_health.hr_rec.timestamp.month = date_time.month; 
-			last_health.hr_rec.timestamp.day = date_time.day;
-			last_health.hr_rec.timestamp.hour = date_time.hour;
-			last_health.hr_rec.timestamp.minute = date_time.minute;
-			last_health.hr_rec.timestamp.second = date_time.second;
-			last_health.hr_rec.timestamp.week = date_time.week;
-			last_health.hr_rec.hr = g_hr;
-			if(g_hr > last_health.hr_max)
-			{
-				if(last_health.hr_min == 0)
-				{
-					if(last_health.hr_max > 0)
-						last_health.hr_min = last_health.hr_max;
-					else
-						last_health.hr_min = g_hr;
-				}
-				last_health.hr_max = g_hr;
-			}
-			else if(g_hr < last_health.hr_min)
-			{
-				last_health.hr_min = g_hr;
-			}
-			
-			save_flag = true;
-		}
-		else if((g_ppg_data == PPG_DATA_SPO2)&&(g_spo2 > 0))
-		{
-			last_health.spo2_rec.timestamp.year = date_time.year;
-			last_health.spo2_rec.timestamp.month = date_time.month; 
-			last_health.spo2_rec.timestamp.day = date_time.day;
-			last_health.spo2_rec.timestamp.hour = date_time.hour;
-			last_health.spo2_rec.timestamp.minute = date_time.minute;
-			last_health.spo2_rec.timestamp.second = date_time.second;
-			last_health.spo2_rec.timestamp.week = date_time.week;
-			last_health.spo2_rec.spo2 = g_spo2;
-			if(g_spo2 > last_health.spo2_max)
-			{
-				if(last_health.spo2_min == 0)
-				{
-					if(last_health.spo2_max > 0)
-						last_health.spo2_min = last_health.spo2_max;
-					else
-						last_health.spo2_min = g_spo2;
-				}
-				last_health.spo2_max = g_spo2;
-			}
-			else if(g_spo2 < last_health.spo2_min)
-			{
-				last_health.spo2_min = g_spo2;
-			}
-			
-			save_flag = true;
-		}
-	}
-	else if((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
-	{
-		if((g_bpt.systolic > 0)&&(g_bpt.diastolic > 0))
-		{
-			last_health.bpt_rec.timestamp.year = date_time.year;
-			last_health.bpt_rec.timestamp.month = date_time.month; 
-			last_health.bpt_rec.timestamp.day = date_time.day;
-			last_health.bpt_rec.timestamp.hour = date_time.hour;
-			last_health.bpt_rec.timestamp.minute = date_time.minute;
-			last_health.bpt_rec.timestamp.second = date_time.second;
-			last_health.bpt_rec.timestamp.week = date_time.week;
-			memcpy(&last_health.bpt_rec.bpt, &g_bpt, sizeof(bpt_data));
-			if(g_bpt.systolic > last_health.bpt_max.systolic)
-			{
-				if(last_health.bpt_min.systolic == 0)
-				{
-					if(last_health.bpt_max.systolic > 0)
-						memcpy(&last_health.bpt_min, &last_health.bpt_max, sizeof(bpt_data));
-					else
-						memcpy(&last_health.bpt_min, &g_bpt, sizeof(bpt_data));
-				}
-				memcpy(&last_health.bpt_max, &g_bpt, sizeof(bpt_data));
-			}
-			else if(g_bpt.systolic < last_health.bpt_min.systolic)
-			{
-				memcpy(&last_health.bpt_min, &g_bpt, sizeof(bpt_data));
-			}
-			
-			save_flag = true;
-		}
-	}
-
-	if(save_flag)
-	{
-		save_cur_health_to_record(&last_health);
-	}
 }
 
 void PPGStopBptCal(void)

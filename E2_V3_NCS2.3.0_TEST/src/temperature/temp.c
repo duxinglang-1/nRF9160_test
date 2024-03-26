@@ -523,6 +523,7 @@ void TempMsgProcess(void)
 				{
 					temp_stop_flag = true;
 					get_temp_ok_flag = true;
+					k_timer_stop(&temp_check_timer);
 				}
 			}
 
@@ -586,6 +587,35 @@ void TempMsgProcess(void)
 		k_timer_stop(&temp_check_timer);
 		k_timer_stop(&temp_stop_timer);
 		k_timer_stop(&temp_menu_stop_timer);
+
+		if(g_temp_body > 0.0)
+		{
+			last_health.temp_rec.timestamp.year = date_time.year;
+			last_health.temp_rec.timestamp.month = date_time.month; 
+			last_health.temp_rec.timestamp.day = date_time.day;
+			last_health.temp_rec.timestamp.hour = date_time.hour;
+			last_health.temp_rec.timestamp.minute = date_time.minute;
+			last_health.temp_rec.timestamp.second = date_time.second;
+			last_health.temp_rec.timestamp.week = date_time.week;
+			last_health.temp_rec.deca_temp = (uint16_t)(g_temp_body*10);
+			if((uint16_t)(g_temp_body*10) > last_health.deca_temp_max)
+			{
+				if(last_health.deca_temp_min == 0)
+				{
+					if(last_health.deca_temp_max > 0)
+						last_health.deca_temp_min = last_health.deca_temp_max;
+					else
+						last_health.deca_temp_min = (uint16_t)(g_temp_body*10);
+				}
+				last_health.deca_temp_max = (uint16_t)(g_temp_body*10);
+			}
+			else if((uint16_t)(g_temp_body*10) < last_health.deca_temp_min)
+			{
+				last_health.deca_temp_min = (uint16_t)(g_temp_body*10);
+			}
+
+			save_cur_health_to_record(&last_health);
+		}
 
 	#ifdef CONFIG_BLE_SUPPORT
 		if((g_temp_trigger&TEMP_TRIGGER_BY_APP) != 0)
@@ -655,35 +685,6 @@ void TempMsgProcess(void)
 			return;
 		}
 	#endif
-
-		if(g_temp_body > 0.0)
-		{
-			last_health.temp_rec.timestamp.year = date_time.year;
-			last_health.temp_rec.timestamp.month = date_time.month; 
-			last_health.temp_rec.timestamp.day = date_time.day;
-			last_health.temp_rec.timestamp.hour = date_time.hour;
-			last_health.temp_rec.timestamp.minute = date_time.minute;
-			last_health.temp_rec.timestamp.second = date_time.second;
-			last_health.temp_rec.timestamp.week = date_time.week;
-			last_health.temp_rec.deca_temp = (uint16_t)(g_temp_body*10);
-			if((uint16_t)(g_temp_body*10) > last_health.deca_temp_max)
-			{
-				if(last_health.deca_temp_min == 0)
-				{
-					if(last_health.deca_temp_max > 0)
-						last_health.deca_temp_min = last_health.deca_temp_max;
-					else
-						last_health.deca_temp_min = (uint16_t)(g_temp_body*10);
-				}
-				last_health.deca_temp_max = (uint16_t)(g_temp_body*10);
-			}
-			else if((uint16_t)(g_temp_body*10) < last_health.deca_temp_min)
-			{
-				last_health.deca_temp_min = (uint16_t)(g_temp_body*10);
-			}
-				
-			save_cur_health_to_record(&last_health);
-		}
 	}
 	
 	if(temp_redraw_data_flag)

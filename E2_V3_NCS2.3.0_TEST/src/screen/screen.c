@@ -3725,7 +3725,7 @@ void BPShowStatus(void)
 	uint16_t i,x,y,w,h;
 	uint8_t tmpbuf[128] = {0};
 	bpt_rec2_nod *p_bpt;
-	static bpt_data bpt_max={0},bpt_min={0};
+	bpt_data bpt_max={0},bpt_min={0};
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x0050,0x0072,0x0065,0x0073,0x0073,0x0075,0x0072,0x0065,0x0000},//Blood Pressure
@@ -4154,7 +4154,7 @@ void SPO2ShowStatus(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	spo2_rec2_nod *p_spo2;
-	static uint8_t spo2_max=0,spo2_min=0;
+	uint8_t spo2_max=0,spo2_min=0;
 	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][25] = {
 											#ifndef FW_FOR_CN
@@ -4573,7 +4573,7 @@ void HRShowStatus(void)
 {
 	uint8_t tmpbuf[128] = {0};
 	hr_rec2_nod *p_hr;
-	uint8_t hr_max,hr_min;
+	uint8_t hr_max=0,hr_min=0;
 	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN

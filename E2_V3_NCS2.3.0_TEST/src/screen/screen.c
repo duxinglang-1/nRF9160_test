@@ -2628,11 +2628,11 @@ void TempShowNumByImg(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t n
 	
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
-		temp_body = (data*10);
+		temp_body = round(data*10.0);
 	}
 	else
 	{
-		temp_body = (uint16_t)((32+1.8*data)*10);
+		temp_body = round((32+1.8*data)*10.0);
 	}
 
 	while(1)

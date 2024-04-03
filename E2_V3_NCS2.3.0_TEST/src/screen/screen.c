@@ -853,8 +853,6 @@ void IdleShowNetMode(void)
 }
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-static uint16_t idle_steps = 0;
-
 void IdleUpdateSportData(void)
 {
 	uint16_t bg_color = 0x00c3;
@@ -864,8 +862,7 @@ void IdleUpdateSportData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	idle_steps = g_steps;
-	steps_show = idle_steps;
+	steps_show = last_sport.step_rec.steps;
 
 	LCD_Fill(IDLE_STEPS_STR_X, IDLE_STEPS_STR_Y, IDLE_STEPS_STR_W, IDLE_STEPS_STR_H, bg_color);
 
@@ -900,8 +897,7 @@ void IdleShowSportData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	idle_steps = g_steps;
-	steps_show = idle_steps;
+	steps_show = last_sport.step_rec.steps;
 	
 	LCD_ShowImg_From_Flash(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_IDLE_STEP_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_STEPS_ICON_X, IDLE_STEPS_ICON_Y, IMG_IDLE_STEP_ICON_ADDR, bg_color);
@@ -930,8 +926,6 @@ void IdleShowSportData(void)
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
-static uint8_t idle_hr = 0;
-
 void IdleUpdateHrData(void)
 {
 	uint16_t bg_color = 0x1820;
@@ -940,9 +934,7 @@ void IdleUpdateHrData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	if(g_hr > 0)
-		idle_hr = g_hr;
-	hr_show = idle_hr;
+	hr_show = last_health.hr_rec.hr;
 	
 	LCD_Fill(IDLE_HR_STR_X, IDLE_HR_STR_Y, IDLE_HR_STR_W, IDLE_HR_STR_H, bg_color);
 
@@ -976,9 +968,7 @@ void IdleShowHrData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	if(g_hr > 0)
-		idle_hr = g_hr;
-	hr_show = idle_hr;
+	hr_show = last_health.hr_rec.hr;
 
 	LCD_ShowImg_From_Flash(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_IDLE_HR_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, IMG_IDLE_HR_ICON_ADDR, bg_color);
@@ -1005,8 +995,6 @@ void IdleShowHrData(void)
 	}
 }
 
-static uint8_t idle_spo2 = 0;
-
 void IdleUpdateSPO2Data(void)
 {
 	uint16_t bg_color = 0x1820;
@@ -1015,9 +1003,7 @@ void IdleUpdateSPO2Data(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	if(g_spo2 > 0)
-		idle_spo2 = g_spo2;
-	spo2_show = idle_spo2;
+	spo2_show = last_health.spo2_rec.spo2;
 	
 	LCD_Fill(IDLE_SPO2_STR_X, IDLE_SPO2_STR_Y, IDLE_SPO2_STR_W, IDLE_SPO2_STR_H, bg_color);
 
@@ -1052,9 +1038,7 @@ void IdleShowSPO2Data(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	if(g_spo2 > 0)
-		idle_spo2 = g_spo2;
-	spo2_show = idle_spo2;
+	spo2_show = last_health.spo2_rec.spo2;
 
 	LCD_ShowImg_From_Flash(IDLE_SPO2_BG_X, IDLE_SPO2_BG_Y, IMG_IDLE_SPO2_BG_ADDR);
 	LCD_dis_pic_trans_from_flash(IDLE_SPO2_ICON_X, IDLE_SPO2_ICON_Y, IMG_IDLE_SPO2_ICON_ADDR, bg_color);
@@ -1085,8 +1069,6 @@ void IdleShowSPO2Data(void)
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT
-static float idle_temp = 0.0;
-
 void IdleUpdateTempData(void)
 {
 	uint16_t x,y,w,h;
@@ -1097,18 +1079,15 @@ void IdleUpdateTempData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	if(g_temp_body > 0.0)
-		idle_temp = g_temp_body;
-	
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
-		temp_show = (uint16_t)(idle_temp*10);
+		temp_show = last_health.temp_rec.deca_temp;
 	}
 	else
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
-		temp_show = (uint16_t)((32+1.8*idle_temp)*10);
+		temp_show = round((32+1.8*(last_health.temp_rec.deca_temp/10.0))*10.0);
 	}
 
 	while(1)
@@ -1167,19 +1146,16 @@ void IdleShowTempData(void)
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	if(g_temp_body > 0.0)
-		idle_temp = g_temp_body;
-
 	LCD_ShowImg_From_Flash(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_IDLE_TEMP_BG_ADDR);
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
-		temp_show = (uint16_t)(idle_temp*10);
+		temp_show = last_health.temp_rec.deca_temp;
 	}
 	else
 	{
 		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
-		temp_show = (uint16_t)((32+1.8*idle_temp)*10);
+		temp_show = round((32+1.8*(last_health.temp_rec.deca_temp/10.0))*10.0);
 	}
 
 	while(1)
@@ -2836,11 +2812,11 @@ void TempUpdateStatus(void)
 
 			if(global_settings.temp_unit == TEMP_UINT_C)
 			{
-				temp_body = (uint16_t)(g_temp_body*10);
+				temp_body = round(g_temp_body*10.0);
 			}
 			else
 			{
-				temp_body = (uint16_t)((32+1.8*g_temp_body)*10);
+				temp_body = round((32+1.8*g_temp_body)*10.0);
 			}
 		
 			while(1)

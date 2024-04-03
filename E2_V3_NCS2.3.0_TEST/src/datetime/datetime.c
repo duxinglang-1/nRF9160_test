@@ -540,7 +540,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
+	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)&&(defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT))
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -743,6 +743,23 @@ void UpdateSystemTime(void)
 		g_steps = 0;
 		reset_steps = true;
 	#endif
+
+	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
+	#ifdef CONFIG_PPG_SUPPORT
+		last_health.hr_max = 0;
+		last_health.hr_min = 0;
+		last_health.spo2_max = 0;
+		last_health.spo2_min = 0;
+		memset(&last_health.bpt_max, 0x00, sizeof(last_health.bpt_max));
+		memset(&last_health.bpt_min, 0x00, sizeof(last_health.bpt_min));
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
+		last_health.deca_temp_max = 0;
+		last_health.deca_temp_min = 0;
+	#endif
+	
+		save_cur_health_to_record(&last_health);
+	#endif
 	}
 }
 
@@ -927,6 +944,24 @@ void TimeMsgProcess(void)
 
 	if(send_timing_data_flag)
 	{
+	#ifdef CONFIG_PPG_SUPPORT
+		if((g_hr_hourly >= PPG_HR_MIN)&&(g_hr_hourly <= PPG_HR_MAX))
+			UpdateLastPPGData(g_health_check_time, PPG_DATA_HR, &g_hr_hourly);
+		if((g_spo2_hourly >= PPG_SPO2_MIN)&&(g_spo2_hourly <= PPG_SPO2_MAX))
+			UpdateLastPPGData(g_health_check_time, PPG_DATA_SPO2, &g_spo2_hourly);
+		if((g_bpt_hourly.systolic >= PPG_BPT_SYS_MIN)&&(g_bpt_hourly.systolic <= PPG_BPT_SYS_MAX)&&(g_bpt_hourly.diastolic >= PPG_BPT_DIA_MIN)&&(g_bpt_hourly.diastolic <= PPG_BPT_DIA_MAX))
+			UpdateLastPPGData(g_health_check_time, PPG_DATA_BPT, &g_bpt_hourly);
+
+		PPGRedrawHourlyData();
+	#endif
+	
+	#ifdef CONFIG_TEMP_SUPPORT
+		if((g_temp_hourly >= (TEMP_MIN/10.0))&&(g_temp_hourly <= (TEMP_MAX/10.0)))
+			UpdateLastTempData(g_health_check_time, g_temp_hourly);
+
+		TempRedrawHourlyData();
+	#endif
+	
 		TimeCheckSendHealthData();
 	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 		TimeCheckSendSportData();

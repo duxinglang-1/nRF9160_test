@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <stdio.h>
+#include <math.h>
 #include "datetime.h"
 
 //sensor mode
@@ -93,6 +94,7 @@ extern bool get_temp_ok_flag;
 extern float g_temp_skin;
 extern float g_temp_body;
 extern float g_temp_menu;
+extern float g_temp_hourly;
 
 extern TEMP_WORK_STATUS g_temp_status;
 #ifndef CONFIG_PPG_SUPPORT
@@ -101,5 +103,6 @@ extern sys_date_timer_t g_health_check_time;
 extern void SetCurDayTempRecData(sys_date_timer_t time_stamp, float data);
 extern void GetCurDayTempRecData(uint8_t *databuf);
 extern void StartTemp(TEMP_TRIGGER_SOUCE trigger_type);
+extern void UpdateLastTempData(sys_date_timer_t time_stamp, float data);
 #endif/*__TEMP_H__*/
 

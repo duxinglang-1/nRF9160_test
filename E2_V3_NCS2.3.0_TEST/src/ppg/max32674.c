@@ -76,10 +76,13 @@ uint8_t g_ppg_ver[64] = {0};
 
 uint8_t g_hr = 0;
 uint8_t g_hr_menu = 0;
+uint8_t g_hr_hourly = 0;
 uint8_t g_spo2 = 0;
 uint8_t g_spo2_menu = 0;
+uint8_t g_spo2_hourly = 0;
 bpt_data g_bpt = {0};
 bpt_data g_bpt_menu = {0};
+bpt_data g_bpt_hourly = {0};
 
 static uint8_t scc_check_sum = 0;
 static uint8_t SCC_COMPARE_MAX = PPG_SCC_COUNT_MAX;
@@ -879,6 +882,102 @@ void GetGivenTimeHrRecData(sys_date_timer_t date, uint8_t *hr)
 	}
 }
 
+void UpdateLastPPGData(sys_date_timer_t time_stamp, PPG_DATA_TYPE type, void *data)
+{
+	switch(type)
+	{
+	case PPG_DATA_HR:
+		{
+			uint8_t *p_hr = data;
+			
+			memcpy(&last_health.hr_rec.timestamp, &time_stamp, sizeof(sys_date_timer_t));
+			last_health.hr_rec.hr = *p_hr;
+			if(*p_hr > last_health.hr_max)
+			{
+				if(last_health.hr_min == 0)
+				{
+					if(last_health.hr_max > 0)
+						last_health.hr_min = last_health.hr_max;
+					else
+						last_health.hr_min = *p_hr;
+				}
+				last_health.hr_max = *p_hr;
+			}
+			else if(*p_hr < last_health.hr_min)
+			{
+				last_health.hr_min = *p_hr;
+			}
+		}
+		break;
+		
+	case PPG_DATA_SPO2:
+		{
+			uint8_t *p_spo2 = data;
+			
+			memcpy(&last_health.spo2_rec.timestamp, &time_stamp, sizeof(sys_date_timer_t));
+			last_health.spo2_rec.spo2 = *p_spo2;
+			if(*p_spo2 > last_health.spo2_max)
+			{
+				if(last_health.spo2_min == 0)
+				{
+					if(last_health.spo2_max > 0)
+						last_health.spo2_min = last_health.spo2_max;
+					else
+						last_health.spo2_min = *p_spo2;
+				}
+				last_health.spo2_max = *p_spo2;
+			}
+			else if(*p_spo2 < last_health.spo2_min)
+			{
+				last_health.spo2_min = *p_spo2;
+			}
+		}
+		break;
+		
+	case PPG_DATA_BPT:
+		{
+			bpt_data *p_bpt = data;
+			
+			memcpy(&last_health.bpt_rec.timestamp, &date_time, sizeof(sys_date_timer_t));
+			memcpy(&last_health.bpt_rec.bpt, p_bpt, sizeof(bpt_data));
+			if(p_bpt->systolic > last_health.bpt_max.systolic)
+			{
+				if(last_health.bpt_min.systolic == 0)
+				{
+					if(last_health.bpt_max.systolic > 0)
+						last_health.bpt_min.systolic = last_health.bpt_max.systolic;
+					else
+						last_health.bpt_min.systolic = p_bpt->systolic;
+				}
+				last_health.bpt_max.systolic = p_bpt->systolic;
+			}
+			else if(p_bpt->systolic < last_health.bpt_min.systolic)
+			{
+				last_health.bpt_min.systolic = p_bpt->systolic;
+			}
+			
+			if(p_bpt->diastolic > last_health.bpt_max.diastolic)
+			{
+				if(last_health.bpt_min.diastolic == 0)
+				{
+					if(last_health.bpt_max.diastolic > 0)
+						last_health.bpt_min.diastolic = last_health.bpt_max.diastolic;
+					else
+						last_health.bpt_min.diastolic = p_bpt->diastolic;
+				}
+				last_health.bpt_max.diastolic = p_bpt->diastolic;
+			}
+			else if(p_bpt->diastolic < last_health.bpt_min.diastolic)
+			{
+				last_health.bpt_min.diastolic = p_bpt->diastolic;
+			}
+		}
+		break;
+	}
+
+	save_cur_health_to_record(&last_health);
+}
+
 void GetPPGData(uint8_t *hr, uint8_t *spo2, uint8_t *systolic, uint8_t *diastolic)
 {
 	if(hr != NULL)
@@ -934,17 +1033,21 @@ bool PPGIsWorking(void)
 		return true;
 }
 
-void PPGRedrawData(void)
+void PPGRedrawHourlyData(void)
 {
 	if(screen_id == SCREEN_ID_IDLE)
 	{
-		if(g_ppg_data == PPG_DATA_HR && get_hr_ok_flag)
+		if((g_hr_hourly >= PPG_HR_MIN)&&(g_hr_hourly <= PPG_HR_MAX))
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
-		else if(g_ppg_data == PPG_DATA_SPO2 && get_spo2_ok_flag)
+		if((g_spo2_hourly >= PPG_SPO2_MIN)&&(g_spo2_hourly <= PPG_SPO2_MAX))
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
 	}
-	else if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
+}
+
+void PPGRedrawData(void)
+{
+	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
 	{
 		if(screen_id == SCREEN_ID_HR)
 			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
@@ -1505,7 +1608,7 @@ void PPGGetSensorHubData(void)
 					LOGD("hr:%d", hr);
 				#endif
 
-					if(hr > PPG_HR_MIN)
+					if((hr >= PPG_HR_MIN)&&(hr <= PPG_HR_MAX))
 					{
 						for(i=0;i<sizeof(temp_hr)/sizeof(temp_hr[0]);i++)
 						{
@@ -1566,7 +1669,7 @@ void PPGGetSensorHubData(void)
 				#ifdef PPG_DEBUG
 					LOGD("spo2:%d", spo2);
 				#endif
-					if(spo2 >= PPG_SPO2_MIN)
+					if((spo2 >= PPG_SPO2_MIN)&&(spo2 <= PPG_SPO2_MAX))
 					{
 						for(i=0;i<sizeof(temp_spo2)/sizeof(temp_spo2[0]);i++)
 						{
@@ -1641,11 +1744,11 @@ void PPGGetSensorHubData(void)
 		if(flag || get_bpt_ok_flag)
 			ppg_redraw_data_flag = true;
 	}
-	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_IDLE))
+	else if((g_ppg_data == PPG_DATA_SPO2)&&(screen_id == SCREEN_ID_SPO2))
 	{
 		ppg_redraw_data_flag = true;
 	}
-	else if((g_ppg_data == PPG_DATA_HR)&&(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_IDLE))
+	else if((g_ppg_data == PPG_DATA_HR)&&(screen_id == SCREEN_ID_HR))
 	{
 		ppg_redraw_data_flag = true;
 	}
@@ -1731,6 +1834,19 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 			g_ppg_data = data_type;
 			k_timer_start(&ppg_delay_start_timer, K_MSEC((NOTIFY_TIMER_INTERVAL+1)*1000), K_NO_WAIT);
 			return;
+		}
+
+		switch(data_type)
+		{
+		case PPG_DATA_HR:
+			g_hr_hourly = 0;
+			break;
+		case PPG_DATA_SPO2:
+			g_spo2_hourly = 0;
+			break;
+		case PPG_DATA_BPT:
+			memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
+			break;
 		}
 		break;
 		
@@ -1914,7 +2030,6 @@ void PPGStartCheck(void)
 void PPGStopCheck(void)
 {
 	int status = -1;
-	bool save_flag = false;
 	
 #ifdef PPG_DEBUG
 	LOGD("ppg_power_flag:%d", ppg_power_flag);
@@ -1938,117 +2053,6 @@ void PPGStopCheck(void)
 	PPG_Disable();
 
 	ppg_power_flag = 0;
-
-	if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
-	{
-		if((g_ppg_data == PPG_DATA_HR)&&(g_hr > 0))
-		{
-			last_health.hr_rec.timestamp.year = date_time.year;
-			last_health.hr_rec.timestamp.month = date_time.month; 
-			last_health.hr_rec.timestamp.day = date_time.day;
-			last_health.hr_rec.timestamp.hour = date_time.hour;
-			last_health.hr_rec.timestamp.minute = date_time.minute;
-			last_health.hr_rec.timestamp.second = date_time.second;
-			last_health.hr_rec.timestamp.week = date_time.week;
-			last_health.hr_rec.hr = g_hr;
-			if(g_hr > last_health.hr_max)
-			{
-				if(last_health.hr_min == 0)
-				{
-					if(last_health.hr_max > 0)
-						last_health.hr_min = last_health.hr_max;
-					else
-						last_health.hr_min = g_hr;
-				}
-				last_health.hr_max = g_hr;
-			}
-			else if(g_hr < last_health.hr_min)
-			{
-				last_health.hr_min = g_hr;
-			}
-
-			save_flag = true;
-		}
-		else if((g_ppg_data == PPG_DATA_SPO2)&&(g_spo2 > 0))
-		{
-			last_health.spo2_rec.timestamp.year = date_time.year;
-			last_health.spo2_rec.timestamp.month = date_time.month; 
-			last_health.spo2_rec.timestamp.day = date_time.day;
-			last_health.spo2_rec.timestamp.hour = date_time.hour;
-			last_health.spo2_rec.timestamp.minute = date_time.minute;
-			last_health.spo2_rec.timestamp.second = date_time.second;
-			last_health.spo2_rec.timestamp.week = date_time.week;
-			last_health.spo2_rec.spo2 = g_spo2;
-			if(g_spo2 > last_health.spo2_max)
-			{
-				if(last_health.spo2_min == 0)
-				{
-					if(last_health.spo2_max > 0)
-						last_health.spo2_min = last_health.spo2_max;
-					else
-						last_health.spo2_min = g_spo2;
-				}
-				last_health.spo2_max = g_spo2;
-			}
-			else if(g_spo2 < last_health.spo2_min)
-			{
-				last_health.spo2_min = g_spo2;
-			}
-
-			save_flag = true;
-		}
-	}
-	else if((g_ppg_alg_mode == ALG_MODE_BPT)&&(g_ppg_bpt_status == BPT_STATUS_GET_EST))
-	{
-		if((g_bpt.systolic > 0)&&(g_bpt.diastolic > 0))
-		{
-			last_health.bpt_rec.timestamp.year = date_time.year;
-			last_health.bpt_rec.timestamp.month = date_time.month; 
-			last_health.bpt_rec.timestamp.day = date_time.day;
-			last_health.bpt_rec.timestamp.hour = date_time.hour;
-			last_health.bpt_rec.timestamp.minute = date_time.minute;
-			last_health.bpt_rec.timestamp.second = date_time.second;
-			last_health.bpt_rec.timestamp.week = date_time.week;
-			memcpy(&last_health.bpt_rec.bpt, &g_bpt, sizeof(bpt_data));
-			if(g_bpt.systolic > last_health.bpt_max.systolic)
-			{
-				if(last_health.bpt_min.systolic == 0)
-				{
-					if(last_health.bpt_max.systolic > 0)
-						last_health.bpt_min.systolic = last_health.bpt_max.systolic;
-					else
-						last_health.bpt_min.systolic = g_bpt.systolic;
-				}
-				last_health.bpt_max.systolic = g_bpt.systolic;
-			}
-			else if(g_bpt.systolic < last_health.bpt_min.systolic)
-			{
-				last_health.bpt_min.systolic = g_bpt.systolic;
-			}
-			
-			if(g_bpt.diastolic > last_health.bpt_max.diastolic)
-			{
-				if(last_health.bpt_min.diastolic == 0)
-				{
-					if(last_health.bpt_max.diastolic > 0)
-						last_health.bpt_min.diastolic = last_health.bpt_max.diastolic;
-					else
-						last_health.bpt_min.diastolic = g_bpt.diastolic;
-				}
-				last_health.bpt_max.diastolic = g_bpt.diastolic;
-			}
-			else if(g_bpt.diastolic < last_health.bpt_min.diastolic)
-			{
-				last_health.bpt_min.diastolic = g_bpt.diastolic;
-			}
-
-			save_flag = true;
-		}
-	}
-	if(save_flag)
-	{
-		save_cur_health_to_record(&last_health);
-	}
 
 #ifdef CONFIG_BLE_SUPPORT
 	if((g_ppg_trigger&TRIGGER_BY_APP_ONE_KEY) != 0)
@@ -2085,6 +2089,8 @@ void PPGStopCheck(void)
 			{
 				flag = true;
 				g_hr_menu = g_hr;
+				UpdateLastPPGData(date_time, PPG_DATA_HR, &g_hr_menu);
+
 			#ifdef CONFIG_BLE_SUPPORT	
 				if(g_ble_connected)
 				{
@@ -2098,6 +2104,8 @@ void PPGStopCheck(void)
 			{
 				flag = true;
 				g_spo2_menu = g_spo2;
+				UpdateLastPPGData(date_time, PPG_DATA_SPO2, &g_spo2_menu);
+				
 			#ifdef CONFIG_BLE_SUPPORT	
 				if(g_ble_connected)
 				{
@@ -2113,6 +2121,8 @@ void PPGStopCheck(void)
 				{
 					flag = true;
 					memcpy(&g_bpt_menu, &g_bpt, sizeof(bpt_data));
+					UpdateLastPPGData(date_time, PPG_DATA_BPT, &g_bpt_menu);
+					
 				#ifdef CONFIG_BLE_SUPPORT	
 					if(g_ble_connected)
 					{
@@ -2142,6 +2152,7 @@ void PPGStopCheck(void)
 		{
 		case PPG_DATA_HR:
 			tmp_hr = g_hr;
+			g_hr_hourly = g_hr;
 			if(!ppg_skin_contacted_flag)
 				tmp_hr = 0xFE;
 			SetCurDayHrRecData(g_health_check_time, tmp_hr);
@@ -2150,6 +2161,7 @@ void PPGStopCheck(void)
 			
 		case PPG_DATA_SPO2:
 			tmp_spo2 = g_spo2;
+			g_spo2_hourly = g_spo2;
 			if(!ppg_skin_contacted_flag)
 				tmp_spo2 = 0xFE;
 			SetCurDaySpo2RecData(g_health_check_time, tmp_spo2);
@@ -2157,6 +2169,7 @@ void PPGStopCheck(void)
 			
 		case PPG_DATA_BPT:
 			memcpy(&tmp_bpt, &g_bpt, sizeof(bpt_data));
+			memcpy(&g_bpt_hourly, &g_bpt, sizeof(bpt_data));
 			if(!ppg_skin_contacted_flag)
 				memset(&tmp_bpt, 0xFE, sizeof(bpt_data));
 			SetCurDayBptRecData(g_health_check_time, tmp_bpt);

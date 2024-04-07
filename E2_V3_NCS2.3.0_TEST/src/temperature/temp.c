@@ -672,12 +672,18 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
 			if(!ppg_skin_contacted_flag)
 			{
+			#ifdef CONFIG_PPG_SUPPORT
 				bpt_data tmp_bpt = {254,254};
+
+				g_hr_hourly = 0;
+				g_spo2_hourly = 0;
+				memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
 				
-				SetCurDayTempRecData(g_health_check_time, 254.0);
 				SetCurDayHrRecData(g_health_check_time, 254);
 				SetCurDaySpo2RecData(g_health_check_time, 254);
 				SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+			#endif
+				SetCurDayTempRecData(g_health_check_time, 254.0);
 			}
 			else
 			{

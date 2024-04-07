@@ -24,7 +24,8 @@
 #else
 #define LANG_BRANCH	"BU"
 #endif
-#endif
+
+#endif
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"

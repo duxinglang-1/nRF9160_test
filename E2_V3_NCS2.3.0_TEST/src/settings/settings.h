@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	7
 #define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.4.3_20240407"
+#define VERSION_STR	"V3.4.3_20240409"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else
@@ -24,8 +24,7 @@
 #else
 #define LANG_BRANCH	"BU"
 #endif
-
-#endif
+#endif
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"

@@ -653,7 +653,7 @@ void pmu_status_update(void)
 		charger_is_connected = true;
 		pmu_battery_stop_shutdown();
 
-		if(g_bat_temp > CHERGING_TERMIN_BY_COLD && g_bat_temp < CHERGING_TERMIN_BY_HOT)
+		if(1)//(g_bat_temp > CHERGING_TERMIN_BY_COLD && g_bat_temp < CHERGING_TERMIN_BY_HOT)
 		{
 			if(g_chg_status == BAT_CHARGING_NO)
 			{
@@ -831,7 +831,7 @@ bool pmu_interrupt_proc(void)
 			lcd_sleep_out = true;
 			pmu_battery_stop_shutdown();
 			
-			if(g_bat_temp > CHERGING_TERMIN_BY_COLD && g_bat_temp < CHERGING_TERMIN_BY_HOT)
+			if(1)//(g_bat_temp > CHERGING_TERMIN_BY_COLD && g_bat_temp < CHERGING_TERMIN_BY_HOT)
 			{
 				g_chg_status = BAT_CHARGING_PROGRESS;
 				g_bat_level = BAT_LEVEL_NORMAL;

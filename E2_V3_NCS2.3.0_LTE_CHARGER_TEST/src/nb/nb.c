@@ -3129,7 +3129,7 @@ void NBMsgProcess(void)
 		LOGD("Start NB-IoT test!");
 	#endif
 	
-		if(nb_is_chinese_sim())	//cmcc
+		if(1)//(nb_is_chinese_sim())	//cmcc
 		{
 			if(nb_is_connecting())
 			{

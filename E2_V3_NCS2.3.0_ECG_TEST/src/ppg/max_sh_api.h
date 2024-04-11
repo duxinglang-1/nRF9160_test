@@ -41,6 +41,8 @@
 /* 3 Slots Measurement 2 PD */
 #define SSMAX86176_MODE1_DATASIZE				18
 
+#define SSMAX86176_MODE2_DATASIZE				48
+
 /* 3 Axis */
 #define SSACCEL_MODE1_DATASIZE					6
 
@@ -64,6 +66,8 @@
 
 #define SSRAW_ECG_DATASIZE                      48
 
+#define SS_RAW_ECG_PACKAGE_SIZE                 (SS_PACKET_COUNTERSIZE + SSRAW_ECG_DATASIZE + SSRAW_ALGO_DATASIZE)
+
 typedef enum
 {
 	SENSORHUB_MODE_BASIC    = 1,
@@ -78,6 +82,26 @@ typedef enum
 	SH_PPG_SIGNAL_RED,
 	SH_PPG_SIGNAL_MAX
 }sensorhub_ppg_signal_t;
+
+typedef struct __attribute__((packed))
+{
+	uint8_t ecg_1[3];
+	uint8_t ecg_2[3];
+	uint8_t ecg_3[3];
+	uint8_t ecg_4[3];
+	uint8_t ecg_5[3];
+	uint8_t ecg_6[3];
+	uint8_t ecg_7[3];
+	uint8_t ecg_8[3];
+	uint8_t ecg_9[3];
+	uint8_t ecg_10[3];
+	uint8_t ecg_11[3];
+	uint8_t ecg_12[3];
+	uint8_t ecg_13[3];
+	uint8_t ecg_14[3];
+	uint8_t ecg_15[3];
+	uint8_t ecg_16[3];
+}max86176_ecg_data;
 
 typedef struct __attribute__((packed))
 {

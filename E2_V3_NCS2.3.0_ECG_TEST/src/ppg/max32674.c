@@ -26,7 +26,7 @@
 #include "external_flash.h"
 #include "logger.h"
 
-//#define PPG_DEBUG
+#define PPG_DEBUG
 
 #define PPG_HR_COUNT_MAX		10
 #define PPG_HR_DEL_MIN_NUM		6
@@ -1085,8 +1085,9 @@ bool PPGSenSorSet(void)
 		return false;
 	}
 
-	if(g_ppg_alg_mode == ALG_MODE_BPT)
+	switch(g_ppg_alg_mode)
 	{
+	case ALG_MODE_BPT:
 		if(!ppg_bpt_is_calbraed)
 		{
 			status = sh_check_bpt_cal_data();
@@ -1148,9 +1149,9 @@ bool PPGSenSorSet(void)
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
 		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500));
-	}
-	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
-	{
+		break;
+
+	case ALG_MODE_HR_SPO2:
 		//set fifo thresh
 		sh_set_fifo_thresh(1);
 		//Set the samples report period to 40ms(minimum is 32ms for BPT).
@@ -1173,6 +1174,187 @@ bool PPGSenSorSet(void)
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
 		k_timer_start(&ppg_get_hr_timer, K_MSEC(1*1000), K_MSEC(1*1000));
+		break;
+
+	case ALG_MODE_ECG:
+		//releases sensor SPI bus to MAX32674C. SensorHub mode.
+		//sh_spi_use();
+		//Set the output format to Raw Data
+		sh_set_data_type(SS_DATATYPE_RAW, true);
+		//Set the output format to Sample Counter byte, Sensor Data and Algorithm
+		sh_set_fifo_thresh(1);
+		//set report period for Sensor Hub to 1
+		sh_set_report_period(1);
+		//Enable MAX86176 AFE in mode 2
+		sensorhub_enable_ecg_sensor();
+
+		//Ecg Enable, 512 Decimation rate.
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x90, 0x85, 1);
+		//Ecg input polarity selection 
+		//7 		6 5 4 		3 	2 	1 0 
+		//ecg_ipol	pga gain 	-	-	ina gain	
+		//ecg_ipol(1b):0 non-inverted, 1 inverted 
+		//pga gain(3b):000~011:1~8, 100~111:2~16
+		//ina gain(2b):00~11: 20/30/40/60
+		//ecg gain=ina gain*pga gain=4*40
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x91, 0x22, 1);
+		//ecg channel fast recobery mode enable and selection
+		//7 6 				5 4 3 2 1 0
+		//en_ecg_fast_rec	ecg_fast_rec_threshold
+		//en_ecg_fast_rec(2b):00 normal mode, 01 manual fast recovery mode, 10 automatic fast recovery mode, 11 reserved.
+		//ecg_fast_rec_threshold(6b):0x3f
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x92, 0x3f, 1);
+		
+		//Lead Detect Configuration 1
+		//7 			6 5 			4 	3 2 1 0
+		//EN_LON_DET	EN_LOFF_DET		-	LOFF_SETTLE
+		//EN_LON_DET(1b):0 ULP Lead-On Detection Disabled, 1 ULP Lead-On Detection Enabled
+		//EN_LOFF_DET(2b):00 DC and AC lead-off detection disabled, 01 DC lead-off detection enabled, 10 AC enable, 11 AC enable with internal resistot
+		//LOFF_SETTLE(4b):00~15 0~120(number of sine waves or square waves) 
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x93, 0xa0, 1);
+		//Lead Detect Configuration 2
+		//7 				6 				5 4 			3 2 1 0
+		//DC_LOFF_RAPID		HI_C_RES_EN		LOFF_CG_MODE	LOFF_IMAG
+		//DC_LOFF_RAPID(1b):0 DC lead off detection with 128ms delay for QRS reason, 1 DC lead off detection without 128ms delay
+		//HI_C_RES_EN(1b):0 ECG high common mode input impedance mode disabled.No effect when AC LOFF is disabled. 1 ECG high common mode input impedance mode enabled.No effect when AC LOFF is disbaled.
+		//LOFF_CG_MODE(2b):00 CMFB with LPF, 01 CMFB without LPF, 10 No CMFB, without pullup, 11 No CMFB, with 5MOhm pullup
+		//LOFF_IMAG(4b):DC or AC Lead Offf Current Full-scale Magnitude Selection
+		//				0000	0nA(Disable & Disconnect Current Sources)
+		//				0001	40nA
+		//				0010	80nA
+		//				0011	120nA
+		//				0100	160nA
+		//				0101	200nA
+		//				0110	240nA
+		//				0111	280nA
+		//				1000	0nA(Disable & Disconnect Current Sources)
+		//				1001	400nA
+		//				1010	800nA
+		//				1011	1200nA
+		//				1100	1600nA
+		//				1101	2000nA
+		//				1110	2400nA
+		//				1111	2800nA
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x94, 0x04, 1);
+
+		//AC Lead Detect Waveform
+		//7 6 5 4 3 2 1 0
+		//AC_LOFF_IWAVE(1b):
+		//AC_LOFF_FREQ_DIV(7b):
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x95, 0x00, 1);
+		
+		//DC Lead Detect DAC Code
+		//7 6 	5 4 3 2 1 0
+		//- - 	DC_LOFF_DAC_CODE
+		//DC_LOFF_DAC_CODE(6b):
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x96, 0x00, 1);
+		
+		//DC Lead Off Threshold
+		//7 6 5 4 		3 2 1 0
+		//LOFF_CG_LPF	LOFF_CG_LPF
+		//LOFF_CG_LPF(4b):
+		//DC_LOFF_THRESH(4b):0000~1111 VMID+-200mV ~ VMID+-500mV
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x97, 0x00, 1);
+		
+		//AC Lead Off Threshold 1
+		//7 6 			5 4 3 2 1 0
+		//AC_LOFF_CMP	- - - - - -
+		//AC_LOFF_CMP(2b):00 Magnitude of In-phase conponent, I only, 01 Magnitude of Quadrature-phase component, Q only, 10 Magnitude of Z, where Z=SQRT(I^2+Q^2), 11 Reserved.Do not use.
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x98, 0x00, 1);
+		//AC lead Off Threshold 2
+		//7 6 5 4 3 2 1 0
+		//AC_LOFF_THRESH[7:0]
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x99, 0x00, 1);
+		
+		//AC Lead Off PGA HPE
+		//7 6 						5 4 3 	2 1 0
+		//AC_LOFF_UTIL_PGA_GAIN		- - - 	AC_LOFF_HPE
+		//AC_LOFF_UTIL_PGA_GAIN(2b):00 AC_LOFF_GAIN:3 UTILITY ADC GAIN:0.5, 
+		//							01 AC_LOFF_GAIN:4 UTILITY ADC GAIN:0.769(DO NOT USE), 
+		//							10 AC_LOFF_GAIN:5 UTILITY ADC GAIN:1.0(DO NOT USE), 
+		//							11 AC_LOFF_GAIN:9 UTILITY ADC GAIN:2.0(DO NOT USE)
+		//AC_LOFF_HPE(3b):000 10(3-dB Frequency(Hz)),
+		//				  001 180(3-dB Frequency(Hz)),
+		//				  010 500(3-dB Frequency(Hz)),
+		//				  011 900(3-dB Frequency(Hz)),
+		//				  100 1800(3-dB Frequency(Hz)),
+		//				  101 3800(3-dB Frequency(Hz)),
+		//				  110 Bypass(DC connection),
+		//				  111 Bypass(DC connection)
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x9A, 0x00, 1);
+		
+		//AC Lead Off Calibration Res(Read only)
+		// 7 6 5 4 3 2 1 0
+		//AC_LOFF_CAL_RES_VAR[7:0]
+		sh_get_reg(SH_SENSORIDX_MAX86176, 0x9B, &status);
+		
+		//Lead Bias Configuration 1
+		//7 6 5 4 	3 2 			1 				0
+		//-	- - - 	RBIAS_VALUE		EN_RBIAS_P		EN_RBIAS_N
+		//RBIAS_VALUE[1:0](2b):00 RBIAS=50M, 01 RBIAS=100M, 10 RBIAS=200M, 11 Reserved,Do not use.
+		//EN_RBIAS_P(1b):0 ECGP is not resistively connected to VMID, 1 ECGP is connected to VMID via a resistor(selected by RBIAS).
+		//EN_RBIAS_N(1b):0 ECGN is not resistively connected to VMID, 1 ECGN is connected to VMID via a resistor(selected by RBIAS).
+		//Don't use, ECGP/ECGN is not resistively connected to VMID.
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0x9E, 0x0C, 1);
+
+		//CAL Configuration 1
+		//7 		6 5 4 		3 			2 1 0
+		//CAL_EN	CAL_FREQ	CAL_DUTY	CAL_HIGH[10:8]
+		//CAL_EN(1b):0 Calibration sources and modes disabled, 1 Calibration sources and modes enable
+		//CAL_FREQ(3b):000~111 FMSTR/2^7(Approxomately 256 Hz)~FMSTR/2^21(Approximately 1/64 Hz)
+		//CAL_DUTY(1b):0 User CAL_HIGH to select time high foe VCALP and VCALN, 1 THIGH=50%(CAL_HIGH[10:0] are ignored)
+		//CAL_HIGH[10:8](3b):if CAL_DUTY=1,THIGI=50%(and CAL_HIGH[100] are ignored),otherwise THIGH=CAL_HIGH[10:0]*CAL_RES;CAL_RES is determined by FMSTR selecton(see CGG_GEN for details);for example,if FMSTR[2:0]=000,CAL_RES=30.52us.
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0xA0, 0x00, 1);
+		//CAL Configuration 2
+		//7 6 5 4 3 2 1 0
+		//CAL_HIGH
+		//CAL_HIGH[7:0](8b)
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0xA1, 0x00, 1);
+		//CAL Configuration 3
+		//7 		6 		5 			4 			3 2 		1 0
+		//OPEN_P	OPEN_N	CAL_MODE	CAL_MAG		CAL_P_SEL	CAL_N_SEL
+		//OPEN_P(1b):0 ECGP is internally connected to the ECG AFE Channel, 1 ECGP is internally isolated from the ECG AFE Channel
+		//OPEN_N(1b):0 ECGN is internally connected to the ECG AFE Channel, 1 ECGN is internally isolated from the ECG AFE Channel
+		//CAL_MODE(1b):0 Unipolar, sources swing between VMID+-CAL_AG and VMID, 1 Bipolar, sources sing between VMID+CAL_MAG and VMID-CAL_MAG
+		//CAL_MAG(1b):0 VCALP-VCALN=0.5mv, 1 VCALP-VCALN=1.0mv
+		//CAL_P_SEL(2b):00 No calibration signal applied, 01 Input is connected to VMID, 10 Input is connected to VCALP(only available if CAL_EN=1), 11 Input is connected to VCALN(only available if CAL_EN=1)
+		//CAL_N_SEL(2b):00 No calibration signal applied, 01 Inout is connected to VMID, 10 Input is connected to VCALP(only available if CAL_EN=1), 11 Input is connected to VCALN(only available if CAL_EN=1)
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0xA2, 0x00, 1);
+		
+		//RLD Configuration 1
+		//7 		6 			5 				4 			3 		2 			1 0
+		//RLD_EN	CLOSE_LOOP	RLD_OOR_RAPID	EN_RLD_ORR	V_CM_P	ACTV_CM_N	RLD_GAIN
+		//RLD_EN(1b):0 Disable, 1 Enable
+		//CLOSE_LOOP(1b):0 open loop, 1 close loop
+		//RLD_OOR_RAPID(1b):0 DC Lead off detection with 128ms delay for QRS reason, 1 DC Lead off detection without 128ms delay
+		//EN_RLD_ORR(1b):0 Disable, 1 Enable
+		//V_CM_P(1b):0 Disable, 1 Enable
+		//ACTV_CM_N(1b):0 Disable, 1 Enable
+		//RLD_GAIN(2b):00 12.5V/V, 01 25V/V, 10 50V/V, 11 100V/V
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0xA8, 0x00, 1);
+		//RLD Configuration 2
+		//7 			6 				5 4 		3 2 1 0
+		//RLD_EXT_RES	RLD_EXT_RES		RLD_BW		BODY_BIAS_DAC
+		//RLD_EXT_RES(1b):0 use internal Rf resistor, 1 use xternal Rf resistor
+		//SEL_VCM_IN(1b):0 use body bias DAC voltage, 1 use VCM voltage
+		//RLD_BW(2b):00 low BW, 01 mid low, 10 mid high, 11 high BW
+		//BODY_BIAS_DAC(4b):0000~1000 VMID/VMID-1 LSB/.../VIMD-7 LSB=0.48(min)/VMID+8 LSB=1.08(max)
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0xA9, 0x00, 1);
+		
+		//utility ADC configuration 1
+		//7 				6 5 	4 3 2 1 0
+		//utlity_adc_start	- - 	utlity_adc_mux
+		//utlity_adc_start(1b):1 start adc conversion
+		//utlity_adc_mux(5b):5b'11011 differential, ECGP - ECGN
+		sh_set_reg(SH_SENSORIDX_MAX86176, 0xE0, 0x9B, 1);
+				
+		//Set algo class operation mode to RAW mode
+		sensorhub_set_algo_operation_mode(SH_OPERATION_RAW_MODE);
+		//Write enable the Wearable Algorithm Suite
+		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
+
+		k_timer_start(&ppg_get_hr_timer, K_MSEC(1*1000), K_MSEC(1*1000));
+		break;
 	}
 	
 	return true;
@@ -1302,6 +1484,15 @@ void PPGGetSensorHubData(void)
 	infor.align = NOTIFY_ALIGN_CENTER;
 	infor.type = NOTIFY_TYPE_POPUP;
 
+	//uitility ADC data high
+	//sh_get_reg(SH_SENSORIDX_MAX86176, 0xe1, &databuf[0]);
+	//uitility ADC data low
+	//sh_get_reg(SH_SENSORIDX_MAX86176, 0xe2, &databuf[1]);
+	
+	//LOGD("adc:%x", (databuf[0]&0x0f)*255+databuf[1]);
+	//return;
+
+	
 	ret = sh_get_sensorhub_status(&hubStatus);
 #ifdef PPG_DEBUG	
 	LOGD("ret:%d, hubStatus:%d", ret, hubStatus);
@@ -1323,7 +1514,12 @@ void PPGGetSensorHubData(void)
 
 		num_bytes_to_read += SS_PACKET_COUNTERSIZE;
 		if(g_algo_sensor_stat.max86176_enabled)
-			num_bytes_to_read += SSMAX86176_MODE1_DATASIZE;
+		{
+			if(g_ppg_alg_mode == ALG_MODE_ECG)
+				num_bytes_to_read += SSMAX86176_MODE2_DATASIZE;
+			else
+				num_bytes_to_read += SSMAX86176_MODE1_DATASIZE;
+		}
 		if(g_algo_sensor_stat.accel_enabled)
 			num_bytes_to_read += SSACCEL_MODE1_DATASIZE;
 		if(g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1)
@@ -1366,8 +1562,9 @@ void PPGGetSensorHubData(void)
 			{
 				index = i * num_bytes_to_read + 1;
 
-				if(g_ppg_alg_mode == ALG_MODE_BPT)
+				switch(g_ppg_alg_mode)
 				{
+				case ALG_MODE_BPT:
 					bpt_algo_data_rx(&bpt, &databuf[index+SS_PACKET_COUNTERSIZE + SSMAX86176_MODE1_DATASIZE + SSACCEL_MODE1_DATASIZE + SSWHRM_WSPO2_SUITE_MODE1_DATASIZE]);
 				
 				#ifdef PPG_DEBUG
@@ -1483,9 +1680,9 @@ void PPGGetSensorHubData(void)
 							ppg_stop_flag = true;
 						}
 					}
-				}
-				else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
-				{
+					break;
+
+				case ALG_MODE_HR_SPO2:
 				#ifdef CONFIG_FACTORY_TEST_SUPPORT
 					if(IsFTPPGTesting())
 						max86176_data_rx(&max86176, &databuf[index+SS_PACKET_COUNTERSIZE + SSACCEL_MODE1_DATASIZE]);
@@ -1503,6 +1700,15 @@ void PPGGetSensorHubData(void)
 						blood_oxy += sensorhub_out.spo2;
 						j++;
 					}
+					break;
+
+				case ALG_MODE_ECG:
+					{
+						max86176_ecg_data ecg_data;
+						
+						max86176_ecg_data_rx(&ecg_data, &databuf[index+SS_PACKET_COUNTERSIZE]);
+					}
+					break;
 				}
 			}
 
@@ -1955,6 +2161,10 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 		memset(&g_bpt, 0, sizeof(bpt_data));
 		get_bpt_ok_flag = false;
 		break;
+
+	case PPG_DATA_ECG:
+		g_ppg_alg_mode = ALG_MODE_ECG;
+		break;
 	}
 
 	ppg_start_flag = true;
@@ -2045,7 +2255,17 @@ void PPGStopCheck(void)
 	if(ppg_power_flag == 0)
 		return;
 
-	sensorhub_disable_sensor();
+	switch(g_ppg_alg_mode)
+	{
+	case ALG_MODE_BPT:
+	case ALG_MODE_HR_SPO2:
+		sensorhub_disable_sensor();
+		break;
+		
+	case ALG_MODE_ECG:
+		sensorhub_disable_ecg_sensor();
+		break;
+	}
 	sensorhub_disable_algo();
 
 	PPG_i2c_off();
@@ -2298,7 +2518,7 @@ void PPGMsgProcess(void)
 
 	if(menu_start_hr)
 	{
-		StartPPG(PPG_DATA_HR, TRIGGER_BY_MENU);
+		StartPPG(PPG_DATA_ECG, TRIGGER_BY_MENU);
 		menu_start_hr = false;
 	}
 	

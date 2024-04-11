@@ -758,8 +758,16 @@ int sh_spi_status(uint8_t * spi_status)
 int sh_sensor_enable_(int idx, int mode, uint8_t ext_mode)
 {
 	uint8_t ByteSeq[] = {0x44, (uint8_t)idx, (uint8_t)mode, ext_mode};
+	int status;
 
-	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_ENABLE_SENSOR_SLEEP_MS);
+	if(mode == 2)
+	{
+		status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_DUMP_REG_SLEEP_MS);
+	}
+	else
+	{
+		status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_ENABLE_SENSOR_SLEEP_MS);
+	}
     return status;
 }
 
@@ -809,6 +817,29 @@ int sensorhub_set_algo_submode( const uint8_t algo_op_mode , const uint8_t algo_
 	return status;
 }
 
+int sensorhub_enable_ecg_sensor(void)
+{
+	int ret = 0;
+
+	/* Enabling OS6X with host supplies data */
+	ret = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 2, SH_INPUT_DATA_DIRECT_SENSOR);
+	g_algo_sensor_stat.max86176_enabled = 1;
+
+	return ret;
+
+}
+
+int sensorhub_disable_ecg_sensor(void)
+{
+	int ret = 0;
+
+	/* Enabling OS6X with host supplies data */
+	ret = sh_sensor_disable(SH_SENSORIDX_MAX86176);
+	g_algo_sensor_stat.max86176_enabled = 0;
+
+	return ret;
+}
+
 int sensorhub_enable_sensors()
 {
 	int ret = 0;
@@ -819,7 +850,7 @@ int sensorhub_enable_sensors()
 	{
 		/* Enabling OS6X with host supplies data */
 		ret = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-		g_algo_sensor_stat.max86176_enabled =1;
+		g_algo_sensor_stat.max86176_enabled = 1;
 	}
 
 	return ret;
@@ -1393,6 +1424,9 @@ need_update:
 		LCD_SleepOut();
 	}
 
+	sh_get_reg(SH_SENSORIDX_MAX86176, 0xff, &u8_rxbuf[0]);
+	LOGD("id:%x", u8_rxbuf[0]);
+	
 	PPG_i2c_off();
 	PPG_Power_Off();
 	PPG_Disable();

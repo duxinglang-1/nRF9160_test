@@ -644,7 +644,7 @@ void mqtt_is_connecting(void)
 	return mqtt_connecting_flag;
 }
 
-static void mqtt_unlink(void)
+void mqtt_unlink(void)
 {
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 		k_timer_stop(&mqtt_disconnect_timer);

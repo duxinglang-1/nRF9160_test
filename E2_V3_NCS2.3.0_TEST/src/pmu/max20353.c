@@ -522,15 +522,30 @@ void pmu_battery_update(void)
 
 	if(charger_is_connected)
 	{
+		if(g_chg_status == BAT_CHARGING_FINISHED)
+			g_bat_soc = 100;
+		
 		last_bat_soc = g_bat_soc;
 		g_bat_level = BAT_LEVEL_NORMAL;
 	}
 	else
 	{
 		if(g_bat_soc > last_bat_soc)
+		{
 			g_bat_soc = last_bat_soc;
+		}
 		else
-			last_bat_soc = g_bat_soc;
+		{
+			if(last_bat_soc > (g_bat_soc+1))
+			{
+				last_bat_soc--;
+				g_bat_soc = last_bat_soc;
+			}
+			else
+			{
+				last_bat_soc = g_bat_soc;
+			}
+		}
 
 		if(g_bat_soc < 4)
 		{
@@ -665,7 +680,7 @@ void pmu_status_update(void)
 		if(g_bat_soc > 100)
 			g_bat_soc = 100;
 
-		if(g_bat_soc >= 95 && g_chg_status == BAT_CHARGING_FINISHED)
+		if(g_chg_status == BAT_CHARGING_FINISHED)
 			g_bat_soc = 100;
 		
 		last_bat_soc = g_bat_soc;
@@ -676,15 +691,6 @@ void pmu_status_update(void)
 	}
 	else
 	{			
-		if(charger_is_connected)
-		{
-		#ifdef PMU_DEBUG
-			LOGD("charger push out!");
-		#endif
-			charger_is_connected = false;
-			g_chg_status = BAT_CHARGING_NO;
-		}
-		
 	#ifdef BATTERY_SOC_GAUGE	
 		g_bat_soc = MAX20353_CalculateSOC();
 	#ifdef PMU_DEBUG
@@ -694,10 +700,29 @@ void pmu_status_update(void)
 			g_bat_soc = 100;
 
 		if(g_bat_soc > last_bat_soc)
+		{
 			g_bat_soc = last_bat_soc;
+		}
 		else
-			last_bat_soc = g_bat_soc;
-
+		{
+			if(charger_is_connected)
+			{
+				g_bat_soc = last_bat_soc;
+			}
+			else
+			{
+				if(last_bat_soc > (g_bat_soc+1))
+				{
+					last_bat_soc--;
+					g_bat_soc = last_bat_soc;
+				}
+				else
+				{
+					last_bat_soc = g_bat_soc;
+				}
+			}
+		}
+		
 		if(g_bat_soc < 4)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
@@ -716,6 +741,15 @@ void pmu_status_update(void)
 			g_bat_level = BAT_LEVEL_GOOD;
 		}
 	#endif
+
+		if(charger_is_connected)
+		{
+		#ifdef PMU_DEBUG
+			LOGD("charger push out!");
+		#endif
+			charger_is_connected = false;
+			g_chg_status = BAT_CHARGING_NO;
+		}
 
 		flag = true;
 	}
@@ -778,9 +812,8 @@ bool pmu_interrupt_proc(void)
 			#ifdef PMU_DEBUG
 				LOGD("g_bat_soc:%d", g_bat_soc);
 			#endif
-				if(g_bat_soc >= 95)
-					g_bat_soc = 100;
 
+				g_bat_soc = 100;
 				last_bat_soc = g_bat_soc;
 			#endif
 
@@ -828,8 +861,23 @@ bool pmu_interrupt_proc(void)
 			g_bat_soc = MAX20353_CalculateSOC();
 			if(g_bat_soc > 100)
 				g_bat_soc = 100;
+			
 			if(g_bat_soc > last_bat_soc)
+			{
 				g_bat_soc = last_bat_soc;
+			}
+			else
+			{
+				if(last_bat_soc > (g_bat_soc+1))
+				{
+					last_bat_soc--;
+					g_bat_soc = last_bat_soc;
+				}
+				else
+				{
+					last_bat_soc = g_bat_soc;
+				}
+			}
 			
 			if(g_bat_soc < 4)
 			{

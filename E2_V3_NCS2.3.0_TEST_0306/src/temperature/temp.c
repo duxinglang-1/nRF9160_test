@@ -54,6 +54,7 @@ uint8_t g_temp_trigger = 0;
 float g_temp_skin = 0.0;
 float g_temp_body = 0.0;
 float g_temp_menu = 0.0;
+float g_temp_hourly = 0.0;
 
 static void temp_auto_stop_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(temp_stop_timer, temp_auto_stop_timerout, NULL);
@@ -96,7 +97,7 @@ void ClearAllTempRecData(void)
 
 void SetCurDayTempRecData(sys_date_timer_t time_stamp, float data)
 {
-	uint16_t i,deca_temp = data*10;
+	uint16_t i,deca_temp = round(data*10.0);
 	temp_rec2_nod *p_temp,tmp_temp = {0};
 
 	tmp_temp.year = time_stamp.year;
@@ -334,6 +335,31 @@ void GetGivenTimeTempRecData(sys_date_timer_t date, uint16_t *temp)
 	}
 }
 
+void UpdateLastTempData(sys_date_timer_t time_stamp, float data)
+{
+	uint16_t dec_temp = round(data*10.0);
+
+	memcpy(&last_health.temp_rec.timestamp, &time_stamp, sizeof(sys_date_timer_t));
+	last_health.temp_rec.deca_temp = dec_temp;
+	if(dec_temp > last_health.deca_temp_max)
+	{
+		if(last_health.deca_temp_min == 0)
+		{
+			if(last_health.deca_temp_max > 0)
+				last_health.deca_temp_min = last_health.deca_temp_max;
+			else
+				last_health.deca_temp_min = dec_temp;
+		}
+		last_health.deca_temp_max = dec_temp;
+	}
+	else if(dec_temp < last_health.deca_temp_min)
+	{
+		last_health.deca_temp_min = dec_temp;
+	}
+
+	save_cur_health_to_record(&last_health);
+}
+
 bool IsInTempScreen(void)
 {
 	if(screen_id == SCREEN_ID_TEMP)
@@ -367,11 +393,21 @@ void TempStop(void)
 	temp_stop_flag = true;
 }
 
+void TempRedrawHourlyData(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		if((g_temp_hourly >= (TEMP_MIN/10.0))&&(g_temp_hourly <= (TEMP_MAX/10.0)))
+		{
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
+			scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+		}
+	}
+}
+
 void TempRedrawData(void)
 {
-	if((screen_id == SCREEN_ID_IDLE && get_temp_ok_flag)
-		||(screen_id == SCREEN_ID_TEMP)
-		)
+	if(screen_id == SCREEN_ID_TEMP)
 	{
 		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_TEMP;
 		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
@@ -402,6 +438,7 @@ void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 	switch(trigger_type)
 	{
 	case TEMP_TRIGGER_BY_HOURLY:
+		g_temp_hourly = 0.0;
 	case TEMP_TRIGGER_BY_APP:
 	case TEMP_TRIGGER_BY_FT:
 		if(!is_wearing())
@@ -523,6 +560,7 @@ void TempMsgProcess(void)
 				{
 					temp_stop_flag = true;
 					get_temp_ok_flag = true;
+					k_timer_stop(&temp_check_timer);
 				}
 			}
 
@@ -596,7 +634,7 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_APP);
 
 			if(get_temp_ok_flag)
-				deca_temp = g_temp_body*10;
+				deca_temp = round(g_temp_body*10.0);
 			
 			data[0] = deca_temp>>8;
 			data[1] = (uint8_t)(deca_temp&0x00ff);
@@ -610,6 +648,7 @@ void TempMsgProcess(void)
 			if(get_temp_ok_flag)
 			{
 				g_temp_menu = g_temp_body;
+				UpdateLastTempData(date_time, g_temp_menu);
 
 			#ifdef CONFIG_BLE_SUPPORT
 				if(g_ble_connected)
@@ -617,7 +656,7 @@ void TempMsgProcess(void)
 					uint8_t data[2] = {0};
 					uint16_t deca_temp = 0;
 
-					deca_temp = g_temp_body*10;
+					deca_temp = round(g_temp_body*10.0);
 					data[0] = deca_temp>>8;
 					data[1] = (uint8_t)(deca_temp&0x00ff);
 					MCU_send_app_get_temp_data(data);
@@ -633,15 +672,23 @@ void TempMsgProcess(void)
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
 			if(!ppg_skin_contacted_flag)
 			{
+			#ifdef CONFIG_PPG_SUPPORT
 				bpt_data tmp_bpt = {254,254};
+
+				g_hr_hourly = 0;
+				g_spo2_hourly = 0;
+				memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
 				
-				SetCurDayTempRecData(g_health_check_time, 254.0);
 				SetCurDayHrRecData(g_health_check_time, 254);
 				SetCurDaySpo2RecData(g_health_check_time, 254);
 				SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+			#endif
+				SetCurDayTempRecData(g_health_check_time, 254.0);
 			}
 			else
 			{
+				g_temp_hourly = g_temp_body;
+				
 				SetCurDayTempRecData(g_health_check_time, g_temp_body);
 			#ifdef CONFIG_PPG_SUPPORT
 				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
@@ -655,19 +702,6 @@ void TempMsgProcess(void)
 			return;
 		}
 	#endif
-
-		if(g_temp_body > 0.0)
-		{
-			last_health.temp_rec.timestamp.year = date_time.year;
-			last_health.temp_rec.timestamp.month = date_time.month; 
-			last_health.temp_rec.timestamp.day = date_time.day;
-			last_health.temp_rec.timestamp.hour = date_time.hour;
-			last_health.temp_rec.timestamp.minute = date_time.minute;
-			last_health.temp_rec.timestamp.second = date_time.second;
-			last_health.temp_rec.timestamp.week = date_time.week;
-			last_health.temp_rec.deca_temp = (uint16_t)(g_temp_body*10);
-			save_cur_health_to_record(&last_health);
-		}
 	}
 	
 	if(temp_redraw_data_flag)

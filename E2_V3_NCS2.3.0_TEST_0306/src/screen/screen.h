@@ -550,7 +550,7 @@ extern "C" {
 #define SPO2_UP_NUM_H				24
 #define SPO2_UP_PERC_W				23
 #define SPO2_UP_PERC_H				24
-#define SPO2_UP_STR_W				52
+#define SPO2_UP_STR_W				65
 #define SPO2_UP_STR_H				24
 #define SPO2_UP_STR_X				64
 #define SPO2_UP_STR_Y				184
@@ -562,7 +562,7 @@ extern "C" {
 #define SPO2_DOWN_NUM_H				24
 #define SPO2_DOWN_PERC_W			23
 #define SPO2_DOWN_PERC_H			24
-#define SPO2_DOWN_STR_W				52
+#define SPO2_DOWN_STR_W				65
 #define SPO2_DOWN_STR_H				24
 #define SPO2_DOWN_STR_X				143
 #define SPO2_DOWN_STR_Y				184
@@ -662,7 +662,7 @@ extern "C" {
 #define TEMP_DOWN_NUM_H				24
 #define TEMP_DOWN_DOT_W				7
 #define TEMP_DOWN_DOT_H				24
-#define TEMP_DOWN_STR_W				49
+#define TEMP_DOWN_STR_W				51
 #define TEMP_DOWN_STR_H				17
 #define TEMP_DOWN_STR_X				145
 #define TEMP_DOWN_STR_Y				184

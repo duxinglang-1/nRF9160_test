@@ -177,6 +177,7 @@ typedef struct
 	bool bo_is_on;					//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
+	bool fall_check;		
 	uint8_t location_type;	//1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	uint16_t target_steps;
 	uint32_t health_interval;

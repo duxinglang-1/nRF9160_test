@@ -5957,6 +5957,7 @@ void FallShowStatus(void)
 	//SetRightKeyUpHandler(FallAlarmCancel);
 
 #ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FALL_YES_X, FALL_YES_X+FALL_YES_W, FALL_YES_Y, FALL_YES_Y+FALL_YES_H, FallAlarmConfirm);
 	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FALL_NO_X, FALL_NO_X+FALL_NO_W, FALL_NO_Y, FALL_NO_Y+FALL_NO_H, FallAlarmCancel);
 #endif

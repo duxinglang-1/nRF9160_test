@@ -288,6 +288,9 @@ menu "PPG"
 config PPG_SUPPORT
 	bool "ppg support"
 	default n
+config PPG_LIB_SUPPORT
+	bool "ppg lib support"
+	default n
 endmenu #PPG
 
 menu "IMU"

@@ -1,13 +1,13 @@
 /****************************************Copyright (c)************************************************
-** File Name:			    max32674.h
-** Descriptions:			PPG process head file
+** File Name:			    ppg.h
+** Descriptions:			PPG libraly head file
 ** Created By:				xie biao
-** Created Date:			2021-05-19
-** Modified Date:      		2021-05-19 
+** Created Date:			2024-06-13
+** Modified Date:      		2024-06-13 
 ** Version:			    	V1.0
 ******************************************************************************************************/
-#ifndef __MAX32674_H__
-#define __MAX32674_H__
+#ifndef __PPG_H__
+#define __PPG_H__
 
 #include <nrf9160.h>
 #include <zephyr/kernel.h>
@@ -266,4 +266,5 @@ extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
 extern void StartSCC(void);
 extern bool CheckSCC(void);
 extern void UpdateLastPPGData(sys_date_timer_t time_stamp, PPG_DATA_TYPE type, void *data);
-#endif/*__MAX32674_H__*/
+#endif/*__PPG_H__*/
+

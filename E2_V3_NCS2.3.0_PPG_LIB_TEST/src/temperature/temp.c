@@ -27,7 +27,7 @@
 #include "ct1711.h"
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-#include "max32674.h"
+#include "ppg.h"
 #endif
 
 static bool temp_check_ok = false;

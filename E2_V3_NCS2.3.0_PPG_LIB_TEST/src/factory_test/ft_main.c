@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #ifdef CONFIG_PPG_SUPPORT
-#include "max32674.h"
+#include "ppg.h"
 #endif
 #ifdef CONFIG_TOUCH_SUPPORT
 #include "CST816.h"

@@ -18,7 +18,7 @@
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
 #ifdef CONFIG_PPG_SUPPORT
-#include "max32674.h"
+#include "ppg.h"
 #endif
 #include "settings.h"
 #include "nb.h"

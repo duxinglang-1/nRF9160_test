@@ -18,7 +18,7 @@
 #include <nrf_socket.h>
 #include <nrfx.h>
 #include "uart_ble.h"
-#include "Max32674.h"
+#include "ppg.h"
 #include "screen.h"
 #include "max_sh_interface.h"
 #include "max_sh_api.h"
@@ -1349,7 +1349,7 @@ void PPGGetSensorHubData(void)
 		#endif
 		}
 
-		WAIT_MS(5);
+		PPG_Delay_ms(5);
 
 		if(u32_sampleCnt > READ_SAMPLE_COUNT_MAX)
 			u32_sampleCnt = READ_SAMPLE_COUNT_MAX;

@@ -33,7 +33,7 @@
 #include "fall.h"
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-#include "Max32674.h"
+#include "ppg.h"
 #endif
 #include "transfer_cache.h"
 #ifdef CONFIG_SYNC_SUPPORT

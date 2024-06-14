@@ -20,7 +20,7 @@
 #include "ft_main.h"
 #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 #ifdef CONFIG_PPG_SUPPORT
-#include "max32674.h"
+#include "ppg.h"
 #endif
 #ifdef CONFIG_ALARM_SUPPORT
 #include "Alarm.h"

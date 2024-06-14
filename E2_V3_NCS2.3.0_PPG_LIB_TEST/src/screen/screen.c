@@ -21,7 +21,7 @@
 #include "datetime.h"
 #include "max20353.h"
 #ifdef CONFIG_PPG_SUPPORT
-#include "max32674.h"
+#include "ppg.h"
 #endif
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"

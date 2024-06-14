@@ -19,7 +19,7 @@
 #include "esp8266.h"
 #endif
 #ifdef CONFIG_PPG_SUPPORT
-#include "max32674.h"
+#include "ppg.h"
 #endif
 
 //存储时间和设置项的地址ID

@@ -255,7 +255,6 @@ extern ppgdev_ctx_t ppg_dev_ctx;
 extern void PPG_init(void);
 extern void PPGMsgProcess(void);
 
-/*heart rate*/
 extern void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt);
 extern void GetCurDayBptRecData(uint8_t *databuf);
 extern void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2);
@@ -266,5 +265,8 @@ extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
 extern void StartSCC(void);
 extern bool CheckSCC(void);
 extern void UpdateLastPPGData(sys_date_timer_t time_stamp, PPG_DATA_TYPE type, void *data);
+
+extern void HealthCompareDataReset(void);
+extern void HealthWorkCheck(sys_date_timer_t time, uint32_t interval);
 #endif/*__PPG_H__*/
 

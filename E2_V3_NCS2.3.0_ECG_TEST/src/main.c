@@ -44,6 +44,9 @@
 #ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
 #endif
+#ifdef CONFIG_PRESSURE_SUPPORT
+#include "pressure.h"
+#endif
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"
 #endif/*CONFIG_WIFI_SUPPORT*/
@@ -743,6 +746,9 @@ void system_init(void)
 #ifdef CONFIG_TEMP_SUPPORT
 	temp_init();
 #endif
+#ifdef CONFIG_PRESSURE_SUPPORT
+	pressure_init();
+#endif
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
@@ -863,6 +869,9 @@ int main(void)
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
 		TempMsgProcess();
+	#endif
+	#ifdef CONFIG_PRESSURE_SUPPORT
+		PressureMsgProcess();
 	#endif
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FactoryTestProccess();

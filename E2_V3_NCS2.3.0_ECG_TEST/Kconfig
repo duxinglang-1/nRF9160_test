@@ -329,6 +329,12 @@ config TEMP_SUPPORT
 	default n
 endmenu #TEMPERATURE
 
+menu "PRESSURE"
+config PRESSURE_SUPPORT
+	bool "pressure support"
+	default n
+endmenu #PRESSURE
+
 menu "CRC"
 config CRC_SUPPORT
 	bool "crc check support"

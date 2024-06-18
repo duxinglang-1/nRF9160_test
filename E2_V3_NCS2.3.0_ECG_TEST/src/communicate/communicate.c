@@ -251,6 +251,7 @@ void TimeCheckSendSportData(void)
  * RETURNS
  *  Nothing
  *****************************************************************************/
+#ifdef CONFIG_PPG_SUPPORT 
 uint8_t hr_data[sizeof(ppg_hr_rec2_data)] = {0};
 void TimeCheckSendHrData(void)
 {
@@ -393,6 +394,7 @@ void TimeCheckSendBptData(void)
 		reply[len] = ',';
 	NBSendTimelyBptData(reply, strlen(reply));
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -404,6 +406,7 @@ void TimeCheckSendBptData(void)
  * RETURNS
  *  Nothing
  *****************************************************************************/
+#ifdef CONFIG_TEMP_SUPPORT
 uint8_t temp_data[sizeof(temp_rec2_data)] = {0};
 void TimeCheckSendTempData(void)
 {
@@ -444,6 +447,7 @@ void TimeCheckSendTempData(void)
 		reply[len] = ',';
 	NBSendTimelyTempData(reply, strlen(reply));
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -457,114 +461,26 @@ void TimeCheckSendTempData(void)
  *****************************************************************************/ 
 void TimeCheckSendHealthData(void)
 {
-#if 1	//xb add 2024-01-17 修改定时健康数据分开上传
-	if(CheckSCC())
+	if(
+		1
+		#ifdef CONFIG_PPG_SUPPORT	
+			&& CheckSCC()
+		#endif	
+		)
 	{
+	#ifdef CONFIG_PPG_SUPPORT 
 		TimeCheckSendHrData();
 		TimeCheckSendSpo2Data();
 		TimeCheckSendBptData();
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
 		TimeCheckSendTempData();
+	#endif
 	}
 	else
 	{
 		TimeCheckSendWristOffData();
 	}
-#else
-	uint8_t i,tmpbuf[20] = {0};
-	uint8_t hr_data[24] = {0};
-	uint8_t spo2_data[24] = {0};
-#ifdef CONFIG_PPG_SUPPORT	
-	bpt_data bp_data[24] = {0};
-#endif
-	uint16_t temp_data[24] = {0};
-
-	memset(&reply, 0x00, sizeof(reply));
-	
-	//wrist
-	if(ppg_skin_contacted_flag)
-		strcpy(reply, "1,");
-	else
-		strcpy(reply, "0,");
-	
-#ifdef CONFIG_PPG_SUPPORT
-	//hr
-	GetCurDayHrRecData(hr_data);
-	//spo2
-	GetCurDaySpo2RecData(spo2_data);
-	//bpt
-	GetCurDayBptRecData(bp_data);
-#endif/*CONFIG_PPG_SUPPORT*/
-	//hr
-	for(i=0;i<24;i++)
-	{
-		memset(tmpbuf,0,sizeof(tmpbuf));
-
-		if(hr_data[i] == 0xff)
-			hr_data[i] = 0;		
-		sprintf(tmpbuf, "%d", hr_data[i]);
-
-		if(i<23)
-			strcat(tmpbuf,"|");
-		else
-			strcat(tmpbuf,",");
-		strcat(reply, tmpbuf);
-	}
-	//spo2
-	for(i=0;i<24;i++)
-	{
-		memset(tmpbuf,0,sizeof(tmpbuf));
-
-		if(spo2_data[i] == 0xff)
-			spo2_data[i] = 0;	
-		sprintf(tmpbuf, "%d", spo2_data[i]);
-
-		if(i<23)
-			strcat(tmpbuf,"|");
-		else
-			strcat(tmpbuf,",");
-		strcat(reply, tmpbuf);
-	}
-	//bpt
-	for(i=0;i<24;i++)
-	{
-		memset(tmpbuf,0,sizeof(tmpbuf));
-
-	#ifdef CONFIG_PPG_SUPPORT
-		if(bp_data[i].systolic == 0xff)
-			bp_data[i].systolic = 0;
-		if(bp_data[i].diastolic == 0xff)
-			bp_data[i].diastolic = 0;
-		sprintf(tmpbuf, "%d&%d", bp_data[i].systolic,bp_data[i].diastolic);
-	#else
-		strcpy(tmpbuf, "0&0");
-	#endif
-	
-		if(i<23)
-			strcat(tmpbuf,"|");
-		else
-			strcat(tmpbuf,",");
-		strcat(reply, tmpbuf);
-	}
-	
-#ifdef CONFIG_TEMP_SUPPORT
-	//body temp
-	GetCurDayTempRecData(temp_data);
-#endif/*CONFIG_TEMP_SUPPORT*/
-	for(i=0;i<24;i++)
-	{
-		memset(tmpbuf,0,sizeof(tmpbuf));
-
-		if(temp_data[i] == 0xffff)
-			temp_data[i] = 0;
-		sprintf(tmpbuf, "%0.1f", (float)temp_data[i]/10.0);
-
-		if(i<23)
-			strcat(tmpbuf,"|");
-		strcat(reply, tmpbuf);
-	}
-
-	NBSendTimelyHealthData(reply, strlen(reply));
-#endif
 }
 
 #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -686,7 +602,8 @@ void SendMissingSportData(void)
 #endif
 
 #if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
-static uint8_t databuf[PPG_REC2_MAX_DAILY*sizeof(bpt_rec2_nod)] = {0};
+#ifdef CONFIG_PPG_SUPPORT
+static uint8_t ppgdata[PPG_REC2_MAX_DAILY*sizeof(bpt_rec2_nod)] = {0};
 /*****************************************************************************
  * FUNCTION
  *  SendMissingHrData
@@ -713,9 +630,9 @@ void SendMissingHrData(void)
 		uint8_t hr_time[15] = {0x30};
 		uint8_t reply[2048] = {0};
 
-		memset(&databuf, 0x00, sizeof(databuf));
-		GetGivenDayHrRecData(temp_date, &databuf);
-		p_hr = (hr_rec2_nod*)databuf;
+		memset(&ppgdata, 0x00, sizeof(ppgdata));
+		GetGivenDayHrRecData(temp_date, &ppgdata);
+		p_hr = (hr_rec2_nod*)ppgdata;
 		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
 		{
 		  	if((p_hr->year == 0xffff || p_hr->year == 0x0000)
@@ -780,9 +697,9 @@ void SendMissingSpo2Data(void)
 		uint8_t spo2_time[15] = {0x30};
 		uint8_t reply[2048] = {0};
 
-		memset(&databuf, 0x00, sizeof(databuf));
-		GetGivenDaySpo2RecData(temp_date, &databuf);
-		p_spo2 = (spo2_rec2_nod*)databuf;
+		memset(&ppgdata, 0x00, sizeof(ppgdata));
+		GetGivenDaySpo2RecData(temp_date, &ppgdata);
+		p_spo2 = (spo2_rec2_nod*)ppgdata;
 		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
 		{
 			if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
@@ -847,9 +764,9 @@ void SendMissingBptData(void)
 		uint8_t bpt_time[15] = {0x30};
 		uint8_t reply[2048] = {0};
 
-		memset(&databuf, 0x00, sizeof(databuf));
-		GetGivenDayBptRecData(temp_date, &databuf);
-		p_bpt = (bpt_rec2_nod*)databuf;
+		memset(&ppgdata, 0x00, sizeof(ppgdata));
+		GetGivenDayBptRecData(temp_date, &ppgdata);
+		p_bpt = (bpt_rec2_nod*)ppgdata;
 		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
 		{
 			if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
@@ -887,8 +804,10 @@ void SendMissingBptData(void)
 		DateIncrease(&temp_date, 1);
 	}
 }
+#endif
 
-
+#ifdef CONFIG_TEMP_SUPPORT
+static uint8_t tempdata[TEMP_REC2_MAX_DAILY*sizeof(temp_rec2_nod)] = {0};
 /*****************************************************************************
  * FUNCTION
  *  SendMissingTempData
@@ -915,10 +834,10 @@ void SendMissingTempData(void)
 		uint8_t temp_time[15] = {0x30};
 		uint8_t reply[2048] = {0};
 
-		memset(&databuf, 0x00, sizeof(databuf));
-		GetGivenDayTempRecData(temp_date, &databuf);
-		p_temp = (temp_rec2_nod*)databuf;
-		for(j=0;j<PPG_REC2_MAX_DAILY;j++)
+		memset(&tempdata, 0x00, sizeof(tempdata));
+		GetGivenDayTempRecData(temp_date, &tempdata);
+		p_temp = (temp_rec2_nod*)tempdata;
+		for(j=0;j<TEMP_REC2_MAX_DAILY;j++)
 		{
 			if((p_temp->year == 0xffff || p_temp->year == 0x0000)
 				||(p_temp->month == 0xff || p_temp->month == 0x00)
@@ -955,7 +874,8 @@ void SendMissingTempData(void)
 		DateIncrease(&temp_date, 1);
 	}
 }
-
+#endif
+	
 /*****************************************************************************
  * FUNCTION
  *  SendMissingHealthData
@@ -968,187 +888,14 @@ void SendMissingTempData(void)
  *****************************************************************************/
 void SendMissingHealthData(void)
 {
-#if 1	//xb add 2024-01-17 修改补传数据单独上传
+#ifdef CONFIG_PPG_SUPPORT
 	SendMissingHrData();
 	SendMissingSpo2Data();
 	SendMissingBptData();
-	SendMissingTempData();
-#else
-	uint8_t i,j,tmpbuf[20] = {0};
-	uint8_t hrbuf[PPG_HR_REC2_DATA_SIZE] = {0};
-	uint8_t spo2buf[PPG_SPO2_REC2_DATA_SIZE] = {0};
-	uint8_t bptbuf[PPG_BPT_REC2_DATA_SIZE] = {0};
-	uint8_t tempbuf[TEMP_REC2_DATA_SIZE] = {0};	
-
-#ifdef CONFIG_PPG_SUPPORT
-	SpiFlash_Read(hrbuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
-	SpiFlash_Read(spo2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
-	SpiFlash_Read(bptbuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
-#endif
-#ifdef CONFIG_TEMP_SUPPORT
-	SpiFlash_Read(tempbuf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-#endif
-
-	for(i=0;i<7;i++)
-	{
-		bool flag = false;
-		uint8_t hr_data[24] = {0};
-		uint8_t hr_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
-		uint8_t spo2_data[24] = {0};
-		uint8_t spo2_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
-	#ifdef CONFIG_PPG_SUPPORT
-		bpt_data bp_data[24] = {0};
-	#endif
-		uint8_t bp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
-		uint16_t temp_data[24] = {0};
-		uint8_t temp_time[15] = {0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
-	#ifdef CONFIG_PPG_SUPPORT
-		ppg_hr_rec2_data hr_rec2 = {0};
-		ppg_spo2_rec2_data spo2_rec2 = {0};
-		ppg_bpt_rec2_data bpt_rec2 = {0};
-	#endif
-	#ifdef CONFIG_TEMP_SUPPORT
-		temp_rec2_data temp_rec2 = {0};
-	#endif
-
-		memset(&reply, 0x00, sizeof(reply));
-	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
-	  #ifdef CONFIG_PPG_SUPPORT
-		//hr
-		memcpy(&hr_rec2, &hrbuf[i*sizeof(ppg_hr_rec2_data)], sizeof(ppg_hr_rec2_data));
-	  	if((hr_rec2.year != 0xffff && hr_rec2.year != 0x0000)
-			&&(hr_rec2.month != 0xff && hr_rec2.month != 0x00)
-			&&(hr_rec2.day != 0xff && hr_rec2.day != 0x00)
-			)
-		{
-			flag = true;
-			memcpy(hr_data, hr_rec2.hr, sizeof(hr_rec2.hr));
-			sprintf(hr_time, "%04d%02d%02d230000", hr_rec2.year,hr_rec2.month,hr_rec2.day);
-		}
-		
-		//spo2
-		memcpy(&spo2_rec2, &spo2buf[i*sizeof(ppg_spo2_rec2_data)], sizeof(ppg_spo2_rec2_data));
-		if((spo2_rec2.year != 0xffff && spo2_rec2.year != 0x0000)
-			&&(spo2_rec2.month != 0xff && spo2_rec2.month != 0x00)
-			&&(spo2_rec2.day != 0xff && spo2_rec2.day != 0x00)
-			)
-		{
-			flag = true;
-			memcpy(spo2_data, spo2_rec2.spo2, sizeof(spo2_rec2.spo2));
-			sprintf(spo2_time, "%04d%02d%02d230000", spo2_rec2.year,spo2_rec2.month,spo2_rec2.day);
-		}
-		
-		//bpt
-		memcpy(&bpt_rec2, &bptbuf[i*sizeof(ppg_bpt_rec2_data)], sizeof(ppg_bpt_rec2_data));
-		if((bpt_rec2.year != 0xffff && bpt_rec2.year != 0x0000)
-			&&(bpt_rec2.month != 0xff && bpt_rec2.month != 0x00)
-			&&(bpt_rec2.day != 0xff && bpt_rec2.day != 0x00)
-			)
-		{
-			flag = true;
-			memcpy(bp_data, bpt_rec2.bpt, sizeof(bpt_rec2.bpt));
-			sprintf(bp_time, "%04d%02d%02d230000", bpt_rec2.year,bpt_rec2.month,bpt_rec2.day);
-		}
-	  #endif
-	  
-	  #ifdef CONFIG_TEMP_SUPPORT
-		//body temp
-		memcpy(&temp_rec2, &tempbuf[i*sizeof(temp_rec2_data)], sizeof(temp_rec2_data));
-	  	if((temp_rec2.year != 0xffff && temp_rec2.year != 0x0000)
-			&&(temp_rec2.month != 0xff && temp_rec2.month != 0x00)
-			&&(temp_rec2.day != 0xff || temp_rec2.day != 0x00)
-			)
-		{
-			flag = true;
-			memcpy(temp_data, temp_rec2.deca_temp, sizeof(temp_rec2.deca_temp));
-			sprintf(temp_time, "%04d%02d%02d230000", temp_rec2.year,temp_rec2.month,temp_rec2.day);
-		}
-	  #endif
-	#endif
-
-		if(!flag)
-			continue;
-		
-		//hr
-		for(j=0;j<24;j++)
-		{
-			memset(tmpbuf,0,sizeof(tmpbuf));
-
-			if(hr_data[j] == 0xff)
-				hr_data[j] = 0;		
-			sprintf(tmpbuf, "%d", hr_data[j]);
-
-			if(j<23)
-				strcat(tmpbuf,"|");
-			else
-				strcat(tmpbuf,",");
-			strcat(reply, tmpbuf);
-		}
-		strcat(reply, hr_time);
-		strcat(reply, ",");
-		
-		//spo2
-		for(j=0;j<24;j++)
-		{
-			memset(tmpbuf,0,sizeof(tmpbuf));
-
-			if(spo2_data[j] == 0xff)
-				spo2_data[j] = 0;	
-			sprintf(tmpbuf, "%d", spo2_data[j]);
-
-			if(j<23)
-				strcat(tmpbuf,"|");
-			else
-				strcat(tmpbuf,",");
-			strcat(reply, tmpbuf);
-		}
-		strcat(reply, spo2_time);
-		strcat(reply, ",");
-			
-		//bpt
-		for(j=0;j<24;j++)
-		{
-			memset(tmpbuf,0,sizeof(tmpbuf));
-
-		#ifdef CONFIG_PPG_SUPPORT
-			if(bp_data[j].systolic == 0xff)
-				bp_data[j].systolic = 0;
-			if(bp_data[j].diastolic == 0xff)
-				bp_data[j].diastolic = 0;
-			sprintf(tmpbuf, "%d&%d", bp_data[j].systolic,bp_data[j].diastolic);
-		#else
-			strcpy(tmpbuf, "0&0");
-		#endif
-		
-			if(j<23)
-				strcat(tmpbuf,"|");
-			else
-				strcat(tmpbuf,",");
-			strcat(reply, tmpbuf);
-		}
-		strcat(reply, bp_time);
-		strcat(reply, ",");
-
-		//temp
-		for(j=0;j<24;j++)
-		{
-			memset(tmpbuf,0,sizeof(tmpbuf));
-
-			if(temp_data[j] == 0xffff)
-				temp_data[j] = 0;
-			sprintf(tmpbuf, "%0.1f", (float)temp_data[j]/10.0);
-
-			if(j<23)
-				strcat(tmpbuf,"|");
-			else
-				strcat(tmpbuf,",");
-			strcat(reply, tmpbuf);
-		}
-		strcat(reply, temp_time);
-		
-		NBSendMissHealthData(reply, strlen(reply));
-	}
 #endif	
+#ifdef CONFIG_TEMP_SUPPORT	
+	SendMissingTempData();
+#endif
 }
 #endif
 
@@ -1255,9 +1002,11 @@ void SyncSendHealthData(void)
 	strcpy(reply, tmpbuf);
 	
 	//wrist
+#ifdef CONFIG_PPG_SUPPORT	
 	if(ppg_skin_contacted_flag)
 		strcat(reply, "1,");
 	else
+#endif		
 		strcat(reply, "0,");
 	
 	//sitdown time

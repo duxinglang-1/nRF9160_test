@@ -279,6 +279,7 @@ void fota_start_confirm(void)
 	fota_cur_status = FOTA_STATUS_LINKING;
 	fota_redraw_pro_flag = true;
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+	mqtt_unlink();
 	modem_configure();
 	k_work_schedule_for_queue(app_work_q, &fota_work, K_SECONDS(2));
 }

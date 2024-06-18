@@ -91,6 +91,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	false,					//blood oxygen turn on		
 	true,					//wake screen by wrist
 	false,					//wrist off check
+	false,					//fall check
 	3,						//location type: 1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	0,						//target steps
 	60,						//health interval

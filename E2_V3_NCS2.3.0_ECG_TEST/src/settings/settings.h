@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	7
 #define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.4.3_20240409"
+#define VERSION_STR	"V3.4.3_20240416"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else
@@ -177,6 +177,7 @@ typedef struct
 	bool bo_is_on;					//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
+	bool fall_check;		
 	uint8_t location_type;	//1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	uint16_t target_steps;
 	uint32_t health_interval;

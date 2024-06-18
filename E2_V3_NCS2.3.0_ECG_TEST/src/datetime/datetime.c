@@ -729,7 +729,7 @@ void UpdateSystemTime(void)
 	 #endif
 	#endif
 	
-		if(date_time.hour == 3)	//xba ddd 2024-03-14 Upload a synchronization packet at 03:00 for the backend to calibrate the watch's time.
+		if(date_time.hour == 3)	//xb ddd 2024-03-14 Upload a synchronization packet at 03:00 for the backend to calibrate the watch's time.
 		{
 			SyncSendHealthData();
 		}

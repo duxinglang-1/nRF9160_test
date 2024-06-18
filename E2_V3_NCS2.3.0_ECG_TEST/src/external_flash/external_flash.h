@@ -950,6 +950,8 @@
 /***************************************************data begin*******************************************************/
 //记录数据 flash里占用512K的空间(0x780000~0x7fffff)
 #define DATA_START_ADDR						0x780000
+
+#ifdef CONFIG_PPG_SUPPORT
 //PPG DATA
 #define PPG_BPT_CAL_DATA_ADDR				(DATA_START_ADDR)
 #define PPG_BPT_CAL_DATA_SIZE				(240)
@@ -978,21 +980,25 @@
 #define PPG_BPT_REC2_DATA_ADDR				(PPG_SPO2_REC2_DATA_END)
 #define PPG_BPT_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(bpt_rec2_nod))
 #define PPG_BPT_REC2_DATA_END				(PPG_BPT_REC2_DATA_ADDR+PPG_BPT_REC2_DATA_SIZE)
+#endif
 
+#ifdef CONFIG_TEMP_SUPPORT
 //TEMP DATA
 //单次测量(100组数据)
-#define TEMP_REC1_DATA_ADDR					(PPG_BPT_REC2_DATA_END)
+#define TEMP_REC1_DATA_ADDR					0x784480
 #define TEMP_REC1_DATA_SIZE					(100*sizeof(temp_rec1_data))
 #define TEMP_REC1_DATA_END					(TEMP_REC1_DATA_ADDR+TEMP_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define TEMP_REC2_DATA_ADDR					(TEMP_REC1_DATA_END)
 #define TEMP_REC2_DATA_SIZE					(TEMP_REC2_MAX_COUNT*sizeof(temp_rec2_nod))
 #define TEMP_REC2_DATA_END					(TEMP_REC2_DATA_ADDR+TEMP_REC2_DATA_SIZE)
+#endif
 
+#ifdef CONFIG_IMU_SUPPORT
 //IMU DATA
 //STEP
 //单次测量(100组数据)
-#define STEP_REC1_DATA_ADDR					(TEMP_REC2_DATA_END)
+#define STEP_REC1_DATA_ADDR					0x785D10
 #define STEP_REC1_DATA_SIZE					(100*(7+2))
 #define STEP_REC1_DATA_END					(STEP_REC1_DATA_ADDR+STEP_REC1_DATA_SIZE)
 //整点测量(7天数据)
@@ -1008,6 +1014,7 @@
 #define SLEEP_REC2_DATA_ADDR				(SLEEP_REC1_DATA_END)
 #define SLEEP_REC2_DATA_SIZE				(7*(4+24*4))
 #define SLEEP_REC2_DATA_END					(SLEEP_REC2_DATA_ADDR+SLEEP_REC2_DATA_SIZE)
+#endif
 
 #define DATA_END_ADDR						0x7fffff
 /****************************************************date end********************************************************/

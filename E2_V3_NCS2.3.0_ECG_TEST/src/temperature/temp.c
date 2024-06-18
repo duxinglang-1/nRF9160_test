@@ -261,7 +261,7 @@ void GetGivenDayTempRecData(sys_date_timer_t date, uint8_t *databuf)
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	p_temp = (temp_rec2_nod*)&rec2buf;
-	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(hr_rec2_nod);i++)
+	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 	{
 		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
 			||(p_temp->month == 0xff || p_temp->month == 0x00)
@@ -425,7 +425,7 @@ void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 	infor.align = NOTIFY_ALIGN_CENTER;
 	infor.type = NOTIFY_TYPE_POPUP;
 
-
+#ifdef CONFIG_PPG_SUPPORT
 	if(1
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		&& !IsFTTempTesting()
@@ -434,6 +434,7 @@ void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
 	{
 		StartSCC();
 	}
+#endif
 
 	switch(trigger_type)
 	{
@@ -522,7 +523,11 @@ void TempMsgProcess(void)
 		if(!temp_check_ok)
 			return;
 
-		if(!CheckSCC()
+		if(
+			1
+		#ifdef CONFIG_PPG_SUPPORT	
+			&& !CheckSCC()
+		#endif	
 		#ifdef CONFIG_FACTORY_TEST_SUPPORT
 			&& !IsFTTempTesting()
 			&& !IsFTTempAging()
@@ -670,7 +675,12 @@ void TempMsgProcess(void)
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
-			if(!ppg_skin_contacted_flag)
+			if(
+				1
+				#ifdef CONFIG_PPG_SUPPORT	
+					&& !ppg_skin_contacted_flag
+				#endif	
+				)
 			{
 			#ifdef CONFIG_PPG_SUPPORT
 				bpt_data tmp_bpt = {254,254};

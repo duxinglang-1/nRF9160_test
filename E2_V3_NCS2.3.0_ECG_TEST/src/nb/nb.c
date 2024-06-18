@@ -644,7 +644,7 @@ void mqtt_is_connecting(void)
 	return mqtt_connecting_flag;
 }
 
-static void mqtt_unlink(void)
+void mqtt_unlink(void)
 {
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 		k_timer_stop(&mqtt_disconnect_timer);
@@ -1074,6 +1074,7 @@ void GetStringInforBySepa(uint8_t *sour_buf, uint8_t *key_buf, uint8_t pos_index
 			if(count == pos_index)
 			{
 				memcpy(outbuf, ptr1, (ptr2-ptr1));
+				outbuf[ptr2-ptr1] = 0x00;
 				return;
 			}
 			else
@@ -1841,17 +1842,21 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
+			uint8_t tmpbuf[8] = {0};
+
+			strcat(strdata, ",");
+			
 			//后台下发抬腕亮屏设置
-			global_settings.wake_screen_by_wrist = atoi(strdata);
+			GetStringInforBySepa(strdata, ",", 1, tmpbuf);
+			global_settings.wake_screen_by_wrist = atoi(tmpbuf);
+			//后台下发脱腕检测设置
+			GetStringInforBySepa(strdata, ",", 2, tmpbuf);
+			global_settings.wrist_off_check = atoi(tmpbuf);
+			//后台下发摔倒检测设置
+			GetStringInforBySepa(strdata, ",", 3, tmpbuf);
+			global_settings.fall_check = atoi(tmpbuf);
 			
 			flag = true;
-		}
-		else if(strcmp(strcmd, "S10") == 0)
-		{
-			//后台下发脱腕检测设置
-			global_settings.wrist_off_check = atoi(strdata);
-
-			flag = true;			
 		}
 		else if(strcmp(strcmd, "S11") == 0)
 		{

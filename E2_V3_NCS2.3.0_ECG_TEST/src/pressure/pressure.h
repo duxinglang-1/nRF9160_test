@@ -27,8 +27,8 @@ typedef int32_t (*pressure_read_ptr)(struct device *handle, uint8_t reg, uint8_t
 typedef struct
 {
   /** Component mandatory fields **/
-  pressure_write_ptr  write;
-  pressure_read_ptr   read;
+  pressure_write_ptr  write_reg;
+  pressure_read_ptr   read_reg;
   /** Customizable optional pointer **/
   struct device *handle;
 }pressure_ctx_t;

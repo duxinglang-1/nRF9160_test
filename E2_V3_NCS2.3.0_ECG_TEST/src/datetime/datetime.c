@@ -533,6 +533,7 @@ void UpdateSystemTime(void)
 		}
 	}
 	date_time_changed = date_time_changed|0x01;
+	pressure_start();
 	
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
@@ -699,13 +700,13 @@ void UpdateSystemTime(void)
 				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}
-
-		#ifdef CONFIG_ALARM_SUPPORT	
-			AlarmRemindCheck(date_time);
-		#endif
-			//TimeCheckSendLocationData();
 		}
 	#endif
+
+	#ifdef CONFIG_ALARM_SUPPORT	
+		AlarmRemindCheck(date_time);
+	#endif
+		//TimeCheckSendLocationData();
 
 		pmu_status_update();
 	}

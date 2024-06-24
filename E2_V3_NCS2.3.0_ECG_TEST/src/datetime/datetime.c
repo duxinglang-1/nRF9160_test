@@ -533,7 +533,6 @@ void UpdateSystemTime(void)
 		}
 	}
 	date_time_changed = date_time_changed|0x01;
-	pressure_start();
 	
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
@@ -707,7 +706,6 @@ void UpdateSystemTime(void)
 		AlarmRemindCheck(date_time);
 	#endif
 		//TimeCheckSendLocationData();
-
 		pmu_status_update();
 	}
 

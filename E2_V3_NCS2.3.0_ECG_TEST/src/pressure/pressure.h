@@ -34,6 +34,7 @@ typedef struct
 }pressure_ctx_t;
 
 extern bool get_pressure_ok_flag;
+extern float g_prs;
 
 #endif/*__PRESSURE_H__*/
 

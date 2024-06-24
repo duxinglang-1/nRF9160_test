@@ -66,8 +66,6 @@ typedef enum
 	//Command Mode
 	MEAS_CMD_PSR		= 0b001,	// - Pressure measurement
 	MEAS_CMD_TMP		= 0b010,	// - Temperature measurement
-	MEAS_CMD_NA1		= 0b011,	// - na.
-	MEAS_CMD_NA2		= 0b100,	// - na.
 	
 	//Background Mode
 	MEAS_CONTI_PRS		= 0b101,	// - Continous pressure measurement
@@ -77,13 +75,49 @@ typedef enum
 
 typedef struct
 {
-	uint8_t prc;
-	int32_t scale;
-}dps368_com_scale_t;
+	uint8_t prc		:4;
+	uint8_t rate	:3;
+	uint8_t ext		:1;
+}dps368_tmp_t;
+
+typedef struct
+{
+	uint8_t prc		:4;
+	uint8_t rate	:3;
+	uint8_t na		:1;
+}dps368_psr_t;
+
+typedef struct
+{
+	uint8_t ctrl	:3;
+	uint8_t na		:5;
+}dps368_meas_t;
+
+typedef struct
+{
+	uint8_t spi_mode	:1;	
+	uint8_t fifo_en		:1;
+	uint8_t p_shift		:1;
+	uint8_t t_shift		:1;
+	uint8_t int_prs		:1;
+	uint8_t int_tmp		:1;
+	uint8_t	int_fifo	:1;
+	uint8_t int_hl		:1;
+}dps368_int_t;
+
+typedef struct
+{
+	dps368_tmp_t tmp_cfg;
+	dps368_psr_t prs_cfg;
+	dps368_meas_t meas_cfg;
+	dps368_int_t int_cfg;
+}dps368_settings_t;
 
 extern bool dps368_init(void);
-extern void dps368_start(void);
+extern void DPS368_Start(DPS368_MEAS_CTRL work_mode);
 extern void dps368_stop(void);
-extern bool GetPressure(float *skin_temp, float *body_temp);
+extern void pressure_start(void);
+extern void pressure_stop(void);
+extern bool GetPressure(float *prs);
 
 #endif/*__DPS368_H__*/

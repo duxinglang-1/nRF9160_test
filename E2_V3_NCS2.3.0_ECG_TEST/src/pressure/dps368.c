@@ -26,6 +26,7 @@ static struct device *gpio_pressure;
 static struct gpio_callback gpio_cb;
 
 static bool pressure_start_flag = false;
+static bool pressure_stop_flag = false;
 static bool pressure_interrupt_flag = false;
 
 static int32_t m_c0,m_c1,m_c00,m_c01,m_c10,m_c11,m_c20,m_c21,m_c30;
@@ -57,16 +58,92 @@ uint8_t DPS368_coefs[18] =
 int32_t DPS368_tmp = 0;
 int32_t DPS368_prs = 0;
 
-static dps368_com_scale_t com_scale[8] = 
+static dps368_settings_t dps368_settings = 
 {
-	{0x00,		 524288},	//0b0000 1 (single)
-	{0x01,		1572864},	//0b0001 2 times (Low Power)
-	{0x02,		3670016},	//0b0010 4 times
-	{0x03,		7864320},	//0b0011 8 times
-	{0x04,		 253952},	//0b0100 16 times (Standard)
-	{0x05,		 516096},	//0b0101 32 times
-	{0x06,		1040384},	//0b0110 64 times (High Precision)
-	{0x07,		2088960}	//0b0111 128 times
+	0x03,		//TMP_PRC: 	
+				// 0000 - single. (Default) - Measurement time 3.6 ms.
+				// 0001 - 2 times.
+				// 0010 - 4 times.
+				// 0011 - 8 times.
+				// 0100 - 16 times.
+				// 0101 - 32 times.
+				// 0110 - 64 times..
+				// 0111 - 128 times.	
+	0x02,		//TMP_RATE:	
+				// 000 - 1 measurement pr. sec.
+				// 001 - 2 measurements pr. sec.
+				// 010 - 4 measurements pr. sec.
+				// 011 - 8 measurements pr. sec.
+				// 100 - 16 measurements pr. sec.
+				// 101 - 32 measurements pr. sec.
+				// 110 - 64 measurements pr. sec.
+				// 111 - 128 measurements pr. sec.						
+	0x1, 		//TMP_EXT:	
+				// 0 - Internal sensor (in ASIC)
+				// 1 - External sensor (in pressure sensor MEMS element)
+
+	0x03,		//PM_PRC:	
+				// 0000 - Single. (Low Precision)
+				// 0001 - 2 times (Low Power).
+				// 0010 - 4 times.
+				// 0011 - 8 times.
+				// 0100 - 16 times (Standard).
+				// 0101 - 32 times.
+				// 0110 - 64 times (High Precision).
+				// 0111 - 128 times.						
+	0x02,		//PM_RATE:	
+				// 000 - 1 measurements pr. sec.
+				// 001 - 2 measurements pr. sec.
+				// 010 - 4 measurements pr. sec.
+				// 011 - 8 measurements pr. sec.
+				// 100 - 16 measurements pr. sec.
+				// 101 - 32 measurements pr. sec.
+				// 110 - 64 measurements pr. sec.
+				// 111 - 128 measurements pr. sec.
+	0x00,		//NA
+	
+	MEAS_CONTI_PRS_TMP,	//MEAS_MODE
+	0x00,				//NA
+	
+				//INT_CFG
+	1,			//Set SPI mode: 
+				// 0 - 4-wire interface.
+				// 1 - 3-wire interface.	
+	1,			//Enable the FIFO: 
+				// 0 - Disable.
+				// 1 - Enable.		
+	0,			//Pressure result bit-shift: 
+				// 0 - no shift.
+				// 1 - shift result right in data register. 
+				// Note: Must be set to '1' when the oversampling rate is >8 times.		
+	0,			//Temperature result bit-shift: 
+				// 0 - no shift. 
+				// 1 - shift result right in data register. 
+				// Note: Must be set to '1' when the oversampling rate is >8 times.		
+	1,			//Generate interupt when a pressure measurement is ready: 
+				// 0 - Disable. 
+				// 1 - Enable.	
+	1,			//Generate interupt when a pressure measurement is ready: 
+				// 0 - Disable. 
+				// 1 - Enable.	
+	1,			//Generate interupt when the FIFO is full: 
+				// 0 - Disable. 
+				// 1 - Enable.		
+	0,			//Interupt (on SDO pin) active level: 
+				// 0 - Active low. 
+				// 1 - Active high.	
+};
+
+static int32_t com_scale[8] = 
+{
+	 524288,	//0b0000 1 (single)
+	1572864,	//0b0001 2 times (Low Power)
+	3670016,	//0b0010 4 times
+	7864320,	//0b0011 8 times
+	 253952,	//0b0100 16 times (Standard)
+	 516096,	//0b0101 32 times
+	1040384,	//0b0110 64 times (High Precision)
+	2088960		//0b0111 128 times
 };
 
 void DPS368_Delayms(unsigned int dly)
@@ -434,7 +511,7 @@ void DPS368_SetMeasTmpCfg(void)
 	// 100 - 16 measurements pr. sec.
 	// 101 - 32 measurements pr. sec.
 	// 110 - 64 measurements pr. sec.
-	// 111 - 128 measurements pr. sec..
+	// 111 - 128 measurements pr. sec.
 	//Applicable for measurements in Background mode only
 	//TMP_PRC[3:0]:
 	//Temperature oversampling (precision):
@@ -448,8 +525,14 @@ void DPS368_SetMeasTmpCfg(void)
 	// 0110 - 64 times..
 	// 0111 - 128 times.
 	// 1xxx - Reserved.
-	
-	DPS368_WriteReg(REG_TMP_CFG, 0xa3);//TMP_EXT:0b0, TMP_RATE:0b010, TMP_PRC:0b0011
+	uint8_t data;
+
+	//data = dps368_settings.tmp_ext<<7 | dps368_settings.tmp_rate<<4 | dps368_settings.tmp_prc;
+	data = *(uint8_t*)&dps368_settings.tmp_cfg;
+#ifdef PRESSURE_DEBUG
+	LOGD("data:0x%02X, ext:%d, rate:%d, prc:%d", data, dps368_settings.tmp_cfg.ext, dps368_settings.tmp_cfg.rate, dps368_settings.tmp_cfg.prc);
+#endif
+	DPS368_WriteReg(REG_TMP_CFG, data);
 }
 
 void DPS368_GetMeasPrsCfg(uint8_t *data)
@@ -485,11 +568,14 @@ void DPS368_SetMeasPrsCfg(void)
 	// 0111 *) - 128 times.
 	// 1xxx - Reserved
 	//*) Note: Use in combination with a bit shift. See Interrupt and FIFO configuration (CFG_REG) register
+	uint8_t data;
 
-	DPS368_WriteReg(REG_PRS_CFG, 0x23);//PM_RATE:0b010, PM_PRC:0b0011
+	//data = dps368_settings.pm_rate<<4 | dps368_settings.pm_prc;
+	data = *(uint8_t*)&dps368_settings.prs_cfg;
+	DPS368_WriteReg(REG_PRS_CFG, data);
 }
 
-void DPS368_GetMeasModeCfg(uint8_t *data)
+void DPS368_GetMeasModeCfg(DPS368_MEAS_CTRL *data)
 {
 	//Setup measurement mode.
 	//b7		b6			b5		b4			b3	b2	b1	b0
@@ -550,7 +636,8 @@ void DPS368_SetMeasModeCfg(DPS368_MEAS_CTRL mode)
 	//				110 - Continous temperature measurement
 	//				111 - Continous pressure and temperature measurement
 
-	DPS368_WriteReg(REG_MEAS_CFG, 0x03&mode);
+	dps368_settings.meas_cfg.ctrl = (mode&0x07);
+	DPS368_WriteReg(REG_MEAS_CFG, (mode&0x07));
 }
 
 void DPS368_GetConfig(uint8_t *data)
@@ -589,8 +676,33 @@ void DPS368_SetConfig(void)
 	//SPI_MODE:Set SPI mode:
 	//			0 - 4-wire interface.
 	//			1 - 3-wire interface.
+	uint8_t data;
+
+	if(dps368_settings.tmp_cfg.prc > 0b0011)
+		dps368_settings.int_cfg.t_shift = 1;
+	else
+		dps368_settings.int_cfg.t_shift = 0;
+
+	if(dps368_settings.prs_cfg.prc > 0b0011)
+		dps368_settings.int_cfg.p_shift = 1;
+	else
+		dps368_settings.int_cfg.p_shift = 0;
 	
-	DPS368_WriteReg(REG_CFG, 0x71);
+	switch(dps368_settings.meas_cfg.ctrl)
+	{
+	case MEAS_CMD_PSR:
+	case MEAS_CMD_TMP:
+		dps368_settings.int_cfg.fifo_en = 0;
+		break;
+
+	case MEAS_CONTI_PRS:
+	case MEAS_CONTI_TMP:
+	case MEAS_CONTI_PRS_TMP:
+		dps368_settings.int_cfg.fifo_en = 1;
+		break;
+	}
+	data = *(uint8_t*)&dps368_settings.int_cfg;
+	DPS368_WriteReg(REG_CFG, data);
 }
 
 void DPS368_Reset(void)
@@ -652,28 +764,18 @@ void DPS368_GetTmpRawData(int32_t *data)
 {
 	uint8_t status,reg_tmp[3] = {0};
 
-	while(1)
+	if(dps368_settings.meas_cfg.ctrl == MEAS_CMD_TMP)
 	{
-		DPS368_GetMeasModeCfg(&status);
-		if((status&0x20) == 0x20)
-			break;
+		while(1)
+		{
+			DPS368_GetMeasModeCfg(&status);
+			if((status&0x20) == 0x20)
+				break;
+		}
 	}
 
 	DPS368_ReadRegMulti(REG_TMP_B2, reg_tmp, sizeof(reg_tmp));
-#ifdef PRESSURE_DEBUG
-	LOGD("reg_tmp:0x%02X 0x%02X 0x%02X", reg_tmp[0],reg_tmp[1],reg_tmp[2]);
-#endif
 	*data = (uint32_t)reg_tmp[0]<<16 | (uint32_t)reg_tmp[1]<<8 | (uint32_t)reg_tmp[2];
-
-	DPS368_GetConfig(&status);
-#ifdef PRESSURE_DEBUG
-	LOGD("status:0x%02X", status);
-#endif	
-	if((status&0x08) == 0x08)
-	{
-		*data = (*data)>>1;
-	}
-
 	DPS368_GetTwosComplement(data, 24);
 #ifdef PRESSURE_DEBUG
 	LOGD("tmp:0x%02X, %d", *data, *data);
@@ -682,30 +784,21 @@ void DPS368_GetTmpRawData(int32_t *data)
 
 void DPS368_GetPrsRawData(int32_t *data)
 {
+	DPS368_MEAS_CTRL mode;
 	uint8_t status,reg_psr[3] = {0};
 
-	while(1)
+	if(dps368_settings.meas_cfg.ctrl == MEAS_CMD_PSR)
 	{
-		DPS368_GetMeasModeCfg(&status);
-		if((status&0x10) == 0x10)
-			break;
+		while(1)
+		{
+			DPS368_GetMeasModeCfg(&status);
+			if((status&0x10) == 0x10)
+				break;
+		}
 	}
 	
 	DPS368_ReadRegMulti(REG_PSR_B2, reg_psr, sizeof(reg_psr));
-#ifdef PRESSURE_DEBUG
-	LOGD("reg_psr:0x%02X 0x%02X 0x%02X", reg_psr[0],reg_psr[1],reg_psr[2]);
-#endif
 	*data = (uint32_t)reg_psr[0]<<16 | (uint32_t)reg_psr[1]<<8 | (uint32_t)reg_psr[2];
-
-	DPS368_GetConfig(&status);
-#ifdef PRESSURE_DEBUG
-	LOGD("status:0x%02X", status);
-#endif	
-	if((status&0x04) == 0x04)
-	{
-		*data = (*data)>>1;
-	}
-
 	DPS368_GetTwosComplement(data, 24);
 #ifdef PRESSURE_DEBUG
 	LOGD("prs:0x%02X, %d", *data, *data);
@@ -723,25 +816,13 @@ void DPS368_CalculateTmp(void)
 	//		Traw_sc = Traw/kT 
 	//5. Calculate compensated measurement results.
 	//		Tcomp (°„C) = c0*0.5 + c1*Traw_sc
-	uint8_t i,data;
 	float Traw_sc,Tcomp;
 
-	DPS368_GetMeasTmpCfg(&data);
-	for(i=0;i<ARRAYNUM(com_scale);i++)
-	{
-		if(com_scale[i].prc == (data&0x0f))
-			break;
-	}
-
-	if(i < ARRAYNUM(com_scale))
-	{
-		Traw_sc = (float)DPS368_tmp/com_scale[i].scale;
-		Tcomp = m_c0*0.5 + m_c1*Traw_sc;
-		
-	#ifdef PRESSURE_DEBUG
-		LOGD("Tcomp:%f,Traw_sc:%f", Tcomp, Traw_sc);
-	#endif	
-	}
+	Traw_sc = (float)DPS368_tmp/com_scale[dps368_settings.tmp_cfg.prc];
+	Tcomp = m_c0*0.5 + m_c1*Traw_sc;
+#ifdef PRESSURE_DEBUG
+	LOGD("Tcomp:%f,Traw_sc:%f", Tcomp, Traw_sc);
+#endif	
 }
 
 void DPS368_CalculatePrs(void)
@@ -757,40 +838,45 @@ void DPS368_CalculatePrs(void)
 	//		Traw_sc = Traw/kT
 	//5. Calculate compensated measurement results.
 	//		Pcomp(Pa) = c00 + Praw_sc*(c10 + Praw_sc *(c20+ Praw_sc *c30)) + Traw_sc *c01 + Traw_sc *Praw_sc *(c11+Praw_sc*c21)
-	uint8_t i,j,data;
 	float Traw_sc,Praw_sc,Pcomp;
 
-	DPS368_GetMeasPrsCfg(&data);
-	for(i=0;i<ARRAYNUM(com_scale);i++)
-	{
-		if(com_scale[i].prc == (data&0x0f))
-			break;
-	}
-	DPS368_GetMeasTmpCfg(&data);
-	for(j=0;j<ARRAYNUM(com_scale);j++)
-	{
-		if(com_scale[j].prc == (data&0x0f))
-			break;
-	}
+	Praw_sc = (float)DPS368_prs/com_scale[dps368_settings.prs_cfg.prc];
+	Traw_sc = (float)DPS368_tmp/com_scale[dps368_settings.tmp_cfg.prc];
+	Pcomp = m_c00 + Praw_sc*(m_c10 + Praw_sc*(m_c20 + Praw_sc*m_c30)) + Traw_sc*m_c01 + Traw_sc*Praw_sc*(m_c11 + Praw_sc*m_c21);
+#ifdef PRESSURE_DEBUG
+	LOGD("Pcomp:%f,Praw_sc:%f", Pcomp, Praw_sc);
+#endif
 
-	if((i < ARRAYNUM(com_scale)) && (j < ARRAYNUM(com_scale)))
-	{
-		Praw_sc = (float)DPS368_prs/com_scale[i].scale;
-		Traw_sc = (float)DPS368_tmp/com_scale[j].scale;
+	g_prs = Pcomp;
+}
 
-		Pcomp = m_c00 + Praw_sc*(m_c10 + Praw_sc*(m_c20 + Praw_sc*m_c30)) + Traw_sc*m_c01 + Traw_sc*Praw_sc*(m_c11 + Praw_sc*m_c21);
-		
-	#ifdef PRESSURE_DEBUG
-		LOGD("Pcomp:%f,Praw_sc:%f", Pcomp, Praw_sc);
-	#endif	
+void DPS368_CalculateFIFOData(void)
+{
+	int32_t data;
+	float Traw_sc,Praw_sc,Pcomp;
+
+	DPS368_GetPrsRawData(&data);
+#ifdef PRESSURE_DEBUG
+	LOGD("data:%x", data);
+#endif	
+	switch(data&0x00000001)
+	{
+	case 0://tmp
+		DPS368_tmp = data;
+		DPS368_CalculateTmp();
+		break;
+	case 1://prs
+		DPS368_prs = data;
+		DPS368_CalculatePrs();
+		break;
 	}
 }
 
 void DPS368_GetIntStatus(uint8_t *status)
 {
 	//Interrupt status register. The register is cleared on read.
-	//b7b6b5b4b3	b2				b1		b0
-	//    -			INT_FIFO_FULL 	INT_TMP INT_PRS
+	//b7 b6 b5 b4 b3	b2				b1		b0
+	//    	-			INT_FIFO_FULL 	INT_TMP INT_PRS
 	//INT_FIFO_FULL:Status of FIFO interrupt
 	//				0 - Interrupt not active
 	//				1 - Interrupt active
@@ -802,6 +888,17 @@ void DPS368_GetIntStatus(uint8_t *status)
 	//				1 - Interrupt active
 	
 	DPS368_ReadReg(REG_INT_STS, status);
+}
+
+void DPS368_GetFIFOStatus(uint8_t *status)
+{
+	//FIFO status register
+	//b7 b6 b5 b4 b3 b2		b1			b0
+	//		-				FIFO_FULL	FIFO_EMPTY
+	//FIFO_FULL: 0 - The FIFO is not full, 1 - The FIFO is full
+	//FIFO_EMPTY: 0 - The FIFO is not empty, 1 - The FIFO is empty
+	
+	DPS368_ReadReg(REG_FIFO_STS, status);
 }
 
 static void init_gpio(void)
@@ -870,9 +967,6 @@ bool DPS368_Init(void)
 		while(1)
 		{
 			DPS368_GetMeasModeCfg(&data);
-		#ifdef PRESSURE_DEBUG
-			LOGD("data:0x%02X", data);
-		#endif	
 			if((data&0xC0) == 0xC0)
 				break;
 		}
@@ -880,7 +974,14 @@ bool DPS368_Init(void)
 		DPS368_SetMeasTmpCfg();
 		DPS368_SetMeasPrsCfg();
 		DPS368_GetCoefs();
-		DPS368_SetConfig();
+
+		if((dps368_settings.meas_cfg.ctrl == MEAS_CONTI_PRS)
+			|| (dps368_settings.meas_cfg.ctrl == MEAS_CONTI_TMP)
+			|| (dps368_settings.meas_cfg.ctrl == MEAS_CONTI_PRS_TMP)
+			)
+		{
+			DPS368_Start(dps368_settings.meas_cfg.ctrl);
+		}
 		
 		return true;
 	}
@@ -895,19 +996,47 @@ void pressure_start(void)
 	pressure_start_flag = true;
 }
 
-void DPS368_Start(void)
+void pressure_stop(void)
 {
-	DPS368_SetMeasModeCfg(MEAS_CMD_TMP);
-	//DPS368_Delayms(20);
-	DPS368_GetTmpRawData(&DPS368_tmp);
-	DPS368_CalculateTmp();
+	pressure_stop_flag = true;
+}
+
+void DPS368_Start(DPS368_MEAS_CTRL work_mode)
+{
+	switch(work_mode)
+	{
+	case MEAS_STANDBY:		//- Idle / Stop background measurement
+		DPS368_SetMeasModeCfg(dps368_settings.meas_cfg.ctrl);
+		break;
+
+	case MEAS_CMD_PSR:		// - Pressure measurement
+		DPS368_SetConfig();
+		DPS368_SetMeasModeCfg(MEAS_CMD_TMP);
+		DPS368_GetTmpRawData(&DPS368_tmp);
+		DPS368_CalculateTmp();
+
+		DPS368_SetMeasModeCfg(MEAS_CMD_PSR);
+		DPS368_GetPrsRawData(&DPS368_prs);
+		DPS368_CalculatePrs();
 	
-	DPS368_SetMeasModeCfg(MEAS_CMD_PSR);
-	//DPS368_Delayms(20);
-	DPS368_GetPrsRawData(&DPS368_prs);
-	DPS368_CalculatePrs();
-	
-	DPS368_SetMeasModeCfg(MEAS_STANDBY);
+		DPS368_SetMeasModeCfg(MEAS_STANDBY);	
+		break;
+		
+	case MEAS_CMD_TMP:		// - Temperature measurement:
+		DPS368_SetConfig();
+		DPS368_SetMeasModeCfg(MEAS_CMD_TMP);
+		DPS368_GetTmpRawData(&DPS368_tmp);
+		DPS368_CalculateTmp();
+		DPS368_SetMeasModeCfg(MEAS_STANDBY);
+		break;
+
+	case MEAS_CONTI_PRS:		// - Continous pressure measurement
+	case MEAS_CONTI_TMP:		// - Continous temperature measurement
+	case MEAS_CONTI_PRS_TMP:	// - Continous pressure and temperature measurement:
+		DPS368_SetConfig();
+		DPS368_SetMeasModeCfg(dps368_settings.meas_cfg.ctrl);
+		break;
+	}
 }
 
 void DPS368_Stop(void)
@@ -919,10 +1048,16 @@ void DPS368MsgProcess(void)
 {
 	if(pressure_start_flag)
 	{
-		DPS368_Start();
+		DPS368_Start(MEAS_CMD_PSR);
 		pressure_start_flag = false;
 	}
 
+	if(pressure_stop_flag)
+	{
+		DPS368_Stop();
+		pressure_stop_flag = false;
+	}
+	
 	if(pressure_interrupt_flag)
 	{
 		uint8_t status;
@@ -931,7 +1066,7 @@ void DPS368MsgProcess(void)
 	#ifdef PRESSURE_DEBUG
 		LOGD("int status:%x", status);
 	#endif
-		if(status&0x01 == 0x01)
+		if((status&0x01) == 0x01)
 		{
 		#ifdef PRESSURE_DEBUG
 			LOGD("int_prs");
@@ -940,7 +1075,7 @@ void DPS368MsgProcess(void)
 			DPS368_CalculatePrs();
 		}
 		
-		if(status&0x02 == 0x02)
+		if((status&0x02) == 0x02)
 		{
 		#ifdef PRESSURE_DEBUG
 			LOGD("int_tmp");
@@ -949,23 +1084,26 @@ void DPS368MsgProcess(void)
 			DPS368_CalculateTmp();	
 		}
 
-		if(status&0x04 == 0x04)
+		if((status&0x04) == 0x04)
 		{
 		#ifdef PRESSURE_DEBUG
 			LOGD("int_fifo_full");
 		#endif
+			while(1)
+			{
+				DPS368_CalculateFIFOData();
+
+				DPS368_GetFIFOStatus(&status);
+			#ifdef PRESSURE_DEBUG
+				LOGD("fifo status:%x", status);
+			#endif
+				if((status&0x01) == 0x01)
+				{
+					break;
+				}
+			}
 		}
 	
 		pressure_interrupt_flag = false;
 	}
-}
-
-bool GetPressure(float *skin_temp, float *body_temp)
-{
-	bool flag=false;
-	uint8_t crc=0;
-	uint8_t databuf[10] = {0};
-	uint16_t trans_temp = 0;
-
-	return flag;
 }

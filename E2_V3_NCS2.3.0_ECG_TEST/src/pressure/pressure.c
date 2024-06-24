@@ -24,128 +24,27 @@
 #endif
 
 static bool pressure_check_ok = false;
-static bool pressure_get_data_flag = false;
-static bool pressure_start_flag = false;
-static bool pressure_test_flag = false;
 static bool pressure_stop_flag = false;
-static bool pressure_power_flag = false;
-static bool menu_start_pressure = false;
-static bool ft_start_pressure = false;
 
-bool get_pressure_ok_flag = false;
-
-static void pressure_auto_stop_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(pressure_stop_timer, pressure_auto_stop_timerout, NULL);
-static void pressure_menu_stop_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(pressure_menu_stop_timer, pressure_menu_stop_timerout, NULL);
-static void pressure_get_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(pressure_check_timer, pressure_get_timerout, NULL);
-
-static void pressure_auto_stop_timerout(struct k_timer *timer_id)
-{
-	pressure_stop_flag = true;
-}
-
-static void pressure_menu_stop_timerout(struct k_timer *timer_id)
-{
-}
-
-static void pressure_get_timerout(struct k_timer *timer_id)
-{
-	pressure_get_data_flag = true;
-}
-
-bool PressureIsWorking(void)
-{
-	if(pressure_power_flag == false)
-		return false;
-	else
-		return true;
-}
+float g_prs = 0.0;
 
 void PressureStop(void)
 {
 	pressure_stop_flag = true;
 }
 
-#if 0
-void StartTemp(TEMP_TRIGGER_SOUCE trigger_type)
+bool GetPressure(float *psr)
 {
-	notify_infor infor = {0};
+	if(!pressure_check_ok || psr == NULL)
+		return false;
 
-	infor.x = 0;
-	infor.y = 0;
-	infor.w = LCD_WIDTH;
-	infor.h = LCD_HEIGHT;
-	infor.align = NOTIFY_ALIGN_CENTER;
-	infor.type = NOTIFY_TYPE_POPUP;
-
-
-	if(1
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-		&& !IsFTTempTesting()
-	#endif
-		)
-	{
-		StartSCC();
-	}
-
-	switch(trigger_type)
-	{
-	case TEMP_TRIGGER_BY_HOURLY:
-		g_temp_hourly = 0.0;
-	case TEMP_TRIGGER_BY_APP:
-	case TEMP_TRIGGER_BY_FT:
-		if(!is_wearing())
-		{
-			return;
-		}
-		break;
-		
-	case TEMP_TRIGGER_BY_MENU:
-		if(!is_wearing())
-		{
-			infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-			infor.img_count = 1;
-
-			DisplayPopUp(infor);
-			return;
-		}
-
-		g_temp_menu = 0.0;
-		break;
-	}
-
-	g_temp_trigger |= trigger_type;
-	g_temp_skin = 0.0;
-	g_temp_body = 0.0;
-	get_temp_ok_flag = false;
-
-	temp_start_flag = true;
-}
-
-void MenuStartTemp(void)
-{
-	menu_start_temp = true;
-}
-
-void MenuStopTemp(void)
-{
-	temp_stop_flag = true;
-}
-
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-void FTStartTemp(void)
-{
-	ft_start_temp = true;
-}
-
-void FTStopTemp(void)
-{
-	temp_stop_flag = true;
-}
+#ifdef PRESSURE_DPS368
+	DPS368_Start(MEAS_CMD_PSR);
 #endif
-#endif
+
+	*psr = g_prs;
+	return true;
+}
 
 void pressure_init(void)
 {

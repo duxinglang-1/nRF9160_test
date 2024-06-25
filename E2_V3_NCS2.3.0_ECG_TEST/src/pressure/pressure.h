@@ -19,7 +19,8 @@
 #define PRESSURE_DEBUG
 
 //sensor mode
-#define PRESSURE_DPS368
+//#define PRESSURE_DPS368
+#define PRESSURE_LPS22DF
 
 typedef int32_t (*pressure_write_ptr)(struct device *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 typedef int32_t (*pressure_read_ptr)(struct device *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
@@ -33,8 +34,15 @@ typedef struct
   struct device *handle;
 }pressure_ctx_t;
 
-extern bool get_pressure_ok_flag;
+extern bool pressure_check_ok;
+extern bool pressure_start_flag;
+extern bool pressure_stop_flag;
+extern bool pressure_interrupt_flag;
+
 extern float g_prs;
+extern float g_tmp;
+
+extern pressure_ctx_t pressure_dev_ctx;
 
 #endif/*__PRESSURE_H__*/
 

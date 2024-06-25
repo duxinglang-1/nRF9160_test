@@ -1,5 +1,5 @@
 /****************************************Copyright (c)************************************************
-** File Name:			    dps368.h
+** File Name:			    dps368.c
 ** Descriptions:			dps368 interface process source file
 ** Created By:				xie biao
 ** Created Date:			2024-06-18
@@ -15,9 +15,8 @@
 #include "pressure.h"
 #include "dps368.h"
 #include "logger.h"
-#ifdef CONFIG_CRC_SUPPORT
-#include "crc_check.h"
-#endif
+
+#ifdef PRESSURE_DPS368
 
 #define ARRAYNUM(a) (sizeof(a)/sizeof(a[0]))
 
@@ -25,13 +24,7 @@ static struct device *i2c_pressure;
 static struct device *gpio_pressure;
 static struct gpio_callback gpio_cb;
 
-static bool pressure_start_flag = false;
-static bool pressure_stop_flag = false;
-static bool pressure_interrupt_flag = false;
-
 static int32_t m_c0,m_c1,m_c00,m_c01,m_c10,m_c11,m_c20,m_c21,m_c30;
-
-pressure_ctx_t pressure_dev_ctx;
 
 uint8_t DPS368_coefs[18] = 
 {
@@ -102,7 +95,7 @@ static dps368_settings_t dps368_settings =
 				// 111 - 128 measurements pr. sec.
 	0x00,		//NA
 	
-	MEAS_CONTI_PRS_TMP,	//MEAS_MODE
+	MEAS_CMD_PSR,	//MEAS_MODE
 	0x00,				//NA
 	
 				//INT_CFG
@@ -823,6 +816,8 @@ void DPS368_CalculateTmp(void)
 #ifdef PRESSURE_DEBUG
 	LOGD("Tcomp:%f,Traw_sc:%f", Tcomp, Traw_sc);
 #endif	
+
+	g_tmp = Tcomp;
 }
 
 void DPS368_CalculatePrs(void)
@@ -1107,3 +1102,5 @@ void DPS368MsgProcess(void)
 		pressure_interrupt_flag = false;
 	}
 }
+
+#endif/*PRESSURE_DPS368*/

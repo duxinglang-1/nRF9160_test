@@ -21,12 +21,19 @@
 #include "pressure.h"
 #if defined(PRESSURE_DPS368)
 #include "dps368.h"
+#elif defined(PRESSURE_LPS22DF)
+#include "lps22df.h"
 #endif
 
-static bool pressure_check_ok = false;
-static bool pressure_stop_flag = false;
+bool pressure_check_ok = false;
+bool pressure_start_flag = false;
+bool pressure_stop_flag = false;
+bool pressure_interrupt_flag = false;
 
 float g_prs = 0.0;
+float g_tmp = 0.0;
+
+pressure_ctx_t pressure_dev_ctx;
 
 void PressureStop(void)
 {
@@ -40,6 +47,8 @@ bool GetPressure(float *psr)
 
 #ifdef PRESSURE_DPS368
 	DPS368_Start(MEAS_CMD_PSR);
+#elif defined(PRESSURE_LPS22DF)
+	
 #endif
 
 	*psr = g_prs;
@@ -50,6 +59,8 @@ void pressure_init(void)
 {
 #ifdef PRESSURE_DPS368
 	pressure_check_ok = DPS368_Init();
+#elif defined(PRESSURE_LPS22DF)
+	pressure_check_ok = LPS22DF_Init();
 #endif
 	if(!pressure_check_ok)
 		return;
@@ -63,6 +74,8 @@ void PressureMsgProcess(void)
 {
 #ifdef PRESSURE_DPS368
 	DPS368MsgProcess();
+#elif defined(PRESSURE_LPS22DF)
+	LPS22DFMsgProcess();
 #endif
 }
 

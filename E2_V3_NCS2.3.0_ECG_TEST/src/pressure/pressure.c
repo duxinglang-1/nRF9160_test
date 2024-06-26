@@ -26,6 +26,7 @@
 #endif
 
 bool pressure_check_ok = false;
+bool pressure_get_ok = false;
 bool pressure_start_flag = false;
 bool pressure_stop_flag = false;
 bool pressure_interrupt_flag = false;
@@ -45,10 +46,16 @@ bool GetPressure(float *psr)
 	if(!pressure_check_ok || psr == NULL)
 		return false;
 
+	pressure_get_ok = false;
+
 #ifdef PRESSURE_DPS368
 	DPS368_Start(MEAS_CMD_PSR);
 #elif defined(PRESSURE_LPS22DF)
-	
+	LPS22DF_Start(MEAS_ONE_SHOT);
+#endif
+
+#ifdef PRESSURE_DEBUG
+	LOGD("g_prs:%f", g_prs);
 #endif
 
 	*psr = g_prs;

@@ -76,4 +76,102 @@ typedef enum
 	MEAS_MAX
 }LPS22DF_MEAS_CTRL;
 
+typedef struct
+{
+	uint8_t phe			:1;
+	uint8_t ple			:1;
+	uint8_t lir			:1;
+	uint8_t na			:1;
+	uint8_t reset_az	:1;
+	uint8_t autozero	:1;
+	uint8_t reset_arp	:1;
+	uint8_t autorefp	:1;
+}lps22df_int_t;
+
+typedef struct
+{
+	uint8_t na			:1;
+	uint8_t cs_pu_dis	:1;
+	uint8_t int_pd_dis	:1;
+	uint8_t sdo_pu_en	:1;
+	uint8_t sda_pu_en	:1;
+	uint8_t sim			:1;
+	uint8_t	i2c_i3c_dis	:1;
+	uint8_t int_en_i3c	:1;
+}lps22df_if_t;
+
+typedef struct
+{
+	uint8_t avg	:3;
+	uint8_t odr	:4;
+	uint8_t	na	:1;
+}lps22df_ctrl_reg_1_t;
+
+typedef struct
+{
+	uint8_t oneshot	:1;
+	uint8_t na		:1;
+	uint8_t swreset	:1;
+	uint8_t bdu		:1;
+	uint8_t en_lpfp	:1;
+	uint8_t lfpf_cfg:1;
+	uint8_t zero	:1;
+	uint8_t boot	:1;
+}lps22df_ctrl_reg_2_t;
+
+typedef struct
+{
+	uint8_t if_add_inc	:1;
+	uint8_t pp_od		:1;
+	uint8_t zero_1		:1;
+	uint8_t int_h_l		:1;
+	uint8_t zero_2		:4;
+}lps22df_ctrl_reg_3_t;
+
+typedef struct
+{
+	uint8_t int_f_ovr	:1;
+	uint8_t int_f_wtm	:1;
+	uint8_t int_f_full	:1;
+	uint8_t na			:1;
+	uint8_t int_en		:1;
+	uint8_t drdy		:1;
+	uint8_t drdy_pls	:1;
+	uint8_t	zero		:1;
+}lps22df_ctrl_reg_4_t;
+
+typedef struct
+{
+	uint8_t f_mode		:2;
+	uint8_t trig_modes	:1;
+	uint8_t stop_on_wtm	:1;
+	uint8_t zero		:4;
+}lps22df_fifo_ctrl_t;
+
+typedef struct
+{
+	uint8_t i3c_bus_avb_sel	:2;
+	uint8_t zero_1			:3;
+	uint8_t asf_on			:1;
+	uint8_t zero_2			:1;
+	uint8_t one				:1;
+}lps22df_i3c_if_ctrl_t;
+
+typedef struct
+{
+	lps22df_int_t int_ctrl;
+	uint16_t ths_p;
+	lps22df_if_t if_ctrl;
+	lps22df_ctrl_reg_1_t reg1_ctrl;
+	lps22df_ctrl_reg_2_t reg2_ctrl;
+	lps22df_ctrl_reg_3_t reg3_ctrl;
+	lps22df_ctrl_reg_4_t reg4_ctrl;
+	lps22df_fifo_ctrl_t fifo_ctrl;
+	uint8_t fifo_wtm;
+	uint16_t ref_p;
+	lps22df_i3c_if_ctrl_t i3c_if_ctrl;
+	uint16_t rpds;
+	LPS22DF_MEAS_CTRL meas_ctrl;
+}lps22df_settings_t;
+
 #endif/*__LPS22DF_H__*/

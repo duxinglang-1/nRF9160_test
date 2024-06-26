@@ -35,6 +35,7 @@ typedef struct
 }pressure_ctx_t;
 
 extern bool pressure_check_ok;
+extern bool pressure_get_ok;
 extern bool pressure_start_flag;
 extern bool pressure_stop_flag;
 extern bool pressure_interrupt_flag;

@@ -53,7 +53,7 @@ int32_t DPS368_prs = 0;
 
 static dps368_settings_t dps368_settings = 
 {
-	0x03,		//TMP_PRC: 	
+	0b0011,		//TMP_PRC: 	
 				// 0000 - single. (Default) - Measurement time 3.6 ms.
 				// 0001 - 2 times.
 				// 0010 - 4 times.
@@ -62,7 +62,7 @@ static dps368_settings_t dps368_settings =
 				// 0101 - 32 times.
 				// 0110 - 64 times..
 				// 0111 - 128 times.	
-	0x02,		//TMP_RATE:	
+	0b010,		//TMP_RATE:	
 				// 000 - 1 measurement pr. sec.
 				// 001 - 2 measurements pr. sec.
 				// 010 - 4 measurements pr. sec.
@@ -71,11 +71,11 @@ static dps368_settings_t dps368_settings =
 				// 101 - 32 measurements pr. sec.
 				// 110 - 64 measurements pr. sec.
 				// 111 - 128 measurements pr. sec.						
-	0x1, 		//TMP_EXT:	
+	0b1, 		//TMP_EXT:	
 				// 0 - Internal sensor (in ASIC)
 				// 1 - External sensor (in pressure sensor MEMS element)
 
-	0x03,		//PM_PRC:	
+	0b0011,		//PM_PRC:	
 				// 0000 - Single. (Low Precision)
 				// 0001 - 2 times (Low Power).
 				// 0010 - 4 times.
@@ -84,7 +84,7 @@ static dps368_settings_t dps368_settings =
 				// 0101 - 32 times.
 				// 0110 - 64 times (High Precision).
 				// 0111 - 128 times.						
-	0x02,		//PM_RATE:	
+	0b010,		//PM_RATE:	
 				// 000 - 1 measurements pr. sec.
 				// 001 - 2 measurements pr. sec.
 				// 010 - 4 measurements pr. sec.
@@ -93,36 +93,36 @@ static dps368_settings_t dps368_settings =
 				// 101 - 32 measurements pr. sec.
 				// 110 - 64 measurements pr. sec.
 				// 111 - 128 measurements pr. sec.
-	0x00,		//NA
+	0b0,		//NA
 	
 	MEAS_CMD_PSR,	//MEAS_MODE
-	0x00,				//NA
+	0b00000,		//NA
 	
 				//INT_CFG
-	1,			//Set SPI mode: 
+	0b1,		//Set SPI mode: 
 				// 0 - 4-wire interface.
 				// 1 - 3-wire interface.	
-	1,			//Enable the FIFO: 
+	0b1,		//Enable the FIFO: 
 				// 0 - Disable.
 				// 1 - Enable.		
-	0,			//Pressure result bit-shift: 
+	0b0,		//Pressure result bit-shift: 
 				// 0 - no shift.
 				// 1 - shift result right in data register. 
 				// Note: Must be set to '1' when the oversampling rate is >8 times.		
-	0,			//Temperature result bit-shift: 
+	0b0,		//Temperature result bit-shift: 
 				// 0 - no shift. 
 				// 1 - shift result right in data register. 
 				// Note: Must be set to '1' when the oversampling rate is >8 times.		
-	1,			//Generate interupt when a pressure measurement is ready: 
+	0b1,		//Generate interupt when a pressure measurement is ready: 
 				// 0 - Disable. 
 				// 1 - Enable.	
-	1,			//Generate interupt when a pressure measurement is ready: 
+	0b1,		//Generate interupt when a pressure measurement is ready: 
 				// 0 - Disable. 
 				// 1 - Enable.	
-	1,			//Generate interupt when the FIFO is full: 
+	0b1,		//Generate interupt when the FIFO is full: 
 				// 0 - Disable. 
 				// 1 - Enable.		
-	0,			//Interupt (on SDO pin) active level: 
+	0b0,		//Interupt (on SDO pin) active level: 
 				// 0 - Active low. 
 				// 1 - Active high.	
 };
@@ -520,7 +520,6 @@ void DPS368_SetMeasTmpCfg(void)
 	// 1xxx - Reserved.
 	uint8_t data;
 
-	//data = dps368_settings.tmp_ext<<7 | dps368_settings.tmp_rate<<4 | dps368_settings.tmp_prc;
 	data = *(uint8_t*)&dps368_settings.tmp_cfg;
 #ifdef PRESSURE_DEBUG
 	LOGD("data:0x%02X, ext:%d, rate:%d, prc:%d", data, dps368_settings.tmp_cfg.ext, dps368_settings.tmp_cfg.rate, dps368_settings.tmp_cfg.prc);
@@ -563,7 +562,6 @@ void DPS368_SetMeasPrsCfg(void)
 	//*) Note: Use in combination with a bit shift. See Interrupt and FIFO configuration (CFG_REG) register
 	uint8_t data;
 
-	//data = dps368_settings.pm_rate<<4 | dps368_settings.pm_prc;
 	data = *(uint8_t*)&dps368_settings.prs_cfg;
 	DPS368_WriteReg(REG_PRS_CFG, data);
 }
@@ -842,6 +840,7 @@ void DPS368_CalculatePrs(void)
 	LOGD("Pcomp:%f,Praw_sc:%f", Pcomp, Praw_sc);
 #endif
 
+	pressure_get_ok = true;
 	g_prs = Pcomp;
 }
 

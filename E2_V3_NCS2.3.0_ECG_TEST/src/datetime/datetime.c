@@ -428,6 +428,7 @@ void UpdateSystemTime(void)
 {
 	uint64_t timestamp,timeskip;
 	static uint64_t timeoffset=0;
+	float prs;
 
    	memcpy(&last_date_time, &date_time, sizeof(sys_date_timer_t));
 
@@ -533,7 +534,7 @@ void UpdateSystemTime(void)
 		}
 	}
 	date_time_changed = date_time_changed|0x01;
-	pressure_start();
+	//GetPressure(&prs);
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
 	{
@@ -706,6 +707,7 @@ void UpdateSystemTime(void)
 		AlarmRemindCheck(date_time);
 	#endif
 		//TimeCheckSendLocationData();
+		//GetPressure(&prs);
 		pmu_status_update();
 	}
 

@@ -187,7 +187,7 @@ static lps22df_settings_t lps22df_settings =
 	//RPDS
 	0x0000,		//RPDS[15:0]
 	//MEAS_CTRL
-	MEAS_CONTINOUS
+	MEAS_ONE_SHOT
 };
 
 void LPS22DF_Delayms(unsigned int dly)

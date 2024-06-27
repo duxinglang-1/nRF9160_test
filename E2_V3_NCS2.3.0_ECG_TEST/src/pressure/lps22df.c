@@ -876,13 +876,13 @@ void LPS22DF_GetINTSource(uint8_t *data)
 	//			1: boot phase is running
 	//IA: Interrupt active.
 	//		0: no interrupt has been generated;
-	//		1: one or more interrupt events have been generated).
+	//		1: one or more interrupt events have been generated.
 	//PL: Differential pressure low.
 	//		0: no interrupt has been generated;
 	//		1: low differential pressure event has occurred.
 	//PH: Differential pressure high.
 	//		0: no interrupt has been generated;
-	//		1: high differential pressure event has occurred).
+	//		1: high differential pressure event has occurred.
 	
 	LPS22DF_ReadReg(REG_INT_SOURCE, data);
 }
@@ -920,7 +920,7 @@ void LPS22DF_GetFIFOStatus2(uint8_t *data)
 
 void LPS22DF_GetStatus(uint8_t *data)
 {
-	//Status register (read only)
+	//Status register (read only). This register is updated every ODR cycle.
 	//b7b6			b5		b4		b3b2	b1		b0
 	//  -			T_OR	P_OR	  -		T_DA	P_DA
 	//T_OR: Temperature data overrun.
@@ -1188,9 +1188,6 @@ void LPS22DFMsgProcess(void)
 		uint8_t status;
 
 		LPS22DF_GetINTSource(&status);
-	#ifdef PRESSURE_DEBUG
-		LOGD("int source:0x%02X", status);
-	#endif
 		if((status&0x80) == 0x80)
 		{
 		#ifdef PRESSURE_DEBUG
@@ -1220,9 +1217,6 @@ void LPS22DFMsgProcess(void)
 		}
 
 		LPS22DF_GetStatus(&status);
-	#ifdef PRESSURE_DEBUG
-		LOGD("status:0x%02X", status);
-	#endif
 		if((status&0x20) == 0x20)
 		{
 		#ifdef PRESSURE_DEBUG

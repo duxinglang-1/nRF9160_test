@@ -53,7 +53,8 @@ int32_t DPS368_prs = 0;
 
 static dps368_settings_t dps368_settings = 
 {
-	0b0011,		//TMP_PRC: 	
+	//MEAS_TMP:	0xA0
+	0b0000,		//TMP_PRC: 	
 				// 0000 - single. (Default) - Measurement time 3.6 ms.
 				// 0001 - 2 times.
 				// 0010 - 4 times.
@@ -74,8 +75,8 @@ static dps368_settings_t dps368_settings =
 	0b1, 		//TMP_EXT:	
 				// 0 - Internal sensor (in ASIC)
 				// 1 - External sensor (in pressure sensor MEMS element)
-
-	0b0011,		//PM_PRC:	
+	//MEAS_PRS: 0x26
+	0b0110,		//PM_PRC:	
 				// 0000 - Single. (Low Precision)
 				// 0001 - 2 times (Low Power).
 				// 0010 - 4 times.
@@ -95,10 +96,9 @@ static dps368_settings_t dps368_settings =
 				// 111 - 128 measurements pr. sec.
 	0b0,		//NA
 	
-	MEAS_CMD_PSR,	//MEAS_MODE
+	MEAS_CONTI_PRS_TMP,	//MEAS_MODE
 	0b00000,		//NA
-	
-				//INT_CFG
+	//INT_CFG
 	0b1,		//Set SPI mode: 
 				// 0 - 4-wire interface.
 				// 1 - 3-wire interface.	

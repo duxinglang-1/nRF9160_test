@@ -46,6 +46,7 @@ bool GetPressure(float *psr)
 	if(!pressure_check_ok || psr == NULL)
 		return false;
 
+	g_prs = 0.0;
 	pressure_get_ok = false;
 
 #ifdef PRESSURE_DPS368

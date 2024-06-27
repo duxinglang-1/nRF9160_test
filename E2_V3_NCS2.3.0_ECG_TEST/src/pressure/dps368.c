@@ -96,13 +96,13 @@ static dps368_settings_t dps368_settings =
 				// 111 - 128 measurements pr. sec.
 	0b0,		//NA
 	
-	MEAS_CONTI_PRS_TMP,	//MEAS_MODE
+	MEAS_CMD_PSR,	//MEAS_MODE
 	0b00000,		//NA
 	//INT_CFG
 	0b1,		//Set SPI mode: 
 				// 0 - 4-wire interface.
 				// 1 - 3-wire interface.	
-	0b1,		//Enable the FIFO: 
+	0b1,		//Enable the FIFO: (Note: after the FIFO is enabled, the temperature and pressure interrupts will fail)
 				// 0 - Disable.
 				// 1 - Enable.		
 	0b0,		//Pressure result bit-shift: 
@@ -119,9 +119,9 @@ static dps368_settings_t dps368_settings =
 	0b1,		//Generate interupt when a pressure measurement is ready: 
 				// 0 - Disable. 
 				// 1 - Enable.	
-	0b1,		//Generate interupt when the FIFO is full: 
+	0b1,		//Generate interupt when the FIFO is full:
 				// 0 - Disable. 
-				// 1 - Enable.		
+				// 1 - Enable.
 	0b0,		//Interupt (on SDO pin) active level: 
 				// 0 - Active low. 
 				// 1 - Active high.	
@@ -684,12 +684,18 @@ void DPS368_SetConfig(void)
 	case MEAS_CMD_PSR:
 	case MEAS_CMD_TMP:
 		dps368_settings.int_cfg.fifo_en = 0;
+		dps368_settings.int_cfg.int_fifo = 0;
+		dps368_settings.int_cfg.int_tmp = 0;
+		dps368_settings.int_cfg.int_prs = 0;
 		break;
 
 	case MEAS_CONTI_PRS:
 	case MEAS_CONTI_TMP:
 	case MEAS_CONTI_PRS_TMP:
 		dps368_settings.int_cfg.fifo_en = 1;
+		dps368_settings.int_cfg.int_fifo = 1;
+		dps368_settings.int_cfg.int_tmp = 1;
+		dps368_settings.int_cfg.int_prs = 1;
 		break;
 	}
 	data = *(uint8_t*)&dps368_settings.int_cfg;
@@ -813,7 +819,7 @@ void DPS368_CalculateTmp(void)
 	Tcomp = m_c0*0.5 + m_c1*Traw_sc;
 #ifdef PRESSURE_DEBUG
 	LOGD("Tcomp:%f,Traw_sc:%f", Tcomp, Traw_sc);
-#endif	
+#endif
 
 	g_tmp = Tcomp;
 }
@@ -958,6 +964,8 @@ bool DPS368_Init(void)
 	{
 		uint8_t data;
 
+		DPS368_Reset();
+		
 		while(1)
 		{
 			DPS368_GetMeasModeCfg(&data);

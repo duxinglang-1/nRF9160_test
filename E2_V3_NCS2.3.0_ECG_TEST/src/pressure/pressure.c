@@ -46,12 +46,24 @@ bool GetPressure(float *psr)
 	if(!pressure_check_ok || psr == NULL)
 		return false;
 
+#ifdef PRESSURE_DPS368
+	if((dps368_settings.meas_cfg.ctrl == MEAS_CONTI_PRS)
+		|| (dps368_settings.meas_cfg.ctrl == MEAS_CONTI_TMP)
+		|| (dps368_settings.meas_cfg.ctrl == MEAS_CONTI_PRS_TMP)
+		)
+		return false;
+
 	g_prs = 0.0;
 	pressure_get_ok = false;
 
-#ifdef PRESSURE_DPS368
 	DPS368_Start(MEAS_CMD_PSR);
 #elif defined(PRESSURE_LPS22DF)
+	if(lps22df_settings.meas_ctrl == MEAS_CONTINOUS)
+		return false;
+
+	g_prs = 0.0;
+	pressure_get_ok = false;
+	
 	LPS22DF_Start(MEAS_ONE_SHOT);
 #endif
 

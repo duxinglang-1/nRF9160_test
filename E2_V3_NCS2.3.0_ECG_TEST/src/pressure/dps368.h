@@ -113,9 +113,11 @@ typedef struct
 	dps368_int_t int_cfg;
 }dps368_settings_t;
 
-extern bool dps368_init(void);
+extern dps368_settings_t dps368_settings;
+
+extern bool DPS368_Init(void);
 extern void DPS368_Start(DPS368_MEAS_CTRL work_mode);
-extern void dps368_stop(void);
+extern void DPS368_Stop(void);
 extern void pressure_start(void);
 extern void pressure_stop(void);
 extern bool GetPressure(float *prs);

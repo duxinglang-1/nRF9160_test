@@ -51,7 +51,7 @@ uint8_t DPS368_coefs[18] =
 int32_t DPS368_tmp = 0;
 int32_t DPS368_prs = 0;
 
-static dps368_settings_t dps368_settings = 
+dps368_settings_t dps368_settings = 
 {
 	//MEAS_TMP:	0xA0
 	0b0000,		//TMP_PRC: 	

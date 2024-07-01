@@ -534,7 +534,7 @@ void UpdateSystemTime(void)
 		}
 	}
 	date_time_changed = date_time_changed|0x01;
-	//GetPressure(&prs);
+	GetPressure(&prs);
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
 	{

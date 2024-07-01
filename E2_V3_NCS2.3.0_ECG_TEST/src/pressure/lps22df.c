@@ -27,7 +27,7 @@ static struct gpio_callback gpio_cb;
 int32_t LPS22DF_tmp = 0;
 int32_t LPS22DF_prs = 0;
 
-static lps22df_settings_t lps22df_settings = 
+lps22df_settings_t lps22df_settings = 
 {
 	//INTERRUPT_CFG:
 	0b0,		//PHE: Enable interrupt generation on pressure high event. Default value: 0
@@ -78,7 +78,7 @@ static lps22df_settings_t lps22df_settings =
 				//				0: INT disabled with MIPI I3CSM; 
 				//				1: INT enabled with MIPI I3CSM.
 	//CTRL_REG1
-	0b000,		//AVG[2:0]: Average selection. Default value: 000
+	0b111,		//AVG[2:0]: Average selection. Default value: 000
 				//AVG[2:0] 	Averaging of pressure and temperature
 				//	000 		4
 				//	001 		8
@@ -87,13 +87,13 @@ static lps22df_settings_t lps22df_settings =
 				//	100 		64
 				//	101 		128
 				//	111 		512
-	0b0001,		//ODR[3:0]: Output data rate selection. Default value: 0000
+	0b0100,		//ODR[3:0]: Output data rate selection. Default value: 0000
 				//ODR[3:0] 	ODR of pressure, temperature
 				//	0000 		Power-down / one-shot
 				//	0001 		1 Hz
 				//	0010 		4 Hz
 				//	0011 		10 Hz
-				//	0100 		25Hz
+				//	0100 		25 Hz
 				//	0101 		50 Hz
 				//	0110 		75 Hz
 				//	0111 		100 Hz
@@ -107,10 +107,10 @@ static lps22df_settings_t lps22df_settings =
 	0b0,		//SWRESET: Software reset. Default value: 0
 				//			0: normal mode; 
 				//			1: software reset. The bit is self-cleared when the reset is completed.
-	0b0,		//BDU: Block data update. Default value: 0
+	0b1,		//BDU: Block data update. Default value: 0
 				//		0: continuous update;
 				//		1: output registers not updated until MSB and LSB have been read.
-	0b0,		//EN_LPFP: Enable low-pass filter on pressure data. Default value: 0
+	0b1,		//EN_LPFP: Enable low-pass filter on pressure data. Default value: 0
 				//			0: disable, 
 				//			1: enable.
 	0b0,		//LFPF_CFG: Low-pass filter configuration. Default value: 0
@@ -133,13 +133,13 @@ static lps22df_settings_t lps22df_settings =
 				//			1: active-low.
 	0b0000,		//ZERO_2
 	//CTRL_REG4
-	0b0,		//INT_F_OVR: FIFO overrun status on INT pin. Default value: 0
+	0b1,		//INT_F_OVR: FIFO overrun status on INT pin. Default value: 0
 				//				0: not overwritten; 
 				//				1: at least one sample in the FIFO has been overwritten.
-	0b0,		//INT_F_WTM: FIFO threshold (watermark) status on INT pin. Default value: 0
+	0b1,		//INT_F_WTM: FIFO threshold (watermark) status on INT pin. Default value: 0
 				//				0: FIFO is lower than WTM level; 
 				//				1: FIFO is equal to or higher than WTM level.
-	0b0,		//INT_F_FULL: FIFO full flag on INT pin. Default value: 0
+	0b1,		//INT_F_FULL: FIFO full flag on INT pin. Default value: 0
 				//				0: FIFO empty; 
 				//				1: FIFO full with 128 unread samples.
 	0b0,		//NA
@@ -154,7 +154,7 @@ static lps22df_settings_t lps22df_settings =
 				//			1: enable data-ready pulsed on INT pin, pulse width around 5 ¦Ìs.
 	0b0,		//ZERO
 	//FIFO_CTRL
-	0b00,		//F_MODE[1:0]: Selects triggered FIFO modes. Default value: 00
+	0b11,		//F_MODE[1:0]: Selects triggered FIFO modes. Default value: 00
 	0b0,		//TRIG_MODES: Enables triggered FIFO modes. Default value: 0
 				//TRIG_MODES 	F_MODE[1:0] 	Mode
 				//		x 			00 			Bypass
@@ -163,12 +163,12 @@ static lps22df_settings_t lps22df_settings =
 				//		1 			01 			Bypass-to-FIFO
 				//		1 			10 			Bypass-to-continuous (dynamic-stream)
 				//		1 			11 			Continuous (dynamic-stream)-to-FIFO
-	0b0,		//STOP_ON_WTM: Stop-on-FIFO watermark. Enables FIFO watermark level use. Default value: 0
+	0b1,		//STOP_ON_WTM: Stop-on-FIFO watermark. Enables FIFO watermark level use. Default value: 0
 				//				0: disable; 
 				//				1: enable.
 	0b0000,		//ZERO
 	//FIFO_WTM
-	0x00,		//WTM[6:0]
+	0x19,		//WTM[6:0]
 	//REF_P
 	0x0000,		//REFL[15:0]
 	//I3C_IF_CTRL_ADD
@@ -642,7 +642,7 @@ void LPS22DF_SetCtrl1(void)
 	switch(lps22df_settings.meas_ctrl)
 	{
 	case MEAS_ONE_SHOT:
-		data = data&0x00;
+		data = data&0x07;
 		break;
 		
 	case MEAS_CONTINOUS:
@@ -658,7 +658,7 @@ void LPS22DF_GetCtrl1(uint8_t *data)
 }
 
 void LPS22DF_SetCtrl2(void)
-{
+{
 	//Control register 2
 	//b7	b6	b5			b4		b3	b2		b1	b0
 	//BOOT 	0 	LFPF_CFG 	EN_LPFP BDU SWRESET - 	ONESHOT
@@ -736,6 +736,7 @@ void LPS22DF_SetCtrl4(void)
 		break;
 		
 	case MEAS_CONTINOUS:
+		data = data&0x77;
 		break;
 	}
 
@@ -764,6 +765,16 @@ void LPS22DF_SetFIFOCtrl(void)
 	//					1 		  10 	Bypass-to-continuous (dynamic-stream)
 	//					1 		  11 	Continuous (dynamic-stream)-to-FIFO
 	uint8_t data = *(uint8_t*)&lps22df_settings.fifo_ctrl;
+
+	switch(lps22df_settings.meas_ctrl)
+	{
+	case MEAS_ONE_SHOT:
+		data = data&0x00;
+		break;
+		
+	case MEAS_CONTINOUS:
+		break;
+	}
 	
 	LPS22DF_WriteReg(REG_FIFO_CTRL, data);
 }
@@ -858,6 +869,20 @@ void LPS22DF_GetPRDS(uint16_t *data)
 	
 	LPS22DF_ReadRegMulti(REG_RPDS_L, offset_p, 2);
 	*data = ((uint16_t)offset_p[1]<<8) | (uint16_t)offset_p[0];
+}
+
+void LPS22DF_Reset(void)
+{
+	uint8_t data;
+
+	LPS22DF_WriteReg(REG_CTRL_REG2, 0x04);
+	do
+	{
+		LPS22DF_ReadReg(REG_CTRL_REG2, &data);
+	#ifdef PRESSURE_DEBUG
+		LOGD("data:0x%02X", data);
+	#endif
+	}while((data&0x04));
 }
 
 void LPS22DF_GetChipID(uint8_t *data)
@@ -990,22 +1015,6 @@ void LPS22DF_GetPrsRawData(int32_t *data)
 #endif		
 }
 
-void LPS22DF_GetFIFORawData(int32_t *data)
-{
-	//FIFO pressure output (read only)
-	//FIFO_DATA_OUT_PRESS_XL:FIFO_P[7:0]
-	//FIFO_DATA_OUT_PRESS_L: FIFO_P[15:8]
-	//FIFO_DATA_OUT_PRESS_H: FIFO_P[23:16]
-	uint8_t data_p[3] = {0};
-	
-	LPS22DF_ReadRegMulti(REG_FIFO_DATA_OUT_PRESS_XL, data_p, 3);
-	*data = ((uint32_t)data_p[2]<<16) | ((uint32_t)data_p[1]<<8) || (uint32_t)data_p[0];
-	LPS22DF_GetTwosComplement(data, 24);
-#ifdef PRESSURE_DEBUG
-	LOGD("psr:0x%02X, %d", *data, *data);
-#endif	
-}
-
 void LPS22DF_CalculateTmp(void)
 {
 	float Tcomp;
@@ -1030,6 +1039,30 @@ void LPS22DF_CalculatePsr(void)
 
 	pressure_get_ok = true;
 	g_prs = Pcomp;
+}
+
+void LPS22DF_CalculateFIFOData(void)
+{
+	//FIFO pressure output (read only)
+	//FIFO_DATA_OUT_PRESS_XL:FIFO_P[7:0]
+	//FIFO_DATA_OUT_PRESS_L: FIFO_P[15:8]
+	//FIFO_DATA_OUT_PRESS_H: FIFO_P[23:16]
+	uint8_t i, data_p[3*128] = {0};
+	int32_t psr_total = 0;
+	
+	LPS22DF_ReadRegMulti(REG_FIFO_DATA_OUT_PRESS_XL, data_p, sizeof(data_p));
+	for(i=0;i<lps22df_settings.fifo_wtm;i++)
+	{
+		int32_t psr;
+		
+		psr = (uint32_t)data_p[3*i+2]<<16 | (uint32_t)data_p[3*i+1]<<8 | (uint32_t)data_p[3*i+0];
+		LPS22DF_GetTwosComplement(&psr, 24);
+
+		psr_total += psr;
+	}
+
+	LPS22DF_prs = psr_total/lps22df_settings.fifo_wtm;
+	LPS22DF_CalculatePsr();
 }
 
 static void init_gpio(void)
@@ -1095,6 +1128,7 @@ bool LPS22DF_Init(void)
 	{
 		uint8_t data;
 
+		LPS22DF_Reset();
 		//set the threshold value for pressure interrupt event
 		LPS22DF_SetThrePrs();
 		//set interrupt mode for pressure acquisition configuration
@@ -1143,6 +1177,8 @@ void LPS22DF_Start(LPS22DF_MEAS_CTRL meas_type)
 		LPS22DF_SetCtrl1();
 		//set interrupt active event
 		LPS22DF_SetCtrl4();
+		//set fifo ctrl
+		LPS22DF_SetFIFOCtrl();
 		//start a single measurement of pressure and temperature
 		LPS22DF_SetCtrl2();
 
@@ -1160,6 +1196,8 @@ void LPS22DF_Start(LPS22DF_MEAS_CTRL meas_type)
 		LPS22DF_SetCtrl1();
 		//set interrupt active event
 		LPS22DF_SetCtrl4();
+		//set fifo ctrl
+		LPS22DF_SetFIFOCtrl();
 		//start a single measurement of pressure and temperature
 		LPS22DF_SetCtrl2();
 		break;
@@ -1206,7 +1244,7 @@ void LPS22DFMsgProcess(void)
 		{
 		#ifdef PRESSURE_DEBUG
 			LOGD("Differential pressure low!");
-		#endif	
+		#endif
 		}
 
 		if((status&0x01) == 0x01)
@@ -1216,38 +1254,73 @@ void LPS22DFMsgProcess(void)
 		#endif	
 		}
 
-		LPS22DF_GetStatus(&status);
-		if((status&0x20) == 0x20)
+		LPS22DF_GetFIFOCtrl(&status);
+	#ifdef PRESSURE_DEBUG
+		//LOGD("FIFO Ctrl:0x%02X", status);
+	#endif	
+		if((status&0x03) == 0)
 		{
-		#ifdef PRESSURE_DEBUG
-			LOGD("Temperature data overrun!");
-		#endif
-		}
+			LPS22DF_GetStatus(&status);
+			if((status&0x20) == 0x20)
+			{
+			#ifdef PRESSURE_DEBUG
+				LOGD("Temperature data overrun!");
+			#endif
+			}
 
-		if((status&0x10) == 0x10)
-		{
-		#ifdef PRESSURE_DEBUG
-			LOGD("Pressure data overrun!");
-		#endif
-		}
+			if((status&0x10) == 0x10)
+			{
+			#ifdef PRESSURE_DEBUG
+				LOGD("Pressure data overrun!");
+			#endif
+			}
 
-		if((status&0x02) == 0x02)
-		{
-		#ifdef PRESSURE_DEBUG
-			LOGD("Temperature data available!");
-		#endif
-			LPS22DF_GetTempRawData(&LPS22DF_tmp);
-			LPS22DF_CalculateTmp();
-		}
+			if((status&0x02) == 0x02)
+			{
+			#ifdef PRESSURE_DEBUG
+				LOGD("Temperature data available!");
+			#endif
+				
+				LPS22DF_GetTempRawData(&LPS22DF_tmp);
+				LPS22DF_CalculateTmp();
+			}
 
-		if((status&0x01) == 0x01)
-		{
-		#ifdef PRESSURE_DEBUG
-			LOGD("Pressure data available!");
-		#endif
-			LPS22DF_GetPrsRawData(&LPS22DF_prs);
-			LPS22DF_CalculatePsr();
+			if((status&0x01) == 0x01)
+			{
+			#ifdef PRESSURE_DEBUG
+				LOGD("Pressure data available!");
+			#endif
+				LPS22DF_GetPrsRawData(&LPS22DF_prs);
+				LPS22DF_CalculatePsr();
+			}
 		}
+		else
+		{
+			LPS22DF_GetFIFOStatus1(&status);
+		#ifdef PRESSURE_DEBUG
+			//LOGD("FIFO status1:0x%02X", status);
+		#endif
+			LPS22DF_GetFIFOStatus2(&status);
+		#ifdef PRESSURE_DEBUG
+			//LOGD("FIFO status2:0x%02X", status);
+		#endif
+			if((status&0xA0) != 0xA0)
+				return;
+			
+			while(1)
+			{
+				LPS22DF_CalculateFIFOData();
+				LPS22DF_GetFIFOStatus1(&status);
+			#ifdef PRESSURE_DEBUG
+				LOGD("FIFO status1:0x%02X", status);
+			#endif	
+				if(status == 0x00)
+					break;
+			}
+		}
+		
+
+		
 		
 		pressure_interrupt_flag = false;
 	}

@@ -174,4 +174,13 @@ typedef struct
 	LPS22DF_MEAS_CTRL meas_ctrl;
 }lps22df_settings_t;
 
+extern lps22df_settings_t lps22df_settings;
+
+extern bool LPS22DF_Init(void);
+extern void LPS22DF_Start(LPS22DF_MEAS_CTRL meas_type);
+extern void LPS22DF_Stop(void);
+extern void pressure_start(void);
+extern void pressure_stop(void);
+extern bool GetPressure(float *prs);
+
 #endif/*__LPS22DF_H__*/

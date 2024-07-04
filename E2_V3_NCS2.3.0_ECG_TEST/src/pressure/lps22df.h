@@ -32,7 +32,7 @@
 
 #define LPS22DF_CHIP_ID		0xB4
 #define LPS22DF_I2C_ADDRESS	0x5C
-
+#define LPS22DF_FIFO_LEVELS	128
 #define LPS22DF_NO_ERROR   	0
 #define LPS22DF_ERROR     	-1
 

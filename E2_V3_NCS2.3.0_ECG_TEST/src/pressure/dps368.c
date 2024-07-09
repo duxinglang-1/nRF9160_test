@@ -774,9 +774,6 @@ void DPS368_GetTmpRawData(int32_t *data)
 	DPS368_ReadRegMulti(REG_TMP_B2, reg_tmp, sizeof(reg_tmp));
 	*data = (uint32_t)reg_tmp[0]<<16 | (uint32_t)reg_tmp[1]<<8 | (uint32_t)reg_tmp[2];
 	DPS368_GetTwosComplement(data, 24);
-#ifdef PRESSURE_DEBUG
-	LOGD("tmp:0x%02X, %d", *data, *data);
-#endif	
 }
 
 void DPS368_GetPrsRawData(int32_t *data)
@@ -797,9 +794,6 @@ void DPS368_GetPrsRawData(int32_t *data)
 	DPS368_ReadRegMulti(REG_PSR_B2, reg_psr, sizeof(reg_psr));
 	*data = (uint32_t)reg_psr[0]<<16 | (uint32_t)reg_psr[1]<<8 | (uint32_t)reg_psr[2];
 	DPS368_GetTwosComplement(data, 24);
-#ifdef PRESSURE_DEBUG
-	LOGD("prs:0x%02X, %d", *data, *data);
-#endif	
 }
 
 void DPS368_CalculateTmp(void)
@@ -853,23 +847,36 @@ void DPS368_CalculatePrs(void)
 void DPS368_CalculateFIFOData(void)
 {
 	int32_t data;
+	int32_t tmp_total=0,psr_total=0;
+	int32_t tmp_count=0,prs_count=0;
 	float Traw_sc,Praw_sc,Pcomp;
 
-	DPS368_GetPrsRawData(&data);
-#ifdef PRESSURE_DEBUG
-	LOGD("data:%x", data);
-#endif	
-	switch(data&0x00000001)
+	while(1)
 	{
-	case 0://tmp
-		DPS368_tmp = data;
-		DPS368_CalculateTmp();
-		break;
-	case 1://prs
-		DPS368_prs = data;
-		DPS368_CalculatePrs();
-		break;
+		uint8_t status;
+		
+		DPS368_GetPrsRawData(&data);
+		switch(data&0x00000001)
+		{
+		case 0://tmp
+			tmp_total += data;
+			tmp_count++;
+			break;
+		case 1://prs
+			psr_total += data;
+			prs_count++;
+			break;
+		}
+
+		DPS368_GetFIFOStatus(&status);
+		if((status&0x01) == 0x01)
+			break;
 	}
+
+	DPS368_tmp = tmp_total/tmp_count;
+	DPS368_CalculateTmp();
+	DPS368_prs = psr_total/prs_count;
+	DPS368_CalculatePrs();
 }
 
 void DPS368_GetIntStatus(uint8_t *status)
@@ -1091,19 +1098,8 @@ void DPS368MsgProcess(void)
 		#ifdef PRESSURE_DEBUG
 			LOGD("int_fifo_full");
 		#endif
-			while(1)
-			{
-				DPS368_CalculateFIFOData();
 
-				DPS368_GetFIFOStatus(&status);
-			#ifdef PRESSURE_DEBUG
-				LOGD("fifo status:%x", status);
-			#endif
-				if((status&0x01) == 0x01)
-				{
-					break;
-				}
-			}
+			DPS368_CalculateFIFOData();
 		}
 	
 		pressure_interrupt_flag = false;

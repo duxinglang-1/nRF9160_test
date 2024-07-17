@@ -54,6 +54,7 @@ extern bool uart_wifi_is_waked;
 extern uint8_t g_wifi_mac_addr[20];
 extern uint8_t g_wifi_ver[20];
 extern uint8_t wifi_test_info[256];
+extern wifi_infor wifi_data;
 
 extern bool wifi_is_working(void);
 extern void ble_turn_on(void);

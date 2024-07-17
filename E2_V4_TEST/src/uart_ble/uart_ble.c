@@ -30,7 +30,7 @@
 #include "esp8266.h"
 #endif
 
-//#define UART_DEBUG
+#define UART_DEBUG
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 #define BLE_DEV DT_NODELABEL(uart2)
@@ -50,12 +50,17 @@
 #define BLE_INT_PIN		27
 #define BLE_WAKE_PIN	25
 
-#define BUF_MAXSIZE	2048
+#define BUF_MAXSIZE	4096
 
 #define PACKET_HEAD	0xAB
 #define PACKET_END	0x88
 
 #define BLE_WORK_MODE_ID		0xFF10			//52810工作状态正常
+#define GET_WIFI_VER_ID			0xFF11			//获取WIFI版本信息
+#define GET_WIFI_MAC_ID			0xFF12			//获取WIFI Mac address信息
+#define GET_WIFI_AP_ID			0xFF13			//扫描附近可用的WIFI APS
+#define START_WIIF_DATA_ID		0xFEEF			//开启透传模式
+#define STOP_WIFI_DATA_ID		0xEFFE			//关闭透传模式
 #define HEART_RATE_ID			0xFF31			//心率
 #define BLOOD_OXYGEN_ID			0xFF32			//血氧
 #define BLOOD_PRESSURE_ID		0xFF33			//血压
@@ -91,7 +96,7 @@
 
 #define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
 #define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
-#define GET_NRF52810_VER_ID		0xFFB2			//获取52810版本号
+#define GET_BLE_VER_ID			0xFFB2			//获取52810版本号
 #define GET_BLE_MAC_ADDR_ID		0xFFB3			//获取BLE MAC地址
 #define GET_BLE_STATUS_ID		0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
 #define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
@@ -191,7 +196,7 @@ void APP_reply_find_phone(uint8_t *buf, uint32_t len)
 void APP_set_find_device(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG	
 	LOGD("begin");
@@ -214,6 +219,10 @@ void APP_set_find_device(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -226,7 +235,7 @@ void APP_set_find_device(uint8_t *buf, uint32_t len)
 void APP_set_language(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -258,6 +267,10 @@ void APP_set_language(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -275,7 +288,7 @@ void APP_set_language(uint8_t *buf, uint32_t len)
 void APP_set_time_24_format(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -305,6 +318,10 @@ void APP_set_time_24_format(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -323,7 +340,7 @@ void APP_set_time_24_format(uint8_t *buf, uint32_t len)
 void APP_set_date_format(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -355,6 +372,10 @@ void APP_set_date_format(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -372,7 +393,7 @@ void APP_set_date_format(uint8_t *buf, uint32_t len)
 void APP_set_date_time(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 	sys_date_timer_t datetime = {0};
 
 #ifdef UART_DEBUG
@@ -416,6 +437,10 @@ void APP_set_date_time(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -426,7 +451,7 @@ void APP_set_date_time(uint8_t *buf, uint32_t len)
 void APP_set_alarm(uint8_t *buf, uint32_t len)
 {
 	uint8_t result=0,reply[128] = {0};
-	uint32_t i,index,reply_len = 0;
+	uint16_t i,index,reply_len = 0;
 	alarm_infor_t infor = {0};
 
 #ifdef UART_DEBUG
@@ -466,6 +491,10 @@ void APP_set_alarm(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -476,7 +505,7 @@ void APP_set_alarm(uint8_t *buf, uint32_t len)
 void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("flag:%d, interval:%d", buf[6], buf[7]);
@@ -502,6 +531,10 @@ void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -513,7 +546,7 @@ void APP_set_PHD_interval(uint8_t *buf, uint32_t len)
 void APP_set_wake_screen_by_wrist(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("flag:%d", buf[6]);
@@ -541,6 +574,10 @@ void APP_set_wake_screen_by_wrist(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -552,7 +589,7 @@ void APP_set_wake_screen_by_wrist(uint8_t *buf, uint32_t len)
 void APP_set_factory_reset(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -575,6 +612,10 @@ void APP_set_factory_reset(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -586,7 +627,7 @@ void APP_set_factory_reset(uint8_t *buf, uint32_t len)
 void APP_set_target_steps(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("steps:%d", buf[7]*100+buf[8]);
@@ -611,6 +652,10 @@ void APP_set_target_steps(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -623,7 +668,7 @@ void APP_set_target_steps(uint8_t *buf, uint32_t len)
 void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("setting:%d", buf[6]);
@@ -660,6 +705,10 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 		//packet end
 		reply[reply_len++] = PACKET_END;
 
+		//Adjust data length
+		reply[1] = (reply_len-3)>>8;
+		reply[2] = (reply_len-3)&0x00ff;
+
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
@@ -671,7 +720,7 @@ void APP_get_one_key_measure_data(uint8_t *buf, uint32_t len)
 void MCU_reply_cur_hour_ppg(sys_date_timer_t time, PPG_DATA_TYPE type, uint8_t *data)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -734,6 +783,10 @@ void MCU_reply_cur_hour_ppg(sys_date_timer_t time, PPG_DATA_TYPE type, uint8_t *
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -743,7 +796,7 @@ void MCU_reply_cur_hour_ppg(sys_date_timer_t time, PPG_DATA_TYPE type, uint8_t *
 void MCU_reply_cur_hour_temp(sys_date_timer_t time, uint8_t *data)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
@@ -777,6 +830,10 @@ void MCU_reply_cur_hour_temp(sys_date_timer_t time, uint8_t *data)
 	reply[reply_len++] = 0x00;
 	//packet end
 	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
 
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
@@ -818,7 +875,7 @@ void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
 	uint8_t wake,reply[128] = {0};
 	uint16_t steps=0,calorie=0,distance=0;
 	uint16_t light_sleep=0,deep_sleep=0;	
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -869,6 +926,10 @@ void APP_get_cur_hour_sport(sys_date_timer_t ask_time)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -904,7 +965,7 @@ void APP_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_
 {
 	uint8_t tmpgps;
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 	uint32_t tmp1;
 	double tmp2;
 
@@ -989,6 +1050,10 @@ void APP_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -998,7 +1063,7 @@ void APP_get_gps_data_reply(bool flag, struct nrf_modem_gnss_pvt_data_frame gps_
 void APP_get_battery_level(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1033,6 +1098,10 @@ void APP_get_battery_level(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1042,7 +1111,7 @@ void APP_get_battery_level(uint8_t *buf, uint32_t len)
 void APP_get_firmware_version(uint8_t *buf, uint32_t len)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1067,6 +1136,10 @@ void APP_get_firmware_version(uint8_t *buf, uint32_t len)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1077,7 +1150,7 @@ void APP_get_firmware_version(uint8_t *buf, uint32_t len)
 void APP_get_hr(uint8_t *buf, uint32_t len)
 {
 	uint8_t heart_rate,reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("type:%d, flag:%d", buf[5], buf[6]);
@@ -1112,6 +1185,10 @@ void APP_get_hr(uint8_t *buf, uint32_t len)
 		//packet end
 		reply[reply_len++] = PACKET_END;
 
+		//Adjust data length
+		reply[1] = (reply_len-3)>>8;
+		reply[2] = (reply_len-3)&0x00ff;
+
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
@@ -1138,7 +1215,7 @@ void APP_get_hr(uint8_t *buf, uint32_t len)
 void APP_get_spo2(uint8_t *buf, uint32_t len)
 {
 	uint8_t heart_rate,reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("type:%d, flag:%d", buf[5], buf[6]);
@@ -1173,6 +1250,10 @@ void APP_get_spo2(uint8_t *buf, uint32_t len)
 		//packet end
 		reply[reply_len++] = PACKET_END;
 
+		//Adjust data length
+		reply[1] = (reply_len-3)>>8;
+		reply[2] = (reply_len-3)&0x00ff;
+
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
@@ -1199,7 +1280,7 @@ void APP_get_spo2(uint8_t *buf, uint32_t len)
 void APP_get_bpt(uint8_t *buf, uint32_t len)
 {
 	uint8_t heart_rate,reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("type:%d, flag:%d", buf[5], buf[6]);
@@ -1234,6 +1315,10 @@ void APP_get_bpt(uint8_t *buf, uint32_t len)
 		//packet end
 		reply[reply_len++] = PACKET_END;
 
+		//Adjust data length
+		reply[1] = (reply_len-3)>>8;
+		reply[2] = (reply_len-3)&0x00ff;
+
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
@@ -1264,7 +1349,7 @@ void APP_get_bpt(uint8_t *buf, uint32_t len)
 void APP_get_temp(uint8_t *buf, uint32_t len)
 {
 	uint8_t heart_rate,reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("type:%d, flag:%d", buf[5], buf[6]);
@@ -1299,6 +1384,10 @@ void APP_get_temp(uint8_t *buf, uint32_t len)
 		//packet end
 		reply[reply_len++] = PACKET_END;
 
+		//Adjust data length
+		reply[1] = (reply_len-3)>>8;
+		reply[2] = (reply_len-3)&0x00ff;
+
 		for(i=0;i<(reply_len-2);i++)
 			reply[reply_len-2] += reply[i];
 
@@ -1329,7 +1418,7 @@ void APP_get_temp(uint8_t *buf, uint32_t len)
 void MCU_get_ble_status(void)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1352,6 +1441,10 @@ void MCU_get_ble_status(void)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1362,7 +1455,7 @@ void MCU_get_ble_status(void)
 void MCU_send_find_phone(void)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1387,6 +1480,10 @@ void MCU_send_find_phone(void)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1398,7 +1495,7 @@ void MCU_send_app_one_key_measure_data(void)
 {
 	uint8_t heart_rate,spo2,systolic,diastolic;
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1431,6 +1528,10 @@ void MCU_send_app_one_key_measure_data(void)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1440,7 +1541,7 @@ void MCU_send_app_one_key_measure_data(void)
 void MCU_send_app_get_ppg_data(PPG_DATA_TYPE flag, uint8_t *data)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1489,6 +1590,10 @@ void MCU_send_app_get_ppg_data(PPG_DATA_TYPE flag, uint8_t *data)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1498,7 +1603,7 @@ void MCU_send_app_get_ppg_data(PPG_DATA_TYPE flag, uint8_t *data)
 void MCU_send_app_get_temp_data(uint8_t *data)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1523,6 +1628,10 @@ void MCU_send_app_get_temp_data(uint8_t *data)
 	reply[reply_len++] = 0x00;
 	//packet end
 	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
 
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
@@ -1622,6 +1731,255 @@ void CTP_notify_handle(uint8_t *buf, uint32_t len)
 }
 #endif
 
+#ifdef CONFIG_WIFI_SUPPORT
+void get_wifi_ver_response(uint8_t *buf, uint32_t len)
+{
+	uint32_t i;
+
+	for(i=0;i<len-9;i++)
+	{
+		g_wifi_ver[i] = buf[7+i];
+	}
+
+#ifdef UART_DEBUG
+	LOGD("g_wifi_ver:%s", g_wifi_ver);
+#endif
+}
+
+void get_wifi_mac_response(uint8_t *buf, uint32_t len)
+{
+	uint32_t i;
+	
+	for(i=0;i<len-9;i++)
+	{
+		g_wifi_mac_addr[i] = buf[7+i];
+	}
+
+#ifdef UART_DEBUG
+	LOGD("g_wifi_mac_addr:%s", g_wifi_mac_addr);
+#endif
+}
+
+void get_wifi_ap_response(uint8_t *buf, uint32_t len)
+{
+	if(len > 9)//head(1)+len(2)+ID(2)+status(1)+control(1)+CRC(1)+end(1)
+		wifi_receive_data_handle(&buf[7], len-9);
+}
+
+void MCU_get_wifi_version(void)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (GET_WIFI_VER_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_WIFI_VER_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_get_wifi_mac_address(void)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (GET_WIFI_MAC_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_WIFI_MAC_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_get_wifi_ap(void)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (GET_WIFI_AP_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_WIFI_AP_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_send_wifi_data(uint8_t *data, uint32_t len)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+	//start transparent mode
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (START_WIIF_DATA_ID>>8);		
+	reply[reply_len++] = (uint8_t)(START_WIIF_DATA_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+	BleSendData(reply, reply_len);
+
+	//transparent data directly
+	BleSendData(data, len);
+	
+	//stop transparent mode
+	reply_len = 0;
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (STOP_WIFI_DATA_ID>>8);		
+	reply[reply_len++] = (uint8_t)(STOP_WIFI_DATA_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+	BleSendData(reply, reply_len);
+}
+
+void MCU_receive_wifi_data(uint8_t *data, uint32_t len)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (GET_WIFI_AP_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_WIFI_AP_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+bool MCU_check_wifi_data(uint8_t *data, uint32_t len)
+{
+	return false;
+}
+
+#endif/*CONFIG_WIFI_SUPPORT*/
+
 void get_nrf52810_ver_response(uint8_t *buf, uint32_t len)
 {
 	uint32_t i;
@@ -1656,10 +2014,10 @@ void get_ble_mac_address_response(uint8_t *buf, uint32_t len)
 #endif
 }
 
-void MCU_get_nrf52810_ver(void)
+void MCU_get_ble_ver(void)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1671,8 +2029,8 @@ void MCU_get_nrf52810_ver(void)
 	reply[reply_len++] = 0x00;
 	reply[reply_len++] = 0x06;
 	//data ID
-	reply[reply_len++] = (GET_NRF52810_VER_ID>>8);		
-	reply[reply_len++] = (uint8_t)(GET_NRF52810_VER_ID&0x00ff);
+	reply[reply_len++] = (GET_BLE_VER_ID>>8);		
+	reply[reply_len++] = (uint8_t)(GET_BLE_VER_ID&0x00ff);
 	//status
 	reply[reply_len++] = 0x80;
 	//control
@@ -1681,6 +2039,10 @@ void MCU_get_nrf52810_ver(void)
 	reply[reply_len++] = 0x00;
 	//packet end
 	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
 
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
@@ -1691,7 +2053,7 @@ void MCU_get_nrf52810_ver(void)
 void MCU_get_ble_mac_address(void)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1714,6 +2076,10 @@ void MCU_get_ble_mac_address(void)
 	//packet end
 	reply[reply_len++] = PACKET_END;
 
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
 
@@ -1724,7 +2090,7 @@ void MCU_get_ble_mac_address(void)
 void MCU_set_ble_work_mode(ENUM_BLE_MODE work_mode)
 {
 	uint8_t reply[128] = {0};
-	uint32_t i,reply_len = 0;
+	uint16_t i,reply_len = 0;
 
 #ifdef UART_DEBUG
 	LOGD("begin");
@@ -1746,6 +2112,10 @@ void MCU_set_ble_work_mode(ENUM_BLE_MODE work_mode)
 	reply[reply_len++] = 0x00;
 	//packet end
 	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
 
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
@@ -1815,11 +2185,12 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 
 	switch(data_ID)
 	{
-	#ifdef CONFIG_BLE_SUPPORT
+#ifdef CONFIG_BLE_SUPPORT
 	case BLE_WORK_MODE_ID:
 		nrf52810_report_work_mode(buf, len);//52810工作状态
 		break;
-	#ifdef CONFIG_PPG_SUPPORT
+		
+#ifdef CONFIG_PPG_SUPPORT
 	case HEART_RATE_ID:			//心率
 		APP_get_hr(buf, len);
 		break;
@@ -1835,24 +2206,28 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case ONE_KEY_MEASURE_ID:	//一键测量
 		APP_get_one_key_measure_data(buf, len);
 		break;
-	#endif
+#endif/*CONFIG_PPG_SUPPORT*/
+
 	case PULL_REFRESH_ID:		//下拉刷新
 		APP_get_cur_hour_data(buf, len);
 		break;
 	case SLEEP_DETAILS_ID:		//睡眠详情
 		break;
-	#ifdef CONFIG_ALARM_SUPPORT	
-	case FIND_DEVICE_ID:		//查找手环
-		APP_set_find_device(buf, len);
-		break;
-	#endif	
-	case SMART_NOTIFY_ID:		//智能提醒
-		break;
-	#ifdef CONFIG_ALARM_SUPPORT	
+		
+#ifdef CONFIG_ALARM_SUPPORT
 	case ALARM_SETTING_ID:		//闹钟设置
 		APP_set_alarm(buf, len);
 		break;
-	#endif	
+	case FIND_DEVICE_ID:		//查找手环
+		APP_set_find_device(buf, len);
+		break;
+	case FIND_PHONE_ID:			//查找手机回复
+		APP_reply_find_phone(buf, len);
+		break;		
+#endif/*CONFIG_ALARM_SUPPORT*/
+
+	case SMART_NOTIFY_ID:		//智能提醒
+		break;
 	case USER_INFOR_ID:			//用户信息
 		break;
 	case SEDENTARY_ID:			//久坐提醒
@@ -1871,11 +2246,6 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case TIME_24_SETTING_ID:	//12/24小时设置
 		APP_set_time_24_format(buf, len);
 		break;
-	#ifdef CONFIG_ALARM_SUPPORT	
-	case FIND_PHONE_ID:			//查找手机回复
-		APP_reply_find_phone(buf, len);
-		break;
-	#endif
 	case WEATHER_INFOR_ID:		//天气信息下发
 		break;
 	case TIME_SYNC_ID:			//时间同步
@@ -1909,19 +2279,27 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	case FIRMWARE_INFOR_ID:		//固件版本号
 		APP_get_firmware_version(buf, len);
 		break;
-	#endif/*CONFIG_BLE_SUPPORT*/
+#endif/*CONFIG_BLE_SUPPORT*/
 
-	#ifdef CONFIG_TOUCH_SUPPORT	
-	case CTP_NOTIFY_ID:
-		CTP_notify_handle(buf, len);
-		break;
-	#endif	
-	case GET_NRF52810_VER_ID:
+	case GET_BLE_VER_ID:
 		get_nrf52810_ver_response(buf, len);
 		break;
 	case GET_BLE_MAC_ADDR_ID:
 		get_ble_mac_address_response(buf, len);
 		break;
+
+#ifdef CONFIG_WIFI_SUPPORT
+	case GET_WIFI_VER_ID:
+		get_wifi_ver_response(buf, len);
+		break;
+	case GET_WIFI_MAC_ID:
+		get_wifi_mac_response(buf, len);
+		break; 
+	case GET_WIFI_AP_ID:
+		get_wifi_ap_response(buf, len);
+		break; 	
+#endif
+
 	default:
 	#ifdef UART_DEBUG	
 		LOGD("data_id is unknown!");
@@ -1930,7 +2308,7 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 	}
 }
 
-void ble_wakeup_nrf52810(void)
+void mcu_wakeup_nrf5340(void)
 {
 	if(!gpio_ble)
 	{
@@ -1946,22 +2324,25 @@ void ble_wakeup_nrf52810(void)
 		gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_OUTPUT);
 	}
 
-	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 1);
-	k_sleep(K_MSEC(10));
 	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 0);
+	k_sleep(K_MSEC(10));
+	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 1);
 }
 
-//xb add 2021-11-01 唤醒52810的串口需要时间，不能直接在接收的中断里延时等待，防止重启
 void uart_send_data_handle(uint8_t *buffer, uint32_t datalen)
 {
-	ble_wakeup_nrf52810();
+	uint32_t sendlen = 0;
 
+	mcu_wakeup_nrf5340();
 #ifdef CONFIG_PM_DEVICE
 	uart_ble_sleep_out();
 #endif
 
-	uart_fifo_fill(uart_ble, buffer, datalen);
-	uart_irq_tx_enable(uart_ble); 	
+	while(sendlen < datalen)
+	{
+		sendlen += uart_fifo_fill(uart_ble, &buffer[sendlen], datalen-sendlen);
+		uart_irq_tx_enable(uart_ble);
+	}
 }
 
 void UartSendData(void)
@@ -2003,7 +2384,11 @@ static void uart_receive_data_handle(uint8_t *data, uint32_t datalen)
 #endif
 
 	data_len = (256*data[1]+data[2]+3);
-    if(datalen == data_len)	
+    if((datalen == data_len)
+		#ifdef CONFIG_WIFI_SUPPORT
+			|| MCU_check_wifi_data(data, datalen)
+		#endif
+		)
     {
         ble_receive_data_handle(data, datalen);
     }
@@ -2156,9 +2541,7 @@ static void UartReceDataCallBack(struct k_timer *timer_id)
 
 static void UartReceFrameCallBack(struct k_timer *timer_id)
 {
-	//uart_rece_frame_flag = true;
-	uart_receive_data_handle(rx_buf, rece_len);
-	rece_len = 0;
+	uart_rece_frame_flag = true;
 }
 
 void ble_init(void)
@@ -2190,7 +2573,7 @@ void ble_init(void)
 		return;
 	}	
 	gpio_pin_configure(gpio_ble, BLE_WAKE_PIN, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 0);
+	gpio_pin_set(gpio_ble, BLE_WAKE_PIN, 1);
 
 #ifdef CONFIG_PM_DEVICE
 	gpio_pin_configure(gpio_ble, BLE_INT_PIN, flag);
@@ -2263,15 +2646,16 @@ void UartMsgProc(void)
 		switch(index)
 		{
 		case 0:
-			index = 1;
-			MCU_get_nrf52810_ver();
+			index++;
+			MCU_get_ble_ver();
 			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
 			break;
 		case 1:
-			index = 2;
+			index++;
 			MCU_get_ble_mac_address();
 			k_timer_start(&get_ble_info_timer, K_MSEC(100), K_NO_WAIT);
 			break;
+			
 	#ifdef CONFIG_BLE_SUPPORT	
 		case 2:
 			MCU_get_ble_status();

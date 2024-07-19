@@ -21,7 +21,7 @@
 #include "logger.h"
 #include "transfer_cache.h"
 
-#define WIFI_DEBUG
+//#define WIFI_DEBUG
 
 uint8_t g_wifi_mac_addr[20] = {0};
 uint8_t g_wifi_ver[20] = {0};
@@ -128,9 +128,9 @@ void APP_Ask_wifi_data(void)
 	{
 		app_wifi_on = true;
 		memset(&wifi_data, 0, sizeof(wifi_data));
-		
+
 		MCU_get_wifi_ap();
-		k_timer_start(&wifi_scan_timer, K_MSEC(5*1000), K_NO_WAIT);	
+		k_timer_start(&wifi_scan_timer, K_MSEC(15*1000), K_NO_WAIT);	
 	}
 }
 
@@ -452,6 +452,15 @@ void WifiMsgProcess(void)
 		{
 			k_timer_start(&wifi_rescan_timer, K_MSEC(5000), K_MSEC(5000));	
 		}
+	}
+
+	if(wifi_off_flag)
+	{
+		wifi_off_flag = false;
+		MCU_set_wifi_off();
+		
+		if(k_timer_remaining_get(&wifi_rescan_timer) > 0)
+			k_timer_stop(&wifi_rescan_timer);
 	}
 	
 	if(wifi_rescanning_flag)

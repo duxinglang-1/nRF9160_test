@@ -30,7 +30,7 @@
 #include "esp8266.h"
 #endif
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 #define BLE_DEV DT_NODELABEL(uart2)
@@ -55,51 +55,54 @@
 #define PACKET_HEAD	0xAB
 #define PACKET_END	0x88
 
-#define BLE_WORK_MODE_ID		0xFF10			//52810工作状态正常
-#define GET_WIFI_VER_ID			0xFF11			//获取WIFI版本信息
-#define GET_WIFI_MAC_ID			0xFF12			//获取WIFI Mac address信息
-#define GET_WIFI_AP_ID			0xFF13			//扫描附近可用的WIFI APS
-#define START_WIIF_DATA_ID		0xFEEF			//开启透传模式
-#define STOP_WIFI_DATA_ID		0xEFFE			//关闭透传模式
-#define HEART_RATE_ID			0xFF31			//心率
-#define BLOOD_OXYGEN_ID			0xFF32			//血氧
-#define BLOOD_PRESSURE_ID		0xFF33			//血压
-#define TEMPERATURE_ID			0xFF62			//体温
-#define	ONE_KEY_MEASURE_ID		0xFF34			//一键测量
-#define	PULL_REFRESH_ID			0xFF35			//下拉刷新
-#define	SLEEP_DETAILS_ID		0xFF36			//睡眠详情
-#define	FIND_DEVICE_ID			0xFF37			//查找手环
-#define SMART_NOTIFY_ID			0xFF38			//智能提醒
-#define	ALARM_SETTING_ID		0xFF39			//闹钟设置
-#define USER_INFOR_ID			0xFF40			//用户信息
-#define	SEDENTARY_ID			0xFF41			//久坐提醒
-#define	SHAKE_SCREEN_ID			0xFF42			//抬手亮屏
-#define	MEASURE_HOURLY_ID		0xFF43			//整点测量设置
-#define	SHAKE_PHOTO_ID			0xFF44			//摇一摇拍照
-#define	LANGUAGE_SETTING_ID		0xFF45			//中英日文切换
-#define	TIME_24_SETTING_ID		0xFF46			//12/24小时设置
-#define	FIND_PHONE_ID			0xFF47			//查找手机回复
-#define	WEATHER_INFOR_ID		0xFF48			//天气信息下发
-#define	TIME_SYNC_ID			0xFF49			//时间同步
-#define	TARGET_STEPS_ID			0xFF50			//目标步数
-#define	BATTERY_LEVEL_ID		0xFF51			//电池电量
-#define	FIRMWARE_INFOR_ID		0xFF52			//固件版本号
-#define	FACTORY_RESET_ID		0xFF53			//清除手环数据
-#define	ECG_ID					0xFF54			//心电
-#define	LOCATION_ID				0xFF55			//获取定位信息
-#define	DATE_FORMAT_ID			0xFF56			//年月日格式设置
-#define NOTIFY_CONTENT_ID		0xFF57			//智能提醒内容
-#define CHECK_WHITELIST_ID		0xFF58			//判断手机ID是否在手环白名单
-#define INSERT_WHITELIST_ID`	0xFF59			//将手机ID插入白名单
-#define DEVICE_SEND_128_RAND_ID	0xFF60			//手环发送随机的128位随机数
-#define PHONE_SEND_128_AES_ID	0xFF61			//手机发送AES 128 CBC加密数据给手环
+#define BLE_WORK_MODE_ID			0xFF10			//52810工作状态正常
+#define GET_WIFI_VER_ID				0xFF11			//获取WIFI版本信息
+#define GET_WIFI_MAC_ID				0xFF12			//获取WIFI Mac address信息
+#define SET_WIFI_OFF_ID				0xFF13			//关闭WIFI
+#define SET_WIFI_ON_ID				0xFF14			//打开WIFI
+#define GET_WIFI_AP_ID				0xFF15			//扫描附近可用的WIFI APS
+#define SEND_WIFI_DATA_ID			0xFE16			//通过WIFI透传数据
+#define SET_WIFI_CONNECTED_AP_ID	0xFF17			//设置WIFI透传连接的AP信息
+#define SET_WIIF_CONNECTED_SEVER_ID	0xFF18			//设置WIFI透传连接的后台信息
+#define HEART_RATE_ID				0xFF31			//心率
+#define BLOOD_OXYGEN_ID				0xFF32			//血氧
+#define BLOOD_PRESSURE_ID			0xFF33			//血压
+#define TEMPERATURE_ID				0xFF62			//体温
+#define	ONE_KEY_MEASURE_ID			0xFF34			//一键测量
+#define	PULL_REFRESH_ID				0xFF35			//下拉刷新
+#define	SLEEP_DETAILS_ID			0xFF36			//睡眠详情
+#define	FIND_DEVICE_ID				0xFF37			//查找手环
+#define SMART_NOTIFY_ID				0xFF38			//智能提醒
+#define	ALARM_SETTING_ID			0xFF39			//闹钟设置
+#define USER_INFOR_ID				0xFF40			//用户信息
+#define	SEDENTARY_ID				0xFF41			//久坐提醒
+#define	SHAKE_SCREEN_ID				0xFF42			//抬手亮屏
+#define	MEASURE_HOURLY_ID			0xFF43			//整点测量设置
+#define	SHAKE_PHOTO_ID				0xFF44			//摇一摇拍照
+#define	LANGUAGE_SETTING_ID			0xFF45			//中英日文切换
+#define	TIME_24_SETTING_ID			0xFF46			//12/24小时设置
+#define	FIND_PHONE_ID				0xFF47			//查找手机回复
+#define	WEATHER_INFOR_ID			0xFF48			//天气信息下发
+#define	TIME_SYNC_ID				0xFF49			//时间同步
+#define	TARGET_STEPS_ID				0xFF50			//目标步数
+#define	BATTERY_LEVEL_ID			0xFF51			//电池电量
+#define	FIRMWARE_INFOR_ID			0xFF52			//固件版本号
+#define	FACTORY_RESET_ID			0xFF53			//清除手环数据
+#define	ECG_ID						0xFF54			//心电
+#define	LOCATION_ID					0xFF55			//获取定位信息
+#define	DATE_FORMAT_ID				0xFF56			//年月日格式设置
+#define NOTIFY_CONTENT_ID			0xFF57			//智能提醒内容
+#define CHECK_WHITELIST_ID			0xFF58			//判断手机ID是否在手环白名单
+#define INSERT_WHITELIST_ID`		0xFF59			//将手机ID插入白名单
+#define DEVICE_SEND_128_RAND_ID		0xFF60			//手环发送随机的128位随机数
+#define PHONE_SEND_128_AES_ID		0xFF61			//手机发送AES 128 CBC加密数据给手环
 
-#define	BLE_CONNECT_ID			0xFFB0			//BLE断连提醒
-#define	CTP_NOTIFY_ID			0xFFB1			//CTP触屏消息
-#define GET_BLE_VER_ID			0xFFB2			//获取52810版本号
-#define GET_BLE_MAC_ADDR_ID		0xFFB3			//获取BLE MAC地址
-#define GET_BLE_STATUS_ID		0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
-#define SET_BEL_WORK_MODE_ID	0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
+#define	BLE_CONNECT_ID				0xFFB0			//BLE断连提醒
+#define	CTP_NOTIFY_ID				0xFFB1			//CTP触屏消息
+#define GET_BLE_VER_ID				0xFFB2			//获取52810版本号
+#define GET_BLE_MAC_ADDR_ID			0xFFB3			//获取BLE MAC地址
+#define GET_BLE_STATUS_ID			0xFFB4			//获取BLE当前工作状态	0:关闭 1:休眠 2:广播 3:连接
+#define SET_BEL_WORK_MODE_ID		0xFFB5			//设置BLE工作模式		0:关闭 1:打开 2:唤醒 3:休眠
 
 bool blue_is_on = true;
 bool get_ble_info_flag = false;
@@ -1874,7 +1877,7 @@ void MCU_get_wifi_ap(void)
 	BleSendData(reply, reply_len);
 }
 
-void MCU_send_wifi_data(uint8_t *data, uint32_t len)
+void MCU_set_wifi_off(void)
 {
 	uint8_t reply[128] = {0};
 	uint16_t i,reply_len = 0;
@@ -1882,43 +1885,15 @@ void MCU_send_wifi_data(uint8_t *data, uint32_t len)
 #ifdef UART_DEBUG
 	LOGD("begin");
 #endif
-	//start transparent mode
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x00;
-	//data ID
-	reply[reply_len++] = (START_WIIF_DATA_ID>>8);		
-	reply[reply_len++] = (uint8_t)(START_WIIF_DATA_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = 0x00;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-	//Adjust data length
-	reply[1] = (reply_len-3)>>8;
-	reply[2] = (reply_len-3)&0x00ff;
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-	BleSendData(reply, reply_len);
 
-	//transparent data directly
-	BleSendData(data, len);
-	
-	//stop transparent mode
-	reply_len = 0;
 	//packet head
 	reply[reply_len++] = PACKET_HEAD;
 	//data_len
 	reply[reply_len++] = 0x00;
 	reply[reply_len++] = 0x00;
 	//data ID
-	reply[reply_len++] = (STOP_WIFI_DATA_ID>>8);		
-	reply[reply_len++] = (uint8_t)(STOP_WIFI_DATA_ID&0x00ff);
+	reply[reply_len++] = (SET_WIFI_OFF_ID>>8);		
+	reply[reply_len++] = (uint8_t)(SET_WIFI_OFF_ID&0x00ff);
 	//status
 	reply[reply_len++] = 0x80;
 	//control
@@ -1934,50 +1909,182 @@ void MCU_send_wifi_data(uint8_t *data, uint32_t len)
 
 	for(i=0;i<(reply_len-2);i++)
 		reply[reply_len-2] += reply[i];
+
 	BleSendData(reply, reply_len);
+}
+
+void MCU_set_wifi_on(void)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (SET_WIFI_ON_ID>>8);		
+	reply[reply_len++] = (uint8_t)(SET_WIFI_ON_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_set_wifi_ap(void)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (SET_WIFI_CONNECTED_AP_ID>>8);		
+	reply[reply_len++] = (uint8_t)(SET_WIFI_CONNECTED_AP_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_set_wifi_server(void)
+{
+	uint8_t reply[128] = {0};
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	//packet head
+	reply[reply_len++] = PACKET_HEAD;
+	//data_len
+	reply[reply_len++] = 0x00;
+	reply[reply_len++] = 0x00;
+	//data ID
+	reply[reply_len++] = (SET_WIIF_CONNECTED_SEVER_ID>>8);		
+	reply[reply_len++] = (uint8_t)(SET_WIIF_CONNECTED_SEVER_ID&0x00ff);
+	//status
+	reply[reply_len++] = 0x80;
+	//control
+	reply[reply_len++] = 0x00;
+	//CRC
+	reply[reply_len++] = 0x00;
+	//packet end
+	reply[reply_len++] = PACKET_END;
+
+	//Adjust data length
+	reply[1] = (reply_len-3)>>8;
+	reply[2] = (reply_len-3)&0x00ff;
+
+	for(i=0;i<(reply_len-2);i++)
+		reply[reply_len-2] += reply[i];
+
+	BleSendData(reply, reply_len);
+}
+
+void MCU_send_wifi_data(uint8_t *data, uint32_t len)
+{
+	uint8_t *reply;
+	uint16_t i,reply_len = 0;
+
+#ifdef UART_DEBUG
+	LOGD("begin");
+#endif
+
+	reply = k_malloc(len+9);
+	if(reply != NULL) 
+	{
+		memset(reply, 0x00, len+9);
+		
+		//packet head
+		reply[reply_len++] = PACKET_HEAD;
+		//data_len
+		reply[reply_len++] = 0x00;
+		reply[reply_len++] = 0x00;
+		//data ID
+		reply[reply_len++] = (SEND_WIFI_DATA_ID>>8);		
+		reply[reply_len++] = (uint8_t)(SEND_WIFI_DATA_ID&0x00ff);
+		//status
+		reply[reply_len++] = 0x80;
+		//control
+		reply[reply_len++] = 0x00;
+		//date context
+		memcpy(&reply[reply_len], data, len);
+		reply_len += len;
+		//CRC
+		reply[reply_len++] = 0x00;
+		//packet end
+		reply[reply_len++] = PACKET_END;
+		
+		//Adjust data length
+		reply[1] = (reply_len-3)>>8;
+		reply[2] = (reply_len-3)&0x00ff;
+		
+		for(i=0;i<(reply_len-2);i++)
+			reply[reply_len-2] += reply[i];
+		
+		BleSendData(reply, reply_len);
+
+		k_free(reply);
+	}
 }
 
 void MCU_receive_wifi_data(uint8_t *data, uint32_t len)
 {
-	uint8_t reply[128] = {0};
-	uint16_t i,reply_len = 0;
+	uint8_t *buf = NULL;
 
-#ifdef UART_DEBUG
-	LOGD("begin");
-#endif
+	buf = k_malloc(len);
+	if(buf != NULL) 
+	{
+		memset(buf, 0, len);
+		
+		memcpy(buf, &data[7], len-9);
+	#ifdef UART_DEBUG
+		LOGD("%s", buf);
+	#endif
 
-	//packet head
-	reply[reply_len++] = PACKET_HEAD;
-	//data_len
-	reply[reply_len++] = 0x00;
-	reply[reply_len++] = 0x00;
-	//data ID
-	reply[reply_len++] = (GET_WIFI_AP_ID>>8);		
-	reply[reply_len++] = (uint8_t)(GET_WIFI_AP_ID&0x00ff);
-	//status
-	reply[reply_len++] = 0x80;
-	//control
-	reply[reply_len++] = 0x00;
-	//CRC
-	reply[reply_len++] = 0x00;
-	//packet end
-	reply[reply_len++] = PACKET_END;
-
-	//Adjust data length
-	reply[1] = (reply_len-3)>>8;
-	reply[2] = (reply_len-3)&0x00ff;
-
-	for(i=0;i<(reply_len-2);i++)
-		reply[reply_len-2] += reply[i];
-
-	BleSendData(reply, reply_len);
+		k_free(buf);
+	}
 }
-
-bool MCU_check_wifi_data(uint8_t *data, uint32_t len)
-{
-	return false;
-}
-
 #endif/*CONFIG_WIFI_SUPPORT*/
 
 void get_nrf52810_ver_response(uint8_t *buf, uint32_t len)
@@ -2297,7 +2404,10 @@ void ble_receive_data_handle(uint8_t *buf, uint32_t len)
 		break; 
 	case GET_WIFI_AP_ID:
 		get_wifi_ap_response(buf, len);
-		break; 	
+		break; 
+	case SEND_WIFI_DATA_ID:
+		MCU_receive_wifi_data(buf, len);
+		break;
 #endif
 
 	default:
@@ -2384,11 +2494,7 @@ static void uart_receive_data_handle(uint8_t *data, uint32_t datalen)
 #endif
 
 	data_len = (256*data[1]+data[2]+3);
-    if((datalen == data_len)
-		#ifdef CONFIG_WIFI_SUPPORT
-			|| MCU_check_wifi_data(data, datalen)
-		#endif
-		)
+    if(datalen == data_len)
     {
         ble_receive_data_handle(data, datalen);
     }

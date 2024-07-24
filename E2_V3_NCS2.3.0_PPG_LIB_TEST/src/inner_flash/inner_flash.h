@@ -101,54 +101,6 @@ typedef struct
 typedef struct
 {
 	sys_date_timer_t timestamp;
-	uint8_t hr;
-}hr_record_t;
-
-typedef struct
-{
-	sys_date_timer_t timestamp;
-	uint8_t spo2;
-}spo2_record_t;
-
-#ifndef CONFIG_PPG_SUPPORT
-typedef struct
-{
-	uint8_t systolic;
-	uint8_t diastolic;
-}bpt_data;
-#endif
-
-typedef struct
-{
-	sys_date_timer_t timestamp;
-	bpt_data bpt;
-}bpt_record_t;
-
-typedef struct
-{
-	sys_date_timer_t timestamp;
-	uint16_t deca_temp;///实际温度放大10倍(36.5*10)
-}temp_record_t;
-
-typedef struct
-{
-	hr_record_t hr_rec;
-	spo2_record_t spo2_rec;
-	bpt_record_t bpt_rec;
-	temp_record_t temp_rec;
-	uint8_t hr_max;
-	uint8_t hr_min;
-	uint8_t spo2_max;
-	uint8_t spo2_min;
-	bpt_data bpt_max;
-	bpt_data bpt_min;
-	uint16_t deca_temp_max;
-	uint16_t deca_temp_min;
-}health_record_t;
-
-typedef struct
-{
-	sys_date_timer_t timestamp;
 	double latitude;
 	double longitude;
 	float altitude;

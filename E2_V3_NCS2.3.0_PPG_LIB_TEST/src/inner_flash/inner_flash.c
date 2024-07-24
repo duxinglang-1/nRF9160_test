@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "inner_flash.h"
+#ifdef CONFIG_PPG_SUPPORT
+#include "ppg.h"
+#endif
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #endif
@@ -47,7 +50,6 @@ static struct nvs_fs fs;
 static struct flash_pages_info info;
 
 sport_record_t last_sport = {0};
-health_record_t last_health = {0};
 
 static int nvs_setup(void)
 {	

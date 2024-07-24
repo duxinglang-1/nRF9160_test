@@ -553,7 +553,7 @@ void UpdateSystemTime(void)
 		)
 		{
 		#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
-			HealthWorkCheck(date_time, global_settings.health_interval);
+			HealthTimedWorkCheck(date_time, global_settings.health_interval);
 		#endif
 		
 		#ifdef CONFIG_ALARM_SUPPORT	

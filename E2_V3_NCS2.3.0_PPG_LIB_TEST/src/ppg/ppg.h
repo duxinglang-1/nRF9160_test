@@ -16,6 +16,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include "datetime.h"
+#include "external_flash.h"
 
 //#define GPIO_ACT_I2C
 
@@ -129,6 +130,18 @@ typedef enum
 	PPG_REC2_BPT
 }PPG_REC2_DATA_TYPE;
 
+typedef enum
+{
+	PPG_TIMER_APPMODE,
+	PPG_TIMER_AUTO_STOP,
+	PPG_TIMER_MENU_STOP,
+	PPG_TIMER_GET_HR,
+	PPG_TIMER_DELAY_START,
+	PPG_TIMER_BPT_EST_START,
+	PPG_TIMER_SKIN_CHECK,
+	PPG_TIER_MAX
+}PPG_TIMER_NAME;
+
 typedef int32_t (*ppgdev_write_ptr)(struct device *handle, uint8_t *tx_buf, uint32_t tx_len);
 typedef int32_t (*ppgdev_read_ptr)(struct device *handle, uint8_t *rx_buf, uint32_t rx_len);
 
@@ -146,6 +159,46 @@ typedef struct
 	uint8_t systolic;
 	uint8_t diastolic;
 }bpt_data;
+
+typedef struct
+{
+	sys_date_timer_t timestamp;
+	uint8_t hr;
+}hr_record_t;
+
+typedef struct
+{
+	sys_date_timer_t timestamp;
+	uint8_t spo2;
+}spo2_record_t;
+
+typedef struct
+{
+	sys_date_timer_t timestamp;
+	bpt_data bpt;
+}bpt_record_t;
+
+typedef struct
+{
+	sys_date_timer_t timestamp;
+	uint16_t deca_temp;///实际温度放大10倍(36.5*10)
+}temp_record_t;
+
+typedef struct
+{
+	hr_record_t hr_rec;
+	spo2_record_t spo2_rec;
+	bpt_record_t bpt_rec;
+	temp_record_t temp_rec;
+	uint8_t hr_max;
+	uint8_t hr_min;
+	uint8_t spo2_max;
+	uint8_t spo2_min;
+	bpt_data bpt_max;
+	bpt_data bpt_min;
+	uint16_t deca_temp_max;
+	uint16_t deca_temp_min;
+}health_record_t;
 
 //单次测量
 typedef struct
@@ -227,6 +280,14 @@ typedef struct
 	bpt_rec2_nod data[PPG_REC2_MAX_DAILY];
 }ppg_bpt_rec2_data;
 
+typedef struct
+{
+	PPG_TIMER_NAME name;
+	struct k_timer timer_id;
+	k_timer_expiry_t expiry_fn;
+	k_timer_stop_t stop_fn;
+}ppg_timer_t;
+
 extern bool get_bpt_ok_flag;
 extern bool get_hr_ok_flag;
 extern bool get_spo2_ok_flag;
@@ -248,25 +309,54 @@ extern bpt_data g_bpt;
 extern bpt_data g_bpt_menu;
 extern bpt_data g_bpt_hourly;
 
+extern health_record_t last_health;
 extern sys_date_timer_t g_health_check_time;
 extern PPG_WORK_STATUS g_ppg_status;
 extern ppgdev_ctx_t ppg_dev_ctx;
 
+//PPG module initialization
 extern void PPG_init(void);
+//PPG module message processing
 extern void PPGMsgProcess(void);
 
+//Save the blood pressure data measured at this scheduled time to the daily record.
 extern void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt);
+//Obtain all timed blood pressure records for the current day
 extern void GetCurDayBptRecData(uint8_t *databuf);
+//Obtain all timed blood pressure records for the given day
+extern void GetGivenDayBptRecData(sys_date_timer_t date, uint8_t *databuf);
+//Obtain blood pressure measurements at the given time
+extern void GetGivenTimeBptRecData(sys_date_timer_t date, bpt_data *bpt);
+//Save the blood oxygen data measured at this scheduled time to the daily record
 extern void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2);
+//Obtain all timed blood oxygen records for the current day
 extern void GetCurDaySpo2RecData(uint8_t *databuf);
+//Obtain all timed blood oxygen records for the given day
+extern void GetGivenDaySpo2RecData(sys_date_timer_t date, uint8_t *databuf);
+//Obtain the blood oxygen measurement value at the given time
+extern void GetGivenTimeSpo2RecData(sys_date_timer_t date, uint8_t *spo2);
+//Save the heart rate data measured at this scheduled time to the daily record
 extern void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr);
+//Obtain all timed heart rate records for the current day
 extern void GetCurDayHrRecData(uint8_t *databuf);
+//Obtain all timed heart rate records for the given day
+extern void GetGivenDayHrRecData(sys_date_timer_t date, uint8_t *databuf);
+//Obtain the heart rate measurement value at the given time
+extern void GetGivenTimeHrRecData(sys_date_timer_t date, uint8_t *hr);
+//PPG detection startup interface function
 extern void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type);
+//Activate wrist detachment detection
 extern void StartSCC(void);
+//Determine whether the wrist has been removed
 extern bool CheckSCC(void);
-extern void UpdateLastPPGData(sys_date_timer_t time_stamp, PPG_DATA_TYPE type, void *data);
 
+//Reset the comparison data record to zero
 extern void HealthCompareDataReset(void);
-extern void HealthWorkCheck(sys_date_timer_t time, uint32_t interval);
+//Check if timed measurement can be initiated
+extern void HealthTimedWorkCheck(sys_date_timer_t time, uint32_t interval);
+//Upload manual measurement data to the server
+extern void SyncSendHealthData(void);
+//Upload scheduled measurement data to the server
+extern void TimeCheckSendHealthData(void);
 #endif/*__PPG_H__*/
 

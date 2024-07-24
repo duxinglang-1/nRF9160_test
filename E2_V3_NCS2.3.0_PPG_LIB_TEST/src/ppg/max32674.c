@@ -22,11 +22,10 @@
 #ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
 #endif
+#include "settings.h"
 #include "screen.h"
 #include "max_sh_interface.h"
 #include "max_sh_api.h"
-#include "inner_flash.h"
-#include "external_flash.h"
 #include "logger.h"
 
 //#define PPG_DEBUG
@@ -45,6 +44,7 @@ bool get_hr_ok_flag = false;
 bool get_spo2_ok_flag = false;
 bool ppg_skin_contacted_flag = false;
 
+health_record_t last_health = {0};
 sys_date_timer_t g_health_check_time = {0};
 PPG_WORK_STATUS g_ppg_status = PPG_STATUS_PREPARE;
 
@@ -124,28 +124,21 @@ static uint16_t str_running_note[LANGUAGE_MAX][70] = {
 													#endif
 													};
 
-static void ppg_set_appmode_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_appmode_timer, ppg_set_appmode_timerout, NULL);
-static void ppg_auto_stop_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_stop_timer, ppg_auto_stop_timerout, NULL);
-static void ppg_menu_stop_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_menu_stop_timer, ppg_menu_stop_timerout, NULL);
-static void ppg_get_data_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_get_hr_timer, ppg_get_data_timerout, NULL);
-static void ppg_delay_start_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_delay_start_timer, ppg_delay_start_timerout, NULL);
-static void ppg_bpt_est_start_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_bpt_est_start_timer, ppg_bpt_est_start_timerout, NULL);
-static void ppg_skin_check_timerout(struct k_timer *timer_id);
-K_TIMER_DEFINE(ppg_skin_check_timer, ppg_skin_check_timerout, NULL);
+void ppg_set_appmode_timerout(struct k_timer *timer_id);
+void ppg_auto_stop_timerout(struct k_timer *timer_id);
+void ppg_menu_stop_timerout(struct k_timer *timer_id);
+void ppg_get_data_timerout(struct k_timer *timer_id);
+void ppg_delay_start_timerout(struct k_timer *timer_id);
+void ppg_bpt_est_start_timerout(struct k_timer *timer_id);
+void ppg_skin_check_timerout(struct k_timer *timer_id);
 
 void ClearAllBptRecData(void)
 {
 	memset(&g_bpt, 0, sizeof(bpt_data));
 	memset(&g_bpt_menu, 0, sizeof(bpt_data));	
 	memset(&rec2buf, 0xff, sizeof(rec2buf));
-	
-	SpiFlash_Write(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+
+	ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
 }
 
 void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
@@ -163,7 +156,7 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	
-	SpiFlash_Read(&rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_BPT);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
 		||(p_bpt->month == 0xff || p_bpt->month == 0x00)
@@ -178,7 +171,7 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 	{
 		//直接覆盖写在第一条
 		memcpy(p_bpt, &tmp_bpt, sizeof(bpt_rec2_nod));
-		SpiFlash_Write(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+		ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
 	}
 	else if((tmp_bpt.year < p_bpt->year)
 			||((tmp_bpt.year == p_bpt->year)&&(tmp_bpt.month < p_bpt->month))
@@ -190,7 +183,7 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 		//插入新的数据,旧的数据往后挪，丢掉最后一个
 		memcpy(&databuf[0*sizeof(bpt_rec2_nod)], &tmp_bpt, sizeof(bpt_rec2_nod));
 		memcpy(&databuf[1*sizeof(bpt_rec2_nod)], &rec2buf[0*sizeof(bpt_rec2_nod)], PPG_BPT_REC2_DATA_SIZE-sizeof(bpt_rec2_nod));
-		SpiFlash_Write(databuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+		ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
 	}
 	else
 	{
@@ -211,7 +204,7 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 			{
 				//直接覆盖写
 				memcpy(p_bpt, &tmp_bpt, sizeof(bpt_rec2_nod));
-				SpiFlash_Write(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+				ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
 				return;
 			}
 			else if((tmp_bpt.year > p_bpt->year)
@@ -243,14 +236,14 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 			memcpy(&databuf[0*sizeof(bpt_rec2_nod)], &rec2buf[0*sizeof(bpt_rec2_nod)], (i+1)*sizeof(bpt_rec2_nod));
 			memcpy(&databuf[(i+1)*sizeof(bpt_rec2_nod)], &tmp_bpt, sizeof(bpt_rec2_nod));
 			memcpy(&databuf[(i+2)*sizeof(bpt_rec2_nod)], &rec2buf[(i+1)*sizeof(bpt_rec2_nod)], PPG_BPT_REC2_DATA_SIZE-(i+1)*sizeof(bpt_rec2_nod));
-			SpiFlash_Write(databuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+			ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
 			memcpy(&databuf[0*sizeof(bpt_rec2_nod)], &rec2buf[1*sizeof(bpt_rec2_nod)], PPG_BPT_REC2_DATA_SIZE-sizeof(bpt_rec2_nod));
 			memcpy(&databuf[PPG_BPT_REC2_DATA_SIZE-sizeof(bpt_rec2_nod)], &tmp_bpt, sizeof(bpt_rec2_nod));
-			SpiFlash_Write(databuf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+			ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
 		}
 	}
 }
@@ -264,7 +257,7 @@ void GetCurDayBptRecData(uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_BPT);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_BPT_REC2_DATA_SIZE/sizeof(bpt_rec2_nod);i++)
 	{
@@ -312,7 +305,7 @@ void GetGivenDayBptRecData(sys_date_timer_t date, uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_BPT);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_BPT_REC2_DATA_SIZE/sizeof(bpt_rec2_nod);i++)
 	{
@@ -360,7 +353,7 @@ void GetGivenTimeBptRecData(sys_date_timer_t date, bpt_data *bpt)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_BPT);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_BPT_REC2_DATA_SIZE/sizeof(bpt_rec2_nod);i++)
 	{
@@ -393,7 +386,7 @@ void ClearAllSpo2RecData(void)
 	g_spo2_menu = 0;
 	memset(&rec2buf, 0xff, sizeof(rec2buf));
 
-	SpiFlash_Write(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
 }
 
 void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
@@ -411,8 +404,8 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 
-	SpiFlash_Read(&rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
-	p_spo2 = (spo2_rec2_nod*)&rec2buf;
+	ppg_read_7_days_data(rec2buf, PPG_REC2_SPO2);
+	p_spo2 = (spo2_rec2_nod*)rec2buf;
 	if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
 		||(p_spo2->month == 0xff || p_spo2->month == 0x00)
 		||(p_spo2->day == 0xff || p_spo2->day == 0x00)
@@ -426,7 +419,7 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 	{
 		//直接覆盖写在第一条
 		memcpy(p_spo2, &tmp_spo2, sizeof(spo2_rec2_nod));
-		SpiFlash_Write(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+		ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
 	}
 	else if((tmp_spo2.year < p_spo2->year)
 			||((tmp_spo2.year == p_spo2->year)&&(tmp_spo2.month < p_spo2->month))
@@ -438,7 +431,7 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 		//插入新的数据,旧的数据往后挪，丢掉最后一个
 		memcpy(&databuf[0*sizeof(spo2_rec2_nod)], &tmp_spo2, sizeof(spo2_rec2_nod));
 		memcpy(&databuf[1*sizeof(spo2_rec2_nod)], &rec2buf[0*sizeof(spo2_rec2_nod)], PPG_SPO2_REC2_DATA_SIZE-sizeof(spo2_rec2_nod));
-		SpiFlash_Write(databuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+		ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
 	}
 	else
 	{
@@ -459,7 +452,7 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 			{
 				//直接覆盖写
 				memcpy(p_spo2, &tmp_spo2, sizeof(spo2_rec2_nod));
-				SpiFlash_Write(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+				ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
 				return;
 			}
 			else if((tmp_spo2.year > p_spo2->year)
@@ -491,14 +484,14 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 			memcpy(&databuf[0*sizeof(spo2_rec2_nod)], &rec2buf[0*sizeof(spo2_rec2_nod)], (i+1)*sizeof(spo2_rec2_nod));
 			memcpy(&databuf[(i+1)*sizeof(spo2_rec2_nod)], &tmp_spo2, sizeof(spo2_rec2_nod));
 			memcpy(&databuf[(i+2)*sizeof(spo2_rec2_nod)], &rec2buf[(i+1)*sizeof(spo2_rec2_nod)], PPG_SPO2_REC2_DATA_SIZE-(i+1)*sizeof(spo2_rec2_nod));
-			SpiFlash_Write(databuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+			ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
 			memcpy(&databuf[0*sizeof(spo2_rec2_nod)], &rec2buf[1*sizeof(spo2_rec2_nod)], PPG_SPO2_REC2_DATA_SIZE-sizeof(spo2_rec2_nod));
 			memcpy(&databuf[PPG_SPO2_REC2_DATA_SIZE-sizeof(spo2_rec2_nod)], &tmp_spo2, sizeof(spo2_rec2_nod));
-			SpiFlash_Write(databuf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+			ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
 		}
 	}
 }
@@ -512,7 +505,7 @@ void GetCurDaySpo2RecData(uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_SPO2);
 	p_spo2 = (spo2_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_SPO2_REC2_DATA_SIZE/sizeof(spo2_rec2_nod);i++)
 	{
@@ -560,7 +553,7 @@ void GetGivenDaySpo2RecData(sys_date_timer_t date, uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_SPO2);
 	p_spo2 = (bpt_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_SPO2_REC2_DATA_SIZE/sizeof(spo2_rec2_nod);i++)
 	{
@@ -608,7 +601,7 @@ void GetGivenTimeSpo2RecData(sys_date_timer_t date, uint8_t *spo2)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_SPO2);
 	p_spo2 = (spo2_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_SPO2_REC2_DATA_SIZE/sizeof(spo2_rec2_nod);i++)
 	{
@@ -642,7 +635,7 @@ void ClearAllHrRecData(void)
 	g_hr_menu = 0;
 	memset(&rec2buf, 0xff, sizeof(rec2buf));
 
-	SpiFlash_Write(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
 }
 
 void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
@@ -660,8 +653,8 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	
-	SpiFlash_Read(&rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
-	p_hr = (hr_rec2_nod*)&rec2buf;
+	ppg_read_7_days_data(rec2buf, PPG_REC2_HR);
+	p_hr = (hr_rec2_nod*)rec2buf;
 	if((p_hr->year == 0xffff || p_hr->year == 0x0000)
 		||(p_hr->month == 0xff || p_hr->month == 0x00)
 		||(p_hr->day == 0xff || p_hr->day == 0x00)
@@ -675,7 +668,7 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 	{
 		//直接覆盖写在第一条
 		memcpy(p_hr, &tmp_hr, sizeof(hr_rec2_nod));
-		SpiFlash_Write(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+		ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
 	}
 	else if((tmp_hr.year < p_hr->year)
 			||((tmp_hr.year == p_hr->year)&&(tmp_hr.month < p_hr->month))
@@ -687,7 +680,7 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 		//插入新的数据,旧的数据往后挪，丢掉最后一个
 		memcpy(&databuf[0*sizeof(hr_rec2_nod)], &tmp_hr, sizeof(hr_rec2_nod));
 		memcpy(&databuf[1*sizeof(hr_rec2_nod)], &rec2buf[0*sizeof(hr_rec2_nod)], PPG_HR_REC2_DATA_SIZE-sizeof(hr_rec2_nod));
-		SpiFlash_Write(databuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+		ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
 	}
 	else
 	{
@@ -708,7 +701,7 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 			{
 				//直接覆盖写
 				memcpy(p_hr, &tmp_hr, sizeof(hr_rec2_nod));
-				SpiFlash_Write(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+				ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
 				return;
 			}
 			else if((tmp_hr.year > p_hr->year)
@@ -740,14 +733,14 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 			memcpy(&databuf[0*sizeof(hr_rec2_nod)], &rec2buf[0*sizeof(hr_rec2_nod)], (i+1)*sizeof(hr_rec2_nod));
 			memcpy(&databuf[(i+1)*sizeof(hr_rec2_nod)], &tmp_hr, sizeof(hr_rec2_nod));
 			memcpy(&databuf[(i+2)*sizeof(hr_rec2_nod)], &rec2buf[(i+1)*sizeof(hr_rec2_nod)], PPG_HR_REC2_DATA_SIZE-(i+1)*sizeof(hr_rec2_nod));
-			SpiFlash_Write(databuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+			ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
 			memcpy(&databuf[0*sizeof(hr_rec2_nod)], &rec2buf[1*sizeof(hr_rec2_nod)], PPG_HR_REC2_DATA_SIZE-sizeof(hr_rec2_nod));
 			memcpy(&databuf[PPG_HR_REC2_DATA_SIZE-sizeof(hr_rec2_nod)], &tmp_hr, sizeof(hr_rec2_nod));
-			SpiFlash_Write(databuf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+			ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
 		}
 	}
 }
@@ -761,7 +754,7 @@ void GetCurDayHrRecData(uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_HR);
 	p_hr = (hr_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_HR_REC2_DATA_SIZE/sizeof(hr_rec2_nod);i++)
 	{
@@ -809,7 +802,7 @@ void GetGivenDayHrRecData(sys_date_timer_t date, uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_HR);
 	p_hr = (hr_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_HR_REC2_DATA_SIZE/sizeof(hr_rec2_nod);i++)
 	{
@@ -857,7 +850,7 @@ void GetGivenTimeHrRecData(sys_date_timer_t date, uint8_t *hr)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	ppg_read_7_days_data(rec2buf, PPG_REC2_HR);
 	p_hr = (hr_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_SPO2_REC2_DATA_SIZE/sizeof(spo2_rec2_nod);i++)
 	{
@@ -978,7 +971,7 @@ void UpdateLastPPGData(sys_date_timer_t time_stamp, PPG_DATA_TYPE type, void *da
 		break;
 	}
 
-	save_cur_health_to_record(&last_health);
+	ppg_save_last_data(&last_health);
 }
 
 void GetPPGData(uint8_t *hr, uint8_t *spo2, uint8_t *systolic, uint8_t *diastolic)
@@ -1051,10 +1044,10 @@ void HealthCompareDataReset(void)
 	last_health.deca_temp_min = 0;
 #endif
 
-	save_cur_health_to_record(&last_health);
+	ppg_save_last_data(&last_health);
 }
 
-void HealthWorkCheck(sys_date_timer_t time, uint32_t interval)
+void HealthTimedWorkCheck(sys_date_timer_t time, uint32_t interval)
 {
 	//The sensor needs to be turned on in advance. 
 	//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
@@ -1273,9 +1266,60 @@ void ppg_get_data_timerout(struct k_timer *timer_id)
 	ppg_get_data_flag = true;
 }
 
-static void ppg_set_appmode_timerout(struct k_timer *timer_id)
+void ppg_set_appmode_timerout(struct k_timer *timer_id)
 {
 	ppg_appmode_init_flag = true;
+}
+
+void ppg_auto_stop_timerout(struct k_timer *timer_id)
+{
+	ppg_stop_flag = true;
+}
+
+void ppg_skin_check_timerout(struct k_timer *timer_id)
+{
+	if(g_ppg_trigger == TRIGGER_BY_SCC)
+		ppg_stop_flag = true;
+}
+
+void ppg_menu_stop_timerout(struct k_timer *timer_id)
+{
+	ppg_stop_flag = true;
+	
+	if((screen_id == SCREEN_ID_HR)
+		||(screen_id == SCREEN_ID_SPO2)
+		||(screen_id == SCREEN_ID_BP)
+		)
+	{
+		g_ppg_status = PPG_STATUS_MEASURE_FAIL;
+
+		if(screen_id == SCREEN_ID_HR)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
+		else if(screen_id == SCREEN_ID_SPO2)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
+		else if(screen_id == SCREEN_ID_BP)
+			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BP;
+		
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void ppg_delay_start_timerout(struct k_timer *timer_id)
+{
+	ppg_delay_start_flag = true;
+}
+
+void ppg_bpt_est_start_timerout(struct k_timer *timer_id)
+{
+#ifdef PPG_DEBUG	
+	LOGD("begin");
+#endif
+
+	g_ppg_alg_mode = ALG_MODE_BPT;
+	g_ppg_data = PPG_DATA_BPT;
+	g_ppg_bpt_status = BPT_STATUS_GET_EST;
+
+	ppg_start_flag = true;
 }
 
 bool PPGSenSorSet(void)
@@ -1315,7 +1359,7 @@ bool PPGSenSorSet(void)
 				sh_req_bpt_cal_data();
 				g_ppg_bpt_status = BPT_STATUS_GET_CAL;
 
-				k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(200));
+				ppg_start_timer(PPG_TIMER_GET_HR, 200, 200);
 				return;
 			}
 		}
@@ -1355,7 +1399,7 @@ bool PPGSenSorSet(void)
 		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
-		k_timer_start(&ppg_get_hr_timer, K_MSEC(200), K_MSEC(500));
+		ppg_start_timer(PPG_TIMER_GET_HR, 200, 500);
 	}
 	else if(g_ppg_alg_mode == ALG_MODE_HR_SPO2)
 	{
@@ -1380,7 +1424,7 @@ bool PPGSenSorSet(void)
 		sh_enable_algo_(SS_ALGOIDX_WHRM_WSPO2_SUITE_OS6X, SENSORHUB_MODE_BASIC);
 		g_algo_sensor_stat.whrm_wspo2_suite_enabled_mode1 = 1;
 
-		k_timer_start(&ppg_get_hr_timer, K_MSEC(1*1000), K_MSEC(1*1000));
+		ppg_start_timer(PPG_TIMER_GET_HR, 1*1000, 1*1000);
 	}
 	
 	return true;
@@ -1398,7 +1442,7 @@ void StartSensorhubCallBack(void)
 		#ifdef PPG_DEBUG
 			LOGD("ppg hr has been stop!");
 		#endif
-			k_timer_stop(&ppg_get_hr_timer);
+			ppg_stop_timer(PPG_TIMER_GET_HR);
 			return;
 		}
 	#ifdef PPG_DEBUG	
@@ -1410,15 +1454,15 @@ void StartSensorhubCallBack(void)
 		{
 			if(g_ppg_data == PPG_DATA_HR)
 			{
-				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_HR_TIMELY*60*1000), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_AUTO_STOP, PPG_CHECK_HR_TIMELY*60*1000, 0);
 			}
 			else if(g_ppg_data == PPG_DATA_SPO2)
 			{
-				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_SPO2_TIMELY*60*1000), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_AUTO_STOP, PPG_CHECK_SPO2_TIMELY*60*1000, 0);
 			}
 			else if(g_ppg_data == PPG_DATA_BPT)
 			{
-				k_timer_start(&ppg_stop_timer, K_MSEC(PPG_CHECK_BPT_TIMELY*60*1000), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_AUTO_STOP, PPG_CHECK_BPT_TIMELY*60*1000, 0);
 			}
 		}
 	#ifndef UI_STYLE_HEALTH_BAR	
@@ -1426,15 +1470,15 @@ void StartSensorhubCallBack(void)
 		{
 			if(g_ppg_data == PPG_DATA_HR)
 			{
-				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_HR_MENU), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_MENU_STOP, PPG_CHECK_HR_MENU*1000, 0);
 			}
 			else if(g_ppg_data == PPG_DATA_SPO2)
 			{
-				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_SPO2_MENU), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_MENU_STOP, PPG_CHECK_SPO2_MENU*1000, 0);
 			}
 			else if(g_ppg_data == PPG_DATA_BPT)
 			{
-				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_BPT_MENU), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_MENU_STOP, PPG_CHECK_BPT_MENU*1000, 0);
 			}
 		}
 	#endif
@@ -1442,15 +1486,15 @@ void StartSensorhubCallBack(void)
 		{
 			if(g_ppg_data == PPG_DATA_HR)
 			{
-				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_HR_MENU), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_MENU_STOP, PPG_CHECK_HR_MENU*1000, 0);
 			}
 			else if(g_ppg_data == PPG_DATA_SPO2)
 			{
-				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_SPO2_MENU), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_MENU_STOP, PPG_CHECK_SPO2_MENU*1000, 0);
 			}
 			else if(g_ppg_data == PPG_DATA_BPT)
 			{
-				k_timer_start(&ppg_menu_stop_timer, K_SECONDS(PPG_CHECK_BPT_MENU), K_NO_WAIT);
+				ppg_start_timer(PPG_TIMER_MENU_STOP, PPG_CHECK_BPT_MENU*1000, 0);
 			}
 		}
 	}
@@ -1466,25 +1510,12 @@ void StartSensorhubCallBack(void)
 void StartSensorhub(void)
 {
 	SH_set_to_APP_mode();
-	k_timer_start(&ppg_appmode_timer, K_MSEC(2000), K_NO_WAIT);
-}
-
-static void ppg_bpt_est_start_timerout(struct k_timer *timer_id)
-{
-#ifdef PPG_DEBUG	
-	LOGD("begin");
-#endif
-
-	g_ppg_alg_mode = ALG_MODE_BPT;
-	g_ppg_data = PPG_DATA_BPT;
-	g_ppg_bpt_status = BPT_STATUS_GET_EST;
-
-	ppg_start_flag = true;
+	ppg_start_timer(PPG_TIMER_APPMODE, 2000, 0);
 }
 
 void PPGRestartToBpt(void)
 {
-	k_timer_start(&ppg_bpt_est_start_timer, K_MSEC(500), K_NO_WAIT);
+	ppg_start_timer(PPG_TIMER_BPT_EST_START, 500, 0);
 }
 
 void PPGGetSensorHubData(void)
@@ -1765,7 +1796,7 @@ void PPGGetSensorHubData(void)
 						else
 							ppg_skin_contacted_flag = false;
 
-						k_timer_stop(&ppg_skin_check_timer);
+						ppg_stop_timer(PPG_TIMER_SKIN_CHECK);
 						scc_check_sum = SCC_COMPARE_MAX;
 					#ifdef PPG_DEBUG
 						LOGD("scc check completed! scc_check_sum:%d,flag:%d", scc_check_sum,ppg_skin_contacted_flag);
@@ -1962,11 +1993,6 @@ void PPGGetSensorHubData(void)
 	}
 }
 
-void ppg_delay_start_timerout(struct k_timer *timer_id)
-{
-	ppg_delay_start_flag = true;
-}
-
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 void FTStartPPG(void)
 {
@@ -1990,7 +2016,7 @@ void StartSCC(void)
 
 	ppg_skin_contacted_flag = true;
     ppg_start_flag = true;
-	k_timer_start(&ppg_skin_check_timer, K_SECONDS(10), K_NO_WAIT);
+	ppg_start_timer(PPG_TIMER_SKIN_CHECK, 10*1000, 0);
 }
 
 bool CheckSCC(void)
@@ -2040,7 +2066,7 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 			DisplayPopUp(infor);
 
 			g_ppg_data = data_type;
-			k_timer_start(&ppg_delay_start_timer, K_MSEC((NOTIFY_TIMER_INTERVAL+1)*1000), K_NO_WAIT);
+			ppg_start_timer(PPG_TIMER_DELAY_START, (NOTIFY_TIMER_INTERVAL+1)*1000, 0);
 			return;
 		}
 
@@ -2242,13 +2268,13 @@ void PPGStopCheck(void)
 #ifdef PPG_DEBUG
 	LOGD("ppg_power_flag:%d", ppg_power_flag);
 #endif
-	k_timer_stop(&ppg_appmode_timer);
-	k_timer_stop(&ppg_stop_timer);
-	k_timer_stop(&ppg_menu_stop_timer);
-	k_timer_stop(&ppg_get_hr_timer);
-	k_timer_stop(&ppg_delay_start_timer);
-	k_timer_stop(&ppg_bpt_est_start_timer);
-	k_timer_stop(&ppg_skin_check_timer);
+	ppg_stop_timer(PPG_TIMER_APPMODE);
+	ppg_stop_timer(PPG_TIMER_AUTO_STOP);
+	ppg_stop_timer(PPG_TIMER_MENU_STOP);
+	ppg_stop_timer(PPG_TIMER_GET_HR);
+	ppg_stop_timer(PPG_TIMER_DELAY_START);
+	ppg_stop_timer(PPG_TIMER_BPT_EST_START);
+	ppg_stop_timer(PPG_TIMER_SKIN_CHECK);
 
 	if(ppg_power_flag == 0)
 		return;
@@ -2403,7 +2429,7 @@ void PPGStopCheck(void)
 
 void PPGStopBptCal(void)
 {
-	k_timer_stop(&ppg_get_hr_timer);
+	ppg_stop_timer(PPG_TIMER_GET_HR);
 	
 	sensorhub_disable_sensor();
 	sensorhub_disable_algo();
@@ -2415,39 +2441,6 @@ void PPGStopBptCal(void)
 	ppg_power_flag = 0;
 }
 
-static void ppg_auto_stop_timerout(struct k_timer *timer_id)
-{
-	ppg_stop_flag = true;
-}
-
-static void ppg_skin_check_timerout(struct k_timer *timer_id)
-{
-	if(g_ppg_trigger == TRIGGER_BY_SCC)
-		ppg_stop_flag = true;
-}
-
-static void ppg_menu_stop_timerout(struct k_timer *timer_id)
-{
-	ppg_stop_flag = true;
-	
-	if((screen_id == SCREEN_ID_HR)
-		||(screen_id == SCREEN_ID_SPO2)
-		||(screen_id == SCREEN_ID_BP)
-		)
-	{
-		g_ppg_status = PPG_STATUS_MEASURE_FAIL;
-
-		if(screen_id == SCREEN_ID_HR)
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_HR;
-		else if(screen_id == SCREEN_ID_SPO2)
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPO2;
-		else if(screen_id == SCREEN_ID_BP)
-			scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_BP;
-		
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
 void PPG_init(void)
 {
 #ifdef PPG_DEBUG
@@ -2455,7 +2448,7 @@ void PPG_init(void)
 #endif
 
 	//Display the last record within 7 days.
-	get_cur_health_from_record(&last_health);
+	ppg_read_last_data(&last_health);
 	DateIncrease(&last_health.hr_rec.timestamp, 7);
 	if(DateCompare(last_health.hr_rec.timestamp, date_time) > 0)
 	{

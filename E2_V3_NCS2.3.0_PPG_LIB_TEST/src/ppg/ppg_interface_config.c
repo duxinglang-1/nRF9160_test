@@ -12,6 +12,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include "inner_flash.h"
+#include "external_flash.h"
 #include "ppg.h"
 
 ppgdev_ctx_t ppg_dev_ctx = {0};
@@ -19,6 +21,25 @@ ppgdev_ctx_t ppg_dev_ctx = {0};
 static struct device *i2c_ppg = NULL;
 static struct device *gpio_ppg = NULL;
 static struct gpio_callback gpio_cb;
+
+extern void ppg_get_data_timerout(struct k_timer *timer_id);
+extern void ppg_set_appmode_timerout(struct k_timer *timer_id);
+extern void ppg_auto_stop_timerout(struct k_timer *timer_id);
+extern void ppg_skin_check_timerout(struct k_timer *timer_id);
+extern void ppg_menu_stop_timerout(struct k_timer *timer_id);
+extern void ppg_delay_start_timerout(struct k_timer *timer_id);
+extern void ppg_bpt_est_start_timerout(struct k_timer *timer_id);
+
+const ppg_timer_t ppg_timer[7] = 
+{
+	{PPG_TIMER_APPMODE, 		NULL,	ppg_set_appmode_timerout, 	NULL},
+	{PPG_TIMER_AUTO_STOP, 		NULL,	ppg_auto_stop_timerout, 	NULL},
+	{PPG_TIMER_MENU_STOP, 		NULL,	ppg_menu_stop_timerout, 	NULL},
+	{PPG_TIMER_GET_HR, 			NULL,	ppg_get_data_timerout, 		NULL},
+	{PPG_TIMER_DELAY_START, 	NULL,	ppg_delay_start_timerout, 	NULL},
+	{PPG_TIMER_BPT_EST_START, 	NULL,	ppg_bpt_est_start_timerout, NULL},
+	{PPG_TIMER_SKIN_CHECK, 		NULL,	ppg_skin_check_timerout, 	NULL},
+};
 
 extern bool ppg_int_event;
 
@@ -384,10 +405,21 @@ static int32_t platform_read(struct device *handle, uint8_t *rx_buf, uint32_t rx
 	return rslt;
 }
 
+static void ppg_init_timer(void)
+{
+	uint8_t i;
+
+	for(i=0;i<(sizeof(ppg_timer)/sizeof(ppg_timer[0]));i++)
+	{
+		k_timer_init(&ppg_timer[i].timer_id, ppg_timer[i].expiry_fn, ppg_timer[i].stop_fn);
+	}
+}
+
 void ppg_interface_init(void)
 {
 	ppg_init_gpio();
 	ppg_init_i2c();
+	ppg_init_timer();
 	
 	ppg_dev_ctx.write = platform_write;
 	ppg_dev_ctx.read  = platform_read;
@@ -398,4 +430,59 @@ void ppg_interface_init(void)
 #endif
 }
 
+void ppg_save_7_days_data(uint8_t *data, PPG_REC2_DATA_TYPE type)
+{
+	switch(type)
+	{
+	case PPG_REC2_HR:
+		SpiFlash_Write(data, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+		break;
 
+	case PPG_REC2_SPO2:
+		SpiFlash_Write(data, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+		break;
+		
+	case PPG_REC2_BPT:
+		SpiFlash_Write(data, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+		break;
+	}
+}
+
+void ppg_read_7_days_data(uint8_t *data, PPG_REC2_DATA_TYPE type)
+{
+	switch(type)
+	{
+	case PPG_REC2_HR:
+		SpiFlash_Read(data, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+		break;
+
+	case PPG_REC2_SPO2:
+		SpiFlash_Read(data, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+		break;
+		
+	case PPG_REC2_BPT:
+		SpiFlash_Read(data, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+		break;
+	}
+
+}
+
+void ppg_save_last_data(health_record_t *data)
+{
+	save_cur_health_to_record(data);
+}
+
+void ppg_read_last_data(health_record_t *data)
+{
+	get_cur_health_from_record(data);
+}
+
+void ppg_start_timer(PPG_TIMER_NAME name, uint32_t duration_ms, uint32_t period_ms)
+{
+	k_timer_start(&ppg_timer[name].timer_id, K_MSEC(duration_ms), K_MSEC(period_ms));
+}
+
+void ppg_stop_timer(PPG_TIMER_NAME name)
+{
+	k_timer_stop(&ppg_timer[name].timer_id);
+}

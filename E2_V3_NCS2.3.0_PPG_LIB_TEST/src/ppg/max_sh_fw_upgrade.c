@@ -92,7 +92,7 @@ int32_t SH_OTA_upgrade_process(void)
 
 	//set page number
 	uint8_t u8_pageNumber;
-	SpiFlash_Read(&u8_pageNumber, PPG_ALGO_FW_ADDR+BL_PAGE_COUNT_INDEX, sizeof(u8_pageNumber));
+	ppg_read_fota_data(&u8_pageNumber, PPG_ALGO_FW_ADDR+BL_PAGE_COUNT_INDEX, sizeof(u8_pageNumber));
 	s32_status = sh_set_bootloader_numberofpages(u8_pageNumber);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -106,7 +106,7 @@ int32_t SH_OTA_upgrade_process(void)
 
 	//Set vector bytes
 	uint8_t u8p_ivData[BL_AES_NONCE_SIZE] = {0};
-	SpiFlash_Read(u8p_ivData, PPG_ALGO_FW_ADDR+BL_IV_INDEX, BL_AES_NONCE_SIZE);
+	ppg_read_fota_data(u8p_ivData, PPG_ALGO_FW_ADDR+BL_IV_INDEX, BL_AES_NONCE_SIZE);
 	s32_status = sh_set_bootloader_iv(u8p_ivData);
 	if(s32_status != SS_SUCCESS)
 	{
@@ -120,7 +120,7 @@ int32_t SH_OTA_upgrade_process(void)
 
 	//Set auth bytes
 	uint8_t u8p_authData[BL_AES_AUTH_SIZE];
-	SpiFlash_Read(u8p_authData, PPG_ALGO_FW_ADDR+BL_AUTH_INDEX, BL_AES_AUTH_SIZE);
+	ppg_read_fota_data(u8p_authData, PPG_ALGO_FW_ADDR+BL_AUTH_INDEX, BL_AES_AUTH_SIZE);
 	s32_status = sh_set_bootloader_auth(u8p_authData);
 	if(s32_status != SS_SUCCESS)
 	{

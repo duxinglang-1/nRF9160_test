@@ -467,6 +467,11 @@ void ppg_read_7_days_data(uint8_t *data, PPG_REC2_DATA_TYPE type)
 
 }
 
+void ppg_read_fota_data(uint8_t *read_buf, uint32_t address, uint32_t read_len)
+{
+	SpiFlash_Read(read_buf, address, read_len);
+}
+
 void ppg_save_last_data(health_record_t *data)
 {
 	save_cur_health_to_record(data);

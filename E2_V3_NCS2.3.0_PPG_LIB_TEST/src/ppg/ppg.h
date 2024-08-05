@@ -283,9 +283,14 @@ typedef struct
 typedef struct
 {
 	PPG_TIMER_NAME name;
-	struct k_timer timer_id;
 	k_timer_expiry_t expiry_fn;
 	k_timer_stop_t stop_fn;
+}ppg_timer_config_t;
+
+typedef struct
+{
+	struct k_timer timer_id;
+	ppg_timer_config_t timer_config;
 }ppg_timer_t;
 
 extern bool get_bpt_ok_flag;

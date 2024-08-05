@@ -30,16 +30,18 @@ extern void ppg_menu_stop_timerout(struct k_timer *timer_id);
 extern void ppg_delay_start_timerout(struct k_timer *timer_id);
 extern void ppg_bpt_est_start_timerout(struct k_timer *timer_id);
 
-const ppg_timer_t ppg_timer[7] = 
+const ppg_timer_config_t ppg_timer_config[7] = 
 {
-	{PPG_TIMER_APPMODE, 		NULL,	ppg_set_appmode_timerout, 	NULL},
-	{PPG_TIMER_AUTO_STOP, 		NULL,	ppg_auto_stop_timerout, 	NULL},
-	{PPG_TIMER_MENU_STOP, 		NULL,	ppg_menu_stop_timerout, 	NULL},
-	{PPG_TIMER_GET_HR, 			NULL,	ppg_get_data_timerout, 		NULL},
-	{PPG_TIMER_DELAY_START, 	NULL,	ppg_delay_start_timerout, 	NULL},
-	{PPG_TIMER_BPT_EST_START, 	NULL,	ppg_bpt_est_start_timerout, NULL},
-	{PPG_TIMER_SKIN_CHECK, 		NULL,	ppg_skin_check_timerout, 	NULL},
+	{PPG_TIMER_APPMODE, 		ppg_set_appmode_timerout, 	NULL},
+	{PPG_TIMER_AUTO_STOP, 		ppg_auto_stop_timerout, 	NULL},
+	{PPG_TIMER_MENU_STOP, 		ppg_menu_stop_timerout, 	NULL},
+	{PPG_TIMER_GET_HR, 			ppg_get_data_timerout, 		NULL},
+	{PPG_TIMER_DELAY_START, 	ppg_delay_start_timerout, 	NULL},
+	{PPG_TIMER_BPT_EST_START, 	ppg_bpt_est_start_timerout, NULL},
+	{PPG_TIMER_SKIN_CHECK, 		ppg_skin_check_timerout, 	NULL},
 };
+
+ppg_timer_t ppg_timer[7] = {0};
 
 extern bool ppg_int_event;
 
@@ -411,7 +413,8 @@ static void ppg_init_timer(void)
 
 	for(i=0;i<(sizeof(ppg_timer)/sizeof(ppg_timer[0]));i++)
 	{
-		k_timer_init(&ppg_timer[i].timer_id, ppg_timer[i].expiry_fn, ppg_timer[i].stop_fn);
+		memcpy(&ppg_timer[i].timer_config, &ppg_timer_config[i], sizeof(ppg_timer_config_t));
+		k_timer_init(&ppg_timer[i].timer_id, ppg_timer[i].timer_config.expiry_fn, ppg_timer[i].timer_config.stop_fn);
 	}
 }
 

@@ -926,6 +926,14 @@ void IdleShowSportData(void)
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
+bool IsInPPGScreen(void)
+{
+	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
+		return true;
+	else
+		return false;
+}
+
 void IdleUpdateHrData(void)
 {
 	uint16_t bg_color = 0x1820;

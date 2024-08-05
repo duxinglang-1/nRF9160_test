@@ -879,6 +879,9 @@ extern void ShowBootUpLogo(void);
 extern void EnterIdleScreen(void);
 extern void EnterAlarmScreen(void);
 extern void EnterFindDeviceScreen(void);
+#ifdef CONFIG_PPG_SUPPORT
+extern bool IsInPPGScreen(void);
+#endif
 #ifdef CONFIG_WIFI_SUPPORT
 extern void EnterWifiTestScreen(void);
 #endif

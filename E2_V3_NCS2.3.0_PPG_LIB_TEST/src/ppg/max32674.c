@@ -962,14 +962,6 @@ void GetPPGData(uint8_t *hr, uint8_t *spo2, uint8_t *systolic, uint8_t *diastoli
 		*diastolic = g_bpt.diastolic;
 }
 
-bool IsInPPGScreen(void)
-{
-	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
-		return true;
-	else
-		return false;
-}
-
 bool PPGIsWorkingTiming(void)
 {
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)

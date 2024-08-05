@@ -482,6 +482,16 @@ void ppg_read_last_data(health_record_t *data)
 	get_cur_health_from_record(data);
 }
 
+void ppg_save_bpt_cal_data(uint8_t *data)
+{
+	SpiFlash_Write(data, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+}
+
+void ppg_read_bpt_cal_data(uint8_t *data)
+{
+	SpiFlash_Read(data, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+}
+
 void ppg_start_timer(PPG_TIMER_NAME name, uint32_t duration_ms, uint32_t period_ms)
 {
 	k_timer_start(&ppg_timer[name].timer_id, K_MSEC(duration_ms), K_MSEC(period_ms));

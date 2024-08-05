@@ -1396,12 +1396,12 @@ void sh_get_APP_version(void)
 bool sh_clear_bpt_cal_data(void)
 {
 	memset(&sh_bpt_cal, 0x00, CAL_RESULT_SIZE);
-	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+	ppg_save_bpt_cal_data(sh_bpt_cal);
 }
 
 bool sh_check_bpt_cal_data(void)
 {
-	SpiFlash_Read(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+	ppg_read_bpt_cal_data(sh_bpt_cal);
 
 	if((sh_bpt_cal[0] == 0x4f)&&(sh_bpt_cal[1] == 0x3c)&&(sh_bpt_cal[2] == 0x34)&&(sh_bpt_cal[3] == 0x01))
 		return true;
@@ -1414,7 +1414,7 @@ void sh_get_bpt_cal_data(void)
 	int status;
 	
 	status = sh_get_cfg_bpt_cal_result(&sh_bpt_cal);
-	SpiFlash_Write(sh_bpt_cal, PPG_BPT_CAL_DATA_ADDR, PPG_BPT_CAL_DATA_SIZE);
+	ppg_save_bpt_cal_data(sh_bpt_cal);
 }
 
 void sh_req_bpt_cal_data(void)

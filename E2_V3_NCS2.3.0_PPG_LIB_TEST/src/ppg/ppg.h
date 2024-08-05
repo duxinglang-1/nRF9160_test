@@ -318,6 +318,10 @@ extern ppgdev_ctx_t ppg_dev_ctx;
 extern void PPG_init(void);
 //PPG module message processing
 extern void PPGMsgProcess(void);
+//PPG is woring
+extern bool PPGIsWorking(void);
+//PPG is in timed triggering operation
+extern bool PPGIsWorkingTiming(void);
 
 //Save the blood pressure data measured at this scheduled time to the daily record.
 extern void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt);

@@ -634,57 +634,57 @@ void UpdateSystemTime(void)
 				}
 				break;
 				
-			case 120://1/3/5/7/9/11/13/15/17/19/21/23
-				if((date_time.hour%2 == 0)&&(date_time.minute+offset_time == 60))
+			case 120://0/2/4/6/8/10/12/14/16/18/20/22
+				if((date_time.hour%2 == 1)&&(date_time.minute+offset_time == 60))
 				{
 					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
 					TimeIncrease(&g_health_check_time, 60);
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%2 == 1)&&(date_time.minute == 00))
+				if((date_time.hour%2 == 0)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}
 				break;
 				
-			case 180://2/5/8/11/14/17/20/23
-				if((date_time.hour%3 == 1)&&(date_time.minute+offset_time == 60))
+			case 180://0/3/6/9/12/15/18/21
+				if((date_time.hour%3 == 2)&&(date_time.minute+offset_time == 60))
 				{
 					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
 					TimeIncrease(&g_health_check_time, 60);
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%3 == 2)&&(date_time.minute == 00))
+				if((date_time.hour%3 == 0)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}
 				break;
 				
-			case 240://3/7/11/15/19/23
-				if((date_time.hour%4 == 2)&&(date_time.minute+offset_time == 60))
+			case 240://0/4/8/12/16/20
+				if((date_time.hour%4 == 3)&&(date_time.minute+offset_time == 60))
 				{
 					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
 					TimeIncrease(&g_health_check_time, 60);
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%4 == 3)&&(date_time.minute == 00))
+				if((date_time.hour%4 == 0)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}
 				break;
 				
-			case 360://5/11/17/23
-				if((date_time.hour%6 == 4)&&(date_time.minute+offset_time == 60))
+			case 360://0/6/12/18
+				if((date_time.hour%6 == 5)&&(date_time.minute+offset_time == 60))
 				{
 					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
 					TimeIncrease(&g_health_check_time, 60);
 					g_health_check_time.minute = 00;
 					check_flag = true;
 				}
-				if((date_time.hour%6 == 5)&&(date_time.minute == 00))
+				if((date_time.hour%6 == 0)&&(date_time.minute == 00))
 				{
 					send_timing_data_flag = true;
 				}

@@ -1002,7 +1002,7 @@ void MAX20353_InitData(void)
 		g_bat_soc = MAX20353_CalculateSOC();
 		if(g_bat_soc > 97)
 			g_bat_soc = 100;
-		if(g_chg_status = BAT_CHARGING_FINISHED)
+		if(g_chg_status == BAT_CHARGING_FINISHED)
 			g_bat_soc = 100;
 		
 		if(g_chg_status != BAT_CHARGING_PROGRESS)

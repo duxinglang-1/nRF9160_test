@@ -156,7 +156,7 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 		//插入新的数据,旧的数据往后挪，丢掉最后一个
 		memcpy(&databuf[0*sizeof(bpt_rec2_nod)], &tmp_bpt, sizeof(bpt_rec2_nod));
 		memcpy(&databuf[1*sizeof(bpt_rec2_nod)], &rec2buf[0*sizeof(bpt_rec2_nod)], PPG_BPT_REC2_DATA_SIZE-sizeof(bpt_rec2_nod));
-		ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
+		ppg_save_7_days_data(databuf, PPG_REC2_BPT);
 	}
 	else
 	{
@@ -209,14 +209,14 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 			memcpy(&databuf[0*sizeof(bpt_rec2_nod)], &rec2buf[0*sizeof(bpt_rec2_nod)], (i+1)*sizeof(bpt_rec2_nod));
 			memcpy(&databuf[(i+1)*sizeof(bpt_rec2_nod)], &tmp_bpt, sizeof(bpt_rec2_nod));
 			memcpy(&databuf[(i+2)*sizeof(bpt_rec2_nod)], &rec2buf[(i+1)*sizeof(bpt_rec2_nod)], PPG_BPT_REC2_DATA_SIZE-(i+1)*sizeof(bpt_rec2_nod));
-			ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
+			ppg_save_7_days_data(databuf, PPG_REC2_BPT);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
 			memcpy(&databuf[0*sizeof(bpt_rec2_nod)], &rec2buf[1*sizeof(bpt_rec2_nod)], PPG_BPT_REC2_DATA_SIZE-sizeof(bpt_rec2_nod));
 			memcpy(&databuf[PPG_BPT_REC2_DATA_SIZE-sizeof(bpt_rec2_nod)], &tmp_bpt, sizeof(bpt_rec2_nod));
-			ppg_save_7_days_data(rec2buf, PPG_REC2_BPT);
+			ppg_save_7_days_data(databuf, PPG_REC2_BPT);
 		}
 	}
 }
@@ -366,7 +366,7 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 {
 	uint16_t i;
 	spo2_rec2_nod *p_spo2,tmp_spo2 = {0};
-	
+
 	tmp_spo2.year = time_stamp.year;
 	tmp_spo2.month = time_stamp.month;
 	tmp_spo2.day = time_stamp.day;
@@ -404,7 +404,7 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 		//插入新的数据,旧的数据往后挪，丢掉最后一个
 		memcpy(&databuf[0*sizeof(spo2_rec2_nod)], &tmp_spo2, sizeof(spo2_rec2_nod));
 		memcpy(&databuf[1*sizeof(spo2_rec2_nod)], &rec2buf[0*sizeof(spo2_rec2_nod)], PPG_SPO2_REC2_DATA_SIZE-sizeof(spo2_rec2_nod));
-		ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
+		ppg_save_7_days_data(databuf, PPG_REC2_SPO2);
 	}
 	else
 	{
@@ -457,14 +457,14 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 			memcpy(&databuf[0*sizeof(spo2_rec2_nod)], &rec2buf[0*sizeof(spo2_rec2_nod)], (i+1)*sizeof(spo2_rec2_nod));
 			memcpy(&databuf[(i+1)*sizeof(spo2_rec2_nod)], &tmp_spo2, sizeof(spo2_rec2_nod));
 			memcpy(&databuf[(i+2)*sizeof(spo2_rec2_nod)], &rec2buf[(i+1)*sizeof(spo2_rec2_nod)], PPG_SPO2_REC2_DATA_SIZE-(i+1)*sizeof(spo2_rec2_nod));
-			ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
+			ppg_save_7_days_data(databuf, PPG_REC2_SPO2);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
 			memcpy(&databuf[0*sizeof(spo2_rec2_nod)], &rec2buf[1*sizeof(spo2_rec2_nod)], PPG_SPO2_REC2_DATA_SIZE-sizeof(spo2_rec2_nod));
 			memcpy(&databuf[PPG_SPO2_REC2_DATA_SIZE-sizeof(spo2_rec2_nod)], &tmp_spo2, sizeof(spo2_rec2_nod));
-			ppg_save_7_days_data(rec2buf, PPG_REC2_SPO2);
+			ppg_save_7_days_data(databuf, PPG_REC2_SPO2);
 		}
 	}
 }
@@ -527,7 +527,7 @@ void GetGivenDaySpo2RecData(sys_date_timer_t date, uint8_t *databuf)
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	ppg_read_7_days_data(rec2buf, PPG_REC2_SPO2);
-	p_spo2 = (bpt_rec2_nod*)rec2buf;
+	p_spo2 = (spo2_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_SPO2_REC2_DATA_SIZE/sizeof(spo2_rec2_nod);i++)
 	{
 		if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
@@ -615,7 +615,7 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 {
 	uint16_t i;
 	hr_rec2_nod *p_hr,tmp_hr = {0};
-	
+
 	tmp_hr.year = time_stamp.year;
 	tmp_hr.month = time_stamp.month;
 	tmp_hr.day = time_stamp.day;
@@ -653,7 +653,7 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 		//插入新的数据,旧的数据往后挪，丢掉最后一个
 		memcpy(&databuf[0*sizeof(hr_rec2_nod)], &tmp_hr, sizeof(hr_rec2_nod));
 		memcpy(&databuf[1*sizeof(hr_rec2_nod)], &rec2buf[0*sizeof(hr_rec2_nod)], PPG_HR_REC2_DATA_SIZE-sizeof(hr_rec2_nod));
-		ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
+		ppg_save_7_days_data(databuf, PPG_REC2_HR);
 	}
 	else
 	{
@@ -706,14 +706,14 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 			memcpy(&databuf[0*sizeof(hr_rec2_nod)], &rec2buf[0*sizeof(hr_rec2_nod)], (i+1)*sizeof(hr_rec2_nod));
 			memcpy(&databuf[(i+1)*sizeof(hr_rec2_nod)], &tmp_hr, sizeof(hr_rec2_nod));
 			memcpy(&databuf[(i+2)*sizeof(hr_rec2_nod)], &rec2buf[(i+1)*sizeof(hr_rec2_nod)], PPG_HR_REC2_DATA_SIZE-(i+1)*sizeof(hr_rec2_nod));
-			ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
+			ppg_save_7_days_data(databuf, PPG_REC2_HR);
 		}
 		else
 		{
 			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
 			memcpy(&databuf[0*sizeof(hr_rec2_nod)], &rec2buf[1*sizeof(hr_rec2_nod)], PPG_HR_REC2_DATA_SIZE-sizeof(hr_rec2_nod));
 			memcpy(&databuf[PPG_HR_REC2_DATA_SIZE-sizeof(hr_rec2_nod)], &tmp_hr, sizeof(hr_rec2_nod));
-			ppg_save_7_days_data(rec2buf, PPG_REC2_HR);
+			ppg_save_7_days_data(databuf, PPG_REC2_HR);
 		}
 	}
 }

@@ -644,7 +644,7 @@ void mqtt_is_connecting(void)
 	return mqtt_connecting_flag;
 }
 
-static void mqtt_unlink(void)
+void mqtt_unlink(void)
 {
 	if(k_timer_remaining_get(&mqtt_disconnect_timer) > 0)
 		k_timer_stop(&mqtt_disconnect_timer);
@@ -1074,6 +1074,7 @@ void GetStringInforBySepa(uint8_t *sour_buf, uint8_t *key_buf, uint8_t pos_index
 			if(count == pos_index)
 			{
 				memcpy(outbuf, ptr1, (ptr2-ptr1));
+				outbuf[ptr2-ptr1] = 0x00;
 				return;
 			}
 			else

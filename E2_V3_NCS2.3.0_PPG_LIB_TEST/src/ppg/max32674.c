@@ -1096,57 +1096,57 @@ void HealthTimedWorkCheck(sys_date_timer_t time, uint32_t interval)
 		}
 		break;
 		
-	case 120://1/3/5/7/9/11/13/15/17/19/21/23
-		if((time.hour%2 == 0)&&(time.minute+offset_time == 60))
+	case 120://0/2/4/6/8/10/12/14/16/18/20/22
+		if((time.hour%2 == 1)&&(time.minute+offset_time == 60))
 		{
 			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
 			TimeIncrease(&g_health_check_time, 60);
 			g_health_check_time.minute = 00;
 			check_flag = true;
 		}
-		if((time.hour%2 == 1)&&(time.minute == 00))
+		if((time.hour%2 == 0)&&(time.minute == 00))
 		{
 			send_flag = true;
 		}
 		break;
 		
-	case 180://2/5/8/11/14/17/20/23
-		if((time.hour%3 == 1)&&(time.minute+offset_time == 60))
+	case 180://0/3/6/9/12/15/18/21
+		if((time.hour%3 == 2)&&(time.minute+offset_time == 60))
 		{
 			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
 			TimeIncrease(&g_health_check_time, 60);
 			g_health_check_time.minute = 00;
 			check_flag = true;
 		}
-		if((time.hour%3 == 2)&&(time.minute == 00))
+		if((time.hour%3 == 0)&&(time.minute == 00))
 		{
 			send_flag = true;
 		}
 		break;
 		
-	case 240://3/7/11/15/19/23
-		if((time.hour%4 == 2)&&(time.minute+offset_time == 60))
+	case 240://0/4/8/12/16/20
+		if((time.hour%4 == 3)&&(time.minute+offset_time == 60))
 		{
 			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
 			TimeIncrease(&g_health_check_time, 60);
 			g_health_check_time.minute = 00;
 			check_flag = true;
 		}
-		if((time.hour%4 == 3)&&(time.minute == 00))
+		if((time.hour%4 == 0)&&(time.minute == 00))
 		{
 			send_flag = true;
 		}
 		break;
 		
-	case 360://5/11/17/23
-		if((time.hour%6 == 4)&&(time.minute+offset_time == 60))
+	case 360://0/6/12/18
+		if((time.hour%6 == 5)&&(time.minute+offset_time == 60))
 		{
 			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
 			TimeIncrease(&g_health_check_time, 60);
 			g_health_check_time.minute = 00;
 			check_flag = true;
 		}
-		if((time.hour%6 == 5)&&(time.minute == 00))
+		if((time.hour%6 == 0)&&(time.minute == 00))
 		{
 			send_flag = true;
 		}

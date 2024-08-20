@@ -56,7 +56,7 @@ void PPG_Delay_us(unsigned int dly)
 }
 
 #ifdef GPIO_ACT_I2C
-void I2C_INIT(void)
+static void I2C_INIT(void)
 {
 	if(gpio_ppg == NULL)
 		gpio_ppg = DEVICE_DT_GET(PPG_PORT);
@@ -67,38 +67,38 @@ void I2C_INIT(void)
 	gpio_pin_set(gpio_ppg, PPG_SDA_PIN, 1);
 }
 
-void I2C_SDA_OUT(void)
+static void I2C_SDA_OUT(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_SDA_PIN, GPIO_OUTPUT);
 }
 
-void I2C_SDA_IN(void)
+static void I2C_SDA_IN(void)
 {
 	gpio_pin_configure(gpio_ppg, PPG_SDA_PIN, GPIO_INPUT);
 }
 
-void I2C_SDA_H(void)
+static void I2C_SDA_H(void)
 {
 	gpio_pin_set(gpio_ppg, PPG_SDA_PIN, 1);
 }
 
-void I2C_SDA_L(void)
+static void I2C_SDA_L(void)
 {
 	gpio_pin_set(gpio_ppg, PPG_SDA_PIN, 0);
 }
 
-void I2C_SCL_H(void)
+static void I2C_SCL_H(void)
 {
 	gpio_pin_set(gpio_ppg, PPG_SCL_PIN, 1);
 }
 
-void I2C_SCL_L(void)
+static void I2C_SCL_L(void)
 {
 	gpio_pin_set(gpio_ppg, PPG_SCL_PIN, 0);
 }
 
 //产生起始信号
-void I2C_Start(void)
+static void I2C_Start(void)
 {
 	I2C_SDA_OUT();
 
@@ -109,7 +109,7 @@ void I2C_Start(void)
 }
 
 //产生停止信号
-void I2C_Stop(void)
+static void I2C_Stop(void)
 {
 	I2C_SDA_OUT();
 
@@ -120,7 +120,7 @@ void I2C_Stop(void)
 }
 
 //主机产生应答信号ACK
-void I2C_Ack(void)
+static void I2C_Ack(void)
 {
 	I2C_SDA_OUT();
 	
@@ -131,7 +131,7 @@ void I2C_Ack(void)
 }
 
 //主机不产生应答信号NACK
-void I2C_NAck(void)
+static void I2C_NAck(void)
 {
 	I2C_SDA_OUT();
 	
@@ -144,7 +144,7 @@ void I2C_NAck(void)
 //等待从机应答信号
 //返回值：1 接收应答失败
 //		  0 接收应答成功
-uint8_t I2C_Wait_Ack(void)
+static uint8_t I2C_Wait_Ack(void)
 {
 	uint8_t val,tempTime=0;
 
@@ -170,7 +170,7 @@ uint8_t I2C_Wait_Ack(void)
 }
 
 //I2C 发送一个字节
-uint8_t I2C_Write_Byte(uint8_t txd)
+static uint8_t I2C_Write_Byte(uint8_t txd)
 {
 	uint8_t i=0;
 
@@ -193,7 +193,7 @@ uint8_t I2C_Write_Byte(uint8_t txd)
 }
 
 //I2C 读取一个字节
-void I2C_Read_Byte(bool ack, uint8_t *data)
+static void I2C_Read_Byte(bool ack, uint8_t *data)
 {
 	uint8_t i=0,receive=0,val=0;
 
@@ -218,7 +218,7 @@ void I2C_Read_Byte(bool ack, uint8_t *data)
 	*data = receive;
 }
 
-uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint32_t len)
+static uint8_t I2C_write_data(uint8_t addr, uint8_t *databuf, uint32_t len)
 {
 	uint32_t i;
 
@@ -241,7 +241,7 @@ err:
 	return -1;
 }
 
-uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint32_t len)
+static uint8_t I2C_read_data(uint8_t addr, uint8_t *databuf, uint32_t len)
 {
 	uint32_t i;
 

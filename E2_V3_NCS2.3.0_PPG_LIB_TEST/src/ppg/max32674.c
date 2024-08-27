@@ -19,9 +19,6 @@
 #include <nrfx.h>
 #include "uart_ble.h"
 #include "ppg.h"
-#ifdef CONFIG_TEMP_SUPPORT
-#include "temp.h"
-#endif
 #include "settings.h"
 #include "screen.h"
 #include "max_sh_interface.h"
@@ -994,209 +991,28 @@ bool PPGIsWorking(void)
 		return true;
 }
 
-void HealthCompareDataReset(void)
+void PPGCompareDataReset(void)
 {
-#ifdef CONFIG_PPG_SUPPORT
 	last_health.hr_max = 0;
 	last_health.hr_min = 0;
 	last_health.spo2_max = 0;
 	last_health.spo2_min = 0;
 	memset(&last_health.bpt_max, 0x00, sizeof(last_health.bpt_max));
 	memset(&last_health.bpt_min, 0x00, sizeof(last_health.bpt_min));
-#endif
-#ifdef CONFIG_TEMP_SUPPORT
-	last_health.deca_temp_max = 0;
-	last_health.deca_temp_min = 0;
-#endif
 
 	ppg_save_last_data(&last_health);
 }
 
-void HealthTimedWorkCheck(sys_date_timer_t time, uint32_t interval)
+void PPGUpdateRecord(void)
 {
-	//The sensor needs to be turned on in advance. 
-	//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
-	bool check_flag = false;
-	bool send_flag = false;
-	uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY+TEMP_CHECK_TIMELY);
-	
-	switch(interval)
-	{
-	case 15://XX:00/XX:15/XX:30/XX:45
-		switch(time.minute+offset_time)
-		{
-		case 15:
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			g_health_check_time.minute = 15;
-			check_flag = true;
-			break;
-		case 30:
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			g_health_check_time.minute = 30;
-			check_flag = true;
-			break;
-		case 45:
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			g_health_check_time.minute = 45;
-			check_flag = true;
-			break;
-		case 60:
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-			break;
-		}
-		switch(time.minute)
-		{
-		case 00:
-		case 15:
-		case 30:
-		case 45:
-			send_flag = true;
-			break;
-		}
-		break;
-		
-	case 30://XX:00/XX:30
-		switch(time.minute+offset_time)
-		{
-		case 30:
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			g_health_check_time.minute = 30;
-			check_flag = true;
-			break;
-		case 60:
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-			break;
-		}
-		switch(time.minute)
-		{
-		case 00:
-		case 30:
-			send_flag = true;
-			break;
-		}
-		break;
-		
-	case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
-		if(time.minute+offset_time == 60)
-		{
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-		}
-		if(date_time.minute == 00)
-		{
-			send_flag = true;
-		}
-		break;
-		
-	case 120://0/2/4/6/8/10/12/14/16/18/20/22
-		if((time.hour%2 == 1)&&(time.minute+offset_time == 60))
-		{
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-		}
-		if((time.hour%2 == 0)&&(time.minute == 00))
-		{
-			send_flag = true;
-		}
-		break;
-		
-	case 180://0/3/6/9/12/15/18/21
-		if((time.hour%3 == 2)&&(time.minute+offset_time == 60))
-		{
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-		}
-		if((time.hour%3 == 0)&&(time.minute == 00))
-		{
-			send_flag = true;
-		}
-		break;
-		
-	case 240://0/4/8/12/16/20
-		if((time.hour%4 == 3)&&(time.minute+offset_time == 60))
-		{
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-		}
-		if((time.hour%4 == 0)&&(time.minute == 00))
-		{
-			send_flag = true;
-		}
-		break;
-		
-	case 360://0/6/12/18
-		if((time.hour%6 == 5)&&(time.minute+offset_time == 60))
-		{
-			memcpy(&g_health_check_time, &time, sizeof(sys_date_timer_t));
-			TimeIncrease(&g_health_check_time, 60);
-			g_health_check_time.minute = 00;
-			check_flag = true;
-		}
-		if((time.hour%6 == 0)&&(time.minute == 00))
-		{
-			send_flag = true;
-		}
-		break;
-	}
+	if((g_hr_hourly >= PPG_HR_MIN)&&(g_hr_hourly <= PPG_HR_MAX))
+		UpdateLastPPGData(g_health_check_time, PPG_DATA_HR, &g_hr_hourly);
+	if((g_spo2_hourly >= PPG_SPO2_MIN)&&(g_spo2_hourly <= PPG_SPO2_MAX))
+		UpdateLastPPGData(g_health_check_time, PPG_DATA_SPO2, &g_spo2_hourly);
+	if((g_bpt_hourly.systolic >= PPG_BPT_SYS_MIN)&&(g_bpt_hourly.systolic <= PPG_BPT_SYS_MAX)&&(g_bpt_hourly.diastolic >= PPG_BPT_DIA_MIN)&&(g_bpt_hourly.diastolic <= PPG_BPT_DIA_MAX))
+		UpdateLastPPGData(g_health_check_time, PPG_DATA_BPT, &g_bpt_hourly);
 
-	if(check_flag == true)
-	{
-	#ifdef CONFIG_TEMP_SUPPORT
-		StartTemp(TEMP_TRIGGER_BY_HOURLY);
-	#elif defined(CONFIG_PPG_SUPPORT)	
-		StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
-	#endif/*CONFIG_PPG_SUPPORT*/
-	}
-
-	if(send_flag)
-	{
-	#ifdef CONFIG_PPG_SUPPORT
-		if((g_hr_hourly >= PPG_HR_MIN)&&(g_hr_hourly <= PPG_HR_MAX))
-			UpdateLastPPGData(g_health_check_time, PPG_DATA_HR, &g_hr_hourly);
-		if((g_spo2_hourly >= PPG_SPO2_MIN)&&(g_spo2_hourly <= PPG_SPO2_MAX))
-			UpdateLastPPGData(g_health_check_time, PPG_DATA_SPO2, &g_spo2_hourly);
-		if((g_bpt_hourly.systolic >= PPG_BPT_SYS_MIN)&&(g_bpt_hourly.systolic <= PPG_BPT_SYS_MAX)&&(g_bpt_hourly.diastolic >= PPG_BPT_DIA_MIN)&&(g_bpt_hourly.diastolic <= PPG_BPT_DIA_MAX))
-			UpdateLastPPGData(g_health_check_time, PPG_DATA_BPT, &g_bpt_hourly);
-
-		PPGRedrawHourlyData();
-	#endif
-	
-	#ifdef CONFIG_TEMP_SUPPORT
-		if((g_temp_hourly >= (TEMP_MIN/10.0))&&(g_temp_hourly <= (TEMP_MAX/10.0)))
-			UpdateLastTempData(g_health_check_time, g_temp_hourly);
-
-		TempRedrawHourlyData();
-	#endif
-	
-		TimeCheckSendHealthData();
-	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-		TimeCheckSendSportData();
-	#endif
-
-	#ifdef CONFIG_BLE_SUPPORT	
-		if(g_ble_connected)
-		{
-			APP_get_cur_hour_health(date_time);
-		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-			APP_get_cur_hour_sport(date_time);
-		#endif
-		}
-	#endif
-	}
+	PPGRedrawHourlyData();
 }
 
 void ppg_get_data_timerout(struct k_timer *timer_id)

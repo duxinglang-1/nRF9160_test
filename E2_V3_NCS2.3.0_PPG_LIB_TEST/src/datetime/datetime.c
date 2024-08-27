@@ -59,6 +59,7 @@ bool update_date_time = false;
 bool sys_time_count = false;
 bool show_date_time_first = true;
 
+static bool send_timing_data_flag = false;
 #ifdef CONFIG_IMU_SUPPORT
 #ifdef CONFIG_STEP_SUPPORT
 static bool save_step_data_flag = false;
@@ -552,10 +553,153 @@ void UpdateSystemTime(void)
 		  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 		)
 		{
-		#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
-			HealthTimedWorkCheck(date_time, global_settings.health_interval);
-		#endif
-		
+			//The sensor needs to be turned on in advance. 
+			//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
+			bool check_flag = false;
+			uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY+TEMP_CHECK_TIMELY);
+			
+			switch(global_settings.health_interval)
+			{
+			case 15://XX:00/XX:15/XX:30/XX:45
+				switch(date_time.minute+offset_time)
+				{
+				case 15:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 15;
+					check_flag = true;
+					break;
+				case 30:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 30;
+					check_flag = true;
+					break;
+				case 45:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 45;
+					check_flag = true;
+					break;
+				case 60:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+					break;
+				}
+				switch(date_time.minute)
+				{
+				case 00:
+				case 15:
+				case 30:
+				case 45:
+					send_timing_data_flag = true;
+					break;
+				}
+				break;
+				
+			case 30://XX:00/XX:30
+				switch(date_time.minute+offset_time)
+				{
+				case 30:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					g_health_check_time.minute = 30;
+					check_flag = true;
+					break;
+				case 60:
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+					break;
+				}
+				switch(date_time.minute)
+				{
+				case 00:
+				case 30:
+					send_timing_data_flag = true;
+					break;
+				}
+				break;
+				
+			case 60://0/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23
+				if(date_time.minute+offset_time == 60)
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+				}
+				if(date_time.minute == 00)
+				{
+					send_timing_data_flag = true;
+				}
+				break;
+				
+			case 120://0/2/4/6/8/10/12/14/16/18/20/22
+				if((date_time.hour%2 == 1)&&(date_time.minute+offset_time == 60))
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+				}
+				if((date_time.hour%2 == 0)&&(date_time.minute == 00))
+				{
+					send_timing_data_flag = true;
+				}
+				break;
+				
+			case 180://0/3/6/9/12/15/18/21
+				if((date_time.hour%3 == 2)&&(date_time.minute+offset_time == 60))
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+				}
+				if((date_time.hour%3 == 0)&&(date_time.minute == 00))
+				{
+					send_timing_data_flag = true;
+				}
+				break;
+				
+			case 240://0/4/8/12/16/20
+				if((date_time.hour%4 == 3)&&(date_time.minute+offset_time == 60))
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+				}
+				if((date_time.hour%4 == 0)&&(date_time.minute == 00))
+				{
+					send_timing_data_flag = true;
+				}
+				break;
+				
+			case 360://0/6/12/18
+				if((date_time.hour%6 == 5)&&(date_time.minute+offset_time == 60))
+				{
+					memcpy(&g_health_check_time, &date_time, sizeof(sys_date_timer_t));
+					TimeIncrease(&g_health_check_time, 60);
+					g_health_check_time.minute = 00;
+					check_flag = true;
+				}
+				if((date_time.hour%6 == 0)&&(date_time.minute == 00))
+				{
+					send_timing_data_flag = true;
+				}
+				break;
+			}
+
+			if(check_flag == true)
+			{
+			#ifdef CONFIG_TEMP_SUPPORT
+				StartTemp(TEMP_TRIGGER_BY_HOURLY);
+			#elif defined(CONFIG_PPG_SUPPORT)	
+				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+			#endif/*CONFIG_PPG_SUPPORT*/
+			}
+
 		#ifdef CONFIG_ALARM_SUPPORT	
 			AlarmRemindCheck(date_time);
 		#endif
@@ -601,7 +745,15 @@ void UpdateSystemTime(void)
 	#endif
 
 	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
-		HealthCompareDataReset();
+	#ifdef CONFIG_PPG_SUPPORT
+		PPGCompareDataReset();
+	#endif
+	
+	#ifdef CONFIG_TEMP_SUPPORT
+		last_health.deca_temp_max = 0;
+		last_health.deca_temp_min = 0;
+		save_cur_health_to_record(&last_health);
+	#endif
 	#endif
 	}
 }
@@ -784,4 +936,34 @@ void TimeMsgProcess(void)
 	}
 #endif
 #endif
+
+	if(send_timing_data_flag)
+	{
+	#ifdef CONFIG_PPG_SUPPORT
+		PPGUpdateRecord();
+	#endif
+	
+	#ifdef CONFIG_TEMP_SUPPORT
+		if((g_temp_hourly >= (TEMP_MIN/10.0))&&(g_temp_hourly <= (TEMP_MAX/10.0)))
+			UpdateLastTempData(g_health_check_time, g_temp_hourly);
+
+		TempRedrawHourlyData();
+	#endif
+	
+		TimeCheckSendHealthData();
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+		TimeCheckSendSportData();
+	#endif
+
+	#ifdef CONFIG_BLE_SUPPORT	
+		if(g_ble_connected)
+		{
+			APP_get_cur_hour_health(date_time);
+		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+			APP_get_cur_hour_sport(date_time);
+		#endif
+		}
+	#endif
+		send_timing_data_flag = false;
+	}
 }

@@ -360,9 +360,9 @@ extern void StartSCC(void);
 extern bool CheckSCC(void);
 
 //Reset the comparison data record to zero
-extern void HealthCompareDataReset(void);
-//Check if timed measurement can be initiated
-extern void HealthTimedWorkCheck(sys_date_timer_t time, uint32_t interval);
+extern void PPGCompareDataReset(void);
+//Update PPG data records and display.
+extern void PPGUpdateRecord(void);
 //Upload manual measurement data to the server
 extern void SyncSendHealthData(void);
 //Upload scheduled measurement data to the server

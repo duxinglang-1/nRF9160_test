@@ -467,7 +467,6 @@ void ppg_read_7_days_data(uint8_t *data, PPG_REC2_DATA_TYPE type)
 		SpiFlash_Read(data, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 		break;
 	}
-
 }
 
 void ppg_read_fota_data(uint8_t *read_buf, uint32_t address, uint32_t read_len)

@@ -1074,6 +1074,7 @@ void GetStringInforBySepa(uint8_t *sour_buf, uint8_t *key_buf, uint8_t pos_index
 			if(count == pos_index)
 			{
 				memcpy(outbuf, ptr1, (ptr2-ptr1));
+				outbuf[ptr2-ptr1] = 0x00;
 				return;
 			}
 			else
@@ -2685,23 +2686,8 @@ void GetModemInfor(void)
 
 	if(strlen(g_imsi) > 0)
 	{
-	#ifndef CONFIG_FACTORY_TEST_SUPPORT
 		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
-	#endif
 	}
-	
-#if 0	//xb add 2023.07.25 外国无信号卡测试，在发射端(DK板或者另外一块手表上调用
-	{
-        if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%XRFTEST=1,1,20,8470,23,0,3,12,0,0,0,0,0") == 0)
-        {
-			LOGD("modem status:%s", tmpbuf);
-		}
-		else
-		{
-			LOGD("no_buf!");
-		}
-    }
-#endif
 }
 
 void GetModemStatus(void)
@@ -3155,7 +3141,7 @@ void NBMsgProcess(void)
 		LOGD("Start NB-IoT test!");
 	#endif
 	
-		if(nb_is_chinese_sim())	//cmcc
+		if(1)//(nb_is_chinese_sim())	//cmcc
 		{
 			if(nb_is_connecting())
 			{

@@ -556,7 +556,16 @@ void UpdateSystemTime(void)
 			//The sensor needs to be turned on in advance. 
 			//For example, the data at 2:00 should be measured at 1:(48-TEMP_CHECK_TIMELY).
 			bool check_flag = false;
-			uint8_t offset_time = 1+(PPG_CHECK_SPO2_TIMELY+PPG_CHECK_BPT_TIMELY+PPG_CHECK_HR_TIMELY+TEMP_CHECK_TIMELY);
+			uint8_t offset_time = 1;
+
+			if(global_settings.temp_is_on)
+				offset_time += TEMP_CHECK_TIMELY;
+			if(global_settings.hr_is_on)
+				offset_time += PPG_CHECK_HR_TIMELY;
+			if(global_settings.bpt_is_on)
+				offset_time += PPG_CHECK_BPT_TIMELY;
+			if(global_settings.spo2_is_on)
+				offset_time += PPG_CHECK_SPO2_TIMELY;
 			
 			switch(global_settings.health_interval)
 			{
@@ -694,9 +703,23 @@ void UpdateSystemTime(void)
 			if(check_flag == true)
 			{
 			#ifdef CONFIG_TEMP_SUPPORT
-				StartTemp(TEMP_TRIGGER_BY_HOURLY);
+				if(global_settings.temp_is_on)
+					StartTemp(TEMP_TRIGGER_BY_HOURLY);
+			  #if defined(CONFIG_PPG_SUPPORT)	
+				else if(global_settings.hr_is_on)
+					StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+				else if(global_settings.bpt_is_on)
+					StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
+				else if(global_settings.spo2_is_on)
+					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
+			  #endif
 			#elif defined(CONFIG_PPG_SUPPORT)	
-				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+				if(global_settings.hr_is_on)
+					StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+				else if(global_settings.bpt_is_on)
+					StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
+				else if(global_settings.spo2_is_on)
+					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
 			#endif/*CONFIG_PPG_SUPPORT*/
 			}
 

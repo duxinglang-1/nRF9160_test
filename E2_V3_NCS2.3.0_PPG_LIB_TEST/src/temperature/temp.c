@@ -678,10 +678,13 @@ void TempMsgProcess(void)
 				g_hr_hourly = 0;
 				g_spo2_hourly = 0;
 				memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
-				
-				SetCurDayHrRecData(g_health_check_time, 254);
-				SetCurDaySpo2RecData(g_health_check_time, 254);
-				SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+
+				if(global_settings.hr_is_on)
+					SetCurDayHrRecData(g_health_check_time, 254);
+				if(global_settings.spo2_is_on)
+					SetCurDaySpo2RecData(g_health_check_time, 254);
+				if(global_settings.bpt_is_on)
+					SetCurDayBptRecData(g_health_check_time, tmp_bpt);
 			#endif
 				SetCurDayTempRecData(g_health_check_time, 254.0);
 			}
@@ -691,7 +694,12 @@ void TempMsgProcess(void)
 				
 				SetCurDayTempRecData(g_health_check_time, g_temp_body);
 			#ifdef CONFIG_PPG_SUPPORT
-				StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+				if(global_settings.hr_is_on)
+					StartPPG(PPG_DATA_HR, TRIGGER_BY_HOURLY);
+				else if(global_settings.bpt_is_on)
+					StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
+				else if(global_settings.spo2_is_on)
+					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
 			#endif
 			}
 		}

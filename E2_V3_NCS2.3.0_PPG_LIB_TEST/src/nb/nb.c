@@ -1823,17 +1823,32 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
-			//后台下发抬腕亮屏设置
-			global_settings.wake_screen_by_wrist = atoi(strdata);
-			
-			flag = true;
-		}
-		else if(strcmp(strcmd, "S10") == 0)
-		{
-			//后台下发脱腕检测设置
-			global_settings.wrist_off_check = atoi(strdata);
+			uint8_t tmpbuf[8] = {0};
 
-			flag = true;			
+			strcat(strdata, ",");
+			
+			//后台下发抬腕亮屏设置
+			GetStringInforBySepa(strdata, ",", 1, tmpbuf);
+			global_settings.wake_screen_by_wrist = atoi(tmpbuf);
+			//后台下发脱腕检测设置
+			GetStringInforBySepa(strdata, ",", 2, tmpbuf);
+			global_settings.wrist_off_check = atoi(tmpbuf);
+			//后台下发摔倒检测设置
+			GetStringInforBySepa(strdata, ",", 3, tmpbuf);
+			global_settings.fall_check = atoi(tmpbuf);
+			//后台下发心率检测设置
+			GetStringInforBySepa(strdata, ",", 4, tmpbuf);
+			global_settings.hr_is_on = atoi(tmpbuf);
+			//后台下发体温检测设置
+			GetStringInforBySepa(strdata, ",", 5, tmpbuf);
+			global_settings.temp_is_on = atoi(tmpbuf);
+			//后台下发血氧检测设置
+			GetStringInforBySepa(strdata, ",", 6, tmpbuf);
+			global_settings.spo2_is_on = atoi(tmpbuf);
+			//后台下发血压检测设置
+			GetStringInforBySepa(strdata, ",", 7, tmpbuf);
+			global_settings.bpt_is_on = atoi(tmpbuf);
+			flag = true;
 		}
 		else if(strcmp(strcmd, "S11") == 0)
 		{

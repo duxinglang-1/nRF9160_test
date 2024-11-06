@@ -1523,7 +1523,7 @@ void PPGGetSensorHubData(void)
 			else
 				index = 1;
 
-			if((((g_ppg_trigger&TRIGGER_BY_SCC) != 0) || (g_ppg_trigger == TRIGGER_BY_MENU))
+			if((((g_ppg_trigger&TRIGGER_BY_SCC) != 0) || (g_ppg_trigger == TRIGGER_BY_MENU) || (global_settings.temp_is_on == false))
 			#ifdef CONFIG_FACTORY_TEST_SUPPORT
 				&& !IsFTPPGTesting()
 				&& !IsFTPPGAging()
@@ -2118,36 +2118,86 @@ void PPGStopCheck(void)
 	}
 	if((g_ppg_trigger&TRIGGER_BY_HOURLY) != 0)
 	{
-		uint8_t tmp_hr,tmp_spo2;
-		bpt_data tmp_bpt;
-
 		g_ppg_trigger = g_ppg_trigger&(~TRIGGER_BY_HOURLY);
 		switch(g_ppg_data)
 		{
 		case PPG_DATA_HR:
-			tmp_hr = g_hr;
-			g_hr_hourly = g_hr;
 			if(!ppg_skin_contacted_flag)
-				tmp_hr = 0xFE;
-			SetCurDayHrRecData(g_health_check_time, tmp_hr);
-			StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
+			{
+				bpt_data tmp_bpt = {254,254};
+
+				g_hr_hourly = 0;
+				g_spo2_hourly = 0;
+				memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
+
+				if(global_settings.hr_is_on)
+					SetCurDayHrRecData(g_health_check_time, 254);
+				if(global_settings.spo2_is_on)
+					SetCurDaySpo2RecData(g_health_check_time, 254);
+				if(global_settings.bpt_is_on)
+					SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+			}
+			else
+			{
+				g_hr_hourly = g_hr;
+				SetCurDayHrRecData(g_health_check_time, g_hr);
+				
+				if(global_settings.bpt_is_on)
+					StartPPG(PPG_DATA_BPT, TRIGGER_BY_HOURLY);
+				else if(global_settings.spo2_is_on)
+					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
+			}
 			break;
 			
 		case PPG_DATA_SPO2:
-			tmp_spo2 = g_spo2;
-			g_spo2_hourly = g_spo2;
 			if(!ppg_skin_contacted_flag)
-				tmp_spo2 = 0xFE;
-			SetCurDaySpo2RecData(g_health_check_time, tmp_spo2);
+			{
+				bpt_data tmp_bpt = {254,254};
+
+				g_hr_hourly = 0;
+				g_spo2_hourly = 0;
+				memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
+
+				if(global_settings.hr_is_on)
+					SetCurDayHrRecData(g_health_check_time, 254);
+				if(global_settings.spo2_is_on)
+					SetCurDaySpo2RecData(g_health_check_time, 254);
+				if(global_settings.bpt_is_on)
+					SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+			}
+			else
+			{
+				g_spo2_hourly = g_spo2;
+				SetCurDaySpo2RecData(g_health_check_time, g_spo2);
+			}
 			break;
 			
 		case PPG_DATA_BPT:
-			memcpy(&tmp_bpt, &g_bpt, sizeof(bpt_data));
-			memcpy(&g_bpt_hourly, &g_bpt, sizeof(bpt_data));
 			if(!ppg_skin_contacted_flag)
-				memset(&tmp_bpt, 0xFE, sizeof(bpt_data));
-			SetCurDayBptRecData(g_health_check_time, tmp_bpt);
-			StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
+			{
+				bpt_data tmp_bpt = {254,254};
+
+				g_hr_hourly = 0;
+				g_spo2_hourly = 0;
+				memset(&g_bpt_hourly, 0x00, sizeof(bpt_data));
+
+				if(global_settings.hr_is_on)
+					SetCurDayHrRecData(g_health_check_time, 254);
+				if(global_settings.spo2_is_on)
+					SetCurDaySpo2RecData(g_health_check_time, 254);
+				if(global_settings.bpt_is_on)
+					SetCurDayBptRecData(g_health_check_time, tmp_bpt);
+			}
+			else
+			{
+				memcpy(&g_bpt_hourly, &g_bpt, sizeof(bpt_data));
+				SetCurDayBptRecData(g_health_check_time, g_bpt);
+				
+				if(global_settings.spo2_is_on)
+					StartPPG(PPG_DATA_SPO2, TRIGGER_BY_HOURLY);
+			}
+			
+
 			break;
 		}
 	}

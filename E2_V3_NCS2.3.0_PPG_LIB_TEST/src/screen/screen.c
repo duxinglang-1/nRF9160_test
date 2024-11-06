@@ -926,6 +926,9 @@ void IdleShowSportData(void)
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
+static uint16_t hr_bg_x,hr_bg_y,hr_icon_x,hr_icon_y,hr_str_x,hr_str_y;
+static uint16_t spo2_bg_x,spo2_bg_y,spo2_icon_x,spo2_icon_y,spo2_str_x,spo2_str_y;
+
 bool IsInPPGScreen(void)
 {
 	if(screen_id == SCREEN_ID_HR || screen_id == SCREEN_ID_SPO2 || screen_id == SCREEN_ID_BP)
@@ -936,7 +939,9 @@ bool IsInPPGScreen(void)
 
 void IdleUpdateHrData(void)
 {
+	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x1820;
+	uint16_t bg_x,bg_y,icon_x,icon_y,str_x,str_y;
 	uint8_t i,hr_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
@@ -944,7 +949,7 @@ void IdleUpdateHrData(void)
 
 	hr_show = last_health.hr_rec.hr;
 	
-	LCD_Fill(IDLE_HR_STR_X, IDLE_HR_STR_Y, IDLE_HR_STR_W, IDLE_HR_STR_H, bg_color);
+	LCD_Fill(hr_str_x, hr_str_y, IDLE_HR_STR_W, IDLE_HR_STR_H, bg_color);
 
 	while(1)
 	{
@@ -960,9 +965,12 @@ void IdleUpdateHrData(void)
 		}
 	}
 
+	x = hr_str_x+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2;
+	y = hr_str_y;
+
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_HR_STR_X+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2+i*IDLE_HR_NUM_W, IDLE_HR_STR_Y, img_num[hr_show/divisor]);
+		LCD_ShowImg_From_Flash(x+i*IDLE_HR_NUM_W, hr_str_y, img_num[hr_show/divisor]);
 		hr_show = hr_show%divisor;
 		divisor = divisor/10;
 	}
@@ -970,16 +978,58 @@ void IdleUpdateHrData(void)
 
 void IdleShowHrData(void)
 {
+	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x1820;
-	uint8_t i,hr_show,count=1;
+	uint8_t i=1,hr_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	hr_show = last_health.hr_rec.hr;
+	if(global_settings.spo2_is_on)
+		i++;
+#ifdef CONFIG_TEMP_SUPPORT	
+	if(global_settings.temp_is_on)
+		i++;
+#endif
 
-	LCD_ShowImg_From_Flash(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_IDLE_HR_BG_ADDR);
-	LCD_dis_pic_trans_from_flash(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, IMG_IDLE_HR_ICON_ADDR, bg_color);
+	switch(i)
+	{
+	case 1://hr
+	case 3://temp+hr+spo2	
+		hr_bg_x = IDLE_HR_BG_X;
+		hr_bg_y = IDLE_HR_BG_Y;
+		hr_icon_x = IDLE_HR_ICON_X;
+		hr_icon_y = IDLE_HR_ICON_Y;
+		hr_str_x = IDLE_HR_STR_X;
+		hr_str_y = IDLE_HR_STR_Y;
+		break;
+		
+	case 2://hr+spo2 or temp+hr
+		if(global_settings.spo2_is_on)
+		{
+			hr_bg_x = IDLE_TEMP_BG_X;
+			hr_bg_y = IDLE_TEMP_BG_Y;
+			hr_icon_x = hr_bg_x+(IDLE_HR_BG_W-IDLE_HR_ICON_W)/2;
+			hr_icon_y = IDLE_TEMP_ICON_Y;
+			hr_str_x = hr_bg_x+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2;
+			hr_str_y = IDLE_TEMP_STR_Y;
+		}
+		else
+		{
+			hr_bg_x = IDLE_SPO2_BG_X;
+			hr_bg_y = IDLE_SPO2_BG_Y;
+			hr_icon_x = hr_bg_x+(IDLE_HR_BG_W-IDLE_HR_ICON_W)/2;
+			hr_icon_y = IDLE_SPO2_ICON_Y;
+			hr_str_x = hr_bg_x+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2;;
+			hr_str_y = IDLE_SPO2_STR_Y;
+		}
+		break;
+	}
+
+	hr_show = last_health.hr_rec.hr;
+	
+	LCD_ShowImg_From_Flash(hr_bg_x, hr_bg_y, IMG_IDLE_HR_BG_ADDR);
+	LCD_dis_pic_trans_from_flash(hr_icon_x, hr_icon_y, IMG_IDLE_HR_ICON_ADDR, bg_color);
 
 	while(1)
 	{
@@ -995,9 +1045,12 @@ void IdleShowHrData(void)
 		}
 	}
 
+	x = hr_str_x+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2;
+	y = hr_str_y;
+
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_HR_STR_X+(IDLE_HR_STR_W-count*IDLE_HR_NUM_W)/2+i*IDLE_HR_NUM_W, IDLE_HR_STR_Y, img_num[hr_show/divisor]);
+		LCD_ShowImg_From_Flash(x+i*IDLE_HR_NUM_W, y, img_num[hr_show/divisor]);
 		hr_show = hr_show%divisor;
 		divisor = divisor/10;
 	}
@@ -1005,6 +1058,7 @@ void IdleShowHrData(void)
 
 void IdleUpdateSPO2Data(void)
 {
+	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x1820;
 	uint8_t i,spo2_show,count=1;
 	uint32_t divisor=10;
@@ -1013,7 +1067,7 @@ void IdleUpdateSPO2Data(void)
 
 	spo2_show = last_health.spo2_rec.spo2;
 	
-	LCD_Fill(IDLE_SPO2_STR_X, IDLE_SPO2_STR_Y, IDLE_SPO2_STR_W, IDLE_SPO2_STR_H, bg_color);
+	LCD_Fill(spo2_str_x, spo2_str_y, IDLE_SPO2_STR_W, IDLE_SPO2_STR_H, bg_color);
 
 	while(1)
 	{
@@ -1029,27 +1083,60 @@ void IdleUpdateSPO2Data(void)
 		}
 	}
 
+	x = spo2_str_x+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2;
+	y = spo2_str_y;
+
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, img_num[spo2_show/divisor]);
+		LCD_ShowImg_From_Flash(x+i*IDLE_SPO2_NUM_W, y, img_num[spo2_show/divisor]);
 		spo2_show = spo2_show%divisor;
 		divisor = divisor/10;
 	}
-	LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, IMG_FONT_20_PERC_ADDR);
+	LCD_ShowImg_From_Flash(x+count*IDLE_SPO2_NUM_W, y, IMG_FONT_20_PERC_ADDR);
 }
 
 void IdleShowSPO2Data(void)
 {
+	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x1820;
-	uint8_t i,spo2_show,count=1;
+	uint8_t i=1,spo2_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
+	if(global_settings.hr_is_on)
+		i++;
+#ifdef CONFIG_TEMP_SUPPORT	
+	if(global_settings.temp_is_on)
+		i++;
+#endif
+	
+	switch(i)
+	{
+	case 1://spo2
+		spo2_bg_x = IDLE_HR_BG_X;
+		spo2_bg_y = IDLE_HR_BG_Y;
+		spo2_icon_x = spo2_bg_x+(IDLE_SPO2_BG_W-IDLE_SPO2_ICON_W)/2;
+		spo2_icon_y = IDLE_HR_ICON_Y;
+		spo2_str_x = spo2_bg_x+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2;
+		spo2_str_y = IDLE_HR_STR_Y;
+		break;
+		
+	case 2://hr+spo2 or temp+spo2
+	case 3://temp+hr+spo2	
+		spo2_bg_x = IDLE_SPO2_BG_X;
+		spo2_bg_y = IDLE_SPO2_BG_Y;
+		spo2_icon_x = IDLE_SPO2_ICON_X;
+		spo2_icon_y = IDLE_SPO2_ICON_Y;
+		spo2_str_x = IDLE_SPO2_STR_X;
+		spo2_str_y = IDLE_SPO2_STR_Y;
+		break;
+	}
+
 	spo2_show = last_health.spo2_rec.spo2;
 
-	LCD_ShowImg_From_Flash(IDLE_SPO2_BG_X, IDLE_SPO2_BG_Y, IMG_IDLE_SPO2_BG_ADDR);
-	LCD_dis_pic_trans_from_flash(IDLE_SPO2_ICON_X, IDLE_SPO2_ICON_Y, IMG_IDLE_SPO2_ICON_ADDR, bg_color);
+	LCD_ShowImg_From_Flash(spo2_bg_x, spo2_bg_y, IMG_IDLE_SPO2_BG_ADDR);
+	LCD_dis_pic_trans_from_flash(spo2_icon_x, spo2_icon_y, IMG_IDLE_SPO2_ICON_ADDR, bg_color);
 
 	while(1)
 	{
@@ -1065,18 +1152,23 @@ void IdleShowSPO2Data(void)
 		}
 	}
 
+	x = spo2_str_x+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2;
+	y = spo2_str_y;
+
 	for(i=0;i<count;i++)
 	{
-		LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, img_num[spo2_show/divisor]);
+		LCD_ShowImg_From_Flash(x+i*IDLE_SPO2_NUM_W, y, img_num[spo2_show/divisor]);
 		spo2_show = spo2_show%divisor;
 		divisor = divisor/10;
 	}
-	LCD_ShowImg_From_Flash(IDLE_SPO2_STR_X+(IDLE_SPO2_STR_W-(IDLE_SPO2_PERC_W+count*IDLE_SPO2_NUM_W))/2+i*IDLE_SPO2_NUM_W, IDLE_SPO2_STR_Y, IMG_FONT_20_PERC_ADDR);
+	LCD_ShowImg_From_Flash(x+count*IDLE_SPO2_NUM_W, y, IMG_FONT_20_PERC_ADDR);
 }
 
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT
+static uint16_t temp_bg_x,temp_bg_y,temp_icon_x,temp_icon_y,temp_str_x,temp_str_y;
+
 void IdleUpdateTempData(void)
 {
 	uint16_t x,y,w,h;
@@ -1089,12 +1181,12 @@ void IdleUpdateTempData(void)
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
-		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
+		LCD_dis_pic_trans_from_flash(temp_icon_x, temp_icon_y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
 		temp_show = last_health.temp_rec.deca_temp;
 	}
 	else
 	{
-		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
+		LCD_dis_pic_trans_from_flash(temp_icon_x, temp_icon_y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
 		temp_show = round((32+1.8*(last_health.temp_rec.deca_temp/10.0))*10.0);
 	}
 
@@ -1112,12 +1204,12 @@ void IdleUpdateTempData(void)
 		}
 	}
 
-	x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-count*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
-	y = IDLE_TEMP_STR_Y;
+	x = temp_str_x+(IDLE_TEMP_STR_W-count*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
+	y = temp_str_y;
 
 	if(count == 1)
 	{
-		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
+		x = temp_str_x+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
 		LCD_ShowImg_From_Flash(x, y, img_num[temp_show/10]);
 		x += IDLE_TEMP_NUM_W;
 		LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
@@ -1148,21 +1240,50 @@ void IdleShowTempData(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t bg_color = 0x00c3;
-	uint8_t i,count=1;
+	uint8_t i=1,count=1;
 	uint16_t temp_show;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_FONT_20_NUM_0_ADDR,IMG_FONT_20_NUM_1_ADDR,IMG_FONT_20_NUM_2_ADDR,IMG_FONT_20_NUM_3_ADDR,IMG_FONT_20_NUM_4_ADDR,
 							IMG_FONT_20_NUM_5_ADDR,IMG_FONT_20_NUM_6_ADDR,IMG_FONT_20_NUM_7_ADDR,IMG_FONT_20_NUM_8_ADDR,IMG_FONT_20_NUM_9_ADDR};
 
-	LCD_ShowImg_From_Flash(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_IDLE_TEMP_BG_ADDR);
+#ifdef CONFIG_PPG_SUPPORT
+	if(global_settings.hr_is_on)
+		i++;
+	if(global_settings.spo2_is_on)
+		i++;
+#endif
+
+	switch(i)
+	{
+	case 1://temp
+		temp_bg_x = IDLE_HR_BG_X;
+		temp_bg_y = IDLE_HR_BG_Y;
+		temp_icon_x = temp_bg_x+(IDLE_TEMP_BG_W-IDLE_TEMP_ICON_W)/2;
+		temp_icon_y = IDLE_HR_ICON_Y;
+		temp_str_x = temp_bg_x+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2;
+		temp_str_y = IDLE_HR_STR_Y;
+		break;
+		
+	case 2://temp+hr or temp+spo2
+	case 3://temp+hr+spo2	
+		temp_bg_x = IDLE_TEMP_BG_X;
+		temp_bg_y = IDLE_TEMP_BG_Y;
+		temp_icon_x = IDLE_TEMP_ICON_X;
+		temp_icon_y = IDLE_TEMP_ICON_Y;
+		temp_str_x = IDLE_TEMP_STR_X;
+		temp_str_y = IDLE_TEMP_STR_Y;
+		break;
+	}
+
+	LCD_ShowImg_From_Flash(temp_bg_x, temp_bg_y, IMG_IDLE_TEMP_BG_ADDR);
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
-		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
+		LCD_dis_pic_trans_from_flash(temp_icon_x, temp_icon_y, IMG_IDLE_TEMP_C_ICON_ADDR, bg_color);
 		temp_show = last_health.temp_rec.deca_temp;
 	}
 	else
 	{
-		LCD_dis_pic_trans_from_flash(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
+		LCD_dis_pic_trans_from_flash(temp_icon_x, temp_icon_y, IMG_IDLE_TEMP_F_ICON_ADDR, bg_color);
 		temp_show = round((32+1.8*(last_health.temp_rec.deca_temp/10.0))*10.0);
 	}
 
@@ -1180,12 +1301,12 @@ void IdleShowTempData(void)
 		}
 	}
 
-	x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-count*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
-	y = IDLE_TEMP_STR_Y;
+	x = temp_str_x+(IDLE_TEMP_STR_W-count*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
+	y = temp_str_y;
 
 	if(count == 1)
 	{
-		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
+		x = temp_str_x+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
 		LCD_ShowImg_From_Flash(x, y, img_num[temp_show/10]);
 		x += IDLE_TEMP_NUM_W;
 		LCD_ShowImg_From_Flash(x, y, IMG_FONT_20_DOT_ADDR);
@@ -1230,14 +1351,17 @@ void IdleScreenProcess(void)
 		IdleShowBleStatus();
 	#endif	
 	#ifdef CONFIG_PPG_SUPPORT
-		IdleShowHrData();
-		IdleShowSPO2Data();
+		if(global_settings.hr_is_on)
+			IdleShowHrData();
+		if(global_settings.spo2_is_on)
+			IdleShowSPO2Data();
 	#endif
 	#if 0//defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		IdleShowSportData();
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
-		IdleShowTempData();
+		if(global_settings.temp_is_on)
+			IdleShowTempData();
 	#endif
 		break;
 		
@@ -1290,19 +1414,22 @@ void IdleScreenProcess(void)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_HR)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_HR);
-			IdleUpdateHrData();
+			if(global_settings.hr_is_on)
+				IdleUpdateHrData();
 		}
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPO2)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SPO2);
-			IdleUpdateSPO2Data();
+			if(global_settings.spo2_is_on)
+				IdleUpdateSPO2Data();
 		}
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_TEMP)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_TEMP);
-			IdleUpdateTempData();
+			if(global_settings.temp_is_on)
+				IdleUpdateTempData();
 		}
 	#endif
 		if(scr_msg[SCREEN_ID_IDLE].para == SCREEN_EVENT_UPDATE_NO)
@@ -2477,9 +2604,39 @@ void EnterSettingsScreen(void)
   #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
   #elif defined(CONFIG_PPG_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+  	if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else if(global_settings.spo2_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+   #if defined(CONFIG_TEMP_SUPPORT)
+	else if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+   #endif
+   	else if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+   	 #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+     #elif defined(CONFIG_STEP_SUPPORT)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+     #endif
+  	#else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+  	#endif
   #elif defined(CONFIG_TEMP_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  	if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+   	 #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+     #elif defined(CONFIG_STEP_SUPPORT)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+     #endif
+  	#else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+  	#endif	
   #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
@@ -2538,9 +2695,38 @@ void EnterSyncDataScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
 	
   #ifdef CONFIG_PPG_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+  	if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else if(global_settings.spo2_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+   #if defined(CONFIG_TEMP_SUPPORT)
+   	else if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+   #endif
+   	else if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+      #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+      #elif defined(CONFIG_STEP_SUPPORT)
+  		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+      #endif
+  	#else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+  	#endif	
   #elif defined(CONFIG_TEMP_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  	if(global_settings.temp_is_on)
+  		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+     #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+     #elif defined(CONFIG_STEP_SUPPORT)
+  		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+     #endif
+   #else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+   #endif	
   #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
@@ -3209,7 +3395,16 @@ void EnterTempScreen(void)
 #endif
 
 #ifdef CONFIG_PPG_SUPPORT
-	SetLeftKeyUpHandler(EnterSPO2Screen);
+	if(global_settings.spo2_is_on)
+		SetLeftKeyUpHandler(EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		SetLeftKeyUpHandler(EnterBPScreen);
+	else
+	#if defined(CONFIG_SYNC_SUPPORT)
+		SetLeftKeyUpHandler(EnterSyncDataScreen);
+	#else
+		SetLeftKeyUpHandler(EnterSettings);
+	#endif	
 #elif defined(CONFIG_SYNC_SUPPORT)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
 #else
@@ -3221,7 +3416,16 @@ void EnterTempScreen(void)
 	clear_all_touch_event_handle();
 
  #ifdef CONFIG_PPG_SUPPORT
- 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+ 	if(global_settings.spo2_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else
+	#if defined(CONFIG_SYNC_SUPPORT)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+	#else
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	#endif	
  #elif defined(CONFIG_SYNC_SUPPORT)
  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
  #else
@@ -3229,7 +3433,18 @@ void EnterTempScreen(void)
  #endif
  
  #ifdef CONFIG_PPG_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+ 	if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+   	  #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+      #elif defined(CONFIG_STEP_SUPPORT)
+  		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+      #endif
+ 	#else
+ 		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+ 	#endif
  #elif defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_SLEEP_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
@@ -4075,7 +4290,24 @@ void EnterBPScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings); 
  #endif
  
- 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+ 	if(global_settings.spo2_is_on)
+ 		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+  #if defined(CONFIG_TEMP_SUPPORT)
+	else if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  #endif
+  	else if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+ 	  #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+	  #elif defined(CONFIG_STEP_SUPPORT)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+	  #endif
+	#else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+	#endif	
 #endif
 }
 
@@ -4482,18 +4714,56 @@ void EnterSPO2Screen(void)
 	ppg_retry_left = 2;
 #endif
 
-	SetLeftKeyUpHandler(EnterBPScreen);
+	if(global_settings.bpt_is_on)
+		SetLeftKeyUpHandler(EnterBPScreen);
+	else
+	#ifdef CONFIG_SYNC_SUPPORT
+		SetLeftKeyUpHandler(EnterSyncDataScreen);
+	#else
+		SetLeftKeyUpHandler(EnterSettings);
+	#endif
 	SetRightKeyUpHandler(ExitSPO2Screen);
 	
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else
+	#ifdef CONFIG_SYNC_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+	#else
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	#endif
 
   #ifdef CONFIG_TEMP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  	if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+	else if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+   	  #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+      #elif defined(CONFIG_STEP_SUPPORT)
+  		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+      #endif
+ 	#else
+ 		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+ 	#endif	
   #else
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+  	if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+	else
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+  	  #ifdef CONFIG_SLEEP_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
+	  #elif defined(CONFIG_STEP_SUPPORT)
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterStepsScreen);
+  	  #endif
+	#else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
+	#endif		
   #endif
 #endif	
 }
@@ -4903,9 +5173,29 @@ void EnterHRScreen(void)
 #endif
 
 #ifdef CONFIG_TEMP_SUPPORT
-	SetLeftKeyUpHandler(EnterTempScreen);
+	if(global_settings.temp_is_on)
+		SetLeftKeyUpHandler(EnterTempScreen);
+	else if(global_settings.spo2_is_on)
+		SetLeftKeyUpHandler(EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		SetLeftKeyUpHandler(EnterBPScreen);
+	else
+	#ifdef CONFIG_SYNC_SUPPORT
+		SetLeftKeyUpHandler(EnterSyncDataScreen);
+	#else
+		SetLeftKeyUpHandler(EnterSettings);
+	#endif	
 #else
-	SetLeftKeyUpHandler(EnterSPO2Screen);
+	if(global_settings.spo2_is_on)
+		SetLeftKeyUpHandler(EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		SetLeftKeyUpHandler(EnterBPScreen);
+	else
+	#ifdef CONFIG_SYNC_SUPPORT
+		SetLeftKeyUpHandler(EnterSyncDataScreen);
+	#else
+		SetLeftKeyUpHandler(EnterSettings);
+	#endif
 #endif
 	SetRightKeyUpHandler(ExitHRScreen);
 
@@ -4913,9 +5203,29 @@ void EnterHRScreen(void)
 	clear_all_touch_event_handle();
 
   #ifdef CONFIG_TEMP_SUPPORT
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  	if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+	else if(global_settings.spo2_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else
+	#ifdef CONFIG_SYNC_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+	#else
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	#endif	
   #else
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+  	if(global_settings.spo2_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else
+	#ifdef CONFIG_SYNC_SUPPORT
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+	#else
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+	#endif
   #endif
 
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -6588,9 +6898,31 @@ void EnterIdleScreen(void)
 	SetLeftKeyUpHandler(EnterSleepScreen);
    #endif
   #elif defined(CONFIG_PPG_SUPPORT)
-	SetLeftKeyUpHandler(EnterHRScreen);
+  	if(global_settings.hr_is_on)
+		SetLeftKeyUpHandler(EnterHRScreen);
+   #if defined(CONFIG_TEMP_SUPPORT)   	
+	else if(global_settings.temp_is_on)
+		SetLeftKeyUpHandler(EnterTempScreen);
+   #endif	
+	else if(global_settings.spo2_is_on)
+		SetLeftKeyUpHandler(EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		SetLeftKeyUpHandler(EnterBPScreen);
+	else
+	#if defined(CONFIG_SYNC_SUPPORT)
+		SetLeftKeyUpHandler(EnterSyncDataScreen);
+	#else
+		SetLeftKeyUpHandler(EnterSettings);
+	#endif
   #elif defined(CONFIG_TEMP_SUPPORT)
-	SetLeftKeyUpHandler(EnterTempScreen);
+  	if(global_settings.temp_is_on)
+		SetLeftKeyUpHandler(EnterTempScreen);
+	else
+	#if defined(CONFIG_SYNC_SUPPORT)
+		SetLeftKeyUpHandler(EnterSyncDataScreen);
+  	#else
+		SetLeftKeyUpHandler(EnterSettings);
+  	#endif
   #elif defined(CONFIG_SYNC_SUPPORT)
 	SetLeftKeyUpHandler(EnterSyncDataScreen);
   #else
@@ -6617,9 +6949,31 @@ void EnterIdleScreen(void)
    	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSleepScreen);
    #endif
   #elif defined(CONFIG_PPG_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+  	if(global_settings.hr_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterHRScreen);
+   #if defined(CONFIG_TEMP_SUPPORT)
+	else if(global_settings.temp_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+   #endif
+   	else if(global_settings.spo2_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSPO2Screen);
+	else if(global_settings.bpt_is_on)
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterBPScreen);
+	else
+	#if defined(CONFIG_SYNC_SUPPORT)
+	   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+  	#else
+  		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+  	#endif
   #elif defined(CONFIG_TEMP_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+  	if(global_settings.temp_is_on)
+  		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterTempScreen);
+	else
+	#if defined(CONFIG_SYNC_SUPPORT)
+	   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
+  	#else
+  		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+  	#endif	
   #elif defined(CONFIG_SYNC_SUPPORT)
   	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
   #else

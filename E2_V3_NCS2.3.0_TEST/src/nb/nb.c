@@ -2717,19 +2717,6 @@ void GetModemInfor(void)
 		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
 	#endif
 	}
-	
-#if 0	//xb add 2023.07.25 外国无信号卡测试，在发射端(DK板或者另外一块手表上调用
-	{
-        if(nrf_modem_at_cmd(tmpbuf, sizeof(tmpbuf), "AT%%XRFTEST=1,1,20,8470,23,0,3,12,0,0,0,0,0") == 0)
-        {
-			LOGD("modem status:%s", tmpbuf);
-		}
-		else
-		{
-			LOGD("no_buf!");
-		}
-    }
-#endif
 }
 
 void GetModemStatus(void)

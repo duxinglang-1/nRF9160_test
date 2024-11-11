@@ -2934,7 +2934,6 @@ void TempShowStatus(void)
 	uint8_t tmpbuf[128] = {0};
 	temp_rec2_nod *p_temp;
 	float temp_max = 0.0, temp_min = 0.0;
-	uint16_t temp[24] = {0};
 	uint16_t color = 0x05DF;
 	uint16_t title_str[LANGUAGE_MAX][24] = {
 											#ifndef FW_FOR_CN
@@ -2994,7 +2993,7 @@ void TempShowStatus(void)
 					temp_min = (float)p_temp->deca_temp/10.0;
 			}
 
-			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(temp[i]/10.0-32.0)*15/2, TEMP_REC_DATA_W, (temp[i]/10.0-32.0)*15/2, color);
+			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(p_temp->deca_temp/10.0-32.0)*15/2, TEMP_REC_DATA_W, (p_temp->deca_temp/10.0-32.0)*15/2, color);
 		}
 
 		p_temp++;

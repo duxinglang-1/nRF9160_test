@@ -182,6 +182,7 @@ void TimeCheckSendSportData(void)
 	uint8_t i,tmpbuf[20] = {0};
 	uint16_t step_data[24] = {0};
 	sleep_data sleep[24] = {0};
+	uint8_t reply[512] = {0};
 
 	memset(&reply, 0x00, sizeof(reply));
 	

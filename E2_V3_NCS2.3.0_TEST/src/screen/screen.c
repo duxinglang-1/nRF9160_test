@@ -2763,6 +2763,22 @@ void TempUpdateStatus(void)
 
 	if(get_temp_ok_flag)
 	{
+		if(global_settings.temp_unit == TEMP_UINT_C)
+			sprintf(tmpbuf, "%0.1f", (float)last_health.deca_temp_max/10.0);
+		else
+			sprintf(tmpbuf, "%0.1f", ((float)last_health.deca_temp_max/10.0)*1.8+32);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(TEMP_UP_NUM_X, TEMP_UP_NUM_Y, TEMP_UP_NUM_W, TEMP_UP_NUM_H, BLACK);
+		LCD_ShowString(TEMP_UP_NUM_X+(TEMP_UP_NUM_W-w)/2, TEMP_UP_NUM_Y+(TEMP_UP_NUM_H-h)/2, tmpbuf);
+
+		if(global_settings.temp_unit == TEMP_UINT_C)
+			sprintf(tmpbuf, "%0.1f", (float)last_health.deca_temp_min/10.0);
+		else
+			sprintf(tmpbuf, "%0.1f", ((float)last_health.deca_temp_min/10.0)*1.8+32);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(TEMP_DOWN_NUM_X, TEMP_DOWN_NUM_Y, TEMP_DOWN_NUM_W, TEMP_DOWN_NUM_H, BLACK);
+		LCD_ShowString(TEMP_DOWN_NUM_X+(TEMP_DOWN_NUM_W-w)/2, TEMP_DOWN_NUM_Y+(TEMP_DOWN_NUM_H-h)/2, tmpbuf);
+		
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 	}
 #else/*UI_STYLE_HEALTH_BAR*/
@@ -2980,19 +2996,6 @@ void TempShowStatus(void)
 		
 		if((p_temp->deca_temp >= TEMP_MIN) && (p_temp->deca_temp <= TEMP_MAX))
 		{
-			if((temp_max == 0.0) && (temp_min == 0.0))
-			{
-				temp_max = (float)p_temp->deca_temp/10.0;
-				temp_min = (float)p_temp->deca_temp/10.0;
-			}
-			else
-			{
-				if(p_temp->deca_temp/10.0 > temp_max)
-					temp_max = (float)p_temp->deca_temp/10.0;
-				if(p_temp->deca_temp/10.0 < temp_min)
-					temp_min = (float)p_temp->deca_temp/10.0;
-			}
-
 			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(p_temp->deca_temp/10.0-32.0)*15/2, TEMP_REC_DATA_W, (p_temp->deca_temp/10.0-32.0)*15/2, color);
 		}
 
@@ -3019,16 +3022,16 @@ void TempShowStatus(void)
   #endif
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
-		sprintf(tmpbuf, "%0.1f", temp_max);
+		sprintf(tmpbuf, "%0.1f", (float)last_health.deca_temp_max/10.0);
 	else
-		sprintf(tmpbuf, "%0.1f", temp_max*1.8+32);
+		sprintf(tmpbuf, "%0.1f", ((float)last_health.deca_temp_max/10.0)*1.8+32);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(TEMP_UP_NUM_X+(TEMP_UP_NUM_W-w)/2, TEMP_UP_NUM_Y+(TEMP_UP_NUM_H-h)/2, tmpbuf);
 
 	if(global_settings.temp_unit == TEMP_UINT_C)
-		sprintf(tmpbuf, "%0.1f", temp_min);
+		sprintf(tmpbuf, "%0.1f", (float)last_health.deca_temp_min/10.0);
 	else
-		sprintf(tmpbuf, "%0.1f", temp_min*1.8+32);
+		sprintf(tmpbuf, "%0.1f", ((float)last_health.deca_temp_min/10.0)*1.8+32);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(TEMP_DOWN_NUM_X+(TEMP_DOWN_NUM_W-w)/2, TEMP_DOWN_NUM_Y+(TEMP_DOWN_NUM_H-h)/2, tmpbuf);
 
@@ -3053,44 +3056,8 @@ void TempShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
-#if 0	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	memset(&tempdata, 0x00, sizeof(tempdata));
-	GetCurDayTempRecData(&tempdata);
-	p_temp = (temp_rec2_nod*)&tempdata;
-	for(i=0;i<TEMP_REC2_MAX_DAILY;i++)
-	{
-		if(p_temp->year == 0x0000
-			|| p_temp->month == 0x00
-			|| p_temp->day == 0x00
-			)
-		{
-			break;
-		}
-		
-		if((p_temp->deca_temp >= TEMP_MIN) && (p_temp->deca_temp <= TEMP_MAX))
-		{
-			if((temp_max == 0.0) && (temp_min == 0.0))
-			{
-				temp_max = (float)p_temp->deca_temp/10.0;
-				temp_min = (float)p_temp->deca_temp/10.0;
-			}
-			else
-			{
-				if(p_temp->deca_temp/10.0 > temp_max)
-					temp_max = (float)p_temp->deca_temp/10.0;
-				if(p_temp->deca_temp/10.0 < temp_min)
-					temp_min = (float)p_temp->deca_temp/10.0;
-			}
-		}
-
-		p_temp++;
-	}
-	TempShowNumByImg(TEMP_UP_STR_X, TEMP_UP_STR_Y, TEMP_UP_STR_W, TEMP_UP_STR_H, TEMP_UP_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, temp_max);
-	TempShowNumByImg(TEMP_DOWN_STR_X, TEMP_DOWN_STR_Y, TEMP_DOWN_STR_W, TEMP_DOWN_STR_H, TEMP_DOWN_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, temp_min);
-#else
 	TempShowNumByImg(TEMP_UP_STR_X, TEMP_UP_STR_Y, TEMP_UP_STR_W, TEMP_UP_STR_H, TEMP_UP_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_max/10.0);
 	TempShowNumByImg(TEMP_DOWN_STR_X, TEMP_DOWN_STR_Y, TEMP_DOWN_STR_W, TEMP_DOWN_STR_H, TEMP_DOWN_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_min/10.0);
-#endif
 
 	k_timer_start(&temp_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -3536,6 +3503,16 @@ void BPUpdateStatus(void)
 
 	if(get_bpt_ok_flag)
 	{
+		sprintf(tmpbuf, "%d/%d", last_health.bpt_max.systolic, last_health.bpt_max.diastolic);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(BP_UP_NUM_X, BP_UP_NUM_Y, BP_UP_NUM_W, BP_UP_NUM_H, BLACK);
+		LCD_ShowString(BP_UP_NUM_X+(BP_UP_NUM_W-w)/2, BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2, tmpbuf);
+
+		sprintf(tmpbuf, "%d/%d", last_health.bpt_min.systolic, last_health.bpt_min.diastolic);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(BP_DOWN_NUM_X, BP_DOWN_NUM_Y, BP_DOWN_NUM_W, BP_DOWN_NUM_H, BLACK);
+		LCD_ShowString(BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2, BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2, tmpbuf);
+	
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 	}
 
@@ -3739,20 +3716,6 @@ void BPShowStatus(void)
 			&& (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN) && (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
-			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
-				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
-			{
-				memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
-				memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
-			}
-			else
-			{	
-				if(p_bpt->bpt.systolic > bpt_max.systolic)
-					memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
-				if(p_bpt->bpt.systolic < bpt_min.systolic)
-					memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
-			}
-
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(p_bpt->bpt.systolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.systolic-30)*15/30, YELLOW);
 			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(p_bpt->bpt.diastolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.diastolic-30)*15/30, RED);
 		}
@@ -3774,11 +3737,11 @@ void BPShowStatus(void)
   #else
 	LCD_SetFontSize(FONT_SIZE_16);
   #endif
-	sprintf(tmpbuf, "%d/%d", bpt_max.systolic, bpt_max.diastolic);
+	sprintf(tmpbuf, "%d/%d", last_health.bpt_max.systolic, last_health.bpt_max.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(BP_UP_NUM_X+(BP_UP_NUM_W-w)/2, BP_UP_NUM_Y+(BP_UP_NUM_H-h)/2, tmpbuf);
 
-	sprintf(tmpbuf, "%d/%d", bpt_min.systolic, bpt_min.diastolic);
+	sprintf(tmpbuf, "%d/%d", last_health.bpt_min.systolic, last_health.bpt_min.diastolic);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(BP_DOWN_NUM_X+(BP_DOWN_NUM_W-w)/2, BP_DOWN_NUM_Y+(BP_DOWN_NUM_H-h)/2, tmpbuf);
 
@@ -3802,47 +3765,8 @@ void BPShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
-#if 0 //xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	memset(&ppgdata, 0x00, sizeof(ppgdata));
-	GetCurDayBptRecData(&ppgdata);
-	p_bpt = (bpt_rec2_nod*)&ppgdata;
-	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
-	{
-		if(p_bpt->year == 0x0000 
-			|| p_bpt->month == 0x00 
-			|| p_bpt->day == 0x00
-			)
-		{
-			break;
-		}
-		
-		if((p_bpt->bpt.systolic >= PPG_BPT_SYS_MIN) && (p_bpt->bpt.systolic <= PPG_BPT_SYS_MAX)
-			&& (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN) && (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN)
-			)
-		{
-			if((bpt_max.systolic == 0) && (bpt_max.diastolic == 0)
-				&& (bpt_min.systolic == 0) && (bpt_min.diastolic == 0))
-			{
-				memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
-				memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
-			}
-			else
-			{	
-				if(p_bpt->bpt.systolic > bpt_max.systolic)
-					memcpy(&bpt_max, &(p_bpt->bpt), sizeof(bpt_data));
-				if(p_bpt->bpt.systolic < bpt_min.systolic)
-					memcpy(&bpt_min, &(p_bpt->bpt), sizeof(bpt_data));
-			}
-		}
-
-		p_bpt++;
-	}	
-	PPGShowBpNumByImg(BP_UP_STR_X, BP_UP_STR_Y, BP_UP_STR_W, BP_UP_STR_H, BP_UP_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, bpt_max);
-	PPGShowBpNumByImg(BP_DOWN_STR_X, BP_DOWN_STR_Y, BP_DOWN_STR_W, BP_DOWN_STR_H, BP_DOWN_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, bpt_min);
-#else
 	PPGShowBpNumByImg(BP_UP_STR_X, BP_UP_STR_Y, BP_UP_STR_W, BP_UP_STR_H, BP_UP_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_max);
 	PPGShowBpNumByImg(BP_DOWN_STR_X, BP_DOWN_STR_Y, BP_DOWN_STR_W, BP_DOWN_STR_H, BP_DOWN_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_min);
-#endif
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -4002,6 +3926,16 @@ void SPO2UpdateStatus(void)
 
 	if(get_spo2_ok_flag)
 	{
+		sprintf(tmpbuf, "%d", last_health.spo2_max);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(SPO2_UP_NUM_X, SPO2_UP_NUM_Y, SPO2_UP_NUM_W, SPO2_UP_NUM_H, BLACK);
+		LCD_ShowString(SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2, SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2, tmpbuf);
+
+		sprintf(tmpbuf, "%d", last_health.spo2_min);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(SPO2_DOWN_NUM_X, SPO2_DOWN_NUM_Y, SPO2_DOWN_NUM_W, SPO2_DOWN_NUM_H, BLACK);
+		LCD_ShowString(SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2, SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2, tmpbuf);
+	
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 	}
 
@@ -4166,19 +4100,6 @@ void SPO2ShowStatus(void)
 		
 		if((p_spo2->spo2 >= PPG_SPO2_MIN) && (p_spo2->spo2 <= PPG_SPO2_MAX))
 		{
-			if((spo2_max == 0) && (spo2_min == 0))
-			{
-				spo2_max = p_spo2->spo2;
-				spo2_min = p_spo2->spo2;
-			}
-			else
-			{
-				if(p_spo2->spo2 > spo2_max)
-					spo2_max = p_spo2->spo2;
-				if(p_spo2->spo2 < spo2_min)
-					spo2_min = p_spo2->spo2;
-			}
-			
 			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(p_spo2->spo2-80)*3, SPO2_REC_DATA_W, (p_spo2->spo2-80)*3, BLUE);
 		}
 
@@ -4194,11 +4115,11 @@ void SPO2ShowStatus(void)
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(SPO2_NUM_X+(SPO2_NUM_W-w)/2, SPO2_NUM_Y+(SPO2_NUM_H-h)/2, tmpbuf);
 
-	sprintf(tmpbuf, "%d", spo2_max);
+	sprintf(tmpbuf, "%d", last_health.spo2_max);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(SPO2_UP_NUM_X+(SPO2_UP_NUM_W-w)/2, SPO2_UP_NUM_Y+(SPO2_UP_NUM_H-h)/2, tmpbuf);
 
-	sprintf(tmpbuf, "%d", spo2_min);
+	sprintf(tmpbuf, "%d", last_health.spo2_min);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(SPO2_DOWN_NUM_X+(SPO2_DOWN_NUM_W-w)/2, SPO2_DOWN_NUM_Y+(SPO2_DOWN_NUM_H-h)/2, tmpbuf);
 
@@ -4223,45 +4144,8 @@ void SPO2ShowStatus(void)
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
-#if 0	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	memset(&ppgdata, 0x00, sizeof(ppgdata));
-	GetCurDaySpo2RecData(&ppgdata);
-	p_spo2 = (spo2_rec2_nod*)&ppgdata;
-	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
-	{
-		if(p_spo2->year == 0x0000
-			|| p_spo2->month == 0x00
-			|| p_spo2->day == 0x00
-			)
-		{
-			break;
-		}
-		
-		if((p_spo2->spo2 >= PPG_SPO2_MIN) && (p_spo2->spo2 <= PPG_SPO2_MAX))
-		{
-			if((spo2_max == 0) && (spo2_min == 0))
-			{
-				spo2_max = p_spo2->spo2;
-				spo2_min = p_spo2->spo2;
-			}
-			else
-			{
-				if(p_spo2->spo2 > spo2_max)
-					spo2_max = p_spo2->spo2;
-				if(p_spo2->spo2 < spo2_min)
-					spo2_min = p_spo2->spo2;
-			}
-		}
-
-		p_spo2++;
-	}
-
-	PPGShowNumWithUnitByImg(SPO2_UP_STR_X, SPO2_UP_STR_Y, SPO2_UP_STR_W, SPO2_UP_STR_H, SPO2_UP_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, spo2_max);
-	PPGShowNumWithUnitByImg(SPO2_DOWN_STR_X, SPO2_DOWN_STR_Y, SPO2_DOWN_STR_W, SPO2_DOWN_STR_H, SPO2_DOWN_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, spo2_min);
-#else
 	PPGShowNumWithUnitByImg(SPO2_UP_STR_X, SPO2_UP_STR_Y, SPO2_UP_STR_W, SPO2_UP_STR_H, SPO2_UP_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_max);
 	PPGShowNumWithUnitByImg(SPO2_DOWN_STR_X, SPO2_DOWN_STR_Y, SPO2_DOWN_STR_W, SPO2_DOWN_STR_H, SPO2_DOWN_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_min);
-#endif
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
 #endif/*UI_STYLE_HEALTH_BAR*/
@@ -4420,6 +4304,16 @@ void HRUpdateStatus(void)
 
 	if(get_hr_ok_flag)
 	{
+		sprintf(tmpbuf, "%d", last_health.hr_max);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(HR_UP_NUM_X, HR_UP_NUM_Y, HR_UP_NUM_W, HR_UP_NUM_H, BLACK);
+		LCD_ShowString(HR_UP_NUM_X+(HR_UP_NUM_W-w)/2, HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2, tmpbuf);
+
+		sprintf(tmpbuf, "%d", last_health.hr_min);
+		LCD_MeasureString(tmpbuf,&w,&h);
+		LCD_Fill(HR_DOWN_NUM_X, HR_DOWN_NUM_Y, HR_DOWN_NUM_W, HR_DOWN_NUM_H, BLACK);
+		LCD_ShowString(HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2, HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2, tmpbuf);
+		
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 	}
 	
@@ -4586,19 +4480,6 @@ void HRShowStatus(void)
 		
 		if((p_hr->hr >= PPG_HR_MIN) && (p_hr->hr <= PPG_HR_MAX))
 		{
-			if((hr_max == 0) && (hr_min == 0))
-			{
-				hr_max = p_hr->hr;
-				hr_min = p_hr->hr;
-			}
-			else
-			{
-				if(p_hr->hr > hr_max)
-					hr_max = p_hr->hr;
-				if(p_hr->hr < hr_min)
-					hr_min = p_hr->hr;
-			}
-
 			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-p_hr->hr*20/50, HR_REC_DATA_W, p_hr->hr*20/50, RED);
 		}
 
@@ -4614,11 +4495,11 @@ void HRShowStatus(void)
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(HR_NUM_X+(HR_NUM_W-w)/2, HR_NUM_Y+(HR_NUM_H-h)/2, tmpbuf);
 
-	sprintf(tmpbuf, "%d", hr_max);
+	sprintf(tmpbuf, "%d", last_health.hr_max);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(HR_UP_NUM_X+(HR_UP_NUM_W-w)/2, HR_UP_NUM_Y+(HR_UP_NUM_H-h)/2, tmpbuf);
 
-	sprintf(tmpbuf, "%d", hr_min);
+	sprintf(tmpbuf, "%d", last_health.hr_min);
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(HR_DOWN_NUM_X+(HR_DOWN_NUM_W-w)/2, HR_DOWN_NUM_Y+(HR_DOWN_NUM_H-h)/2, tmpbuf);
 	
@@ -4643,47 +4524,10 @@ void HRShowStatus(void)
 	LCD_MeasureUniString(tmpbuf,&w,&h);
 	LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
-#if 0	//xb add 2024-03-14 The results of the last manual measurement are also included in the judgment.
-	memset(&ppgdata, 0x00, sizeof(ppgdata));
-	GetCurDayHrRecData(&ppgdata);
-	p_hr = (hr_rec2_nod*)&ppgdata;
-	for(i=0;i<PPG_REC2_MAX_DAILY;i++)
-	{
-		if(p_hr->year == 0x0000
-			|| p_hr->month == 0x00
-			|| p_hr->day == 0x00
-			)
-		{
-			break;
-		}
-		
-		if((p_hr->hr >= PPG_HR_MIN) && (p_hr->hr <= PPG_HR_MAX))
-		{
-			if((hr_max == 0) && (hr_min == 0))
-			{
-				hr_max = p_hr->hr;
-				hr_min = p_hr->hr;
-			}
-			else
-			{
-				if(p_hr->hr > hr_max)
-					hr_max = p_hr->hr;
-				if(p_hr->hr < hr_min)
-					hr_min = p_hr->hr;
-			}
-		}
-
-		p_hr++;
-	}
-	PPGShowNumByImg(HR_UP_STR_X, HR_UP_STR_Y, HR_UP_STR_W, HR_UP_STR_H, HR_UP_NUM_W, img_num, hr_max);
-	PPGShowNumByImg(HR_DOWN_STR_X, HR_DOWN_STR_Y, HR_DOWN_STR_W, HR_DOWN_STR_H, HR_UP_NUM_W, img_num, hr_min);
-#else
 	PPGShowNumByImg(HR_UP_STR_X, HR_UP_STR_Y, HR_UP_STR_W, HR_UP_STR_H, HR_UP_NUM_W, img_num, last_health.hr_max);
 	PPGShowNumByImg(HR_DOWN_STR_X, HR_DOWN_STR_Y, HR_DOWN_STR_W, HR_DOWN_STR_H, HR_UP_NUM_W, img_num, last_health.hr_min);
-#endif
 
 	k_timer_start(&ppg_status_timer, K_SECONDS(2), K_NO_WAIT);
-
 #endif/*UI_STYLE_HEALTH_BAR*/
 }
 

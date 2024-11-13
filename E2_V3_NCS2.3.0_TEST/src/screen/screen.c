@@ -3008,10 +3008,7 @@ void TempShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_32);
   #endif
 
-	if(global_settings.temp_unit == TEMP_UINT_C)
-		sprintf(tmpbuf, "%0.1f", 0);
-	else
-		sprintf(tmpbuf, "%0.1f", 0);
+	strcpy(tmpbuf, "0.0");
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(TEMP_NUM_X+(TEMP_NUM_W-w)/2, TEMP_NUM_Y+(TEMP_NUM_H-h)/2, tmpbuf);
 
@@ -3020,7 +3017,7 @@ void TempShowStatus(void)
   #else		
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
-
+	
 	if(global_settings.temp_unit == TEMP_UINT_C)
 		sprintf(tmpbuf, "%0.1f", (float)last_health.deca_temp_max/10.0);
 	else
@@ -3728,7 +3725,7 @@ void BPShowStatus(void)
   #else		
 	LCD_SetFontSize(FONT_SIZE_24);
   #endif
-	sprintf(tmpbuf, "%d/%d", 0, 0);
+	strcpy(tmpbuf, "0/0");
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(BP_NUM_X+(BP_NUM_W-w)/2, BP_NUM_Y+(BP_NUM_H-h)/2, tmpbuf);
 	
@@ -4111,7 +4108,7 @@ void SPO2ShowStatus(void)
   #else
 	LCD_SetFontSize(FONT_SIZE_32);
   #endif
-	sprintf(tmpbuf, "%d%%", 0);
+	strcpy(tmpbuf, "0%");
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(SPO2_NUM_X+(SPO2_NUM_W-w)/2, SPO2_NUM_Y+(SPO2_NUM_H-h)/2, tmpbuf);
 
@@ -4491,7 +4488,7 @@ void HRShowStatus(void)
   #else	
 	LCD_SetFontSize(FONT_SIZE_32);
   #endif
-	sprintf(tmpbuf, "%d", 0);
+	strcpy(tmpbuf, "0");
 	LCD_MeasureString(tmpbuf,&w,&h);
 	LCD_ShowString(HR_NUM_X+(HR_NUM_W-w)/2, HR_NUM_Y+(HR_NUM_H-h)/2, tmpbuf);
 

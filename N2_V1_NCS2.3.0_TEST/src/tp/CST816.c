@@ -20,7 +20,7 @@
 #include "CST816T_update.h"
 #include "logger.h"
 
-#define TP_DEBUG
+//#define TP_DEBUG
 #define TP_TEST
 
 #if defined(TP_DEBUG)||defined(TP_TEST)
@@ -614,7 +614,7 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 #endif
 
 #ifdef TP_TEST //xb test 2022-04-21
-	tp_redraw_flag = true;
+	//tp_redraw_flag = true;
 #endif
 	tp_trige_flag = true;
 }

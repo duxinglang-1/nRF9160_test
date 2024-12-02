@@ -1413,27 +1413,41 @@ void SendPowerOnData(void)
 	//ppg algo
 #ifdef CONFIG_PPG_SUPPORT	
 	strcat(reply, g_ppg_ver);
+#else
+	strcat(reply, "NO PPG");
 #endif
 	strcat(reply, ",");
 
 	//wifi version
 #ifdef CONFIG_WIFI_SUPPORT
-	strcat(reply, g_wifi_ver);	
+	strcat(reply, g_wifi_ver);
+#else
+	strcat(reply, "NO WiFi");
 #endif
 	strcat(reply, ",");
 
 	//wifi mac
 #ifdef CONFIG_WIFI_SUPPORT	
-	strcat(reply, g_wifi_mac_addr);	
+	strcat(reply, g_wifi_mac_addr);
+#else
+	strcat(reply, "NO WiFi");
 #endif
 	strcat(reply, ",");
 
 	//ble version
-	strcat(reply, &g_nrf52810_ver[15]);	
+#ifdef CONFIG_BLE_SUPPORT	
+	strcat(reply, &g_nrf52810_ver[15]);
+#else
+	strcat(reply, "NO BLE");
+#endif
 	strcat(reply, ",");
 
 	//ble mac
-	strcat(reply, g_ble_mac_addr);	
+#ifdef CONFIG_BLE_SUPPORT	
+	strcat(reply, g_ble_mac_addr);
+#else
+	strcat(reply, "NO BLE");
+#endif
 
 	NBSendPowerOnInfor(reply, strlen(reply));
 }

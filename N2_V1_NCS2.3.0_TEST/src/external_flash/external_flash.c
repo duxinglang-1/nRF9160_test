@@ -626,7 +626,7 @@ void SPI_Flash_Init(void)
 	if (!spi_flash) 
 	{
 	#ifdef FLASH_DEBUG
-		LOGD("Could not get %s device", FLASH_DEVICE);
+		LOGD("Could not get spi");
 	#endif
 		return;
 	}
@@ -657,6 +657,7 @@ void flash_init(void)
 	SPI_Flash_Init();
 
 	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+	LOGD("g_ui_ver:%d, g_font_ver:%d, g_ppg_algo_ver:%d", g_ui_ver, g_font_ver, g_ppg_algo_ver);	
 }
 
 void test_flash_write_and_read(uint8_t *buf, uint32_t len)

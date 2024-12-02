@@ -27,7 +27,7 @@
 #include "screen.h"
 #include "logger.h"
 
-//#define FOTA_DEBUG
+#define FOTA_DEBUG
 
 #define TLS_SEC_TAG 42
 #define FOTA_RESULT_NOTIFY_TIMEOUT	5

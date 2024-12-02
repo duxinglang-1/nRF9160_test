@@ -92,8 +92,10 @@ void FTMainMenuTempProc(void)
 
 void FTMainMenuWristProc(void)
 {
+#ifdef CONFIG_WRIST_CHECK_SUPPORT
 	ft_main_menu_index = FT_WRIST;
 	EnterFTMenuWrist();
+#endif	
 }
 
 void FTMainMenuIMUProc(void)
@@ -490,9 +492,11 @@ void FactoryTestProccess(void)
 	case FT_KEY:
 		FTMenuKeyProcess();
 		break;
+#ifdef CONFIG_WRIST_CHECK_SUPPORT		
 	case FT_WRIST:
 		FTMenuWristProcess();
 		break;
+#endif		
 	case FT_VIBRATE:
 		FTMenuVibrateProcess();
 		break;

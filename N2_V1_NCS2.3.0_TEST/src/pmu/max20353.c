@@ -14,7 +14,7 @@
 #include "logger.h"
 
 //#define SHOW_LOG_IN_SCREEN
-#define PMU_DEBUG
+//#define PMU_DEBUG
 
 #ifdef GPIO_ACT_I2C
 #define PMU_SCL		31

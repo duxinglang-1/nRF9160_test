@@ -351,5 +351,5 @@ void LogInit(void)
 
 #ifdef TEST_DEBUG
 	log_read_from_flash();
-#endif	
+#endif
 }

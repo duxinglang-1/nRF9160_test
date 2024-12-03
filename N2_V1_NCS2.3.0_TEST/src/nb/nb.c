@@ -41,7 +41,7 @@
 #endif
 #include "logger.h"
 
-#define NB_DEBUG
+//#define NB_DEBUG
 
 #define MQTT_CONNECTED_KEEP_TIME	(60)
 

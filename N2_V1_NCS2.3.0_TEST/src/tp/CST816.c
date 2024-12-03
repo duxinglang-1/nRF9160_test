@@ -21,9 +21,7 @@
 #include "logger.h"
 
 //#define TP_DEBUG
-#define TP_TEST
 
-#if defined(TP_DEBUG)||defined(TP_TEST)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c2), okay)
 #define TP_DEV DT_NODELABEL(i2c2)
 #else
@@ -42,7 +40,6 @@
 #define TP_EINT			4
 #define TP_SCL			1
 #define TP_SDA			0
-#endif
 
 bool tp_int_flag = false;
 bool tp_trige_flag = false;
@@ -61,7 +58,6 @@ static struct gpio_callback gpio_cb;
 static TPInfo tp_event_info = {0};
 static TpEventNode *tp_event_tail = NULL;
 
-#if defined(TP_DEBUG)||defined(TP_TEST)
 static uint8_t init_i2c(void)
 {
 	i2c_ctp = DEVICE_DT_GET(TP_DEV);
@@ -262,7 +258,6 @@ static uint32_t cst816s_read_checksum(void)
 	return checksum.sum;
 }
 
-
 bool ctp_hynitron_update(void)
 {
 	uint8_t lvalue;
@@ -329,7 +324,6 @@ bool ctp_hynitron_update(void)
 	}
 	return false;
 }
-#endif
 
 void clear_all_touch_event_handle(void)
 {
@@ -613,13 +607,9 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 	tp_msg.y_pos = y_pos;
 #endif
 
-#ifdef TP_TEST //xb test 2022-04-21
-	//tp_redraw_flag = true;
-#endif
 	tp_trige_flag = true;
 }
 
-#if defined(TP_DEBUG)||defined(TP_TEST)
 void CaptouchInterruptHandle(void)
 {
 	tp_int_flag = true;
@@ -738,7 +728,7 @@ void tp_init(void)
 	case TP_CST816S:
 		if(tp_fw_ver < 0x02)
 		{
-			//ctp_hynitron_update();
+			ctp_hynitron_update();
 		}
 		break;
 
@@ -749,14 +739,13 @@ void tp_init(void)
 		if(tp_fw_ver < 0x05)
 	#endif
 		{
-			//ctp_hynitron_update();
+			ctp_hynitron_update();
 		}
 		break;
 		
 	}
 	tp_set_auto_sleep();
 }
-
 
 void test_tp(void)
 {
@@ -776,7 +765,6 @@ void test_tp(void)
 #endif	
 	//tp_init();
 }
-#endif
 
 void tp_show_infor(void)
 {
@@ -823,13 +811,12 @@ void tp_show_infor(void)
 
 void TPMsgProcess(void)
 {
-#if defined(TP_DEBUG)||defined(TP_TEST)
 	if(tp_int_flag)
 	{
 		tp_int_flag = false;
 		tp_interrupt_proc();
 	}
-#endif
+
 	if(tp_trige_flag)
 	{
 		tp_trige_flag = false;

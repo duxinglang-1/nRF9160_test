@@ -86,9 +86,10 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 const global_settings_t FACTORY_DEFAULT_SETTINGS = 
 {
 	SETTINGS_STATUS_NORMAL,	//status flag
-	false,					//heart rate turn on
-	false,					//blood pressure turn on
-	false,					//blood oxygen turn on		
+	true,					//temp turn on
+	true,					//heart rate turn on
+	true,					//blood pressure turn on
+	true,					//blood oxygen turn on		
 	true,					//wake screen by wrist
 	false,					//wrist off check
 	false,					//fall check

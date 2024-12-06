@@ -22,6 +22,6 @@
 /* 有自动添加函数名 */
 #define LOGM(fmt, args...) LOGDM(__func__, fmt, ##args)
 
-#define TEST_DEBUG
+//#define TEST_DEBUG
 
 #endif/*__LOGGER_H__*/

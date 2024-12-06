@@ -12,7 +12,6 @@
 
 #include <stdint.h>
 #include "font.h"
-#include "temp.h"
 
 //SPIÒý½Å¶¨Òå
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)

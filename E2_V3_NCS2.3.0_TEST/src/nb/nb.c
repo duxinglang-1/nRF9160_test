@@ -41,7 +41,7 @@
 #endif
 #include "logger.h"
 
-#define NB_DEBUG
+//#define NB_DEBUG
 
 #define MQTT_CONNECTED_KEEP_TIME	(60)
 
@@ -1855,7 +1855,18 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			//后台下发摔倒检测设置
 			GetStringInforBySepa(strdata, ",", 3, tmpbuf);
 			global_settings.fall_check = atoi(tmpbuf);
-			
+			//后台下发心率检测设置
+			GetStringInforBySepa(strdata, ",", 4, tmpbuf);
+			global_settings.hr_is_on = atoi(tmpbuf);
+			//后台下发体温检测设置
+			GetStringInforBySepa(strdata, ",", 5, tmpbuf);
+			global_settings.temp_is_on = atoi(tmpbuf);
+			//后台下发血氧检测设置
+			GetStringInforBySepa(strdata, ",", 6, tmpbuf);
+			global_settings.spo2_is_on = atoi(tmpbuf);
+			//后台下发血压检测设置
+			GetStringInforBySepa(strdata, ",", 7, tmpbuf);
+			global_settings.bpt_is_on = atoi(tmpbuf);
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S11") == 0)
@@ -3170,7 +3181,7 @@ void NBMsgProcess(void)
 		LOGD("Start NB-IoT test!");
 	#endif
 	
-		if(nb_is_chinese_sim())	//cmcc
+		if(1)//(nb_is_chinese_sim())	//cmcc
 		{
 			if(nb_is_connecting())
 			{

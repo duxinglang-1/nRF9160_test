@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	7
 #define MENU_NOTIFY_STR_MAX	28
 
-#define VERSION_STR	"V3.4.3_241110"
+#define VERSION_STR	"V3.4.4_241206"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else
@@ -172,9 +172,10 @@ typedef struct
 typedef struct
 {
 	SETTINGS_STATUS flag;
+	bool temp_is_on;				//temp
 	bool hr_is_on;					//heart rate
-	bool bp_is_on;					//blood pressure
-	bool bo_is_on;					//blood oxygen
+	bool bpt_is_on;					//blood pressure
+	bool spo2_is_on;				//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
 	bool fall_check;		

@@ -160,7 +160,7 @@ void SetCurDayBptRecData(sys_date_timer_t time_stamp, bpt_data bpt)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	
-	SpiFlash_Read(&rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	SpiFlash_Read(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	if((p_bpt->year == 0xffff || p_bpt->year == 0x0000)
 		||(p_bpt->month == 0xff || p_bpt->month == 0x00)
@@ -261,7 +261,7 @@ void GetCurDayBptRecData(uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	SpiFlash_Read(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_BPT_REC2_DATA_SIZE/sizeof(bpt_rec2_nod);i++)
 	{
@@ -309,7 +309,7 @@ void GetGivenDayBptRecData(sys_date_timer_t date, uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
+	SpiFlash_Read(rec2buf, PPG_BPT_REC2_DATA_ADDR, PPG_BPT_REC2_DATA_SIZE);
 	p_bpt = (bpt_rec2_nod*)rec2buf;
 	for(i=0;i<PPG_BPT_REC2_DATA_SIZE/sizeof(bpt_rec2_nod);i++)
 	{
@@ -408,8 +408,8 @@ void SetCurDaySpo2RecData(sys_date_timer_t time_stamp, uint8_t spo2)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 
-	SpiFlash_Read(&rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
-	p_spo2 = (spo2_rec2_nod*)&rec2buf;
+	SpiFlash_Read(rec2buf, PPG_SPO2_REC2_DATA_ADDR, PPG_SPO2_REC2_DATA_SIZE);
+	p_spo2 = (spo2_rec2_nod*)rec2buf;
 	if((p_spo2->year == 0xffff || p_spo2->year == 0x0000)
 		||(p_spo2->month == 0xff || p_spo2->month == 0x00)
 		||(p_spo2->day == 0xff || p_spo2->day == 0x00)
@@ -657,8 +657,8 @@ void SetCurDayHrRecData(sys_date_timer_t time_stamp, uint8_t hr)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	
-	SpiFlash_Read(&rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
-	p_hr = (hr_rec2_nod*)&rec2buf;
+	SpiFlash_Read(rec2buf, PPG_HR_REC2_DATA_ADDR, PPG_HR_REC2_DATA_SIZE);
+	p_hr = (hr_rec2_nod*)rec2buf;
 	if((p_hr->year == 0xffff || p_hr->year == 0x0000)
 		||(p_hr->month == 0xff || p_hr->month == 0x00)
 		||(p_hr->day == 0xff || p_hr->day == 0x00)

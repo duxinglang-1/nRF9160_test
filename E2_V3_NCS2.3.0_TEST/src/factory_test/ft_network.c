@@ -113,7 +113,7 @@ static void FTMenuNetStartTest(void)
 	FTStartNet();
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 
-	if(nb_is_chinese_sim())
+	if(1)//(nb_is_chinese_sim())
 		k_timer_start(&net_test_timer, K_SECONDS(FT_NET_TEST_TIMEROUT), K_NO_WAIT);
 }
 

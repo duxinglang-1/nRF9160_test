@@ -110,8 +110,8 @@ void SetCurDayTempRecData(sys_date_timer_t time_stamp, float data)
 	memset(&databuf, 0x00, sizeof(databuf));
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	
-	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	p_temp = (temp_rec2_nod*)&rec2buf;
+	SpiFlash_Read(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)rec2buf;
 	if((p_temp->year == 0xffff || p_temp->year == 0x0000)
 		||(p_temp->month == 0xff || p_temp->month == 0x00)
 		||(p_temp->day == 0xff || p_temp->day == 0x00)
@@ -211,8 +211,8 @@ void GetCurDayTempRecData(uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	p_temp = (temp_rec2_nod*)&rec2buf;
+	SpiFlash_Read(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)rec2buf;
 	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 	{
 		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
@@ -259,8 +259,8 @@ void GetGivenDayTempRecData(sys_date_timer_t date, uint8_t *databuf)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	p_temp = (temp_rec2_nod*)&rec2buf;
+	SpiFlash_Read(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)rec2buf;
 	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(hr_rec2_nod);i++)
 	{
 		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
@@ -307,8 +307,8 @@ void GetGivenTimeTempRecData(sys_date_timer_t date, uint16_t *temp)
 		return;
 
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
-	SpiFlash_Read(&rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
-	p_temp = (temp_rec2_nod*)&rec2buf;
+	SpiFlash_Read(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
+	p_temp = (temp_rec2_nod*)rec2buf;
 	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 	{
 		if((p_temp->year == 0xffff || p_temp->year == 0x0000)

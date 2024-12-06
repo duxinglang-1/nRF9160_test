@@ -2996,7 +2996,7 @@ void TempShowStatus(void)
 		
 		if((p_temp->deca_temp >= TEMP_MIN) && (p_temp->deca_temp <= TEMP_MAX))
 		{
-			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*i, TEMP_REC_DATA_Y-(p_temp->deca_temp/10.0-32.0)*15/2, TEMP_REC_DATA_W, (p_temp->deca_temp/10.0-32.0)*15/2, color);
+			LCD_Fill(TEMP_REC_DATA_X+TEMP_REC_DATA_OFFSET_X*p_temp->hour, TEMP_REC_DATA_Y-(p_temp->deca_temp/10.0-32.0)*15/2, TEMP_REC_DATA_W, (p_temp->deca_temp/10.0-32.0)*15/2, color);
 		}
 
 		p_temp++;
@@ -3713,8 +3713,8 @@ void BPShowStatus(void)
 			&& (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN) && (p_bpt->bpt.diastolic >= PPG_BPT_DIA_MIN)
 			)
 		{
-			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(p_bpt->bpt.systolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.systolic-30)*15/30, YELLOW);
-			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*i, BP_REC_DATA_Y-(p_bpt->bpt.diastolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.diastolic-30)*15/30, RED);
+			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*p_bpt->hour, BP_REC_DATA_Y-(p_bpt->bpt.systolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.systolic-30)*15/30, YELLOW);
+			LCD_Fill(BP_REC_DATA_X+BP_REC_DATA_OFFSET_X*p_bpt->hour, BP_REC_DATA_Y-(p_bpt->bpt.diastolic-30)*15/30, BP_REC_DATA_W, (p_bpt->bpt.diastolic-30)*15/30, RED);
 		}
 
 		p_bpt++;
@@ -4097,7 +4097,7 @@ void SPO2ShowStatus(void)
 		
 		if((p_spo2->spo2 >= PPG_SPO2_MIN) && (p_spo2->spo2 <= PPG_SPO2_MAX))
 		{
-			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*i, SPO2_REC_DATA_Y-(p_spo2->spo2-80)*3, SPO2_REC_DATA_W, (p_spo2->spo2-80)*3, BLUE);
+			LCD_Fill(SPO2_REC_DATA_X+SPO2_REC_DATA_OFFSET_X*p_spo2->hour, SPO2_REC_DATA_Y-(p_spo2->spo2-80)*3, SPO2_REC_DATA_W, (p_spo2->spo2-80)*3, BLUE);
 		}
 
 		p_spo2++;
@@ -4477,7 +4477,7 @@ void HRShowStatus(void)
 		
 		if((p_hr->hr >= PPG_HR_MIN) && (p_hr->hr <= PPG_HR_MAX))
 		{
-			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*i, HR_REC_DATA_Y-p_hr->hr*20/50, HR_REC_DATA_W, p_hr->hr*20/50, RED);
+			LCD_Fill(HR_REC_DATA_X+HR_REC_DATA_OFFSET_X*p_hr->hour, HR_REC_DATA_Y-p_hr->hr*20/50, HR_REC_DATA_W, p_hr->hr*20/50, RED);
 		}
 
 		p_hr++;

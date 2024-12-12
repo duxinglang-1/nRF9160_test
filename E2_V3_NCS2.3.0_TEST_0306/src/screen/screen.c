@@ -2156,23 +2156,35 @@ void SettingsUpdateStatus(void)
 
 	if(settings_menu.count > SETTINGS_MAIN_MENU_MAX_PER_PG)
 	{		
-		if(settings_menu.count > 3*SETTINGS_MAIN_MENU_MAX_PER_PG)
+		if(settings_menu.count > 5*SETTINGS_MAIN_MENU_MAX_PER_PG)
+		{
+			uint32_t page6_img[6] = {IMG_SET_PG6_1_ADDR,IMG_SET_PG6_2_ADDR,IMG_SET_PG6_3_ADDR,IMG_SET_PG6_4_ADDR,IMG_SET_PG6_5_ADDR,IMG_SET_PG6_6_ADDR};
+			
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE6_DOT_X, SETTINGS_MEUN_PAGE6_DOT_Y, page6_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+		}
+		else if(settings_menu.count > 4*SETTINGS_MAIN_MENU_MAX_PER_PG)
+		{
+			uint32_t page5_img[5] = {IMG_SET_PG5_1_ADDR,IMG_SET_PG5_2_ADDR,IMG_SET_PG5_3_ADDR,IMG_SET_PG5_4_ADDR,IMG_SET_PG5_5_ADDR};
+			
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE5_DOT_X, SETTINGS_MEUN_PAGE5_DOT_Y, page5_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+		}
+		else if(settings_menu.count > 3*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
 			uint32_t page4_img[4] = {IMG_SET_PG4_1_ADDR,IMG_SET_PG4_2_ADDR,IMG_SET_PG4_3_ADDR,IMG_SET_PG4_4_ADDR};
 			
-			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page4_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE4_DOT_X, SETTINGS_MEUN_PAGE4_DOT_Y, page4_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 		else if(settings_menu.count > 2*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
 			uint32_t page3_img[3] = {IMG_SET_PG3_1_ADDR,IMG_SET_PG3_2_ADDR,IMG_SET_PG3_3_ADDR};
 			
-			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page3_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE3_DOT_X, SETTINGS_MEUN_PAGE3_DOT_Y, page3_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 		else
 		{
 			uint32_t page2_img[2] = {IMG_SET_PG2_1_ADDR,IMG_SET_PG2_2_ADDR};
 			
-			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, page2_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE2_DOT_X, SETTINGS_MEUN_PAGE2_DOT_Y, page2_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 
 	#ifdef CONFIG_TOUCH_SUPPORT
@@ -2319,7 +2331,16 @@ void SettingsShowStatus(void)
 
 	if(settings_menu.count > SETTINGS_MAIN_MENU_MAX_PER_PG)
 	{
-		LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE_DOT_X, SETTINGS_MEUN_PAGE_DOT_Y, IMG_SET_PG3_1_ADDR);
+		if(settings_menu.count > 5*SETTINGS_MAIN_MENU_MAX_PER_PG)
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE6_DOT_X, SETTINGS_MEUN_PAGE6_DOT_Y, IMG_SET_PG6_1_ADDR);
+		else if(settings_menu.count > 4*SETTINGS_MAIN_MENU_MAX_PER_PG)
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE5_DOT_X, SETTINGS_MEUN_PAGE5_DOT_Y, IMG_SET_PG5_1_ADDR);
+		else if(settings_menu.count > 3*SETTINGS_MAIN_MENU_MAX_PER_PG)
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE4_DOT_X, SETTINGS_MEUN_PAGE4_DOT_Y, IMG_SET_PG4_1_ADDR);
+		else if(settings_menu.count > 2*SETTINGS_MAIN_MENU_MAX_PER_PG)
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE3_DOT_X, SETTINGS_MEUN_PAGE3_DOT_Y, IMG_SET_PG3_1_ADDR);
+		else
+			LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE2_DOT_X, SETTINGS_MEUN_PAGE2_DOT_Y, IMG_SET_PG2_1_ADDR);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
 		register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, settings_menu.pg_handler[0]);

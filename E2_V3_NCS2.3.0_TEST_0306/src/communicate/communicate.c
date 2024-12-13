@@ -1215,6 +1215,36 @@ void SendSettingsData(void)
 	case LANGUAGE_PT:	//Portuguese
 		strcat(reply, "pt");
 		break;
+	case LANGUAGE_JP:	//Japanese
+		strcat(reply, "jp");
+		break;
+	case LANGUAGE_RU:	//Russian
+		strcat(reply, "ru");
+		break;
+	case LANGUAGE_SE:	//Swedish
+		strcat(reply, "se");
+		break;
+	case LANGUAGE_PL:	//Polish
+		strcat(reply, "pl");
+		break;
+	case LANGUAGE_GR:	//Greece
+		strcat(reply, "gr");
+		break;
+	case LANGUAGE_KR:	//Korea	
+		strcat(reply, "ko");
+		break;		
+	case LANGUAGE_DK:	//Danish
+		strcat(reply, "dk");
+		break;
+	case LANGUAGE_FI:	//Finnish
+		strcat(reply, "fi");
+		break;
+	case LANGUAGE_NL:	//Dutch
+		strcat(reply, "nl");
+		break;
+	case LANGUAGE_NO:	//Norwegian
+		strcat(reply, "no");
+		break;
 #else
 	case LANGUAGE_CHN:	//Chinese
 		strcat(reply, "zh");

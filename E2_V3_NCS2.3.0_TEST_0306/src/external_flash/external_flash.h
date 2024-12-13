@@ -62,7 +62,7 @@
 #define	SPI_TXRX_MAX_LEN		(1024*4)	//255	(1024*2)
 
 /***************************************************img start*********************************************************/
-//IMG在flash里占用4M的空间(0x000000~0x3FFFFF)
+//IMG在flash里占用2M的空间(0x000000~0x1FFFFF)
 #define IMG_START_ADDR						0x000000
 //img ver
 #define IMG_VER_ADDR						IMG_START_ADDR
@@ -327,7 +327,40 @@
 #define IMG_SET_PG4_4_ADDR					(IMG_SET_PG4_3_END)
 #define IMG_SET_PG4_4_SIZE					(476)
 #define IMG_SET_PG4_4_END					(IMG_SET_PG4_4_ADDR+IMG_SET_PG4_4_SIZE)
-#define IMG_SET_QR_ICON_ADDR				(IMG_SET_PG4_4_END)
+#define IMG_SET_PG5_1_ADDR					(IMG_SET_PG4_4_END)
+#define IMG_SET_PG5_1_SIZE					(608)
+#define IMG_SET_PG5_1_END					(IMG_SET_PG5_1_ADDR+IMG_SET_PG5_1_SIZE)
+#define IMG_SET_PG5_2_ADDR					(IMG_SET_PG5_1_END)
+#define IMG_SET_PG5_2_SIZE					(608)
+#define IMG_SET_PG5_2_END					(IMG_SET_PG5_2_ADDR+IMG_SET_PG5_2_SIZE)
+#define IMG_SET_PG5_3_ADDR					(IMG_SET_PG5_2_END)
+#define IMG_SET_PG5_3_SIZE					(608)
+#define IMG_SET_PG5_3_END					(IMG_SET_PG5_3_ADDR+IMG_SET_PG5_3_SIZE)
+#define IMG_SET_PG5_4_ADDR					(IMG_SET_PG5_3_END)
+#define IMG_SET_PG5_4_SIZE					(608)
+#define IMG_SET_PG5_4_END					(IMG_SET_PG5_4_ADDR+IMG_SET_PG5_4_SIZE)
+#define IMG_SET_PG5_5_ADDR					(IMG_SET_PG5_4_END)
+#define IMG_SET_PG5_5_SIZE					(608)
+#define IMG_SET_PG5_5_END					(IMG_SET_PG5_5_ADDR+IMG_SET_PG5_5_SIZE)
+#define IMG_SET_PG6_1_ADDR					(IMG_SET_PG5_5_END)
+#define IMG_SET_PG6_1_SIZE					(740)
+#define IMG_SET_PG6_1_END					(IMG_SET_PG6_1_ADDR+IMG_SET_PG6_1_SIZE)
+#define IMG_SET_PG6_2_ADDR					(IMG_SET_PG6_1_END)
+#define IMG_SET_PG6_2_SIZE					(740)
+#define IMG_SET_PG6_2_END					(IMG_SET_PG6_2_ADDR+IMG_SET_PG6_2_SIZE)
+#define IMG_SET_PG6_3_ADDR					(IMG_SET_PG6_2_END)
+#define IMG_SET_PG6_3_SIZE					(740)
+#define IMG_SET_PG6_3_END					(IMG_SET_PG6_3_ADDR+IMG_SET_PG6_3_SIZE)
+#define IMG_SET_PG6_4_ADDR					(IMG_SET_PG6_3_END)
+#define IMG_SET_PG6_4_SIZE					(740)
+#define IMG_SET_PG6_4_END					(IMG_SET_PG6_4_ADDR+IMG_SET_PG6_4_SIZE)
+#define IMG_SET_PG6_5_ADDR					(IMG_SET_PG6_4_END)
+#define IMG_SET_PG6_5_SIZE					(740)
+#define IMG_SET_PG6_5_END					(IMG_SET_PG6_5_ADDR+IMG_SET_PG6_5_SIZE)
+#define IMG_SET_PG6_6_ADDR					(IMG_SET_PG6_5_END)
+#define IMG_SET_PG6_6_SIZE					(740)
+#define IMG_SET_PG6_6_END					(IMG_SET_PG6_6_ADDR+IMG_SET_PG6_6_SIZE)
+#define IMG_SET_QR_ICON_ADDR				(IMG_SET_PG6_6_END)
 #define IMG_SET_QR_ICON_SIZE				(1258)
 #define IMG_SET_QR_ICON_END					(IMG_SET_QR_ICON_ADDR+IMG_SET_QR_ICON_SIZE)
 #define IMG_SET_SWITCH_OFF_ICON_ADDR		(IMG_SET_QR_ICON_END)
@@ -845,13 +878,12 @@
 #define IMG_FALL_CANCEL_SIZE				(7208)
 #define IMG_FALL_CANCEL_END					(IMG_FALL_CANCEL_ADDR+IMG_FALL_CANCEL_SIZE)
 
-
-#define IMG_END_ADDR						0x3FFFFF
+#define IMG_END_ADDR						0x1FFFFF
 /***************************************************img end*********************************************************/
 
 /***************************************************font start*********************************************************/
-//FONT在flash里占用3M的空间(0x400000~0x6FFFFF)
-#define FONT_START_ADDR						0x400000
+//FONT在flash里占用5M的空间(0x200000~0x6FFFFF)
+#define FONT_START_ADDR						0x200000
 
 #define FONT_VER_ADDR						(FONT_START_ADDR)
 #define FONT_VER_SIZE						(16)
@@ -859,75 +891,29 @@
 
 #define FONT_DATA_ADDR						(FONT_VER_END)
 
-#ifdef FONTMAKER_UNICODE_FONT
 #define FONT_EN_UNI_16_ADDR					(FONT_DATA_ADDR)
-#define FONT_EN_UNI_16_SIZE					(6748)
+#define FONT_EN_UNI_16_SIZE					(12296)
 #define FONT_EN_UNI_16_END					(FONT_EN_UNI_16_ADDR+FONT_EN_UNI_16_SIZE)
 
 #define FONT_EN_UNI_20_ADDR					(FONT_EN_UNI_16_END)
-#define FONT_EN_UNI_20_SIZE					(459868)
+#define FONT_EN_UNI_20_SIZE					(1165996)
 #define FONT_EN_UNI_20_END					(FONT_EN_UNI_20_ADDR+FONT_EN_UNI_20_SIZE)
 
 #define FONT_EN_UNI_28_ADDR					(FONT_EN_UNI_20_END)
-#define FONT_EN_UNI_28_SIZE					(789208)
+#define FONT_EN_UNI_28_SIZE					(2180064)
 #define FONT_EN_UNI_28_END					(FONT_EN_UNI_28_ADDR+FONT_EN_UNI_28_SIZE)
 
 #define FONT_EN_UNI_36_ADDR					(FONT_EN_UNI_28_END)
-#define FONT_EN_UNI_36_SIZE					(1240332)
+#define FONT_EN_UNI_36_SIZE					(36808)
 #define FONT_EN_UNI_36_END					(FONT_EN_UNI_36_ADDR+FONT_EN_UNI_36_SIZE)
 
 #define FONT_EN_UNI_52_ADDR					(FONT_EN_UNI_36_END)
-#define FONT_EN_UNI_52_SIZE					(39472)
+#define FONT_EN_UNI_52_SIZE					(67244)
 #define FONT_EN_UNI_52_END					(FONT_EN_UNI_52_ADDR+FONT_EN_UNI_52_SIZE)
 
 #define FONT_EN_UNI_68_ADDR					(FONT_EN_UNI_52_END)
-#define FONT_EN_UNI_68_SIZE					(73052)
+#define FONT_EN_UNI_68_SIZE					(122988)
 #define FONT_EN_UNI_68_END					(FONT_EN_UNI_68_ADDR+FONT_EN_UNI_68_SIZE)
-
-#elif defined(FONTMAKER_MBCS_FONT)
-
-#else
-#define FONT_ASC_1608_ADDR					(FONT_DATA_ADDR)
-#define FONT_ASC_1608_WIDTH					(16)
-#define FONT_ASC_1608_SIZE 					(96*16)
-#define FONT_ASC_1608_END					(FONT_ASC_1608_ADDR+FONT_ASC_1608_SIZE)
-
-#define FONT_ASC_2412_ADDR					(FONT_ASC_1608_END)
-#define FONT_ASC_2412_WIDTH					(48)
-#define FONT_ASC_2412_SIZE 					(96*48)
-#define FONT_ASC_2412_END					(FONT_ASC_2412_ADDR+FONT_ASC_2412_SIZE)
-
-#define FONT_ASC_3216_ADDR					(FONT_ASC_2412_END)
-#define FONT_ASC_3216_WIDTH					(64)
-#define FONT_ASC_3216_SIZE 					(96*64)
-#define FONT_ASC_3216_END					(FONT_ASC_3216_ADDR+FONT_ASC_3216_SIZE)
-
-#define FONT_ASC_4824_ADDR					(FONT_ASC_3216_END)
-#define FONT_ASC_4824_WIDTH					(144)
-#define FONT_ASC_4824_SIZE 					(96*144)
-#define FONT_ASC_4824_END					(FONT_ASC_4824_ADDR+FONT_ASC_4824_SIZE)
-
-#define FONT_ASC_6432_ADDR					(FONT_ASC_4824_END)
-#define FONT_ASC_6432_WIDTH					(256)
-#define FONT_ASC_6432_SIZE 					(96*255)
-#define FONT_ASC_6432_END					(FONT_ASC_6432_ADDR+FONT_ASC_6432_SIZE)
-
-#define FONT_CHN_SM_1616_ADDR				(FONT_ASC_6432_END)
-#define FONT_CHN_SM_1616_WIDTH				(32)
-#define FONT_CHN_SM_1616_SIZE 				(8178*32)
-#define FONT_CHN_SM_1616_END				(FONT_CHN_SM_1616_ADDR+FONT_CHN_SM_1616_SIZE)
-
-#define FONT_CHN_SM_2424_ADDR				(FONT_CHN_SM_1616_END)
-#define FONT_CHN_SM_2424_WIDTH				(72)
-#define FONT_CHN_SM_2424_SIZE 				(8178*72)
-#define FONT_CHN_SM_2424_END				(FONT_CHN_SM_2424_ADDR+FONT_CHN_SM_2424_SIZE)
-
-#define FONT_CHN_SM_3232_ADDR				(FONT_CHN_SM_2424_END)
-#define FONT_CHN_SM_3232_WIDTH				(128)
-#define FONT_CHN_SM_3232_SIZE 				(8178*128)
-#define FONT_CHN_SM_3232_END				(FONT_CHN_SM_3232_ADDR+FONT_CHN_SM_3232_SIZE)
-
-#endif
 
 #define FONT_END_ADDR						0x6FFFFF
 /***************************************************font end*********************************************************/

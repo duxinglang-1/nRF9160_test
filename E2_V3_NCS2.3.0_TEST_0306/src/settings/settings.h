@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
 
 #define ALARM_MAX	8
-#define MENU_MAX_COUNT	10
+#define MENU_MAX_COUNT	15
 #define MENU_NAME_MAX	25
 #define MENU_NAME_STR_MAX	13
 #define MENU_OPT_STR_MAX	7
@@ -58,11 +58,21 @@ typedef enum
 	LANGUAGE_ITA,					//Italian
 	LANGUAGE_ES,					//Spanish
 	LANGUAGE_PT,					//Portuguese
+	LANGUAGE_PL,					//Polish
+	LANGUAGE_SE,					//Swedish
+	LANGUAGE_JP,					//Japanese
+	LANGUAGE_KR,					//Korea
+	LANGUAGE_RU,					//Russian
+	LANGUAGE_GR,					//Greece
 #else
 	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
 	LANGUAGE_EN,					//English
 #endif	
-	LANGUAGE_MAX
+	LANGUAGE_MAX,
+	LANGUAGE_DK,					//Danish
+	LANGUAGE_FI,					//Finnish
+	LANGUAGE_NL,					//Dutch
+	LANGUAGE_NO,					//Norwegian
 }LANGUAGE_SET;
 
 typedef enum
@@ -139,7 +149,7 @@ typedef struct
 	MENU_ID id;
 	uint8_t index;
 	uint8_t count;
-	uint16_t name[LANGUAGE_MAX][MENU_MAX_COUNT][MENU_NAME_MAX];
+	uint16_t *name[LANGUAGE_MAX][MENU_MAX_COUNT];
 	menu_handler sel_handler[MENU_MAX_COUNT];
 	menu_handler pg_handler[4];
 }settings_menu_t;

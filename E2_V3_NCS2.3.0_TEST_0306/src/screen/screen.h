@@ -35,7 +35,7 @@ extern "C" {
 #define IDLE_TIME_W				153
 #define IDLE_TIME_H				60
 #define IDLE_TIME_X				((LCD_WIDTH-IDLE_TIME_W)/2)
-#define IDLE_TIME_Y				50
+#define IDLE_TIME_Y				48
 #define IDLE_TIME_NUM_W			34
 #define IDLE_TIME_NUM_H			60
 #define IDLE_TIME_COLON_W		17
@@ -47,7 +47,7 @@ extern "C" {
 #define IDLE_DATE_DAY_EN_W		24
 #define IDLE_DATE_DAY_EN_H		20
 #define IDLE_DATE_DAY_EN_X		115
-#define IDLE_DATE_DAY_EN_Y		106
+#define IDLE_DATE_DAY_EN_Y		105
 #define IDLE_DATE_NUM_EN_W		12
 #define IDLE_DATE_NUM_EN_H		20
 #define IDLE_DATE_MON_CN_W		100
@@ -69,38 +69,37 @@ extern "C" {
 #define IDLE_WEEK_CN_X			150
 #define IDLE_WEEK_CN_Y			106
 
-
 //ble
 #define IDLE_BLE_W		50
 #define IDLE_BLE_H		30
 #define IDLE_BLE_X		((LCD_WIDTH-IDLE_BLE_W)/2)
-#define IDLE_BLE_Y		5
+#define IDLE_BLE_Y		4
 
 //network mode
 #define IDLE_NET_MODE_W		12
 #define IDLE_NET_MODE_H		16
 #define IDLE_NET_MODE_X		108
-#define IDLE_NET_MODE_Y		34
+#define IDLE_NET_MODE_Y		33
 
 //battery soc
 #define IDLE_BAT_W		30
 #define IDLE_BAT_H		16
 #define IDLE_BAT_X		169
-#define IDLE_BAT_Y		34
+#define IDLE_BAT_Y		32
 #define IDLE_BAT_PERCENT_W		44
 #define IDLE_BAT_PERCENT_H		18
 #define IDLE_BAT_PERCENT_X		120
-#define IDLE_BAT_PERCENT_Y		32
+#define IDLE_BAT_PERCENT_Y		30
 #define IDLE_BAT_INNER_RECT_W	22
 #define IDLE_BAT_INNER_RECT_H	10
 #define IDLE_BAT_INNER_RECT_X	172
-#define IDLE_BAT_INNER_RECT_Y	37
+#define IDLE_BAT_INNER_RECT_Y	35
 
 //NB signal
 #define IDLE_SIGNAL_W		54
 #define IDLE_SIGNAL_H		12
 #define IDLE_SIGNAL_X		45
-#define IDLE_SIGNAL_Y		35
+#define IDLE_SIGNAL_Y		34
 
 //idle circle bg
 #define IDLE_CIRCLE_BG_W	192

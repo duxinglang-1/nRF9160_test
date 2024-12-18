@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-//#define FW_FOR_CN	//中文版本
+#define FW_FOR_CN	//中文版本
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	15
@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	6
 #define MENU_NOTIFY_STR_MAX	32
 
-#define VERSION_STR	"V3.4.4_241212"
+#define VERSION_STR	"V3.4.4_241218"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else

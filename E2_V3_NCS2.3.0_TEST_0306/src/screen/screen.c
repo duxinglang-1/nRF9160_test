@@ -124,7 +124,7 @@ static uint16_t still_str[LANGUAGE_MAX][21] = {
 												{0x0046,0x0069,0x0071,0x0075,0x0065,0x0020,0x0070,0x0061,0x0072,0x0061,0x0064,0x006F,0x0000},//Fique parado
 												{0x005A,0x006F,0x0073,0x0074,0x0061,0x0144,0x0020,0x0077,0x0020,0x0062,0x0065,0x007A,0x0072,0x0075,0x0063,0x0068,0x0075,0x0000},//Zosta里 w bezruchu
 												{0x0048,0x00E5,0x006C,0x006C,0x0020,0x0064,0x0069,0x0067,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0061,0x0000},//H?ll dig stilla
-												{0x3058,0x3063,0x3068,0x3057,0x3066,0x3044,0x3066,0x304F,0x3060,0x3055,0x3044,0x0000},//元勻午仄化中化仁分今中
+												{0x3058,0x3063,0x3068,0x3057,0x3066,0x3066,0x0000},//元勻午仄化化
 												{0xAC00,0xB9CC,0xD788,0x0020,0xC788,0xC5B4,0x0000},//??? ??
 												{0x041E,0x0441,0x0442,0x0430,0x0432,0x0430,0x0439,0x0442,0x0435,0x0441,0x044C,0x0020,0x043D,0x0430,0x0020,0x043C,0x0435,0x0441,0x0442,0x0435,0x0000},//妍扼找忘志忘抄找快扼抆 扶忘 技快扼找快
 												{0x039C,0x03B5,0x03AF,0x03BD,0x03B5,0x0020,0x03B1,0x03BA,0x03AF,0x03BD,0x03B7,0x03C4,0x03BF,0x03C2,0x0000},//收汍?糸汍 汐百?糸灰而羊?
@@ -3242,7 +3242,19 @@ void TempUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		
@@ -3354,7 +3366,18 @@ void TempUpdateStatus(void)
 		temp_retry_left--;
 		if(temp_retry_left == 0)
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			switch(global_settings.language)
+			{
+		  #ifndef FW_FOR_CN	
+			case LANGUAGE_JP:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				break;
+		  #endif
+		  
+			default:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				break;
+			}
 		}
 		else
 		{
@@ -3375,7 +3398,19 @@ void TempUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
@@ -3981,7 +4016,19 @@ void BPUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 		
@@ -4086,7 +4133,18 @@ void BPUpdateStatus(void)
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			switch(global_settings.language)
+			{
+		  #ifndef FW_FOR_CN	
+			case LANGUAGE_JP:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				break;
+		  #endif
+		  
+			default:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				break;
+			}
 		}
 		else
 		{
@@ -4106,7 +4164,19 @@ void BPUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
@@ -4420,7 +4490,19 @@ void SPO2UpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
@@ -4491,7 +4573,18 @@ void SPO2UpdateStatus(void)
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			switch(global_settings.language)
+			{
+		  #ifndef FW_FOR_CN	
+			case LANGUAGE_JP:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				break;
+		  #endif
+		  
+			default:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				break;
+			}
 		}
 		else
 		{
@@ -4510,8 +4603,20 @@ void SPO2UpdateStatus(void)
 	#else	
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
+	
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
@@ -4804,7 +4909,19 @@ void HRUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 		
@@ -4876,7 +4993,18 @@ void HRUpdateStatus(void)
 		ppg_retry_left--;
 		if(ppg_retry_left == 0)
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			switch(global_settings.language)
+			{
+		  #ifndef FW_FOR_CN	
+			case LANGUAGE_JP:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				break;
+		  #endif
+		  
+			default:
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				break;
+			}
 		}
 		else
 		{
@@ -4896,7 +5024,19 @@ void HRUpdateStatus(void)
 		LCD_SetFontSize(FONT_SIZE_24);
 	#endif
 
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+		switch(global_settings.language)
+		{
+	  #ifndef FW_FOR_CN	
+		case LANGUAGE_JP:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			break;
+	  #endif
+	  
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			break;
+		}
+
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 

@@ -263,7 +263,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 					dl_font_start();
 			#if defined(CONFIG_PPG_SUPPORT)
 				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))

@@ -1726,7 +1726,7 @@ void SettingsUpdateStatus(void)
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
 															{
-																{0x00DC,0x0062,0x0065,0x0072,0x0070,0x0072,0x00FC,0x0066,0x0065,0x006E,0x0000},//?berpr¨¹fen
+																{0x0053,0x0069,0x0063,0x0068,0x0074,0x0000},//Sicht
 																{0x0000},//null
 																{0x005A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0065,0x006E,0x0000},//Zur¨¹cksetzen
 															},
@@ -1900,7 +1900,6 @@ void SettingsUpdateStatus(void)
 				
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
-
 				switch(global_settings.language)
 				{
 			  #ifndef FW_FOR_CN
@@ -1908,9 +1907,11 @@ void SettingsUpdateStatus(void)
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], 6);
 					break;
 			  #endif
-
-				default:
+				case LANGUAGE_EN:
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], MENU_NAME_STR_MAX);
+					break;
+				default:
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], 12);
 					break;
 				}
 				LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -1966,9 +1967,12 @@ void SettingsUpdateStatus(void)
 								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 5);
 								break;
 						  #endif
+						  	case LANGUAGE_EN:
+								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
+								break;
 						  
 							default:
-								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
+								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 6);
 								break;
 							}
 						}
@@ -1984,7 +1988,18 @@ void SettingsUpdateStatus(void)
 					break;
 				case 6:
 					memset(tmpbuf, 0, sizeof(tmpbuf));
-					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
+					switch(global_settings.language)
+					{
+				  #ifndef FW_FOR_CN	
+					case LANGUAGE_DE:
+						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 6);
+						break;
+				  #endif
+		  
+					default:
+						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
+						break;
+					}
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
@@ -2099,10 +2114,13 @@ void SettingsUpdateStatus(void)
 		
 	case SETTINGS_MENU_FACTORY_RESET:
 		{
+			static LANGUAGE_SET language_bk = LANGUAGE_MAX;
 			uint16_t tmpbuf[128] = {0};
 			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
+			if(language_bk == LANGUAGE_MAX)
+				language_bk = global_settings.language;
 			
 			switch(g_reset_status)
 			{
@@ -2242,7 +2260,7 @@ void SettingsUpdateStatus(void)
 
 					LCD_ShowImg_From_Flash(SETTINGS_MENU_RESET_LOGO_X, SETTINGS_MENU_RESET_LOGO_Y, IMG_RESET_SUCCESS_ADDR);
 
-					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_success[global_settings.language], MENU_NOTIFY_STR_MAX);
+					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_success[language_bk], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
@@ -2711,8 +2729,15 @@ void SettingsShowStatus(void)
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontColor(WHITE);
-
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
+		switch(global_settings.language)
+		{
+		case LANGUAGE_EN:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
+			break;
+		default:
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], 12);
+			break;
+		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 							SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
@@ -3246,7 +3271,7 @@ void TempUpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -3370,7 +3395,7 @@ void TempUpdateStatus(void)
 			{
 		  #ifndef FW_FOR_CN	
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
 		  #endif
 		  
@@ -3402,7 +3427,7 @@ void TempUpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -4020,7 +4045,7 @@ void BPUpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -4137,7 +4162,7 @@ void BPUpdateStatus(void)
 			{
 		  #ifndef FW_FOR_CN	
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
 		  #endif
 		  
@@ -4168,7 +4193,7 @@ void BPUpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -4494,7 +4519,7 @@ void SPO2UpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -4577,7 +4602,7 @@ void SPO2UpdateStatus(void)
 			{
 		  #ifndef FW_FOR_CN	
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
 		  #endif
 		  
@@ -4608,7 +4633,7 @@ void SPO2UpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -4913,7 +4938,7 @@ void HRUpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
 	  #endif
 	  
@@ -4997,7 +5022,7 @@ void HRUpdateStatus(void)
 			{
 		  #ifndef FW_FOR_CN	
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
 		  #endif
 		  
@@ -5028,7 +5053,7 @@ void HRUpdateStatus(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_JP:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-22);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
 	  #endif
 	  

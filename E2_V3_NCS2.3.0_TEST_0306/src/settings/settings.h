@@ -11,11 +11,11 @@
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	15
 #define MENU_NAME_MAX	25
-#define MENU_NAME_STR_MAX	12
-#define MENU_OPT_STR_MAX	6
+#define MENU_NAME_STR_MAX	15
+#define MENU_OPT_STR_MAX	10
 #define MENU_NOTIFY_STR_MAX	32
 
-#define VERSION_STR	"V3.4.4_241218"
+#define VERSION_STR	"V3.4.4_241224"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else
@@ -63,7 +63,7 @@ typedef enum
 	LANGUAGE_JP,					//Japanese
 	LANGUAGE_KR,					//Korea
 	LANGUAGE_RU,					//Russian
-	LANGUAGE_GR,					//Greece
+	LANGUAGE_AR,					//Arabic
 #else
 	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
 	LANGUAGE_EN,					//English
@@ -73,6 +73,7 @@ typedef enum
 	LANGUAGE_FI,					//Finnish
 	LANGUAGE_NL,					//Dutch
 	LANGUAGE_NO,					//Norwegian
+	LANGUAGE_GR,					//Greece
 }LANGUAGE_SET;
 
 typedef enum

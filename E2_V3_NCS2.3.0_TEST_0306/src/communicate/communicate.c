@@ -1230,6 +1230,9 @@ void SendSettingsData(void)
 	case LANGUAGE_GR:	//Greece
 		strcat(reply, "gr");
 		break;
+	case LANGUAGE_AR:	//Arabic
+		strcat(reply, "ar");
+		break;
 	case LANGUAGE_KR:	//Korea	
 		strcat(reply, "ko");
 		break;		

@@ -944,9 +944,6 @@ void TimeMsgProcess(void)
 
 	if(send_timing_data_flag)
 	{
-		bool flag = false;
-		static uint8_t scc_count = 0;
-		
 	#ifdef CONFIG_PPG_SUPPORT
 		if((g_hr_hourly >= PPG_HR_MIN)&&(g_hr_hourly <= PPG_HR_MAX))
 			UpdateLastPPGData(g_health_check_time, PPG_DATA_HR, &g_hr_hourly);
@@ -965,28 +962,10 @@ void TimeMsgProcess(void)
 		TempRedrawHourlyData();
 	#endif
 
-		if(CheckSCC())
-		{
-			flag = true;
-			scc_count = 0;
-		}
-		else
-		{
-			scc_count++;
-			if(scc_count >= 6)
-			{
-				flag = true;
-				scc_count = 0;
-			}
-		}
-		
-		if(flag)
-		{
-			TimeCheckSendHealthData();
-		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-			TimeCheckSendSportData();
-		#endif
-		}
+		TimeCheckSendHealthData();
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+		TimeCheckSendSportData();
+	#endif
 
 	#ifdef CONFIG_BLE_SUPPORT	
 		if(g_ble_connected)

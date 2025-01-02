@@ -123,7 +123,6 @@ void LCD_FillExtra(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t color
 }
 #endif
 
-
 void LCD_FillColor(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {          
 	uint32_t i;
@@ -361,30 +360,28 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 
 	w = cbyte;
 	h = system_font;
-	
-#ifdef LCD_TYPE_SPI
 	if((x+w)>=LCD_WIDTH)
 		w = LCD_WIDTH - x;
 	if((y+h)>=LCD_HEIGHT)
 		h = LCD_HEIGHT - y;
-	BlockWrite(x,y,w,h);	//设置刷新位置
-#endif
+	//BlockWrite(x0,y0,w,h);	//设置刷新位置
 
 	for(t=0;t<csize;t++)
 	{		
+		uint8_t point_c[2] = {(POINT_COLOR>>8)&0xff, POINT_COLOR&0xff};
+		uint8_t back_c[2] = {(BACK_COLOR>>8)&0xff, BACK_COLOR&0xff};
+		
 		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
 			if(temp&0x80)
 			{
-				databuf[2*i] = POINT_COLOR>>8;
-				databuf[2*i+1] = POINT_COLOR;
+				memcpy(&databuf[2*i], point_c, 2);
 			}
 			else if(mode==0)
 			{
-				databuf[2*i] = BACK_COLOR>>8;
-				databuf[2*i+1] = BACK_COLOR;
+				memcpy(&databuf[2*i], back_c, 2);
 			}
 			
 			temp<<=1;
@@ -392,6 +389,7 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
+				BlockWrite(x0,y,w,1);	//设置刷新位置
 				DispData(2*i, databuf);
 				i=0;
 				
@@ -400,10 +398,10 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 				if(y>=LCD_HEIGHT)return; //超区域了
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
-
 			}
 			if((x-x0)==cbyte)
 			{
+				BlockWrite(x0,y,w,1);	//设置刷新位置
 				DispData(2*i, databuf);
 				i=0;
 				
@@ -681,15 +679,15 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 			temp<<=1;
 			i++;
 			x++;
-			if(x>=LCD_WIDTH)							//超出行区域，直接显示下一行
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
 				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return;							//超区域了
-				t=t+(cbyte-(t%cbyte))-1;				//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 			}
 			if((x-x0)==(system_font))
@@ -3217,26 +3215,105 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 }
 
 #ifdef FONTMAKER_UNICODE_FONT
+bool LCD_FindArabAlphabetFrom(uint16_t alphabet, font_arabic_forms *from)
+{
+	uint8_t i,count=sizeof(ara_froms)/sizeof(ara_froms[0]);
+
+	from->final = from->medial = from->initial = from->isolated = alphabet;
+	
+	for(i=0;i<count;i++)
+	{
+		if(alphabet == ara_froms[i].isolated)
+		{
+			memcpy(from, &ara_froms[i], sizeof(font_arabic_forms));
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
 {
-	uint16_t str_x=x,str_y=y,str_w,str_h;
+	int16_t str_x=x,str_y=y,str_w,str_h;
+	uint16_t *pre,*next,show;
 	uint8_t w=0;
-	uint16_t end=0x000a;
-	
-	str_w = width+x;
-	str_h = height+y;
+	uint16_t end=0x000a,space=0x0020;
+	font_arabic_forms arab_al_froms = {0x00};
+
+	if(g_language_r2l)
+	{
+		str_w = 0;
+		if(x > width)
+			str_w = x-width;
+	}
+	else
+	{
+		str_w = x+width;
+		if(str_w >= LCD_WIDTH)
+			str_w = LCD_WIDTH;
+	}
+	str_h = y+height;
+
+	pre = NULL;
+	next = p+1;
 	while(*p)
 	{       
-		if(str_x>=str_w){str_x=x;str_y+=system_font;}
-		if(*p==end){str_x=x;str_y+=system_font;p++;}
-		if(str_y>=str_h)break;//退出
-		if(*p==0x0000)break;//退出
-		w = LCD_Measure_Uni_Byte(*p);
-		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
-		if(str_y>=str_h)break;//退出
-		w = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
-		str_x += w;
+		if(g_language_r2l)
+		{
+			if(*p==end){str_x=x;str_y+=system_font;p++;}
+			if(str_y>=str_h)break;//退出
+			if(*p==0x0000)break;//退出
+			show = *p;
+
+			if(global_settings.language == LANGUAGE_AR)
+			{
+				uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+				
+				if((pre != NULL)&&(*pre != space))
+					flag |= 0b00000010;
+				if((*next != 0x0000)&&(*next != space))
+					flag |= 0b00000001;
+
+				if(flag != 0)
+				{
+					LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+					switch(flag)
+					{
+					case 1:
+						show = arab_al_froms.initial;
+						break;
+					case 2:
+						show = arab_al_froms.final;
+						break;
+					case 3:
+						show = arab_al_froms.medial;
+						break;
+					}
+				}
+			}
+						
+			w = LCD_Measure_Uni_Byte(show);
+			if((str_x-w)<=str_w){str_x=x-w;str_y+=system_font;}
+			if(str_y>=str_h)break;//退出
+			str_x -= w;
+			LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
+		}
+		else
+		{
+			if(*p==end){str_x=x;str_y+=system_font;p++;}
+			if(str_y>=str_h)break;//退出
+			if(*p==0x0000)break;//退出
+			w = LCD_Measure_Uni_Byte(*p);
+			if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+			if(str_y>=str_h)break;//退出
+			LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+			str_x += w;
+		}
+		
+		pre = p;
 		p++;
+		next = p+1;
 	}
 }
 
@@ -3245,17 +3322,66 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 //*p:字符串起始地址	
 void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 {
-	uint16_t str_x=x,str_y=y;
+	int16_t str_x=x,str_y=y;
+	uint16_t *pre,*next,show;
+	uint16_t space=0x0020;
+	uint8_t w=0;
 	uint8_t width;
+	font_arabic_forms arab_al_froms = {0x00};
 
+	if((str_x >= LCD_WIDTH)||(str_y >= LCD_HEIGHT))
+		return;
+
+	pre = NULL;
+	next = p+1;
 	while(*p)
-	{       
-		if(str_x>=LCD_WIDTH)break;//退出
-		if(str_y>=LCD_HEIGHT)break;//退出
+	{
+		if(g_language_r2l)
+		{
+			if(str_x<=0)break;//退出
 
-		width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
-		str_x += width;
+			show = *p;
+			if(global_settings.language == LANGUAGE_AR)
+			{
+				uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+				
+				if((pre != NULL)&&(*pre != space))
+					flag |= 0b00000010;
+				if((*next != 0x0000)&&(*next != space))
+					flag |= 0b00000001;
+
+				if(flag != 0)
+				{
+					LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+					switch(flag)
+					{
+					case 1:
+						show = arab_al_froms.initial;
+						break;
+					case 2:
+						show = arab_al_froms.final;
+						break;
+					case 3:
+						show = arab_al_froms.medial;
+						break;
+					}
+				}
+			}
+			w = LCD_Measure_Uni_Byte(show);
+			if(str_x<=w)break;//退出
+			str_x -= w;
+			LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
+		}
+		else
+		{
+			if(str_x>=LCD_WIDTH)break;//退出
+			width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+			str_x += width;
+		}
+
+		pre = p;
 		p++;
+		next = p+1;
 	}
 }
 #endif/*FONTMAKER_UNICODE_FONT*/

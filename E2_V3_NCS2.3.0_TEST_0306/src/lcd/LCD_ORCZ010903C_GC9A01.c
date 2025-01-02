@@ -153,7 +153,7 @@ void WriteOneDot(unsigned int color)
 void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
 {
 	uint8_t buf[4] = {0};
-	
+
 	WriteComm(0x2A);
 	buf[0] = x>>8;
 	buf[1] = x;

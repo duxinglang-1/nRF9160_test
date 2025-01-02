@@ -152,21 +152,22 @@ void WriteOneDot(unsigned int color)
 ////////////////////////////////////////////////²âÊÔº¯Êý//////////////////////////////////////////
 void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //reentrant
 {
-	x += 0;
-	y += 0;
+	uint8_t buf[4] = {0};
+	
+	WriteComm(0x2A);
+	buf[0] = x>>8;
+	buf[1] = x;
+	buf[2] = (x+w-1)>>8;
+	buf[3] = (x+w-1);
+	DispData(4, buf);
 
-	WriteComm(0x2A);             
-	WriteData(x>>8);             
-	WriteData(x);             
-	WriteData((x+w-1)>>8);             
-	WriteData((x+w-1));             
-
-	WriteComm(0x2B);             
-	WriteData(y>>8);             
-	WriteData(y);             
-	WriteData((y+h-1)>>8);//	WriteData((Yend+1)>>8);             
-	WriteData((y+h-1));//	WriteData(Yend+1);   	
-
+	WriteComm(0x2B);
+	buf[0] = y>>8;
+	buf[1] = y;
+	buf[2] = (y+h-1)>>8;
+	buf[3] = (y+h-1);
+	DispData(4, buf);
+	
 	WriteComm(0x2c);
 }
 
@@ -200,7 +201,7 @@ void DispColor(uint32_t total, uint16_t color)
 
 void DispData(uint32_t total, uint8_t *data)
 {
-	uint32_t i,remain;      
+	uint32_t i,remain,sent=0;      
 
 	gpio_pin_set(gpio_lcd, RS, 1);
 	
@@ -210,18 +211,15 @@ void DispData(uint32_t total, uint8_t *data)
 			remain = total;
 		else
 			remain = 2*LCD_DATA_LEN;
-		
-		for(i=0;i<remain;i++)
-		{
-			lcd_data_buffer[i] = data[i];
-		}
-		
+
+		memcpy(lcd_data_buffer, &data[sent], remain);
 		LCD_SPI_Transceive(lcd_data_buffer, remain, NULL, 0);
 
 		if(remain == total)
 			break;
 
 		total -= remain;
+		sent += remain;
 	}
 }
 

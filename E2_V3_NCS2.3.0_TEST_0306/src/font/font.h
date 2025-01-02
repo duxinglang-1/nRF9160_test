@@ -107,6 +107,14 @@ typedef struct
 }font_uni_infor;
 #endif
 
+typedef struct
+{
+	uint16_t isolated;
+	uint16_t initial;
+	uint16_t medial;
+	uint16_t final;
+}font_arabic_forms;
+
 //Ó¢ÎÄ×Ö¿â
 #ifdef FONT_16
 extern unsigned char asc2_1608[96][16];
@@ -170,4 +178,5 @@ extern unsigned char asc2_6432[96][256];
 //extern unsigned char chinese_3232[8178][128];
 #endif/*FONT_32*/
 
+extern font_arabic_forms ara_froms[29];
 #endif/*__FONT_H__*/

@@ -1676,9 +1676,11 @@ void InitSystemSettings(void)
 
 	switch(global_settings.language)
 	{
+#ifndef FW_FOR_CN	
 	case LANGUAGE_AR:
 		g_language_r2l = true;
 		break;
+#endif		
 	default:
 		g_language_r2l = false;
 		break;
@@ -2306,9 +2308,11 @@ void SettingsMsgPorcess(void)
 		
 		switch(global_settings.language)
 		{
+	#ifndef FW_FOR_CN	
 		case LANGUAGE_AR:
 			g_language_r2l = true;
 			break;
+	#endif		
 		default:
 			g_language_r2l = false;
 			break;

@@ -2979,6 +2979,8 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 	while(*p)
 	{
 		show = *p;
+
+	#ifndef FW_FOR_CN	
 		if(global_settings.language == LANGUAGE_AR)
 		{
 			uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
@@ -3005,6 +3007,8 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 				}
 			}
 		}
+	#endif
+	
 		(*width) += LCD_Measure_Uni_Byte(show);
 
 		pre = p;
@@ -3046,6 +3050,7 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 			if(*p==0x0000)break;//退出
 			show = *p;
 
+		#ifndef FW_FOR_CN
 			if(global_settings.language == LANGUAGE_AR)
 			{
 				uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
@@ -3072,7 +3077,8 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 					}
 				}
 			}
-						
+		#endif
+		
 			w = LCD_Measure_Uni_Byte(show);
 			if((str_x-w)<=str_w){str_x=x-w;str_y+=system_font;}
 			if(str_y>=str_h)break;//退出
@@ -3121,6 +3127,8 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 			if(str_x<=0)break;//退出
 
 			show = *p;
+
+		#ifndef FW_FOR_CN	
 			if(global_settings.language == LANGUAGE_AR)
 			{
 				uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
@@ -3147,6 +3155,8 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 					}
 				}
 			}
+		#endif
+		
 			w = LCD_Measure_Uni_Byte(show);
 			if(str_x<=w)break;//退出
 			str_x -= w;

@@ -712,9 +712,11 @@ void IdleShowSystemDate(void)
 		LCD_FillColor(IDLE_DATE_MON_EN_X, IDLE_DATE_MON_EN_Y, IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_H, BLACK);
 		switch(global_settings.language)
 		{
+	#ifndef FW_FOR_CN	
 		case LANGUAGE_AR:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 3);
 			break;
+	#endif		
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 8);
 			break;
@@ -939,9 +941,11 @@ void IdleShowSystemWeek(void)
 	LCD_FillColor(x, y, w, h, BLACK);
 	switch(global_settings.language)
 	{
+#ifndef FW_FOR_CN	
 	case LANGUAGE_AR:
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 3);
 		break;
+#endif		
 	default:
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 4);
 		break;

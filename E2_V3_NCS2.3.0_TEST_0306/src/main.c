@@ -565,7 +565,7 @@ void test_show_string(void)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
 	LCD_MeasureUniString(test_buf, &w, &h);
-	if(global_settings.language == LANGUAGE_AR)
+	if(g_language_r2l)
 		x = (w >= LCD_WIDTH)? LCD_WIDTH-1 : (LCD_WIDTH+w)/2;
 	else
 		x = (w >= LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;

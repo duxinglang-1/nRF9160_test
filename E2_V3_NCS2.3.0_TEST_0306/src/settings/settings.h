@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	15
@@ -15,7 +15,7 @@
 #define MENU_OPT_STR_MAX	10
 #define MENU_NOTIFY_STR_MAX	32
 
-#define VERSION_STR	"V3.4.4_241224"
+#define VERSION_STR	"V3.4.4_250107"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #else
@@ -210,6 +210,7 @@ typedef struct
 extern bool need_save_time;
 extern bool need_save_settings;
 extern bool need_reset_settings;
+extern bool g_language_r2l;
 
 extern uint8_t screen_id;
 extern uint8_t g_fw_version[64];

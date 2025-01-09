@@ -62,7 +62,7 @@ extern "C" {
 #define IDLE_DATE_NUM_CN_H		24
 #define IDLE_WEEK_EN_W			50
 #define IDLE_WEEK_EN_H			26
-#define IDLE_WEEK_EN_X			60
+#define IDLE_WEEK_EN_X			50
 #define IDLE_WEEK_EN_Y			106
 #define IDLE_WEEK_CN_W			45
 #define IDLE_WEEK_CN_H			26

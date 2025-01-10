@@ -3020,6 +3020,33 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
 {
 	int16_t str_x=x,str_y=y,str_w,str_h;
+	uint8_t w=0;
+	uint16_t end=0x000a;
+	font_arabic_forms arab_al_froms = {0x00};
+
+	str_w = x+width;
+	if(str_w >= LCD_WIDTH)
+		str_w = LCD_WIDTH;
+
+	str_h = y+height;
+	while(*p)
+	{       
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
+		if(*p==0x0000)break;//退出
+		w = LCD_Measure_Uni_Byte(*p);
+		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(str_y>=str_h)break;//退出
+		LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		str_x += w;
+		
+		p++;
+	}
+}
+
+void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
+{
+	int16_t str_x=x,str_y=y,str_w,str_h;
 	uint16_t *pre,*next,show;
 	uint8_t w=0;
 	uint16_t end=0x000a,space=0x0020;
@@ -3031,71 +3058,52 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 		if(x > width)
 			str_w = x-width;
 	}
-	else
-	{
-		str_w = x+width;
-		if(str_w >= LCD_WIDTH)
-			str_w = LCD_WIDTH;
-	}
+
 	str_h = y+height;
 
 	pre = NULL;
 	next = p+1;
 	while(*p)
 	{       
-		if(g_language_r2l)
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
+		if(*p==0x0000)break;//退出
+		show = *p;
+
+	#ifndef FW_FOR_CN
+		if(global_settings.language == LANGUAGE_AR)
 		{
-			if(*p==end){str_x=x;str_y+=system_font;p++;}
-			if(str_y>=str_h)break;//退出
-			if(*p==0x0000)break;//退出
-			show = *p;
+			uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+			
+			if((pre != NULL)&&(*pre != space))
+				flag |= 0b00000010;
+			if((*next != 0x0000)&&(*next != space))
+				flag |= 0b00000001;
 
-		#ifndef FW_FOR_CN
-			if(global_settings.language == LANGUAGE_AR)
+			if(flag != 0)
 			{
-				uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
-				
-				if((pre != NULL)&&(*pre != space))
-					flag |= 0b00000010;
-				if((*next != 0x0000)&&(*next != space))
-					flag |= 0b00000001;
-
-				if(flag != 0)
+				LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+				switch(flag)
 				{
-					LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
-					switch(flag)
-					{
-					case 1:
-						show = arab_al_froms.initial;
-						break;
-					case 2:
-						show = arab_al_froms.final;
-						break;
-					case 3:
-						show = arab_al_froms.medial;
-						break;
-					}
+				case 1:
+					show = arab_al_froms.initial;
+					break;
+				case 2:
+					show = arab_al_froms.final;
+					break;
+				case 3:
+					show = arab_al_froms.medial;
+					break;
 				}
 			}
-		#endif
-		
-			w = LCD_Measure_Uni_Byte(show);
-			if((str_x-w)<=str_w){str_x=x-w;str_y+=system_font;}
-			if(str_y>=str_h)break;//退出
-			str_x -= w;
-			LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
 		}
-		else
-		{
-			if(*p==end){str_x=x;str_y+=system_font;p++;}
-			if(str_y>=str_h)break;//退出
-			if(*p==0x0000)break;//退出
-			w = LCD_Measure_Uni_Byte(*p);
-			if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
-			if(str_y>=str_h)break;//退出
-			LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
-			str_x += w;
-		}
+	#endif
+	
+		w = LCD_Measure_Uni_Byte(show);
+		if((str_x-w)<=str_w){str_x=x-w;str_y+=system_font;}
+		if(str_y>=str_h)break;//退出
+		str_x -= w;
+		LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
 		
 		pre = p;
 		p++;
@@ -3109,10 +3117,30 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 {
 	int16_t str_x=x,str_y=y;
+	uint8_t width;
+
+	if((str_x >= LCD_WIDTH)||(str_y >= LCD_HEIGHT))
+		return;
+
+	while(*p)
+	{
+		if(str_x>=LCD_WIDTH)break;//退出
+		width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		str_x += width;
+
+		p++;
+	}
+}
+
+//显示中英文字符串
+//x,y:起点坐标
+//*p:字符串起始地址	
+void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
+{
+	int16_t str_x=x,str_y=y;
 	uint16_t *pre,*next,show;
 	uint16_t space=0x0020;
-	uint8_t w=0;
-	uint8_t width;
+	uint8_t width=0;
 	font_arabic_forms arab_al_froms = {0x00};
 
 	if((str_x >= LCD_WIDTH)||(str_y >= LCD_HEIGHT))
@@ -3122,52 +3150,43 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 	next = p+1;
 	while(*p)
 	{
-		if(g_language_r2l)
+		if(str_x<=0)break;//退出
+
+		show = *p;
+
+	#ifndef FW_FOR_CN	
+		if(global_settings.language == LANGUAGE_AR)
 		{
-			if(str_x<=0)break;//退出
+			uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+			
+			if((pre != NULL)&&(*pre != space))
+				flag |= 0b00000010;
+			if((*next != 0x0000)&&(*next != space))
+				flag |= 0b00000001;
 
-			show = *p;
-
-		#ifndef FW_FOR_CN	
-			if(global_settings.language == LANGUAGE_AR)
+			if(flag != 0)
 			{
-				uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
-				
-				if((pre != NULL)&&(*pre != space))
-					flag |= 0b00000010;
-				if((*next != 0x0000)&&(*next != space))
-					flag |= 0b00000001;
-
-				if(flag != 0)
+				LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+				switch(flag)
 				{
-					LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
-					switch(flag)
-					{
-					case 1:
-						show = arab_al_froms.initial;
-						break;
-					case 2:
-						show = arab_al_froms.final;
-						break;
-					case 3:
-						show = arab_al_froms.medial;
-						break;
-					}
+				case 1:
+					show = arab_al_froms.initial;
+					break;
+				case 2:
+					show = arab_al_froms.final;
+					break;
+				case 3:
+					show = arab_al_froms.medial;
+					break;
 				}
 			}
-		#endif
-		
-			w = LCD_Measure_Uni_Byte(show);
-			if(str_x<=w)break;//退出
-			str_x -= w;
-			LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
 		}
-		else
-		{
-			if(str_x>=LCD_WIDTH)break;//退出
-			width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
-			str_x += width;
-		}
+	#endif
+	
+		width = LCD_Measure_Uni_Byte(show);
+		if(str_x<=width)break;//退出
+		str_x -= width;
+		LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
 
 		pre = p;
 		p++;
@@ -3501,8 +3520,6 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
-		lcd_sleep_in = false;
-
 		if(LCD_Get_BL_Mode() != LCD_BL_ALWAYS_ON)
 		{
 			LCD_BL_Off();
@@ -3516,12 +3533,12 @@ void LCDMsgProcess(void)
 			
 			LCD_SleepIn();
 		}
+		
+		lcd_sleep_in = false;
 	}
 
 	if(lcd_sleep_out)
 	{
-		lcd_sleep_out = false;
-	
 		LCD_SleepOut();
 		
 		if(IsInIdleScreen())
@@ -3532,5 +3549,7 @@ void LCDMsgProcess(void)
 		}
 
 		LCD_BL_On();
+
+		lcd_sleep_out = false;
 	}
 }

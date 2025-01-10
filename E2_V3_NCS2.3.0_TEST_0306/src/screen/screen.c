@@ -271,10 +271,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 			#endif
 				else
 				{
-					if(get_dl_status() == DL_STATUS_FINISHED)
-						dl_reboot_confirm();
-					else
-						EntryIdleScr();
+					dl_reboot_confirm();
 				}
 				break;
 			}
@@ -295,10 +292,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				else
 			#endif		
 				{
-					if(get_dl_status() == DL_STATUS_FINISHED)
-						dl_reboot_confirm();
-					else
-						EntryIdleScr();
+					dl_reboot_confirm();
 				}
 				break;
 			}
@@ -313,10 +307,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
-				if(get_dl_status() == DL_STATUS_FINISHED)
-					dl_reboot_confirm();
-				else
-					EntryIdleScr();
+				dl_reboot_confirm();
 				break;
 			}
 			break;
@@ -6844,7 +6835,7 @@ void DlUpdateStatus(void)
 			y = DL_NOTIFY_YES_Y+(DL_NOTIFY_YES_H-h)/2;	
 			LCD_ShowUniString(x,y,(uint16_t*)strbuf);
 
-			SetLeftKeyUpHandler(dl_exit);
+			SetLeftKeyUpHandler(dl_reboot_confirm);
 			SetRightKeyUpHandler(dl_exit);
 		#ifdef CONFIG_TOUCH_SUPPORT
 			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, (LCD_WIDTH-DL_NOTIFY_YES_W)/2-10, (LCD_WIDTH-DL_NOTIFY_YES_W)/2+DL_NOTIFY_YES_W+10, DL_NOTIFY_YES_Y-10, DL_NOTIFY_YES_Y+DL_NOTIFY_YES_H+10, dl_exit);

@@ -2595,27 +2595,17 @@ void SettingsUpdateStatus(void)
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(menu_color);
 				LCD_SetFontSize(FONT_SIZE_20);
-				if(g_language_r2l)
-					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
-										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
-										settings_menu.name[global_settings.language][i+settings_menu.index]);
-				else
-					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
-										settings_menu.name[global_settings.language][i+settings_menu.index]);
+				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
+									settings_menu.name[global_settings.language][i+settings_menu.index]);
 				LCD_SetFontColor(WHITE);
 			  #ifdef CONFIG_FACTORY_TEST_SUPPORT	
 				if((settings_menu.index == 0) && (i == 2))
 					LCD_SetFontSize(FONT_SIZE_16);
 			  #endif
-			  	if(g_language_r2l)
-					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
-										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
-										menu_sle_str[i+settings_menu.index]);
-				else
-					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
-										menu_sle_str[i+settings_menu.index]);
+			  	LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
+									menu_sle_str[i+settings_menu.index]);
 			#endif
 
 			#ifdef CONFIG_TOUCH_SUPPORT

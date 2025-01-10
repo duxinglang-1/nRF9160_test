@@ -726,9 +726,9 @@ void IdleShowSystemDate(void)
 		if(g_language_r2l)
 		{
 			if(IDLE_DATE_MON_EN_W > str_w)
-				LCD_ShowUniString(IDLE_DATE_MON_EN_X+(IDLE_DATE_MON_EN_W+str_w)/2, IDLE_DATE_MON_EN_Y, tmpbuf);
+				LCD_ShowUniStringRtoL(IDLE_DATE_MON_EN_X+(IDLE_DATE_MON_EN_W+str_w)/2, IDLE_DATE_MON_EN_Y, tmpbuf);
 			else
-				LCD_ShowUniString(IDLE_DATE_MON_EN_X+IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_Y, tmpbuf);
+				LCD_ShowUniStringRtoL(IDLE_DATE_MON_EN_X+IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_Y, tmpbuf);
 		}
 		else
 		{
@@ -956,9 +956,9 @@ void IdleShowSystemWeek(void)
 	if(g_language_r2l)
 	{
 		if(w > str_w)
-			LCD_ShowUniString(x+(w+str_w)/2, y, tmpbuf);
+			LCD_ShowUniStringRtoL(x+(w+str_w)/2, y, tmpbuf);
 		else
-			LCD_ShowUniString(x+w, y, tmpbuf);
+			LCD_ShowUniStringRtoL(x+w, y, tmpbuf);
 	}
 	else
 	{
@@ -1959,7 +1959,7 @@ void SettingsUpdateStatus(void)
 				}
 				LCD_MeasureUniString(tmpbuf, &w, &h);
 				if(g_language_r2l)
-					LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									tmpbuf);
 				else
@@ -1977,7 +1977,7 @@ void SettingsUpdateStatus(void)
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)lang_sle_str[global_settings.language], MENU_OPT_STR_MAX);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
 						if(g_language_r2l)
-							LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+							LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 						else
@@ -1990,7 +1990,7 @@ void SettingsUpdateStatus(void)
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)level_str[global_settings.language][global_settings.backlight_level], MENU_OPT_STR_MAX+2);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
 						if(g_language_r2l)
-							LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+							LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 						else
@@ -2045,7 +2045,7 @@ void SettingsUpdateStatus(void)
 						}
 						LCD_MeasureUniString(tmpbuf, &w, &h);
 						if(g_language_r2l)
-							LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+							LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 											tmpbuf);
 						else
@@ -2070,7 +2070,7 @@ void SettingsUpdateStatus(void)
 					}
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					if(g_language_r2l)
-						LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 					else
@@ -2179,7 +2179,7 @@ void SettingsUpdateStatus(void)
 				LCD_SetFontColor(WHITE);
 				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
 				if(g_language_r2l)
-					LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
 				else
@@ -2256,7 +2256,7 @@ void SettingsUpdateStatus(void)
 					}
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					if(g_language_r2l)
-						LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2), 
+						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2), 
 										SETTINGS_MENU_RESET_STR_Y+(SETTINGS_MENU_RESET_STR_H-h)/2, 
 										tmpbuf);
 					else
@@ -2315,7 +2315,7 @@ void SettingsUpdateStatus(void)
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_running[global_settings.language], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					if(g_language_r2l)
-						LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
+						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
 					else
@@ -2359,7 +2359,7 @@ void SettingsUpdateStatus(void)
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_success[language_bk], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					if(g_language_r2l)
-						LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
+						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
 					else
@@ -2400,7 +2400,7 @@ void SettingsUpdateStatus(void)
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_fail[language_bk], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
 					if(g_language_r2l)
-						LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
+						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
 					else
@@ -2443,7 +2443,7 @@ void SettingsUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
+				LCD_ShowUniStringRtoL(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 			else
 				LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 
@@ -2531,7 +2531,7 @@ void SettingsUpdateStatus(void)
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
 				if(g_language_r2l)
-					LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										tmpbuf);
 				else
@@ -2605,7 +2605,7 @@ void SettingsUpdateStatus(void)
 				LCD_SetFontColor(menu_color);
 				LCD_SetFontSize(FONT_SIZE_20);
 				if(g_language_r2l)
-					LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
 				else
@@ -2618,7 +2618,7 @@ void SettingsUpdateStatus(void)
 					LCD_SetFontSize(FONT_SIZE_16);
 			  #endif
 			  	if(g_language_r2l)
-					LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
 										menu_sle_str[i+settings_menu.index]);
 				else
@@ -2671,7 +2671,7 @@ void SettingsUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
+				LCD_ShowUniStringRtoL(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 			else
 				LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 		#endif/*CONFIG_QRCODE_SUPPORT*/
@@ -2892,7 +2892,7 @@ void SettingsShowStatus(void)
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+			LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 							SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 							tmpbuf);
 		else
@@ -2906,7 +2906,7 @@ void SettingsShowStatus(void)
 		case 0:
 			LCD_MeasureUniString(menu_sle_str[global_settings.language], &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+				LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									menu_sle_str[global_settings.language]);
 			else
@@ -2917,7 +2917,7 @@ void SettingsShowStatus(void)
 		case 1:
 			LCD_MeasureUniString(level_str[global_settings.language][global_settings.backlight_level], &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+				LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									level_str[global_settings.language][global_settings.backlight_level]);
 			else
@@ -3477,7 +3477,7 @@ void TempUpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		
@@ -3608,7 +3608,7 @@ void TempUpdateStatus(void)
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);		
+			LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);		
 		else
 			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);		
 
@@ -3639,7 +3639,7 @@ void TempUpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
@@ -3763,7 +3763,7 @@ void TempShowStatus(void)
 	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	if(g_language_r2l)
-		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
+		LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
 	else
 		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
@@ -4263,7 +4263,7 @@ void BPUpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 		
@@ -4387,7 +4387,7 @@ void BPUpdateStatus(void)
 		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
 		if(g_language_r2l)
-			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
@@ -4417,7 +4417,7 @@ void BPUpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
@@ -4537,7 +4537,7 @@ void BPShowStatus(void)
 
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	if(g_language_r2l)
-		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
+		LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 	else
 		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
@@ -4749,7 +4749,7 @@ void SPO2UpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
@@ -4839,7 +4839,7 @@ void SPO2UpdateStatus(void)
 		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
 		if(g_language_r2l)
-			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
@@ -4869,7 +4869,7 @@ void SPO2UpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
@@ -4969,7 +4969,7 @@ void SPO2ShowStatus(void)
 	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 	LCD_MeasureUniString(tmpbuf, &w, &h);
 	if(g_language_r2l)
-		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
+		LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 	else
 		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
@@ -5180,7 +5180,7 @@ void HRUpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 		
@@ -5271,7 +5271,7 @@ void HRUpdateStatus(void)
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 			
@@ -5301,7 +5301,7 @@ void HRUpdateStatus(void)
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
+			LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 		else
 			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
@@ -5414,7 +5414,7 @@ void HRShowStatus(void)
 	
 	LCD_MeasureUniString(tmpbuf,&w,&h);
 	if(g_language_r2l)
-		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
+		LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 	else
 		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
@@ -6435,7 +6435,7 @@ void DlShowStatus(void)
 
 #ifdef FONTMAKER_UNICODE_FONT
 	if(g_language_r2l)
-		LCD_ShowUniStringInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_notify[global_settings.language]);
+		LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_notify[global_settings.language]);
 	else
 		LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_notify[global_settings.language]);
 #else
@@ -6516,7 +6516,7 @@ void DlUpdateStatus(void)
 			LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
 		#ifdef FONTMAKER_UNICODE_FONT
 			if(g_language_r2l)
-				LCD_ShowUniStringInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_linking[global_settings.language]);
+				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_linking[global_settings.language]);
 			else
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_linking[global_settings.language]);
 		#else
@@ -6557,7 +6557,7 @@ void DlUpdateStatus(void)
 			LCD_Fill(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, BLACK);
 		#ifdef FONTMAKER_UNICODE_FONT
 			if(g_language_r2l)
-				LCD_ShowUniStringInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_downloading[global_settings.language]);
+				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_downloading[global_settings.language]);
 			else
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_downloading[global_settings.language]);
 		#else
@@ -6574,10 +6574,7 @@ void DlUpdateStatus(void)
 			memset(strbuf, 0x00, sizeof(strbuf));
 			mmi_asc_to_ucs2(strbuf, pro_buf);
 			LCD_MeasureUniString((uint16_t*)strbuf, &w, &h);
-			if(g_language_r2l)
-				pro_str_x = (LCD_WIDTH+w)/2;
-			else
-				pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
+			pro_str_x = DL_NOTIFY_PRO_NUM_X+(DL_NOTIFY_PRO_NUM_W-w)/2;
 			pro_str_y = DL_NOTIFY_PRO_NUM_Y+(DL_NOTIFY_PRO_NUM_H-h)/2;
 			LCD_ShowUniString(pro_str_x,pro_str_y, (uint16_t*)strbuf);
 		}
@@ -6681,7 +6678,7 @@ void DlUpdateStatus(void)
 			strcpy(strbuf, "Upgraded successfully!");
 		#ifdef FONTMAKER_UNICODE_FONT
 			if(g_language_r2l)
-				LCD_ShowUniStringInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_finish[global_settings.language]);
+				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_finish[global_settings.language]);
 			else
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_finish[global_settings.language]);
 		#else	
@@ -6830,7 +6827,7 @@ void DlUpdateStatus(void)
 			strcpy(strbuf, "Upgrade failed, please check the network or server.");
 		#ifdef FONTMAKER_UNICODE_FONT
 			if(g_language_r2l)
-				LCD_ShowUniStringInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_fail[global_settings.language]);
+				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_fail[global_settings.language]);
 			else
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_fail[global_settings.language]);
 		#else
@@ -7067,7 +7064,7 @@ void FOTAShowStatus(void)
 		
 		LCD_MeasureUniString(tmpbuf1, &w, &h);
 		if(g_language_r2l)
-			LCD_ShowUniString((LCD_WIDTH+w)/2, FOTA_START_STR_Y, tmpbuf1);
+			LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y, tmpbuf1);
 		else
 			LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf1);
 
@@ -7075,7 +7072,7 @@ void FOTAShowStatus(void)
 		{
 			LCD_MeasureUniString(tmpbuf2, &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString((LCD_WIDTH+w)/2, FOTA_START_STR_Y+h+2, tmpbuf2);
+				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y+h+2, tmpbuf2);
 			else
 				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf2);
 		}
@@ -7140,7 +7137,7 @@ void FOTAUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString((LCD_WIDTH+w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
+				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 			else
 				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 		#endif
@@ -7179,7 +7176,7 @@ void FOTAUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString((LCD_WIDTH+w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
+				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 			else
 				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 					
@@ -7195,10 +7192,7 @@ void FOTAUpdateStatus(void)
 			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
 			mmi_asc_to_ucs2(tmpbuf, pro_buf);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
-			if(g_language_r2l)
-				pro_str_x = (LCD_WIDTH+w)/2;
-			else
-				pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
+			pro_str_x = FOTA_PRO_NUM_X+(FOTA_PRO_NUM_W-w)/2;
 			pro_str_y = FOTA_PRO_NUM_Y+(FOTA_PRO_NUM_H-h)/2;
 			LCD_ShowUniString(pro_str_x,pro_str_y, tmpbuf);
 		}
@@ -7253,7 +7247,7 @@ void FOTAUpdateStatus(void)
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
 				if(g_language_r2l)
-					LCD_ShowUniString((LCD_WIDTH+w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
+					LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
 				else
 					LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
 			#endif
@@ -7298,7 +7292,7 @@ void FOTAUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
 			if(g_language_r2l)
-				LCD_ShowUniString((LCD_WIDTH+w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, tmpbuf);
+				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, tmpbuf);
 			else
 				LCD_ShowUniString(FOTA_FAIL_STR_X+(FOTA_FAIL_STR_W-w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, tmpbuf);
 		#endif	

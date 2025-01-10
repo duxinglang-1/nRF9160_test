@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-//#define FW_FOR_CN	//中文版本
+#define FW_FOR_CN	//中文版本
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	15

@@ -146,7 +146,7 @@ static void FTMenuIMUShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_IMU_TITLE_X+(FT_IMU_TITLE_W-w)/2, FT_IMU_TITLE_Y, title_str);
 

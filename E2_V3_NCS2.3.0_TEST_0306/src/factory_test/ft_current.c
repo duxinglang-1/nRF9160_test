@@ -146,7 +146,7 @@ static void FTMenuCurUpdate(void)
 	{
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 		LCD_MeasureUniString(ret_str[0], &w, &h);
 		x = FT_CUR_PASS_STR_X+(FT_CUR_PASS_STR_W-w)/2;
 		y = FT_CUR_PASS_STR_Y+(FT_CUR_PASS_STR_H-h)/2;
@@ -191,7 +191,7 @@ static void FTMenuCurShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_CUR_TITLE_X+(FT_CUR_TITLE_W-w)/2, FT_CUR_TITLE_Y, title_str);
 

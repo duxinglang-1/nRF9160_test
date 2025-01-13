@@ -142,7 +142,7 @@ static void FTMenuPPGUpdate(void)
 		update_show_flag = false;
 
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 
 		//pass or fail
 		LCD_SetFontSize(FONT_SIZE_52);
@@ -173,7 +173,7 @@ static void FTMenuPPGShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_PPG_TITLE_X+(FT_PPG_TITLE_W-w)/2, FT_PPG_TITLE_Y, title_str);
 	LCD_MeasureUniString(notify_str, &w, &h);

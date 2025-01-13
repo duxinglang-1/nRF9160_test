@@ -213,7 +213,7 @@ static void FTMenuKeyShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str);
 
@@ -359,7 +359,7 @@ static void FTMenuWristUpdate(void)
 							  };	
 	if(!ft_wrist_checked)
 	{
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 
 		check_count++;
 		if(check_count > 2)
@@ -406,7 +406,7 @@ static void FTMenuWristShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_KEY_TITLE_X+(FT_KEY_TITLE_W-w)/2, FT_KEY_TITLE_Y, title_str);
 

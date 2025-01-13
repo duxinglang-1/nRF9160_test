@@ -184,7 +184,7 @@ static void AgingTestUpdate(void)
 		{
 			ft_aging_update_show_flag = true;
 			
-			LCD_SetFontSize(FONT_SIZE_36);
+			LCD_SetFontSize(FONT_SIZE_28);
 			LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 			LCD_Fill(FT_AGING_MENU_STR_X, FT_AGING_MENU_STR_Y, FT_AGING_MENU_STR_W, 2*(FT_AGING_MENU_STR_H+FT_AGING_MENU_STR_OFFSET_Y), BLACK);
@@ -214,7 +214,7 @@ static void AgingTestUpdate(void)
 		}
 
 		LCD_Fill(FT_AGING_STATUS_STR_X, FT_AGING_STATUS_STR_Y, FT_AGING_STATUS_STR_W, FT_AGING_STATUS_STR_H, BLACK);
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 		LCD_MeasureUniString(show_str, &w, &h);
 		LCD_ShowUniString(FT_AGING_STATUS_STR_X+(FT_AGING_STATUS_STR_W-w)/2, FT_AGING_STATUS_STR_Y+(FT_AGING_STATUS_STR_H-h)/2, show_str);
 	}
@@ -223,7 +223,7 @@ static void AgingTestUpdate(void)
 		ft_aging_update_show_flag = false;
 		
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 
 		LCD_Fill(FT_AGING_STATUS_STR_X, FT_AGING_STATUS_STR_Y, FT_AGING_STATUS_STR_W, FT_AGING_STATUS_STR_H, BLACK);
 		LCD_MeasureUniString(status_str[0], &w, &h);
@@ -248,7 +248,7 @@ static void AgingTestShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_AGING_TITLE_X+(FT_AGING_TITLE_W-w)/2, FT_AGING_TITLE_Y, title_str);
 

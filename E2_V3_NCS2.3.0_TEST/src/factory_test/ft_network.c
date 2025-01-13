@@ -167,7 +167,7 @@ static void FTMenuNetUpdate(void)
 			
 			LCD_Fill(FT_NET_MENU_STR_X, FT_NET_MENU_STR_Y, FT_NET_MENU_STR_W, 2*(FT_NET_MENU_STR_H+FT_NET_MENU_STR_OFFSET_Y), BLACK);
 			
-			LCD_SetFontSize(FONT_SIZE_36);
+			LCD_SetFontSize(FONT_SIZE_28);
 			LCD_MeasureUniString(notify_str, &w, &h);
 			LCD_ShowUniString(FT_NET_NOTIFY_X+(FT_NET_NOTIFY_W-w)/2, FT_NET_NOTIFY_Y+(FT_NET_NOTIFY_H-h)/2, notify_str);
 
@@ -191,7 +191,7 @@ static void FTMenuNetUpdate(void)
 		LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 		//pass and fail
-		LCD_SetFontSize(FONT_SIZE_36);
+		LCD_SetFontSize(FONT_SIZE_28);
 		LCD_MeasureUniString(ret_str[0], &w, &h);
 		x = FT_NET_PASS_STR_X+(FT_NET_PASS_STR_W-w)/2;
 		y = FT_NET_PASS_STR_Y+(FT_NET_PASS_STR_H-h)/2;
@@ -238,7 +238,7 @@ static void FTMenuNetShow(void)
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
-	LCD_SetFontSize(FONT_SIZE_36);
+	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
 	LCD_ShowUniString(FT_NET_TITLE_X+(FT_NET_TITLE_W-w)/2, FT_NET_TITLE_Y, title_str);
 

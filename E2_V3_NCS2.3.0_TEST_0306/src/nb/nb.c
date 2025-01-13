@@ -2987,20 +2987,22 @@ static void nb_test(struct k_work *work)
 #endif
 
 	err = lte_lc_connect();
-	__ASSERT(err == 0, "LTE link could not be established.");
-#ifdef NB_DEBUG
-	LOGD("LTE Link Connected!");
-#endif
+	if(err == 0)
+	{
+	#ifdef NB_DEBUG
+		LOGD("LTE Link Connected!");
+	#endif
 
-	strcpy(nb_test_info, "LTE Link Connected!");
-#ifdef NB_SIGNAL_TEST
-	TestNBUpdateINfor();
-#endif
-#ifdef CONFIG_FACTORY_TEST_SUPPORT	
-	FTNetStatusUpdate(0);
-#endif
+		strcpy(nb_test_info, "LTE Link Connected!");
+	#ifdef NB_SIGNAL_TEST
+		TestNBUpdateINfor();
+	#endif
+	#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+		FTNetStatusUpdate(0);
+	#endif
 
-	k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
+		k_timer_start(&get_nw_rsrp_timer, K_MSEC(1000), K_NO_WAIT);
+	}
 }
 
 static void nb_link(struct k_work *work)

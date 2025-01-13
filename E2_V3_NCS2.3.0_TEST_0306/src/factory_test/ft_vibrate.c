@@ -198,6 +198,8 @@ static void FTMenuVibUpdate(void)
 		SetRightKeyUpHandler(FTMenuVibSle2Hander);
 
 	#ifdef CONFIG_TOUCH_SUPPORT
+		clear_all_touch_event_handle();
+
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_VIB_SLE1_STR_X, FT_VIB_SLE1_STR_X+FT_VIB_SLE1_STR_W, FT_VIB_SLE1_STR_Y, FT_VIB_SLE1_STR_Y+FT_VIB_SLE1_STR_H, FTMenuVibSle1Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_VIB_SLE2_STR_X, FT_VIB_SLE2_STR_X+FT_VIB_SLE2_STR_W, FT_VIB_SLE2_STR_Y, FT_VIB_SLE2_STR_Y+FT_VIB_SLE2_STR_H, FTMenuVibSle2Hander);	
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_VIB_PASS_STR_X, FT_VIB_PASS_STR_X+FT_VIB_PASS_STR_W, FT_VIB_PASS_STR_Y, FT_VIB_PASS_STR_Y+FT_VIB_PASS_STR_H, FTMenuVibPassHander);

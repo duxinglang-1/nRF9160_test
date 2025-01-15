@@ -1862,7 +1862,7 @@ void SettingsMainMenu7Proc(void)
 #ifdef CONFIG_FOTA_DOWNLOAD
 	extern uint8_t g_new_fw_ver[64];
 
-	if((strcmp(g_new_fw_ver,g_fw_version) != 0)
+	if(((strcmp(g_new_fw_ver,g_fw_version) != 0) && (strlen(g_new_fw_ver) > 0))
 		#ifdef NB_SIGNAL_TEST
 		 || 1
 		#endif

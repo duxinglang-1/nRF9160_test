@@ -2170,13 +2170,27 @@ void SettingsUpdateStatus(void)
 				LCD_SetFontColor(WHITE);
 				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
 				if(g_language_r2l)
+				{
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
+				}
 				else
-					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+				{
+					if((i+settings_menu.index) == (settings_menu.count-1))
+					{
+						//Arabic names should be displayed from right to left even in other language settings
+						LCD_ShowUniStringRtoL(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X+w,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
+					}
+					else
+					{
+						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+										settings_menu.name[global_settings.language][i+settings_menu.index]);
+					}
+				}
 			#endif
 
 			#ifdef CONFIG_TOUCH_SUPPORT

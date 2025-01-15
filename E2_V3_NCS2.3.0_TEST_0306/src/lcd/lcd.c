@@ -2978,33 +2978,30 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 	next = p+1;
 	while(*p)
 	{
+		uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+		
 		show = *p;
 
 	#ifndef FW_FOR_CN	
-		if(global_settings.language == LANGUAGE_AR)
-		{
-			uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
-			
-			if((pre != NULL)&&(*pre != space))
-				flag |= 0b00000010;
-			if((*next != 0x0000)&&(*next != space))
-				flag |= 0b00000001;
+		if((pre != NULL)&&(*pre != space))
+			flag |= 0b00000010;
+		if((*next != 0x0000)&&(*next != space))
+			flag |= 0b00000001;
 
-			if(flag != 0)
+		if(flag != 0)
+		{
+			LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+			switch(flag)
 			{
-				LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
-				switch(flag)
-				{
-				case 1:
-					show = arab_al_froms.initial;
-					break;
-				case 2:
-					show = arab_al_froms.final;
-					break;
-				case 3:
-					show = arab_al_froms.medial;
-					break;
-				}
+			case 1:
+				show = arab_al_froms.initial;
+				break;
+			case 2:
+				show = arab_al_froms.final;
+				break;
+			case 3:
+				show = arab_al_froms.medial;
+				break;
 			}
 		}
 	#endif

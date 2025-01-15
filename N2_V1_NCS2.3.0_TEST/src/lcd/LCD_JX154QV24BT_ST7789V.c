@@ -144,22 +144,21 @@ void WriteData(uint8_t i)
 	Write_Data(i);  
 }
 
-void WriteDispData(uint8_t DataH, uint8_t DataM, uint8_t DataL)
+void WriteDispData(uint8_t DataH, uint8_t DataL)
 {
 	gpio_pin_set(gpio_lcd, RS, 1);
 
 	lcd_data_buffer[0] = DataH;
-	lcd_data_buffer[1] = DataM;
-	lcd_data_buffer[2] = DataL;
+	lcd_data_buffer[1] = DataL;
 	
-	LCD_SPI_Transceive(lcd_data_buffer, 3, NULL, 0);
+	LCD_SPI_Transceive(lcd_data_buffer, 2, NULL, 0);
 }
 
 //LCD画点函数
 //color:要填充的颜色
 void WriteOneDot(unsigned int color)
 { 
-	WriteDispData(color>>16, color>>8, color);
+	WriteDispData(color>>8, color);
 }
 
 ////////////////////////////////////////////////测试函数//////////////////////////////////////////
@@ -271,35 +270,35 @@ void DispFrame(void)
 
 	BlockWrite(0,0,COL,ROW);
 
-	WriteDispData(RED>>16, RED>>8, RED);
+	WriteDispData(RED>>8, RED);
 
 	for(i=0;i<COL-2;i++)
 	{
-		WriteDispData(WHITE>>16, WHITE>>8, WHITE);
+		WriteDispData(WHITE>>8, WHITE);
 	}
 	
-	WriteDispData(BLUE>>16, BLUE>>8, BLUE);
+	WriteDispData(BLUE>>8, BLUE);
 
 	for(j=0;j<ROW-2;j++)
 	{
-		WriteDispData(RED>>16, RED>>8, RED);
+		WriteDispData(RED>>8, RED);
  
 		for(i=0;i<COL-2;i++)
 		{
-			WriteDispData(BLACK>>16, BLACK>>8, BLACK);
+			WriteDispData(BLACK>>8, BLACK);
 		}
 
-		WriteDispData(BLUE>>16, BLUE>>8, BLUE);
+		WriteDispData(BLUE>>8, BLUE);
 	}
 
-	WriteDispData(RED>>16, RED>>8, RED);
+	WriteDispData(RED>>8, RED);
  
 	for(i=0;i<COL-2;i++)
 	{
-		WriteDispData(WHITE>>16, WHITE>>8, WHITE);
+		WriteDispData(WHITE>>8, WHITE);
 	}
 
-	WriteDispData(BLUE>>16, BLUE>>8, BLUE);
+	WriteDispData(BLUE>>8, BLUE);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////

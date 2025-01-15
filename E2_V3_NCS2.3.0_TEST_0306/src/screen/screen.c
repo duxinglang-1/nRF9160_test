@@ -6301,8 +6301,8 @@ void DlShowStatus(void)
 											},
 											{
 												//????? ???????? PPG
-												0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x062E,0x0648,0x0627,0x0631,0x0632,0x0645,0x064A,0x0629,0x0050,0x0050,
-												0x0047,0x0000
+												0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x062E,0x0648,0x0627,0x0631,0x0632,0x0645,0x064A,0x0629,0x0047,0x0050,
+												0x0050,0x0000
 											},
 										#else
 											{
@@ -6394,18 +6394,17 @@ void DlShowStatus(void)
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_MeasureUniString((uint16_t*)str_title, &w, &h);
+	y = 25;
 	if(g_language_r2l)
 	{
-		x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? (LCD_WIDTH-1) : (LCD_WIDTH-((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2);
-		x -= (DL_NOTIFY_RECT_X+DL_NOTIFY_OFFSET_W);
+		x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? (LCD_WIDTH-1) : (LCD_WIDTH+w)/2;
+		LCD_ShowUniStringRtoL(x, y, (uint16_t*)str_title);
 	}
 	else
 	{
-		x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? 0 : ((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2;
-		x += (DL_NOTIFY_RECT_X+DL_NOTIFY_OFFSET_W);
+		x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? 0 : (LCD_WIDTH-w)/2;
+		LCD_ShowUniString(x, y, (uint16_t*)str_title);
 	}
-	y = 25;
-	LCD_ShowUniString(x, y, (uint16_t*)str_title);
 #else
 	LCD_MeasureString(str_title, &w, &h);
 	x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? 0 : ((DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W)-w)/2;

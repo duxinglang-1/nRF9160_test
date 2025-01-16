@@ -123,7 +123,6 @@ void LCD_FillExtra(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t color
 }
 #endif
 
-
 void LCD_FillColor(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {          
 	uint32_t i;
@@ -361,30 +360,28 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 
 	w = cbyte;
 	h = system_font;
-	
-#ifdef LCD_TYPE_SPI
 	if((x+w)>=LCD_WIDTH)
 		w = LCD_WIDTH - x;
 	if((y+h)>=LCD_HEIGHT)
 		h = LCD_HEIGHT - y;
-	BlockWrite(x,y,w,h);	//设置刷新位置
-#endif
+	//BlockWrite(x0,y0,w,h);	//设置刷新位置
 
 	for(t=0;t<csize;t++)
 	{		
+		uint8_t point_c[2] = {(POINT_COLOR>>8)&0xff, POINT_COLOR&0xff};
+		uint8_t back_c[2] = {(BACK_COLOR>>8)&0xff, BACK_COLOR&0xff};
+		
 		temp = fontbuf[t];
 		for(t1=0;t1<8;t1++)
 		{
 		#ifdef LCD_TYPE_SPI
 			if(temp&0x80)
 			{
-				databuf[2*i] = POINT_COLOR>>8;
-				databuf[2*i+1] = POINT_COLOR;
+				memcpy(&databuf[2*i], point_c, 2);
 			}
 			else if(mode==0)
 			{
-				databuf[2*i] = BACK_COLOR>>8;
-				databuf[2*i+1] = BACK_COLOR;
+				memcpy(&databuf[2*i], back_c, 2);
 			}
 			
 			temp<<=1;
@@ -392,6 +389,7 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
+				BlockWrite(x0,y,w,1);	//设置刷新位置
 				DispData(2*i, databuf);
 				i=0;
 				
@@ -400,10 +398,10 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 				if(y>=LCD_HEIGHT)return; //超区域了
 				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
-
 			}
 			if((x-x0)==cbyte)
 			{
+				BlockWrite(x0,y,w,1);	//设置刷新位置
 				DispData(2*i, databuf);
 				i=0;
 				
@@ -681,15 +679,15 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 			temp<<=1;
 			i++;
 			x++;
-			if(x>=LCD_WIDTH)							//超出行区域，直接显示下一行
+			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
 				DispData(2*i, databuf);
 				i=0;
 				
 				x=x0;
 				y++;
-				if(y>=LCD_HEIGHT)return;							//超区域了
-				t=t+(cbyte-(t%cbyte))-1;				//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
+				if(y>=LCD_HEIGHT)return;	//超区域了
+				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
 				break;
 			}
 			if((x-x0)==(system_font))
@@ -3427,8 +3425,6 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
-		lcd_sleep_in = false;
-
 		if(LCD_Get_BL_Mode() != LCD_BL_ALWAYS_ON)
 		{
 			LCD_BL_Off();
@@ -3442,12 +3438,12 @@ void LCDMsgProcess(void)
 			
 			LCD_SleepIn();
 		}
+		
+		lcd_sleep_in = false;
 	}
 
 	if(lcd_sleep_out)
 	{
-		lcd_sleep_out = false;
-	
 		LCD_SleepOut();
 		
 		if(IsInIdleScreen())
@@ -3458,5 +3454,7 @@ void LCDMsgProcess(void)
 		}
 
 		LCD_BL_On();
+
+		lcd_sleep_out = false;
 	}
 }

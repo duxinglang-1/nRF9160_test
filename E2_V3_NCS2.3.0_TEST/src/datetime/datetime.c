@@ -961,7 +961,7 @@ void TimeMsgProcess(void)
 
 		TempRedrawHourlyData();
 	#endif
-	
+
 		TimeCheckSendHealthData();
 	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
 		TimeCheckSendSportData();

@@ -20,7 +20,7 @@
 #ifdef LCD_VG6432TSWPG28_SSD1315
 #include "LCD_VG6432TSWPG28_SSD1315.h"
 
-//#define GPIO_ACT_I2C
+#define GPIO_ACT_I2C
 
 #ifdef GPIO_ACT_I2C
 #define LCD_SCL		1
@@ -202,10 +202,6 @@ static uint8_t I2C_Write_Byte(uint8_t txd)
 		I2C_SCL_L();
 	}
 
-	//I2C_SDA_H();
-	//I2C_SCL_H();
-	//I2C_SCL_L();
-	//I2C_NAck();
 	return I2C_Wait_Ack();
 }
 

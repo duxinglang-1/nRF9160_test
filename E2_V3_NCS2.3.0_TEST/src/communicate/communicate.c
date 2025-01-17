@@ -242,6 +242,7 @@ void TimeCheckSendSportData(void)
 }
 #endif
 
+#ifdef CONFIG_PPG_SUPPORT
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendHrData
@@ -394,7 +395,9 @@ void TimeCheckSendBptData(void)
 		reply[len] = ',';
 	NBSendTimelyBptData(reply, strlen(reply));
 }
+#endif
 
+#ifdef CONFIG_TEMP_SUPPORT
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendTempData
@@ -445,6 +448,7 @@ void TimeCheckSendTempData(void)
 		reply[len] = ',';
 	NBSendTimelyTempData(reply, strlen(reply));
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -458,12 +462,20 @@ void TimeCheckSendTempData(void)
  *****************************************************************************/ 
 void TimeCheckSendHealthData(void)
 {
-	if(CheckSCC())
+	if(1
+		#ifdef CONFIG_PPG_SUPPORT	
+		 && CheckSCC()
+		#endif	
+		)
 	{
+	#ifdef CONFIG_PPG_SUPPORT
 		TimeCheckSendHrData();
 		TimeCheckSendSpo2Data();
 		TimeCheckSendBptData();
+	#endif	
+	#ifdef CONFIG_TEMP_SUPPORT	
 		TimeCheckSendTempData();
+	#endif
 	}
 	else
 	{
@@ -982,7 +994,11 @@ void SyncSendHealthData(void)
 	strcpy(reply, tmpbuf);
 	
 	//wrist
-	if(ppg_skin_contacted_flag)
+	if(1
+	#ifdef CONFIG_WRIST_CHECK_SUPPORT	
+		&& ppg_skin_contacted_flag
+	#endif
+		)
 		strcat(reply, "1,");
 	else
 		strcat(reply, "0,");
@@ -1121,27 +1137,41 @@ void SendPowerOnData(void)
 	//ppg algo
 #ifdef CONFIG_PPG_SUPPORT	
 	strcat(reply, g_ppg_ver);
+#else
+	strcat(reply, "NO PPG");
 #endif
 	strcat(reply, ",");
 
 	//wifi version
 #ifdef CONFIG_WIFI_SUPPORT
-	strcat(reply, g_wifi_ver);	
+	strcat(reply, g_wifi_ver);
+#else
+	strcat(reply, "NO WiFi");
 #endif
 	strcat(reply, ",");
 
 	//wifi mac
 #ifdef CONFIG_WIFI_SUPPORT	
-	strcat(reply, g_wifi_mac_addr);	
+	strcat(reply, g_wifi_mac_addr);
+#else
+	strcat(reply, "NO WiFi");
 #endif
 	strcat(reply, ",");
 
 	//ble version
-	strcat(reply, &g_nrf52810_ver[15]);	
+#ifdef CONFIG_BLE_SUPPORT	
+	strcat(reply, &g_nrf52810_ver[15]);
+#else
+	strcat(reply, "NO BLE");
+#endif
 	strcat(reply, ",");
 
 	//ble mac
-	strcat(reply, g_ble_mac_addr);	
+#ifdef CONFIG_BLE_SUPPORT	
+	strcat(reply, g_ble_mac_addr);
+#else
+	strcat(reply, "NO BLE");
+#endif
 
 	NBSendPowerOnInfor(reply, strlen(reply));
 }

@@ -1,6 +1,8 @@
 #ifndef __IMG_H__
 #define __IMG_H__
 
+#include "lcd.h"
+
 /*Image2Lcd保存的图像数据组织方式为：图像头数据-调色板数据-图像数据。
 “单色/4灰/16灰/256色”的图像数据头如下：
 typedef struct _HEADGRAY
@@ -342,4 +344,75 @@ extern unsigned char IMG_FALL_NO[7208];
 extern unsigned char IMG_FALL_CONFIRM[7208];
 extern unsigned char IMG_FALL_CANCEL[7208];
 #endif
-#endif/*__FONT_H__*/
+
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VG6432TSWPG28_SSD1315)
+extern unsigned char jjph_gc_96X32[390];
+extern unsigned char gImage_jjph_gc_64x32[262];
+extern unsigned char gImage_IDLE_1[262];
+extern unsigned char gImage_IDLE_2[262];
+extern unsigned char gImage_IDLE_3[262];
+extern unsigned char gImage_IDLE_4[262];
+extern unsigned char gImage_IDLE_5[262];
+extern unsigned char gImage_IDLE_6[262];
+extern unsigned char gImage_IDLE_7[262];
+
+extern unsigned char IMG_BAT_0[38];
+extern unsigned char IMG_BAT_1[38];
+extern unsigned char IMG_BAT_2[38];
+extern unsigned char IMG_BAT_3[38];
+extern unsigned char IMG_BAT_4[38];
+extern unsigned char IMG_BAT_5[38];
+
+extern unsigned char IMG_SIG_0[22];
+extern unsigned char IMG_SIG_1[22];
+extern unsigned char IMG_SIG_2[22];
+extern unsigned char IMG_SIG_3[22];
+extern unsigned char IMG_SIG_4[22];
+
+extern unsigned char IMG_COLON[34];
+extern unsigned char IMG_NO_COLON[34];
+extern unsigned char IMG_BIG_NUM_0[70];
+extern unsigned char IMG_BIG_NUM_1[70];
+extern unsigned char IMG_BIG_NUM_2[70];
+extern unsigned char IMG_BIG_NUM_3[70];
+extern unsigned char IMG_BIG_NUM_4[70];
+extern unsigned char IMG_BIG_NUM_5[70];
+extern unsigned char IMG_BIG_NUM_6[70];
+extern unsigned char IMG_BIG_NUM_7[70];
+extern unsigned char IMG_BIG_NUM_8[70];
+extern unsigned char IMG_BIG_NUM_9[70];
+
+extern unsigned char IMG_NUM_0[46];
+extern unsigned char IMG_NUM_1[46];
+extern unsigned char IMG_NUM_2[46];
+extern unsigned char IMG_NUM_3[46];
+extern unsigned char IMG_NUM_4[46];
+extern unsigned char IMG_NUM_5[46];
+extern unsigned char IMG_NUM_6[46];
+extern unsigned char IMG_NUM_7[46];
+extern unsigned char IMG_NUM_8[46];
+extern unsigned char IMG_NUM_9[46];
+
+extern unsigned char IMG_FALL_ICON[114];
+extern unsigned char IMG_FALL_CN[194];
+extern unsigned char IMG_FALL_EN[114];
+
+extern unsigned char IMG_SLP_ICON[36];
+extern unsigned char IMG_STEP_ICON[66];
+
+extern unsigned char IMG_HOUR_CN[38];
+extern unsigned char IMG_MIN_CN[38];
+extern unsigned char IMG_HOUR_EN[30];
+extern unsigned char IMG_MIN_EN[34];
+
+extern unsigned char IMG_SOS[314];
+extern unsigned char IMG_SOS_RECE[342];
+extern unsigned char IMG_SOS_SEND[342];
+
+extern unsigned char IMG_WRIST_ICON[90];
+extern unsigned char IMG_WRIST_CN[194];
+extern unsigned char IMG_WRIST_EN[226];
+
+#endif/*LCD_VGM068A4W01_SH1106G*/
+
+#endif/*__IMG_H__*/

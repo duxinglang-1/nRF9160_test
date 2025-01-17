@@ -398,55 +398,67 @@ void test_show_image(void)
 	uint16_t x,y,w=0,h=0;
 	
 	LCD_Clear(BLACK);
-	
+
+#ifdef LCD_VG6432TSWPG28_SSD1315
+	LCD_ShowImg(0, 0, gImage_jjph_gc_64x32);
+#endif
+	k_sleep(K_MSEC(2000));
+
 	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
 	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
-	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
+	//LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
+	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
-	while(0)
+	while(1)
 	{
-	#if 0	
+	#if 1	
 		switch(i)
 		{
 			case 0:
+				LCD_ShowImg(0, 0, gImage_IDLE_1);
 				//LCD_dis_pic(w*0,h*0,peppa_pig_160X160);
 				//LCD_dis_pic_trans(w*0,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_from_flash(w*0, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,0);
 				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,0);
 				break;
 			case 1:
+				LCD_ShowImg(0, 0, gImage_IDLE_2);
 				//LCD_dis_pic(w*1,h*0,peppa_pig_160X160);
 				//LCD_dis_pic_trans(w*1,h*0,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_from_flash(w*1, h*0, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,90);
 				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,90);
 				break;
 			case 2:
+				LCD_ShowImg(0, 0, gImage_IDLE_3);
 				//LCD_dis_pic(w*1,h*1,peppa_pig_160X160);
 				//LCD_dis_pic_trans(w*1,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*1, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_from_flash(w*1, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,180);
 				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,180);
 				break;
 			case 3:
+				LCD_ShowImg(0, 0, gImage_IDLE_4);
 				//LCD_dis_pic(w*0,h*1,peppa_pig_160X160);
 				//LCD_dis_pic_trans(w*0,h*1,peppa_pig_80X160,WHITE);
-				LCD_dis_pic_from_flash(w*0, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
+				//LCD_dis_pic_from_flash(w*0, h*1, IMG_ANALOG_CLOCK_BG_ADDR);
 				//LCD_dis_pic_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,270);
 				//LCD_dis_pic_trans_rotate((LCD_WIDTH-w)/2,(LCD_HEIGHT-h)/2,peppa_pig_160X160,WHITE,270);
 				break;
 			case 4:
-				LCD_Fill(w*0,h*0,w,h,BLACK);
+				LCD_ShowImg(0, 0, gImage_IDLE_5);
+				//LCD_Fill(w*0,h*0,w,h,BLACK);
 				break;
 			case 5:
-				LCD_Fill(w*1,h*0,w,h,BLACK);
+				LCD_ShowImg(0, 0, gImage_IDLE_6);
+				//LCD_Fill(w*1,h*0,w,h,BLACK);
 				break;
 			case 6:
-				LCD_Fill(w*1,h*1,w,h,BLACK);
+				LCD_ShowImg(0, 0, gImage_IDLE_7);
+				//LCD_Fill(w*1,h*1,w,h,BLACK);
 				break;
 			case 7:
 				LCD_Fill(w*0,h*1,w,h,BLACK);
@@ -455,10 +467,10 @@ void test_show_image(void)
 	#endif
 
 		i++;
-		if(i==23)
+		if(i==7)
 			i = 0;
 		
-		k_sleep(K_MSEC(1000));								//软件延时1000ms
+		k_sleep(K_MSEC(2000));								//软件延时1000ms
 	}
 }
 
@@ -725,7 +737,7 @@ void system_init(void)
 	LCD_Init();
 	flash_init();
 	
-	ShowBootUpLogo();
+	//ShowBootUpLogo();
 	
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
@@ -748,8 +760,8 @@ void system_init(void)
 #endif
 	LogInit();
 
-	NB_init(&nb_work_q);
-	GPS_init(&gps_work_q);
+	//NB_init(&nb_work_q);
+	//GPS_init(&gps_work_q);
 }
 
 void work_init(void)
@@ -794,7 +806,7 @@ int main(void)
 	system_init();
 
 //	test_show_string();
-//	test_show_image();
+	test_show_image();
 //	test_show_color();
 //	test_show_stripe();
 //	test_nvs();
@@ -815,7 +827,7 @@ int main(void)
 //	test_wifi();
 //	LogInit();
 
-	while(1)
+	while(0)
 	{
 		KeyMsgProcess();
 		TimeMsgProcess();

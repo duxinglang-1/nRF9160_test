@@ -36,6 +36,8 @@
 #include "LCD_VGM068A4W01_SH1106G.h"
 #elif defined(LCD_VGM096064A6W01_SP5090)
 #include "LCD_VGM096064A6W01_SP5090.h"
+#elif defined(LCD_VG6432TSWPG28_SSD1315)
+#include "LCD_VG6432TSWPG28_SSD1315.h"
 #endif 
 
 #define PI	(3.1415926)
@@ -2752,7 +2754,7 @@ void LCD_dis_pic_trans_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 	}
 }
 
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)||defined(LCD_VG6432TSWPG28_SSD1315)
 //指定位置显示图片
 //color:图片数据指针
 //x:图片显示X坐标
@@ -2893,17 +2895,17 @@ uint8_t LCD_Measure_Uni_Byte(uint16_t word)
 	{
 	#ifdef FONT_16
 		case FONT_SIZE_16:
-			ptr_font=uni_16_rm; 	 	//调用1608字体
+			//ptr_font=uni_16_rm; 	 	//调用1608字体
 			break;
 	#endif
 	#ifdef FONT_24
 		case FONT_SIZE_24:
-			ptr_font=uni_24_rm;			//调用2412字体
+			//ptr_font=uni_24_rm;			//调用2412字体
 			break;
 	#endif
 	#ifdef FONT_32
 		case FONT_SIZE_32:
-			ptr_font=uni_32_rm;			//调用3216字体
+			//ptr_font=uni_32_rm;			//调用3216字体
 			break;
 	#endif
 		default:
@@ -3030,14 +3032,14 @@ uint8_t LCD_Measure_Mbcs_Byte(uint8_t byte)
 //y:图片显示Y坐标
 void LCD_ShowImg(uint16_t x, uint16_t y, unsigned char *color)
 {
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)||defined(LCD_VG6432TSWPG28_SSD1315)
 	LCD_dis_img(x, y, color);
 #else
 	LCD_dis_pic(x, y, color);
 #endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 }
 
-#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)
+#if defined(LCD_VGM068A4W01_SH1106G)||defined(LCD_VGM096064A6W01_SP5090)||defined(LCD_VG6432TSWPG28_SSD1315)
 //在指定矩形区域内显示中英文字符串
 //x,y:起点坐标
 //width,height:区域大小 (height<PAGE_MAX) 

@@ -867,12 +867,12 @@ void IdleShowSystemWeek(void)
 													{0x0421,0x0431,0x0000},//§³§Ò
 												},
 												{//Arabic
-													{0x0627,0x0644,0x0623,0x062D,0x062F,0x0000},//?????
-													{0x0625,0x062B,0x0646,0x064A,0x0646,0x0000},//?????
-													{0x062A,0x0644,0x062A,0x0627,0x0621,0x0000},//?????
-													{0x0623,0x0631,0x0628,0x0639,0x0627,0x0621,0x0000},//??????
-													{0x062E,0x0645,0x064A,0x0633,0x0000},//????
-													{0x062C,0x0645,0x0639,0x0629,0x0000},//????
+													{0x0627,0xFEF7,0x062D,0x062F,0x0000},//?????
+													{0x0627,0xFEFB,0x062B,0x0646,0x064A,0x0646,0x0000},//?????
+													{0x0627,0x0644,0x062A,0x0644,0x062A,0x0627,0x0621,0x0000},//?????
+													{0x0627,0xFEF7,0x0631,0x0628,0x0639,0x0627,0x0621,0x0000},//??????
+													{0x0627,0x0644,0x062E,0x0645,0x064A,0x0633,0x0000},//????
+													{0x0627,0x0644,0x062C,0x0645,0x0639,0x0629,0x0000},//????
 													{0x0627,0x0644,0x0633,0x0628,0x062A,0x0000},//?????
 												},
 											#else	
@@ -936,7 +936,7 @@ void IdleShowSystemWeek(void)
 	{
 #ifndef FW_FOR_CN	
 	case LANGUAGE_AR:
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 6);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 7);
 		break;
 #endif		
 	default:
@@ -1925,6 +1925,7 @@ void SettingsUpdateStatus(void)
 			
 			for(i=0;i<SETTINGS_MAIN_MENU_MAX_PER_PG;i++)
 			{
+				uint8_t copy_len;
 				uint16_t tmpbuf[128] = {0};
 
 				if((settings_menu.index + i) >= settings_menu.count)
@@ -1938,16 +1939,21 @@ void SettingsUpdateStatus(void)
 				{
 			  #ifndef FW_FOR_CN
 				case LANGUAGE_JP:
-					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], 6);
+					copy_len = 6;
 					break;
 			  #endif
 				case LANGUAGE_EN:
-					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], MENU_NAME_STR_MAX);
+					copy_len = MENU_NAME_STR_MAX;
+					break;
+				case LANGUAGE_AR:
+					copy_len = 14;
 					break;
 				default:
-					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], 12);
+					copy_len = 12;
 					break;
 				}
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], copy_len);
+
 				LCD_MeasureUniString(tmpbuf, &w, &h);
 				if(g_language_r2l)
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
@@ -2014,21 +2020,21 @@ void SettingsUpdateStatus(void)
 							{
 						  #ifndef FW_FOR_CN	
 							case LANGUAGE_JP:
-								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 3);
+								copy_len = 3;
 								break;
 							case LANGUAGE_RU:
 							case LANGUAGE_GR:
-								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 5);
+								copy_len = 5;
 								break;
 						  #endif
 						  	case LANGUAGE_EN:
-								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
+								copy_len = MENU_OPT_STR_MAX;
 								break;
-						  
 							default:
-								mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 6);
+								copy_len = 6;
 								break;
 							}
+							mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], copy_len);
 						}
 						else
 						{

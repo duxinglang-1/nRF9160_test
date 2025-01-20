@@ -689,14 +689,14 @@ void LCD_Init(void)
 	WriteComm(0x81); /*contract control*/
 	WriteComm(0xff); /*128*/
 	
-	WriteComm(0xA1); /*set segment remap*/
+	WriteComm(0xA0); /*set segment(left or right) remap A0:X[0]=0b: column address 0 is mapped to SEG0 (RESET),A1:X[0]=1b: column address 127 is mapped to SEG0*/
 	
 	WriteComm(0xA6); /*normal / reverse*/
 	
 	WriteComm(0xA8); /*multiplex ratio*/
 	WriteComm(0x1F); /*duty = 1/32*/
 	
-	WriteComm(0xC8); /*Com scan direction*/
+	WriteComm(0xC0); /*Com scan direction(up or down) C0:normal mode (RESET) Scan from COM0 to COM[N ¨C1], C8:remapped mode. Scan from COM[N-1] to COM0*/
 	
 	WriteComm(0xD3); /*set display offset*/
 	WriteComm(0x00);

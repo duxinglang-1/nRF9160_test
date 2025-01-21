@@ -1966,12 +1966,12 @@ void SettingsUpdateStatus(void)
 				case LANGUAGE_JP:
 					copy_len = 6;
 					break;
+				case LANGUAGE_AR:
+					copy_len = 14;
+					break;	
 			  #endif
 				case LANGUAGE_EN:
 					copy_len = MENU_NAME_STR_MAX;
-					break;
-				case LANGUAGE_AR:
-					copy_len = 14;
 					break;
 				default:
 					copy_len = 12;

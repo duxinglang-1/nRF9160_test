@@ -574,7 +574,7 @@ void IdleShowSystemDate(void)
 													{0x0645,0x0627,0x064A,0x0648,0x0000},//????
 													{0x064A,0x0648,0x0646,0x064A,0x0648,0x0000},//?????
 													{0x064A,0x0648,0x0644,0x064A,0x0648,0x0000},//?????
-													{0x0623,0x063A,0x0633,0x0637,0x0633,0x0000},//?????
+													{0x0623,0xFECF,0x0633,0x0637,0x0633,0x0000},//?????
 													{0x0633,0x0628,0x062A,0x0645,0x0628,0x0631,0x0000},//??????
 													{0x0623,0x0643,0x062A,0x0648,0x0628,0x0631,0x0000},//??????
 													{0x0646,0x0648,0x0641,0x0645,0x0628,0x0631,0x0000},//??????
@@ -695,34 +695,53 @@ void IdleShowSystemDate(void)
 		break;
 	
 	default:
-		LCD_FillColor(IDLE_DATE_DAY_EN_X, IDLE_DATE_DAY_EN_Y, IDLE_DATE_DAY_EN_W, IDLE_DATE_DAY_EN_H, BLACK);
-
-		LCD_ShowImg_From_Flash(IDLE_DATE_DAY_EN_X+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day/10]);
-		LCD_ShowImg_From_Flash(IDLE_DATE_DAY_EN_X+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day%10]);
-	
-		LCD_FillColor(IDLE_DATE_MON_EN_X, IDLE_DATE_MON_EN_Y, IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_H, BLACK);
 		switch(global_settings.language)
 		{
-	#ifndef FW_FOR_CN	
+	  #ifndef FW_FOR_CN	
 		case LANGUAGE_AR:
+			x = IDLE_DATE_DAY_EN_X-12;
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 8);
 			break;
-	#endif		
+	  #endif		
 		default:
+			x = IDLE_DATE_DAY_EN_X;
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 8);
 			break;
 		}
+		LCD_ShowImg_From_Flash(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day/10]);
+		LCD_ShowImg_From_Flash(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day%10]);
 
 		LCD_MeasureUniString(tmpbuf, &str_w, &str_h);
 		if(g_language_r2l)
 		{
-			if(IDLE_DATE_MON_EN_W > str_w)
-				LCD_ShowUniStringRtoL(IDLE_DATE_MON_EN_X+(IDLE_DATE_MON_EN_W+str_w)/2, IDLE_DATE_MON_EN_Y, tmpbuf);
+			switch(global_settings.language)
+			{
+		  #ifndef FW_FOR_CN	
+			case LANGUAGE_AR:
+				x = IDLE_WEEK_EN_X;
+				y = IDLE_WEEK_EN_Y;
+				w = IDLE_WEEK_EN_W;
+				h = IDLE_WEEK_EN_H;
+				break;
+		  #endif		
+			default:
+				x = IDLE_DATE_MON_EN_X;
+				y = IDLE_DATE_MON_EN_Y;
+				w = IDLE_DATE_MON_EN_W;
+				h = IDLE_DATE_MON_EN_H;
+				break;
+			}
+			LCD_FillColor(x, y, w, h, BLACK);
+			
+			if(w > str_w)
+				LCD_ShowUniStringRtoL(x+(w+str_w)/2, y, tmpbuf);
 			else
-				LCD_ShowUniStringRtoL(IDLE_DATE_MON_EN_X+IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_Y, tmpbuf);
+				LCD_ShowUniStringRtoL(x+w, y, tmpbuf);
 		}
 		else
 		{
+			LCD_FillColor(IDLE_DATE_MON_EN_X, IDLE_DATE_MON_EN_Y, IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_H, BLACK);
+			
 			if(IDLE_DATE_MON_EN_W > str_w)
 				LCD_ShowUniString(IDLE_DATE_MON_EN_X+(IDLE_DATE_MON_EN_W-str_w)/2, IDLE_DATE_MON_EN_Y, tmpbuf);
 			else
@@ -922,7 +941,13 @@ void IdleShowSystemWeek(void)
 		y = IDLE_WEEK_CN_Y;
 		w = IDLE_WEEK_CN_W;
 		h = IDLE_WEEK_CN_H;
-		break;	
+		break;
+	case LANGUAGE_AR:
+		x = IDLE_DATE_MON_EN_X;
+		y = IDLE_DATE_MON_EN_Y;
+		w = IDLE_DATE_MON_EN_W;
+		h = IDLE_DATE_MON_EN_H;
+		break;
   #endif
 	default:
 		x = IDLE_WEEK_EN_X;

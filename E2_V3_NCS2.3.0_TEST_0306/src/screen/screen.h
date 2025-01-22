@@ -40,7 +40,7 @@ extern "C" {
 #define IDLE_TIME_NUM_H			60
 #define IDLE_TIME_COLON_W		17
 #define IDLE_TIME_COLON_H		60
-#define IDLE_DATE_MON_EN_W		50
+#define IDLE_DATE_MON_EN_W		65
 #define IDLE_DATE_MON_EN_H		26
 #define IDLE_DATE_MON_EN_X		142
 #define IDLE_DATE_MON_EN_Y		106

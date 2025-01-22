@@ -699,7 +699,7 @@ void IdleShowSystemDate(void)
 		{
 	  #ifndef FW_FOR_CN	
 		case LANGUAGE_AR:
-			x = IDLE_DATE_DAY_EN_X-12;
+			x = IDLE_DATE_DAY_EN_X;
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 8);
 			break;
 	  #endif		
@@ -720,8 +720,8 @@ void IdleShowSystemDate(void)
 			case LANGUAGE_AR:
 				x = IDLE_WEEK_EN_X;
 				y = IDLE_WEEK_EN_Y;
-				w = IDLE_WEEK_EN_W;
-				h = IDLE_WEEK_EN_H;
+				w = IDLE_DATE_MON_EN_W;
+				h = IDLE_DATE_MON_EN_H;
 				break;
 		  #endif		
 			default:

@@ -886,10 +886,10 @@ void IdleShowSystemWeek(void)
 													{0x0421,0x0431,0x0000},//§³§Ò
 												},
 												{//Arabic
-													{0x0627,0xFEF7,0x062D,0x062F,0x0000},//?????
-													{0x0627,0xFEFB,0x062B,0x0646,0x064A,0x0646,0x0000},//?????
+													{0x0627,0x0644,0x0623,0x062D,0x062F,0x0000},//?????
+													{0x0627,0x0644,0x0625,0x062A,0x0646,0x064A,0x0646,0x0000},//?????
 													{0x0627,0x0644,0x062A,0x0644,0x062A,0x0627,0x0621,0x0000},//?????
-													{0x0627,0xFEF7,0x0631,0x0628,0x0639,0x0627,0x0621,0x0000},//??????
+													{0x0627,0x0644,0x0623,0x0631,0x0628,0x0639,0x0627,0x0621,0x0000},//??????
 													{0x0627,0x0644,0x062E,0x0645,0x064A,0x0633,0x0000},//????
 													{0x0627,0x0644,0x062C,0x0645,0x0639,0x0629,0x0000},//????
 													{0x0627,0x0644,0x0633,0x0628,0x062A,0x0000},//?????
@@ -961,7 +961,7 @@ void IdleShowSystemWeek(void)
 	{
 #ifndef FW_FOR_CN	
 	case LANGUAGE_AR:
-		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 7);
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 8);
 		break;
 #endif		
 	default:
@@ -5945,9 +5945,18 @@ void NotifyShow(void)
 					tmpbuf[i] = 0x00;
 
 					LCD_MeasureUniString(tmpbuf, &w, &h);
-					x = ((str_w-2*offset_w)-w)/2;
-					x += (str_x+offset_w);
-					LCD_ShowUniString(x,y,tmpbuf);
+					if(g_language_r2l)
+					{
+						x = str_x+(str_w+2*offset_w+w)/2;
+						x -= offset_w;
+						LCD_ShowUniStringRtoL(x,y,tmpbuf);
+					}
+					else
+					{
+						x = str_x+(str_w-2*offset_w-w)/2;
+						x += offset_w;
+						LCD_ShowUniString(x,y,tmpbuf);
+					}
 
 					y += line_h;
 					line_no++;
@@ -5955,27 +5964,45 @@ void NotifyShow(void)
 				else
 				{
 					LCD_MeasureUniString(tmpbuf, &w, &h);
-					x = ((str_w-2*offset_w)-w)/2;
-					x += (str_x+offset_w);
-					LCD_ShowUniString(x,y,tmpbuf);
+					if(g_language_r2l)
+					{
+						x = str_x+(str_w+2*offset_w+w)/2;
+						x -= offset_w;
+						LCD_ShowUniStringRtoL(x,y,tmpbuf);
+					}
+					else
+					{
+						x = str_x+(str_w-2*offset_w-w)/2;
+						x += offset_w;
+						LCD_ShowUniString(x,y,tmpbuf);
+					}
 					break;
 				}
 			}
 		}
 		else if(w > 0)
 		{
-			x = ((str_w-2*offset_w)-w)/2;
 			y = (h > (str_h-2*offset_h))? 0 : ((str_h-2*offset_h)-h)/2;
-			x += (str_x+offset_w);
-			y += (str_y+offset_h);
-			LCD_ShowUniString(x,y,notify_msg.text);				
+			if(g_language_r2l)
+			{
+				x = str_x+(str_w+2*offset_w+w)/2;
+				x -= offset_w;
+				LCD_ShowUniStringRtoL(x,y,notify_msg.text);		
+			}
+			else
+			{
+				x = str_x+(str_w-2*offset_w-w)/2;
+				x += offset_w;
+				LCD_ShowUniString(x,y,notify_msg.text);				
+			}
 		}
 		break;
 		
 	case NOTIFY_ALIGN_BOUNDARY:
-		x = (notify_msg.x+offset_w);
-		y = (notify_msg.y+offset_h);
-		LCD_ShowUniStringInRect(x, y, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+		if(g_language_r2l)
+			LCD_ShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+		else
+			LCD_ShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
 		break;
 	}
 }

@@ -2818,6 +2818,22 @@ void LCD_dis_img(uint16_t x, uint16_t y, unsigned char *color)
 #endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 #ifdef FONTMAKER_UNICODE_FONT
+bool LCD_FindArabAlphabetFromSpecial(uint16_t front, uint16_t rear, uint16_t *deform)
+{
+	uint8_t i,count=sizeof(ara_froms_spec)/sizeof(ara_froms_spec[0]);
+	
+	for(i=0;i<count;i++)
+	{
+		if((front == ara_froms_spec[i].front) && (rear == ara_froms_spec[i].rear))
+		{
+			*deform = ara_froms_spec[i].deform;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool LCD_FindArabAlphabetFrom(uint16_t alphabet, font_arabic_forms *from)
 {
 	uint8_t i,count=sizeof(ara_froms)/sizeof(ara_froms[0]);
@@ -2982,7 +2998,16 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 		
 		show = *p;
 
-	#ifndef FW_FOR_CN	
+	#ifndef FW_FOR_CN
+		if((*next != 0x0000)&&(*next != space))
+		{
+			if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+			{
+				p = next;
+				goto do_measure;
+			}
+		}
+	
 		if((pre != NULL)&&(*pre != space))
 			flag |= 0b00000010;
 		if((*next != 0x0000)&&(*next != space))
@@ -3005,7 +3030,8 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 			}
 		}
 	#endif
-	
+
+	do_measure:
 		(*width) += LCD_Measure_Uni_Byte(show);
 
 		pre = p;
@@ -3071,6 +3097,15 @@ void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_
 		if(global_settings.language == LANGUAGE_AR)
 		{
 			uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+
+			if((*next != 0x0000)&&(*next != space))
+			{
+				if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+				{
+					p = next;
+					goto do_show;
+				}
+			}
 			
 			if((pre != NULL)&&(*pre != space))
 				flag |= 0b00000010;
@@ -3096,6 +3131,7 @@ void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_
 		}
 	#endif
 	
+	do_show:
 		w = LCD_Measure_Uni_Byte(show);
 		if((str_x-w)<=str_w){str_x=x-w;str_y+=system_font;}
 		if(str_y>=str_h)break;//ÍË³ö
@@ -3155,6 +3191,15 @@ void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 		if(global_settings.language == LANGUAGE_AR)
 		{
 			uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+
+			if((*next != 0x0000)&&(*next != space))
+			{
+				if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+				{
+					p = next;
+					goto do_show;
+				}
+			}
 			
 			if((pre != NULL)&&(*pre != space))
 				flag |= 0b00000010;
@@ -3179,7 +3224,8 @@ void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 			}
 		}
 	#endif
-	
+
+	do_show:
 		width = LCD_Measure_Uni_Byte(show);
 		if(str_x<=width)break;//ÍË³ö
 		str_x -= width;

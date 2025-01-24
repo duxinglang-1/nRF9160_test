@@ -30,13 +30,27 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define LEDK	31
 #define LEDA	14
 
-#define X_min 0x0043		 //TP测试范围常量定义
-#define X_max 0x07AE
-#define Y_min 0x00A1
-#define Y_max 0x0759
+#define LCD_X_OFFSET	(0x20)
 
 #define LCD_DATA_LEN ((COL*ROW)/8)
 
+typedef enum
+{
+	SCROLL_H_RIGHT 			= 0x26,
+	SCROLL_H_LEFT 			= 0x27,
+	SCROLL_V_AND_H_RIGHT 	= 0x29,
+	SCROLL_V_AND_H_LEFT		= 0x2A,
+	SCROLL_CONTENT_RIGHT	= 0x2C,
+	SCROLL_CONTENT_LEFT		= 0x2D,
+	SCROLL_MAX				= 0xFF,
+}LCD_SCROLLING_DERECTION;
+
+typedef enum
+{
+	FADE_DISABLE			= 0b00,
+	FADA_OUT				= 0b10,
+	FADE_BLINKING  			= 0b11,
+}LCD_FADE_OUT_MODE;
 //------------------------------------------------------
 
 extern uint8_t lcd_data_buffer[2*LCD_DATA_LEN];

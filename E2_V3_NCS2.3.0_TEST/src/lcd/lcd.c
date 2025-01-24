@@ -1669,7 +1669,7 @@ void LCD_ShowEn(uint16_t x,uint16_t y,uint8_t num)
  	uint8_t i,databuf[128] = {0};
 	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
-
+	y = y/PAGE_H;
 	switch(system_font)
 	{
 	#ifdef FONT_8
@@ -1723,6 +1723,7 @@ void LCD_ShowCn(uint16_t x, uint16_t y, uint16_t num)
 	uint8_t i,databuf[128] = {0};
 	uint16_t index=0;
 
+	y = y/PAGE_H;
 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
 	switch(system_font)
 	{
@@ -2779,7 +2780,7 @@ void LCD_dis_img(uint16_t x, uint16_t y, unsigned char *color)
 	else
 		show_h = h;
 
-	y = y/PAGE_MAX;
+	y = y/PAGE_H;
 	BlockWrite(x,y,show_w,show_h);	//设置刷新位置
 
 	datelen = show_w*(show_h/8+((show_h%8)?1:0));

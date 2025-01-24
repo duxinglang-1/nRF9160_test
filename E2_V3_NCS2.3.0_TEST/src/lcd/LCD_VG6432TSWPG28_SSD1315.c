@@ -393,7 +393,7 @@ void BlockWrite(unsigned int x,unsigned int y,unsigned int w,unsigned int h) //r
 	if(y >= ROW)
 		y = 0;
 
-	x0 = x+0x20;//屏起始坐标对应IC的起始坐标偏移
+	x0 = x+LCD_X_OFFSET;	//屏起始坐标对应IC的起始坐标偏移
 	
 	WriteComm(0xb0+y%PAGE_MAX);
 	WriteComm((x0&0xf0)>>4|0x10);		  // Set Higher Column Start Address for Page Addressing Mode
@@ -533,6 +533,168 @@ void LCD_Clear(uint16_t color)
 			WriteData(data);
 	}
 } 
+
+//屏幕启动滚动
+void LCD_StartScrolling()
+{
+	//Activate scrolling
+	WriteComm(0x2F);
+}
+
+//屏幕关闭滚动
+void LCD_StopScrolling(void)
+{
+	//Deactivate scrolling
+	WriteComm(0x2E);
+}
+
+//屏幕启动滚动
+void LCD_SetScrolling(LCD_SCROLLING_DERECTION derection, uint16_t h_start, uint16_t h_end, uint16_t v_start, uint16_t v_end, uint16_t frequency)
+{
+	//Deactivate scrolling
+	WriteComm(0x2E);
+
+	switch(derection)
+	{
+	case SCROLL_H_RIGHT:
+	case SCROLL_H_LEFT:
+		//hex    D7 D6 D5 D4 D3 D2 D1 D0
+		//26/27  0  0  1  0  0  1  1  X0 	X[0]=0, Right Horizontal Scroll (Horizontal scroll by 1 column)
+		//									X[0]=1, Left Horizontal Scroll (Horizontal scroll by 1 column)
+		//A[7:0] 0	0  0  0  0  0  0  0		A[7:0]: Dummy byte (Set as 00h)
+		//B[2:0] 0  0  0  0  0  B2 B1 B0	B[2:0]: Define start page address, 000b~111b: page0~page7
+		//C[2:0] 0  0  0  0  0  C2 C1 C0	C[2:0]: Set time interval between each scroll step interms of frame frequency
+		//											000b – 6 frames  	100b – 3 frames
+		//											001b – 32 frames  	101b – 4 frames
+		//											010b – 64 frames  	110b – 5 frame
+		//											011b – 128 frames  111b – 2 frame
+		//D[2:0] 0  0  0  0  0  D2 D1 D0	D[2:0]: Define end page address, 00b~111b: page0~page7
+		//E[6:0] 0  E6 E5 E4 E3 E2 E1 E0	E[6:0]: Define start column address (RESET = 00h)
+		//F[6:0] 0  F6 F5 F4 F3 F2 F1 F0	F[6:0]: Define end column address (RESET = 7Fh)
+		WriteComm(derection);
+		//Dummy byte
+		WriteComm(0x00);
+		//Set start page address, 
+		WriteComm(h_start/PAGE_H);
+		//Set horizontal scroll speed 0~7
+		WriteComm(frequency);
+		//Set end page address
+		WriteComm(h_end/PAGE_H);
+		//Set start column address
+		WriteComm(v_start+LCD_X_OFFSET);
+		//Set end column address
+		WriteComm(v_end+LCD_X_OFFSET);
+		break;
+
+	case SCROLL_V_AND_H_RIGHT:
+	case SCROLL_V_AND_H_LEFT:
+		//hex	 D7 D6 D5 D4 D3 D2 D1 D0
+		//29/2A  0  0  1  0  1  0  X1 X0 	X[1:0]=01b: Vertical and Right Horizontal Scroll
+		//									X[1:0]=10b: Vertical and Left Horizontal Scroll
+		//A[0]   0  0  0  0  0  0  0  A0	A[0]:Set number of column scroll offset
+		//										  0b No horizontal scroll
+		//										  1b Horizontal scroll by 1 column
+		//B[2:0] 0  0  0  0  0  0  B1 B0	B[2:0]: Define start page address, 000b~111b: page0~page7
+		//C[2:0] 0  0  0  0  0  C2 C1 C0	C[2:0]: Set time interval between each scroll step interms of frame frequency
+		//											000b – 6 frames  	100b – 3 frames
+		//											001b – 32 frames  	101b – 4 frames
+		//											010b – 64 frames  	110b – 5 frame
+		//											011b – 128 frames  111b – 2 frame
+		//D[2:0] 0  0  0  0  0  D2 D1 D0	D[2:0]: Define end page address, 000b~111b: page0~page7
+		//E[5:0] 0  0  E5 E4 E3 E2 E1 E0	E[5:0]: Vertical scrolling offset
+		//											e.g. E[5:0]=01h refer to offset =1 row
+		//												 E[5:0]=3Fh refer to offset =63 rows
+		//F[6:0] 0  F6 F5 F4 F3 F2 F1 F0	F[6:0]: Define the start column address (RESET=00h)
+		//G[6:0] 0  G6 G5 G4 G3 G2 G1 G0	G[6:0]: Define the end column address (RESET=7Fh)
+		WriteComm(derection);
+		//Set horizontal scroll
+		WriteComm(0x00);
+		//Set start page address
+		WriteComm(h_start/PAGE_H);
+		//Set horizontal scroll speed 0~7
+		WriteComm(frequency);
+		//Set end page address
+		WriteComm(h_end/PAGE_H);
+		//Set vertical scrolling offset as 1 row
+		WriteComm(0x01);
+		//Set start column
+		WriteComm(v_start+LCD_X_OFFSET);
+		//Set end colimn
+		WriteComm(v_end+LCD_X_OFFSET);
+		break;
+
+	case SCROLL_CONTENT_RIGHT:
+	case SCROLL_CONTENT_LEFT:
+		//hex    D7 D6 D5 D4 D3 D2 D1 D0
+		//2C/2D  0  0  1  0  0  1  1  X0 	X[0]=0, Right Horizontal Scroll by one column
+		//									X[0]=1, Left Horizontal Scroll by one column
+		//A[7:0] 0	0  0  0  0  0  0  0		A[7:0]: Dummy byte (Set as 00h)
+		//B[2:0] 0  0  0  0  0  B2 B1 B0	B[2:0]: Define start page address, 000b~111b: page0~page7
+		//C[7:0] 0  0  0  0  0  0  0  1		C[2:0]: Dummy byte (Set as 01h)
+		//D[2:0] 0  0  0  0  0  D2 D1 D0	D[2:0]: Define end page address, 00b~111b: page0~page7
+		//E[6:0] 0  E6 E5 E4 E3 E2 E1 E0	E[6:0]: Define start column address (RESET = 00h)
+		//F[6:0] 0  F6 F5 F4 F3 F2 F1 F0	F[6:0]: Define end column address (RESET = 7Fh)
+		WriteComm(derection);
+		//Dummy byte
+		WriteComm(0x00);
+		//Set start page address, 
+		WriteComm(h_start/PAGE_H);
+		//Dummy byte
+		WriteComm(0x01);
+		//Set end page address
+		WriteComm(h_end/PAGE_H);
+		//Set start column address
+		WriteComm(v_start+LCD_X_OFFSET);
+		//Set end column address
+		WriteComm(v_end+LCD_X_OFFSET);
+		break;
+	}
+	
+	//activate scrolling
+	WriteComm(0x2F);
+}
+
+//淡入淡出和闪烁
+void LCD_SetFadeOutOrBlinking(LCD_FADE_OUT_MODE mode, uint8_t interval)
+{
+	//Set Fade Out and Blinking
+	//hex 		D7 D6 D5 D4 D3 D2 D1 D0
+	//23  		0  0  1  0  0  0  1  1  
+	//A[5:0]  	*  *  A5 A4 A3 A2 A1 A0		A[5:4] = 00b Disable Fade Out / Blinking Mode[RESET]
+	//										A[5:4] = 10b Enable Fade Out mode.
+	//														Once Fade Out mode is enabled, contrast decrease
+	//														gradually to all pixels OFF. Output follows RAM content
+	//														when Fade mode is disabled.
+	//										A[5:4] = 11b Enable Blinking mode.
+	//														Once Blinking mode is enabled, contrast decrease
+	//														gradually to all pixels OFF and then contrast increase
+	//														gradually to normal display. This process loop
+	//														continuously until the Blinking mode is disabled.
+	//										A[3:0] : Set time interval for each fade step
+	//													A[3:0]  Time interval for each fade step
+	//													0000b  8 Frames
+	//													0001b  16 Frames
+	//													0010b  24 Frames
+	//														:
+	//													1111b  128 Frames
+	WriteComm(0x23);
+	WriteComm((0x30&(mode<<4))+interval);
+}
+
+//区域放大
+void LCD_SetZoomIn(bool flag)
+{
+	//Set Zoom In
+	//hex	D7 D6 D5 D4 D3 D2 D1 D0
+	//D6  	1  1  0  1  0  1  1  0  
+	//A[0]  *  *  *  *  *  *  *  A0			A[0] = 0b Disable Zoom in Mode [RESET]
+	//										A[0] = 1b Enable Zoom in Mode
+	//Note
+	//(1) The panel must be in alternative COM pin configuration (command DAh A[4] =1)
+	//(2)  Refer to section 1.4.2 for details.
+	WriteComm(0xD6);
+	WriteComm(flag);
+}
 
 //背光打开
 void LCD_BL_On(void)
@@ -678,7 +840,15 @@ void LCD_Init(void)
 
 	WriteComm(0xAE); //Set Display Off
 
-#if 1
+	WriteComm(0xD5); /*set osc division*/
+	WriteComm(0x80);
+
+	WriteComm(0xA8); /*multiplex ratio*/
+	WriteComm(0x1F); /*duty = 1/32*/
+
+	WriteComm(0xD3); /*set display offset*/
+	WriteComm(0x00);
+
 	WriteComm(0x00); /*set lower column address*/
 	WriteComm(0x12); /*set higher column address*/
 
@@ -690,19 +860,10 @@ void LCD_Init(void)
 	WriteComm(0xff); /*128*/
 	
 	WriteComm(0xA0); /*set segment(left or right) remap A0:X[0]=0b: column address 0 is mapped to SEG0 (RESET),A1:X[0]=1b: column address 127 is mapped to SEG0*/
-	
-	WriteComm(0xA6); /*normal / reverse*/
-	
-	WriteComm(0xA8); /*multiplex ratio*/
-	WriteComm(0x1F); /*duty = 1/32*/
-	
+
 	WriteComm(0xC0); /*Com scan direction(up or down) C0:normal mode (RESET) Scan from COM0 to COM[N –1], C8:remapped mode. Scan from COM[N-1] to COM0*/
 	
-	WriteComm(0xD3); /*set display offset*/
-	WriteComm(0x00);
-	
-	WriteComm(0xD5); /*set osc division*/
-	WriteComm(0x80);
+	WriteComm(0xA6); /*normal / reverse*/
 	
 	WriteComm(0xD9); /*set pre-charge period*/
 	WriteComm(0x1f);
@@ -710,44 +871,16 @@ void LCD_Init(void)
 	WriteComm(0xDA); /*set COM pins*/
 	WriteComm(0x12);
 	
-	WriteComm(0xdb); /*set vcomh*/
+	WriteComm(0xDB); /*set vcomh*/
 	WriteComm(0x40);
 	
-	WriteComm(0x8d); /*set charge pump enable*/
+	WriteComm(0x8D); /*set charge pump enable*/
 	WriteComm(0x14);
 	
 	WriteComm(0xAF); /*display ON*/
-#else
-	WriteComm(0xD5); //Display divide ratio/osc. freq. mode
-	WriteComm(0x51);
-	WriteComm(0xA8); //Multiplex ration mode:
-	WriteComm(0x1F);
-	WriteComm(0xD3); //Set Display Offset
-	WriteComm(0x10);
-	WriteComm(0x40); //Set Display Start Line
-	WriteComm(0xAD); //DC-DC Control Mode Set
-	WriteComm(0x8B); //DC-DC ON/OFF Mode Set
-	WriteComm(0x31); //Set Pump voltage value
-	WriteComm(0xA1); //Segment Remap
-	WriteComm(0xC8); //Sst COM Output Scan Direction
-	WriteComm(0xDA); //Common pads hardware: alternative
-	WriteComm(0x12);
-	WriteComm(0x81); //Contrast control
-	WriteComm(0xA0);
-	WriteComm(0xD9); //Set pre-charge period
-	WriteComm(0x22);
-	WriteComm(0xDB); //VCOM deselect level mode
-	WriteComm(0x25);
-	WriteComm(0xA4); //Set Entire Display On/Off
-	WriteComm(0xA6); //Set Normal Display
 
-	WriteComm(0xAF); //Set Display On
-#endif
-
-	LCD_Clear(WHITE);
-	Delay_ms(1000);
 	LCD_Clear(BLACK);
-	Delay_ms(1000);
+	Delay_ms(100);
 
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU

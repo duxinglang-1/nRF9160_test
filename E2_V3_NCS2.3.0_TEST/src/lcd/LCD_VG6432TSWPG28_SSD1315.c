@@ -594,7 +594,7 @@ void LCD_SetScrolling(LCD_SCROLLING_DERECTION derection, uint16_t h_start, uint1
 		//A[0]   0  0  0  0  0  0  0  A0	A[0]:Set number of column scroll offset
 		//										  0b No horizontal scroll
 		//										  1b Horizontal scroll by 1 column
-		//B[2:0] 0  0  0  0  0  0  B1 B0	B[2:0]: Define start page address, 000b~111b: page0~page7
+		//B[2:0] 0  0  0  0  0  B2 B1 B0	B[2:0]: Define start page address, 000b~111b: page0~page7
 		//C[2:0] 0  0  0  0  0  C2 C1 C0	C[2:0]: Set time interval between each scroll step interms of frame frequency
 		//											000b 每 6 frames  	100b 每 3 frames
 		//											001b 每 32 frames  	101b 每 4 frames

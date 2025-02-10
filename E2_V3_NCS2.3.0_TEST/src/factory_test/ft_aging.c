@@ -304,16 +304,22 @@ void FTAgingTestProcess(void)
 	{
 		switch(aging_status)
 		{
+		#ifdef CONFIG_PPG_SUPPORT	
 		case AGING_PPG:
 			FTStopTemp();
 			FTStartPPG();
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;
+		#endif
+	
+		#ifdef CONFIG_WIFI_SUPPORT		
 		case AGING_WIFI:
 			FTStopPPG();
 			FTStartWifi();
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;
+		#endif
+	
 		case AGING_GPS:
 			FTStopWifi();
 			FTMenuGPSInit();
@@ -321,17 +327,21 @@ void FTAgingTestProcess(void)
 			FTStartGPS();
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;
+	
 		case AGING_VIB:
 			FTStopGPS();
 			SetModemTurnOff();
 			vibrate_on(VIB_RHYTHMIC, 1000, 1000);
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;
+		
+		#ifdef CONFIG_TEMP_SUPPORT	
 		case AGING_TEMP:
 			vibrate_off();
 			FTStartTemp();
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;
+		#endif	
 		}
 
 		scr_msg[SCREEN_ID_AGING_TEST].act = SCREEN_ACTION_UPDATE;

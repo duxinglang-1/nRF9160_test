@@ -290,10 +290,14 @@ static void FactoryTestMainUpdate(void)
 	uint16_t x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
+	uint16_t title[5] = {0x5DE5,0x5382,0x6D4B,0x8BD5,0x0000};//工厂测试
 	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 
 	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
+	
 	LCD_SetFontBgColor(bg_clor);
 
 #ifdef CONFIG_TOUCH_SUPPORT
@@ -338,12 +342,16 @@ static void FactoryTestMainShow(void)
 	uint16_t i,x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
+	uint16_t title[5] = {0x5DE5,0x5382,0x6D4B,0x8BD5,0x0000};//工厂测试
 	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 	
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	
 	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
+	
 	LCD_SetFontBgColor(bg_clor);
 
 #ifdef CONFIG_TOUCH_SUPPORT

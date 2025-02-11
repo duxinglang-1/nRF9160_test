@@ -6898,8 +6898,13 @@ void EnterNBTestScreen(void)
 void DeviceShowQRStatus(void)
 {
 	uint8_t buf[512] = {0};
+	uint16_t w,h;
+	uint16_t title[5] = {0x8BBE,0x5907,0x4FE1,0x606F,0x0000};//设备信息
 	
 	LCD_Clear(BLACK);
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
 
 	//IMEI
 	strcpy(buf, "IMEI:");
@@ -7034,143 +7039,157 @@ void EnterDeviceScreen(void)
 void FTResultsShowQRStatus(void)
 {
 	uint8_t buf[512] = {0};
+	uint16_t w,h;
+	uint16_t title[5] = {0x6D4B,0x8BD5,0x7ED3,0x679C,0x0000};//测试结果
 	
 	LCD_Clear(BLACK);
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
 
 	//Current Test
 	strcpy(buf, "CUR:");
 	switch(ft_results.cur_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//KEY Test
 	strcat(buf, "KEY:");
 	switch(ft_results.key_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//LCD Test
 	strcat(buf, "LCD:");
 	switch(ft_results.lcd_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//Touch Test
 	strcat(buf, "TOUCH:");
 	switch(ft_results.touch_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//Temp Test
 	strcat(buf, "TEMP:");
 	switch(ft_results.temp_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//IMU Test
 	strcat(buf, "IMU:");
 	switch(ft_results.imu_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//Flash Test
 	strcat(buf, "FLASH:");
 	switch(ft_results.flash_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//SIM Test
 	strcat(buf, "SIM:");
 	switch(ft_results.sim_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//BLE Test
 	strcat(buf, "BLE:");
 	switch(ft_results.ble_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 #ifdef CONFIG_PPG_SUPPORT	
 	//PPG Test
@@ -7178,15 +7197,16 @@ void FTResultsShowQRStatus(void)
 	switch(ft_results.ppg_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 #endif
 
 	//Charging Test
@@ -7194,30 +7214,32 @@ void FTResultsShowQRStatus(void)
 	switch(ft_results.pmu_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//Vibration Test
 	strcat(buf, "VIB:");
 	switch(ft_results.vib_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 #ifdef CONFIG_WIFI_SUPPORT	
 	//WIFI Test
@@ -7225,15 +7247,16 @@ void FTResultsShowQRStatus(void)
 	switch(ft_results.wifi_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 #endif
 
 	//Network Test
@@ -7241,30 +7264,32 @@ void FTResultsShowQRStatus(void)
 	switch(ft_results.net_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 	
 	//GPS Test
 	strcat(buf, "GPS:");
 	switch(ft_results.gps_ret)
 	{
 	case 0:
-		strcat(buf, "TBT;");
+		strcat(buf, "TBT");
 		break;
 	case 1:
-		strcat(buf, "PASS;");
+		strcat(buf, "PASS");
 		break;
 	case 2:
-		strcat(buf, "FAIL;");
+		strcat(buf, "FAIL");
 		break;
 	}
+	strcat(buf, "\r\n");
 
 	show_QR_code(strlen(buf), buf);
 }

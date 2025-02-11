@@ -96,6 +96,9 @@ const ft_menu_t FT_MENU_VIB =
 static void FTMenuVibPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
+	ft_results.vib_ret = 1;
+	SaveFactoryTestResults(ft_results);
+	
 	vibrate_off();
 	
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
@@ -104,6 +107,9 @@ static void FTMenuVibPassHander(void)
 static void FTMenuVibFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
+	ft_results.vib_ret = 2;
+	SaveFactoryTestResults(ft_results);
+	
 	vibrate_off();
 	
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();

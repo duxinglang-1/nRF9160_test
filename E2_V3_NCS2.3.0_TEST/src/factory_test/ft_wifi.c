@@ -148,6 +148,13 @@ static void FTMenuWifiUpdate(void)
 		LCD_ShowUniString(FT_WIFI_RET_STR_X+(FT_WIFI_RET_STR_W-w)/2, FT_WIFI_RET_STR_Y+(FT_WIFI_RET_STR_H-h)/2, ret_str[ft_wifi_check_ok]);
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
+
+		if(ft_wifi_check_ok)
+			ft_results.wifi_ret = 1;
+		else
+			ft_results.wifi_ret = 2;
+
+		SaveFactoryTestResults(ft_results);
 	}
 }
 

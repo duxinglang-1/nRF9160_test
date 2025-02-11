@@ -51,7 +51,7 @@
 		
 #define FT_BLE_TEST_TIMEROUT	1
 	
-static uint8_t ft_ble_status = 0;//1:ready get the imsi/iccic 2:getting the imsi/iccid 3:got the imsi/iccid
+static uint8_t ft_ble_status = 0;//1:ready get the ver/mac 2:getting the ver/mac 3:got the ver/mac
 static bool ft_ble_check_ok = false;
 static bool ft_ble_checking = false;
 
@@ -115,6 +115,7 @@ static void BleTestTimerOutCallBack(struct k_timer *timer_id)
 			ft_menu_checked[ft_main_menu_index] = true;
 			break;
 		}
+
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 	}
 }
@@ -196,7 +197,14 @@ static void FTMenuBleUpdate(void)
 		clear_all_touch_event_handle();
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_BLE_SLE1_STR_X, FT_BLE_SLE1_STR_X+FT_BLE_SLE1_STR_W, FT_BLE_SLE1_STR_Y, FT_BLE_SLE1_STR_Y+FT_BLE_SLE1_STR_H, FTMenuBleSle1Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_BLE_SLE2_STR_X, FT_BLE_SLE2_STR_X+FT_BLE_SLE2_STR_W, FT_BLE_SLE2_STR_Y, FT_BLE_SLE2_STR_Y+FT_BLE_SLE2_STR_H, FTMenuBleSle2Hander);
-	#endif	
+	#endif
+
+		if(ft_ble_check_ok)
+			ft_results.ble_ret = 1;
+		else
+			ft_results.ble_ret = 2;
+		
+		SaveFactoryTestResults(ft_results);
 	}
 }
 

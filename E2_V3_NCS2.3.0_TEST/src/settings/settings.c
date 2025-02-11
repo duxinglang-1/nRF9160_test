@@ -11,6 +11,9 @@
 #ifdef CONFIG_ALARM_SUPPORT
 #include "alarm.h"
 #endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#include "ft_main.h"
+#endif
 #include "lcd.h"
 #include "codetrans.h"
 #include "inner_flash.h"
@@ -715,6 +718,24 @@ void InitSystemDateTime(void)
 	StartSystemDateTime();
 }
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void SaveFactoryTestResults(ft_results_t ret)
+{
+	SaveFtResultsToInnerFlash(ret);
+}
+
+void ResetFactoryTestResults(void)
+{
+	memset(&ft_results, 0, sizeof(ft_results_t));
+	SaveFactoryTestResults(ft_results);
+}
+
+void InitFactoryTestResults(void)
+{
+	ReadFtResultsFromInnerFlash(&ft_results);
+}
+#endif
+
 void SaveSystemSettings(void)
 {
 	SaveSettingsToInnerFlash(global_settings);
@@ -750,6 +771,11 @@ void InitSystemSettings(void)
 	}
 
 	InitSystemDateTime();
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	InitFactoryTestResults();
+#endif
+
 #ifdef CONFIG_ALARM_SUPPORT	
 	AlarmRemindInit();
 #endif
@@ -801,6 +827,10 @@ void ResetSportData(void)
 
 void ResetFactoryDefault(void)
 {
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	ResetFactoryTestResults();	
+#endif
+
 	ResetSystemTime();
 	ResetSystemSettings();
 

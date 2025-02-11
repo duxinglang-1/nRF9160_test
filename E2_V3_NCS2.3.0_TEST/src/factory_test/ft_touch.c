@@ -308,6 +308,13 @@ static void FTMenuTouchUpdate(void)
 
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_TP_SLE1_STR_X, FT_TP_SLE1_STR_X+FT_TP_SLE1_STR_W, FT_TP_SLE1_STR_Y, FT_TP_SLE1_STR_Y+FT_TP_SLE1_STR_H, FTMenuTouchSle1Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_TP_SLE2_STR_X, FT_TP_SLE2_STR_X+FT_TP_SLE2_STR_W, FT_TP_SLE2_STR_Y, FT_TP_SLE2_STR_Y+FT_TP_SLE2_STR_H, FTMenuTouchSle2Hander);
+
+		if(ft_tp.check_item == FT_TP_MAX)
+			ft_results.touch_ret = 1;
+		else
+			ft_results.touch_ret = 2;
+		
+		SaveFactoryTestResults(ft_results);
 	}
 }
 

@@ -56,6 +56,7 @@
 
 static bool ft_lcd_color_change = false;
 static bool update_show_flag = false;
+static uint8_t ft_lcd_color_change_count = 0;
 
 static FT_LCD_COLOR ft_color;
 
@@ -93,6 +94,8 @@ const ft_menu_t FT_MENU_LCD =
 static void FTMenuLcdPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
+	ft_results.lcd_ret = 1;
+	SaveFactoryTestResults(ft_results);
 
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
@@ -100,6 +103,8 @@ static void FTMenuLcdPassHander(void)
 static void FTMenuLcdFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
+	ft_results.lcd_ret = 2;
+	SaveFactoryTestResults(ft_results);
 
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
@@ -126,6 +131,7 @@ static void LcdTestTimerOutCallBack(struct k_timer *timer_id)
 static void FTMenuLcdStopTest(void)
 {
 	ft_lcd_color_change = false;
+	ft_lcd_color_change_count = 0;
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 	k_timer_stop(&Lcd_test_timer);
 }
@@ -133,6 +139,7 @@ static void FTMenuLcdStopTest(void)
 static void FTMenuLcdStartTest(void)
 {
 	ft_lcd_color_change = true;
+	ft_lcd_color_change_count = 0;
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 	k_timer_start(&Lcd_test_timer, K_MSEC(FT_LCD_COLOR_CHANGE_INTERVEIW), K_MSEC(FT_LCD_COLOR_CHANGE_INTERVEIW));
 }
@@ -161,6 +168,14 @@ static void FTMenuLcdUpdate(void)
 			LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 			
 			ClearAllKeyHandler();
+		}
+
+		if(ft_lcd_color_change_count < 5)
+		{
+			ft_lcd_color_change_count++;
+		}
+		else
+		{
 			SetLeftKeyUpHandler(FTMenuLcdStopTest);
 			SetRightKeyUpHandler(FTMenuLcdStopTest);
 		}

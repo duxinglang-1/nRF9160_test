@@ -177,7 +177,14 @@ static void FTMenuSIMUpdate(void)
 		clear_all_touch_event_handle();
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_SIM_SLE1_STR_X, FT_SIM_SLE1_STR_X+FT_SIM_SLE1_STR_W, FT_SIM_SLE1_STR_Y, FT_SIM_SLE1_STR_Y+FT_SIM_SLE1_STR_H, FTMenuSIMSle1Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_SIM_SLE2_STR_X, FT_SIM_SLE2_STR_X+FT_SIM_SLE2_STR_W, FT_SIM_SLE2_STR_Y, FT_SIM_SLE2_STR_Y+FT_SIM_SLE2_STR_H, FTMenuSIMSle2Hander);
-	#endif	
+	#endif
+
+		if(ft_sim_check_ok)
+			ft_results.sim_ret = 1;
+		else
+			ft_results.sim_ret = 2;
+
+		SaveFactoryTestResults(ft_results);
 	}
 }
 

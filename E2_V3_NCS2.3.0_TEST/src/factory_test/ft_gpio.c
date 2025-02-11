@@ -193,6 +193,8 @@ static void FTMenukeyUpdate(void)
 		SetRightKeyUpHandler(FTMenuKeySle2Hander);
 
 		ft_menu_checked[ft_main_menu_index] = true;
+		ft_results.key_ret = 1;
+		SaveFactoryTestResults(ft_results);
 	}
 }
 
@@ -367,6 +369,8 @@ static void FTMenuWristUpdate(void)
 			check_count = 0;
 			ft_wrist_checked = true;
 			ft_menu_checked[ft_main_menu_index] = true;
+			ft_results.wrist_ret =1;
+			SaveFactoryTestResults(ft_results);
 			
 			LCD_Set_BL_Mode(LCD_BL_AUTO);
 			LCD_SetFontSize(FONT_SIZE_52);

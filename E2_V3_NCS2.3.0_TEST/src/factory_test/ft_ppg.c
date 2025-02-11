@@ -95,8 +95,9 @@ static void FTMenuPPGSle2Hander(void)
 
 static void FTMenuPPGStopTest(void)
 {
-	k_timer_stop(&ppg_test_timer);
+	ft_ppg_checking = false;
 	FTStopPPG();
+	k_timer_stop(&ppg_test_timer);
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 }
 
@@ -152,6 +153,13 @@ static void FTMenuPPGUpdate(void)
 		LCD_ShowUniString(FT_PPG_RET_STR_X+(FT_PPG_RET_STR_W-w)/2, FT_PPG_RET_STR_Y+(FT_PPG_RET_STR_H-h)/2, ret_str[ft_ppg_check_ok]);
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
+
+		if(ft_ppg_check_ok)
+			ft_results.ppg_ret = 1;
+		else
+			ft_results.ppg_ret = 2;
+
+		SaveFactoryTestResults(ft_results);
 	}
 }
 

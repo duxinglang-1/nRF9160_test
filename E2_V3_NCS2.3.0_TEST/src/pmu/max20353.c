@@ -15,7 +15,6 @@
 
 //#define SHOW_LOG_IN_SCREEN
 //#define PMU_DEBUG
-#define GPIO_ACT_I2C
 
 #ifdef GPIO_ACT_I2C
 #define PMU_SCL		0

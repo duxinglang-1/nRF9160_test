@@ -6,7 +6,25 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
+
+#ifdef FW_FOR_CN
+#define LANGUAGE_CN_ENABLE		//Chinese
+#define LANGUAGE_EN_ENABLE		//English
+#else
+#define LANGUAGE_EN_ENABLE		//English
+#define LANGUAGE_DE_ENABLE		//Deutsch
+#define LANGUAGE_FR_ENABLE		//French
+#define LANGUAGE_IT_ENABLE		//Italian
+//#define LANGUAGE_ES_ENABLE		//Spanish
+//#define LANGUAGE_PT_ENABLE		//Portuguese
+//#define LANGUAGE_PL_ENABLE		//Polish
+//#define LANGUAGE_SE_ENABLE		//Swedish
+#define LANGUAGE_JP_ENABLE		//Japanese
+#define LANGUAGE_KR_ENABLE		//Korea
+#define LANGUAGE_RU_ENABLE		//Russian
+//#define LANGUAGE_AR_ENABLE		//Arabic
+#endif
 
 #define ALARM_MAX	8
 #define MENU_MAX_COUNT	15
@@ -50,30 +68,65 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_BEGIN,
 #ifndef FW_FOR_CN
-	LANGUAGE_EN = LANGUAGE_BEGIN,	//English
-	LANGUAGE_DE,					//Deutsch
-	LANGUAGE_FR,					//French
-	LANGUAGE_ITA,					//Italian
-	LANGUAGE_ES,					//Spanish
-	LANGUAGE_PT,					//Portuguese
-	LANGUAGE_PL,					//Polish
-	LANGUAGE_SE,					//Swedish
-	LANGUAGE_JP,					//Japanese
-	LANGUAGE_KR,					//Korea
-	LANGUAGE_RU,					//Russian
-	LANGUAGE_AR,					//Arabic
-#else
-	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
 	LANGUAGE_EN,					//English
+  #ifdef LANGUAGE_DE_ENABLE
+	LANGUAGE_DE,					//Deutsch
+  #endif
+  #ifdef LANGUAGE_FR_ENABLE
+	LANGUAGE_FR,					//French
+  #endif
+  #ifdef LANGUAGE_IT_ENABLE
+	LANGUAGE_ITA,					//Italian
+  #endif
+  #ifdef LANGUAGE_ES_ENABLE
+	LANGUAGE_ES,					//Spanish
+  #endif
+  #ifdef LANGUAGE_PT_ENABLE
+	LANGUAGE_PT,					//Portuguese
+  #endif
+  #ifdef LANGUAGE_PL_ENABLE
+	LANGUAGE_PL,					//Polish
+  #endif
+  #ifdef LANGUAGE_SE_ENABLE
+	LANGUAGE_SE,					//Swedish
+  #endif	
+  #ifdef LANGUAGE_JP_ENABLE	
+	LANGUAGE_JP,					//Japanese
+  #endif	
+  #ifdef LANGUAGE_KR_ENABLE	
+	LANGUAGE_KR,					//Korea
+  #endif	
+  #ifdef LANGUAGE_RU_ENABLE	
+	LANGUAGE_RU,					//Russian
+  #endif	
+  #ifdef LANGUAGE_AR_ENABLE	
+	LANGUAGE_AR,					//Arabic
+  #endif	
+#else
+  #ifdef LANGUAGE_CN_ENABLE
+	LANGUAGE_CHN,					//Chinese
+  #endif	
+  #ifdef LANGUAGE_EN_ENABLE	
+	LANGUAGE_EN,					//English
+  #endif	
 #endif	
 	LANGUAGE_MAX,
+#ifdef LANGUAGE_DK_ENABLE	
 	LANGUAGE_DK,					//Danish
+#endif
+#ifdef LANGUAGE_FI_ENABLE
 	LANGUAGE_FI,					//Finnish
+#endif
+#ifdef LANGUAGE_NL_ENABLE
 	LANGUAGE_NL,					//Dutch
+#endif
+#ifdef LANGUAGE_NO_ENABLE
 	LANGUAGE_NO,					//Norwegian
+#endif
+#ifdef LANGUAGE_GR_ENABLE
 	LANGUAGE_GR,					//Greece
+#endif
 }LANGUAGE_SET;
 
 typedef enum

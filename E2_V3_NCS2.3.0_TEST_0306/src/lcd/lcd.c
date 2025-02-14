@@ -3067,6 +3067,7 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 	}
 }
 
+#ifdef LANGUAGE_AR_ENABLE
 void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
 {
 	int16_t str_x=x,str_y=y,str_w,str_h;
@@ -3138,6 +3139,7 @@ void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_
 		next = p+1;
 	}
 }
+#endif
 
 //显示中英文字符串
 //x,y:起点坐标
@@ -3163,6 +3165,7 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 //显示中英文字符串
 //x,y:起点坐标
 //*p:字符串起始地址	
+#ifdef LANGUAGE_AR_ENABLE
 void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 {
 	int16_t str_x=x,str_y=y;
@@ -3225,6 +3228,7 @@ void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 		next = p+1;
 	}
 }
+#endif
 
 #elif defined(FONTMAKER_MBCS_FONT)
 //根据字体测量字符的宽度

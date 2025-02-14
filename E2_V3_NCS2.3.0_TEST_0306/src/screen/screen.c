@@ -116,78 +116,190 @@ static char *logo_img[] =
 
 static uint16_t still_str[LANGUAGE_MAX][21] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0053,0x0074,0x0061,0x0079,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0000},//Stay still
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x0052,0x0075,0x0068,0x0069,0x0067,0x0020,0x0068,0x0061,0x006C,0x0074,0x0065,0x006E,0x0000},//Ruhig halten
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x0052,0x0065,0x0073,0x0074,0x0065,0x0072,0x0020,0x0069,0x006D,0x006D,0x006F,0x0062,0x0069,0x006C,0x0065,0x0000},//Rester immobile
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0053,0x0074,0x0061,0x0069,0x0020,0x0066,0x0065,0x0072,0x006D,0x006F,0x0000},//Stai fermo
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x004E,0x006F,0x0020,0x0074,0x0065,0x0020,0x006D,0x0075,0x0065,0x0076,0x0061,0x0073,0x0000},//No te muevas
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0046,0x0069,0x0071,0x0075,0x0065,0x0020,0x0070,0x0061,0x0072,0x0061,0x0064,0x006F,0x0000},//Fique parado
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x005A,0x006F,0x0073,0x0074,0x0061,0x0144,0x0020,0x0077,0x0020,0x0062,0x0065,0x007A,0x0072,0x0075,0x0063,0x0068,0x0075,0x0000},//Zostań w bezruchu
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x0056,0x0061,0x0072,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0061,0x0000},//Var stilla
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x9759,0x6B62,0x3092,0x4FDD,0x3064,0x0000},//静止を保つ
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xAC00,0xB9CC,0xD788,0x0020,0xC788,0xC5B4,0x0000},//??? ??
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x041D,0x0435,0x0020,0x0434,0x0432,0x0438,0x0433,0x0430,0x0442,0x044C,0x0441,0x044F,0x0000},//Не двигаться
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x0627,0x0628,0x0642,0x0020,0x0633,0x0627,0x0643,0x0646,0x0627,0x0000},//??? ?????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x4FDD,0x6301,0x9759,0x6B62,0x0000},//保持静止
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0053,0x0074,0x0061,0x0079,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0000},//Stay still
+											  #endif
 											#endif
 											  };
 static uint16_t Incon_1_str[LANGUAGE_MAX][40] = {
 												#ifndef FW_FOR_CN
+											      #ifdef LANGUAGE_EN_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x0065,0x0020,0x0072,0x0065,0x0074,0x0072,0x0079,0x0020,0x006C,0x0061,0x0074,0x0065,0x0072,0x0000},//Inconclusive retry later
+												  #endif
+												  #ifdef LANGUAGE_DE_ENABLE
 													{0x0046,0x0065,0x0068,0x006C,0x0065,0x0072,0x0020,0x0076,0x0065,0x0072,0x0073,0x0075,0x0063,0x0068,0x0065,0x006E,0x0020,0x0053,0x0069,0x0065,0x0020,0x0065,0x0073,0x0020,0x0065,0x0072,0x006E,0x0065,0x0075,0x0074,0x0000},//Fehler versuchen Sie es erneut
+												  #endif
+												  #ifdef LANGUAGE_FR_ENABLE
 													{0x004E,0x006F,0x006E,0x0020,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0061,0x006E,0x0074,0x0020,0x0072,0x00E9,0x0065,0x0073,0x0073,0x0061,0x0079,0x0065,0x007A,0x0020,0x0070,0x006C,0x0075,0x0073,0x0020,0x0074,0x0061,0x0072,0x0064,0x0000},//Non concluant, réessayez plus tard
+												  #endif
+												  #ifdef LANGUAGE_IT_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0064,0x0065,0x006E,0x0074,0x0065,0x0020,0x0072,0x0069,0x0070,0x0072,0x006F,0x0076,0x0061,0x0072,0x0065,0x0020,0x0070,0x0069,0x00F9,0x0020,0x0074,0x0061,0x0072,0x0064,0x0069,0x0000},//Inconcludente, riprovare più tardi
+												  #endif
+												  #ifdef LANGUAGE_ES_ENABLE
 													{0x004E,0x006F,0x0020,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0079,0x0065,0x006E,0x0074,0x0065,0x0020,0x0069,0x006E,0x0074,0x00E9,0x006E,0x0074,0x0065,0x006C,0x006F,0x0020,0x006D,0x00E1,0x0073,0x0020,0x0074,0x0061,0x0072,0x0064,0x0065,0x0000},//No concluyente, inténtelo más tarde
+												  #endif
+												  #ifdef LANGUAGE_PT_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x006F,0x0020,0x0074,0x0065,0x006E,0x0074,0x0065,0x0020,0x006D,0x0061,0x0069,0x0073,0x0020,0x0074,0x0061,0x0072,0x0064,0x0065,0x0000},//Inconclusivo, tente mais tarde
+												  #endif
+												  #ifdef LANGUAGE_PL_ENABLE
 													{0x004E,0x0069,0x0065,0x006A,0x0065,0x0064,0x006E,0x006F,0x007A,0x006E,0x002E,0x0020,0x0050,0x006F,0x006E,0x00F3,0x0077,0x0000},//Niejednozn. Ponów
+												  #endif
+												  #ifdef LANGUAGE_SE_ENABLE
 													{0x004F,0x0074,0x0079,0x0064,0x006C,0x0069,0x0067,0x0074,0x002C,0x0020,0x0066,0x00F6,0x0072,0x0073,0x00F6,0x006B,0x0020,0x0073,0x0065,0x006E,0x0061,0x0072,0x0065,0x002E,0x0000},//Otydligt, f?rs?k senare.
+												  #endif
+												  #ifdef LANGUAGE_JP_ENABLE
 													{0x7D50,0x8AD6,0x304C,0x51FA,0x306A,0x3044,0x002C,0x0020,0x5F8C,0x3067,0x8A66,0x3059,0x0000},//結論が出ない, 後で試す
+												  #endif
+												  #ifdef LANGUAGE_KR_ENABLE
 													{0xCE21,0xC815,0x0020,0xC2E4,0xD328,0x002C,0x0020,0xB098,0xC911,0xC5D0,0x0020,0xB2E4,0xC2DC,0x0020,0xC2DC,0xB3C4,0xD574,0x0020,0xBCF4,0xC138,0xC694,0x0000},//?? ??, ??? ?? ??? ???
+												  #endif
+												  #ifdef LANGUAGE_RU_ENABLE
 													{0x041D,0x0435,0x043E,0x043F,0x0440,0x0435,0x0434,0x002E,0x002C,0x0020,0x043F,0x043E,0x043F,0x0440,0x043E,0x0431,0x002E,0x0020,0x043F,0x043E,0x0437,0x0436,0x0435,0x002E,0x0000},//Неопред., попроб. позже.
+												  #endif
+												  #ifdef LANGUAGE_AR_ENABLE
 													{0x063A,0x064A,0x0631,0x0020,0x062D,0x0627,0x0633,0x0645,0x0629,0x060C,0x0020,0x062D,0x0627,0x0648,0x0644,0x0020,0x0644,0x0627,0x062D,0x0642,0x064B,0x0627,0x0000},//??? ?????? ???? ??????
+												  #endif
 												#else
+												  #ifdef LANGUAGE_CN_ENABLE
 													{0x6D4B,0x91CF,0x5931,0x8D25,0xFF0C,0x8BF7,0x7A0D,0x540E,0x91CD,0x8BD5,0x0000},//测量失败，请稍后重试
+												  #endif
+												  #ifdef LANGUAGE_EN_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x0065,0x0020,0x0072,0x0065,0x0074,0x0072,0x0079,0x0020,0x006C,0x0061,0x0074,0x0065,0x0072,0x0000},//Inconclusive retry later
+												  #endif
 												#endif
 												};
 static uint16_t Incon_2_str[LANGUAGE_MAX][18] = {
 												#ifndef FW_FOR_CN
+												  #ifdef LANGUAGE_EN_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x0065,0x0000},//Inconclusive
+												  #endif
+												  #ifdef LANGUAGE_DE_ENABLE
 													{0x0046,0x0065,0x0068,0x006C,0x0065,0x0072,0x0000},//Fehler
+												  #endif
+												  #ifdef LANGUAGE_FR_ENABLE
 													{0x004E,0x006F,0x006E,0x0020,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0061,0x006E,0x0074,0x0000},//Non concluant
+												  #endif
+												  #ifdef LANGUAGE_IT_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0064,0x0065,0x006E,0x0074,0x0065,0x0000},//Inconcludente
+												  #endif
+												  #ifdef LANGUAGE_ES_ENABLE
 													{0x004E,0x006F,0x0020,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0079,0x0065,0x006E,0x0074,0x0065,0x0000},//No concluyente
+												  #endif
+												  #ifdef LANGUAGE_PT_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x006F,0x0000},//Inconclusivo
+												  #endif
+												  #ifdef LANGUAGE_PL_ENABLE
 													{0x0050,0x006F,0x006D,0x0069,0x0061,0x0072,0x0020,0x006E,0x0069,0x0065,0x006A,0x0065,0x0064,0x006E,0x006F,0x007A,0x006E,0x002E,0x0000},//Pomiar niejednozn.
+												  #endif
+												  #ifdef LANGUAGE_SE_ENABLE
 													{0x004F,0x0074,0x0079,0x0064,0x006C,0x0069,0x0067,0x0000},//Otydlig
+												  #endif
+												  #ifdef LANGUAGE_JP_ENABLE
 													{0x7D50,0x8AD6,0x304C,0x51FA,0x306A,0x3044,0x0000},//結論が出ない
+												  #endif
+												  #ifdef LANGUAGE_KR_ENABLE
 													{0xCE21,0xC815,0x0020,0xC2E4,0xD328,0x0000},//?? ??
+												  #endif
+												  #ifdef LANGUAGE_RU_ENABLE
 													{0x041D,0x0435,0x043E,0x043F,0x0440,0x0435,0x0434,0x0435,0x043B,0x0451,0x043D,0x043D,0x043E,0x0000},//неопределённо
+												  #endif
+												  #ifdef LANGUAGE_AR_ENABLE
 													{0x063A,0x064A,0x0631,0x0020,0x062D,0x0627,0x0633,0x0645,0x0629,0x0000},//??? ?????
+												  #endif
 												#else
+												  #ifdef LANGUAGE_CN_ENABLE
 													{0x6D4B,0x91CF,0x5931,0x8D25,0x0000},//测量失败
+												  #endif
+												  #ifdef LANGUAGE_EN_ENABLE
 													{0x0049,0x006E,0x0063,0x006F,0x006E,0x0063,0x006C,0x0075,0x0073,0x0069,0x0076,0x0065,0x0000},//Inconclusive
+												  #endif
 												#endif
 												};
 static uint16_t still_retry_str[LANGUAGE_MAX][42] = {
 													#ifndef FW_FOR_CN
+												      #ifdef LANGUAGE_EN_ENABLE
 														{0x004B,0x0065,0x0065,0x0070,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0020,0x0061,0x006E,0x0064,0x0020,0x0072,0x0065,0x0074,0x0072,0x0079,0x0000},//Keep still and retry
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0052,0x0075,0x0068,0x0069,0x0067,0x0020,0x0068,0x0061,0x006C,0x0074,0x0065,0x006E,0x0020,0x0076,0x0065,0x0072,0x0073,0x0075,0x0063,0x0068,0x0065,0x006E,0x0020,0x0053,0x0069,0x0065,0x0020,0x0065,0x0073,0x0020,0x0065,0x0072,0x006E,0x0065,0x0075,0x0074,0x0000},//Ruhig halten versuchen Sie es erneut
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x0052,0x0065,0x0073,0x0074,0x0065,0x0072,0x0020,0x0069,0x006D,0x006D,0x006F,0x0062,0x0069,0x006C,0x0065,0x0020,0x0065,0x0074,0x0020,0x0072,0x00E9,0x0065,0x0073,0x0073,0x0061,0x0079,0x0065,0x0072,0x0000},//Rester immobile et réessayer
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x0052,0x0069,0x006D,0x0061,0x006E,0x0065,0x0072,0x0065,0x0020,0x0066,0x0065,0x0072,0x006D,0x0069,0x0020,0x0065,0x0020,0x0072,0x0069,0x0074,0x0065,0x006E,0x0074,0x0061,0x0072,0x0065,0x0000},//Rimanere fermi e ritentare
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x004E,0x006F,0x0020,0x0074,0x0065,0x0020,0x006D,0x0075,0x0065,0x0076,0x0061,0x0073,0x0020,0x0079,0x0020,0x0076,0x0075,0x0065,0x006C,0x0076,0x0065,0x0020,0x0061,0x0020,0x0069,0x006E,0x0074,0x0065,0x006E,0x0074,0x0061,0x0072,0x006C,0x006F,0x0000},//No te muevas y vuelve a intentarlo
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0046,0x0069,0x0071,0x0075,0x0065,0x0020,0x0070,0x0061,0x0072,0x0061,0x0064,0x006F,0x0020,0x0065,0x0020,0x0074,0x0065,0x006E,0x0074,0x0065,0x0020,0x006E,0x006F,0x0076,0x0061,0x006D,0x0065,0x006E,0x0074,0x0065,0x0000},//Fique parado e tente novamente
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x005A,0x006F,0x0073,0x0074,0x0020,0x0077,0x0020,0x0062,0x0065,0x007A,0x0072,0x002E,0x0020,0x0050,0x006F,0x006E,0x00F3,0x0077,0x0000},//Zost w bezr. Ponów
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0056,0x0061,0x0072,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0061,0x0020,0x006F,0x0063,0x0068,0x0020,0x0066,0x00F6,0x0072,0x0073,0x00F6,0x006B,0x002E,0x0000},//Var stilla och f?rs?k.
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x9759,0x6B62,0x3057,0x3066,0x518D,0x8A66,0x884C,0x3059,0x308B,0x0000},//静止して再試行する
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xAC00,0xB9CC,0xD788,0x0020,0xC788,0xB2E4,0xAC00,0x0020,0xC7AC,0xCE21,0xC815,0x0000},//??? ??? ???
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x041D,0x0435,0x0020,0x0434,0x0432,0x0438,0x0433,0x0430,0x0439,0x0441,0x044F,0x0020,0x0438,0x0020,0x043F,0x043E,0x0432,0x0442,0x043E,0x0440,0x0438,0x0000},//Не двигайся и повтори
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x062D,0x0627,0x0641,0x0638,0x0020,0x0639,0x0644,0x0649,0x0020,0x062B,0x0628,0x0627,0x062A,0x0643,0x0020,0x0648,0x0623,0x0639,0x062F,0x0020,0x0627,0x0644,0x0645,0x062D,0x0627,0x0648,0x0644,0x0629,0x0000},//???? ??? ????? ???? ????????
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x4FDD,0x6301,0x9759,0x6B62,0xFF0C,0x91CD,0x65B0,0x6D4B,0x91CF,0x0000},//保持静止，重新测量
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x004B,0x0065,0x0065,0x0070,0x0020,0x0073,0x0074,0x0069,0x006C,0x006C,0x0020,0x0061,0x006E,0x0064,0x0020,0x0072,0x0065,0x0074,0x0072,0x0079,0x0000},//Keep still and retry
+													  #endif
 													#endif
 													};
 
@@ -412,6 +524,7 @@ void IdleShowSystemDate(void)
 #ifdef FONTMAKER_UNICODE_FONT	
 	uint16_t str_mon[LANGUAGE_MAX][12][7] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{//English
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
@@ -426,6 +539,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x0065,0x0063,0x0000,0x0000},//Dec
 												},
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{//Deutsch
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
@@ -440,6 +555,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x0065,0x007A,0x0000,0x0000},//Dez
 												},
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{//French
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x00E9,0x0076,0x0000,0x0000},//Fév
@@ -454,6 +571,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x00E9,0x0063,0x0000,0x0000},//Déc
 												},
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{//Italian
 													{0x0047,0x0065,0x006E,0x0000},//Gen
 													{0x0046,0x0065,0x0062,0x0000},//Feb
@@ -468,6 +587,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000},//Nov
 													{0x0044,0x0069,0x0063,0x0000},//Dic
 												},
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{//Spanish
 													{0x0045,0x006E,0x0065,0x0000},//Ene
 													{0x0046,0x0065,0x0062,0x0000},//Feb
@@ -482,6 +603,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000},//Nov
 													{0x0044,0x0069,0x0063,0x0000},//Dic
 												},
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{//Portuguese
 													{0x004A,0x0061,0x006E,0x0000},//Jan
 													{0x0046,0x0065,0x0076,0x0000},//Fev
@@ -496,6 +619,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000},//Nov
 													{0x0044,0x0065,0x007A,0x0000},//Dez
 												},
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{//Polish
 													{0x0053,0x0074,0x0079,0x002E,0x0000},//Sty.
 													{0x004C,0x0075,0x0074,0x0079,0x0000},//Luty
@@ -510,6 +635,8 @@ void IdleShowSystemDate(void)
 													{0x004C,0x0069,0x0073,0x0074,0x002E,0x0000},//List.
 													{0x0047,0x0072,0x0075,0x002E,0x0000},//Gru.
 												},
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{//Swedish
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
@@ -524,6 +651,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x0065,0x0063,0x0000,0x0000},//Dec
 												},
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{//Japanese
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
@@ -538,6 +667,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x0065,0x0063,0x0000,0x0000},//Dec
 												},
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{//Korea
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
@@ -552,6 +683,8 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x0065,0x0063,0x0000,0x0000},//Dec
 												},
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{//Russian
 													{0x042F,0x043D,0x0432,0x0000},//Янв
 													{0x0424,0x0435,0x0432,0x0000},//Фев
@@ -566,6 +699,8 @@ void IdleShowSystemDate(void)
 													{0x041D,0x043E,0x044F,0x0000},//Ноя
 													{0x0414,0x0435,0x043A,0x0000},//Дек
 												},
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{//Arabic
 													{0x064A,0x0646,0x0627,0x064A,0x0631,0x0000},//?????
 													{0x0641,0x0628,0x0631,0x0627,0x064A,0x0631,0x0000},//??????
@@ -580,7 +715,9 @@ void IdleShowSystemDate(void)
 													{0x0646,0x0648,0x0641,0x0645,0x0628,0x0631,0x0000},//??????
 													{0x062F,0x064A,0x0633,0x0645,0x0628,0x0631,0x0000},//??????
 												},
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{
 													{0x4E00,0x6708,0x0000,0x0000,0x0000},//一月
 													{0x4E8C,0x6708,0x0000,0x0000,0x0000},//二月
@@ -595,6 +732,8 @@ void IdleShowSystemDate(void)
 													{0x5341,0x4E00,0x6708,0x0000,0x0000},//十一月
 													{0x5341,0x4E8C,0x6708,0x0000,0x0000},//十二月
 												},
+											  #endif
+									          #ifdef LANGUAGE_EN_ENABLE
 												{
 													{0x004A,0x0061,0x006E,0x0000,0x0000},//Jan
 													{0x0046,0x0065,0x0062,0x0000,0x0000},//Feb
@@ -609,6 +748,7 @@ void IdleShowSystemDate(void)
 													{0x004E,0x006F,0x0076,0x0000,0x0000},//Nov
 													{0x0044,0x0065,0x0063,0x0000,0x0000},//Dec
 												},
+											  #endif
 											#endif
 											};
 	uint16_t str_mon_cn[2] = {0x6708,0x0000};
@@ -632,15 +772,19 @@ void IdleShowSystemDate(void)
 
 	switch(global_settings.language)
 	{
-  #ifdef FW_FOR_CN
-	case LANGUAGE_CHN:
-  #else	
+ #if defined(LANGUAGE_CN_ENABLE)||defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+   #ifdef LANGUAGE_CN_ENABLE
+	case LANGUAGE_CHN:
+   #endif
+   #ifdef LANGUAGE_JP_ENABLE
 	case LANGUAGE_JP:
+   #endif
+   #ifdef LANGUAGE_KR_ENABLE
 	case LANGUAGE_KR:
-  #endif		
+   #endif
 		switch(global_settings.language)
 		{
-	  #ifdef FW_FOR_CN
+	   #ifdef LANGUAGE_CN_ENABLE
 		case LANGUAGE_CHN:
 			x = IDLE_DATE_MON_CN_X;
 			y = IDLE_DATE_MON_CN_Y;
@@ -649,7 +793,9 @@ void IdleShowSystemDate(void)
 			str_m = str_mon_cn;
 			str_d = str_day_cn;
 			break;
-	  #else
+	   #endif
+	   
+	   #ifdef LANGUAGE_JP_ENABLE
 	 	case LANGUAGE_JP:
 			x = IDLE_DATE_MON_CN_X;
 			y = IDLE_DATE_MON_CN_Y;
@@ -658,7 +804,9 @@ void IdleShowSystemDate(void)
 			str_m = str_mon_cn;
 			str_d = str_day_cn;
 			break;
- 	  
+ 	   #endif
+	   
+	   #ifdef LANGUAGE_KR_ENABLE
 		case LANGUAGE_KR:
 			x = IDLE_DATE_MON_CN_X-10;
 			y = IDLE_DATE_MON_CN_Y;
@@ -667,7 +815,7 @@ void IdleShowSystemDate(void)
 			str_m = str_mon_kr;
 			str_d = str_day_kr;
 			break;
-	  #endif
+	   #endif
 		}
 		
 		LCD_FillColor(x, y, w, h, BLACK);
@@ -693,16 +841,18 @@ void IdleShowSystemDate(void)
 		x += IDLE_DATE_NUM_CN_W;
 		LCD_ShowUniString(x, y, str_d);
 		break;
+ #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/		
 	
 	default:
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_AR_ENABLE
 		case LANGUAGE_AR:
 			x = IDLE_DATE_DAY_EN_X;
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 8);
 			break;
-	  #endif		
+	   #endif
+	   
 		default:
 			x = IDLE_DATE_DAY_EN_X;
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_mon[global_settings.language][date_time.month-1], 8);
@@ -712,18 +862,20 @@ void IdleShowSystemDate(void)
 		LCD_ShowImg_From_Flash(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day%10]);
 
 		LCD_MeasureUniString(tmpbuf, &str_w, &str_h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 		{
 			switch(global_settings.language)
 			{
-		  #ifndef FW_FOR_CN	
+		   #ifdef LANGUAGE_AR_ENABLE
 			case LANGUAGE_AR:
 				x = IDLE_WEEK_EN_X;
 				y = IDLE_WEEK_EN_Y;
 				w = IDLE_DATE_MON_EN_W;
 				h = IDLE_DATE_MON_EN_H;
 				break;
-		  #endif		
+		   #endif
+		   
 			default:
 				x = IDLE_DATE_MON_EN_X;
 				y = IDLE_DATE_MON_EN_Y;
@@ -739,6 +891,7 @@ void IdleShowSystemDate(void)
 				LCD_ShowUniStringRtoL(x+w, y, tmpbuf);
 		}
 		else
+	#endif		
 		{
 			LCD_FillColor(IDLE_DATE_MON_EN_X, IDLE_DATE_MON_EN_Y, IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_H, BLACK);
 			
@@ -786,6 +939,7 @@ void IdleShowSystemWeek(void)
 #ifdef FONTMAKER_UNICODE_FONT	
 	uint16_t str_week[LANGUAGE_MAX][7][13] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{//English
 													{0x0053,0x0075,0x006E,0x0000},//Sun
 													{0x004D,0x006F,0x006E,0x0000},//Mon
@@ -795,6 +949,8 @@ void IdleShowSystemWeek(void)
 													{0x0046,0x0072,0x0069,0x0000},//Fri
 													{0x0053,0x0061,0x0074,0x0000},//Sat
 												},
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{//Deutsch
 													{0x0053,0x006F,0x006E,0x0000},//Son
 													{0x004D,0x006F,0x006E,0x0000},//Mon
@@ -804,6 +960,8 @@ void IdleShowSystemWeek(void)
 													{0x0046,0x0072,0x0065,0x0000},//Fre
 													{0x0053,0x0061,0x006D,0x0000},//Sam
 												},
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{//French
 													{0x0044,0x0069,0x006D,0x0000},//Dim
 													{0x004C,0x0075,0x006E,0x0000},//Lun
@@ -813,6 +971,8 @@ void IdleShowSystemWeek(void)
 													{0x0056,0x0065,0x006E,0x0000},//Ven
 													{0x0053,0x0061,0x006D,0x0000},//Sam
 												},
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{//Italian
 													{0x0044,0x006F,0x006D,0x0000},//Dom
 													{0x004C,0x0075,0x006E,0x0000},//Lun
@@ -822,6 +982,8 @@ void IdleShowSystemWeek(void)
 													{0x0056,0x0065,0x006E,0x0000},//Ven
 													{0x0053,0x0061,0x0062,0x0000},//Sab
 												},
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{//Spanish
 													{0x0044,0x006F,0x006D,0x0000},//Dom
 													{0x004C,0x0075,0x006E,0x0000},//Lun
@@ -831,6 +993,8 @@ void IdleShowSystemWeek(void)
 													{0x0056,0x0069,0x0065,0x0000},//Vie
 													{0x0053,0x00E1,0x0062,0x0000},//Sáb
 												},
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{//Portuguese
 													{0x0044,0x006F,0x006D,0x0000},//Dom
 													{0x0053,0x0065,0x0067,0x0000},//Seg
@@ -840,6 +1004,8 @@ void IdleShowSystemWeek(void)
 													{0x0053,0x0065,0x0078,0x0000},//Sex
 													{0x0053,0x00E1,0x0062,0x0000},//Sáb
 												},
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{//Polish
 													{0x004E,0x0069,0x0065,0x0064,0x007A,0x0000},//Niedz
 													{0x0050,0x006F,0x006E,0x002E,0x0000},//Pon.
@@ -849,6 +1015,8 @@ void IdleShowSystemWeek(void)
 													{0x0050,0x0074,0x002E,0x0000},//Pt.
 													{0x0053,0x006F,0x0062,0x002E,0x0000},//Sob.
 												},
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{//Swedish
 													{0x0053,0x00F6,0x006E,0x0000},//S?n
 													{0x004D,0x00E5,0x006E,0x0000},//M?n
@@ -858,6 +1026,8 @@ void IdleShowSystemWeek(void)
 													{0x0046,0x0072,0x0065,0x0000},//Fre
 													{0x004C,0x00F6,0x0072,0x0000},//L?r
 												},
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{//Japanese
 													{0x65E5,0x66DC,0x0000},//日曜
 													{0x6708,0x66DC,0x0000},//月曜
@@ -867,6 +1037,8 @@ void IdleShowSystemWeek(void)
 													{0x91D1,0x66DC,0x0000},//金曜
 													{0x571F,0x66DC,0x0000},//土曜
 												},
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{//Korea
 													{0xC77C,0xC694,0xC77C,0x0000},//???
 													{0xC6D4,0xC694,0xC77C,0x0000},//???
@@ -876,6 +1048,8 @@ void IdleShowSystemWeek(void)
 													{0xAE08,0xC694,0xC77C,0x0000},//???
 													{0xD1A0,0xC694,0xC77C,0x0000},//???
 												},
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{//Russian
 													{0x0412,0x0441,0x043A,0x0000},//Вск
 													{0x041F,0x043D,0x0434,0x0000},//Пнд
@@ -885,6 +1059,8 @@ void IdleShowSystemWeek(void)
 													{0x041F,0x0442,0x0000},//Пт
 													{0x0421,0x0431,0x0000},//Сб
 												},
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{//Arabic
 													{0x0627,0x0644,0x0623,0x062D,0x062F,0x0000},//?????
 													{0x0627,0x0644,0x0625,0x062A,0x0646,0x064A,0x0646,0x0000},//?????
@@ -894,7 +1070,9 @@ void IdleShowSystemWeek(void)
 													{0x0627,0x0644,0x062C,0x0645,0x0639,0x0629,0x0000},//????
 													{0x0627,0x0644,0x0633,0x0628,0x062A,0x0000},//?????
 												},
-											#else	
+											  #endif
+											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{
 				 									{0x5468,0x65E5,0x0000},//周日
 													{0x5468,0x4E00,0x0000},//周一
@@ -904,6 +1082,8 @@ void IdleShowSystemWeek(void)
 													{0x5468,0x4E94,0x0000},//周五
 													{0x5468,0x516D,0x0000},//周六
 												},
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{
 													{0x0053,0x0075,0x006E,0x0000},//Sun
 													{0x004D,0x006F,0x006E,0x0000},//Mon
@@ -913,6 +1093,7 @@ void IdleShowSystemWeek(void)
 													{0x0046,0x0072,0x0069,0x0000},//Fri
 													{0x0053,0x0061,0x0074,0x0000},//Sat
 												},
+											  #endif
 											#endif
 											};
 #else
@@ -927,28 +1108,38 @@ void IdleShowSystemWeek(void)
 
 	switch(global_settings.language)
 	{
-  #ifdef FW_FOR_CN	
+   #ifdef LANGUAGE_CN_ENABLE
 	case LANGUAGE_CHN:
 		x = IDLE_WEEK_CN_X;
 		y = IDLE_WEEK_CN_Y;
 		w = IDLE_WEEK_CN_W;
 		h = IDLE_WEEK_CN_H;
 		break;
-  #else
+   #endif
+   
+   #if defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+   #ifdef LANGUAGE_JP_ENABLE
 	case LANGUAGE_JP:
+   #endif
+   #ifdef LANGUAGE_KR_ENABLE
 	case LANGUAGE_KR:
+   #endif		
 		x = IDLE_WEEK_CN_X;
 		y = IDLE_WEEK_CN_Y;
 		w = IDLE_WEEK_CN_W;
 		h = IDLE_WEEK_CN_H;
 		break;
+   #endif/*LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
+   
+   #ifdef LANGUAGE_AR_ENABLE		
 	case LANGUAGE_AR:
 		x = IDLE_DATE_MON_EN_X;
 		y = IDLE_DATE_MON_EN_Y;
 		w = IDLE_DATE_MON_EN_W;
 		h = IDLE_DATE_MON_EN_H;
 		break;
-  #endif
+   #endif
+
 	default:
 		x = IDLE_WEEK_EN_X;
 		y = IDLE_WEEK_EN_Y;
@@ -959,16 +1150,19 @@ void IdleShowSystemWeek(void)
 	LCD_FillColor(x, y, w, h, BLACK);
 	switch(global_settings.language)
 	{
-#ifndef FW_FOR_CN	
+  #ifdef LANGUAGE_AR_ENABLE
 	case LANGUAGE_AR:
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 8);
 		break;
-#endif		
+  #endif		
+
 	default:
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_week[global_settings.language][date_time.week], 6);
 		break;
 	}
 	LCD_MeasureUniString(tmpbuf, &str_w, &str_h);
+	
+  #ifdef LANGUAGE_AR_ENABLE	
 	if(g_language_r2l)
 	{
 		if(w > str_w)
@@ -977,6 +1171,7 @@ void IdleShowSystemWeek(void)
 			LCD_ShowUniStringRtoL(x+w, y, tmpbuf);
 	}
 	else
+  #endif		
 	{
 		if(w > str_w)
 			LCD_ShowUniString(x+(w-str_w)/2, y, tmpbuf);
@@ -1676,8 +1871,6 @@ void PowerOffShowStatus(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
- 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAgingTest);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
   	if((strlen(g_ui_ver) == 0) 
@@ -1760,185 +1953,269 @@ void SettingsUpdateStatus(void)
 		{
 			uint16_t lang_sle_str[LANGUAGE_MAX][10] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0044,0x0065,0x0075,0x0074,0x0073,0x0063,0x0068,0x0000},//Deutsch
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x0046,0x0072,0x0061,0x006E,0x00E7,0x0061,0x0069,0x0073,0x0000},//Fran?ais
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x0049,0x0074,0x0061,0x006C,0x0069,0x0061,0x006E,0x006F,0x0000},//Italiano
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0045,0x0073,0x0070,0x0061,0x00F1,0x006F,0x006C,0x0000},//Espa?ol
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0050,0x006F,0x0072,0x0074,0x0075,0x0067,0x0075,0x00EA,0x0073,0x0000},//Português
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x0050,0x006F,0x006C,0x0073,0x006B,0x0069,0x0000},//Polski
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0053,0x0076,0x0065,0x006E,0x0073,0x006B,0x0061,0x0000},//Svenska
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x65E5,0x672C,0x8A9E,0x0000},//日本語
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xD55C,0xAD6D,0xC778,0x0000},//???
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x0420,0x0443,0x0441,0x0441,0x043A,0x0438,0x0439,0x0000},//Русский
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x0627,0x0644,0x0639,0x0631,0x0628,0x064A,0x0629,0x0000},//???????
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x4E2D,0x6587,0x0000},//中文
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
+													  #endif
 													#endif	
 													};
 			uint16_t menu_sle_str[LANGUAGE_MAX][3][14] = {
 														#ifndef FW_FOR_CN
+														  #ifdef LANGUAGE_EN_ENABLE
 															{
 																{0x0056,0x0069,0x0065,0x0077,0x0000},//View
 																{0x0000},//null
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
+														  #endif
+														  #ifdef LANGUAGE_DE_ENABLE
 															{
 																{0x0053,0x0069,0x0063,0x0068,0x0074,0x0000},//Sicht
 																{0x0000},//null
 																{0x005A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0065,0x006E,0x0000},//Zurücksetzen
 															},
+														  #endif
+														  #ifdef LANGUAGE_FR_ENABLE
 															{
 																{0x0056,0x006F,0x0069,0x0072,0x0000},//Voir
 																{0x0000},//null
 																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0069,0x0061,0x006C,0x0069,0x0073,0x0065,0x0072,0x0000},//Réinitialiser
 															},
+														  #endif
+														  #ifdef LANGUAGE_IT_ENABLE
 															{
 																{0x0056,0x0069,0x0073,0x0074,0x0061,0x0000},//Vista
 																{0x0000},//null
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
+														  #endif
+														  #ifdef LANGUAGE_ES_ENABLE
 															{
 																{0x0056,0x0065,0x0072,0x0000},//Ver
 																{0x0000},//null
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
+														  #endif
+														  #ifdef LANGUAGE_PT_ENABLE
 															{
 																{0x0056,0x0065,0x0072,0x0000},//Ver
 																{0x0000},//null
 																{0x0052,0x0065,0x0064,0x0065,0x0066,0x0069,0x006E,0x0069,0x0072,0x0000},//Redefinir
 															},
+														  #endif
+														  #ifdef LANGUAGE_PL_ENABLE
 															{
 																{0x005A,0x006F,0x0062,0x002E,0x0000},//Zob.
 																{0x0000},//null
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
+														  #endif
+														  #ifdef LANGUAGE_SE_ENABLE
 															{
 																{0x0056,0x0069,0x0073,0x0061,0x0000},//Visa
 																{0x0000},//null
 																{0x00C5,0x0074,0x0065,0x0072,0x002E,0x0000},//?ter.
 															},
+														  #endif
+														  #ifdef LANGUAGE_JP_ENABLE
 															{
 																{0x78BA,0x8A8D,0x0000},//確認
 																{0x0000},//null
 																{0x521D,0x671F,0x5316,0x0000},//初期化
 															},
+														  #endif
+														  #ifdef LANGUAGE_KR_ENABLE
 															{
 																{0xD655,0xC778,0x0000},//??
 																{0x0000},//null
 																{0xCD08,0xAE30,0xD654,0x0000},//???
 															},
+														  #endif
+														  #ifdef LANGUAGE_RU_ENABLE
 															{
 																{0x0412,0x0438,0x0434,0x0000},//Вид
 																{0x0000},//null
 																{0x0421,0x0431,0x0440,0x043E,0x0441,0x0000},//Сброс
 															},
+														  #endif
+														  #ifdef LANGUAGE_AR_ENABLE
 															{
 																{0x0645,0x0639,0x0627,0x064A,0x0646,0x0629,0x0000},//??????
 																{0x0000},//null
 																{0x0625,0x0639,0x0627,0x062F,0x0629,0x0020,0x0636,0x0628,0x0637,0x0000},//????? ???
 															},
-														#else	
+														  #endif
+														#else
+														  #ifdef LANGUAGE_CN_ENABLE
 															{
 																{0x67E5,0x770B,0x0000},//查看
 																{0x0000},//空白
 																{0x91CD,0x7F6E,0x0000},//重置
 															},
+														  #endif
+														  #ifdef LANGUAGE_EN_ENABLE
 															{
 																{0x0056,0x0069,0x0065,0x0077,0x0000},//View
 																{0x0000},//null
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
+														  #endif
 														#endif	
 														  };
 			uint16_t level_str[LANGUAGE_MAX][4][10] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0031,0x0000},//Level 1
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0032,0x0000},//Level 2
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0033,0x0000},//Level 3
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0034,0x0000},//Level 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0031,0x0000},//Level 1
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0032,0x0000},//Level 2
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0033,0x0000},//Level 3
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0034,0x0000},//Level 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{
 															{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0031,0x0000},//Niveau 1
 															{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0032,0x0000},//Niveau 2
 															{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0033,0x0000},//Niveau 3
 															{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0034,0x0000},//Niveau 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{
 															{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0031,0x0000},//Livello 1
 															{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0032,0x0000},//Livello 2
 															{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0033,0x0000},//Livello 3
 															{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0034,0x0000},//Livello 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{
 															{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0031,0x0000},//Nivel 1
 															{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0032,0x0000},//Nivel 2
 															{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0033,0x0000},//Nivel 3
 															{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0034,0x0000},//Nivel 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{
 															{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0031,0x0000},//Nível 1
 															{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0032,0x0000},//Nível 2
 															{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0033,0x0000},//Nível 3
 															{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0034,0x0000},//Nível 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{
 															{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0031,0x0000},//Poziom 1
 															{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0032,0x0000},//Poziom 2
 															{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0033,0x0000},//Poziom 3
 															{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0034,0x0000},//Poziom 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{
 															{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0031,0x0000},//Niv? 1
 															{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0032,0x0000},//Niv? 2
 															{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0033,0x0000},//Niv? 3
 															{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0034,0x0000},//Niv? 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{
 															{0x30EC,0x30D9,0x30EB,0x0031,0x0000},//レベル1
 															{0x30EC,0x30D9,0x30EB,0x0032,0x0000},//レベル2
 															{0x30EC,0x30D9,0x30EB,0x0033,0x0000},//レベル3
 															{0x30EC,0x30D9,0x30EB,0x0034,0x0000},//レベル4
 														},
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{
 															{0xB808,0xBCA8,0x0020,0x0031,0x0000},//?? 1
 															{0xB808,0xBCA8,0x0020,0x0032,0x0000},//?? 2
 															{0xB808,0xBCA8,0x0020,0x0033,0x0000},//?? 3
 															{0xB808,0xBCA8,0x0020,0x0034,0x0000},//?? 4
 														},
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{
 															{0x0423,0x0440,0x043E,0x0432,0x0435,0x043D,0x044C,0x0020,0x0031,0x0000},//Уровень 1
 															{0x0423,0x0440,0x043E,0x0432,0x0435,0x043D,0x044C,0x0020,0x0032,0x0000},//Уровень 2
 															{0x0423,0x0440,0x043E,0x0432,0x0435,0x043D,0x044C,0x0020,0x0033,0x0000},//Уровень 3
 															{0x0423,0x0440,0x043E,0x0432,0x0435,0x043D,0x044C,0x0020,0x0034,0x0000},//Уровень 1
 														},
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{
 															{0x0627,0x0644,0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0031,0x0000},//??????? 1
 															{0x0627,0x0644,0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0032,0x0000},//??????? 2
 															{0x0627,0x0644,0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0033,0x0000},//??????? 3
 															{0x0627,0x0644,0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0034,0x0000},//??????? 4
 														},
-													#else	
+													  #endif
+													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{
 															{0x7B49,0x7EA7,0x0031,0x0000},//等级1
 															{0x7B49,0x7EA7,0x0032,0x0000},//等级2
 															{0x7B49,0x7EA7,0x0033,0x0000},//等级3
 															{0x7B49,0x7EA7,0x0034,0x0000},//等级4
 														},
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0031,0x0000},//Level 1
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0032,0x0000},//Level 2
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0033,0x0000},//Level 3
 															{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0034,0x0000},//Level 4
 														},
+													  #endif
 													#endif
 													};
 
@@ -1962,17 +2239,24 @@ void SettingsUpdateStatus(void)
 				LCD_SetFontColor(WHITE);
 				switch(global_settings.language)
 				{
-			  #ifndef FW_FOR_CN
+			   #ifdef LANGUAGE_JP_ENABLE
 				case LANGUAGE_JP:
 					copy_len = 6;
 					break;
+			   #endif
+			   
+			   #ifdef LANGUAGE_AR_ENABLE
 				case LANGUAGE_AR:
 					copy_len = 14;
-					break;	
-			  #endif
+					break;
+			   #endif
+
+			   #ifdef LANGUAGE_EN_ENABLE
 				case LANGUAGE_EN:
 					copy_len = MENU_NAME_STR_MAX;
 					break;
+			   #endif
+			   
 				default:
 					copy_len = 12;
 					break;
@@ -1980,11 +2264,14 @@ void SettingsUpdateStatus(void)
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], copy_len);
 
 				LCD_MeasureUniString(tmpbuf, &w, &h);
+
+			#ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									tmpbuf);
 				else
+			#endif		
 					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									tmpbuf);
@@ -1998,11 +2285,13 @@ void SettingsUpdateStatus(void)
 						memset(tmpbuf, 0, sizeof(tmpbuf));
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)lang_sle_str[global_settings.language], MENU_OPT_STR_MAX);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
+					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
 							LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 						else
+					#endif		
 							LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
@@ -2011,19 +2300,23 @@ void SettingsUpdateStatus(void)
 						memset(tmpbuf, 0, sizeof(tmpbuf));
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)level_str[global_settings.language][global_settings.backlight_level], MENU_OPT_STR_MAX+2);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
+					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
 							LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 						else
+					#endif		
 							LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 						break;
 					case 2:
+					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
 							LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_TEMP_UNIT_X-SETTINGS_MENU_TEMP_UNIT_W, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
 						else
+					#endif		
 							LCD_ShowImg_From_Flash(SETTINGS_MENU_TEMP_UNIT_X, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
 						break;
 					}
@@ -2031,9 +2324,11 @@ void SettingsUpdateStatus(void)
 				case 3:
 					if(i == 1)
 					{
+					#ifdef LANGUAGE_AR_ENABLE
 						if(g_language_r2l)
 							LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_QR_ICON_X-SETTINGS_MENU_QR_ICON_W, SETTINGS_MENU_QR_ICON_Y, IMG_SET_QR_ICON_ADDR);
 						else
+					#endif		
 							LCD_ShowImg_From_Flash(SETTINGS_MENU_QR_ICON_X, SETTINGS_MENU_QR_ICON_Y, IMG_SET_QR_ICON_ADDR);
 					}
 					else
@@ -2043,18 +2338,29 @@ void SettingsUpdateStatus(void)
 						{
 							switch(global_settings.language)
 							{
-						  #ifndef FW_FOR_CN	
+						   #ifdef LANGUAGE_JP_ENABLE
 							case LANGUAGE_JP:
 								copy_len = 3;
 								break;
+						   #endif
+						   
+						   #if defined(LANGUAGE_RU_ENABLE)||defined(LANGUAGE_GR_ENABLE)
+						   #ifdef LANGUAGE_RU_ENABLE
 							case LANGUAGE_RU:
+						   #endif
+						   #ifdef LANGUAGE_GR_ENABLE
 							case LANGUAGE_GR:
+						   #endif
 								copy_len = 5;
 								break;
-						  #endif
+						   #endif/*LANGUAGE_RU_ENABLE||LANGUAGE_GR_ENABLE*/	
+						   
+						   #ifdef LANGUAGE_EN_ENABLE
 						  	case LANGUAGE_EN:
 								copy_len = MENU_OPT_STR_MAX;
 								break;
+						   #endif
+
 							default:
 								copy_len = 6;
 								break;
@@ -2066,11 +2372,13 @@ void SettingsUpdateStatus(void)
 							mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
 						}
 						LCD_MeasureUniString(tmpbuf, &w, &h);
+					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
 							LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 											tmpbuf);
 						else
+					#endif		
 							LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 											tmpbuf);
@@ -2080,22 +2388,24 @@ void SettingsUpdateStatus(void)
 					memset(tmpbuf, 0, sizeof(tmpbuf));
 					switch(global_settings.language)
 					{
-				  #ifndef FW_FOR_CN	
+				   #ifdef LANGUAGE_DE_ENABLE
 					case LANGUAGE_DE:
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], 6);
 						break;
-				  #endif
+				   #endif
 		  
 					default:
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)menu_sle_str[global_settings.language][i], MENU_OPT_STR_MAX);
 						break;
 					}
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+				#ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
 					else
+				#endif		
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												tmpbuf);
@@ -2117,8 +2427,6 @@ void SettingsUpdateStatus(void)
 		#ifdef CONFIG_TOUCH_SUPPORT
 		 #ifdef NB_SIGNAL_TEST
 			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
-		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
 		 #else
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -2148,8 +2456,6 @@ void SettingsUpdateStatus(void)
 		  #else
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
 		  #endif
-		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 		 #elif defined(CONFIG_SYNC_SUPPORT)
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
 		 #elif defined(CONFIG_PPG_SUPPORT)
@@ -2184,22 +2490,28 @@ void SettingsUpdateStatus(void)
 
 				if((i+settings_menu.index) == global_settings.language)
 				{
+				#ifdef LANGUAGE_AR_ENABLE
 					if(g_language_r2l)
 						LCD_ShowImg_From_Flash(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X)-SETTINGS_MENU_SEL_DOT_W, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
 					else
+				#endif		
 						LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
 				}
 				else
 				{
+				#ifdef LANGUAGE_AR_ENABLE
 					if(g_language_r2l)
 						LCD_ShowImg_From_Flash(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X)-SETTINGS_MENU_SEL_DOT_W, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
 					else
+				#endif		
 						LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
 				}
 
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
 				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
+				
+			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 				{
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
@@ -2207,8 +2519,9 @@ void SettingsUpdateStatus(void)
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
 				}
 				else
+			  #endif		
 				{
-				#ifndef FW_FOR_CN
+				 #ifdef LANGUAGE_AR_ENABLE
 					if((i+settings_menu.index) == (settings_menu.count-1))
 					{
 						//Arabic names should be displayed from right to left even in other language settings
@@ -2217,7 +2530,7 @@ void SettingsUpdateStatus(void)
 										settings_menu.name[global_settings.language][i+settings_menu.index]);
 					}
 					else
-				#endif		
+				 #endif		
 					{
 						LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
@@ -2232,7 +2545,7 @@ void SettingsUpdateStatus(void)
 											SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W, 
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), 
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_BG_H, 
-											settings_menu.sel_handler[i+settings_menu.index]);
+											settings_menu.sel_handler[i]);
 			#endif
 			}
 		}
@@ -2254,21 +2567,49 @@ void SettingsUpdateStatus(void)
 				{
 					uint16_t str_ready[LANGUAGE_MAX][44] = {
 															#ifndef FW_FOR_CN
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x0074,0x006F,0x0020,0x0074,0x0068,0x0065,0x0020,0x0066,0x0061,0x0063,0x0074,0x006F,0x0072,0x0079,0x0020,0x0073,0x0065,0x0074,0x0074,0x0069,0x006E,0x0067,0x0073,0x0000},//Reset to the factory settings
+															  #endif
+															  #ifdef LANGUAGE_DE_ENABLE
 																{0x0041,0x0075,0x0066,0x0020,0x0064,0x0069,0x0065,0x0020,0x0057,0x0065,0x0072,0x006B,0x0073,0x0065,0x0069,0x006E,0x0073,0x0074,0x0065,0x006C,0x006C,0x0075,0x006E,0x0067,0x0065,0x006E,0x0020,0x007A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0065,0x006E,0x0000},//Auf die Werkseinstellungen zurücksetzen
+															  #endif
+															  #ifdef LANGUAGE_FR_ENABLE
 																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0069,0x0061,0x006C,0x0069,0x0073,0x0065,0x0072,0x0020,0x006C,0x0065,0x0073,0x0020,0x0070,0x0061,0x0072,0x0061,0x006D,0x00E8,0x0074,0x0072,0x0065,0x0073,0x0020,0x0064,0x0027,0x0075,0x0073,0x0069,0x006E,0x0065,0x0000},//Réinitialiser les paramètres d'usine
+															  #endif
+															  #ifdef LANGUAGE_IT_ENABLE
 																{0x0052,0x0069,0x0070,0x0072,0x0069,0x0073,0x0074,0x0069,0x006E,0x0061,0x0020,0x006C,0x0065,0x0020,0x0069,0x006D,0x0070,0x006F,0x0073,0x0074,0x0061,0x007A,0x0069,0x006F,0x006E,0x0069,0x0020,0x0064,0x0069,0x0020,0x0066,0x0061,0x0062,0x0062,0x0072,0x0069,0x0063,0x0061,0x0000},//Ripristina le impostazioni di fabbrica
+															  #endif
+															  #ifdef LANGUAGE_ES_ENABLE
 																{0x0052,0x0065,0x0073,0x0074,0x0061,0x0062,0x006C,0x0065,0x0063,0x0065,0x0072,0x0020,0x006C,0x006F,0x0073,0x0020,0x0076,0x0061,0x006C,0x006F,0x0072,0x0065,0x0073,0x0020,0x0064,0x0065,0x0020,0x0066,0x00E1,0x0062,0x0072,0x0069,0x0063,0x0061,0x0000},//Restablecer los valores de fábrica
+															  #endif
+															  #ifdef LANGUAGE_PT_ENABLE
 																{0x0052,0x0065,0x0064,0x0065,0x0066,0x0069,0x006E,0x0069,0x0072,0x0020,0x0070,0x0061,0x0072,0x0061,0x0020,0x0061,0x0073,0x0020,0x0063,0x006F,0x006E,0x0066,0x0069,0x0067,0x0075,0x0072,0x0061,0x00E7,0x00F5,0x0065,0x0073,0x0020,0x0064,0x0065,0x0020,0x0066,0x00E1,0x0062,0x0072,0x0069,0x0063,0x0061,0x0000},//Redefinir para as configura??es de fábrica
+															  #endif
+															  #ifdef LANGUAGE_PL_ENABLE
 																{0x0055,0x0073,0x0074,0x0061,0x0077,0x0069,0x0065,0x006E,0x0069,0x0061,0x0020,0x0066,0x0061,0x0062,0x0072,0x002E,0x0000},//Ustawienia fabr.
+															  #endif
+															  #ifdef LANGUAGE_SE_ENABLE
 																{0x00C5,0x0074,0x0065,0x0072,0x0073,0x0074,0x00E4,0x006C,0x006C,0x0020,0x0074,0x0069,0x006C,0x006C,0x0020,0x0066,0x0061,0x0062,0x0072,0x0069,0x006B,0x0073,0x0064,0x0065,0x0066,0x002E,0x0000},//?terst?ll till fabriksdef.
+															  #endif
+															  #ifdef LANGUAGE_JP_ENABLE
 																{0x5DE5,0x5834,0x51FA,0x8377,0x6642,0x8A2D,0x5B9A,0x306B,0x30EA,0x30BB,0x30C3,0x30C8,0x3059,0x308B,0x0000},//工場出荷時設定にリセットする
+															  #endif
+															  #ifdef LANGUAGE_KR_ENABLE
 																{0xACF5,0xC7A5,0x0020,0xC124,0xC815,0xC73C,0xB85C,0x0020,0xBCF5,0xC6D0,0x0000},//?? ???? ??
+															  #endif
+															  #ifdef LANGUAGE_RU_ENABLE
 																{0x0421,0x0431,0x0440,0x043E,0x0441,0x0020,0x0434,0x043E,0x0020,0x0437,0x0430,0x0432,0x043E,0x0434,0x0441,0x043A,0x0438,0x0445,0x0000},//Сброс до заводских
+															  #endif
+															  #ifdef LANGUAGE_AR_ENABLE
 																{0x0625,0x0639,0x0627,0x062F,0x0629,0x0020,0x0627,0x0644,0x062A,0x0639,0x064A,0x064A,0x0646,0x0020,0x0625,0x0644,0x0649,0x0020,0x0625,0x0639,0x062F,0x0627,0x062F,0x0627,0x062A,0x0020,0x0627,0x0644,0x0645,0x0635,0x0646,0x0639,0x0000},//????? ??????? ??? ??????? ??????
+															  #endif
 															#else
+															  #ifdef LANGUAGE_CN_ENABLE
 																{0x6062,0x590D,0x5230,0x51FA,0x5382,0x8BBE,0x7F6E,0x0000},//恢复到出厂设置
+															  #endif
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x0074,0x006F,0x0020,0x0074,0x0068,0x0065,0x0020,0x0066,0x0061,0x0063,0x0074,0x006F,0x0072,0x0079,0x0020,0x0073,0x0065,0x0074,0x0074,0x0069,0x006E,0x0067,0x0073,0x0000},//Reset to the factory settings
+															  #endif
 															#endif	
 															};
 					
@@ -2278,26 +2619,36 @@ void SettingsUpdateStatus(void)
 
 					switch(global_settings.language)
 					{
-				  #ifndef FW_FOR_CN	
+				   #if defined(LANGUAGE_DE_ENABLE)||defined(LANGUAGE_GR_ENABLE)
+				   #ifdef LANGUAGE_DE_ENABLE
 					case LANGUAGE_DE:
+				   #endif
+				   #ifdef LANGUAGE_GR_ENABLE
 					case LANGUAGE_GR:
+				   #endif
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_ready[global_settings.language], MENU_NOTIFY_STR_MAX-2);
 						break;
+				   #endif/*LANGUAGE_DE_ENABLE||LANGUAGE_GR_ENABLE*/
+				   
+				   #ifdef LANGUAGE_JP_ENABLE
 					case LANGUAGE_JP:
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_ready[global_settings.language], MENU_NOTIFY_STR_MAX-18);
 						break;
-				  #endif
+				   #endif
 				  
 					default:
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_ready[global_settings.language], MENU_NOTIFY_STR_MAX);
 						break;
 					}
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+
+				  #ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2), 
 										SETTINGS_MENU_RESET_STR_Y+(SETTINGS_MENU_RESET_STR_H-h)/2, 
 										tmpbuf);
 					else
+				  #endif		
 						LCD_ShowUniString(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2, 
 										SETTINGS_MENU_RESET_STR_Y+(SETTINGS_MENU_RESET_STR_H-h)/2, 
 										tmpbuf);
@@ -2322,21 +2673,49 @@ void SettingsUpdateStatus(void)
 				{
 					uint16_t str_running[LANGUAGE_MAX][28] = {
 															#ifndef FW_FOR_CN
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0074,0x0069,0x006E,0x0067,0x0020,0x0069,0x006E,0x0020,0x0070,0x0072,0x006F,0x0067,0x0072,0x0065,0x0073,0x0073,0x0000},//Resetting in progress
+															  #endif
+															  #ifdef LANGUAGE_DE_ENABLE
 																{0x005A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0075,0x006E,0x0067,0x0020,0x006C,0x00E4,0x0075,0x0066,0x0074,0x0000},//Zurücksetzung l?uft
+															  #endif
+															  #ifdef LANGUAGE_FR_ENABLE
 																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0069,0x0061,0x006C,0x0069,0x0073,0x0061,0x0074,0x0069,0x006F,0x006E,0x0020,0x0065,0x006E,0x0020,0x0063,0x006F,0x0075,0x0072,0x0073,0x0000},//Réinitialisation en cours
+														      #endif
+															  #ifdef LANGUAGE_IT_ENABLE
 																{0x0052,0x0069,0x0070,0x0072,0x0069,0x0073,0x0074,0x0069,0x006E,0x0061,0x0020,0x0069,0x006E,0x0020,0x0063,0x006F,0x0072,0x0073,0x006F,0x0000},//Ripristina in corso
+															  #endif
+															  #ifdef LANGUAGE_ES_ENABLE
 																{0x0052,0x0065,0x0069,0x006E,0x0069,0x0063,0x0069,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,0x0020,0x0065,0x006E,0x0020,0x0063,0x0075,0x0072,0x0073,0x006F,0x0000},//Reinicialización en curso
+															  #endif
+															  #ifdef LANGUAGE_PT_ENABLE
 																{0x0052,0x0065,0x0064,0x0065,0x0066,0x0069,0x006E,0x0069,0x00E7,0x00E3,0x006F,0x0020,0x0065,0x006D,0x0020,0x0061,0x006E,0x0064,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0000},//Redefini??o em andamento
+															  #endif
+															  #ifdef LANGUAGE_PL_ENABLE
 																{0x0054,0x0072,0x0077,0x0061,0x0020,0x0072,0x0065,0x0073,0x0065,0x0074,0x006F,0x0077,0x0061,0x006E,0x0069,0x0065,0x0000},//Trwa resetowanie
+															  #endif
+															  #ifdef LANGUAGE_SE_ENABLE
 																{0x00C5,0x0074,0x0065,0x0072,0x0073,0x0074,0x00E4,0x006C,0x006C,0x0065,0x0072,0x0020,0x0070,0x00E5,0x0067,0x00E5,0x0072,0x002E,0x002E,0x002E,0x0000},//?terst?ller p?g?r...
+															  #endif
+															  #ifdef LANGUAGE_JP_ENABLE
 																{0x30EA,0x30BB,0x30C3,0x30C8,0x4E2D,0x002E,0x002E,0x002E,0x0000},//リセット中...
+															  #endif
+															  #ifdef LANGUAGE_KR_ENABLE
 																{0xC7AC,0xC124,0xC815,0x0020,0xC9C4,0xD589,0x0020,0xC911,0x0000},//??? ?? ?
+															  #endif
+															  #ifdef LANGUAGE_RU_ENABLE
 																{0x0421,0x0431,0x0440,0x043E,0x0441,0x0020,0x0432,0x0020,0x043F,0x0440,0x043E,0x0446,0x0435,0x0441,0x0441,0x0435,0x0000},//Сброс в процессе
+															  #endif
+															  #ifdef LANGUAGE_AR_ENABLE
 																{0x0625,0x0639,0x0627,0x062F,0x0629,0x0020,0x0627,0x0644,0x0636,0x0628,0x0637,0x0020,0x0642,0x064A,0x062F,0x0020,0x0627,0x0644,0x062A,0x0642,0x062F,0x0645,0x0000},//????? ????? ??? ??????
+															  #endif
 															#else
+															  #ifdef LANGUAGE_CN_ENABLE
 																{0x91CD,0x7F6E,0x8FDB,0x884C,0x4E2D,0x0000},//重置进行中
+															  #endif
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0074,0x0069,0x006E,0x0067,0x0020,0x0069,0x006E,0x0020,0x0070,0x0072,0x006F,0x0067,0x0072,0x0065,0x0073,0x0073,0x0000},//Resetting in progress
+															  #endif
 															#endif
 															  };
 					uint32_t img_addr[8] = {
@@ -2352,11 +2731,14 @@ void SettingsUpdateStatus(void)
 
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_running[global_settings.language], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+
+				  #ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
 					else
+				  #endif		
 						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
@@ -2370,21 +2752,49 @@ void SettingsUpdateStatus(void)
 				{
 					uint16_t str_success[LANGUAGE_MAX][26] = {
 															#ifndef FW_FOR_CN
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x0053,0x0075,0x0063,0x0063,0x0065,0x0073,0x0073,0x0066,0x0075,0x006C,0x0000},//Reset Successful
+															  #endif
+															  #ifdef LANGUAGE_DE_ENABLE
 																{0x005A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0065,0x006E,0x0020,0x0065,0x0072,0x0066,0x006F,0x006C,0x0067,0x0072,0x0065,0x0069,0x0063,0x0068,0x0000},//Zurücksetzen erfolgreich
+															  #endif
+															  #ifdef LANGUAGE_FR_ENABLE
 																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0069,0x0061,0x006C,0x0069,0x0073,0x0065,0x0072,0x0020,0x006C,0x0065,0x0020,0x0073,0x0075,0x0063,0x0063,0x00E8,0x0073,0x0000},//Réinitialiser le succès
+															  #endif
+															  #ifdef LANGUAGE_IT_ENABLE
 																{0x0052,0x0069,0x0070,0x0072,0x0069,0x0073,0x0074,0x0069,0x006E,0x006F,0x0020,0x0072,0x0069,0x0075,0x0073,0x0063,0x0069,0x0074,0x006F,0x0000},//Ripristino riuscito
+															  #endif
+															  #ifdef LANGUAGE_ES_ENABLE
 																{0x0052,0x0065,0x0073,0x0074,0x0061,0x0062,0x006C,0x0065,0x0063,0x0069,0x006D,0x0069,0x0065,0x006E,0x0074,0x006F,0x0020,0x00E9,0x0078,0x0069,0x0074,0x006F,0x0000},//Restablecimiento éxito
+															  #endif
+															  #ifdef LANGUAGE_PT_ENABLE
 																{0x0052,0x0065,0x0064,0x0065,0x0066,0x0069,0x006E,0x0069,0x0072,0x0020,0x0062,0x0065,0x006D,0x0020,0x002D,0x0073,0x0075,0x0063,0x0065,0x0064,0x0069,0x0064,0x006F,0x0000},//Redefinir bem -sucedido
+															  #endif
+															  #ifdef LANGUAGE_PL_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x007A,0x0061,0x006B,0x006F,0x0144,0x0063,0x007A,0x006F,0x006E,0x0079,0x0000},//Reset zakończony
+															  #endif
+															  #ifdef LANGUAGE_SE_ENABLE
 																{0x00C5,0x0074,0x0065,0x0072,0x0073,0x0074,0x00E4,0x006C,0x006C,0x006E,0x0069,0x006E,0x0067,0x0020,0x0073,0x006C,0x0075,0x0074,0x0066,0x00F6,0x0072,0x0064,0x0021,0x0000},//?terst?llning slutf?rd!
+															  #endif
+															  #ifdef LANGUAGE_JP_ENABLE
 																{0x30EA,0x30BB,0x30C3,0x30C8,0x6210,0x529F,0x0000},//リセット成功
+															  #endif
+															  #ifdef LANGUAGE_KR_ENABLE
 																{0xBCF5,0xAD6C,0x0020,0xCD08,0xAE30,0xD654,0x0020,0xC131,0xACF5,0x0000},//?? ??? ??
+															  #endif
+															  #ifdef LANGUAGE_RU_ENABLE
 																{0x0421,0x0431,0x0440,0x043E,0x0441,0x0020,0x0432,0x044B,0x043F,0x043E,0x043B,0x043D,0x0435,0x043D,0x0000},//Сброс выполнен
+															  #endif
+															  #ifdef LANGUAGE_AR_ENABLE
 																{0x062A,0x0645,0x062A,0x0020,0x0625,0x0639,0x0627,0x062F,0x0629,0x0020,0x0627,0x0644,0x0636,0x0628,0x0637,0x0020,0x0628,0x0646,0x062C,0x0627,0x062D,0x0000},//??? ????? ????? ?????
+															  #endif
 															#else
+															  #ifdef LANGUAGE_CN_ENABLE
 																{0x51FA,0x5382,0x8BBE,0x7F6E,0x6062,0x590D,0x6210,0x529F,0x0000},//出厂设置恢复成功
+															  #endif
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x0053,0x0075,0x0063,0x0063,0x0065,0x0073,0x0073,0x0066,0x0075,0x006C,0x0000},//Reset Successful
+															  #endif
 															#endif
 															  };
 					
@@ -2396,11 +2806,14 @@ void SettingsUpdateStatus(void)
 
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_success[language_bk], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+
+				  #ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
 					else
+				  #endif
 						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
@@ -2411,21 +2824,49 @@ void SettingsUpdateStatus(void)
 				{
 					uint16_t str_fail[LANGUAGE_MAX][30] = {
 															#ifndef FW_FOR_CN
+														      #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x0046,0x0061,0x0069,0x006C,0x0065,0x0064,0x0000},//Reset Failed
+															  #endif
+															  #ifdef LANGUAGE_DE_ENABLE
 																{0x005A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0065,0x006E,0x0020,0x0066,0x0065,0x0068,0x006C,0x0067,0x0065,0x0073,0x0063,0x0068,0x006C,0x0061,0x0067,0x0065,0x006E,0x0000},//Zurücksetzen fehlgeschlagen
+															  #endif
+															  #ifdef LANGUAGE_FR_ENABLE
 																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0069,0x0061,0x006C,0x0069,0x0073,0x0065,0x0072,0x0020,0x0061,0x0020,0x00E9,0x0063,0x0068,0x006F,0x0075,0x00E9,0x0000},//Réinitialiser a échoué
+															  #endif
+															  #ifdef LANGUAGE_IT_ENABLE
 																{0x0052,0x0069,0x0070,0x0072,0x0069,0x0073,0x0074,0x0069,0x006E,0x006F,0x0020,0x0066,0x0061,0x006C,0x006C,0x0069,0x0074,0x006F,0x0000},//Ripristino fallito
+															  #endif
+															  #ifdef LANGUAGE_ES_ENABLE
 																{0x0052,0x0065,0x0073,0x0074,0x0061,0x0062,0x006C,0x0065,0x0063,0x0069,0x006D,0x0069,0x0065,0x006E,0x0074,0x006F,0x0020,0x0066,0x0061,0x006C,0x006C,0x0069,0x0064,0x006F,0x0000},//Restablecimiento fallido
+															  #endif
+															  #ifdef LANGUAGE_PT_ENABLE
 																{0x0046,0x0061,0x006C,0x0068,0x0061,0x0020,0x006E,0x0061,0x0020,0x0072,0x0065,0x0064,0x0065,0x0066,0x0069,0x006E,0x0069,0x00E7,0x00E3,0x006F,0x0000},//Falha na redefini??o
+															  #endif
+															  #ifdef LANGUAGE_PL_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x006E,0x0069,0x0065,0x0075,0x0064,0x0061,0x006E,0x0079,0x0000},//Reset nieudany
+															  #endif
+															  #ifdef LANGUAGE_SE_ENABLE
 																{0x00C5,0x0074,0x0065,0x0072,0x0073,0x0074,0x00E4,0x006C,0x006C,0x006E,0x0069,0x006E,0x0067,0x0020,0x006D,0x0069,0x0073,0x0073,0x006C,0x0079,0x0063,0x006B,0x0061,0x0064,0x0065,0x0073,0x0021,0x0000},//?terst?llning misslyckades!
+															  #endif
+															  #ifdef LANGUAGE_JP_ENABLE
 																{0x30EA,0x30BB,0x30C3,0x30C8,0x5931,0x6557,0x0000},//リセット失敗
+															  #endif
+															  #ifdef LANGUAGE_KR_ENABLE
 																{0xBCF5,0xAD6C,0x0020,0xCD08,0xAE30,0xD654,0x0020,0xC2E4,0xD328,0x0000},//?? ??? ??
+															  #endif
+															  #ifdef LANGUAGE_RU_ENABLE
 																{0x0421,0x0431,0x0440,0x043E,0x0441,0x0020,0x043D,0x0435,0x0020,0x0443,0x0434,0x0430,0x043B,0x0441,0x044F,0x0000},//Сброс не удался
+															  #endif
+															  #ifdef LANGUAGE_AR_ENABLE
 																{0x0641,0x0634,0x0644,0x062A,0x0020,0x0625,0x0639,0x0627,0x062F,0x0629,0x0020,0x0627,0x0644,0x062A,0x0639,0x064A,0x064A,0x0646,0x0000},//???? ????? ???????
+															  #endif
 															#else
+															  #ifdef LANGUAGE_CN_ENABLE
 																{0x51FA,0x5382,0x8BBE,0x7F6E,0x6062,0x590D,0x5931,0x8D25,0x0000},//出厂设置恢复失败
+															  #endif
+															  #ifdef LANGUAGE_EN_ENABLE
 																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0020,0x0046,0x0061,0x0069,0x006C,0x0065,0x0064,0x0000},//Reset Failed
+															  #endif
 															#endif
 														   };
 
@@ -2437,11 +2878,14 @@ void SettingsUpdateStatus(void)
 
 					mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_fail[language_bk], MENU_NOTIFY_STR_MAX);
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+
+				#ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 						LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
 					else
+				#endif
 						LCD_ShowUniString(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2, 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										tmpbuf);
@@ -2457,21 +2901,49 @@ void SettingsUpdateStatus(void)
 			uint16_t tmpbuf[128] = {0};
 			uint16_t str_notify[LANGUAGE_MAX][30] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0049,0x0074,0x0020,0x0069,0x0073,0x0020,0x0074,0x0068,0x0065,0x0020,0x006C,0x0061,0x0074,0x0065,0x0073,0x0074,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0000},//It is the latest version
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0045,0x0073,0x0020,0x0069,0x0073,0x0074,0x0020,0x0064,0x0069,0x0065,0x0020,0x006E,0x0065,0x0075,0x0065,0x0073,0x0074,0x0065,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0000},//Es ist die neueste version
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x0043,0x0027,0x0065,0x0073,0x0074,0x0020,0x006C,0x0061,0x0020,0x0064,0x0065,0x0072,0x006E,0x0069,0x00E8,0x0072,0x0065,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0000},//C'est la dernière version
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x00C8,0x0020,0x006C,0x0027,0x0075,0x006C,0x0074,0x0069,0x006D,0x0061,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0065,0x0000},//? l'ultima versione
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0045,0x0073,0x0020,0x006C,0x0061,0x0020,0x00FA,0x006C,0x0074,0x0069,0x006D,0x0061,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0000},//Es la última version
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x00C9,0x0020,0x0061,0x0020,0x0076,0x0065,0x0072,0x0073,0x00E3,0x006F,0x0020,0x006D,0x0061,0x0069,0x0073,0x0020,0x0072,0x0065,0x0063,0x0065,0x006E,0x0074,0x0065,0x0000},//? a vers?o mais recente
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x004D,0x0061,0x0073,0x007A,0x0020,0x006E,0x0061,0x006A,0x006E,0x006F,0x0077,0x0020,0x0077,0x0065,0x0072,0x0073,0x006A,0x0119,0x0000},//Masz najnow wersj?
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0044,0x0065,0x0074,0x0020,0x00E4,0x0072,0x0020,0x0064,0x0065,0x006E,0x0020,0x0073,0x0065,0x006E,0x0061,0x0073,0x0074,0x0065,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0065,0x006E,0x002E,0x0000},//Det ?r den senaste versionen.
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x6700,0x65B0,0x30D0,0x30FC,0x30B8,0x30E7,0x30F3,0x3067,0x3059,0x0000},//最新バージョンです
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xCD5C,0xC2E0,0x0020,0xBC84,0xC804,0xC785,0xB2C8,0xB2E4,0x0000},//?? ?????
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x042D,0x0442,0x043E,0x0020,0x043F,0x043E,0x0441,0x043B,0x0435,0x0434,0x043D,0x044F,0x044F,0x0020,0x0432,0x0435,0x0440,0x0441,0x0438,0x044F,0x002E,0x0000},//Это последняя версия.
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x0647,0x0630,0x0627,0x0020,0x0647,0x0648,0x0020,0x0627,0x0644,0x0625,0x0635,0x062F,0x0627,0x0631,0x0020,0x0627,0x0644,0x0623,0x062D,0x062F,0x062B,0x0000},//??? ?? ??????? ??????
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x5DF2,0x662F,0x6700,0x65B0,0x7248,0x672C,0x0000},//已是最新版本
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0049,0x0074,0x0020,0x0069,0x0073,0x0020,0x0074,0x0068,0x0065,0x0020,0x006C,0x0061,0x0074,0x0065,0x0073,0x0074,0x0020,0x0076,0x0065,0x0072,0x0073,0x0069,0x006F,0x006E,0x0000},//It is the latest version
+													  #endif
 													#endif
 													};
 			
@@ -2480,9 +2952,12 @@ void SettingsUpdateStatus(void)
 
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
+			
+		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 			else
+		#endif
 				LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 
 		#ifdef CONFIG_TOUCH_SUPPORT
@@ -2551,16 +3026,20 @@ void SettingsUpdateStatus(void)
 
 				if(i == global_settings.temp_unit)
 				{
+				#ifdef LANGUAGE_AR_ENABLE
 					if(g_language_r2l)
 						LCD_ShowImg_From_Flash(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X)-SETTINGS_MENU_SEL_DOT_W, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
 					else
+				#endif
 						LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
 				}
 				else
 				{
+				#ifdef LANGUAGE_AR_ENABLE
 					if(g_language_r2l)
 						LCD_ShowImg_From_Flash(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X)-SETTINGS_MENU_SEL_DOT_W, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
 					else
+				#endif		
 						LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
 				}
 				
@@ -2568,11 +3047,14 @@ void SettingsUpdateStatus(void)
 				LCD_SetFontColor(WHITE);
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
+
+			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										tmpbuf);
 				else
+			  #endif
 					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										tmpbuf);
@@ -2672,21 +3154,49 @@ void SettingsUpdateStatus(void)
 			uint16_t tmpbuf[128] = {0};
 			uint16_t str_notify[LANGUAGE_MAX][35] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0049,0x0074,0x0020,0x0069,0x0073,0x0020,0x0062,0x0065,0x0069,0x006E,0x0067,0x0020,0x0064,0x0065,0x0076,0x0065,0x006C,0x006F,0x0070,0x0065,0x0064,0x002E,0x0000},//It is being developed.
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0045,0x0073,0x0020,0x0077,0x0069,0x0072,0x0064,0x0020,0x0065,0x006E,0x0074,0x0077,0x0069,0x0063,0x006B,0x0065,0x006C,0x0074,0x002E,0x0000},//Es wird entwickelt.
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x0049,0x006C,0x0020,0x0065,0x0073,0x0074,0x0020,0x0065,0x006E,0x0020,0x0063,0x006F,0x0075,0x0072,0x0073,0x0020,0x0064,0x0065,0x0020,0x0064,0x00E9,0x0076,0x0065,0x006C,0x006F,0x0070,0x0070,0x0065,0x006D,0x0065,0x006E,0x0074,0x002E,0x0000},//Il est en cours de développement.
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x00C8,0x0020,0x0069,0x006E,0x0020,0x0066,0x0061,0x0073,0x0065,0x0020,0x0064,0x0069,0x0020,0x0073,0x0076,0x0069,0x006C,0x0075,0x0070,0x0070,0x006F,0x002E,0x0000},//? in fase di sviluppo.
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0053,0x0065,0x0020,0x0065,0x0073,0x0074,0x00E1,0x0020,0x0064,0x0065,0x0073,0x0061,0x0072,0x0072,0x006F,0x006C,0x006C,0x0061,0x006E,0x0064,0x006F,0x002E,0x0000},//Se está desarrollando.
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0045,0x0073,0x0074,0x00E1,0x0020,0x0073,0x0065,0x006E,0x0064,0x006F,0x0020,0x0064,0x0065,0x0073,0x0065,0x006E,0x0076,0x006F,0x006C,0x0076,0x0069,0x0064,0x006F,0x002E,0x0000},//Está sendo desenvolvido.
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x004A,0x0065,0x0073,0x0074,0x0020,0x0077,0x0020,0x0074,0x0072,0x0061,0x006B,0x0063,0x0069,0x0065,0x0020,0x006F,0x0070,0x0072,0x0061,0x0063,0x006F,0x0077,0x0079,0x0077,0x0061,0x006E,0x0069,0x0061,0x002E,0x0000},//Jest w trakcie opracowywania.
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0044,0x0065,0x0074,0x0020,0x0068,0x00E5,0x006C,0x006C,0x0065,0x0072,0x0020,0x0070,0x00E5,0x0020,0x0061,0x0074,0x0074,0x0020,0x0075,0x0074,0x0076,0x0065,0x0063,0x006B,0x006C,0x0061,0x0073,0x002E,0x0000},//Det h?ller p? att utvecklas.
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x3053,0x306E,0x6A5F,0x80FD,0x306F,0x958B,0x767A,0x4E2D,0x3067,0x3059,0x3002,0x0000},//この機能は開発中です。
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xC774,0x0020,0xAE30,0xB2A5,0xC740,0x0020,0xAC1C,0xBC1C,0x0020,0xC911,0xC785,0xB2C8,0xB2E4,0x002E,0x0000},//? ??? ?? ????.
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x042D,0x0442,0x0430,0x0020,0x0444,0x0443,0x043D,0x043A,0x0446,0x0438,0x044F,0x0020,0x0432,0x0020,0x0440,0x0430,0x0437,0x0440,0x0430,0x0431,0x043E,0x0442,0x043A,0x0435,0x002E,0x0000},//Эта функция в разработке.
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x002E,0x0647,0x0631,0x064A,0x0648,0x0637,0x062A,0x0020,0x064A,0x0631,0x0627,0x062C,0x0000},//???? ??????.
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x6B64,0x529F,0x80FD,0x6B63,0x5728,0x5F00,0x53D1,0x3002,0x0000},//此功能正在开发。
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0049,0x0074,0x0020,0x0069,0x0073,0x0020,0x0062,0x0065,0x0069,0x006E,0x0067,0x0020,0x0064,0x0065,0x0076,0x0065,0x006C,0x006F,0x0070,0x0065,0x0064,0x002E,0x0000},//It is being developed.
+													  #endif
 													#endif
 													}; 
 			LCD_Clear(BLACK);
@@ -2698,9 +3208,11 @@ void SettingsUpdateStatus(void)
 		#else
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
+		  #ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 			else
+		  #endif
 				LCD_ShowUniString((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, tmpbuf);
 		#endif/*CONFIG_QRCODE_SUPPORT*/
 		
@@ -2721,45 +3233,55 @@ void SettingsUpdateStatus(void)
 		{
 			uint32_t page6_img[6] = {IMG_SET_PG6_1_ADDR,IMG_SET_PG6_2_ADDR,IMG_SET_PG6_3_ADDR,IMG_SET_PG6_4_ADDR,IMG_SET_PG6_5_ADDR,IMG_SET_PG6_6_ADDR};
 
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE6_DOT_X-SETTINGS_MEUN_PAGE6_DOT_W, SETTINGS_MEUN_PAGE6_DOT_Y, page6_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 			else
+		#endif
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE6_DOT_X, SETTINGS_MEUN_PAGE6_DOT_Y, page6_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 		else if(settings_menu.count > 4*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
 			uint32_t page5_img[5] = {IMG_SET_PG5_1_ADDR,IMG_SET_PG5_2_ADDR,IMG_SET_PG5_3_ADDR,IMG_SET_PG5_4_ADDR,IMG_SET_PG5_5_ADDR};
 
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE5_DOT_X-SETTINGS_MEUN_PAGE5_DOT_W, SETTINGS_MEUN_PAGE5_DOT_Y, page5_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE5_DOT_X, SETTINGS_MEUN_PAGE5_DOT_Y, page5_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 		else if(settings_menu.count > 3*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
 			uint32_t page4_img[4] = {IMG_SET_PG4_1_ADDR,IMG_SET_PG4_2_ADDR,IMG_SET_PG4_3_ADDR,IMG_SET_PG4_4_ADDR};
 
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE4_DOT_X-SETTINGS_MEUN_PAGE4_DOT_W, SETTINGS_MEUN_PAGE4_DOT_Y, page4_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 			else
+		#endif
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE4_DOT_X, SETTINGS_MEUN_PAGE4_DOT_Y, page4_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 		else if(settings_menu.count > 2*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
 			uint32_t page3_img[3] = {IMG_SET_PG3_1_ADDR,IMG_SET_PG3_2_ADDR,IMG_SET_PG3_3_ADDR};
 
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE3_DOT_X-SETTINGS_MEUN_PAGE3_DOT_W, SETTINGS_MEUN_PAGE3_DOT_Y, page3_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 			else
+		#endif
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE3_DOT_X, SETTINGS_MEUN_PAGE3_DOT_Y, page3_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 		else
 		{
 			uint32_t page2_img[2] = {IMG_SET_PG2_1_ADDR,IMG_SET_PG2_2_ADDR};
 
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE2_DOT_X-SETTINGS_MEUN_PAGE2_DOT_W, SETTINGS_MEUN_PAGE2_DOT_Y, page2_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 			else
+		#endif
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE2_DOT_X, SETTINGS_MEUN_PAGE2_DOT_Y, page2_img[settings_menu.index/SETTINGS_MAIN_MENU_MAX_PER_PG]);
 		}
 
@@ -2782,110 +3304,166 @@ void SettingsShowStatus(void)
 	uint16_t i,x,y,w,h;
 	uint16_t menu_sle_str[LANGUAGE_MAX][11] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x0044,0x0065,0x0075,0x0074,0x0073,0x0063,0x0068,0x0000},//Deutsch
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x0046,0x0072,0x0061,0x006E,0x00E7,0x0061,0x0069,0x0073,0x0000},//Fran?ais
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0049,0x0074,0x0061,0x006C,0x0069,0x0061,0x006E,0x006F,0x0000},//Italiano
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x0045,0x0073,0x0070,0x0061,0x00F1,0x006F,0x006C,0x0000},//Espa?ol
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0050,0x006F,0x0072,0x0074,0x0075,0x0067,0x0075,0x00EA,0x0073,0x0000},//Português
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x0050,0x006F,0x006C,0x0073,0x006B,0x0069,0x0000},//Polski
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x0053,0x0076,0x0065,0x006E,0x0073,0x006B,0x0061,0x0000},//Svenska
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x65E5,0x672C,0x8A9E,0x0000},//日本語
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xD55C,0xAD6D,0xC778,0x0000},//???
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x0420,0x0443,0x0441,0x0441,0x043A,0x0438,0x0439,0x0000},//Русский
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x0627,0x0644,0x0639,0x0631,0x0628,0x064A,0x0629,0x0000},//???????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x4E2D,0x6587,0x0000},//中文
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
+											  #endif
 											#endif	
 											};
 	uint16_t level_str[LANGUAGE_MAX][4][11] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0031,0x0000},//Level 1
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0032,0x0000},//Level 2
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0033,0x0000},//Level 3
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0034,0x0000},//Level 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0031,0x0000},//Level 1
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0032,0x0000},//Level 2
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0033,0x0000},//Level 3
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0034,0x0000},//Level 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{
 													{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0031,0x0000},//Niveau 1
 													{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0032,0x0000},//Niveau 2
 													{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0033,0x0000},//Niveau 3
 													{0x004E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0034,0x0000},//Niveau 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{
 													{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0031,0x0000},//Livello 1
 													{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0032,0x0000},//Livello 2
 													{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0033,0x0000},//Livello 3
 													{0x004C,0x0069,0x0076,0x0065,0x006C,0x006C,0x006F,0x0020,0x0034,0x0000},//Livello 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{
 													{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0031,0x0000},//Nivel 1
 													{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0032,0x0000},//Nivel 2
 													{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0033,0x0000},//Nivel 3
 													{0x004E,0x0069,0x0076,0x0065,0x006C,0x0020,0x0034,0x0000},//Nivel 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{
 													{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0031,0x0000},//Nível 1
 													{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0032,0x0000},//Nível 2
 													{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0033,0x0000},//Nível 3
 													{0x004E,0x00ED,0x0076,0x0065,0x006C,0x0020,0x0034,0x0000},//Nível 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{
 													{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0031,0x0000},//Poziom 1
 													{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0032,0x0000},//Poziom 2
 													{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0033,0x0000},//Poziom 3
 													{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0034,0x0000},//Poziom 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{
 													{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0031,0x0000},//Niv? 1
 													{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0032,0x0000},//Niv? 2
 													{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0033,0x0000},//Niv? 3
 													{0x004E,0x0069,0x0076,0x00E5,0x0020,0x0034,0x0000},//Niv? 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{
 													{0x30EC,0x30D9,0x30EB,0x0031,0x0000},//レベル1
 													{0x30EC,0x30D9,0x30EB,0x0032,0x0000},//レベル2
 													{0x30EC,0x30D9,0x30EB,0x0033,0x0000},//レベル3
 													{0x30EC,0x30D9,0x30EB,0x0034,0x0000},//レベル4
 												},
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{
 													{0xB808,0xBCA8,0x0020,0x0031,0x0000},//?? 1
 													{0xB808,0xBCA8,0x0020,0x0032,0x0000},//?? 2
 													{0xB808,0xBCA8,0x0020,0x0033,0x0000},//?? 3
 													{0xB808,0xBCA8,0x0020,0x0034,0x0000},//?? 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{
 													{0x0423,0x0440,0x002E,0x0020,0x0031,0x0000},//Ур. 1
 													{0x0423,0x0440,0x002E,0x0020,0x0032,0x0000},//Ур. 2
 													{0x0423,0x0440,0x002E,0x0020,0x0033,0x0000},//Ур. 3
 													{0x0423,0x0440,0x002E,0x0020,0x0034,0x0000},//Ур. 4
 												},
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{
 													{0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0031,0x0000},//??????? 1
 													{0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0032,0x0000},//??????? 2
 													{0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0033,0x0000},//??????? 3
 													{0x0645,0x0633,0x062A,0x0648,0x0649,0x0020,0x0034,0x0000},//??????? 4
 												},
-											#else	
+											  #endif
+											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{
 													{0x7B49,0x7EA7,0x0031,0x0000},//等级1
 													{0x7B49,0x7EA7,0x0032,0x0000},//等级2
 													{0x7B49,0x7EA7,0x0033,0x0000},//等级3
 													{0x7B49,0x7EA7,0x0034,0x0000},//等级4
 												},
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0031,0x0000},//Level 1
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0032,0x0000},//Level 2
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0033,0x0000},//Level 3
 													{0x004c,0x0065,0x0076,0x0065,0x006c,0x0020,0x0034,0x0000},//Level 4
 												},
+											  #endif
 											#endif
 											};
 	uint32_t img_addr[2] = {IMG_SET_TEMP_UNIT_C_ICON_ADDR, IMG_SET_TEMP_UNIT_F_ICON_ADDR};
@@ -2919,11 +3497,13 @@ void SettingsShowStatus(void)
 			break;
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 							SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 							tmpbuf);
 		else
+	#endif
 			LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 							SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 							tmpbuf);
@@ -2933,30 +3513,36 @@ void SettingsShowStatus(void)
 		{
 		case 0:
 			LCD_MeasureUniString(menu_sle_str[global_settings.language], &w, &h);
+		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									menu_sle_str[global_settings.language]);
 			else
+		#endif		
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									menu_sle_str[global_settings.language]);
 			break;
 		case 1:
 			LCD_MeasureUniString(level_str[global_settings.language][global_settings.backlight_level], &w, &h);
+		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									level_str[global_settings.language][global_settings.backlight_level]);
 			else
+		#endif		
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									level_str[global_settings.language][global_settings.backlight_level]);
 			break;
 		case 2:
+		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_TEMP_UNIT_X-SETTINGS_MENU_TEMP_UNIT_W, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MENU_TEMP_UNIT_X, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
 			break;
 		}
@@ -2976,37 +3562,47 @@ void SettingsShowStatus(void)
 	{
 		if(settings_menu.count > 5*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE6_DOT_X-SETTINGS_MEUN_PAGE6_DOT_W, SETTINGS_MEUN_PAGE6_DOT_Y, IMG_SET_PG6_1_ADDR);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE6_DOT_X, SETTINGS_MEUN_PAGE6_DOT_Y, IMG_SET_PG6_1_ADDR);
 		}
 		else if(settings_menu.count > 4*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE5_DOT_X-SETTINGS_MEUN_PAGE5_DOT_W, SETTINGS_MEUN_PAGE5_DOT_Y, IMG_SET_PG5_1_ADDR);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE5_DOT_X, SETTINGS_MEUN_PAGE5_DOT_Y, IMG_SET_PG5_1_ADDR);
 		}
 		else if(settings_menu.count > 3*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE4_DOT_X-SETTINGS_MEUN_PAGE4_DOT_W, SETTINGS_MEUN_PAGE4_DOT_Y, IMG_SET_PG4_1_ADDR);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE4_DOT_X, SETTINGS_MEUN_PAGE4_DOT_Y, IMG_SET_PG4_1_ADDR);
 		}
 		else if(settings_menu.count > 2*SETTINGS_MAIN_MENU_MAX_PER_PG)
 		{
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE3_DOT_X-SETTINGS_MEUN_PAGE3_DOT_W, SETTINGS_MEUN_PAGE3_DOT_Y, IMG_SET_PG3_1_ADDR);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE3_DOT_X, SETTINGS_MEUN_PAGE3_DOT_Y, IMG_SET_PG3_1_ADDR);
 		}
 		else
 		{
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MEUN_PAGE2_DOT_X-SETTINGS_MEUN_PAGE2_DOT_W, SETTINGS_MEUN_PAGE2_DOT_Y, IMG_SET_PG2_1_ADDR);
 			else
+		#endif		
 				LCD_ShowImg_From_Flash(SETTINGS_MEUN_PAGE2_DOT_X, SETTINGS_MEUN_PAGE2_DOT_Y, IMG_SET_PG2_1_ADDR);
 		}
 
@@ -3082,8 +3678,6 @@ void EnterSettingsScreen(void)
 
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
-#elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	SetLeftKeyUpHandler(EnterFactoryTest);
 #else
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
  	if((strlen(g_ui_ver) == 0) 
@@ -3121,8 +3715,6 @@ void EnterSettingsScreen(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -3152,8 +3744,6 @@ void EnterSettingsScreen(void)
   #else
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
   #endif
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
  #else
   #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
@@ -3492,11 +4082,11 @@ void TempUpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -3504,9 +4094,11 @@ void TempUpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		
 		MenuStartTemp();
@@ -3619,11 +4211,11 @@ void TempUpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		  #ifndef FW_FOR_CN	
+		   #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
-		  #endif
+		   #endif
 		  
 			default:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -3635,9 +4227,11 @@ void TempUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);		
 		else
+	#endif		
 			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);		
 
 		k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -3654,11 +4248,11 @@ void TempUpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -3666,9 +4260,11 @@ void TempUpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&temp_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -3686,21 +4282,49 @@ void TempShowStatus(void)
 	uint16_t color = 0x05DF;
 	uint16_t title_str[LANGUAGE_MAX][24] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0042,0x006F,0x0064,0x0079,0x0020,0x0054,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0065,0x0000},//Body Temperature
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x004B,0x00F6,0x0072,0x0070,0x0065,0x0072,0x0074,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0000},//K?rpertemperatur
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x0054,0x0065,0x006D,0x0070,0x00E9,0x0072,0x0061,0x0074,0x0075,0x0072,0x0065,0x0020,0x0063,0x006F,0x0072,0x0070,0x006F,0x0072,0x0065,0x006C,0x006C,0x0065,0x0000},//Température corporelle
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0054,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0061,0x0020,0x0043,0x006F,0x0072,0x0070,0x006F,0x0072,0x0065,0x0061,0x0000},//Temperatura Corporea
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x0054,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0061,0x0020,0x0063,0x006F,0x0072,0x0070,0x006F,0x0072,0x0061,0x006C,0x0000},//Temperatura corporal
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0054,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0061,0x0020,0x0063,0x006F,0x0072,0x0070,0x006F,0x0072,0x0061,0x006C,0x0000},//Temperatura corporal
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x0054,0x0065,0x006D,0x0070,0x002E,0x0020,0x0063,0x0069,0x0061,0x0142,0x0061,0x0000},//Temp. cia?a
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x004B,0x0072,0x006F,0x0070,0x0070,0x0073,0x0074,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0000},//Kroppstemperatur
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x4F53,0x6E29,0x0000},//体温
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xCCB4,0xC628,0x0000},//??
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x0422,0x0435,0x043C,0x043F,0x0435,0x0440,0x0430,0x0442,0x0443,0x0440,0x0430,0x0000},//температура
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x062D,0x0631,0x0627,0x0631,0x0629,0x0020,0x0627,0x0644,0x062C,0x0633,0x0645,0x0000},//????? ?????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x4F53,0x6E29,0x0000},//体温
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0042,0x006F,0x0064,0x0079,0x0020,0x0054,0x0065,0x006D,0x0070,0x0065,0x0072,0x0061,0x0074,0x0075,0x0072,0x0065,0x0000},//Body Temperature
+											  #endif
 											#endif
 											};
 
@@ -3790,9 +4414,11 @@ void TempShowStatus(void)
 
 	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 	LCD_MeasureUniString(tmpbuf, &w, &h);
+#ifdef LANGUAGE_AR_ENABLE	
 	if(g_language_r2l)
 		LCD_ShowUniStringRtoL(TEMP_NOTIFY_X+(TEMP_NOTIFY_W+w)/2, TEMP_NOTIFY_Y, tmpbuf);
 	else
+#endif		
 		LCD_ShowUniString(TEMP_NOTIFY_X+(TEMP_NOTIFY_W-w)/2, TEMP_NOTIFY_Y, tmpbuf);
 
 	TempShowNumByImg(TEMP_UP_STR_X, TEMP_UP_STR_Y, TEMP_UP_STR_W, TEMP_UP_STR_H, TEMP_UP_NUM_W, img_num, IMG_FONT_24_DOT_ADDR, (float)last_health.deca_temp_max/10.0);
@@ -4278,11 +4904,11 @@ void BPUpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4290,9 +4916,11 @@ void BPUpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 		
 		MenuStartBpt();
@@ -4398,11 +5026,11 @@ void BPUpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		  #ifndef FW_FOR_CN	
+		   #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
-		  #endif
+		   #endif
 		  
 			default:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4414,9 +5042,11 @@ void BPUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -4432,11 +5062,11 @@ void BPUpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4444,9 +5074,11 @@ void BPUpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -4463,21 +5095,49 @@ void BPShowStatus(void)
 	bpt_data bpt_max={0},bpt_min={0};
 	uint16_t title_str[LANGUAGE_MAX][22] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x0050,0x0072,0x0065,0x0073,0x0073,0x0075,0x0072,0x0065,0x0000},//Blood Pressure
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x0042,0x006C,0x0075,0x0074,0x0064,0x0072,0x0075,0x0063,0x006B,0x0000},//Blutdruck
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x0050,0x0072,0x0065,0x0073,0x0073,0x0069,0x006F,0x006E,0x0020,0x0061,0x0072,0x0074,0x00E9,0x0072,0x0069,0x0065,0x006C,0x006C,0x0065,0x0000},//Pression art閞ielle
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0050,0x0072,0x0065,0x0073,0x0073,0x0069,0x006F,0x006E,0x0065,0x0020,0x0053,0x0061,0x006E,0x0067,0x0075,0x0069,0x0067,0x006E,0x0061,0x0000},//Pressione Sanguigna
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x0050,0x0072,0x0065,0x0073,0x0069,0x00F3,0x006E,0x0020,0x0061,0x0072,0x0074,0x0065,0x0072,0x0069,0x0061,0x006C,0x0000},//Presi髇 arterial
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0050,0x0072,0x0065,0x0073,0x0073,0x00E3,0x006F,0x0020,0x0061,0x0072,0x0074,0x0065,0x0072,0x0069,0x0061,0x006C,0x0000},//Press鉶 arterial
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x0043,0x0069,0x015B,0x002E,0x0020,0x006B,0x0072,0x0077,0x0069,0x0000},//Ci?. krwi
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x0042,0x006C,0x006F,0x0064,0x0074,0x0072,0x0079,0x0063,0x006B,0x0000},//Blodtryck
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x8840,0x5727,0x0000},//血圧
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xD608,0xC555,0x0000},//??
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x0410,0x0414,0x0000},//АД
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x0636,0x063A,0x0637,0x0020,0x0627,0x0644,0x062F,0x0645,0x0000},//??? ????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x8840,0x538B,0x0000},//血压
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x0050,0x0072,0x0065,0x0073,0x0073,0x0075,0x0072,0x0065,0x0000},//Blood Pressure
+											  #endif
 											#endif
 											};
 
@@ -4552,11 +5212,11 @@ void BPShowStatus(void)
 
   	switch(global_settings.language)
 	{
-  #ifndef FW_FOR_CN	
+   #ifdef LANGUAGE_RU_ENABLE
 	case LANGUAGE_RU:
 	  mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-14);
 	  break;
-  #endif
+   #endif
   
 	default:
 	  mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4564,9 +5224,11 @@ void BPShowStatus(void)
 	}
 
 	LCD_MeasureUniString(tmpbuf, &w, &h);
+#ifdef LANGUAGE_AR_ENABLE	
 	if(g_language_r2l)
 		LCD_ShowUniStringRtoL(BP_NOTIFY_X+(BP_NOTIFY_W+w)/2, BP_NOTIFY_Y, tmpbuf);
 	else
+#endif		
 		LCD_ShowUniString(BP_NOTIFY_X+(BP_NOTIFY_W-w)/2, BP_NOTIFY_Y, tmpbuf);
 
 	PPGShowBpNumByImg(BP_UP_STR_X, BP_UP_STR_Y, BP_UP_STR_W, BP_UP_STR_H, BP_UP_NUM_W, img_num, IMG_FONT_16_SLASH_ADDR, last_health.bpt_max);
@@ -4764,11 +5426,11 @@ void SPO2UpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4776,9 +5438,11 @@ void SPO2UpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
 		MenuStartSpo2();
@@ -4850,11 +5514,11 @@ void SPO2UpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		  #ifndef FW_FOR_CN	
+		   #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
-		  #endif
+		   #endif
 		  
 			default:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4866,9 +5530,11 @@ void SPO2UpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -4884,11 +5550,11 @@ void SPO2UpdateStatus(void)
 	
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -4896,9 +5562,11 @@ void SPO2UpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -4915,21 +5583,49 @@ void SPO2ShowStatus(void)
 	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][25] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x004F,0x0078,0x0079,0x0067,0x0065,0x006E,0x0000},//Blood Oxygen
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x0042,0x006C,0x0075,0x0074,0x0073,0x0061,0x0075,0x0065,0x0072,0x0073,0x0074,0x006F,0x0066,0x0066,0x0000},//Blutsauerstoff
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x004F,0x0078,0x0079,0x0067,0x00E8,0x006E,0x0065,0x0020,0x0073,0x0061,0x006E,0x0067,0x0075,0x0069,0x006E,0x0000},//Oxyg鑞e sanguin
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0073,0x0061,0x0074,0x0075,0x0072,0x0061,0x007A,0x0069,0x006F,0x006E,0x0065,0x0020,0x0064,0x0069,0x0020,0x006F,0x0073,0x0073,0x0069,0x0067,0x0065,0x006E,0x006F,0x0000},//saturazione di ossigeno
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x004F,0x0078,0x00ED,0x0067,0x0065,0x006E,0x006F,0x0020,0x0064,0x0065,0x0020,0x0073,0x0061,0x006E,0x0067,0x0072,0x0065,0x0000},//Oxígeno de sangre
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0053,0x0061,0x0074,0x0075,0x0072,0x0061,0x00E7,0x00E3,0x006F,0x0020,0x0064,0x0065,0x0020,0x006F,0x0078,0x0069,0x0067,0x00EA,0x006E,0x0069,0x006F,0x0000},//Satura??o de oxigênio
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x0050,0x006F,0x007A,0x0069,0x006F,0x006D,0x0020,0x0074,0x006C,0x0065,0x006E,0x0075,0x0000},//Poziom tlenu
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x0042,0x006C,0x006F,0x0064,0x0073,0x0079,0x0072,0x0065,0x0000},//Blodsyre
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x8840,0x4E2D,0x9178,0x7D20,0x0000},//血中酸素
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xD608,0xC561,0x0020,0xC0B0,0xC18C,0x0000},//?? ??
+										      #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x0421,0x0430,0x0442,0x0443,0x0440,0x0430,0x0446,0x0438,0x044F,0x0000},//Сатурация
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x0623,0x0643,0x0633,0x062C,0x064A,0x0646,0x0020,0x0627,0x0644,0x062F,0x0645,0x0000},//?????? ????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x8840,0x6C27,0x0000},//血氧
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0042,0x006C,0x006F,0x006F,0x0064,0x0020,0x004F,0x0078,0x0079,0x0067,0x0065,0x006E,0x0000},//Blood Oxygen
+											  #endif
 											#endif
 							 				};
 
@@ -4996,9 +5692,11 @@ void SPO2ShowStatus(void)
 
 	mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 	LCD_MeasureUniString(tmpbuf, &w, &h);
+#ifdef LANGUAGE_AR_ENABLE	
 	if(g_language_r2l)
 		LCD_ShowUniStringRtoL(SPO2_NOTIFY_X+(SPO2_NOTIFY_W+w)/2, SPO2_NOTIFY_Y, tmpbuf);
 	else
+#endif		
 		LCD_ShowUniString(SPO2_NOTIFY_X+(SPO2_NOTIFY_W-w)/2, SPO2_NOTIFY_Y, tmpbuf);
 
 	PPGShowNumWithUnitByImg(SPO2_UP_STR_X, SPO2_UP_STR_Y, SPO2_UP_STR_W, SPO2_UP_STR_H, SPO2_UP_NUM_W, img_num, IMG_FONT_24_PERC_ADDR, last_health.spo2_max);
@@ -5195,11 +5893,11 @@ void HRUpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -5207,9 +5905,11 @@ void HRUpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 		
 		MenuStartHr();
@@ -5282,11 +5982,11 @@ void HRUpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		  #ifndef FW_FOR_CN	
+		   #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
 				break;
-		  #endif
+		   #endif
 		  
 			default:
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -5298,9 +5998,11 @@ void HRUpdateStatus(void)
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 			
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -5316,11 +6018,11 @@ void HRUpdateStatus(void)
 
 		switch(global_settings.language)
 		{
-	  #ifndef FW_FOR_CN	
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], 10);
 			break;
-	  #endif
+	   #endif
 	  
 		default:
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -5328,9 +6030,11 @@ void HRUpdateStatus(void)
 		}
 
 		LCD_MeasureUniString(tmpbuf, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 		else
+	#endif		
 			LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
 		k_timer_start(&ppg_status_timer, K_SECONDS(5), K_NO_WAIT);
@@ -5347,21 +6051,49 @@ void HRShowStatus(void)
 	uint16_t i,w,h;
 	uint16_t title_str[LANGUAGE_MAX][29] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0048,0x0065,0x0061,0x0072,0x0074,0x0020,0x0052,0x0061,0x0074,0x0065,0x0000},//Heart Rate
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x0050,0x0075,0x006C,0x0073,0x0073,0x0063,0x0068,0x006C,0x0061,0x0067,0x0000},//Pulsschlag
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x0052,0x0079,0x0074,0x0068,0x006D,0x0065,0x0020,0x0063,0x0061,0x0072,0x0064,0x0069,0x0061,0x0071,0x0075,0x0065,0x0000},//Rythme cardiaque
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0046,0x0072,0x0065,0x0071,0x0075,0x0065,0x006E,0x007A,0x0061,0x0020,0x0063,0x0061,0x0072,0x0064,0x0069,0x0061,0x0063,0x0000},//Frequenza cardiac
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x0052,0x0069,0x0074,0x006D,0x006F,0x0020,0x0063,0x0061,0x0072,0x0064,0x0069,0x0061,0x0063,0x0000},//Ritmo cardiac
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0046,0x0072,0x0065,0x0071,0x0075,0x00EA,0x006E,0x0063,0x0069,0x0061,0x0020,0x0063,0x0061,0x0072,0x0064,0x00ED,0x0061,0x0063,0x0061,0x0000},//Frequência cardíaca
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x0054,0x0119,0x0074,0x006E,0x006F,0x0000},//T?tno
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x0048,0x006A,0x00E4,0x0072,0x0074,0x0066,0x0072,0x0065,0x006B,0x0076,0x0065,0x006E,0x0073,0x0000},//Hj?rtfrekvens
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x5FC3,0x62CD,0x6570,0x0000},//心拍数
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xC2EC,0xBC15,0xC218,0x0000},//???
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x041F,0x0443,0x043B,0x044C,0x0441,0x0000},//пульс
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x0636,0x0631,0x0628,0x0627,0x062A,0x0020,0x0627,0x0644,0x0642,0x0644,0x0628,0x0000},//????? ?????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x5FC3,0x7387,0x0000},//心率
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0048,0x0065,0x0061,0x0072,0x0074,0x0020,0x0052,0x0061,0x0074,0x0065,0x0000},//Heart Rate
+											  #endif
 											#endif
 							 				};
 
@@ -5429,11 +6161,11 @@ void HRShowStatus(void)
 
 	switch(global_settings.language)
 	{
-  #ifndef FW_FOR_CN	
+   #ifdef LANGUAGE_RU_ENABLE      
 	case LANGUAGE_RU:
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-14);
 		break;
-  #endif
+   #endif
   
 	default:
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)title_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
@@ -5441,9 +6173,11 @@ void HRShowStatus(void)
 	}
 	
 	LCD_MeasureUniString(tmpbuf,&w,&h);
+#ifdef LANGUAGE_AR_ENABLE	
 	if(g_language_r2l)
 		LCD_ShowUniStringRtoL(HR_NOTIFY_X+(HR_NOTIFY_W+w)/2, HR_NOTIFY_Y, tmpbuf);
 	else
+#endif		
 		LCD_ShowUniString(HR_NOTIFY_X+(HR_NOTIFY_W-w)/2, HR_NOTIFY_Y, tmpbuf);
 
 	PPGShowNumByImg(HR_UP_STR_X, HR_UP_STR_Y, HR_UP_STR_W, HR_UP_STR_H, HR_UP_NUM_W, img_num, last_health.hr_max);
@@ -5945,6 +6679,7 @@ void NotifyShow(void)
 					tmpbuf[i] = 0x00;
 
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+				#ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 					{
 						x = str_x+(str_w+2*offset_w+w)/2;
@@ -5952,6 +6687,7 @@ void NotifyShow(void)
 						LCD_ShowUniStringRtoL(x,y,tmpbuf);
 					}
 					else
+				#endif		
 					{
 						x = str_x+(str_w-2*offset_w-w)/2;
 						x += offset_w;
@@ -5964,6 +6700,7 @@ void NotifyShow(void)
 				else
 				{
 					LCD_MeasureUniString(tmpbuf, &w, &h);
+				#ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
 					{
 						x = str_x+(str_w+2*offset_w+w)/2;
@@ -5971,6 +6708,7 @@ void NotifyShow(void)
 						LCD_ShowUniStringRtoL(x,y,tmpbuf);
 					}
 					else
+				#endif		
 					{
 						x = str_x+(str_w-2*offset_w-w)/2;
 						x += offset_w;
@@ -5983,6 +6721,7 @@ void NotifyShow(void)
 		else if(w > 0)
 		{
 			y = (h > (str_h-2*offset_h))? 0 : ((str_h-2*offset_h)-h)/2;
+		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 			{
 				x = str_x+(str_w+2*offset_w+w)/2;
@@ -5990,6 +6729,7 @@ void NotifyShow(void)
 				LCD_ShowUniStringRtoL(x,y,notify_msg.text);		
 			}
 			else
+		#endif		
 			{
 				x = str_x+(str_w-2*offset_w-w)/2;
 				x += offset_w;
@@ -5999,9 +6739,11 @@ void NotifyShow(void)
 		break;
 		
 	case NOTIFY_ALIGN_BOUNDARY:
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
 		else
+	#endif		
 			LCD_ShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
 		break;
 	}
@@ -6031,6 +6773,15 @@ void NotifyScreenProcess(void)
 }
 
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+#ifdef LANGUAGE_CN_ENABLE
+uint16_t dl_idle_notify_cn[] = 
+{
+	//确保电量大于80%或者充电器已经连接。
+	0x786E,0x4FDD,0x7535,0x91CF,0x5927,0x4E8E,0x0038,0x0030,0x0025,0x6216,0x8005,0x5145,0x7535,0x5668,0x5DF2,0x7ECF,0x8FDE,0x63A5,
+	0x3002,0x0000
+};
+#endif
+#ifdef LANGUAGE_EN_ENABLE
 uint16_t dl_idle_notify_en[] = 
 {
 	////Please ensure the battery level is over 80% or the charger is connected.
@@ -6039,7 +6790,8 @@ uint16_t dl_idle_notify_en[] =
 	0x0076,0x0065,0x0072,0x0020,0x0038,0x0030,0x0025,0x0020,0x006F,0x0072,0x0020,0x0074,0x0068,0x0065,0x0020,0x0063,0x0068,0x0061,
 	0x0072,0x0067,0x0065,0x0072,0x0020,0x0069,0x0073,0x0063,0x006F,0x006E,0x006E,0x0065,0x0063,0x0074,0x0065,0x0064,0x002E,0x0000
 };
-#ifndef FW_FOR_CN
+#endif
+#ifdef LANGUAGE_DE_ENABLE
 uint16_t dl_idle_notify_de[] = 
 {
 	//Stellen Sie sicher, dass der Akkustand über 80 % liegt oder das Ladekabel angeschlossen ist.
@@ -6050,6 +6802,8 @@ uint16_t dl_idle_notify_de[] =
 	0x006C,0x0020,0x0061,0x006E,0x0067,0x0065,0x0073,0x0063,0x0068,0x006C,0x006F,0x0073,0x0073,0x0065,0x006E,0x0020,0x0069,0x0073,
 	0x0074,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_FR_ENABLE
 uint16_t dl_idle_notify_fr[] =
 {
 	//Assurez-vous que le niveau de batterie est supérieur à 80 % ou que le c?ble de chargement est connecté.
@@ -6060,6 +6814,8 @@ uint16_t dl_idle_notify_fr[] =
 	0x0062,0x006C,0x0065,0x0020,0x0064,0x0065,0x0020,0x0063,0x0068,0x0061,0x0072,0x0067,0x0065,0x006D,0x0065,0x006E,0x0074,0x0020,
 	0x0065,0x0073,0x0074,0x0020,0x0063,0x006F,0x006E,0x006E,0x0065,0x0063,0x0074,0x00E9,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_IT_ENABLE
 uint16_t dl_idle_notify_it[] =
 {
 	//Assicurarsi che il livello della batteria sia superiore all'80% o che il cavo di ricarica sia collegato.
@@ -6070,6 +6826,8 @@ uint16_t dl_idle_notify_it[] =
 	0x0063,0x0061,0x0076,0x006F,0x0020,0x0064,0x0069,0x0020,0x0072,0x0069,0x0063,0x0061,0x0072,0x0069,0x0063,0x0061,0x0020,0x0073,
 	0x0069,0x0061,0x0020,0x0063,0x006F,0x006C,0x006C,0x0065,0x0067,0x0061,0x0074,0x006F,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_ES_ENABLE
 uint16_t dl_idle_notify_es[] =
 {
 	//Asegúrate de que el nivel de la batería es superior al 80% o de que el cable de carga está conectado.
@@ -6080,6 +6838,8 @@ uint16_t dl_idle_notify_es[] =
 	0x0061,0x0062,0x006C,0x0065,0x0020,0x0064,0x0065,0x0020,0x0063,0x0061,0x0072,0x0067,0x0061,0x0020,0x0065,0x0073,0x0074,0x00E1,
 	0x0020,0x0063,0x006F,0x006E,0x0065,0x0063,0x0074,0x0061,0x0064,0x006F,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_PT_ENABLE
 uint16_t dl_idle_notify_pt[] =
 {
 	//Certifique-se de que o nível da bateria é superior a 80% ou que o cabo de carregamento está ligado.
@@ -6090,6 +6850,8 @@ uint16_t dl_idle_notify_pt[] =
 	0x0063,0x0061,0x0072,0x0072,0x0065,0x0067,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0065,0x0073,0x0074,0x00E1,0x0020,
 	0x006C,0x0069,0x0067,0x0061,0x0064,0x006F,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_PL_ENABLE
 uint16_t dl_idle_notify_pl[] =
 {
 	//Sprawd?, czy poziom na?adowania baterii wynosi ponad 80% lub czy ?adowarka jest pod??czona.
@@ -6100,6 +6862,8 @@ uint16_t dl_idle_notify_pl[] =
 	0x006B,0x0061,0x0020,0x006A,0x0065,0x0073,0x0074,0x0020,0x0070,0x006F,0x0064,0x0142,0x0105,0x0063,0x007A,0x006F,0x006E,0x0061,
 	0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_SE_ENABLE
 uint16_t dl_idle_notify_se[] =
 {
 	//V?nligen s?kerst?ll att batteriniv?n ?r ?ver 80% eller att laddaren ?r ansluten.
@@ -6109,6 +6873,8 @@ uint16_t dl_idle_notify_se[] =
 	0x0020,0x0061,0x0074,0x0074,0x0020,0x006C,0x0061,0x0064,0x0064,0x0061,0x0072,0x0065,0x006E,0x00E4,0x0072,0x0020,0x0061,0x006E,
 	0x0073,0x006C,0x0075,0x0074,0x0065,0x006E,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_JP_ENABLE
 uint16_t dl_idle_notify_jp[] =
 {
 	//バッテリーが80%以上、または充電器が接続中であることを確認してください。
@@ -6116,6 +6882,8 @@ uint16_t dl_idle_notify_jp[] =
 	0x304C,0x63A5,0x7D9A,0x4E2D,0x3067,0x3042,0x308B,0x3053,0x3068,0x3092,0x78BA,0x8A8D,0x3057,0x3066,0x304F,0x3060,0x3055,0x3044,
 	0x3002,0x0000
 };
+#endif
+#ifdef LANGUAGE_KR_ENABLE
 uint16_t dl_idle_notify_kr[] =
 {
 	//???? 80% ?? ?????? ???? ???? ??? ?????.
@@ -6123,6 +6891,8 @@ uint16_t dl_idle_notify_kr[] =
 	0x0020,0xCDA9,0xC804,0xAE30,0xAC00,0x0020,0xC5F0,0xACB0,0xB418,0xC5B4,0x0020,0xC788,0xB294,0xC9C0,0x0020,0xD655,0xC778,0xD558,
 	0xC138,0xC694,0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_RU_ENABLE
 uint16_t dl_idle_notify_ru[] =
 {
 	//Убедитесь, что заряд батареи выше 80% или зарядное устройство подключено.
@@ -6132,6 +6902,8 @@ uint16_t dl_idle_notify_ru[] =
 	0x0440,0x043E,0x0439,0x0441,0x0442,0x0432,0x043E,0x0020,0x043F,0x043E,0x0434,0x043A,0x043B,0x044E,0x0447,0x0435,0x043D,0x043E,
 	0x002E,0x0000
 };
+#endif
+#ifdef LANGUAGE_AR_ENABLE
 uint16_t dl_idle_notify_ar[] =
 {
 	//???? ?? ?? ????? ???????? ???? ?? 80%  ?? ?? ?????? ????.
@@ -6140,14 +6912,7 @@ uint16_t dl_idle_notify_ar[] =
 	0x0623,0x0648,0x0020,0x0623,0x0646,0x0020,0x0627,0x0644,0x0634,0x0627,0x062D,0x0646,0x0020,0x0645,0x062A,0x0635,0x0644,0x002E,
 	0x0000
 };
-#else
-uint16_t dl_idle_notify_cn[] = 
-{
-	//确保电量大于80%或者充电器已经连接。
-	0x786E,0x4FDD,0x7535,0x91CF,0x5927,0x4E8E,0x0038,0x0030,0x0025,0x6216,0x8005,0x5145,0x7535,0x5668,0x5DF2,0x7ECF,0x8FDE,0x63A5,
-	0x3002,0x0000
-};
-#endif/*FW_FOR_CN*/
+#endif
 
 void DlShowStatus(void)
 {
@@ -6155,239 +6920,351 @@ void DlShowStatus(void)
 	uint8_t str_title[128] = {0};
 	uint16_t *str_notify[LANGUAGE_MAX] = {
 										#ifndef FW_FOR_CN
+										  #ifdef LANGUAGE_EN_ENABLE
 											dl_idle_notify_en,
+										  #endif
+										  #ifdef LANGUAGE_DE_ENABLE
 											dl_idle_notify_de,
+										  #endif
+										  #ifdef LANGUAGE_FR_ENABLE
 											dl_idle_notify_fr,
+										  #endif
+										  #ifdef LANGUAGE_IT_ENABLE
 											dl_idle_notify_it,
+										  #endif
+										  #ifdef LANGUAGE_ES_ENABLE
 											dl_idle_notify_es,
+										  #endif
+										  #ifdef LANGUAGE_PT_ENABLE
 											dl_idle_notify_pt,
+										  #endif
+										  #ifdef LANGUAGE_PL_ENABLE
 											dl_idle_notify_pl,
+										  #endif
+										  #ifdef LANGUAGE_SE_ENABLE
 											dl_idle_notify_se,
+										  #endif
+										  #ifdef LANGUAGE_JP_ENABLE
 											dl_idle_notify_jp,
+										  #endif
+										  #ifdef LANGUAGE_KR_ENABLE
 											dl_idle_notify_kr,
+										  #endif
+										  #ifdef LANGUAGE_RU_ENABLE
 											dl_idle_notify_ru,
+										  #endif
+										  #ifdef LANGUAGE_AR_ENABLE
 											dl_idle_notify_ar,
+										  #endif
 										#else
+										  #ifdef LANGUAGE_CN_ENABLE
 											dl_idle_notify_cn,
+										  #endif
+										  #ifdef LANGUAGE_EN_ENABLE
 											dl_idle_notify_en,
+										  #endif
 										#endif
 										};
 	uint16_t str_ui_title[LANGUAGE_MAX][41] = {
 										#ifndef FW_FOR_CN
+										  #ifdef LANGUAGE_EN_ENABLE
 											{
 												//UI Upgrade
 												0x0055,0x0049,0x0020,0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_DE_ENABLE
 											{
 												//UI-Upgrade
 												0x0055,0x0049,0x2013,0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_FR_ENABLE
 											{
 												//Mise à niveau de l'interface utilisateur
 												0x004D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0064,0x0065,
 												0x0020,0x006C,0x0027,0x0069,0x006E,0x0074,0x0065,0x0072,0x0066,0x0061,0x0063,0x0065,0x0020,0x0075,0x0074,0x0069,
 												0x006C,0x0069,0x0073,0x0061,0x0074,0x0065,0x0075,0x0072,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_IT_ENABLE
 											{
 												//Aggiornamento dell'interfaccia utente
 												0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0064,0x0065,
 												0x006C,0x006C,0x0027,0x0069,0x006E,0x0074,0x0065,0x0072,0x0066,0x0061,0x0063,0x0063,0x0069,0x0061,0x0020,0x0075,
 												0x0074,0x0065,0x006E,0x0074,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_ES_ENABLE
 											{
 												//Actualización de la interfaz de usuario
 												0x0041,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,0x0020,0x0064,0x0065,
 												0x0020,0x006C,0x0061,0x0020,0x0069,0x006E,0x0074,0x0065,0x0072,0x0066,0x0061,0x007A,0x0020,0x0064,0x0065,0x0020,
 												0x0075,0x0073,0x0075,0x0061,0x0072,0x0069,0x006F,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_PT_ENABLE
 											{
 												//Atualiza??o da IU
 												0x0041,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x00E7,0x00E3,0x006F,0x0020,0x0064,0x0061,0x0020,0x0049,
 												0x0055,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_PL_ENABLE
 											{
 												//Aktualizacja interfejsu u?ytkownika
 												0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0061,0x0020,0x0069,0x006E,0x0074,
 												0x0065,0x0072,0x0066,0x0065,0x006A,0x0073,0x0075,0x0020,0x0075,0x017C,0x0079,0x0074,0x006B,0x006F,0x0077,0x006E,
 												0x0069,0x006B,0x0061,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_SE_ENABLE
 											{
 												//Uppgradering av UI
 												0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0020,0x0061,0x0076,0x0020,
 												0x0055,0x0049,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_JP_ENABLE
 											{
 												//UI アップグレード
 												0x0055,0x0049,0x0020,0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_KR_ENABLE
 											{
 												//UI ?????
 												0x0055,0x0049,0x0020,0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_RU_ENABLE
 											{
 												//Обновление пользовательского интерфейса
 												0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x043F,0x043E,0x043B,0x044C,0x0437,
 												0x043E,0x0432,0x0430,0x0442,0x0435,0x043B,0x044C,0x0441,0x043A,0x043E,0x0433,0x043E,0x0020,0x0438,0x043D,0x0442,
 												0x0435,0x0440,0x0444,0x0435,0x0439,0x0441,0x0430,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_AR_ENABLE
 											{
 												//????? ????? ????????
 												0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x0648,0x0627,0x062C,0x0647,0x0629,0x0020,0x0627,0x0644,0x0645,0x0633,
 												0x062A,0x062E,0x062F,0x0645,0x0000
 											},
+										  #endif
 										#else
+										  #ifdef LANGUAGE_CN_ENABLE
 											{
 												//图库升级
 												0x56FE,0x5E93,0x5347,0x7EA7,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_EN_ENABLE
 											{
 												//UI Upgrade
 												0x0055,0x0049,0x0020,0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
 										#endif
 										};
 	uint16_t str_font_title[LANGUAGE_MAX][28] = {
 										#ifndef FW_FOR_CN
+										  #ifdef LANGUAGE_EN_ENABLE
 											{
 												//Font Upgrade
 												0x0046,0x006F,0x006E,0x0074,0x0020,0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_DE_ENABLE
 											{
 												//Schriftart-Upgrade
 												0x0053,0x0063,0x0068,0x0072,0x0069,0x0066,0x0074,0x0061,0x0072,0x0074,0x2013,0x0055,0x0070,0x0067,0x0072,0x0061,
 												0x0064,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_FR_ENABLE
 											{
 												//Mise à jour de la police
 												0x004D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006A,0x006F,0x0075,0x0072,0x0020,0x0064,0x0065,0x0020,0x006C,
 												0x0061,0x0020,0x0070,0x006F,0x006C,0x0069,0x0063,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_IT_ENABLE
 											{
 												//Aggiornamento del carattere
 												0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0064,0x0065,
 												0x006C,0x0020,0x0063,0x0061,0x0072,0x0061,0x0074,0x0074,0x0065,0x0072,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_ES_ENABLE
 											{
 												//Actualización de fuentes
 												0x0041,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,0x0020,0x0064,0x0065,
 												0x0020,0x0066,0x0075,0x0065,0x006E,0x0074,0x0065,0x0073,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_PT_ENABLE
 											{
 												//Atualiza??o de fonte
 												0x0041,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x00E7,0x00E3,0x006F,0x0020,0x0064,0x0065,0x0020,0x0066,
 												0x006F,0x006E,0x0074,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_PL_ENABLE
 											{
 												//Uaktualnienie czcionki
 												0x0055,0x0061,0x006B,0x0074,0x0075,0x0061,0x006C,0x006E,0x0069,0x0065,0x006E,0x0069,0x0065,0x0020,0x0063,0x007A,
 												0x0063,0x0069,0x006F,0x006E,0x006B,0x0069,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_SE_ENABLE
 											{
 												//Teckensnittsuppgradering
 												0x0054,0x0065,0x0063,0x006B,0x0065,0x006E,0x0073,0x006E,0x0069,0x0074,0x0074,0x0073,0x0075,0x0070,0x0070,0x0067,
 												0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_JP_ENABLE
 											{
 												//フォントのアップグレード
 												0x30D5,0x30A9,0x30F3,0x30C8,0x306E,0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_KR_ENABLE
 											{
 												//?? ?????
 												0xAE00,0xAF34,0x0020,0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_RU_ENABLE
 											{
 												//Обновление шрифта
 												0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x0448,0x0440,0x0438,0x0444,0x0442,
 												0x0430,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_AR_ENABLE
 											{
 												//????? ????
 												0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x0627,0x0644,0x062E,0x0637,0x0000
 											},
+										  #endif
 										#else
+										  #ifdef LANGUAGE_CN_ENABLE
 											{
 												//字库升级
 												0x5B57,0x5E93,0x5347,0x7EA7,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_EN_ENABLE
 											{
 												//Font Upgrade
 												0x0046,0x006F,0x006E,0x0074,0x0020,0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
 										#endif
 										};
 	uint16_t str_ppg_ag_title[LANGUAGE_MAX][34] = {
 										#ifndef FW_FOR_CN
+										  #ifdef LANGUAGE_EN_ENABLE
 											{
 												//PPG algorithm Upgrade
 												0x0050,0x0050,0x0047,0x0020,0x0061,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x0068,0x006D,0x0020,0x0055,0x0070,
 												0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_DE_ENABLE
 											{
 												//PPG-Algorithmus-Upgrade
 												0x0050,0x0050,0x0047,0x2013,0x0041,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x0068,0x006D,0x0075,0x0073,0x2013,
 												0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_FR_ENABLE
 											{
 												//Mise à niveau de l'algorithme PPG
 												0x004D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0064,0x0065,
 												0x0020,0x006C,0x0027,0x0061,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x0068,0x006D,0x0065,0x0020,0x0050,0x0050,
 												0x0047,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_IT_ENABLE
 											{
 												//Aggiornamento dell'algoritmo PPG
 												0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0064,0x0065,
 												0x006C,0x006C,0x0027,0x0061,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x006D,0x006F,0x0020,0x0050,0x0050,0x0047,
 												0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_ES_ENABLE
 											{
 												//Actualización del algoritmo PPG
 												0x0041,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,0x0020,0x0064,0x0065,
 												0x006C,0x0020,0x0061,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x006D,0x006F,0x0020,0x0050,0x0050,0x0047,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_PT_ENABLE
 											{
 												//Atualiza??o do algoritmo PPG
 												0x0041,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x00E7,0x00E3,0x006F,0x0020,0x0064,0x006F,0x0020,0x0061,
 												0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x006D,0x006F,0x0020,0x0050,0x0050,0x0047,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_PL_ENABLE
 											{
 												//Aktualizacja algorytmu PPG
 												0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0061,0x0020,0x0061,0x006C,0x0067,
 												0x006F,0x0072,0x0079,0x0074,0x006D,0x0075,0x0020,0x0050,0x0050,0x0047,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_SE_ENABLE
 											{
 												//Uppgradering av PPG-algoritm
 												0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0020,0x0061,0x0076,0x0020,
 												0x0050,0x0050,0x0047,0x2013,0x0061,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x006D,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_JP_ENABLE
 											{
 												//PPGアルゴリズムのアップグレード
 												0x0050,0x0050,0x0047,0x30A2,0x30EB,0x30B4,0x30EA,0x30BA,0x30E0,0x306E,0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,
 												0x30C9,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_KR_ENABLE
 											{
 												//PPG ???? ?????
 												0x0050,0x0050,0x0047,0x0020,0xC54C,0xACE0,0xB9AC,0xC998,0x0020,0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_RU_ENABLE
 											{
 												//Обновление алгоритма PPG
 												0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x0430,0x043B,0x0433,0x043E,0x0440,
 												0x0438,0x0442,0x043C,0x0430,0x0020,0x0050,0x0050,0x0047,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_AR_ENABLE
 											{
 												//????? ???????? PPG
 												0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x062E,0x0648,0x0627,0x0631,0x0632,0x0645,0x064A,0x0629,0x0047,0x0050,
 												0x0050,0x0000
 											},
+										  #endif
 										#else
+										  #ifdef LANGUAGE_CN_ENABLE
 											{
 												//PPG算法升级
 												0x0050,0x0050,0x0047,0x7B97,0x6CD5,0x5347,0x7EA7,0x0000
 											},
+										  #endif
+										  #ifdef LANGUAGE_EN_ENABLE
 											{
 												//PPG algorithm Upgrade
 												0x0050,0x0050,0x0047,0x0020,0x0061,0x006C,0x0067,0x006F,0x0072,0x0069,0x0074,0x0068,0x006D,0x0020,0x0055,0x0070,
 												0x0067,0x0072,0x0061,0x0064,0x0065,0x0000
 											},
+										  #endif
 										#endif
 										};
 
@@ -6399,14 +7276,19 @@ void DlShowStatus(void)
 	#ifdef FONTMAKER_UNICODE_FONT
 		switch(global_settings.language)
 		{
-	  #ifdef FW_FOR_CN
+	 #if defined(LANGUAGE_CN_ENABLE)||defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+	   #ifdef LANGUAGE_CN_ENABLE
 	  	case LANGUAGE_CHN:
-	  #else
+	   #endif
+	   #ifdef LANGUAGE_JP_ENABLE
 	  	case LANGUAGE_JP:
+	   #endif
+	   #ifdef LANGUAGE_KR_ENABLE
 		case LANGUAGE_KR:
+	   #endif
 			mmi_ucs2smartcpy(str_title, (uint8_t*)str_ui_title[global_settings.language], 16);
 			break;
-	  #endif
+	 #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
 	  
 		default:
 			mmi_ucs2smartcpy(str_title, (uint8_t*)str_ui_title[global_settings.language], 18);
@@ -6420,14 +7302,19 @@ void DlShowStatus(void)
 	#ifdef FONTMAKER_UNICODE_FONT
 		switch(global_settings.language)
 		{
-	  #ifdef FW_FOR_CN
+	 #if defined(LANGUAGE_CN_ENABLE)||defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+	   #ifdef LANGUAGE_CN_ENABLE
 	  	case LANGUAGE_CHN:
-	  #else
+	   #endif
+	   #ifdef LANGUAGE_JP_ENABLE
 	  	case LANGUAGE_JP:
+	   #endif
+	   #ifdef LANGUAGE_KR_ENABLE
 		case LANGUAGE_KR:
+	   #endif		
 			mmi_ucs2smartcpy(str_title, (uint8_t*)str_font_title[global_settings.language], 16);
 			break;
-	  #endif
+	 #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
 	  
 		default:
 			mmi_ucs2smartcpy(str_title, (uint8_t*)str_font_title[global_settings.language], 18);
@@ -6441,14 +7328,19 @@ void DlShowStatus(void)
 	#ifdef FONTMAKER_UNICODE_FONT
 		switch(global_settings.language)
 		{
-	  #ifdef FW_FOR_CN
+	 #if defined(LANGUAGE_CN_ENABLE)||defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+	   #ifdef LANGUAGE_CN_ENABLE
 	  	case LANGUAGE_CHN:
-	  #else
+	   #endif
+	   #ifdef LANGUAGE_JP_ENABLE
 	  	case LANGUAGE_JP:
+	   #endif
+	   #ifdef LANGUAGE_KR_ENABLE
 		case LANGUAGE_KR:
+	   #endif
 			mmi_ucs2smartcpy(str_title, (uint8_t*)str_ppg_ag_title[global_settings.language], 16);
 			break;
-	  #endif
+	 #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
 	  
 		default:
 			mmi_ucs2smartcpy(str_title, (uint8_t*)str_ppg_ag_title[global_settings.language], 18);
@@ -6469,12 +7361,14 @@ void DlShowStatus(void)
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_MeasureUniString((uint16_t*)str_title, &w, &h);
 	y = 25;
+  #ifdef LANGUAGE_AR_ENABLE	
 	if(g_language_r2l)
 	{
 		x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? (LCD_WIDTH-1) : (LCD_WIDTH+w)/2;
 		LCD_ShowUniStringRtoL(x, y, (uint16_t*)str_title);
 	}
 	else
+  #endif		
 	{
 		x = (w > (DL_NOTIFY_RECT_W-2*DL_NOTIFY_OFFSET_W))? 0 : (LCD_WIDTH-w)/2;
 		LCD_ShowUniString(x, y, (uint16_t*)str_title);
@@ -6488,9 +7382,11 @@ void DlShowStatus(void)
 #endif
 
 #ifdef FONTMAKER_UNICODE_FONT
+  #ifdef LANGUAGE_AR_ENABLE
 	if(g_language_r2l)
 		LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_notify[global_settings.language]);
 	else
+  #endif
 		LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_notify[global_settings.language]);
 #else
 	ShowStringsInRect(DL_NOTIFY_STRING_X, 
@@ -6549,29 +7445,59 @@ void DlUpdateStatus(void)
 			uint16_t str_linking[LANGUAGE_MAX][33] = 
 				{
 				#ifndef FW_FOR_CN
+				  #ifdef LANGUAGE_EN_ENABLE
 					{0x004C,0x0069,0x006E,0x006B,0x0069,0x006E,0x0067,0x0020,0x0074,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x002E,0x002E,0x002E,0x0000},//Linking to server...
+				  #endif
+				  #ifdef LANGUAGE_DE_ENABLE
 					{0x0056,0x0065,0x0072,0x006C,0x0069,0x006E,0x006B,0x0075,0x006E,0x0067,0x0020,0x007A,0x0075,0x006D,0x0020,0x0053,0x0065,0x0072,0x0076,0x0065,0x0072,0x002E,0x002E,0x002E,0x0000},//Verlinkung zum Server...
+				  #endif
+				  #ifdef LANGUAGE_FR_ENABLE
 					{0x0043,0x006F,0x006E,0x006E,0x0065,0x0078,0x0069,0x006F,0x006E,0x0020,0x0061,0x0075,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0075,0x0072,0x0020,0x0065,0x006E,0x0020,0x0063,0x006F,0x0075,0x0072,0x0073,0x002E,0x002E,0x002E,0x0000},//Connexion au serveur en cours...
+				  #endif
+				  #ifdef LANGUAGE_IT_ENABLE
 					{0x0043,0x006F,0x006E,0x006E,0x0065,0x0073,0x0073,0x0069,0x006F,0x006E,0x0065,0x0020,0x0061,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Connessione al server ...
+				  #endif
+				  #ifdef LANGUAGE_ES_ENABLE
 					{0x0045,0x006E,0x006C,0x0061,0x0063,0x0065,0x0020,0x0061,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0069,0x0064,0x006F,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Enlace al servidor ...
+				  #endif
+				  #ifdef LANGUAGE_PT_ENABLE
 					{0x0056,0x0069,0x006E,0x0063,0x0075,0x006C,0x0061,0x006E,0x0064,0x006F,0x0020,0x0061,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,0x0069,0x0064,0x006F,0x0072,0x002E,0x002E,0x002E,0x0000},//Vinculando ao servidor...
+				  #endif
+				  #ifdef LANGUAGE_PL_ENABLE
 					{0x0141,0x0105,0x0063,0x007A,0x0065,0x006E,0x0069,0x0065,0x0020,0x007A,0x0020,0x0073,0x0065,0x0072,0x0077,0x0065,0x0072,0x0065,0x006D,0x002E,0x002E,0x002E,0x0000},//??czenie z serwerem...
+				  #endif
+				  #ifdef LANGUAGE_SE_ENABLE
 					{0x004C,0x00E4,0x006E,0x006B,0x0061,0x0072,0x0020,0x0074,0x0069,0x006C,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x006E,0x002E,0x002E,0x002E,0x0000},//L?nkar till servern...
+				  #endif
+				  #ifdef LANGUAGE_JP_ENABLE
 					{0x30B5,0x30FC,0x30D0,0x30FC,0x306B,0x63A5,0x7D9A,0x4E2D,0x002E,0x002E,0x002E,0x0000},//サーバーに接続中...
+				  #endif
+				  #ifdef LANGUAGE_KR_ENABLE
 					{0xC11C,0xBC84,0xC5D0,0x0020,0xC5F0,0xACB0,0x0020,0xC911,0x002E,0x002E,0x002E,0x0000},//??? ?? ?...
+				  #endif
+				  #ifdef LANGUAGE_RU_ENABLE
 					{0x041F,0x043E,0x0434,0x043A,0x043B,0x044E,0x0447,0x0435,0x043D,0x0438,0x0435,0x0020,0x043A,0x0020,0x0441,0x0435,0x0440,0x0432,0x0435,0x0440,0x0443,0x002E,0x002E,0x002E,0x0000},//Подключение к серверу...
+				  #endif
+				  #ifdef LANGUAGE_AR_ENABLE
 					{0x0631,0x0628,0x0637,0x0020,0x0628,0x0627,0x0644,0x062E,0x0627,0x062F,0x0645,0x002E,0x002E,0x002E,0x0000},//??? ???????...
+				  #endif
 				#else
+				  #ifdef LANGUAGE_CN_ENABLE
 					{0x8FDE,0x63A5,0x670D,0x52A1,0x5668,0x2026,0x0000},//连接服务器…
+				  #endif
+				  #ifdef LANGUAGE_EN_ENABLE
 					{0x004C,0x0069,0x006E,0x006B,0x0069,0x006E,0x0067,0x0020,0x0074,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x002E,0x002E,0x002E,0x0000},//Linking to server...
+				  #endif
 				#endif
 				};
 			
 			LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
 		#ifdef FONTMAKER_UNICODE_FONT
+		  #ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_linking[global_settings.language]);
 			else
+		  #endif
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_linking[global_settings.language]);
 		#else
 			ShowStringsInRect(DL_NOTIFY_STRING_X,
@@ -6588,31 +7514,61 @@ void DlUpdateStatus(void)
 		if(!flag)
 		{
 			uint16_t str_downloading[LANGUAGE_MAX][31] = {
-											#ifndef FW_FOR_CN
+												#ifndef FW_FOR_CN
+											  	  #ifdef LANGUAGE_EN_ENABLE
 													{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0069,0x006E,0x0067,0x002E,0x002E,0x002E,0x0000},//Upgrading...
+												  #endif
+												  #ifdef LANGUAGE_DE_ENABLE
 													{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0077,0x0069,0x0072,0x0064,0x0020,0x0064,0x0075,0x0072,0x0063,0x0068,0x0067,0x0065,0x0066,0x00FC,0x0068,0x0072,0x0074,0x002E,0x002E,0x002E,0x0000},//Upgrade wird durchgeführt...
+												  #endif
+												  #ifdef LANGUAGE_FR_ENABLE
 													{0x004D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006A,0x006F,0x0075,0x0072,0x0020,0x0065,0x006E,0x0020,0x0063,0x006F,0x0075,0x0072,0x0073,0x002E,0x002E,0x002E,0x0000},//Mise à jour en cours...
+												  #endif
+												  #ifdef LANGUAGE_IT_ENABLE
 													{0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x002E,0x002E,0x002E,0x0000},//Aggiornamento...
+												  #endif
+												  #ifdef LANGUAGE_ES_ENABLE
 													{0x0041,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x006E,0x0064,0x006F,0x002E,0x002E,0x002E,0x0000},//Actualizando...
+												  #endif
+												  #ifdef LANGUAGE_PT_ENABLE
 													{0x0041,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x006E,0x0064,0x006F,0x002E,0x002E,0x002E,0x0000},//Atualizando...
+												  #endif
+												  #ifdef LANGUAGE_PL_ENABLE
 													{0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0061,0x0020,0x006F,0x0070,0x0072,0x006F,0x0067,0x0072,0x0061,0x006D,0x006F,0x0077,0x0061,0x006E,0x0069,0x0061,0x002E,0x002E,0x002E,0x0000},//Aktualizacja oprogramowania...
+												  #endif
+												  #ifdef LANGUAGE_SE_ENABLE
 													{0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0061,0x0072,0x002E,0x002E,0x002E,0x0000},//Uppgraderar...
+												  #endif
+												  #ifdef LANGUAGE_JP_ENABLE
 													{0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x3092,0x7D9A,0x3051,0x307E,0x3059,0x304B,0xFF1F,0x0000},//アップグレード中…
+											      #endif
+												  #ifdef LANGUAGE_KR_ENABLE
 													{0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0020,0xC911,0x2026,0x0000},//????? ?…
+												  #endif
+												  #ifdef LANGUAGE_RU_ENABLE
 													{0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x002E,0x002E,0x002E,0x0000},//Обновление...
+												  #endif
+												  #ifdef LANGUAGE_AR_ENABLE
 													{0x062C,0x0627,0x0631,0x064D,0x0020,0x0627,0x0644,0x062A,0x0631,0x0642,0x064A,0x0629,0x002E,0x002E,0x002E,0x0000},//???? ???????...
-											#else
+												  #endif
+												#else
+												  #ifdef LANGUAGE_CN_ENABLE
 													{0x5347,0x7EA7,0x4E2D,0x2026,0x0000},//升级中…
+												  #endif
+												  #ifdef LANGUAGE_EN_ENABLE
 													{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0069,0x006E,0x0067,0x002E,0x002E,0x002E,0x0000},//Upgrading...
-											#endif
+												  #endif
+												#endif
 												};
 			flag = true;
 			
 			LCD_Fill(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, BLACK);
 		#ifdef FONTMAKER_UNICODE_FONT
+		  #ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_downloading[global_settings.language]);
 			else
+		  #endif
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_downloading[global_settings.language]);
 		#else
 			ShowStringsInRect(DL_NOTIFY_STRING_X, 
@@ -6652,88 +7608,118 @@ void DlUpdateStatus(void)
 			uint16_t str_finish[LANGUAGE_MAX][37] = 
 				{
 				#ifndef FW_FOR_CN
+				  #ifdef LANGUAGE_EN_ENABLE
 					{
 						//Upgraded successfully!
 						0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0064,0x0020,0x0073,0x0075,0x0063,0x0063,0x0065,0x0073,0x0073,
 						0x0066,0x0075,0x006C,0x006C,0x0079,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_DE_ENABLE
 					{
 						//Upgrade erfolgreich!
 						0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0065,0x0072,0x0066,0x006F,0x006C,0x0067,0x0072,0x0065,
 						0x0069,0x0063,0x0068,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_FR_ENABLE
 					{
 						////Mise à jour réussie?!
 						0x004D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006A,0x006F,0x0075,0x0072,0x0020,0x0072,0x00E9,0x0075,0x0073,
 						0x0073,0x0069,0x0065,0x00A0,0x0021,0x0000
 					},
+			      #endif
+				  #ifdef LANGUAGE_IT_ENABLE
 					{
 						//Aggiornamento eseguito con successo!
 						0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0065,0x0073,
 						0x0065,0x0067,0x0075,0x0069,0x0074,0x006F,0x0020,0x0063,0x006F,0x006E,0x0020,0x0073,0x0075,0x0063,0x0063,0x0065,
 						0x0073,0x0073,0x006F,0x0021,0x0000
-					},
+					},
+				  #endif
+				  #ifdef LANGUAGE_ES_ENABLE
 					{
 						//?Actualizado exitosamente!
 						0x00A1,0x0041,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0064,0x006F,0x0020,0x0065,0x0078,0x0069,
 						0x0074,0x006F,0x0073,0x0061,0x006D,0x0065,0x006E,0x0074,0x0065,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_PT_ENABLE
 					{
 						//Atualizado com sucesso!
 						0x0041,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0064,0x006F,0x0020,0x0063,0x006F,0x006D,0x0020,0x0073,
 						0x0075,0x0063,0x0065,0x0073,0x0073,0x006F,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_PL_ENABLE
 					{
 						//Aktualizacja zakończona pomy?lnie!
 						0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0061,0x0020,0x007A,0x0061,0x006B,
 						0x006F,0x0144,0x0063,0x007A,0x006F,0x006E,0x0061,0x0020,0x0070,0x006F,0x006D,0x0079,0x015B,0x006C,0x006E,0x0069,
 						0x0065,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_SE_ENABLE
 					{
 						//Uppgraderingen lyckades!
 						0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0065,0x006E,0x0020,0x006C,
 						0x0079,0x0063,0x006B,0x0061,0x0064,0x0065,0x0073,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_JP_ENABLE
 					{
 						//アップグレードに成功しました!
 						0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x306B,0x6210,0x529F,0x3057,0x307E,0x3057,0x305F,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_KR_ENABLE
 					{
 						//????? ??????????!
 						0xC131,0xACF5,0xC801,0xC73C,0xB85C,0x0020,0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0xB418,0xC5C8,0xC2B5,0xB2C8,0xB2E4,
 						0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_RU_ENABLE
 					{
 						//Обновление успешно выполнено!
 						0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x0443,0x0441,0x043F,0x0435,0x0448,
 						0x043D,0x043E,0x0020,0x0432,0x044B,0x043F,0x043E,0x043B,0x043D,0x0435,0x043D,0x043E,0x0021,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_AR_ENABLE
 					{
 						//??? ??????? ?????!
 						0x062A,0x0645,0x062A,0x0020,0x0627,0x0644,0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x0628,0x0646,0x062C,0x0627,
 						0x062D,0x0021,0x0000
 					},
+				  #endif
 				#else
+				  #ifdef LANGUAGE_CN_ENABLE
 					{
 						//升级成功！
 						0x5347,0x7EA7,0x6210,0x529F,0xFF01,0x0000
 					},
+				  #endif
+				  #ifdef LANGUAGE_EN_ENABLE
 					{
 						//Upgraded successfully!
 						0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0064,0x0020,0x0073,0x0075,0x0063,0x0063,0x0065,0x0073,0x0073,
 						0x0066,0x0075,0x006C,0x006C,0x0079,0x0021,0x0000
 					},
+				  #endif
 				#endif
-					};
+				};
 			
 			flag = false;
 		
 			LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
 			strcpy(strbuf, "Upgraded successfully!");
 		#ifdef FONTMAKER_UNICODE_FONT
+		  #ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_finish[global_settings.language]);
 			else
+		  #endif
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_finish[global_settings.language]);
 		#else	
 			ShowStringsInRect(DL_NOTIFY_STRING_X,
@@ -6775,6 +7761,7 @@ void DlUpdateStatus(void)
 		{
 			uint16_t str_fail[LANGUAGE_MAX][83] = {
 												#ifndef FW_FOR_CN
+												  #ifdef LANGUAGE_EN_ENABLE
 													{
 														//Upgrade failed, please check the network or server.
 														0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0066,0x0061,0x0069,0x006C,0x0065,0x0064,0x002C,0x0020,
@@ -6782,6 +7769,8 @@ void DlUpdateStatus(void)
 														0x0020,0x006E,0x0065,0x0074,0x0077,0x006F,0x0072,0x006B,0x0020,0x006F,0x0072,0x0020,0x0073,0x0065,0x0072,0x0076,
 														0x0065,0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_DE_ENABLE
 													{
 														//Das Upgrade ist fehlgeschlagen. Bitte überprüfen Sie das Netzwerk oder den Server.
 														0x0044,0x0061,0x0073,0x0020,0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0069,0x0073,0x0074,0x0020,
@@ -6791,6 +7780,8 @@ void DlUpdateStatus(void)
 														0x006B,0x0020,0x006F,0x0064,0x0065,0x0072,0x0020,0x0064,0x0065,0x006E,0x0020,0x0053,0x0065,0x0072,0x0076,0x0065,
 														0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_FR_ENABLE
 													{
 														//La mise à niveau a échoué, veuillez vérifier le réseau ou le serveur.
 														0x004C,0x0061,0x0020,0x006D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006E,0x0069,0x0076,0x0065,0x0061,0x0075,
@@ -6799,6 +7790,8 @@ void DlUpdateStatus(void)
 														0x0072,0x00E9,0x0073,0x0065,0x0061,0x0075,0x0020,0x006F,0x0075,0x0020,0x006C,0x0065,0x0020,0x0073,0x0065,0x0072,
 														0x0076,0x0065,0x0075,0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_IT_ENABLE
 													{
 														//Aggiornamento non riuscito, controllare la rete o il server.
 														0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x006E,0x006F,
@@ -6806,6 +7799,8 @@ void DlUpdateStatus(void)
 														0x0072,0x006F,0x006C,0x006C,0x0061,0x0072,0x0065,0x0020,0x006C,0x0061,0x0020,0x0072,0x0065,0x0074,0x0065,0x0020,
 														0x006F,0x0020,0x0069,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_ES_ENABLE
 													{
 														//La actualización falló, verifique la red o el servidor.
 														0x004C,0x0061,0x0020,0x0061,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,
@@ -6813,6 +7808,8 @@ void DlUpdateStatus(void)
 														0x0065,0x0020,0x006C,0x0061,0x0020,0x0072,0x0065,0x0064,0x0020,0x006F,0x0020,0x0065,0x006C,0x0020,0x0073,0x0065,
 														0x0072,0x0076,0x0069,0x0064,0x006F,0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_PT_ENABLE
 													{
 														//Falha na atualiza??o, verifique a rede ou o servidor.
 														0x0046,0x0061,0x006C,0x0068,0x0061,0x0020,0x006E,0x0061,0x0020,0x0061,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,
@@ -6820,6 +7817,8 @@ void DlUpdateStatus(void)
 														0x0061,0x0020,0x0072,0x0065,0x0064,0x0065,0x0020,0x006F,0x0075,0x0020,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,
 														0x0069,0x0064,0x006F,0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_PL_ENABLE
 													{
 														//Aktualizacja nie powiod?a si?. Sprawd? sie? lub serwer.
 														0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0061,0x0020,0x006E,0x0069,0x0065,
@@ -6827,6 +7826,8 @@ void DlUpdateStatus(void)
 														0x0070,0x0072,0x0061,0x0077,0x0064,0x017A,0x0020,0x0073,0x0069,0x0065,0x0107,0x0020,0x006C,0x0075,0x0062,0x0020,
 														0x0073,0x0065,0x0072,0x0077,0x0065,0x0072,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_SE_ENABLE
 													{
 														//Uppgraderingen misslyckades, kontrollera n?tverket eller servern.
 														0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0065,0x006E,0x0020,0x006D,
@@ -6835,17 +7836,23 @@ void DlUpdateStatus(void)
 														0x0065,0x0074,0x0020,0x0065,0x006C,0x006C,0x0065,0x0072,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x006E,
 														0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_JP_ENABLE
 													{
 														//アップグレードに失敗しました。ネットワークまたはサーバーを確認してください。
 														0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x306B,0x5931,0x6557,0x3057,0x307E,0x3057,0x305F,0x3002,0x30CD,
 														0x30C3,0x30C8,0x30EF,0x30FC,0x30AF,0x307E,0x305F,0x306F,0x30B5,0x30FC,0x30D0,0x30FC,0x3092,0x78BA,0x8A8D,0x3057,
 														0x3066,0x304F,0x3060,0x3055,0x3044,0x3002,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_KR_ENABLE
 													{
 														//?????? ??????. ????? ??? ?????.
 														0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0xC5D0,0x0020,0xC2E4,0xD328,0xD588,0xC2B5,0xB2C8,0xB2E4,0x002E,0x0020,0xB124,
 														0xD2B8,0xC6CC,0xD06C,0xB098,0x0020,0xC11C,0xBC84,0xB97C,0x0020,0xD655,0xC778,0xD558,0xC138,0xC694,0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_RU_ENABLE
 													{
 														//Обновление не удалось, проверьте сеть или сервер.
 														0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x043D,0x0435,0x0020,0x0443,0x0434,
@@ -6853,6 +7860,8 @@ void DlUpdateStatus(void)
 														0x0020,0x0441,0x0435,0x0442,0x044C,0x0020,0x0438,0x043B,0x0438,0x0020,0x0441,0x0435,0x0440,0x0432,0x0435,0x0440,
 														0x002E,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_AR_ENABLE
 													{
 														//???? ????? ???????? ???? ?????? ?? ?????? ?? ??????.
 														0x0641,0x0634,0x0644,0x062A,0x0020,0x0639,0x0645,0x0644,0x064A,0x0629,0x0020,0x0627,0x0644,0x062A,0x0631,0x0642,
@@ -6860,11 +7869,15 @@ void DlUpdateStatus(void)
 														0x0645,0x0646,0x0020,0x0627,0x0644,0x0634,0x0628,0x0643,0x0629,0x0020,0x0623,0x0648,0x0020,0x0627,0x0644,0x062E,
 														0x0627,0x062F,0x0645,0x002E,0x0000
 													},
+												  #endif
 												#else
+												  #ifdef LANGUAGE_CN_ENABLE
 													{
 														//升级失败，请检查网络或服务器。
 														0x5347,0x7EA7,0x5931,0x8D25,0xFF0C,0x8BF7,0x68C0,0x67E5,0x7F51,0x7EDC,0x6216,0x670D,0x52A1,0x5668,0x3002,0x0000
 													},
+												  #endif
+												  #ifdef LANGUAGE_EN_ENABLE
 													{
 														//Upgrade failed, please check the network or server.
 														0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0066,0x0061,0x0069,0x006C,0x0065,0x0064,0x002C,0x0020,
@@ -6872,6 +7885,7 @@ void DlUpdateStatus(void)
 														0x0020,0x006E,0x0065,0x0074,0x0077,0x006F,0x0072,0x006B,0x0020,0x006F,0x0072,0x0020,0x0073,0x0065,0x0072,0x0076,
 														0x0065,0x0072,0x002E,0x0000
 													},
+												  #endif
 												#endif
 												};
 			
@@ -6880,9 +7894,11 @@ void DlUpdateStatus(void)
 			LCD_Fill(DL_NOTIFY_RECT_X+1, DL_NOTIFY_STRING_Y, DL_NOTIFY_RECT_W-1, DL_NOTIFY_RECT_H-(DL_NOTIFY_STRING_Y-DL_NOTIFY_RECT_Y)-1, BLACK);
 			strcpy(strbuf, "Upgrade failed, please check the network or server.");
 		#ifdef FONTMAKER_UNICODE_FONT
+		  #ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoLInRect(LCD_WIDTH-DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_fail[global_settings.language]);
 			else
+		  #endif
 				LCD_ShowUniStringInRect(DL_NOTIFY_STRING_X, DL_NOTIFY_STRING_Y, DL_NOTIFY_STRING_W, DL_NOTIFY_STRING_H, str_fail[global_settings.language]);
 		#else
 			ShowStringsInRect(DL_NOTIFY_STRING_X,
@@ -7028,21 +8044,49 @@ void FOTAShowStatus(void)
 	uint16_t tmpbuf2[128] = {0};
 	uint16_t str_notify[LANGUAGE_MAX][44] = {
 											#ifndef FW_FOR_CN
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0065,0x0020,0x0074,0x006F,0x0020,0x0075,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0074,0x0068,0x0065,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continue to upgrade the firmware?
+											  #endif
+											  #ifdef LANGUAGE_DE_ENABLE
 												{0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x0073,0x0069,0x0065,0x0072,0x0075,0x006E,0x0067,0x0020,0x0064,0x0065,0x0072,0x0020,0x0046,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x0020,0x0066,0x006F,0x0072,0x0074,0x0066,0x0061,0x0068,0x0072,0x0065,0x006E,0x003F,0x0000},//Aktualisierung der Firmware fortfahren?
+											  #endif
+											  #ifdef LANGUAGE_FR_ENABLE
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0065,0x0072,0x0020,0x006C,0x0061,0x0020,0x006D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006A,0x006F,0x0075,0x0072,0x0020,0x0064,0x0075,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continuer la mise à jour du firmware?
+											  #endif
+											  #ifdef LANGUAGE_IT_ENABLE
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0061,0x0020,0x0061,0x0020,0x0061,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x0072,0x0065,0x0020,0x0069,0x006C,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continua a aggiornare il firmware?
+											  #endif
+											  #ifdef LANGUAGE_ES_ENABLE
 												{0x00BF,0x0053,0x0065,0x0067,0x0075,0x0069,0x0072,0x0020,0x0061,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x006E,0x0064,0x006F,0x0020,0x0065,0x006C,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//?Seguir actualizando el firmware?
+											  #endif
+											  #ifdef LANGUAGE_PT_ENABLE
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0061,0x0072,0x0020,0x0061,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x006E,0x0064,0x006F,0x0020,0x006F,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continuar atualizando o firmware?
+											  #endif
+											  #ifdef LANGUAGE_PL_ENABLE
 												{0x004B,0x006F,0x006E,0x0074,0x0020,0x0061,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0119,0x003F,0x0000},//Kont aktualizacj??
+											  #endif
+											  #ifdef LANGUAGE_SE_ENABLE
 												{0x0046,0x006F,0x0072,0x0074,0x0073,0x00E4,0x0074,0x0074,0x0061,0x0020,0x0075,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0061,0x0020,0x0066,0x0061,0x0073,0x0074,0x0076,0x0061,0x0072,0x0061,0x006E,0x003F,0x0000},//Forts?tta uppgradera fastvaran?
+											  #endif
+											  #ifdef LANGUAGE_JP_ENABLE
 												{0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x3092,0x7D9A,0x3051,0x307E,0x3059,0x304B,0xFF1F,0x0000},//アップグレードを続けますか？
+											  #endif
+											  #ifdef LANGUAGE_KR_ENABLE
 												{0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0020,0xACC4,0xC18D,0xD558,0xAE30,0xFF1F,0x0000},//????? ????？
+											  #endif
+											  #ifdef LANGUAGE_RU_ENABLE
 												{0x041F,0x0440,0x043E,0x0434,0x043E,0x043B,0x0436,0x0438,0x0442,0x044C,0x0020,0x043E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x003F,0x0000},//Продолжить обновление?
+											  #endif
+											  #ifdef LANGUAGE_AR_ENABLE
 												{0x0647,0x0644,0x0020,0x062A,0x0631,0x064A,0x062F,0x0020,0x0627,0x0644,0x0627,0x0633,0x062A,0x0645,0x0631,0x0627,0x0631,0x0020,0x0641,0x064A,0x0020,0x062A,0x0631,0x0642,0x064A,0x0629,0x0020,0x0627,0x0644,0x0628,0x0631,0x0627,0x0645,0x062C,0x0020,0x0627,0x0644,0x062B,0x0627,0x0628,0x062A,0x0629,0x061F,0x0000},//?? ???? ????????? ?? ????? ??????? ????????
+											  #endif
 											#else
+											  #ifdef LANGUAGE_CN_ENABLE
 												{0x7EE7,0x7EED,0x5347,0x7EA7,0x56FA,0x4EF6,0xFF1F,0x0000},//继续升级固件？
+											  #endif
+											  #ifdef LANGUAGE_EN_ENABLE
 												{0x0043,0x006F,0x006E,0x0074,0x0069,0x006E,0x0075,0x0065,0x0020,0x0074,0x006F,0x0020,0x0075,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0074,0x0068,0x0065,0x0020,0x0066,0x0069,0x0072,0x006D,0x0077,0x0061,0x0072,0x0065,0x003F,0x0000},//Continue to upgrade the firmware?
+											  #endif
 											#endif
 											};
 
@@ -7055,79 +8099,116 @@ void FOTAShowStatus(void)
 #ifdef FONTMAKER_UNICODE_FONT
 	switch(global_settings.language)
 	{
-  #ifdef FW_FOR_CN
+   #ifdef LANGUAGE_CN_ENABLE
 	case LANGUAGE_CHN:
 		LCD_MeasureUniString(str_notify[global_settings.language], &w, &h);
 		LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, str_notify[global_settings.language]);
 		break;
-  #endif
+   #endif
   
 	default:
 		switch(global_settings.language)
 		{
+	   #ifdef LANGUAGE_EN_ENABLE
 		case LANGUAGE_EN:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*12);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][12], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-12));
 			break;
-	  #ifndef FW_FOR_CN		
+	   #endif
+
+	   #ifdef LANGUAGE_DE_ENABLE
 		case LANGUAGE_DE:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*19);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][19], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-19));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_FR_ENABLE
 		case LANGUAGE_FR:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*20);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][20], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-20));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_IT_ENABLE
 		case LANGUAGE_ITA:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*11);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][11], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-11));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_ES_ENABLE
 		case LANGUAGE_ES:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*21);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][21], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-21));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_PT_ENABLE
 		case LANGUAGE_PT:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*22);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][22], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-22));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_PL_ENABLE
 		case LANGUAGE_PL:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*18);
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_SE_ENABLE
 		case LANGUAGE_SE:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*21);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][21], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-21));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_JP_ENABLE
 		case LANGUAGE_JP:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*14);
 			//memcpy(tmpbuf2, &str_notify[global_settings.language][13], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-13));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_KR_ENABLE
 		case LANGUAGE_KR:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*11);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][11], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-11));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_RU_ENABLE
 		case LANGUAGE_RU:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*22);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][22], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-22));
 			break;
+	   #endif
+	   
+	   #ifdef LANGUAGE_AR_ENABLE
 		case LANGUAGE_AR:
 			memcpy(tmpbuf1, &str_notify[global_settings.language][0], 2*21);
 			memcpy(tmpbuf2, &str_notify[global_settings.language][21], 2*(mmi_ucs2strlen(str_notify[global_settings.language])-21));
 			break;
-	  #endif		
+	   #endif
 		}
 		
 		LCD_MeasureUniString(tmpbuf1, &w, &h);
+	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
 			LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y, tmpbuf1);
 		else
+	#endif
 			LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y, tmpbuf1);
 
 		if(mmi_ucs2strlen((uint8_t*)tmpbuf2) > 0)
 		{
 			LCD_MeasureUniString(tmpbuf2, &w, &h);
+		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y+h+2, tmpbuf2);
 			else
+		#endif		
 				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+h+2, tmpbuf2);
 		}
 		break;
@@ -7166,21 +8247,49 @@ void FOTAUpdateStatus(void)
 		{
 			uint16_t str_notify[LANGUAGE_MAX][28] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x004C,0x0069,0x006E,0x006B,0x0069,0x006E,0x0067,0x0020,0x0074,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x002E,0x002E,0x002E,0x0000},//Linking to server...
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0056,0x0065,0x0072,0x006C,0x0069,0x006E,0x006B,0x0075,0x006E,0x0067,0x0020,0x007A,0x0075,0x006D,0x0020,0x0053,0x0065,0x0072,0x0076,0x0065,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Verlinkung zum Server ...
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x004C,0x0069,0x0065,0x006E,0x0020,0x0076,0x0065,0x0072,0x0073,0x0020,0x006C,0x0065,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0075,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Lien vers le serveur ...
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x0043,0x006F,0x006C,0x006C,0x0065,0x0067,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0061,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Collegamento al server ...
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0045,0x006E,0x006C,0x0061,0x0063,0x0065,0x0020,0x0061,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0069,0x0064,0x006F,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Enlace al servidor ...
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0056,0x0069,0x006E,0x0063,0x0075,0x006C,0x0061,0x006E,0x0064,0x006F,0x0020,0x0061,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,0x0069,0x0064,0x006F,0x0072,0x0020,0x002E,0x002E,0x002E,0x0000},//Vinculando ao servidor ...
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x0141,0x0105,0x0063,0x007A,0x0119,0x0020,0x007A,0x0020,0x0073,0x0065,0x0072,0x0077,0x0065,0x0072,0x0065,0x006D,0x002E,0x002E,0x002E,0x0000},//??cz? z serwerem...
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x004C,0x00E4,0x006E,0x006B,0x0061,0x0072,0x0020,0x0074,0x0069,0x006C,0x006C,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x006E,0x002E,0x002E,0x002E,0x0000},//L?nkar till servern...
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x30B5,0x30FC,0x30D0,0x30FC,0x306B,0x63A5,0x7D9A,0x4E2D,0x002E,0x002E,0x002E,0x0000},//サーバーに接続中...
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xC5F0,0xACB0,0x0020,0xC11C,0xBC84,0x2026,0x0000},//?? ??…
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x041F,0x043E,0x0434,0x043A,0x043B,0x044E,0x0447,0x0435,0x043D,0x0438,0x0435,0x002E,0x002E,0x002E,0x0000},//Подключение...
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x0631,0x0628,0x0637,0x0020,0x0628,0x0627,0x0644,0x062E,0x0627,0x062F,0x0645,0x002E,0x002E,0x002E,0x0000},//??? ???????...
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x8FDE,0x63A5,0x670D,0x52A1,0x5668,0x002E,0x002E,0x002E,0x0000},//连接服务器...
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x004C,0x0069,0x006E,0x006B,0x0069,0x006E,0x0067,0x0020,0x0074,0x006F,0x0020,0x0073,0x0065,0x0072,0x0076,0x0065,0x0072,0x002E,0x002E,0x002E,0x0000},//Linking to server...
+													  #endif
 													#endif
 													};
 
@@ -7190,9 +8299,11 @@ void FOTAUpdateStatus(void)
 		#ifdef FONTMAKER_UNICODE_FONT
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
+		  #ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 			else
+		  #endif
 				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 		#endif
 
@@ -7205,21 +8316,49 @@ void FOTAUpdateStatus(void)
 		{
 			uint16_t str_notify[LANGUAGE_MAX][32] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0044,0x0061,0x0074,0x0061,0x0020,0x0064,0x006F,0x0077,0x006E,0x006C,0x006F,0x0061,0x0064,0x0069,0x006E,0x0067,0x002E,0x002E,0x002E,0x0000},//Data downloading...
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0044,0x0061,0x0074,0x0065,0x006E,0x0020,0x0068,0x0065,0x0072,0x0075,0x006E,0x0074,0x0065,0x0072,0x006C,0x0061,0x0064,0x0065,0x006E,0x0020,0x002E,0x002E,0x002E,0x0000},//Daten herunterladen ...
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x0054,0x00E9,0x006C,0x00E9,0x0063,0x0068,0x0061,0x0072,0x0067,0x0065,0x006D,0x0065,0x006E,0x0074,0x0020,0x0064,0x0065,0x0073,0x0020,0x0064,0x006F,0x006E,0x006E,0x00E9,0x0065,0x0073,0x0020,0x002E,0x002E,0x002E,0x0000},//Téléchargement des données ...
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x0053,0x0063,0x0061,0x0072,0x0069,0x0063,0x0061,0x0072,0x0065,0x0020,0x0069,0x0020,0x0064,0x0061,0x0074,0x0069,0x0020,0x002E,0x002E,0x002E,0x0000},//Scaricare i dati ...
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0044,0x0065,0x0073,0x0063,0x0061,0x0072,0x0067,0x0061,0x0020,0x0064,0x0065,0x0020,0x0064,0x0061,0x0074,0x006F,0x0073,0x0020,0x002E,0x002E,0x002E,0x0000},//Descarga de datos ...
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0042,0x0061,0x0069,0x0078,0x0061,0x006E,0x0064,0x006F,0x0020,0x0064,0x0061,0x0064,0x006F,0x0073,0x0020,0x002E,0x002E,0x002E,0x0000},//Baixando dados ...
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x0050,0x006F,0x0062,0x0069,0x0065,0x0072,0x0061,0x006E,0x0069,0x0065,0x0020,0x0064,0x0061,0x006E,0x0079,0x0063,0x0068,0x002E,0x002E,0x002E,0x0000},//Pobieranie danych...
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0044,0x0061,0x0074,0x0061,0x0020,0x0068,0x00E4,0x006D,0x0074,0x0061,0x0073,0x002E,0x002E,0x002E,0x0000},//Data h?mtas...
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x30C7,0x30FC,0x30BF,0x3092,0x30C0,0x30A6,0x30F3,0x30ED,0x30FC,0x30C9,0x4E2D,0x2026,0x0000},//データをダウンロード中…
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xB370,0xC774,0xD130,0x0020,0xB2E4,0xC6B4,0xB85C,0xB4DC,0x2026,0x0000},//??? ????…
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x0417,0x0430,0x0433,0x0440,0x0443,0x0437,0x043A,0x0430,0x0020,0x0434,0x0430,0x043D,0x043D,0x044B,0x0445,0x002E,0x002E,0x002E,0x0000},//Загрузка данных...
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x062C,0x0627,0x0631,0x064D,0x0020,0x062A,0x0646,0x0632,0x064A,0x0644,0x0020,0x0627,0x0644,0x0628,0x064A,0x0627,0x0646,0x0627,0x062A,0x002E,0x002E,0x002E,0x0000},//???? ????? ????????...
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x6570,0x636E,0x4E0B,0x8F7D,0x4E2D,0x002E,0x002E,0x002E,0x0000},//数据下载中…
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0044,0x0061,0x0074,0x0061,0x0020,0x0064,0x006F,0x0077,0x006E,0x006C,0x006F,0x0061,0x0064,0x0069,0x006E,0x0067,0x002E,0x002E,0x002E,0x0000},//Data downloading...
+													  #endif
 													#endif
 													};
 			
@@ -7229,9 +8368,11 @@ void FOTAUpdateStatus(void)
 
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
+		#ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 			else
+		#endif
 				LCD_ShowUniString(FOTA_START_STR_X+(FOTA_START_STR_W-w)/2, FOTA_START_STR_Y+(FOTA_START_STR_H-h)/2, tmpbuf);
 					
 			LCD_DrawRectangle(FOTA_PROGRESS_X, FOTA_PROGRESS_Y, FOTA_PROGRESS_W, FOTA_PROGRESS_H);
@@ -7270,21 +8411,49 @@ void FOTAUpdateStatus(void)
 			static bool is_finished = false;
 			uint16_t str_notify[LANGUAGE_MAX][26] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0063,0x006F,0x006D,0x0070,0x006C,0x0065,0x0074,0x0065,0x0064,0x0000},//Upgrade completed
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0065,0x0072,0x0066,0x006F,0x006C,0x0067,0x0072,0x0065,0x0069,0x0063,0x0068,0x0000},//Upgrade erfolgreich
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x004D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0074,0x0065,0x0072,0x006D,0x0069,0x006E,0x00E9,0x0065,0x0000},//Mise à niveau terminée
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0072,0x0069,0x0075,0x0073,0x0063,0x0069,0x0074,0x006F,0x0000},//Aggiornamento riuscito
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0041,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,0x0020,0x0065,0x0078,0x0069,0x0074,0x006F,0x0073,0x0061,0x0000},//Actualización exitosa
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0041,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0072,0x0020,0x0062,0x0065,0x006D,0x0020,0x002D,0x0073,0x0075,0x0063,0x0065,0x0064,0x0069,0x0064,0x006F,0x0000},//Atualizar bem -sucedido
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x006A,0x0061,0x0020,0x0075,0x006B,0x006F,0x0144,0x0063,0x007A,0x006F,0x006E,0x0061,0x0000},//Aktualizacja ukończona
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0020,0x0073,0x006C,0x0075,0x0074,0x0066,0x00F6,0x0072,0x0064,0x0021,0x0000},//Uppgradering slutf?rd!
+													  #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x6210,0x529F,0x0000},//アップグレード成功
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0020,0xC131,0xACF5,0x0000},//????? ??
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x0437,0x0430,0x0432,0x0435,0x0440,0x0448,0x0435,0x043D,0x043E,0x0000},//Обновление завершено
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x0627,0x0643,0x062A,0x0645,0x0644,0x062A,0x0020,0x0627,0x0644,0x062A,0x0631,0x0642,0x064A,0x0629,0x0021,0x0000},//?????? ???????!
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x5347,0x7EA7,0x6210,0x529F,0x0000},//升级成功
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0063,0x006F,0x006D,0x0070,0x006C,0x0065,0x0074,0x0065,0x0064,0x0000},//Upgrade completed
+													  #endif
 													#endif
 													};
 			
@@ -7300,9 +8469,11 @@ void FOTAUpdateStatus(void)
 			#ifdef FONTMAKER_UNICODE_FONT
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
+			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 					LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
 				else
+			  #endif
 					LCD_ShowUniString(FOTA_FINISH_STR_X+(FOTA_FINISH_STR_W-w)/2, FOTA_FINISH_STR_Y+(FOTA_FINISH_STR_H-h)/2, tmpbuf);
 			#endif
 			
@@ -7319,21 +8490,49 @@ void FOTAUpdateStatus(void)
 		{
 			uint16_t str_notify[LANGUAGE_MAX][27] = {
 													#ifndef FW_FOR_CN
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0066,0x0061,0x0069,0x006C,0x0065,0x0064,0x0000},//Upgrade failed
+													  #endif
+													  #ifdef LANGUAGE_DE_ENABLE
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0066,0x0065,0x0068,0x006C,0x0067,0x0065,0x0073,0x0063,0x0068,0x006C,0x0061,0x0067,0x0065,0x006E,0x0000},//Upgrade fehlgeschlagen
+													  #endif
+													  #ifdef LANGUAGE_FR_ENABLE
 														{0x004C,0x0061,0x0020,0x006D,0x0069,0x0073,0x0065,0x0020,0x00E0,0x0020,0x006E,0x0069,0x0076,0x0065,0x0061,0x0075,0x0020,0x0061,0x0020,0x00E9,0x0063,0x0068,0x006F,0x0075,0x00E9,0x0000},//La mise à niveau a échoué
+													  #endif
+													  #ifdef LANGUAGE_IT_ENABLE
 														{0x0041,0x0067,0x0067,0x0069,0x006F,0x0072,0x006E,0x0061,0x006D,0x0065,0x006E,0x0074,0x006F,0x0020,0x0066,0x0061,0x006C,0x006C,0x0069,0x0074,0x006F,0x0000},//Aggiornamento fallito
+													  #endif
+													  #ifdef LANGUAGE_ES_ENABLE
 														{0x0045,0x0072,0x0072,0x006F,0x0072,0x0020,0x0064,0x0065,0x0020,0x0061,0x0063,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x0063,0x0069,0x00F3,0x006E,0x0000},//Error de actualización
+													  #endif
+													  #ifdef LANGUAGE_PT_ENABLE
 														{0x0046,0x0061,0x006C,0x0068,0x0061,0x0020,0x006E,0x0061,0x0020,0x0061,0x0074,0x0075,0x0061,0x006C,0x0069,0x007A,0x0061,0x00E7,0x00E3,0x006F,0x0000},//Falha na atualiza??o
+													  #endif
+													  #ifdef LANGUAGE_PL_ENABLE
 														{0x0041,0x006B,0x0074,0x0075,0x0061,0x006C,0x002E,0x0020,0x006E,0x0069,0x0065,0x0075,0x0064,0x0061,0x006E,0x0061,0x0000},//Aktual. nieudana
+													  #endif
+													  #ifdef LANGUAGE_SE_ENABLE
 														{0x0055,0x0070,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0072,0x0069,0x006E,0x0067,0x0020,0x006D,0x0069,0x0073,0x0073,0x006C,0x0079,0x0063,0x006B,0x0061,0x0064,0x0065,0x0073,0xFF01,0x0000},//Uppgradering misslyckades！
+												      #endif
+													  #ifdef LANGUAGE_JP_ENABLE
 														{0x30A2,0x30C3,0x30D7,0x30B0,0x30EC,0x30FC,0x30C9,0x5931,0x6557,0x0000},//アップグレード失敗
+													  #endif
+													  #ifdef LANGUAGE_KR_ENABLE
 														{0xC5C5,0xADF8,0xB808,0xC774,0xB4DC,0x0020,0xC2E4,0xD328,0x0000},//????? ??
+													  #endif
+													  #ifdef LANGUAGE_RU_ENABLE
 														{0x041E,0x0431,0x043D,0x043E,0x0432,0x043B,0x0435,0x043D,0x0438,0x0435,0x0020,0x043D,0x0435,0x0020,0x0443,0x0434,0x0430,0x043B,0x043E,0x0441,0x044C,0x0000},//Обновление не удалось
+													  #endif
+													  #ifdef LANGUAGE_AR_ENABLE
 														{0x0641,0x0634,0x0644,0x062A,0x0020,0x0627,0x0644,0x062A,0x0631,0x0642,0x064A,0x06290,0x0021,0x0000},//???? ???????!
+													  #endif
 													#else
+													  #ifdef LANGUAGE_CN_ENABLE
 														{0x5347,0x7EA7,0x5931,0x8D25,0x0000},//升级失败
+													  #endif
+													  #ifdef LANGUAGE_EN_ENABLE
 														{0x0055,0x0070,0x0067,0x0072,0x0061,0x0064,0x0065,0x0020,0x0066,0x0061,0x0069,0x006C,0x0065,0x0064,0x0000},//Upgrade failed
+													  #endif
 													#endif
 													};
 			
@@ -7345,9 +8544,11 @@ void FOTAUpdateStatus(void)
 		#ifdef FONTMAKER_UNICODE_FONT
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
+		  #ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
 				LCD_ShowUniStringRtoL((LCD_WIDTH+w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, tmpbuf);
 			else
+		  #endif
 				LCD_ShowUniString(FOTA_FAIL_STR_X+(FOTA_FAIL_STR_W-w)/2, FOTA_FAIL_STR_Y+(FOTA_FAIL_STR_H-h)/2, tmpbuf);
 		#endif	
 
@@ -7713,11 +8914,11 @@ void StepUpdateStatus(void)
 	
 	switch(global_settings.language)
 	{
-	#ifdef FW_FOR_CN	
+  #ifdef LANGUAGE_CN_ENABLE
 	case LANGUAGE_CHN:
 		language = 1;
 		break;
-	#endif
+  #endif
 
 	default:
 		language = 0;
@@ -7770,11 +8971,11 @@ void StepShowStatus(void)
 	
 	switch(global_settings.language)
 	{
-	#ifdef FW_FOR_CN	
+  #ifdef LANGUAGE_CN_ENABLE
 	case LANGUAGE_CHN:
 		language = 1;
 		break;
-	#endif
+  #endif
 
 	default:
 		language = 0;
@@ -7972,8 +9173,6 @@ void EnterIdleScreen(void)
 
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterNBTestScreen);
-#elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	SetLeftKeyUpHandler(EnterSettings);
 #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_STEP_SUPPORT
@@ -7999,9 +9198,6 @@ void EnterIdleScreen(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
- 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
@@ -8472,8 +9668,13 @@ void EnterNBTestScreen(void)
 void DeviceShowQRStatus(void)
 {
 	uint8_t buf[512] = {0};
+	uint16_t w,h;
+	uint16_t title[5] = {0x8BBE,0x5907,0x4FE1,0x606F,0x0000};//设备信息
 	
 	LCD_Clear(BLACK);
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
 
 	//IMEI
 	strcpy(buf, "IMEI:");
@@ -8602,6 +9803,315 @@ void EnterDeviceScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitDeviceScreen);
+#endif	
+}
+
+void FTResultsShowQRStatus(void)
+{
+	uint8_t buf[512] = {0};
+	uint16_t w,h;
+	uint16_t title[5] = {0x6D4B,0x8BD5,0x7ED3,0x679C,0x0000};//测试结果
+	
+	LCD_Clear(BLACK);
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
+
+	//Current Test
+	strcpy(buf, "CUR:");
+	switch(ft_results.cur_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//KEY Test
+	strcat(buf, "KEY:");
+	switch(ft_results.key_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//LCD Test
+	strcat(buf, "LCD:");
+	switch(ft_results.lcd_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//Touch Test
+	strcat(buf, "TOUCH:");
+	switch(ft_results.touch_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//Temp Test
+	strcat(buf, "TEMP:");
+	switch(ft_results.temp_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//IMU Test
+	strcat(buf, "IMU:");
+	switch(ft_results.imu_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//Flash Test
+	strcat(buf, "FLASH:");
+	switch(ft_results.flash_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//SIM Test
+	strcat(buf, "SIM:");
+	switch(ft_results.sim_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//BLE Test
+	strcat(buf, "BLE:");
+	switch(ft_results.ble_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+#ifdef CONFIG_PPG_SUPPORT	
+	//PPG Test
+	strcat(buf, "PPG:");
+	switch(ft_results.ppg_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+#endif
+
+	//Charging Test
+	strcat(buf, "CHRGE:");
+	switch(ft_results.pmu_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//Vibration Test
+	strcat(buf, "VIB:");
+	switch(ft_results.vib_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+#ifdef CONFIG_WIFI_SUPPORT	
+	//WIFI Test
+	strcat(buf, "WIFI:");
+	switch(ft_results.wifi_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+#endif
+
+	//Network Test
+	strcat(buf, "NET:");
+	switch(ft_results.net_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+	
+	//GPS Test
+	strcat(buf, "GPS:");
+	switch(ft_results.gps_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, "\r\n");
+
+	show_QR_code(strlen(buf), buf);
+}
+
+void FTResultsScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_FT_RESULT_INFOR].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_FT_RESULT_INFOR].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FT_RESULT_INFOR].status = SCREEN_STATUS_CREATED;
+
+		FTResultsShowQRStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		FTResultsShowQRStatus();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_FT_RESULT_INFOR].act = SCREEN_ACTION_NO;
+}
+
+void ExitFTResultsScreen(void)
+{
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	EnterIdleScreen();
+}
+
+void EnterFTResultsScreen(void)
+{
+	if(screen_id == SCREEN_ID_FT_RESULT_INFOR)
+		return;
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FT_RESULT_INFOR;	
+	scr_msg[SCREEN_ID_FT_RESULT_INFOR].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FT_RESULT_INFOR].status = SCREEN_STATUS_CREATING;
+
+	SetLeftKeyUpHandler(ExitFTResultsScreen);
+	SetRightKeyUpHandler(ExitFTResultsScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
 #endif	
 }
 #endif
@@ -8921,6 +10431,9 @@ void ScreenMsgProcess(void)
 	#ifdef CONFIG_QRCODE_SUPPORT
 		case SCREEN_ID_DEVICE_INFOR:
 			DeviceScreenProcess();
+			break;
+		case SCREEN_ID_FT_RESULT_INFOR:
+			FTResultsScreenProcess();
 			break;
 	#endif
 		}

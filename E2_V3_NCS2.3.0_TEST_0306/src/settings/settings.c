@@ -11,10 +11,20 @@
 #ifdef CONFIG_ALARM_SUPPORT
 #include "alarm.h"
 #endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#include "ft_main.h"
+#endif
 #include "lcd.h"
 #include "codetrans.h"
 #include "inner_flash.h"
 #include "logger.h"
+
+#ifdef FW_FOR_CN
+#ifdef LANGUAGE_CN_ENABLE
+#else
+#error "In the version of FW_FOR_CN, language chinese must be enabled"
+#endif
+#endif/*FW_FOR_CN*/
 
 bool need_save_settings = false;
 bool need_save_time = false;
@@ -53,17 +63,6 @@ static void SettingsMainMenu7Proc(void);
 static void SettingsMenuLang1Proc(void);
 static void SettingsMenuLang2Proc(void);
 static void SettingsMenuLang3Proc(void);
-static void SettingsMenuLang4Proc(void);
-static void SettingsMenuLang5Proc(void);
-static void SettingsMenuLang6Proc(void);
-static void SettingsMenuLang7Proc(void);
-static void SettingsMenuLang8Proc(void);
-static void SettingsMenuLang9Proc(void);
-static void SettingsMenuLang10Proc(void);
-static void SettingsMenuLang11Proc(void);
-static void SettingsMenuLang12Proc(void);
-static void SettingsMenuLang13Proc(void);
-static void SettingsMenuLang14Proc(void);
 static void SettingsMenuReset1Proc(void);
 static void SettingsMenuReset2Proc(void);
 static void SettingsMenuCaremateQRProc(void);
@@ -131,7 +130,7 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	},
 };
 
-uint16_t MAIN_SEL_STR[LANGUAGE_MAX][7][33] = 
+uint16_t MAIN_SEL_STR[][7][33] = 
 {
 #ifndef FW_FOR_CN
 	{
@@ -271,6 +270,7 @@ const settings_menu_t SETTING_MAIN_MENU =
 	7,
 	{
 	#ifndef FW_FOR_CN
+	  #ifdef LANGUAGE_EN_ENABLE
 		{
 			MAIN_SEL_STR[0][0],//language
 			MAIN_SEL_STR[0][1],//Brightness
@@ -280,6 +280,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[0][5],//Factory default
 			MAIN_SEL_STR[0][6],//OTA Update
 		},
+	  #endif
+	  #ifdef LANGUAGE_DE_ENABLE
 		{
 			MAIN_SEL_STR[1][0],//Sprache
 			MAIN_SEL_STR[1][1],//Helligkeit
@@ -289,6 +291,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[1][5],//Werkseinstellung
 			MAIN_SEL_STR[1][6],//OTA Update
 		},
+	  #endif
+	  #ifdef LANGUAGE_FR_ENABLE
 		{
 			MAIN_SEL_STR[2][0],//Langue
 			MAIN_SEL_STR[2][1],//Luminosité
@@ -298,6 +302,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[2][5],//Paramètre d'usine
 			MAIN_SEL_STR[2][6],//Mise à jour OTA
 		},
+	  #endif
+	  #ifdef LANGUAGE_IT_ENABLE
 		{
 			MAIN_SEL_STR[3][0],//Lingua
 			MAIN_SEL_STR[3][1],//Luminosità
@@ -307,6 +313,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[3][5],//Impostazione di fabbrica
 			MAIN_SEL_STR[3][6],//Aggiornamento OTA
 		},
+	  #endif
+	  #ifdef LANGUAGE_ES_ENABLE
 		{
 			MAIN_SEL_STR[4][0],//Idioma
 			MAIN_SEL_STR[4][1],//Luminosidad
@@ -316,6 +324,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[4][5],//Ajustes de fábrica
 			MAIN_SEL_STR[4][6],//Actualización OTA
 		},
+	  #endif
+	  #ifdef LANGUAGE_PT_ENABLE
 		{
 			MAIN_SEL_STR[5][0],//Linguagem
 			MAIN_SEL_STR[5][1],//Brilho
@@ -325,6 +335,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[5][5],//Predefini??o de fábrica
 			MAIN_SEL_STR[5][6],//Atualiza??o OTA
 		},
+	  #endif
+	  #ifdef LANGUAGE_PL_ENABLE
 		{
 			MAIN_SEL_STR[6][0],//J?zyk
 			MAIN_SEL_STR[6][1],//Jasno??
@@ -334,6 +346,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[6][5],//Ustaw. fabr.
 			MAIN_SEL_STR[6][6],//Aktual. OTA
 		},
+	  #endif
+	  #ifdef LANGUAGE_SE_ENABLE
 		{
 			MAIN_SEL_STR[7][0],//Spr?k
 			MAIN_SEL_STR[7][1],//Ljusstyrka
@@ -343,6 +357,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[7][5],//Fabriksinst?llning
 			MAIN_SEL_STR[7][6],//OTA-uppdatering
 		},
+	  #endif
+	  #ifdef LANGUAGE_JP_ENABLE
 		{
 			MAIN_SEL_STR[8][0],//言語
 			MAIN_SEL_STR[8][1],//画面明度
@@ -352,6 +368,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[8][5],//初期設定
 			MAIN_SEL_STR[8][6],//OTA更新
 		},
+	  #endif
+	  #ifdef LANGUAGE_KR_ENABLE
 		{
 			MAIN_SEL_STR[9][0],//??
 			MAIN_SEL_STR[9][1],//??
@@ -361,6 +379,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[9][5],//?? ???
 			MAIN_SEL_STR[9][6],//OTA ????
 		},
+	  #endif
+	  #ifdef LANGUAGE_RU_ENABLE
 		{
 			MAIN_SEL_STR[10][0],//Язык
 			MAIN_SEL_STR[10][1],//Яркость
@@ -370,6 +390,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[10][5],//Заводские настройки по умолчанию
 			MAIN_SEL_STR[10][6],//Обновление OTA
 		},
+	  #endif
+	  #ifdef LANGUAGE_AR_ENABLE
 		{
 			MAIN_SEL_STR[11][0],//???
 			MAIN_SEL_STR[11][1],//????
@@ -379,7 +401,9 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[11][5],//??????? ??????
 			MAIN_SEL_STR[11][6],//????? ??? ??????
 		},
+	  #endif	
 	#else
+	  #ifdef LANGUAGE_CN_ENABLE
 		{
 			MAIN_SEL_STR[0][0],//语言
 			MAIN_SEL_STR[0][1],//屏幕亮度
@@ -389,6 +413,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[0][5],//恢复出厂设置
 			MAIN_SEL_STR[0][6],//OTA升级
 		},
+	  #endif
+	  #ifdef LANGUAGE_EN_ENABLE
 		{
 			MAIN_SEL_STR[1][0],//language
 			MAIN_SEL_STR[1][1],//Brightness
@@ -398,6 +424,7 @@ const settings_menu_t SETTING_MAIN_MENU =
 			MAIN_SEL_STR[1][5],//Factory default
 			MAIN_SEL_STR[1][6],//OTA Update
 		},
+	  #endif	
 	#endif
 	},
 	{
@@ -419,10 +446,10 @@ const settings_menu_t SETTING_MAIN_MENU =
 	},
 };
 
-uint16_t LANGUAGE_SEL_STR[LANGUAGE_MAX][12][10] =
+uint16_t LANGUAGE_SEL_STR[][12][10] =
 {
 #ifndef FW_FOR_CN
-	{
+  	{
 		{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
 		{0x0044,0x0065,0x0075,0x0074,0x0073,0x0063,0x0068,0x0000},//Deutsch
 		{0x0046,0x0072,0x0061,0x006E,0x00E7,0x0061,0x0069,0x0073,0x0000},//Fran?ais
@@ -590,226 +617,532 @@ uint16_t LANGUAGE_SEL_STR[LANGUAGE_MAX][12][10] =
 		{0x0439,0x0438,0x043A,0x0441,0x0441,0x0443,0x0420,0x0000},//Русский
 		{0x0627,0x0644,0x0639,0x0631,0x0628,0x064A,0x0629,0x0000},//???????
 	},
-#else	
-	{
+#else
+ 	{
 		{0x4E2D,0x6587,0x0000},//中文
 		{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
 	},
-	{
+ 	{
 		{0x4E2D,0x6587,0x0000},//中文
 		{0x0045,0x006E,0x0067,0x006C,0x0069,0x0073,0x0068,0x0000},//English
 	},
 #endif	
-
 };
+
 const settings_menu_t SETTING_MENU_LANGUAGE = 
 {
 	SETTINGS_MENU_LANGUAGE,
 	0,
-#ifndef FW_FOR_CN
-	12,
-#else
-	2,
-#endif
+	LANGUAGE_MAX,
 	{
 	#ifndef FW_FOR_CN
+	  #ifdef LANGUAGE_EN_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[0][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[0][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[0][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[0][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[0][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[0][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[0][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[0][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[0][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[0][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[0][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[0][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_DE_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[1][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[1][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[1][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[1][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[1][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[1][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[1][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[1][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[1][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[1][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[1][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[1][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_FR_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[2][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[2][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[2][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[2][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[2][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[2][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[2][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[2][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[2][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[2][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[2][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[2][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_IT_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[3][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[3][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[3][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[3][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[3][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[3][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[3][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[3][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[3][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[3][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[3][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[3][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_ES_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[4][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[4][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[4][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[4][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[4][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[4][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[4][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[4][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[4][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[4][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[4][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[4][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_PT_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[5][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[5][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[5][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[5][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[5][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[5][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[5][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[5][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[5][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[5][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[5][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[5][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_PL_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[6][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[6][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[6][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[6][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[6][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[6][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[6][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[6][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[6][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[6][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[6][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[6][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_SE_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[7][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[7][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[7][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[7][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[7][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[7][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[7][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[7][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[7][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[7][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[7][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[7][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_JP_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[8][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[8][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[8][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[8][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[8][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[8][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[8][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[8][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[8][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[8][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[8][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[8][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_KR_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[9][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[9][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[9][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[9][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[9][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[9][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[9][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[9][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[9][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[9][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[9][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[9][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_RU_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[10][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[10][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[10][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_EN2ABLE
 			LANGUAGE_SEL_STR[10][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[10][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[10][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[10][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[10][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[10][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[10][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[10][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[10][11],//ελληνικ?
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_AR_ENABLE
 		{
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[11][0],//English
+		#endif
+		#ifdef LANGUAGE_DE_ENABLE
 			LANGUAGE_SEL_STR[11][1],//Deutsch
+		#endif
+		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[11][2],//Fran?ais
+		#endif
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[11][3],//Italiano
+		#endif
+		#ifdef LANGUAGE_ES_ENABLE
 			LANGUAGE_SEL_STR[11][4],//Espa?ol
+		#endif
+		#ifdef LANGUAGE_PT_ENABLE
 			LANGUAGE_SEL_STR[11][5],//Português
+		#endif
+		#ifdef LANGUAGE_PL_ENABLE
 			LANGUAGE_SEL_STR[11][6],//Polski
+		#endif
+		#ifdef LANGUAGE_SE_ENABLE
 			LANGUAGE_SEL_STR[11][7],//Svenska
+		#endif
+		#ifdef LANGUAGE_JP_ENABLE
 			LANGUAGE_SEL_STR[11][8],//日本語
+		#endif
+		#ifdef LANGUAGE_KR_ENABLE
 			LANGUAGE_SEL_STR[11][9],//???
+		#endif
+		#ifdef LANGUAGE_RU_ENABLE
 			LANGUAGE_SEL_STR[11][10],//Русский
+		#endif
+		#ifdef LANGUAGE_AR_ENABLE
 			LANGUAGE_SEL_STR[11][11],//ελληνικ?
+		#endif	
 		}
-	#else	
+	  #endif  
+	#else
+	  #ifdef LANGUAGE_CN_ENABLE
 		{
+		#ifdef LANGUAGE_CN_ENABLE
 			LANGUAGE_SEL_STR[0][0],//中文
+		#endif
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[0][1],//English
+		#endif	
 		},
+	  #endif
+	  #ifdef LANGUAGE_EN_ENABLE
 		{
+		#ifdef LANGUAGE_CN_ENABLE
 			LANGUAGE_SEL_STR[1][0],//中文
+		#endif
+		#ifdef LANGUAGE_EN_ENABLE
 			LANGUAGE_SEL_STR[1][1],//English
+		#endif	
 		},
+	  #endif
 	#endif	
 	},
 	{
-	#ifndef FW_FOR_CN
 		SettingsMenuLang1Proc,
 		SettingsMenuLang2Proc,
 		SettingsMenuLang3Proc,
-		SettingsMenuLang4Proc,
-		SettingsMenuLang5Proc,
-		SettingsMenuLang6Proc,
-		SettingsMenuLang7Proc,
-		SettingsMenuLang8Proc,
-		SettingsMenuLang9Proc,
-		SettingsMenuLang10Proc,
-		SettingsMenuLang11Proc,
-		SettingsMenuLang12Proc,
-	#else
-		SettingsMenuLang1Proc,
-		SettingsMenuLang2Proc,
-	#endif
 	},
 	{	
 		//page proc func
@@ -942,7 +1275,7 @@ const settings_menu_t SETTING_MENU_BRIGHTNESS =
 	},
 };
 
-uint16_t TEMP_SEL_STR[LANGUAGE_MAX][2][20] = 
+uint16_t TEMP_SEL_STR[][2][20] = 
 {
 #ifndef FW_FOR_CN
 	{
@@ -1012,63 +1345,91 @@ const settings_menu_t SETTING_MENU_TEMP =
 	2,
 	{
 	#ifndef FW_FOR_CN
+	  #ifdef LANGUAGE_EN_ENABLE
 		{
 			TEMP_SEL_STR[0][0],//Celsius
 			TEMP_SEL_STR[0][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_DE_ENABLE
 		{
 			TEMP_SEL_STR[1][0],//Celsius
 			TEMP_SEL_STR[1][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_FR_ENABLE
 		{
 			TEMP_SEL_STR[2][0],//Celsius
 			TEMP_SEL_STR[2][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_IT_ENABLE
 		{
 			TEMP_SEL_STR[3][0],//Celsius
 			TEMP_SEL_STR[3][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_ES_ENABLE
 		{
 			TEMP_SEL_STR[4][0],//Celsius
 			TEMP_SEL_STR[4][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_PT_ENABLE
 		{
 			TEMP_SEL_STR[5][0],//Celsius
 			TEMP_SEL_STR[5][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_PL_ENABLE
 		{
 			TEMP_SEL_STR[6][0],//St. Celsj.
 			TEMP_SEL_STR[6][1],//St. Fahr.
 		},
+	  #endif
+	  #ifdef LANGUAGE_SE_ENABLE
 		{
 			TEMP_SEL_STR[7][0],//Celsius
 			TEMP_SEL_STR[7][1],//Fahrenheit
 		},
+	  #endif
+	  #ifdef LANGUAGE_JP_ENABLE
 		{
 			TEMP_SEL_STR[8][0],//摂氏度
 			TEMP_SEL_STR[8][1],//華氏度
 		},
+	  #endif
+	  #ifdef LANGUAGE_KR_ENABLE
 		{
 			TEMP_SEL_STR[9][0],//??
 			TEMP_SEL_STR[9][1],//??
 		},
+	  #endif
+	  #ifdef LANGUAGE_RU_ENABLE
 		{
 			TEMP_SEL_STR[10][0],//Цельсия
 			TEMP_SEL_STR[10][1],//по Фаренгейту
 		},
+	  #endif
+	  #ifdef LANGUAGE_AR_ENABLE
 		{
 			TEMP_SEL_STR[11][0],//Κελσ?ου
 			TEMP_SEL_STR[11][1],//θερμ?μετρο Φαρεν?ιτ
 		},
+	  #endif
 	#else
+	  #ifdef LANGUAGE_CN_ENABLE
 		{
 			TEMP_SEL_STR[0][0],//摄氏度
 			TEMP_SEL_STR[0][1],//华氏度
 		},
+	  #endif
+	  #ifdef LANGUAGE_EN_ENABLE
 		{
 			TEMP_SEL_STR[1][0],//Celsius
 			TEMP_SEL_STR[1][1],//Fahrenheit
 		},
+	  #endif
 	#endif
 	},
 	{
@@ -1084,7 +1445,7 @@ const settings_menu_t SETTING_MENU_TEMP =
 	},	
 };
 
-uint16_t DEVICE_SEL_STR[LANGUAGE_MAX][9][11] = 
+uint16_t DEVICE_SEL_STR[][9][11] = 
 {
 #ifndef FW_FOR_CN
   #ifdef CONFIG_FACTORY_TEST_SUPPORT
@@ -1121,7 +1482,7 @@ uint16_t DEVICE_SEL_STR[LANGUAGE_MAX][9][11] =
 		{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
 		{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:						
 	},
-	{
+ 	{
 		{0x0049,0x004D,0x0045,0x0049,0x003A,0x0000},//IMEI:
 		{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x002E,0x003A,0x0000},//IMSI No.:
 		{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x002E,0x003A,0x0000},//ICCID No.:
@@ -1187,7 +1548,7 @@ uint16_t DEVICE_SEL_STR[LANGUAGE_MAX][9][11] =
 		{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
 		{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:						
 	},
-	{
+ 	{
 		{0x0049,0x004D,0x0045,0x0049,0x003A,0x0000},//IMEI:
 		{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x002E,0x003A,0x0000},//IMSI No.:
 		{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x002E,0x003A,0x0000},//ICCID No.:
@@ -1209,7 +1570,7 @@ uint16_t DEVICE_SEL_STR[LANGUAGE_MAX][9][11] =
 		{0x0042,0x004C,0x0045,0x003A,0x0000},//BLE:
 		{0x0042,0x004C,0x0045,0x0020,0x004D,0x0041,0x0043,0x003A,0x0000},//BLE MAC:						
 	},
-	{
+ 	{
 		{0x0049,0x004D,0x0045,0x0049,0x003A,0x0000},//IMEI:
 		{0x0049,0x004D,0x0053,0x0049,0x0020,0x004E,0x006F,0x002E,0x003A,0x0000},//IMSI No.:
 		{0x0049,0x0043,0x0043,0x0049,0x0044,0x0020,0x004E,0x006F,0x002E,0x003A,0x0000},//ICCID No.:
@@ -1333,6 +1694,7 @@ const settings_menu_t SETTING_MENU_DEVICE =
 	{
 	#ifndef FW_FOR_CN
 	  #ifdef CONFIG_FACTORY_TEST_SUPPORT
+	   #ifdef LANGUAGE_EN_ENABLE
 		{
 			DEVICE_SEL_STR[0][0],//IMEI:
 			DEVICE_SEL_STR[0][1],//IMSI No.:
@@ -1344,6 +1706,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[0][7],//BLE:
 			DEVICE_SEL_STR[0][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_DE_ENABLE
 		{
 			DEVICE_SEL_STR[1][0],//IMEI:
 			DEVICE_SEL_STR[1][1],//IMSI No.:
@@ -1355,6 +1719,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[1][7],//BLE:
 			DEVICE_SEL_STR[1][8],//BLE MAC:	
 		},
+	   #endif
+	   #ifdef LANGUAGE_FR_ENABLE
 		{
 			DEVICE_SEL_STR[2][0],//IMEI:
 			DEVICE_SEL_STR[2][1],//IMSI No.:
@@ -1366,6 +1732,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[2][7],//BLE:
 			DEVICE_SEL_STR[2][8],//BLE MAC:	
 		},
+	   #endif
+	   #ifdef LANGUAGE_IT_ENABLE
 		{
 			DEVICE_SEL_STR[3][0],//IMEI:
 			DEVICE_SEL_STR[3][1],//IMSI No.:
@@ -1377,6 +1745,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[3][7],//BLE:
 			DEVICE_SEL_STR[3][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_ES_ENABLE
 		{
 			DEVICE_SEL_STR[4][0],//IMEI:
 			DEVICE_SEL_STR[4][1],//IMSI No.:
@@ -1388,6 +1758,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[4][7],//BLE:
 			DEVICE_SEL_STR[4][8],//BLE MAC:					
 		},
+	   #endif
+	   #ifdef LANGUAGE_PT_ENABLE
 		{
 			DEVICE_SEL_STR[5][0],//IMEI:
 			DEVICE_SEL_STR[5][1],//IMSI No.:
@@ -1399,6 +1771,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[5][7],//BLE:
 			DEVICE_SEL_STR[5][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_PL_ENABLE
 		{
 			DEVICE_SEL_STR[6][0],//IMEI:
 			DEVICE_SEL_STR[6][1],//IMSI No.:
@@ -1410,6 +1784,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[6][7],//BLE:
 			DEVICE_SEL_STR[6][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_SE_ENABLE
 		{
 			DEVICE_SEL_STR[7][0],//IMEI:
 			DEVICE_SEL_STR[7][1],//IMSI No.:
@@ -1421,6 +1797,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[7][7],//BLE:
 			DEVICE_SEL_STR[7][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_JP_ENABLE
 		{
 			DEVICE_SEL_STR[8][0],//IMEI:
 			DEVICE_SEL_STR[8][1],//IMSI No.:
@@ -1432,6 +1810,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[8][7],//BLE:
 			DEVICE_SEL_STR[8][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_KR_ENABLE
 		{
 			DEVICE_SEL_STR[9][0],//IMEI:
 			DEVICE_SEL_STR[9][1],//IMSI No.:
@@ -1443,6 +1823,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[9][7],//BLE:
 			DEVICE_SEL_STR[9][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_RU_ENABLE
 		{
 			DEVICE_SEL_STR[10][0],//IMEI:
 			DEVICE_SEL_STR[10][1],//IMSI No.:
@@ -1454,6 +1836,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[10][7],//BLE:
 			DEVICE_SEL_STR[10][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_AR_ENABLE
 		{
 			DEVICE_SEL_STR[11][0],//IMEI:
 			DEVICE_SEL_STR[11][1],//IMSI No.:
@@ -1465,70 +1849,96 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[11][7],//BLE:
 			DEVICE_SEL_STR[11][8],//BLE MAC:						
 		},
+	   #endif
 	  #else
+	   #ifdef LANGUAGE_EN_ENABLE
 		{
 			DEVICE_SEL_STR[0][0],//IMEI:
 			DEVICE_SEL_STR[0][1],//IMSI No.:
 			DEVICE_SEL_STR[0][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_DE_ENABLE
 		{
 			DEVICE_SEL_STR[1][0],//IMEI:
 			DEVICE_SEL_STR[1][1],//IMSI No.:
 			DEVICE_SEL_STR[1][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_FR_ENABLE
 		{
 			DEVICE_SEL_STR[2][0],//IMEI:
 			DEVICE_SEL_STR[2][1],//IMSI No.:
 			DEVICE_SEL_STR[2][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_IT_ENABLE
 		{
 			DEVICE_SEL_STR[3][0],//IMEI:
 			DEVICE_SEL_STR[3][1],//IMSI No.:
 			DEVICE_SEL_STR[3][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_ES_ENABLE
 		{
 			DEVICE_SEL_STR[4][0],//IMEI:
 			DEVICE_SEL_STR[4][1],//IMSI No.:
 			DEVICE_SEL_STR[4][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_PT_ENABLE
 		{
 			DEVICE_SEL_STR[5][0],//IMEI:
 			DEVICE_SEL_STR[5][1],//IMSI No.:
 			DEVICE_SEL_STR[5][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_PL_ENABLE
 		{
 			DEVICE_SEL_STR[6][0],//IMEI:
 			DEVICE_SEL_STR[6][1],//IMSI No.:
 			DEVICE_SEL_STR[6][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_SE_ENABLE
 		{
 			DEVICE_SEL_STR[7][0],//IMEI:
 			DEVICE_SEL_STR[7][1],//IMSI No.:
 			DEVICE_SEL_STR[7][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_JP_ENABLE
 		{
 			DEVICE_SEL_STR[8][0],//IMEI:
 			DEVICE_SEL_STR[8][1],//IMSI No.:
 			DEVICE_SEL_STR[8][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_KR_ENABLE
 		{
 			DEVICE_SEL_STR[9][0],//IMEI:
 			DEVICE_SEL_STR[9][1],//IMSI No.:
 			DEVICE_SEL_STR[9][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_RU_ENABLE
 		{
 			DEVICE_SEL_STR[10][0],//IMEI:
 			DEVICE_SEL_STR[10][1],//IMSI No.:
 			DEVICE_SEL_STR[10][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_AR_ENABLE
 		{
 			DEVICE_SEL_STR[11][0],//IMEI:
 			DEVICE_SEL_STR[11][1],//IMSI No.:
 			DEVICE_SEL_STR[11][2],//MCU:
 		},
+	   #endif
 	  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 	#else
 	  #ifdef CONFIG_FACTORY_TEST_SUPPORT
+	   #ifdef LANGUAGE_CN_ENABLE
 		{
 			DEVICE_SEL_STR[0][0],//IMEI:
 			DEVICE_SEL_STR[0][1],//IMSI No.:
@@ -1540,6 +1950,8 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[0][7],//BLE:
 			DEVICE_SEL_STR[0][8],//BLE MAC:						
 		},
+	   #endif
+	   #ifdef LANGUAGE_EN_ENABLE
 		{
 			DEVICE_SEL_STR[1][0],//IMEI:
 			DEVICE_SEL_STR[1][1],//IMSI No.:
@@ -1551,17 +1963,22 @@ const settings_menu_t SETTING_MENU_DEVICE =
 			DEVICE_SEL_STR[1][7],//BLE:
 			DEVICE_SEL_STR[1][8],//BLE MAC:						
 		},
+	   #endif	
 	  #else
+	   #ifdef LANGUAGE_CN_ENABLE
 		{
 			DEVICE_SEL_STR[0][0],//IMEI:
 			DEVICE_SEL_STR[0][1],//IMSI No.:
 			DEVICE_SEL_STR[0][2],//MCU:
 		},
+	   #endif
+	   #ifdef LANGUAGE_EN_ENABLE
 		{
 			DEVICE_SEL_STR[1][0],//IMEI:
 			DEVICE_SEL_STR[1][1],//IMSI No.:
 			DEVICE_SEL_STR[1][2],//MCU:
 		},
+	   #endif
 	  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 	#endif
 	},
@@ -1640,6 +2057,24 @@ void InitSystemDateTime(void)
 	StartSystemDateTime();
 }
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void SaveFactoryTestResults(ft_results_t ret)
+{
+	SaveFtResultsToInnerFlash(ret);
+}
+
+void ResetFactoryTestResults(void)
+{
+	memset(&ft_results, 0, sizeof(ft_results_t));
+	SaveFactoryTestResults(ft_results);
+}
+
+void InitFactoryTestResults(void)
+{
+	ReadFtResultsFromInnerFlash(&ft_results);
+}
+#endif
+
 void SaveSystemSettings(void)
 {
 	SaveSettingsToInnerFlash(global_settings);
@@ -1676,10 +2111,12 @@ void InitSystemSettings(void)
 
 	switch(global_settings.language)
 	{
-#ifndef FW_FOR_CN	
+#ifndef FW_FOR_CN
+  #ifdef LANGUAGE_AR_ENABLE
 	case LANGUAGE_AR:
 		g_language_r2l = true;
 		break;
+  #endif		
 #endif		
 	default:
 		g_language_r2l = false;
@@ -1687,6 +2124,11 @@ void InitSystemSettings(void)
 	}
 	
 	InitSystemDateTime();
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	InitFactoryTestResults();
+#endif
+
 #ifdef CONFIG_ALARM_SUPPORT	
 	AlarmRemindInit();
 #endif
@@ -1738,6 +2180,10 @@ void ResetSportData(void)
 
 void ResetFactoryDefault(void)
 {
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	ResetFactoryTestResults();	
+#endif
+
 	ResetSystemTime();
 	ResetSystemSettings();
 
@@ -1885,9 +2331,9 @@ void SettingsMainMenu7Proc(void)
 
 void SettingsMenuLang1Proc(void)
 {
-	if(global_settings.language != LANGUAGE_BEGIN+0)
+	if(global_settings.language != 0+settings_menu.index)
 	{
-		global_settings.language = LANGUAGE_BEGIN+0;
+		global_settings.language = 0+settings_menu.index;
 		need_save_settings = true;
 	}
 
@@ -1902,9 +2348,9 @@ void SettingsMenuLang1Proc(void)
 
 void SettingsMenuLang2Proc(void)
 {
-	if(global_settings.language != LANGUAGE_BEGIN+1)
+	if(global_settings.language != 1+settings_menu.index)
 	{
-		global_settings.language = LANGUAGE_BEGIN+1;
+		global_settings.language = 1+settings_menu.index;
 		need_save_settings = true;
 	}
 
@@ -1919,196 +2365,9 @@ void SettingsMenuLang2Proc(void)
 
 void SettingsMenuLang3Proc(void)
 {
-	if(global_settings.language != LANGUAGE_BEGIN+2)
+	if(global_settings.language != 2+settings_menu.index)
 	{
-		global_settings.language = LANGUAGE_BEGIN+2;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang4Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+3)
-	{
-		global_settings.language = LANGUAGE_BEGIN+3;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang5Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+4)
-	{
-		global_settings.language = LANGUAGE_BEGIN+4;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang6Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+5)
-	{
-		global_settings.language = LANGUAGE_BEGIN+5;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang7Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+6)
-	{
-		global_settings.language = LANGUAGE_BEGIN+6;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang8Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+7)
-	{
-		global_settings.language = LANGUAGE_BEGIN+7;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang9Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+8)
-	{
-		global_settings.language = LANGUAGE_BEGIN+8;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang10Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+9)
-	{
-		global_settings.language = LANGUAGE_BEGIN+9;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang11Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+10)
-	{
-		global_settings.language = LANGUAGE_BEGIN+10;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang12Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+11)
-	{
-		global_settings.language = LANGUAGE_BEGIN+11;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang13Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+12)
-	{
-		global_settings.language = LANGUAGE_BEGIN+12;
-		need_save_settings = true;
-	}
-
-	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
-	settings_menu.index = main_menu_index_bk;
-	
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMenuLang14Proc(void)
-{
-	if(global_settings.language != LANGUAGE_BEGIN+13)
-	{
-		global_settings.language = LANGUAGE_BEGIN+13;
+		global_settings.language = 2+settings_menu.index;
 		need_save_settings = true;
 	}
 
@@ -2308,10 +2567,12 @@ void SettingsMsgPorcess(void)
 		
 		switch(global_settings.language)
 		{
-	#ifndef FW_FOR_CN	
+	#ifndef FW_FOR_CN
+	  #ifdef LANGUAGE_AR_ENABLE
 		case LANGUAGE_AR:
 			g_language_r2l = true;
 			break;
+	  #endif
 	#endif		
 		default:
 			g_language_r2l = false;

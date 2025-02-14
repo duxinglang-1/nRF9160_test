@@ -17,7 +17,7 @@
 
 #define QR_CODE_DOT_PIXEL_MIN	2
 #define QR_CODE_DOT_PIXEL	3
-#define QR_CODE_BG_SHADE	4
+#define QR_CODE_BG_SHADE	2
 
 //P28 表9 QR码符号各版本的纠错特效
 const QR_VERSIONINFO QR_VersonInfo[] = {{0}, // Ver.0

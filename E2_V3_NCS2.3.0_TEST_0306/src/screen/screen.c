@@ -9806,6 +9806,7 @@ void EnterDeviceScreen(void)
 #endif	
 }
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
 void FTResultsShowQRStatus(void)
 {
 	uint8_t buf[512] = {0};
@@ -10114,7 +10115,8 @@ void EnterFTResultsScreen(void)
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
 #endif	
 }
-#endif
+#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
+#endif/*CONFIG_QRCODE_SUPPORT*/
 
 void SOSUpdateStatus(void)
 {
@@ -10432,9 +10434,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_DEVICE_INFOR:
 			DeviceScreenProcess();
 			break;
+	  #ifdef CONFIG_FACTORY_TEST_SUPPORT		
 		case SCREEN_ID_FT_RESULT_INFOR:
 			FTResultsScreenProcess();
 			break;
+	  #endif		
 	#endif
 		}
 	}

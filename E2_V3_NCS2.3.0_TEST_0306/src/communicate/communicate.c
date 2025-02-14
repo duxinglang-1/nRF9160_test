@@ -242,6 +242,7 @@ void TimeCheckSendSportData(void)
 }
 #endif
 
+#ifdef CONFIG_PPG_SUPPORT
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendHrData
@@ -394,7 +395,9 @@ void TimeCheckSendBptData(void)
 		reply[len] = ',';
 	NBSendTimelyBptData(reply, strlen(reply));
 }
+#endif
 
+#ifdef CONFIG_TEMP_SUPPORT
 /*****************************************************************************
  * FUNCTION
  *  TimeCheckSendTempData
@@ -445,6 +448,7 @@ void TimeCheckSendTempData(void)
 		reply[len] = ',';
 	NBSendTimelyTempData(reply, strlen(reply));
 }
+#endif
 
 /*****************************************************************************
  * FUNCTION
@@ -458,12 +462,20 @@ void TimeCheckSendTempData(void)
  *****************************************************************************/ 
 void TimeCheckSendHealthData(void)
 {
-	if(CheckSCC())
+	if(1
+		#ifdef CONFIG_PPG_SUPPORT	
+		 && CheckSCC()
+		#endif	
+		)
 	{
+	#ifdef CONFIG_PPG_SUPPORT
 		TimeCheckSendHrData();
 		TimeCheckSendSpo2Data();
 		TimeCheckSendBptData();
+	#endif	
+	#ifdef CONFIG_TEMP_SUPPORT	
 		TimeCheckSendTempData();
+	#endif
 	}
 	else
 	{
@@ -982,7 +994,11 @@ void SyncSendHealthData(void)
 	strcpy(reply, tmpbuf);
 	
 	//wrist
-	if(ppg_skin_contacted_flag)
+	if(1
+	#ifdef CONFIG_WRIST_CHECK_SUPPORT	
+		&& ppg_skin_contacted_flag
+	#endif
+		)
 		strcat(reply, "1,");
 	else
 		strcat(reply, "0,");
@@ -1121,27 +1137,41 @@ void SendPowerOnData(void)
 	//ppg algo
 #ifdef CONFIG_PPG_SUPPORT	
 	strcat(reply, g_ppg_ver);
+#else
+	strcat(reply, "NO PPG");
 #endif
 	strcat(reply, ",");
 
 	//wifi version
 #ifdef CONFIG_WIFI_SUPPORT
-	strcat(reply, g_wifi_ver);	
+	strcat(reply, g_wifi_ver);
+#else
+	strcat(reply, "NO WiFi");
 #endif
 	strcat(reply, ",");
 
 	//wifi mac
 #ifdef CONFIG_WIFI_SUPPORT	
-	strcat(reply, g_wifi_mac_addr);	
+	strcat(reply, g_wifi_mac_addr);
+#else
+	strcat(reply, "NO WiFi");
 #endif
 	strcat(reply, ",");
 
 	//ble version
-	strcat(reply, &g_nrf52810_ver[15]);	
+#ifdef CONFIG_BLE_SUPPORT	
+	strcat(reply, &g_nrf52810_ver[15]);
+#else
+	strcat(reply, "NO BLE");
+#endif
 	strcat(reply, ",");
 
 	//ble mac
-	strcat(reply, g_ble_mac_addr);	
+#ifdef CONFIG_BLE_SUPPORT	
+	strcat(reply, g_ble_mac_addr);
+#else
+	strcat(reply, "NO BLE");
+#endif
 
 	NBSendPowerOnInfor(reply, strlen(reply));
 }
@@ -1197,64 +1227,102 @@ void SendSettingsData(void)
 	switch(global_settings.language)
 	{
 #ifndef FW_FOR_CN
+  #ifdef LANGUAGE_EN_ENABLE
 	case LANGUAGE_EN:	//English
 		strcat(reply, "en");
 		break;
+  #endif
+  #ifdef LANGUAGE_DE_ENABLE
 	case LANGUAGE_DE:	//Deutsch
 		strcat(reply, "de");
 		break;
+  #endif
+  #ifdef LANGUAGE_FR_ENABLE
 	case LANGUAGE_FR:	//French
 		strcat(reply, "fr");
 		break;
+  #endif
+  #ifdef LANGUAGE_IT_ENABLE
 	case LANGUAGE_ITA:	//Italian
 		strcat(reply, "it");
 		break;
+  #endif
+  #ifdef LANGUAGE_ES_ENABLE
 	case LANGUAGE_ES:	//Spanish
 		strcat(reply, "es");
 		break;
+  #endif
+  #ifdef LANGUAGE_PT_ENABLE
 	case LANGUAGE_PT:	//Portuguese
 		strcat(reply, "pt");
 		break;
+  #endif
+  #ifdef LANGUAGE_JP_ENABLE
 	case LANGUAGE_JP:	//Japanese
 		strcat(reply, "jp");
 		break;
+  #endif
+  #ifdef LANGUAGE_RU_ENABLE
 	case LANGUAGE_RU:	//Russian
 		strcat(reply, "ru");
 		break;
+  #endif
+  #ifdef LANGUAGE_SE_ENABLE
 	case LANGUAGE_SE:	//Swedish
 		strcat(reply, "se");
 		break;
+  #endif
+  #ifdef LANGUAGE_PL_ENABLE
 	case LANGUAGE_PL:	//Polish
 		strcat(reply, "pl");
 		break;
+  #endif
+  #ifdef LANGUAGE_GR_ENABLE
 	case LANGUAGE_GR:	//Greece
 		strcat(reply, "gr");
 		break;
+  #endif
+  #ifdef LANGUAGE_AR_ENABLE
 	case LANGUAGE_AR:	//Arabic
 		strcat(reply, "ar");
 		break;
+  #endif
+  #ifdef LANGUAGE_KR_ENABLE
 	case LANGUAGE_KR:	//Korea	
 		strcat(reply, "ko");
-		break;		
+		break;
+  #endif
+  #ifdef LANGUAGE_DK_ENABLE
 	case LANGUAGE_DK:	//Danish
 		strcat(reply, "dk");
 		break;
+  #endif
+  #ifdef LANGUAGE_FI_ENABLE
 	case LANGUAGE_FI:	//Finnish
 		strcat(reply, "fi");
 		break;
+  #endif
+  #ifdef LANGUAGE_NL_ENABLE
 	case LANGUAGE_NL:	//Dutch
 		strcat(reply, "nl");
 		break;
+  #endif
+  #ifdef LANGUAGE_NO_ENABLE
 	case LANGUAGE_NO:	//Norwegian
 		strcat(reply, "no");
 		break;
+  #endif
 #else
+  #ifdef LANGUAGE_CN_ENABLE
 	case LANGUAGE_CHN:	//Chinese
 		strcat(reply, "zh");
 		break;
+  #endif
+  #ifdef LANGUAGE_EN_ENABLE
 	case LANGUAGE_EN:	//English
 		strcat(reply, "en");
 		break;
+  #endif
 #endif	
 	}
 	

@@ -122,6 +122,8 @@ static void FTMenuPMUUpdate(void)
 				check_count = 0;
 				ft_pmu_checked = true;
 				ft_menu_checked[ft_main_menu_index] = true;
+				ft_results.pmu_ret = 1;
+				SaveFactoryTestResults(ft_results);
 				
 				LCD_Set_BL_Mode(LCD_BL_AUTO);
 				LCD_SetFontSize(FONT_SIZE_52);

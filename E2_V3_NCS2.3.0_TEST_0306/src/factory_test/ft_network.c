@@ -120,6 +120,8 @@ static void FTMenuNetStartTest(void)
 static void FTMenuNetPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
+	ft_results.net_ret = 1;
+	SaveFactoryTestResults(ft_results);
 
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
@@ -127,6 +129,8 @@ static void FTMenuNetPassHander(void)
 static void FTMenuNetFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
+	ft_results.net_ret = 2;
+	SaveFactoryTestResults(ft_results);
 
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }

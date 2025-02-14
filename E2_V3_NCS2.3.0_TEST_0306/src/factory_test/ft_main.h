@@ -46,6 +46,27 @@ typedef struct
 
 typedef struct
 {
+	uint8_t cur_ret;
+	uint8_t key_ret;
+	uint8_t lcd_ret;
+	uint8_t touch_ret;
+	uint8_t temp_ret;
+	uint8_t imu_ret;
+	uint8_t flash_ret;
+	uint8_t sim_ret;
+	uint8_t ble_ret;
+	uint8_t ppg_ret;
+	uint8_t pmu_ret;
+	uint8_t vib_ret;
+	uint8_t wifi_ret;
+	uint8_t net_ret;
+	uint8_t gps_ret;
+	uint8_t audio_ret;
+	uint8_t wrist_ret;
+}ft_results_t;
+
+typedef struct
+{
 	FT_MENU_ID id;
 	uint8_t index;
 	uint8_t count;
@@ -56,11 +77,13 @@ typedef struct
 extern uint8_t ft_main_menu_index;
 extern bool ft_menu_checked[FT_MENU_MAX_COUNT];
 extern ft_menu_t ft_menu;
+extern ft_results_t ft_results;
 extern const ft_menu_t FT_MENU_MAIN;
 
 extern bool FactryTestActived(void);
 extern void FactoryTestProccess(void);
 extern void EnterFactoryTest(void);
+extern void EnterFactoryTestResults(void);
 extern void FTMainMenuCurProc(void);
 extern void FTMainMenuKeyProc(void);
 extern void FTMainMenuLcdProc(void);

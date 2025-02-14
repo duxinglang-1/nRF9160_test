@@ -46,6 +46,10 @@
 #define LOCAL_INDEX_BEGIN			3000
 #define LOCAL_INDEX_MAX				3100
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#define FT_RESULTS_ID				12
+#endif
+
 typedef enum
 {
 	RECORD_TYPE_LOCATION,

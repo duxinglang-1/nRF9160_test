@@ -126,6 +126,13 @@ static void FTMenuIMUUpdate(void)
 	LCD_ShowUniString(FT_IMU_RET_STR_X+(FT_IMU_RET_STR_W-w)/2, FT_IMU_RET_STR_Y+(FT_IMU_RET_STR_H-h)/2, ret_str[ft_imu_checked]);
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
+
+	if(ft_imu_checked)
+		ft_results.imu_ret = 1;
+	else
+		ft_results.imu_ret = 2;
+	
+	SaveFactoryTestResults(ft_results);
 }
 
 static void FTMenuIMUShow(void)

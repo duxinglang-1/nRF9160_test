@@ -139,6 +139,14 @@ fast_key_struct fast_key_to_test[] =
 	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
 	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
 };
+
+fast_key_struct fast_key_to_test_result[] = 
+{
+	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_SOS, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+	{0, KEY_POWER, 	KEY_EVENT_DOWN, KEY_EVENT_UP},
+};
 #endif
 
 #ifdef CONFIG_QRCODE_SUPPORT
@@ -156,6 +164,7 @@ fast_key_struct *fast_key_sum[] = {
 										fast_key_to_dump,
 									#ifdef CONFIG_FACTORY_TEST_SUPPORT
 										fast_key_to_test,
+										fast_key_to_test_result,
 									#endif	
 									#ifdef CONFIG_QRCODE_SUPPORT
 										fast_key_to_device,
@@ -166,6 +175,7 @@ FastKeyFunc fast_key_fun_sum[] = {
 										EnterDumpTest,
 									#ifdef CONFIG_FACTORY_TEST_SUPPORT
 										EnterFactoryTest,
+										EnterFactoryTestResults,
 									#endif	
 									#ifdef CONFIG_QRCODE_SUPPORT
 										EnterDeviceScreen,

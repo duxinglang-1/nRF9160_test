@@ -17,6 +17,9 @@
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#include "ft_main.h"
+#endif
 #include "logger.h"
 
 //#define INNER_FLASH_DEBUG
@@ -133,6 +136,38 @@ void SaveSettingsToInnerFlash(global_settings_t settings)
 {
 	nvs_write(&fs, SETTINGS_ID, &settings, sizeof(global_settings_t));
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void ReadFtResultsFromInnerFlash(ft_results_t *results)
+{
+	int err = 0;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return;
+		}
+	}
+
+	err = nvs_read(&fs, FT_RESULTS_ID, results, sizeof(ft_results_t));
+	if(err < 0)
+	{
+	#ifdef INNER_FLASH_DEBUG
+		LOGD("get ft results err:%d", err);
+	#endif
+	}
+}
+
+void SaveFtResultsToInnerFlash(ft_results_t results)
+{
+	nvs_write(&fs, FT_RESULTS_ID, &results, sizeof(ft_results_t));
+}
+#endif
 
 void ReadDateTimeFromInnerFlash(sys_date_timer_t *time)
 {

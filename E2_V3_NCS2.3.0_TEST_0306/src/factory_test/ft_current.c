@@ -85,6 +85,8 @@ const ft_menu_t FT_MENU_CURRENT =
 static void FTMenuCurPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
+	ft_results.cur_ret = 1;
+	SaveFactoryTestResults(ft_results);
 
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
@@ -92,6 +94,8 @@ static void FTMenuCurPassHander(void)
 static void FTMenuCurFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
+	ft_results.cur_ret = 2;
+	SaveFactoryTestResults(ft_results);
 
 	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }

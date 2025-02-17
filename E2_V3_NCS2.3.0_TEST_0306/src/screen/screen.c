@@ -10410,11 +10410,11 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_NOTIFY:
 			NotifyScreenProcess();
 			break;
-	#ifdef CONFIG_SYNC_SUPPORT	
+	#ifdef CONFIG_SYNC_SUPPORT
 		case SCREEN_ID_SYNC:
 			SyncScreenProcess();
 			break;
-	#endif		
+	#endif
 	#ifdef CONFIG_FOTA_DOWNLOAD
 		case SCREEN_ID_FOTA:
 			FOTAScreenProcess();
@@ -10438,7 +10438,7 @@ void ScreenMsgProcess(void)
 		case SCREEN_ID_FT_RESULT_INFOR:
 			FTResultsScreenProcess();
 			break;
-	  #endif		
+	  #endif
 	#endif
 		}
 	}

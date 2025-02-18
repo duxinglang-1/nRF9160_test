@@ -2701,7 +2701,9 @@ void GetModemInfor(void)
 
 	if(strlen(g_imsi) > 0)
 	{
-		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_SECONDS(5));
+	#ifndef CONFIG_FACTORY_TEST_SUPPORT
+		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
+	#endif
 	}
 }
 

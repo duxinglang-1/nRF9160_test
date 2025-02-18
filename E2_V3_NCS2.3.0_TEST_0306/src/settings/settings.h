@@ -16,14 +16,14 @@
 #define LANGUAGE_DE_ENABLE		//Deutsch
 #define LANGUAGE_FR_ENABLE		//French
 #define LANGUAGE_IT_ENABLE		//Italian
-//#define LANGUAGE_ES_ENABLE		//Spanish
-//#define LANGUAGE_PT_ENABLE		//Portuguese
-//#define LANGUAGE_PL_ENABLE		//Polish
-//#define LANGUAGE_SE_ENABLE		//Swedish
+#define LANGUAGE_ES_ENABLE		//Spanish
+#define LANGUAGE_PT_ENABLE		//Portuguese
+#define LANGUAGE_PL_ENABLE		//Polish
+#define LANGUAGE_SE_ENABLE		//Swedish
 #define LANGUAGE_JP_ENABLE		//Japanese
 #define LANGUAGE_KR_ENABLE		//Korea
 #define LANGUAGE_RU_ENABLE		//Russian
-//#define LANGUAGE_AR_ENABLE		//Arabic
+#define LANGUAGE_AR_ENABLE		//Arabic
 #endif
 
 #define ALARM_MAX	8

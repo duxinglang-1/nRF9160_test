@@ -51,7 +51,7 @@ typedef union{
 
 //define default thresholds 
 #define ACC_MAGN_TRIGGER_THRES_DEF    9.0f 	 // 9.0 for acc trigger, 7.0-10.0的范围内设置。数值越小越容易通过判定
-#define FUZZY_OUT_THRES_DEF           43.0f //46.0f	 // 46.0 for fuzzy output, 40.0-50.0的范围内调整。数值越小越容易通过判定
+#define FUZZY_OUT_THRES_DEF           45.0f //46.0f	 // 46.0 for fuzzy output, 40.0-50.0的范围内调整。数值越小越容易通过判定
 #define STD_SVMG_SECOND_STAGE         12.0f
 #define STD_VARIANCE_THRES_DEF        0.15f  	 // 0.15 for Standard Deviation, 0.1-0.2的范围内调整。数值越大越容易通过判定
 #define PEAKS_NO_THRES                8       //number of peaks threshold

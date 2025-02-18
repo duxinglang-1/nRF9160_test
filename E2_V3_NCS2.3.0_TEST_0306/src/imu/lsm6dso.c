@@ -25,6 +25,7 @@
 #include "esp8266.h"
 #endif
 #include "logger.h"
+#include "max32674.h" // SCC
 
 //#define IMU_DEBUG
 
@@ -52,6 +53,87 @@
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
+uint16_t activity_num = 0;
+uint16_t tap_count = 0;
+
+lsm6dso_emb_fsm_enable_t fsm_enable;
+uint16_t fsm_addr;
+lsm6dso_pin_int1_route_t int1_route;
+lsm6dso_pin_int2_route_t int2_route;
+stmdev_ctx_t imu_dev_ctx;
+
+bool SCC_check_ok = false;
+
+bool int1_event = false;
+bool int2_event = false;
+bool RUN_FD_FLAG = false;
+
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+lsm6dso_all_sources_t all_source;
+
+/*
+// ̧�������������?
+const uint8_t lsm6so_prg_wrist_tilt[] = {
+  0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x00, 0x00, 0x80, 0x00, 
+  0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
+};
+*/
+
+/*fall + tap trigger FSM*/
+const uint8_t falltrigger[] = {
+      0x91, 0x00, 0x18, 0x00, 0x0E, 0x00, 0xCD, 0x3C,
+      0x66, 0x36, 0xA8, 0x00, 0x00, 0x06, 0x23, 0X00,
+      0x33, 0x63, 0x33, 0xA5, 0x57, 0x44, 0x22, 0X00,
+     };
+
+static void imu_activity_confirm_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(imu_activity_timer, imu_activity_confirm_timerout, NULL);
+
+static void fall_scc_confirm_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(fall_scc_timer, fall_scc_confirm_timerout, NULL);
+
+static void tap_detection_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(tap_detect_timer, tap_detection_timerout, NULL);
+
+static void imu_activity_confirm_timerout(struct k_timer *timer_id)
+{
+	//LOGD("Activity Num: %d", activity_num);
+
+	if(activity_num<75)
+	{
+		#if 0 // SCC detection
+		StartSCC();
+		k_timer_start(&fall_scc_timer, K_SECONDS(9), K_NO_WAIT);
+		#else
+		FallTrigger();
+		#endif
+	}
+
+	activity_num = 0;
+}
+
+static void tap_detection_timerout(struct k_timer *timer_id)
+{
+	//LOGD("Tap Timer Up. Total Tap: %d", tap_count);
+	if(tap_count <= 3)
+	{
+		RUN_FD_FLAG = true;
+	}
+	else
+	{
+		RUN_FD_FLAG = false;
+		//LOGD("Too many taps. Possible false alarm.");
+	}
+	tap_count = 0;
+}
+#endif
+
+// new version from ucf file. check wrist_tilt.ucf file.
+const uint8_t lsm6so_prg_wrist_tilt[] = {
+  0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x8E, 0x31, 0x20, 0x00, 
+  0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
+};
+
 static struct k_work_q *imu_work_q;
 
 static bool imu_check_ok = false;
@@ -62,9 +144,9 @@ static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
-#ifdef CONFIG_FALL_DETECT_SUPPORT
-static bool fall_check_flag = false;
-#endif
+//#ifdef CONFIG_FALL_DETECT_SUPPORT
+//static bool fall_check_flag = false;
+//#endif
 
 uint16_t g_last_steps = 0;
 uint16_t g_steps = 0;
@@ -328,6 +410,87 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+void imu_sensor_init(void)
+{
+	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_reset_get(&imu_dev_ctx, &rst);
+
+	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
+
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g); 
+	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
+	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
+
+	lsm6dso_fifo_watermark_set(&imu_dev_ctx, 400);
+	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
+
+	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
+
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
+
+	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz); 
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
+	
+	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
+	lsm6dso_gy_power_mode_set(&imu_dev_ctx, LSM6DSO_GY_NORMAL);
+
+	//Activity detection
+    //Set duration for Activity detection to 9.62 ms (= 1 * 1 / ODR_XL)
+    lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01); // ����Ѽ��ʱ������?
+    //Set duration for Inactivity detection to 4.92 s (= 1 * 512 / ODR_XL) ���ûģʽ�½���˯��ģʽ֮ǰ�ĳ���ʱ��
+    lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01); // ���趨�Ļ˯�߳���ʱ����û�н�һ���Ļ�����������Զ�����͹���ģ�?
+    //Set Activity/Inactivity threshold to 31.25 mg (= 1* FS_XL / 2^6)
+    lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01); // ���û�����ֵ,����������⵽�ļ��ٶȻ���ٶȵȲ������������ֵʱ�����������ӵ͹���ģʽ���ѵ���?ģʽ,
+	//  ���ýϸߵ���ֵ���������ѵķ��գ������ܻή�ͶԽ�С�����ļ������?
+    //Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down
+    //lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
+
+	//Tap detection 
+	lsm6dso_tap_detection_on_z_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_tap_detection_on_y_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	lsm6dso_tap_detection_on_x_set(&imu_dev_ctx, PROPERTY_ENABLE);
+
+	lsm6dso_tap_threshold_z_set(&imu_dev_ctx, 0x16); // 31*(2/2^5) = 1.9375 = 1937.5 mg
+	lsm6dso_tap_threshold_y_set(&imu_dev_ctx, 0x16); // 16
+	lsm6dso_tap_threshold_x_set(&imu_dev_ctx, 0x16);
+
+	lsm6dso_tap_quiet_set(&imu_dev_ctx, 0x03); // 3*(4/104) = 0.115384 seconds = 115.384 ms where 104 is the current ODR
+	lsm6dso_tap_shock_set(&imu_dev_ctx, 0x03); // 3*(8/104) = 0.230769 seconds = 230.769 ms where 104 is the current ODR
+	lsm6dso_tap_mode_set(&imu_dev_ctx, LSM6DSO_ONLY_SINGLE);
+
+	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
+	
+	//Tilt FSM
+	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
+	lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
+	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 1);
+	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
+	//fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_DISABLE;
+	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
+	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
+	fsm_addr = LSM6DSO_START_FSM_ADD;
+
+	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)lsm6so_prg_wrist_tilt, 
+						sizeof(lsm6so_prg_wrist_tilt));
+	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
+	
+	// route wrist tilt to INT1 pin
+	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	
+	// route tap and activity to INT2 pin
+	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
+	int2_route.md2_cfg.int2_single_tap = PROPERTY_ENABLE;
+	int2_route.md2_cfg.int2_sleep_change = PROPERTY_ENABLE;
+	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+
+	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
+}
+#else
 void imu_sensor_init(void)
 {
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
@@ -391,6 +554,7 @@ void imu_sensor_init(void)
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
 }
+#endif
 
 static bool sensor_init(void)
 {
@@ -405,7 +569,7 @@ static bool sensor_init(void)
 /*@brief Get real time X/Y/Z reading in mg
 *
 */
-void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
+/*void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 {
 	uint8_t reg;
 
@@ -422,7 +586,7 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 	*sensor_x = acceleration_mg[0];
 	*sensor_y = acceleration_mg[1];
 	*sensor_z = acceleration_mg[2];
-}
+}*/
 
 #ifdef CONFIG_STEP_SUPPORT
 void ReSetImuSteps(void)
@@ -553,6 +717,35 @@ bool is_tilt(void)
 	return ret;
 }
 
+bool is_tap(void)
+{
+	bool ret = false;
+	lsm6dso_all_sources_t status1;
+
+	lsm6dso_all_sources_get(&imu_dev_ctx, &status1);
+	if(status1.tap_src.single_tap)
+	{ 
+		//tap detected
+		ret = true;
+	}
+
+	return ret;
+}
+
+void tap_detection(void)
+{
+	tap_count++;
+	//LOGD("Tap Num: %d", tap_count);
+}
+
+static void fall_scc_confirm_timerout(struct k_timer *timer_id)
+{
+	if(CheckSCC())
+	{
+		SCC_check_ok = true;
+	}
+}
+
 void IMUMsgProcess(void)
 {
 	if(0
@@ -589,5 +782,85 @@ void IMUMsgProcess(void)
 			}
 		}
 	}
+
+	#ifdef CONFIG_FALL_DETECT_SUPPORT
+	if(int2_event && global_settings.fall_check) //fall
+	{
+	#ifdef IMU_DEBUG
+		LOGD("int2 evt!");
+	#endif
+
+		if(!imu_check_ok || !is_wearing())
+			return;
+		
+		if(is_tap())
+		{
+			#if 0 //Tap detection
+			k_timer_start(&tap_detect_timer, K_SECONDS(3), K_NO_WAIT);
+
+			if(k_timer_remaining_get(&tap_detect_timer)>=0)
+			{
+				tap_detection();
+			}
+			#else
+			fall_detection();
+			#endif
+		}
+
+		int2_event = false;
+	}
+
+	if(RUN_FD_FLAG)
+	{
+		RUN_FD_FLAG = false;
+		fall_detection();
+	}
+
+	if(fall_result)
+	{
+		fall_result = false;
+		//LOGD("Checking for activity");
+
+		#if 0 // Activity detection
+		k_timer_start(&imu_activity_timer, K_SECONDS(3), K_NO_WAIT);
+
+		while(1)
+		{
+			lsm6dso_all_sources_t status3;
+
+			lsm6dso_all_sources_get(&imu_dev_ctx, &status3);
+			if(status3.wake_up_src.wu_ia)
+			{
+				activity_num++;
+				//LOGD("Acitvity detected: %d", activity_num);
+			}
+
+			if(k_timer_remaining_get(&imu_activity_timer) == 0)
+			{
+				break;
+			}
+		}
+		#else
+		#if 1 // SCC detections
+		StartSCC();
+		k_timer_start(&fall_scc_timer, K_SECONDS(9), K_NO_WAIT);
+		#else
+		FallTrigger();
+		#endif
+		#endif
+	}
+	
+	if(SCC_check_ok)
+	{
+		SCC_check_ok = false;
+
+		FallTrigger();
+	}
+
+	//if(fall_check_flag)
+	//{
+		//k_sleep(K_MSEC(3));
+	//}
+#endif
 }
 #endif/*CONFIG_IMU_SUPPORT*/

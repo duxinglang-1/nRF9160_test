@@ -20,13 +20,13 @@
 #ifdef LCD_VG6432TSWPG28_SSD1315
 #include "LCD_VG6432TSWPG28_SSD1315.h"
 
-#define GPIO_ACT_I2C
+#define GPIO_FOR_I2C
 
-#ifdef GPIO_ACT_I2C
+#ifdef GPIO_FOR_I2C
 #define LCD_SCL		1
 #define LCD_SDA		0
 
-#else/*GPIO_ACT_I2C*/
+#else/*GPIO_FOR_I2C*/
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 #define LCD_DEV DT_NODELABEL(i2c1)
@@ -37,7 +37,7 @@
 
 #define LCD_SCL		31
 #define LCD_SDA		30
-#endif/*GPIO_ACT_I2C*/
+#endif/*GPIO_FOR_I2C*/
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
 #define LCD_PORT DT_NODELABEL(gpio0)
@@ -68,7 +68,7 @@ static void Delay_us(unsigned int dly)
 	k_usleep(dly);
 }
 
-#ifdef GPIO_ACT_I2C
+#ifdef GPIO_FOR_I2C
 static void I2C_INIT(void)
 {
 	if(gpio_lcd == NULL)
@@ -281,7 +281,7 @@ err:
 
 static bool LCD_I2C_Init(void)
 {
-#ifdef GPIO_ACT_I2C
+#ifdef GPIO_FOR_I2C
 	I2C_INIT();
 	return true;
 #else
@@ -336,7 +336,7 @@ static bool LCD_I2C_Init(void)
 
 static void LCD_I2C_Write(uint8_t *buf, uint32_t len)
 {
-#ifdef GPIO_ACT_I2C
+#ifdef GPIO_FOR_I2C
 	I2C_write_data(LCD_I2C_ADDR, buf, len);
 #else
 	i2c_write(i2c_lcd, buf, len, LCD_I2C_ADDR);

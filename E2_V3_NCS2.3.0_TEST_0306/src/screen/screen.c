@@ -9826,6 +9826,7 @@ void EnterDeviceScreen(void)
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 void FTResultsShowQRStatus(void)
 {
+	uint8_t sper[] = {'\r','\n',0x00};
 	uint8_t buf[512] = {0};
 	uint16_t w,h;
 	uint16_t title[5] = {0x6D4B,0x8BD5,0x7ED3,0x679C,0x0000};//²âÊÔ½á¹û
@@ -9835,8 +9836,13 @@ void FTResultsShowQRStatus(void)
 	LCD_MeasureUniString(title, &w, &h);
 	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
 
+	//IMEI
+	strcpy(buf, "IMEI:");
+	strcat(buf, g_imei);
+	strcat(buf, sper);
+	
 	//Current Test
-	strcpy(buf, "CUR:");
+	strcat(buf, "CUR:");
 	switch(ft_results.cur_ret)
 	{
 	case 0:
@@ -9849,7 +9855,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//KEY Test
 	strcat(buf, "KEY:");
@@ -9865,7 +9871,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//LCD Test
 	strcat(buf, "LCD:");
@@ -9881,7 +9887,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//Touch Test
 	strcat(buf, "TOUCH:");
@@ -9897,7 +9903,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//Temp Test
 	strcat(buf, "TEMP:");
@@ -9913,7 +9919,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//IMU Test
 	strcat(buf, "IMU:");
@@ -9929,7 +9935,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//Flash Test
 	strcat(buf, "FLASH:");
@@ -9945,7 +9951,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//SIM Test
 	strcat(buf, "SIM:");
@@ -9961,7 +9967,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//BLE Test
 	strcat(buf, "BLE:");
@@ -9977,7 +9983,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 #ifdef CONFIG_PPG_SUPPORT	
 	//PPG Test
@@ -9994,7 +10000,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 #endif
 
 	//Charging Test
@@ -10011,7 +10017,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//Vibration Test
 	strcat(buf, "VIB:");
@@ -10027,7 +10033,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 #ifdef CONFIG_WIFI_SUPPORT	
 	//WIFI Test
@@ -10044,7 +10050,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 #endif
 
 	//Network Test
@@ -10061,7 +10067,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 	
 	//GPS Test
 	strcat(buf, "GPS:");
@@ -10077,7 +10083,7 @@ void FTResultsShowQRStatus(void)
 		strcat(buf, "FAIL");
 		break;
 	}
-	strcat(buf, "\r\n");
+	strcat(buf, sper);
 
 	show_QR_code(strlen(buf), buf);
 }

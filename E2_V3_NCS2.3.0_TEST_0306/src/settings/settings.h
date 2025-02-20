@@ -36,6 +36,7 @@
 #define VERSION_STR	"V3.4.5_250218"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
+#define FALL_BRAMCH ""
 #else
 #ifdef FW_FOR_CN
 #define LANG_BRANCH	"BC"

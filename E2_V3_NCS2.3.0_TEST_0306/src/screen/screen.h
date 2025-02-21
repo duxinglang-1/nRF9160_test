@@ -477,7 +477,7 @@ extern "C" {
 #define HR_ICON_H					60
 #define HR_ICON_X					((LCD_WIDTH-HR_ICON_W)/2)
 #define HR_ICON_Y					66
-#define HR_NOTIFY_W					LCD_WIDTH
+#define HR_NOTIFY_W					(LCD_WIDTH-10)
 #define HR_NOTIFY_H					30
 #define HR_NOTIFY_X					((LCD_WIDTH-HR_NOTIFY_W)/2)
 #define HR_NOTIFY_Y					140
@@ -521,7 +521,7 @@ extern "C" {
 #define SPO2_ICON_H					60
 #define SPO2_ICON_X					((LCD_WIDTH-SPO2_ICON_W)/2)
 #define SPO2_ICON_Y					66
-#define SPO2_NOTIFY_W				LCD_WIDTH
+#define SPO2_NOTIFY_W				(LCD_WIDTH-10)
 #define SPO2_NOTIFY_H				30
 #define SPO2_NOTIFY_X				((LCD_WIDTH-SPO2_NOTIFY_W)/2)
 #define SPO2_NOTIFY_Y				140
@@ -571,7 +571,7 @@ extern "C" {
 #define BP_ICON_H					60
 #define BP_ICON_X					((LCD_WIDTH-BP_ICON_W)/2)
 #define BP_ICON_Y					66
-#define BP_NOTIFY_W					LCD_WIDTH
+#define BP_NOTIFY_W					(LCD_WIDTH-10)
 #define BP_NOTIFY_H					30
 #define BP_NOTIFY_X					((LCD_WIDTH-BP_NOTIFY_W)/2)
 #define BP_NOTIFY_Y					140
@@ -621,7 +621,7 @@ extern "C" {
 #define TEMP_ICON_H					60
 #define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
 #define TEMP_ICON_Y					66
-#define TEMP_NOTIFY_W				LCD_WIDTH
+#define TEMP_NOTIFY_W				(LCD_WIDTH-10)
 #define TEMP_NOTIFY_H				30
 #define TEMP_NOTIFY_X				((LCD_WIDTH-TEMP_NOTIFY_W)/2)
 #define TEMP_NOTIFY_Y				140

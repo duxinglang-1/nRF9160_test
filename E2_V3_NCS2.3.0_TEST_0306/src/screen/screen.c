@@ -2243,7 +2243,10 @@ void SettingsUpdateStatus(void)
 				{
 			   #ifdef LANGUAGE_JP_ENABLE
 				case LANGUAGE_JP:
-					copy_len = 6;
+					if((settings_menu.index == 3) && (i == 1))//"Caremate QR" be showed as english character
+						copy_len = 12;
+					else
+						copy_len = 6;
 					break;
 			   #endif
 			   
@@ -4223,20 +4226,25 @@ void TempUpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		   #ifdef LANGUAGE_JP_ENABLE
+		#if defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+		  #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
+		  #endif
+		  #ifdef LANGUAGE_KR_ENABLE
+			case LANGUAGE_KR:
+		  #endif
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 14);
 				break;
-		   #endif
-		  
+		#endif/*LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
+
 			default:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 				break;
 			}
 		}
 		else
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 	#ifdef LANGUAGE_AR_ENABLE	
@@ -4267,7 +4275,7 @@ void TempUpdateStatus(void)
 	   #endif
 	  
 		default:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 			break;
 		}
 
@@ -5038,20 +5046,25 @@ void BPUpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		   #ifdef LANGUAGE_JP_ENABLE
+		#if defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+		  #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
+		  #endif
+		  #ifdef LANGUAGE_KR_ENABLE
+			case LANGUAGE_KR:
+		  #endif
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 14);
 				break;
-		   #endif
+		#endif/*LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
 		  
 			default:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 				break;
 			}
 		}
 		else
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
 	#ifdef LANGUAGE_AR_ENABLE	
@@ -5081,7 +5094,7 @@ void BPUpdateStatus(void)
 	   #endif
 	  
 		default:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 			break;
 		}
 
@@ -5526,20 +5539,25 @@ void SPO2UpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		   #ifdef LANGUAGE_JP_ENABLE
+		#if defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+		  #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
+		  #endif
+		  #ifdef LANGUAGE_KR_ENABLE
+			case LANGUAGE_KR:
+		  #endif
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 14);
 				break;
-		   #endif
-		  
+		#endif/*LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
+	   
 			default:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 				break;
 			}
 		}
 		else
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 		}
 		LCD_MeasureUniString(tmpbuf,&w,&h);
 	#ifdef LANGUAGE_AR_ENABLE	
@@ -5569,7 +5587,7 @@ void SPO2UpdateStatus(void)
 	   #endif
 	  
 		default:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 			break;
 		}
 
@@ -5994,20 +6012,25 @@ void HRUpdateStatus(void)
 		{
 			switch(global_settings.language)
 			{
-		   #ifdef LANGUAGE_JP_ENABLE
+		#if defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+  		  #ifdef LANGUAGE_JP_ENABLE
 			case LANGUAGE_JP:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 10);
-				break;
-		   #endif
-		  
+  		  #endif
+  		  #ifdef LANGUAGE_KR_ENABLE
+			case LANGUAGE_KR:
+  		  #endif
+			   mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], 14);
+			   break;
+		#endif/*LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
+
 			default:
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_1_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 				break;
 			}
 		}
 		else
 		{
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)Incon_2_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 		}
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 	#ifdef LANGUAGE_AR_ENABLE	
@@ -6037,7 +6060,7 @@ void HRUpdateStatus(void)
 	   #endif
 	  
 		default:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-8);
+			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)still_retry_str[global_settings.language], MENU_NOTIFY_STR_MAX-12);
 			break;
 		}
 

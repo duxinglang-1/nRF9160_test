@@ -1047,7 +1047,7 @@ const settings_menu_t SETTING_MENU_LANGUAGE =
 		#ifdef LANGUAGE_FR_ENABLE
 			LANGUAGE_SEL_STR[10][2],//Fran?ais
 		#endif
-		#ifdef LANGUAGE_IT_EN2ABLE
+		#ifdef LANGUAGE_IT_ENABLE
 			LANGUAGE_SEL_STR[10][3],//Italiano
 		#endif
 		#ifdef LANGUAGE_ES_ENABLE

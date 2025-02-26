@@ -669,7 +669,7 @@ static void mqtt_link(struct k_work_q *work_q)
 #endif
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactryTestActived())
+	if(FactoryTestActived())
 		return;
 #endif
 
@@ -996,7 +996,7 @@ void NBRedrawSignal(void)
 	bool flag = false;
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactryTestActived())
+	if(FactoryTestActived())
 		return;
 #endif
 
@@ -1106,7 +1106,7 @@ void GetModemDateTime(void)
 	#endif
 	
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-	  	if(FactryTestActived())
+	  	if(FactoryTestActived())
 	  		return;
 	#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
@@ -3011,7 +3011,7 @@ static void nb_link(struct k_work *work)
 	uint8_t tmpbuf[128] = {0};
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactryTestActived()&&!IsFTNetTesting())
+	if(FactoryTestActived()&&!IsFTNetTesting())
 		return;
 #endif
 
@@ -3160,7 +3160,11 @@ void NBMsgProcess(void)
 		LOGD("Start NB-IoT test!");
 	#endif
 	
-		if(1)//(nb_is_chinese_sim())	//cmcc
+		if(1
+			#ifdef CONFIG_FACTORY_TEST_SUPPORT	
+				&& FactorySmtTestActived()
+			#endif
+			)
 		{
 			if(nb_is_connecting())
 			{
@@ -3295,7 +3299,7 @@ void NBMsgProcess(void)
 		
 		if(test_gps_flag || nb_connected
 		#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			|| FactryTestActived()
+			|| FactoryTestActived()
 		#endif
 			)
 			return;
@@ -3328,7 +3332,7 @@ void NBMsgProcess(void)
 
 		if(test_gps_flag || mqtt_connected
 		#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			|| FactryTestActived()
+			|| FactoryTestActived()
 		#endif
 			)
 			return;
@@ -3367,7 +3371,7 @@ void NBMsgProcess(void)
 
 		if(test_gps_flag
 		#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			|| FactryTestActived()
+			|| FactoryTestActived()
 		#endif
 			)
 			return;

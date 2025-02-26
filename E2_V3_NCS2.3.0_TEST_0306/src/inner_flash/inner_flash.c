@@ -138,9 +138,14 @@ void SaveSettingsToInnerFlash(global_settings_t settings)
 }
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-void ReadFtResultsFromInnerFlash(ft_results_t *results)
+void ReadFtStatusFromInnerFlash(uint8_t *status)
 {
-	int err = 0;
+	nvs_read(&fs, FT_STATUS_ID, status, sizeof(uint8_t));
+}
+
+void ReadFtResultsFromInnerFlash(FT_STATUS status, void *results)
+{
+	int err;
 	
 	if(!nvs_init_flag)
 	{
@@ -154,18 +159,35 @@ void ReadFtResultsFromInnerFlash(ft_results_t *results)
 		}
 	}
 
-	err = nvs_read(&fs, FT_RESULTS_ID, results, sizeof(ft_results_t));
-	if(err < 0)
+	switch(status)
 	{
-	#ifdef INNER_FLASH_DEBUG
-		LOGD("get ft results err:%d", err);
-	#endif
+	case FT_STATUS_SMT:
+		nvs_read(&fs, FT_SMT_RESULTS_ID, results, sizeof(ft_smt_results_t));
+		break;
+		
+	case FT_STATUS_ASSEM:
+		nvs_read(&fs, FT_ASSEM_RESULTS_ID, results, sizeof(ft_assem_results_t));
+		break;
 	}
 }
 
-void SaveFtResultsToInnerFlash(ft_results_t results)
+void SaveFtStatusToInnerFlash(uint8_t status)
 {
-	nvs_write(&fs, FT_RESULTS_ID, &results, sizeof(ft_results_t));
+	nvs_write(&fs, FT_STATUS_ID, &status, sizeof(uint8_t));
+}
+
+void SaveFtResultsToInnerFlash(FT_STATUS status, void *results)
+{
+	switch(status)
+	{
+	case FT_STATUS_SMT:
+		nvs_write(&fs, FT_SMT_RESULTS_ID, results, sizeof(ft_smt_results_t));
+		break;
+		
+	case FT_STATUS_ASSEM:
+		nvs_write(&fs, FT_ASSEM_RESULTS_ID, results, sizeof(ft_assem_results_t));
+		break;
+	}
 }
 #endif
 

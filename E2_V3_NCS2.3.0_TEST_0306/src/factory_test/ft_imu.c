@@ -125,7 +125,6 @@ static void FTMenuIMUUpdate(void)
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 							  };
 
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	LCD_Fill(FT_IMU_STR_X, FT_IMU_STR_Y, FT_IMU_STR_W, FT_IMU_STR_H, BLACK);
 	
 	LCD_SetFontSize(FONT_SIZE_52);

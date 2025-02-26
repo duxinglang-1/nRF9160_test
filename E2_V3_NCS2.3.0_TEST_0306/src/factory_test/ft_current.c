@@ -148,7 +148,7 @@ static void FTMenuCurUpdate(void)
 	}
 	else
 	{
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
+		LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 		
 		LCD_SetFontSize(FONT_SIZE_28);
 		LCD_MeasureUniString(ret_str[0], &w, &h);

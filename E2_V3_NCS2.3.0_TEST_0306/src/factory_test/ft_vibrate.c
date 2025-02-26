@@ -197,7 +197,6 @@ static void FTMenuVibUpdate(void)
 			update_show_flag = true;
 			
 			LCD_SetFontSize(FONT_SIZE_28);
-			LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 			LCD_Fill(FT_VIB_MENU_STR_X, FT_VIB_MENU_STR_Y, FT_VIB_MENU_STR_W, 2*(FT_VIB_MENU_STR_H+FT_VIB_MENU_STR_OFFSET_Y), BLACK);
 			
@@ -213,7 +212,6 @@ static void FTMenuVibUpdate(void)
 	{
 		update_show_flag = false;
 		
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		LCD_Fill(FT_VIB_STATUS_STR_X, FT_VIB_STATUS_STR_Y, FT_VIB_STATUS_STR_W, FT_VIB_STATUS_STR_H, BLACK);

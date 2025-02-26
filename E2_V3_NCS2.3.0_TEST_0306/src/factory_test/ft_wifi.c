@@ -147,7 +147,6 @@ static void FTMenuWifiUpdate(void)
 	else
 	{
 		update_show_flag = false;
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
 
 		//pass or fail
 		LCD_SetFontSize(FONT_SIZE_52);

@@ -474,7 +474,7 @@ static void FactoryTestMainShow(void)
 	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 	
 	LCD_Clear(BLACK);
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	LCD_SetFontSize(FONT_SIZE_20);
 	if(g_ft_status == FT_STATUS_SMT)
 	{		
@@ -586,7 +586,7 @@ void EnterFactoryTestScreen(void)
 		MenuStopWifi();
 #endif
 
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 	
 	history_screen_id = screen_id;
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
@@ -599,21 +599,7 @@ void EnterFactoryTestScreen(void)
 
 void ReturnFTMainMenu(void)
 {
-	if((ft_smt_results.cur_ret == 1)
-		|| (ft_smt_results.key_ret == 1)
-		|| (ft_smt_results.lcd_ret == 1)
-		|| (ft_smt_results.touch_ret == 1)
-		|| (ft_smt_results.temp_ret == 1)
-		|| (ft_smt_results.imu_ret == 1)
-		|| (ft_smt_results.flash_ret == 1)
-		|| (ft_smt_results.sim_ret == 1)
-		|| (ft_smt_results.ble_ret == 1)
-		|| (ft_smt_results.ppg_ret == 1)
-		|| (ft_smt_results.pmu_ret == 1)
-		|| (ft_smt_results.vib_ret == 1)
-		|| (ft_smt_results.wifi_ret == 1)
-		|| (ft_smt_results.gps_ret == 1)
-		)
+	if(FactorySmtTestFinished())
 	{
 		g_ft_status = FT_STATUS_ASSEM;
 		SaveFtStatusToInnerFlash(g_ft_status);
@@ -662,19 +648,19 @@ void EnterFactoryTest(void)
 bool FactorySmtTestFinished(void)
 {
 	if((ft_smt_results.cur_ret == 1)
-		|| (ft_smt_results.key_ret == 1)
-		|| (ft_smt_results.lcd_ret == 1)
-		|| (ft_smt_results.touch_ret == 1)
-		|| (ft_smt_results.temp_ret == 1)
-		|| (ft_smt_results.imu_ret == 1)
-		|| (ft_smt_results.flash_ret == 1)
-		|| (ft_smt_results.sim_ret == 1)
-		|| (ft_smt_results.ble_ret == 1)
-		|| (ft_smt_results.ppg_ret == 1)
-		|| (ft_smt_results.pmu_ret == 1)
-		|| (ft_smt_results.vib_ret == 1)
-		|| (ft_smt_results.wifi_ret == 1)
-		|| (ft_smt_results.gps_ret == 1)
+		&& (ft_smt_results.key_ret == 1)
+		&& (ft_smt_results.lcd_ret == 1)
+		&& (ft_smt_results.touch_ret == 1)
+		&& (ft_smt_results.temp_ret == 1)
+		&& (ft_smt_results.imu_ret == 1)
+		&& (ft_smt_results.flash_ret == 1)
+		&& (ft_smt_results.sim_ret == 1)
+		&& (ft_smt_results.ble_ret == 1)
+		&& (ft_smt_results.ppg_ret == 1)
+		&& (ft_smt_results.pmu_ret == 1)
+		&& (ft_smt_results.vib_ret == 1)
+		&& (ft_smt_results.wifi_ret == 1)
+		&& (ft_smt_results.gps_ret == 1)
 		)
 	{
 		return true;

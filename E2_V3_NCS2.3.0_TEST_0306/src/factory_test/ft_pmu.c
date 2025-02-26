@@ -143,8 +143,7 @@ static void FTMenuPMUUpdate(void)
 					SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
 					break;
 				}
-				
-				LCD_Set_BL_Mode(LCD_BL_AUTO);
+
 				LCD_SetFontSize(FONT_SIZE_52);
 				LCD_SetFontColor(BRRED);
 				LCD_SetFontBgColor(GREEN);

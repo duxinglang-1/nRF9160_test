@@ -162,8 +162,6 @@ static void FTMenuTempUpdate(void)
 	}
 	else
 	{
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
-
 		//pass or fail
 		LCD_SetFontSize(FONT_SIZE_52);
 		LCD_SetFontColor(BRRED);

@@ -243,7 +243,6 @@ static void FTMenuTouchUpdate(void)
 		if(!update_show_flag)
 		{
 			update_show_flag = true;
-			LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 			
 			ClearAllKeyHandler();
 			SetLeftKeyUpHandler(FTMenuTouchStopTest);
@@ -280,7 +279,6 @@ static void FTMenuTouchUpdate(void)
 		
 		update_show_flag = false;
 		
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		//title

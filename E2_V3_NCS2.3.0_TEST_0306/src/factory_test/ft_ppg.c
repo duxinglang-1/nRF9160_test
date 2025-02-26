@@ -151,7 +151,6 @@ static void FTMenuPPGUpdate(void)
 	{
 		update_show_flag = false;
 
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		//pass or fail

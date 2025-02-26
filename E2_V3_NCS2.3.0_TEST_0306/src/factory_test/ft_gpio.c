@@ -182,8 +182,6 @@ static void FTMenukeyUpdate(void)
 
 	if(i == ARRAY_SIZE(ft_key))
 	{
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
-		
 		LCD_Fill(FT_KEY_RET_STR_X-2, FT_KEY_RET_STR_Y-2, FT_KEY_RET_STR_W+4, FT_KEY_RET_STR_H+4, GRAY);
 		LCD_Fill(FT_KEY_RET_STR_X, FT_KEY_RET_STR_Y, FT_KEY_RET_STR_W, FT_KEY_RET_STR_H, GREEN);
 
@@ -410,7 +408,6 @@ static void FTMenuWristUpdate(void)
 				break;
 			}
 			
-			LCD_Set_BL_Mode(LCD_BL_AUTO);
 			LCD_SetFontSize(FONT_SIZE_52);
 			LCD_SetFontColor(BRRED);
 			LCD_SetFontBgColor(GREEN);

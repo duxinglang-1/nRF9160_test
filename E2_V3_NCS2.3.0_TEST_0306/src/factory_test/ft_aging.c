@@ -185,7 +185,6 @@ static void AgingTestUpdate(void)
 			ft_aging_update_show_flag = true;
 			
 			LCD_SetFontSize(FONT_SIZE_28);
-			LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 			LCD_Fill(FT_AGING_MENU_STR_X, FT_AGING_MENU_STR_Y, FT_AGING_MENU_STR_W, 2*(FT_AGING_MENU_STR_H+FT_AGING_MENU_STR_OFFSET_Y), BLACK);
 			
@@ -222,7 +221,6 @@ static void AgingTestUpdate(void)
 	{
 		ft_aging_update_show_flag = false;
 		
-		LCD_Set_BL_Mode(LCD_BL_AUTO);
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		LCD_Fill(FT_AGING_STATUS_STR_X, FT_AGING_STATUS_STR_Y, FT_AGING_STATUS_STR_W, FT_AGING_STATUS_STR_H, BLACK);
@@ -246,7 +244,6 @@ static void AgingTestShow(void)
 #endif
 
 	LCD_Clear(BLACK);
-	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	LCD_SetFontSize(FONT_SIZE_28);
 	LCD_MeasureUniString(title_str, &w, &h);
@@ -371,7 +368,7 @@ void EnterFTAgingTest(void)
 	
 	vibrate_off();
 
-	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
 
 	aging_status = AGING_BEGIN;
 	memcpy(&ft_menu, &FT_MENU_AGING, sizeof(ft_menu_t));

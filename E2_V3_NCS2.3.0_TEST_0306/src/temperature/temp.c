@@ -71,6 +71,8 @@ static void temp_auto_stop_timerout(struct k_timer *timer_id)
 
 static void temp_menu_stop_timerout(struct k_timer *timer_id)
 {
+	temp_stop_flag = true;
+	
 	if(screen_id == SCREEN_ID_TEMP)
 	{
 		g_temp_status = TEMP_STATUS_MEASURE_FAIL;
@@ -512,67 +514,6 @@ void temp_init(void)
 
 void TempMsgProcess(void)
 {
-	if(temp_get_data_flag)
-	{
-		bool ret;
-		float temp_1=0.0,temp_2=0.0;
-		
-		temp_get_data_flag = false;
-
-		if(!temp_check_ok)
-			return;
-
-		if(!CheckSCC()
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			&& !IsFTTempTesting()
-			&& !IsFTTempAging()
-		#endif
-			)
-		{
-			notify_infor infor = {0};
-
-			infor.x = 0;
-			infor.y = 0;
-			infor.w = LCD_WIDTH;
-			infor.h = LCD_HEIGHT;
-			infor.align = NOTIFY_ALIGN_CENTER;
-			infor.type = NOTIFY_TYPE_POPUP;
-
-			if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == TEMP_TRIGGER_BY_MENU)
-			{
-				infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
-				infor.img_count = 1;
-				DisplayPopUp(infor);
-			}
-			
-			temp_stop_flag = true;
-			return;
-		}
-		
-		ret = GetTemperature(&temp_1, &temp_2);
-		if(temp_1 > 0.0)
-		{
-			g_temp_skin = temp_1;
-			if(temp_2 >= TEMP_MIN/10.0)
-			{
-				g_temp_body = temp_2;
-				if(ret)
-				{
-					temp_stop_flag = true;
-					get_temp_ok_flag = true;
-					k_timer_stop(&temp_check_timer);
-				}
-			}
-
-			temp_redraw_data_flag = true;
-
-		#ifdef CONFIG_FACTORY_TEST_SUPPORT
-			if(IsFTTempTesting())
-				FTTempStatusUpdate();
-		#endif
-		}
-	}
-
 	if(menu_start_temp)
 	{
 		StartTemp(TEMP_TRIGGER_BY_MENU);
@@ -703,7 +644,68 @@ void TempMsgProcess(void)
 		}
 	#endif
 	}
-	
+
+	if(temp_get_data_flag)
+	{
+		bool ret;
+		float temp_1=0.0,temp_2=0.0;
+		
+		temp_get_data_flag = false;
+
+		if(!temp_check_ok || !temp_power_flag)
+			return;
+
+		if(!CheckSCC()
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			&& !IsFTTempTesting()
+			&& !IsFTTempAging()
+		#endif
+			)
+		{
+			notify_infor infor = {0};
+
+			infor.x = 0;
+			infor.y = 0;
+			infor.w = LCD_WIDTH;
+			infor.h = LCD_HEIGHT;
+			infor.align = NOTIFY_ALIGN_CENTER;
+			infor.type = NOTIFY_TYPE_POPUP;
+
+			if((g_temp_trigger&TEMP_TRIGGER_BY_MENU) == TEMP_TRIGGER_BY_MENU)
+			{
+				infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+				infor.img_count = 1;
+				DisplayPopUp(infor);
+			}
+			
+			temp_stop_flag = true;
+			return;
+		}
+		
+		ret = GetTemperature(&temp_1, &temp_2);
+		if(temp_1 > 0.0)
+		{
+			g_temp_skin = temp_1;
+			if(temp_2 >= TEMP_MIN/10.0)
+			{
+				g_temp_body = temp_2;
+				if(ret)
+				{
+					temp_stop_flag = true;
+					get_temp_ok_flag = true;
+					k_timer_stop(&temp_check_timer);
+				}
+			}
+
+			temp_redraw_data_flag = true;
+
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			if(IsFTTempTesting())
+				FTTempStatusUpdate();
+		#endif
+		}
+	}
+
 	if(temp_redraw_data_flag)
 	{
 		TempRedrawData();

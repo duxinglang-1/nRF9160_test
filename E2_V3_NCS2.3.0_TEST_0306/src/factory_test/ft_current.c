@@ -85,24 +85,24 @@ const ft_menu_t FT_MENU_CURRENT =
 static void FTMenuCurPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
-	ft_results.cur_ret = 1;
-	SaveFactoryTestResults(ft_results);
+	ft_smt_results.cur_ret = 1;
+	SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
 
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuCurFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
-	ft_results.cur_ret = 2;
-	SaveFactoryTestResults(ft_results);
+	ft_smt_results.cur_ret = 2;
+	SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
 
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuCurSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 }
 
 static void FTMenuCurSle2Hander(void)

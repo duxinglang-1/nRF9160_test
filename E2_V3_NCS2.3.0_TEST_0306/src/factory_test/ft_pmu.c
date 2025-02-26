@@ -76,7 +76,16 @@ const ft_menu_t FT_MENU_PMU =
 
 static void FTMenuPMUSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuPMUSle2Hander(void)
@@ -122,8 +131,18 @@ static void FTMenuPMUUpdate(void)
 				check_count = 0;
 				ft_pmu_checked = true;
 				ft_menu_checked[ft_main_menu_index] = true;
-				ft_results.pmu_ret = 1;
-				SaveFactoryTestResults(ft_results);
+				switch(g_ft_status)
+				{
+				case FT_STATUS_SMT:
+					ft_smt_results.pmu_ret = 1;
+					SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+					break;
+					
+				case FT_STATUS_ASSEM:
+					ft_assem_results.pmu_ret = 1;
+					SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+					break;
+				}
 				
 				LCD_Set_BL_Mode(LCD_BL_AUTO);
 				LCD_SetFontSize(FONT_SIZE_52);

@@ -85,7 +85,16 @@ const ft_menu_t FT_MENU_PPG =
 
 static void FTMenuPPGSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuPPGSle2Hander(void)
@@ -154,12 +163,26 @@ static void FTMenuPPGUpdate(void)
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
 
-		if(ft_ppg_check_ok)
-			ft_results.ppg_ret = 1;
-		else
-			ft_results.ppg_ret = 2;
-
-		SaveFactoryTestResults(ft_results);
+		switch(g_ft_status)
+		{
+		case FT_STATUS_SMT:
+			if(ft_ppg_check_ok)
+				ft_smt_results.ppg_ret = 1;
+			else
+				ft_smt_results.ppg_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+			break;
+			
+		case FT_STATUS_ASSEM:
+			if(ft_ppg_check_ok)
+				ft_assem_results.ppg_ret = 1;
+			else
+				ft_assem_results.ppg_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+			break;
+		}
 	}
 }
 

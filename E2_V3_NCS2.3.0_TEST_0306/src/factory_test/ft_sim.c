@@ -82,7 +82,16 @@ const ft_menu_t FT_MENU_SIM =
 
 static void FTMenuSIMSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuSIMSle2Hander(void)
@@ -179,12 +188,26 @@ static void FTMenuSIMUpdate(void)
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_SIM_SLE2_STR_X, FT_SIM_SLE2_STR_X+FT_SIM_SLE2_STR_W, FT_SIM_SLE2_STR_Y, FT_SIM_SLE2_STR_Y+FT_SIM_SLE2_STR_H, FTMenuSIMSle2Hander);
 	#endif
 
-		if(ft_sim_check_ok)
-			ft_results.sim_ret = 1;
-		else
-			ft_results.sim_ret = 2;
-
-		SaveFactoryTestResults(ft_results);
+		switch(g_ft_status)
+		{
+		case FT_STATUS_SMT:
+			if(ft_sim_check_ok)
+				ft_smt_results.sim_ret = 1;
+			else
+				ft_smt_results.sim_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+			break;
+			
+		case FT_STATUS_ASSEM:
+			if(ft_sim_check_ok)
+				ft_assem_results.sim_ret = 1;
+			else
+				ft_assem_results.sim_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+			break;
+		}
 	}
 }
 

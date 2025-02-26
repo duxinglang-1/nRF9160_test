@@ -549,7 +549,7 @@ void UpdateSystemTime(void)
 			&& (!dl_is_running())
 		  #endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
 		  #ifdef CONFIG_FACTORY_TEST_SUPPORT
-			&& (!FactryTestActived())
+			&& (!FactoryTestActived())
 		  #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 		)
 		{

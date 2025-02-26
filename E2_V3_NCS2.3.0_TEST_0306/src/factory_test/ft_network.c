@@ -113,33 +113,62 @@ static void FTMenuNetStartTest(void)
 	FTStartNet();
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 
-	if(1)//(nb_is_chinese_sim())
+	if(FactorySmtTestActived())
 		k_timer_start(&net_test_timer, K_SECONDS(FT_NET_TEST_TIMEROUT), K_NO_WAIT);
 }
 
 static void FTMenuNetPassHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = true;
-	ft_results.net_ret = 1;
-	SaveFactoryTestResults(ft_results);
-
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		ft_smt_results.net_ret = 1;
+		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		ft_assem_results.net_ret = 1;
+		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuNetFailHander(void)
 {
 	ft_menu_checked[ft_main_menu_index] = false;
-	ft_results.net_ret = 2;
-	SaveFactoryTestResults(ft_results);
-
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		ft_smt_results.net_ret = 2;
+		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		ft_assem_results.net_ret = 2;
+		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuNetSle1Hander(void)
 {
 	FTMenuNetStopTest();
 
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuNetSle2Hander(void)

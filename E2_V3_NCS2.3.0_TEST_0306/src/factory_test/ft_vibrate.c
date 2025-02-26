@@ -95,31 +95,61 @@ const ft_menu_t FT_MENU_VIB =
 
 static void FTMenuVibPassHander(void)
 {
-	ft_menu_checked[ft_main_menu_index] = true;
-	ft_results.vib_ret = 1;
-	SaveFactoryTestResults(ft_results);
-	
 	vibrate_off();
 	
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	ft_menu_checked[ft_main_menu_index] = true;
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		ft_smt_results.vib_ret = 1;
+		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		ft_assem_results.vib_ret = 1;
+		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}	
 }
 
 static void FTMenuVibFailHander(void)
 {
-	ft_menu_checked[ft_main_menu_index] = false;
-	ft_results.vib_ret = 2;
-	SaveFactoryTestResults(ft_results);
-	
 	vibrate_off();
 	
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	ft_menu_checked[ft_main_menu_index] = false;
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		ft_smt_results.vib_ret = 2;
+		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		ft_assem_results.vib_ret = 2;
+		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
+	
 }
 
 static void FTMenuVibSle1Hander(void)
 {
 	vibrate_off();
 
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuVibSle2Hander(void)

@@ -831,7 +831,8 @@ typedef enum
 	SCREEN_ID_FOTA,
 	SCREEN_ID_DL,
 	SCREEN_ID_FACTORY_TEST,
-	SCREEN_ID_FT_RESULT_INFOR,
+	SCREEN_ID_FT_SMT_RESULT_INFOR,
+	SCREEN_ID_FT_ASSEM_RESULT_INFOR,
 	SCREEN_ID_AGING_TEST,
 	SCREEN_ID_DEVICE_INFOR,
 	SCREEN_ID_MAX
@@ -912,7 +913,8 @@ extern void EnterFOTAScreen(void);
 extern void DisplayPopUp(notify_infor infor);
 #ifdef CONFIG_QRCODE_SUPPORT
 extern void EnterDeviceScreen(void);
-extern void EnterFTResultsScreen(void);
+extern void EnterFTSmtResultsScreen(void);
+extern void EnterFTAssemResultsScreen(void);
 #endif
 extern void EnterFallScreen(void);
 

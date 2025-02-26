@@ -49,10 +49,12 @@ static bool ft_running_flag = false;
 static bool ft_main_redaw_flag = false;
 
 uint8_t ft_main_menu_index = 0;
+uint8_t g_ft_status = FT_STATUS_SMT;
 
 bool ft_menu_checked[FT_MENU_MAX_COUNT] = {false};
 ft_menu_t ft_menu = {0};
-ft_results_t ft_results = {0};	//0:has not be tested; 1:test passed; 2:test failed;
+ft_smt_results_t ft_smt_results = {0};	//0:has not be tested; 1:test passed; 2:test failed;
+ft_assem_results_t ft_assem_results = {0};	//0:has not be tested; 1:test passed; 2:test failed;
 
 static void FactoryTestNextExit(void);
 static void FactoryTestPreExit(void);
@@ -188,7 +190,7 @@ void FTMainMenuPgDownProc(void)
 	}
 }
 
-const ft_menu_t FT_MENU_MAIN = 
+const ft_menu_t FT_SMT_MENU_MAIN = 
 {
 	FT_MAIN,
 	0,
@@ -284,19 +286,114 @@ const ft_menu_t FT_MENU_MAIN =
 	},
 };
 
+const ft_menu_t FT_ASSEM_MENU_MAIN = 
+{
+	FT_MAIN,
+	0,
+	14,
+	{
+		//∞¥º¸≤‚ ‘
+		{
+			{0x6309,0x952E,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuKeyProc,
+		},
+		//∆¡ƒª≤‚ ‘
+		{
+			{0x5C4F,0x5E55,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuLcdProc,
+		},
+		//¥•√˛≤‚ ‘
+		{
+			{0x89E6,0x6478,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuTouchProc,
+		},
+		//Œ¬∂»≤‚ ‘
+		{
+			{0x6E29,0x5EA6,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuTempProc,
+		},
+		//IMU≤‚ ‘
+		{
+			{0x0049,0x004D,0x0055,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuIMUProc,
+		},
+		//FLASH≤‚ ‘
+		{
+			{0x0046,0x004C,0x0041,0x0053,0x0048,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuFlashProc,
+		},
+		//SIMø®≤‚ ‘
+		{
+			{0x0053,0x0049,0x004D,0x5361,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuSIMProc,
+		},
+		//BLE≤‚ ‘
+		{
+			{0x0042,0x004C,0x0045,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuBleProc,
+		},
+		//PPG≤‚ ‘
+		{
+			{0x0050,0x0050,0x0047,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuPPGProc,
+		},
+		//≥‰µÁ≤‚ ‘
+		{
+			{0x5145,0x7535,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuPMUProc,
+		},
+		//’∂Ø≤‚ ‘
+		{
+			{0x9707,0x52A8,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuVibrateProc,
+		},
+		//WiFi≤‚ ‘
+		{
+			{0x0057,0x0069,0x0046,0x0069,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuWifiProc,
+		},
+		//Õ¯¬Á≤‚ ‘
+		{
+			{0x7F51,0x7EDC,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuNetProc,
+		},
+		//GPS≤‚ ‘
+		{
+			{0x0047,0x0050,0x0053,0x6D4B,0x8BD5,0x0000},
+			FTMainMenuGPSProc,
+		},
+	},	
+	{	
+		//page proc func
+		FTMainMenuPgUpProc,
+		FTMainMenuPgDownProc,
+		FTMainDumpProc,
+		FTMainDumpProc,
+	},
+};
+
 static void FactoryTestMainUpdate(void)
 {
 	uint8_t i,count;
 	uint16_t x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
-	uint16_t title[5] = {0x5DE5,0x5382,0x6D4B,0x8BD5,0x0000};//π§≥ß≤‚ ‘
+	uint16_t title_smt[6] = {0x0053,0x004D,0x0054,0x6D4B,0x8BD5,0x0000};//SMT≤‚ ‘
+	uint16_t title_assem[5] = {0x7EC4,0x88C5,0x6D4B,0x8BD5,0x0000};//◊È◊∞≤‚ ‘
 	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 
 	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_20);
-	LCD_MeasureUniString(title, &w, &h);
-	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
+	if(g_ft_status == FT_STATUS_SMT)
+	{		
+		LCD_MeasureUniString(title_smt, &w, &h);
+		LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title_smt);
+	}
+	else
+	{
+		LCD_MeasureUniString(title_assem, &w, &h);
+		LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title_assem);
+	}
 	
 	LCD_SetFontBgColor(bg_clor);
 
@@ -342,15 +439,23 @@ static void FactoryTestMainShow(void)
 	uint16_t i,x,y,w,h;
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
-	uint16_t title[5] = {0x5DE5,0x5382,0x6D4B,0x8BD5,0x0000};//π§≥ß≤‚ ‘
+	uint16_t title_smt[6] = {0x0053,0x004D,0x0054,0x6D4B,0x8BD5,0x0000};//SMT≤‚ ‘
+	uint16_t title_assem[5] = {0x7EC4,0x88C5,0x6D4B,0x8BD5,0x0000};//◊È◊∞≤‚ ‘
 	uint32_t img_addr[2] = {IMG_SELECT_ICON_NO_ADDR,IMG_SELECT_ICON_YES_ADDR};
 	
 	LCD_Clear(BLACK);
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
-	
 	LCD_SetFontSize(FONT_SIZE_20);
-	LCD_MeasureUniString(title, &w, &h);
-	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
+	if(g_ft_status == FT_STATUS_SMT)
+	{		
+		LCD_MeasureUniString(title_smt, &w, &h);
+		LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title_smt);
+	}
+	else
+	{
+		LCD_MeasureUniString(title_assem, &w, &h);
+		LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title_assem);
+	}
 	
 	LCD_SetFontBgColor(bg_clor);
 
@@ -430,7 +535,7 @@ static void FactoryTestNextExit(void)
 	ft_running_flag = false;
 	
 	SetModemTurnOn();
-	EnterFTAgingTest();
+	EnterFTSmtResultsScreen();
 }
 
 void EnterFactoryTestScreen(void)
@@ -464,7 +569,35 @@ void EnterFactoryTestScreen(void)
 
 void ReturnFTMainMenu(void)
 {
-	memcpy(&ft_menu, &FT_MENU_MAIN, sizeof(ft_menu_t));
+	if((ft_smt_results.cur_ret == 1)
+		|| (ft_smt_results.key_ret == 1)
+		|| (ft_smt_results.lcd_ret == 1)
+		|| (ft_smt_results.touch_ret == 1)
+		|| (ft_smt_results.temp_ret == 1)
+		|| (ft_smt_results.imu_ret == 1)
+		|| (ft_smt_results.flash_ret == 1)
+		|| (ft_smt_results.sim_ret == 1)
+		|| (ft_smt_results.ble_ret == 1)
+		|| (ft_smt_results.ppg_ret == 1)
+		|| (ft_smt_results.pmu_ret == 1)
+		|| (ft_smt_results.vib_ret == 1)
+		|| (ft_smt_results.wifi_ret == 1)
+		|| (ft_smt_results.gps_ret == 1)
+		)
+	{
+		g_ft_status = FT_STATUS_ASSEM;
+		SaveFtStatusToInnerFlash(g_ft_status);
+	}
+
+	if(g_ft_status == FT_STATUS_SMT)
+	{
+		memcpy(&ft_menu, &FT_SMT_MENU_MAIN, sizeof(ft_menu_t));
+	}
+	else
+	{
+		memcpy(&ft_menu, &FT_ASSEM_MENU_MAIN, sizeof(ft_menu_t));
+	}
+	
 	ft_menu.index = ft_main_menu_index;
 	FactoryTestMainShow();
 }
@@ -474,10 +607,18 @@ void EnterFactoryTest(void)
 	uint8_t i,*p_ret;
 	
 	ft_running_flag = true;
-	memcpy(&ft_menu, &FT_MENU_MAIN, sizeof(ft_menu_t));
+	if(g_ft_status == FT_STATUS_SMT)
+	{
+		memcpy(&ft_menu, &FT_SMT_MENU_MAIN, sizeof(ft_menu_t));
+		p_ret = (uint8_t*)&ft_smt_results;
+	}
+	else
+	{
+		memcpy(&ft_menu, &FT_ASSEM_MENU_MAIN, sizeof(ft_menu_t));
+		p_ret = (uint8_t*)&ft_assem_results;
+	}
 	
-	p_ret = (uint8_t*)&ft_results;
-	for(i=0;i<FT_MENU_MAX_COUNT;i++)
+	for(i=0;i<ft_menu.count;i++)
 	{
 		if(*(p_ret++) == 1)
 			ft_menu_checked[i] = true;
@@ -488,9 +629,51 @@ void EnterFactoryTest(void)
 	EnterFactoryTestScreen();
 }
 
-bool FactryTestActived(void)
+bool FactorySmtTestFinished(void)
+{
+	if((ft_smt_results.cur_ret == 1)
+		|| (ft_smt_results.key_ret == 1)
+		|| (ft_smt_results.lcd_ret == 1)
+		|| (ft_smt_results.touch_ret == 1)
+		|| (ft_smt_results.temp_ret == 1)
+		|| (ft_smt_results.imu_ret == 1)
+		|| (ft_smt_results.flash_ret == 1)
+		|| (ft_smt_results.sim_ret == 1)
+		|| (ft_smt_results.ble_ret == 1)
+		|| (ft_smt_results.ppg_ret == 1)
+		|| (ft_smt_results.pmu_ret == 1)
+		|| (ft_smt_results.vib_ret == 1)
+		|| (ft_smt_results.wifi_ret == 1)
+		|| (ft_smt_results.gps_ret == 1)
+		)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool FactoryTestActived(void)
 {
 	return ft_running_flag;
+}
+
+bool FactorySmtTestActived(void)
+{
+	if(ft_running_flag && (g_ft_status == FT_STATUS_SMT))
+		return true;
+	else
+		return false;
+}
+
+bool FactoryAssemTestActived(void)
+{
+	if(ft_running_flag && (g_ft_status == FT_STATUS_ASSEM))
+		return true;
+	else
+		return false;
 }
 
 void FactoryTestProccess(void)
@@ -612,7 +795,10 @@ void EnterFactoryTestResults(void)
 											}; 
 
 #ifdef CONFIG_QRCODE_SUPPORT
-	EnterFTResultsScreen();
+	if(g_ft_status == FT_STATUS_SMT)
+		EnterFTSmtResultsScreen();
+	else
+		EnterFTAssemResultsScreen();
 #else
 	infor.x = 0;
 	infor.y = 0;

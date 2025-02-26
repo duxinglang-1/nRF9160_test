@@ -91,7 +91,16 @@ bool IsFTTempTesting(void)
 
 static void FTMenuTempSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuTempSle2Hander(void)
@@ -164,12 +173,26 @@ static void FTMenuTempUpdate(void)
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
 
-		if(ft_temp_check_ok)
-			ft_results.temp_ret = 1;
-		else
-			ft_results.temp_ret = 2;
-
-		SaveFactoryTestResults(ft_results);
+		switch(g_ft_status)
+		{
+		case FT_STATUS_SMT:
+			if(ft_temp_check_ok)
+				ft_smt_results.temp_ret = 1;
+			else
+				ft_smt_results.temp_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+			break;
+			
+		case FT_STATUS_ASSEM:
+			if(ft_temp_check_ok)
+				ft_assem_results.temp_ret = 1;
+			else
+				ft_assem_results.temp_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+			break;
+		}
 	}
 }
 

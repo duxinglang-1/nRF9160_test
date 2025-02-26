@@ -153,7 +153,7 @@ static void AgingStartTest(void)
 static void AgingTestPreExit(void)
 {
 	AgingStopTest();
-	EnterFactoryTest();
+	EnterFTAssemResultsScreen();
 }
 
 static void AgingTestNextExit(void)

@@ -80,7 +80,16 @@ const ft_menu_t FT_MENU_FLASH =
 
 static void FTMenuFlashSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuFlashSle2Hander(void)
@@ -135,12 +144,26 @@ static void FTMenuFlashUpdate(void)
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
 
-	if(ft_flash_checked)
-		ft_results.flash_ret = 1;
-	else
-		ft_results.flash_ret = 2;
-	
-	SaveFactoryTestResults(ft_results);
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		if(ft_flash_checked)
+			ft_smt_results.flash_ret = 1;
+		else
+			ft_smt_results.flash_ret = 2;
+		
+		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		break;
+		
+	case FT_STATUS_ASSEM:
+		if(ft_flash_checked)
+			ft_assem_results.flash_ret = 1;
+		else
+			ft_assem_results.flash_ret = 2;
+		
+		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+		break;
+	}
 }
 
 static void FTMenuFlashShow(void)

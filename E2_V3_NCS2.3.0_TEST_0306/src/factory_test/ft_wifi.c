@@ -83,7 +83,16 @@ const ft_menu_t FT_MENU_WIFI =
 
 static void FTMenuWifiSle1Hander(void)
 {
-	FT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		FT_SMT_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+		
+	case FT_STATUS_ASSEM:
+		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
+		break;
+	}
 }
 
 static void FTMenuWifiSle2Hander(void)
@@ -149,12 +158,26 @@ static void FTMenuWifiUpdate(void)
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
 
-		if(ft_wifi_check_ok)
-			ft_results.wifi_ret = 1;
-		else
-			ft_results.wifi_ret = 2;
-
-		SaveFactoryTestResults(ft_results);
+		switch(g_ft_status)
+		{
+		case FT_STATUS_SMT:
+			if(ft_wifi_check_ok)
+				ft_smt_results.wifi_ret = 1;
+			else
+				ft_smt_results.wifi_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+			break;
+			
+		case FT_STATUS_ASSEM:
+			if(ft_wifi_check_ok)
+				ft_assem_results.wifi_ret = 1;
+			else
+				ft_assem_results.wifi_ret = 2;
+			
+			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+			break;
+		}
 	}
 }
 

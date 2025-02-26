@@ -9847,12 +9847,12 @@ void EnterDeviceScreen(void)
 }
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-void FTResultsShowQRStatus(void)
+void FTSmtResultsShowQRStatus(void)
 {
 	uint8_t sper[] = {'\r','\n',0x00};
 	uint8_t buf[512] = {0};
 	uint16_t w,h;
-	uint16_t title[5] = {0x6D4B,0x8BD5,0x7ED3,0x679C,0x0000};//测试结果
+	uint16_t title[8] = {0x0053,0x004D,0x0054,0x6D4B,0x8BD5,0x7ED3,0x679C,0x0000};//SMT测试结果
 	
 	LCD_Clear(BLACK);
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -9866,7 +9866,7 @@ void FTResultsShowQRStatus(void)
 	
 	//Current Test
 	strcat(buf, "CUR:");
-	switch(ft_results.cur_ret)
+	switch(ft_smt_results.cur_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9882,7 +9882,7 @@ void FTResultsShowQRStatus(void)
 	
 	//KEY Test
 	strcat(buf, "KEY:");
-	switch(ft_results.key_ret)
+	switch(ft_smt_results.key_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9898,7 +9898,7 @@ void FTResultsShowQRStatus(void)
 	
 	//LCD Test
 	strcat(buf, "LCD:");
-	switch(ft_results.lcd_ret)
+	switch(ft_smt_results.lcd_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9914,7 +9914,7 @@ void FTResultsShowQRStatus(void)
 	
 	//Touch Test
 	strcat(buf, "TOUCH:");
-	switch(ft_results.touch_ret)
+	switch(ft_smt_results.touch_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9930,7 +9930,7 @@ void FTResultsShowQRStatus(void)
 	
 	//Temp Test
 	strcat(buf, "TEMP:");
-	switch(ft_results.temp_ret)
+	switch(ft_smt_results.temp_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9946,7 +9946,7 @@ void FTResultsShowQRStatus(void)
 	
 	//IMU Test
 	strcat(buf, "IMU:");
-	switch(ft_results.imu_ret)
+	switch(ft_smt_results.imu_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9962,7 +9962,7 @@ void FTResultsShowQRStatus(void)
 	
 	//Flash Test
 	strcat(buf, "FLASH:");
-	switch(ft_results.flash_ret)
+	switch(ft_smt_results.flash_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9978,7 +9978,7 @@ void FTResultsShowQRStatus(void)
 	
 	//SIM Test
 	strcat(buf, "SIM:");
-	switch(ft_results.sim_ret)
+	switch(ft_smt_results.sim_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -9994,7 +9994,7 @@ void FTResultsShowQRStatus(void)
 	
 	//BLE Test
 	strcat(buf, "BLE:");
-	switch(ft_results.ble_ret)
+	switch(ft_smt_results.ble_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10011,7 +10011,7 @@ void FTResultsShowQRStatus(void)
 #ifdef CONFIG_PPG_SUPPORT	
 	//PPG Test
 	strcat(buf, "PPG:");
-	switch(ft_results.ppg_ret)
+	switch(ft_smt_results.ppg_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10028,7 +10028,7 @@ void FTResultsShowQRStatus(void)
 
 	//Charging Test
 	strcat(buf, "CHRGE:");
-	switch(ft_results.pmu_ret)
+	switch(ft_smt_results.pmu_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10044,7 +10044,7 @@ void FTResultsShowQRStatus(void)
 	
 	//Vibration Test
 	strcat(buf, "VIB:");
-	switch(ft_results.vib_ret)
+	switch(ft_smt_results.vib_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10061,7 +10061,7 @@ void FTResultsShowQRStatus(void)
 #ifdef CONFIG_WIFI_SUPPORT	
 	//WIFI Test
 	strcat(buf, "WIFI:");
-	switch(ft_results.wifi_ret)
+	switch(ft_smt_results.wifi_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10078,7 +10078,7 @@ void FTResultsShowQRStatus(void)
 
 	//Network Test
 	strcat(buf, "NET:");
-	switch(ft_results.net_ret)
+	switch(ft_smt_results.net_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10094,7 +10094,7 @@ void FTResultsShowQRStatus(void)
 	
 	//GPS Test
 	strcat(buf, "GPS:");
-	switch(ft_results.gps_ret)
+	switch(ft_smt_results.gps_ret)
 	{
 	case 0:
 		strcat(buf, "TBT");
@@ -10111,34 +10111,34 @@ void FTResultsShowQRStatus(void)
 	show_QR_code(strlen(buf), buf);
 }
 
-void FTResultsScreenProcess(void)
+void FTSmtResultsScreenProcess(void)
 {
-	switch(scr_msg[SCREEN_ID_FT_RESULT_INFOR].act)
+	switch(scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].act)
 	{
 	case SCREEN_ACTION_ENTER:
-		scr_msg[SCREEN_ID_FT_RESULT_INFOR].act = SCREEN_ACTION_NO;
-		scr_msg[SCREEN_ID_FT_RESULT_INFOR].status = SCREEN_STATUS_CREATED;
+		scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].status = SCREEN_STATUS_CREATED;
 
-		FTResultsShowQRStatus();
+		FTSmtResultsShowQRStatus();
 		break;
 		
 	case SCREEN_ACTION_UPDATE:
-		FTResultsShowQRStatus();
+		FTSmtResultsShowQRStatus();
 		break;
 	}
 	
-	scr_msg[SCREEN_ID_FT_RESULT_INFOR].act = SCREEN_ACTION_NO;
+	scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].act = SCREEN_ACTION_NO;
 }
 
-void ExitFTResultsScreen(void)
+void ExitFTSmtResultsScreen(void)
 {
 	LCD_Set_BL_Mode(LCD_BL_AUTO);
 	EnterIdleScreen();
 }
 
-void EnterFTResultsScreen(void)
+void EnterFTSmtResultsScreen(void)
 {
-	if(screen_id == SCREEN_ID_FT_RESULT_INFOR)
+	if(screen_id == SCREEN_ID_FT_SMT_RESULT_INFOR)
 		return;
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
@@ -10147,20 +10147,314 @@ void EnterFTResultsScreen(void)
 	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
 	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
 
-	screen_id = SCREEN_ID_FT_RESULT_INFOR;	
-	scr_msg[SCREEN_ID_FT_RESULT_INFOR].act = SCREEN_ACTION_ENTER;
-	scr_msg[SCREEN_ID_FT_RESULT_INFOR].status = SCREEN_STATUS_CREATING;
+	screen_id = SCREEN_ID_FT_SMT_RESULT_INFOR;	
+	scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].status = SCREEN_STATUS_CREATING;
 
-	SetLeftKeyUpHandler(ExitFTResultsScreen);
-	SetRightKeyUpHandler(ExitFTResultsScreen);
+	SetLeftKeyUpHandler(ExitFTSmtResultsScreen);
+	SetRightKeyUpHandler(ExitFTSmtResultsScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
-	register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, ExitFTResultsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAssemResultsScreen);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
 #endif	
 }
+
+void FTAssemResultsShowQRStatus(void)
+{
+	uint8_t sper[] = {'\r','\n',0x00};
+	uint8_t buf[512] = {0};
+	uint16_t w,h;
+	uint16_t title[7] = {0x7EC4,0x88C5,0x6D4B,0x8BD5,0x7ED3,0x679C,0x0000};//测试结果
+	
+	LCD_Clear(BLACK);
+	LCD_SetFontSize(FONT_SIZE_20);
+	LCD_MeasureUniString(title, &w, &h);
+	LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title);
+
+	//IMEI
+	strcpy(buf, "IMEI:");
+	strcat(buf, g_imei);
+	strcat(buf, sper);
+	
+	//KEY Test
+	strcat(buf, "KEY:");
+	switch(ft_assem_results.key_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//LCD Test
+	strcat(buf, "LCD:");
+	switch(ft_assem_results.lcd_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//Touch Test
+	strcat(buf, "TOUCH:");
+	switch(ft_assem_results.touch_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//Temp Test
+	strcat(buf, "TEMP:");
+	switch(ft_assem_results.temp_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//IMU Test
+	strcat(buf, "IMU:");
+	switch(ft_assem_results.imu_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//Flash Test
+	strcat(buf, "FLASH:");
+	switch(ft_assem_results.flash_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//SIM Test
+	strcat(buf, "SIM:");
+	switch(ft_assem_results.sim_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//BLE Test
+	strcat(buf, "BLE:");
+	switch(ft_assem_results.ble_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+#ifdef CONFIG_PPG_SUPPORT	
+	//PPG Test
+	strcat(buf, "PPG:");
+	switch(ft_assem_results.ppg_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+#endif
+
+	//Charging Test
+	strcat(buf, "CHRGE:");
+	switch(ft_assem_results.pmu_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//Vibration Test
+	strcat(buf, "VIB:");
+	switch(ft_assem_results.vib_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+#ifdef CONFIG_WIFI_SUPPORT	
+	//WIFI Test
+	strcat(buf, "WIFI:");
+	switch(ft_assem_results.wifi_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+#endif
+
+	//Network Test
+	strcat(buf, "NET:");
+	switch(ft_assem_results.net_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+	
+	//GPS Test
+	strcat(buf, "GPS:");
+	switch(ft_assem_results.gps_ret)
+	{
+	case 0:
+		strcat(buf, "TBT");
+		break;
+	case 1:
+		strcat(buf, "PASS");
+		break;
+	case 2:
+		strcat(buf, "FAIL");
+		break;
+	}
+	strcat(buf, sper);
+
+	show_QR_code(strlen(buf), buf);
+}
+
+void FTAssemResultsScreenProcess(void)
+{
+	switch(scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].act)
+	{
+	case SCREEN_ACTION_ENTER:
+		scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].act = SCREEN_ACTION_NO;
+		scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].status = SCREEN_STATUS_CREATED;
+
+		FTAssemResultsShowQRStatus();
+		break;
+		
+	case SCREEN_ACTION_UPDATE:
+		FTAssemResultsShowQRStatus();
+		break;
+	}
+	
+	scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].act = SCREEN_ACTION_NO;
+}
+
+void ExitFTAssemResultsScreen(void)
+{
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	EnterIdleScreen();
+}
+
+void EnterFTAssemResultsScreen(void)
+{
+	if(screen_id == SCREEN_ID_FT_ASSEM_RESULT_INFOR)
+		return;
+
+	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
+
+	history_screen_id = screen_id;
+	scr_msg[history_screen_id].act = SCREEN_ACTION_NO;
+	scr_msg[history_screen_id].status = SCREEN_STATUS_NO;
+
+	screen_id = SCREEN_ID_FT_ASSEM_RESULT_INFOR;	
+	scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].act = SCREEN_ACTION_ENTER;
+	scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].status = SCREEN_STATUS_CREATING;
+
+	SetLeftKeyUpHandler(ExitFTAssemResultsScreen);
+	SetRightKeyUpHandler(ExitFTAssemResultsScreen);
+#ifdef CONFIG_TOUCH_SUPPORT
+	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAgingTest);
+	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTSmtResultsScreen);
+#endif	
+}
+
 #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 #endif/*CONFIG_QRCODE_SUPPORT*/
 
@@ -10481,8 +10775,11 @@ void ScreenMsgProcess(void)
 			DeviceScreenProcess();
 			break;
 	  #ifdef CONFIG_FACTORY_TEST_SUPPORT		
-		case SCREEN_ID_FT_RESULT_INFOR:
-			FTResultsScreenProcess();
+		case SCREEN_ID_FT_SMT_RESULT_INFOR:
+			FTSmtResultsScreenProcess();
+			break;
+		case SCREEN_ID_FT_ASSEM_RESULT_INFOR:
+			FTAssemResultsScreenProcess();
 			break;
 	  #endif
 	#endif

@@ -38,6 +38,13 @@ typedef enum
 	FT_MAX
 }FT_MENU_ID;
 
+typedef enum
+{
+	FT_STATUS_SMT,
+	FT_STATUS_ASSEM,
+	FT_STATUS_MAX
+}FT_STATUS;
+
 typedef struct
 {
 	uint16_t name[FT_MENU_NAME_MAX];
@@ -63,7 +70,27 @@ typedef struct
 	uint8_t gps_ret;
 	uint8_t audio_ret;
 	uint8_t wrist_ret;
-}ft_results_t;
+}ft_smt_results_t;
+
+typedef struct
+{
+	uint8_t key_ret;
+	uint8_t lcd_ret;
+	uint8_t touch_ret;
+	uint8_t temp_ret;
+	uint8_t imu_ret;
+	uint8_t flash_ret;
+	uint8_t sim_ret;
+	uint8_t ble_ret;
+	uint8_t ppg_ret;
+	uint8_t pmu_ret;
+	uint8_t vib_ret;
+	uint8_t wifi_ret;
+	uint8_t net_ret;
+	uint8_t gps_ret;
+	uint8_t audio_ret;
+	uint8_t wrist_ret;
+}ft_assem_results_t;
 
 typedef struct
 {
@@ -75,12 +102,16 @@ typedef struct
 }ft_menu_t;
 
 extern uint8_t ft_main_menu_index;
+extern uint8_t g_ft_status;
 extern bool ft_menu_checked[FT_MENU_MAX_COUNT];
 extern ft_menu_t ft_menu;
-extern ft_results_t ft_results;
-extern const ft_menu_t FT_MENU_MAIN;
+extern ft_smt_results_t ft_smt_results;
+extern ft_assem_results_t ft_assem_results;
+extern const ft_menu_t FT_SMT_MENU_MAIN;
+extern const ft_menu_t FT_ASSEM_MENU_MAIN;
 
-extern bool FactryTestActived(void);
+extern bool FactorySmtTestFinished(void);
+extern bool FactoryTestActived(void);
 extern void FactoryTestProccess(void);
 extern void EnterFactoryTest(void);
 extern void EnterFactoryTestResults(void);

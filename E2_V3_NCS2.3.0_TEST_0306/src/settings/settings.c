@@ -2058,20 +2058,34 @@ void InitSystemDateTime(void)
 }
 
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
-void SaveFactoryTestResults(ft_results_t ret)
+void SaveFactoryTestResults(FT_STATUS type, void *ret)
 {
-	SaveFtResultsToInnerFlash(ret);
+	SaveFtResultsToInnerFlash(type, ret);
 }
 
 void ResetFactoryTestResults(void)
 {
-	memset(&ft_results, 0, sizeof(ft_results_t));
-	SaveFactoryTestResults(ft_results);
+	memset(&ft_smt_results, 0, sizeof(ft_smt_results_t));
+	SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+
+	memset(&ft_assem_results, 0, sizeof(ft_assem_results_t));
+	SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+
+	g_ft_status = FT_STATUS_SMT;
+	SaveFtStatusToInnerFlash(g_ft_status);
 }
 
 void InitFactoryTestResults(void)
 {
-	ReadFtResultsFromInnerFlash(&ft_results);
+	ReadFtStatusFromInnerFlash(&g_ft_status);
+	ReadFtResultsFromInnerFlash(FT_STATUS_SMT, &ft_smt_results);
+	ReadFtResultsFromInnerFlash(FT_STATUS_ASSEM, &ft_assem_results);
+	
+	if(FactorySmtTestFinished())
+	{
+		g_ft_status = FT_STATUS_ASSEM;
+		SaveFtStatusToInnerFlash(g_ft_status);
+	}
 }
 #endif
 

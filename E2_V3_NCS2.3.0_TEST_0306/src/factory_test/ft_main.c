@@ -72,24 +72,32 @@ void FTMainMenuCurProc(void)
 void FTMainMenuKeyProc(void)
 {
 	ft_main_menu_index = FT_KEY;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuKey();
 }
 
 void FTMainMenuLcdProc(void)
 {
 	ft_main_menu_index = FT_LCD;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuLcd();
 }
 
 void FTMainMenuTouchProc(void)
 {
 	ft_main_menu_index = FT_TOUCH;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuTouch();
 }
 
 void FTMainMenuTempProc(void)
 {
 	ft_main_menu_index = FT_TEMP;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuTemp();
 }
 
@@ -97,6 +105,8 @@ void FTMainMenuWristProc(void)
 {
 #ifdef CONFIG_WRIST_CHECK_SUPPORT
 	ft_main_menu_index = FT_WRIST;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuWrist();
 #endif	
 }
@@ -104,42 +114,56 @@ void FTMainMenuWristProc(void)
 void FTMainMenuIMUProc(void)
 {
 	ft_main_menu_index = FT_IMU;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuIMU();
 }
 
 void FTMainMenuFlashProc(void)
 {
 	ft_main_menu_index = FT_FLASH;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuFlash();
 }
 
 void FTMainMenuSIMProc(void)
 {
 	ft_main_menu_index = FT_SIM;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuSIM();
 }
 
 void FTMainMenuBleProc(void)
 {
 	ft_main_menu_index = FT_BLE;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuBle();
 }
 
 void FTMainMenuPPGProc(void)
 {
 	ft_main_menu_index = FT_PPG;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuPPG();
 }
 
 void FTMainMenuPMUProc(void)
 {
 	ft_main_menu_index = FT_PMU;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuPMU();
 }
 
 void FTMainMenuVibrateProc(void)
 {
 	ft_main_menu_index = FT_VIBRATE;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuVibrate();
 }
 
@@ -147,6 +171,8 @@ void FTMainMenuWifiProc(void)
 {
 #ifdef CONFIG_WIFI_SUPPORT
 	ft_main_menu_index = FT_WIFI;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuWifi();	
 #endif
 }
@@ -154,12 +180,16 @@ void FTMainMenuWifiProc(void)
 void FTMainMenuNetProc(void)
 {
 	ft_main_menu_index = FT_NET;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuNet();
 }
 
 void FTMainMenuGPSProc(void)
 {
 	ft_main_menu_index = FT_GPS;
+	if(g_ft_status == FT_STATUS_ASSEM)	//组装测试没有电流测试，按键测试排在第一位，序号需要从0开始
+		ft_main_menu_index--;
 	EnterFTMenuGPS();
 }
 

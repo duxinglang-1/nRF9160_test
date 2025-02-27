@@ -186,6 +186,6 @@ extern unsigned char asc2_6432[96][256];
 //extern unsigned char chinese_3232[8178][128];
 #endif/*FONT_32*/
 
-extern font_arabic_forms ara_froms[28];
+extern font_arabic_forms ara_froms[35];
 extern font_arabic_forms_spec ara_froms_spec[3];
 #endif/*__FONT_H__*/

@@ -555,6 +555,11 @@ static void FactoryTestMainProcess(void)
 static void FactoryTestPreExit(void)
 {
 	ft_running_flag = false;
+	if(FactorySmtTestFinished())
+	{
+		g_ft_status = FT_STATUS_ASSEM;
+		SaveFtStatusToInnerFlash(g_ft_status);
+	}
 	
 	SetModemTurnOn();
 	EnterSettings();
@@ -563,6 +568,11 @@ static void FactoryTestPreExit(void)
 static void FactoryTestNextExit(void)
 {
 	ft_running_flag = false;
+	if(FactorySmtTestFinished())
+	{
+		g_ft_status = FT_STATUS_ASSEM;
+		SaveFtStatusToInnerFlash(g_ft_status);
+	}
 	
 	SetModemTurnOn();
 	EnterFTSmtResultsScreen();
@@ -599,12 +609,6 @@ void EnterFactoryTestScreen(void)
 
 void ReturnFTMainMenu(void)
 {
-	if(FactorySmtTestFinished())
-	{
-		g_ft_status = FT_STATUS_ASSEM;
-		SaveFtStatusToInnerFlash(g_ft_status);
-	}
-
 	if(g_ft_status == FT_STATUS_SMT)
 	{
 		memcpy(&ft_menu, &FT_SMT_MENU_MAIN, sizeof(ft_menu_t));

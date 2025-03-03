@@ -462,7 +462,6 @@ static void FactoryTestMainUpdate(void)
 	LCD_ReSetFontColor();
 }
 
-
 static void FactoryTestMainShow(void)
 {
 	uint8_t;
@@ -487,11 +486,15 @@ static void FactoryTestMainShow(void)
 		LCD_ShowUniString((LCD_WIDTH-w)/2, 10, title_assem);
 	}
 	
-	LCD_SetFontBgColor(bg_clor);
-
+	ClearAllKeyHandler();
+	SetLeftKeyUpHandler(FactoryTestNextExit);
+	//SetRightKeyUpHandler(FTMainMenuProcess);
+	
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
 #endif
+
+	LCD_SetFontBgColor(bg_clor);
 
 	for(i=0;i<FT_MAIN_MENU_MAX_PER_PG;i++)
 	{
@@ -512,18 +515,15 @@ static void FactoryTestMainShow(void)
 	#endif
 	}
 
-	SetLeftKeyUpHandler(FactoryTestNextExit);
-	SetRightKeyUpHandler(FTMainMenuProcess);
-	
+	LCD_ReSetFontBgColor();
+	LCD_ReSetFontColor();
+
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_UP, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[0]);
 	register_touch_event_handle(TP_EVENT_MOVING_DOWN, 0, LCD_WIDTH, 0, LCD_HEIGHT, ft_menu.pg_handler[1]);
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestNextExit);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestPreExit);	
 #endif		
-
-	LCD_ReSetFontBgColor();
-	LCD_ReSetFontColor();
 
 	//xb add 2023-03-15 Turn off the modem after entering the ft menu to prevent jamming.
 	FTPreReadyNet();

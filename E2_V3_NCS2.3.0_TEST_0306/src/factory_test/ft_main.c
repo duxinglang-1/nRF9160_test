@@ -622,31 +622,50 @@ void ReturnFTMainMenu(void)
 	FactoryTestMainShow();
 }
 
-void EnterFactoryTest(void)
+void EnterFactorySmtTest(void)
+{
+	uint8_t i,*p_ret;
+
+	if(g_ft_status == FT_STATUS_SMT)
+	{
+		ft_running_flag = true;
+		
+		memcpy(&ft_menu, &FT_SMT_MENU_MAIN, sizeof(ft_menu_t));
+		p_ret = (uint8_t*)&ft_smt_results;
+
+		for(i=0;i<ft_menu.count;i++)
+		{
+			if(*(p_ret++) == 1)
+				ft_menu_checked[i] = true;
+			else
+				ft_menu_checked[i] = false;
+		}
+		
+		EnterFactoryTestScreen();
+	}
+}
+
+void EnterFactoryAssemTest(void)
 {
 	uint8_t i,*p_ret;
 	
-	ft_running_flag = true;
-	if(g_ft_status == FT_STATUS_SMT)
+	if(g_ft_status == FT_STATUS_ASSEM)
 	{
-		memcpy(&ft_menu, &FT_SMT_MENU_MAIN, sizeof(ft_menu_t));
-		p_ret = (uint8_t*)&ft_smt_results;
-	}
-	else
-	{
+		ft_running_flag = true;
+		
 		memcpy(&ft_menu, &FT_ASSEM_MENU_MAIN, sizeof(ft_menu_t));
 		p_ret = (uint8_t*)&ft_assem_results;
+
+		for(i=0;i<ft_menu.count;i++)
+		{
+			if(*(p_ret++) == 1)
+				ft_menu_checked[i] = true;
+			else
+				ft_menu_checked[i] = false;
+		}
+		
+		EnterFactoryTestScreen();
 	}
-	
-	for(i=0;i<ft_menu.count;i++)
-	{
-		if(*(p_ret++) == 1)
-			ft_menu_checked[i] = true;
-		else
-			ft_menu_checked[i] = false;
-	}
-	
-	EnterFactoryTestScreen();
 }
 
 bool FactorySmtTestFinished(void)

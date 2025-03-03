@@ -199,20 +199,20 @@ int MAX20353_HapticConfig(void)
 void VibrateStart(void)
 {
 #ifdef MOTOR_TYPE_ERM
-	MAX20353_WriteReg( REG_HPT_RTI2CAMP,  0x3F);	//振幅控制，从0x00到0x7f
-	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x26); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x06
+	MAX20353_WriteReg(REG_HPT_RTI2CAMP, 0x55&0x7f);	//振幅控制，从0x00到0x7f
+	MAX20353_WriteReg(REG_HPT_DIRECT1, 0x26); //hptExtTrig=0, HptRamEn=1, HptDrvEn=0, HptDrvMode=0x06
 #else defined(MOTOR_TYPE_LRA)
 	appcmdoutvalue_ = 0xAC;
-	MAX20353_WriteReg( REG_AP_CMDOUT,  appcmdoutvalue_);//0x17	//Pattern RAM Address
+	MAX20353_WriteReg(REG_AP_CMDOUT,  appcmdoutvalue_);//0x17	//Pattern RAM Address
 #endif
 }
 
 void VibrateStop(void)
 {
 #ifdef MOTOR_TYPE_ERM
-	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x00); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x12
+	MAX20353_WriteReg(REG_HPT_DIRECT1, 0x00); //hptExtTrig=1, HptRamEn=1, HptDrvEn=1, HptDrvMode=0x12
 #else defined(MOTOR_TYPE_LRA)
-	MAX20353_WriteReg( REG_HPT_DIRECT1,  0x00);
+	MAX20353_WriteReg(REG_HPT_DIRECT1, 0x00);
 #endif
 }
 

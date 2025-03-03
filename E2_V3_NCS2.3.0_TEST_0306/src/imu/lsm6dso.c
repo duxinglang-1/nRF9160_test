@@ -755,6 +755,9 @@ void IMUMsgProcess(void)
 		#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			|| (dl_is_running())
 		#endif
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			|| (FactoryTestActived())
+		#endif
 		)
 	{
 		return;
@@ -795,16 +798,16 @@ void IMUMsgProcess(void)
 		
 		if(is_tap())
 		{
-			#if 0 //Tap detection
+		#if 0 //Tap detection
 			k_timer_start(&tap_detect_timer, K_SECONDS(3), K_NO_WAIT);
 
 			if(k_timer_remaining_get(&tap_detect_timer)>=0)
 			{
 				tap_detection();
 			}
-			#else
+		#else
 			fall_detection();
-			#endif
+		#endif
 		}
 
 		int2_event = false;

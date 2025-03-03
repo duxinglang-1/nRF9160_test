@@ -185,8 +185,8 @@ static void FTMenuNetUpdate(void)
 {
 	uint16_t x,y,w,h;
 	uint16_t ret_str[2][5] = {
-								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
+								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 							  };
 	uint16_t notify_str[9] = {0x6B63,0x5728,0x83B7,0x53D6,0x4FE1,0x53F7,0x2026,0x0000};//正在获取信号…
 
@@ -222,32 +222,55 @@ static void FTMenuNetUpdate(void)
 	{
 		update_show_flag = false;
 
-		//pass and fail
-		LCD_SetFontSize(FONT_SIZE_28);
-		LCD_MeasureUniString(ret_str[0], &w, &h);
-		x = FT_NET_PASS_STR_X+(FT_NET_PASS_STR_W-w)/2;
-		y = FT_NET_PASS_STR_Y+(FT_NET_PASS_STR_H-h)/2;
-		LCD_Fill(FT_NET_PASS_STR_X, FT_NET_PASS_STR_Y, FT_NET_PASS_STR_W, FT_NET_PASS_STR_H, BLACK);
-		LCD_DrawRectangle(FT_NET_PASS_STR_X, FT_NET_PASS_STR_Y, FT_NET_PASS_STR_W, FT_NET_PASS_STR_H);
-		LCD_ShowUniString(x, y, ret_str[0]);
-		
-		LCD_MeasureUniString(ret_str[1], &w, &h);
-		x = FT_NET_FAIL_STR_X+(FT_NET_FAIL_STR_W-w)/2;
-		y = FT_NET_FAIL_STR_Y+(FT_NET_FAIL_STR_H-h)/2;
-		LCD_Fill(FT_NET_FAIL_STR_X, FT_NET_FAIL_STR_Y, FT_NET_FAIL_STR_W, FT_NET_FAIL_STR_H, BLACK);
-		LCD_DrawRectangle(FT_NET_FAIL_STR_X, FT_NET_FAIL_STR_Y, FT_NET_FAIL_STR_W, FT_NET_FAIL_STR_H);
-		LCD_ShowUniString(x, y, ret_str[1]);
+		if(g_ft_status == FT_STATUS_SMT)
+		{
+			//pass or fail
+			LCD_SetFontSize(FONT_SIZE_52);
+			LCD_SetFontColor(BRRED);
+			LCD_SetFontBgColor(GREEN);
+			LCD_MeasureUniString(ret_str[ft_net_check_ok], &w, &h);
+			LCD_ShowUniString(FT_NET_RET_STR_X+(FT_NET_RET_STR_W-w)/2, FT_NET_RET_STR_Y+(FT_NET_RET_STR_H-h)/2, ret_str[ft_net_check_ok]);
+			LCD_ReSetFontBgColor();
+			LCD_ReSetFontColor();
 
+			if(ft_net_check_ok)
+				ft_smt_results.net_ret = 1;
+			else
+				ft_smt_results.net_ret = 2;
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		}
+		else
+		{
+			//pass and fail
+			LCD_SetFontSize(FONT_SIZE_28);
+			LCD_MeasureUniString(ret_str[1], &w, &h);
+			x = FT_NET_PASS_STR_X+(FT_NET_PASS_STR_W-w)/2;
+			y = FT_NET_PASS_STR_Y+(FT_NET_PASS_STR_H-h)/2;
+			LCD_Fill(FT_NET_PASS_STR_X, FT_NET_PASS_STR_Y, FT_NET_PASS_STR_W, FT_NET_PASS_STR_H, BLACK);
+			LCD_DrawRectangle(FT_NET_PASS_STR_X, FT_NET_PASS_STR_Y, FT_NET_PASS_STR_W, FT_NET_PASS_STR_H);
+			LCD_ShowUniString(x, y, ret_str[1]);
+			
+			LCD_MeasureUniString(ret_str[0], &w, &h);
+			x = FT_NET_FAIL_STR_X+(FT_NET_FAIL_STR_W-w)/2;
+			y = FT_NET_FAIL_STR_Y+(FT_NET_FAIL_STR_H-h)/2;
+			LCD_Fill(FT_NET_FAIL_STR_X, FT_NET_FAIL_STR_Y, FT_NET_FAIL_STR_W, FT_NET_FAIL_STR_H, BLACK);
+			LCD_DrawRectangle(FT_NET_FAIL_STR_X, FT_NET_FAIL_STR_Y, FT_NET_FAIL_STR_W, FT_NET_FAIL_STR_H);
+			LCD_ShowUniString(x, y, ret_str[0]);
+		}
+		
 		ClearAllKeyHandler();
 		SetLeftKeyUpHandler(FTMenuNetSle1Hander);
 		SetRightKeyUpHandler(FTMenuNetSle2Hander);
-			
+
 	#ifdef CONFIG_TOUCH_SUPPORT
 		clear_all_touch_event_handle();
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_NET_SLE1_STR_X, FT_NET_SLE1_STR_X+FT_NET_SLE1_STR_W, FT_NET_SLE1_STR_Y, FT_NET_SLE1_STR_Y+FT_NET_SLE1_STR_H, FTMenuNetSle1Hander);
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_NET_SLE2_STR_X, FT_NET_SLE2_STR_X+FT_NET_SLE2_STR_W, FT_NET_SLE2_STR_Y, FT_NET_SLE2_STR_Y+FT_NET_SLE2_STR_H, FTMenuNetSle2Hander);
-		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_NET_PASS_STR_X, FT_NET_PASS_STR_X+FT_NET_PASS_STR_W, FT_NET_PASS_STR_Y, FT_NET_PASS_STR_Y+FT_NET_PASS_STR_H, FTMenuNetPassHander);
-		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_NET_FAIL_STR_X, FT_NET_FAIL_STR_X+FT_NET_FAIL_STR_W, FT_NET_FAIL_STR_Y, FT_NET_FAIL_STR_Y+FT_NET_FAIL_STR_H, FTMenuNetFailHander);		
+		if(g_ft_status == FT_STATUS_ASSEM)
+		{
+			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_NET_PASS_STR_X, FT_NET_PASS_STR_X+FT_NET_PASS_STR_W, FT_NET_PASS_STR_Y, FT_NET_PASS_STR_Y+FT_NET_PASS_STR_H, FTMenuNetPassHander);
+			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_NET_FAIL_STR_X, FT_NET_FAIL_STR_X+FT_NET_FAIL_STR_W, FT_NET_FAIL_STR_Y, FT_NET_FAIL_STR_Y+FT_NET_FAIL_STR_H, FTMenuNetFailHander);		
+		}
 	#endif	
 	}
 }
@@ -341,19 +364,21 @@ void FTNetStatusUpdate(uint8_t rssp)
 
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_NET))
 	{
-	#if 0	//xb add 2023.07.25 手动检验是否合格
-		if((rssp > 0)&&(rssp < 255))
+		if(g_ft_status == FT_STATUS_SMT)
 		{
-			count++;
-			if(count > 3)
+			if((rssp > 35)&&(rssp < 255))
 			{
-				count = 0;
-				ft_net_check_ok = true;
-				ft_menu_checked[ft_main_menu_index] = true;
-				FTMenuNetStopTest();
+				count++;
+				if(count > 3)
+				{
+					count = 0;
+					ft_net_check_ok = true;
+					ft_menu_checked[ft_main_menu_index] = true;
+					FTMenuNetStopTest();
+				}
 			}
 		}
-	#endif
+
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 	}
 }

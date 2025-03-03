@@ -47,10 +47,10 @@
 #define FT_CUR_FAIL_STR_X			130
 #define FT_CUR_FAIL_STR_Y			((LCD_HEIGHT-FT_CUR_FAIL_STR_H)/2)
 
-#define FT_CUR_RET_STR_W			120
-#define FT_CUR_RET_STR_H			60
-#define FT_CUR_RET_STR_X			((LCD_WIDTH-FT_CUR_RET_STR_W)/2)
-#define FT_CUR_RET_STR_Y			((LCD_HEIGHT-FT_CUR_RET_STR_H)/2)
+#define FT_CUR_NOTIFY_STR_W			220
+#define FT_CUR_NOTIFY_STR_H			60
+#define FT_CUR_NOTIFY_STR_X			((LCD_WIDTH-FT_CUR_NOTIFY_STR_W)/2)
+#define FT_CUR_NOTIFY_STR_Y			60
 
 static bool ft_cur_checking = false;
 
@@ -125,6 +125,7 @@ static void FTMenuCurStartTest(void)
 static void FTMenuCurUpdate(void)
 {
 	uint16_t x,y,w,h;
+	uint16_t notify[13] = {0x7535,0x6D41,0x662F,0x5426,0x5C0F,0x4E8E,0x0031,0x0035,0x0030,0x0075,0x0041,0x003F,0x0000};//电流是否小于150uA?
 	uint16_t ret_str[2][5] = {
 								{0x0050,0x0041,0x0053,0x0053,0x0000},//PASS
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
@@ -149,7 +150,11 @@ static void FTMenuCurUpdate(void)
 	else
 	{
 		LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);
-		
+
+		LCD_SetFontSize(FONT_SIZE_20);
+		LCD_MeasureUniString(notify, &w, &h);
+		LCD_ShowUniString(FT_CUR_NOTIFY_STR_X+(FT_CUR_NOTIFY_STR_W-w)/2, FT_CUR_NOTIFY_STR_Y, notify);
+
 		LCD_SetFontSize(FONT_SIZE_28);
 		LCD_MeasureUniString(ret_str[0], &w, &h);
 		x = FT_CUR_PASS_STR_X+(FT_CUR_PASS_STR_W-w)/2;

@@ -2319,7 +2319,7 @@ void SettingsMainMenu6Proc(void)
 
 void SettingsMainMenu7Proc(void)
 {
-#ifdef CONFIG_FOTA_DOWNLOAD
+#if defined(CONFIG_FOTA_DOWNLOAD)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
 	extern uint8_t g_new_fw_ver[64];
 
 	if(((strcmp(g_new_fw_ver,g_fw_version) != 0) && (strlen(g_new_fw_ver) > 0))

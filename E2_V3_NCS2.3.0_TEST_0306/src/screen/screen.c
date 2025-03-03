@@ -2433,7 +2433,33 @@ void SettingsUpdateStatus(void)
 		 #ifdef NB_SIGNAL_TEST
 			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
 		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
+		 	if(!FactorySmtTestFinished())
+		 	{
+		 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
+		 	}
+			else
+			{
+			#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+				if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+				{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+				}
+				else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+				{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+				}
+		   	  #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
+				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+				{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+				}
+		   	  #endif
+				else
+		  	#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/		
+				{
+					register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+				}	
+			}
 		 #else
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -3688,7 +3714,41 @@ void EnterSettingsScreen(void)
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	SetLeftKeyUpHandler(EnterFactoryTest);
+	if(!FactorySmtTestFinished())
+	{
+		SetLeftKeyUpHandler(EnterFactorySmtTest);
+	}
+	else
+	{
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+	 	if((strlen(g_ui_ver) == 0) 
+			|| (strlen(g_font_ver) == 0)
+			|| (strlen(g_ppg_algo_ver) == 0)
+			)
+		{
+			SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+		}
+	 
+	  	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			SetLeftKeyUpHandler(dl_img_start);
+		}
+		else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			SetLeftKeyUpHandler(dl_font_start);
+		}
+  	  #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
+		else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+		{
+			SetLeftKeyUpHandler(dl_ppg_start);
+		}
+  	  #endif
+  		else
+ 	#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+	  	{
+	  		SetLeftKeyUpHandler(EnterPoweroffScreen);
+	  	}
+	}
 #else
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
  	if((strlen(g_ui_ver) == 0) 
@@ -3727,7 +3787,33 @@ void EnterSettingsScreen(void)
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
+ 	if(!FactorySmtTestFinished())
+	{
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
+ 	}
+	else
+	{
+	#ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
+		if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_img_start);
+		}
+		else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+		}
+	  #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
+		else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_ppg_start);
+		}
+	  #endif
+		else
+	#endif/*CONFIG_DATA_DOWNLOAD_SUPPORT*/
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
+	 	}
+	}
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -10159,8 +10245,11 @@ void EnterFTSmtResultsScreen(void)
 	SetRightKeyUpHandler(ExitFTSmtResultsScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAssemResultsScreen);
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryTest);
-#endif	
+	if(!FactorySmtTestFinished())
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
+	else
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+#endif
 }
 
 void FTAssemResultsShowQRStatus(void)

@@ -85,6 +85,10 @@ const ft_menu_t FT_MENU_PPG =
 
 static void FTMenuPPGSle1Hander(void)
 {
+	ft_ppg_checking = false;
+	k_timer_stop(&ppg_test_timer);
+	FTStopPPG();
+	
 	switch(g_ft_status)
 	{
 	case FT_STATUS_SMT:

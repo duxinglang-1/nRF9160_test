@@ -164,6 +164,20 @@ static void FTMenukeyUpdate(void)
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
 							  };
 
+	ft_menu_checked[ft_main_menu_index] = false;
+	switch(g_ft_status)
+	{
+	case FT_STATUS_SMT:
+		ft_smt_results.key_ret = 2;
+		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+		break;
+		
+	case FT_STATUS_ASSEM:
+		ft_assem_results.key_ret = 2;
+		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+		break;
+	}
+
 	for(i=0;i<ARRAY_SIZE(ft_key);i++)
 	{
 		if(ft_key[i].status == FT_KEY_UP)
@@ -306,7 +320,6 @@ void ExitFTMenuKey(void)
 
 void EnterFTMenuKey(void)
 {
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_KEY, sizeof(ft_menu_t));
 	memcpy(&ft_key, &FT_KEY_INF, sizeof(FT_KEY_INF));
 	
@@ -387,6 +400,20 @@ static void FTMenuWristUpdate(void)
 							  };	
 	if(!ft_wrist_checked)
 	{
+		ft_menu_checked[ft_main_menu_index] = false;
+		switch(g_ft_status)
+		{
+		case FT_STATUS_SMT:
+			ft_smt_results.wrist_ret = 2;
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+			break;
+			
+		case FT_STATUS_ASSEM:
+			ft_assem_results.wrist_ret = 2;
+			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+			break;
+		}
+		
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		check_count++;
@@ -511,7 +538,6 @@ void ExitFTMenuWrist(void)
 void EnterFTMenuWrist(void)
 {
 	ft_wrist_checked = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_WRIST, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

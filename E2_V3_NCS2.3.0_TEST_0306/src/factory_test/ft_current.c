@@ -281,7 +281,6 @@ void ExitFTMenuCur(void)
 void EnterFTMenuCur(void)
 {
 	ft_cur_checking = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_CURRENT, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

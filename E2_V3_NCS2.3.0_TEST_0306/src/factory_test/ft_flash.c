@@ -114,6 +114,11 @@ void FTFlashStatusUpdate(void)
 			ft_menu_checked[ft_main_menu_index] = true;
 		}
 	}
+	else
+	{
+		ft_flash_checked = false;
+		ft_menu_checked[ft_main_menu_index] = false;
+	}
 	
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_FLASH))
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
@@ -250,7 +255,6 @@ void EnterFTMenuFlash(void)
 {
 	ft_flash_start_check = false;
 	ft_flash_checked = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_FLASH, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

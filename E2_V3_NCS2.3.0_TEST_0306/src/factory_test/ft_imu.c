@@ -107,6 +107,11 @@ void FTIMUStatusUpdate(void)
 		ft_imu_checked = true;
 		ft_menu_checked[ft_main_menu_index] = true;
 	}
+	else
+	{
+		ft_imu_checked = false;
+		ft_menu_checked[ft_main_menu_index] = false;
+	}
 	
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_IMU))
 		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
@@ -242,7 +247,6 @@ void ExitFTMenuIMU(void)
 void EnterFTMenuIMU(void)
 {
 	ft_imu_checked = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_IMU, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

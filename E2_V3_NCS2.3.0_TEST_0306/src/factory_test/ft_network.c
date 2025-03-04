@@ -234,9 +234,15 @@ static void FTMenuNetUpdate(void)
 			LCD_ReSetFontColor();
 
 			if(ft_net_check_ok)
+			{
 				ft_smt_results.net_ret = 1;
+				ft_menu_checked[ft_main_menu_index] = true;
+			}
 			else
+			{
 				ft_smt_results.net_ret = 2;
+				ft_menu_checked[ft_main_menu_index] = false;
+			}
 			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
 		}
 		else
@@ -405,7 +411,6 @@ void EnterFTMenuNet(void)
 {
 	ft_net_check_ok = false;
 	update_show_flag = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_NET, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

@@ -52,6 +52,7 @@
 #define FT_AGING_STATUS_STR_Y			100	
 
 static bool ft_aging_change_flag = false;
+static bool ft_aging_stop_flag = false;
 static bool ft_aging_is_running = false;
 static bool ft_aging_update_show_flag = false;
 
@@ -87,6 +88,8 @@ const ft_menu_t FT_MENU_AGING =
 
 static void FtAgingChangeCallBack(struct k_timer *timer_id);
 K_TIMER_DEFINE(ft_aging_change_timer, FtAgingChangeCallBack, NULL);
+static void FtAgingStopCallBack(struct k_timer *timer_id);
+K_TIMER_DEFINE(ft_aging_stop_timer, FtAgingStopCallBack, NULL);
 
 static void AgingStartTest(void);
 static void AgingTestPreExit(void);
@@ -117,8 +120,14 @@ static void FtAgingChangeCallBack(struct k_timer *timer_id)
 		aging_status = AGING_BEGIN;
 }
 
+static void FtAgingStopCallBack(struct k_timer *timer_id)
+{
+	ft_aging_stop_flag = true;
+}
+
 static void AgingStopTest(void)
 {
+	k_timer_stop(&ft_aging_stop_timer);
 	k_timer_stop(&ft_aging_change_timer);
 	ft_aging_is_running = false;
 	ft_aging_update_show_flag = false;
@@ -148,6 +157,7 @@ static void AgingStartTest(void)
 {
 	ft_aging_is_running = true;
 	ft_aging_change_flag = true;
+	k_timer_start(&ft_aging_stop_timer, K_HOURS(4), K_NO_WAIT);
 }
 
 static void AgingTestPreExit(void)
@@ -343,6 +353,12 @@ void FTAgingTestProcess(void)
 
 		scr_msg[SCREEN_ID_AGING_TEST].act = SCREEN_ACTION_UPDATE;
 		ft_aging_change_flag = false;
+	}
+
+	if(ft_aging_stop_flag)
+	{
+		AgingStopTest();
+		ft_aging_stop_flag = false;
 	}
 }
 

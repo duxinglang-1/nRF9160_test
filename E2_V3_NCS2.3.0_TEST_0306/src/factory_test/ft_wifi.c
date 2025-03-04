@@ -157,6 +157,11 @@ static void FTMenuWifiUpdate(void)
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
 
+		if(ft_wifi_check_ok)
+			ft_menu_checked[ft_main_menu_index] = true;
+		else
+			ft_menu_checked[ft_main_menu_index] = false;
+
 		switch(g_ft_status)
 		{
 		case FT_STATUS_SMT:
@@ -283,7 +288,6 @@ void EnterFTMenuWifi(void)
 {
 	ft_wifi_check_ok = false;
 	update_show_flag = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_WIFI, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

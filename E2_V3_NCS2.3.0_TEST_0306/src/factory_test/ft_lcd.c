@@ -365,7 +365,6 @@ void EnterFTMenuLcd(void)
 {
 	ft_color = LCD_COLOR_BEGIN;
 	update_show_flag = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_LCD, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

@@ -334,7 +334,6 @@ void EnterFTMenuGPS(void)
 	ft_gps_lon=0;
 	ft_gps_lat=0;
 	update_show_flag = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_GPS, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

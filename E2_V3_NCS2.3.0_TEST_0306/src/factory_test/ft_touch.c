@@ -240,6 +240,8 @@ static void FTMenuTouchUpdate(void)
 
 	if(ft_tp_testing)
 	{
+		ft_menu_checked[ft_main_menu_index] = false;
+		
 		if(!update_show_flag)
 		{
 			update_show_flag = true;
@@ -247,6 +249,9 @@ static void FTMenuTouchUpdate(void)
 			ClearAllKeyHandler();
 			SetLeftKeyUpHandler(FTMenuTouchStopTest);
 			SetRightKeyUpHandler(FTMenuTouchStopTest);
+
+			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_TP_SLE1_STR_X, FT_TP_SLE1_STR_X+FT_TP_SLE1_STR_W, FT_TP_SLE1_STR_Y, FT_TP_SLE1_STR_Y+FT_TP_SLE1_STR_H, FTMenuTouchDumpProc);
+			register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_TP_SLE2_STR_X, FT_TP_SLE2_STR_X+FT_TP_SLE2_STR_W, FT_TP_SLE2_STR_Y, FT_TP_SLE2_STR_Y+FT_TP_SLE2_STR_H, FTMenuTouchDumpProc);
 		}
 
 		LCD_SetFontSize(FONT_SIZE_28);
@@ -422,7 +427,6 @@ void ExitFTMenuTouch(void)
 
 void EnterFTMenuTouch(void)
 {
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_TOUCH, sizeof(ft_menu_t));
 	memcpy(&ft_tp, &FT_TP_INF[0], sizeof(FT_TP_INF[0]));
 	

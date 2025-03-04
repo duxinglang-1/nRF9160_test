@@ -186,6 +186,11 @@ static void FTMenuSIMUpdate(void)
 		register_touch_event_handle(TP_EVENT_SINGLE_CLICK, FT_SIM_SLE2_STR_X, FT_SIM_SLE2_STR_X+FT_SIM_SLE2_STR_W, FT_SIM_SLE2_STR_Y, FT_SIM_SLE2_STR_Y+FT_SIM_SLE2_STR_H, FTMenuSIMSle2Hander);
 	#endif
 
+		if(ft_sim_check_ok)
+			ft_menu_checked[ft_main_menu_index] = true;
+		else
+			ft_menu_checked[ft_main_menu_index] = false;
+
 		switch(g_ft_status)
 		{
 		case FT_STATUS_SMT:
@@ -293,7 +298,6 @@ void EnterFTMenuSIM(void)
 	ft_sim_status = 0;
 	ft_sim_check_ok = false;
 	ft_sim_checking = true;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_SIM, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

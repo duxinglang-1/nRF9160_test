@@ -133,7 +133,6 @@ static void FTMenuVibFailHander(void)
 		FT_ASSEM_MENU_MAIN.item[ft_main_menu_index+1].sel_handler();
 		break;
 	}
-	
 }
 
 static void FTMenuVibSle1Hander(void)
@@ -159,16 +158,22 @@ static void FTMenuVibSle2Hander(void)
 
 static void FTMenuVibStopTest(void)
 {
-	ft_vib_testing = false;
-	vibrate_off();
-	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	if(ft_vib_testing)
+	{		
+		ft_vib_testing = false;
+		vibrate_off();
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+	}
 }
 
 static void FTMenuVibStartTest(void)
 {
-	ft_vib_testing = true;
-	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
-	k_timer_start(&vib_test_timer, K_MSEC(1000), K_NO_WAIT);
+	if(!ft_vib_testing)
+	{
+		ft_vib_testing = true;
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+		k_timer_start(&vib_test_timer, K_MSEC(1000), K_NO_WAIT);
+	}
 }
 
 static void VibDelayStartCallBack(struct k_timer *timer_id)
@@ -351,7 +356,6 @@ void ExitFTMenuVibrate(void)
 void EnterFTMenuVibrate(void)
 {
 	update_show_flag = false;
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_VIB, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

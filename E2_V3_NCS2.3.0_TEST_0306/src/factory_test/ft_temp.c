@@ -171,6 +171,11 @@ static void FTMenuTempUpdate(void)
 		LCD_ReSetFontBgColor();
 		LCD_ReSetFontColor();
 
+		if(ft_temp_check_ok)
+			ft_menu_checked[ft_main_menu_index] = true;
+		else
+			ft_menu_checked[ft_main_menu_index] = false;
+		
 		switch(g_ft_status)
 		{
 		case FT_STATUS_SMT:
@@ -289,7 +294,6 @@ void ExitFTMenuTemp(void)
 
 void EnterFTMenuTemp(void)
 {
-	ft_menu_checked[ft_main_menu_index] = false;
 	memcpy(&ft_menu, &FT_MENU_TEMP, sizeof(ft_menu_t));
 	
 	history_screen_id = screen_id;

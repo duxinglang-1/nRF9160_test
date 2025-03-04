@@ -57,6 +57,7 @@ static bool ft_gps_check_ok = false;
 static bool ft_gps_checking = false;
 static bool ft_gps_start_flag = false;
 static bool ft_gps_fixed = false;
+static bool ft_gps_exit_flag = false;
 static bool update_show_flag = false;
 
 static int32_t ft_gps_lon=0,ft_gps_lat=0;
@@ -88,12 +89,12 @@ const ft_menu_t FT_MENU_GPS =
 
 static void FTMenuGPSSle1Hander(void)
 {
-	ExitFTMenuGPS();
+	ft_gps_exit_flag = true;
 }
 
 static void FTMenuGPSSle2Hander(void)
 {
-	ExitFTMenuGPS();
+	ft_gps_exit_flag = true;
 }
 
 void FTMenuGPSInit(void)
@@ -268,6 +269,12 @@ void FTMenuGPSProcess(void)
 	{
 		FTMenuGPSStopTest();
 		ft_gps_stop_flag = false;
+	}
+
+	if(ft_gps_exit_flag)
+	{
+		ExitFTMenuGPS();
+		ft_gps_exit_flag = false;
 	}
 }
 

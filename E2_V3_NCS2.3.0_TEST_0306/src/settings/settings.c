@@ -2331,7 +2331,7 @@ void SettingsMainMenu7Proc(void)
 		fota_start();
 	}
 	else
-#endif		
+#endif
 	{
 		main_menu_index_bk = settings_menu.index;
 		memcpy(&settings_menu, &SETTING_MENU_OTA_UPDATE, sizeof(settings_menu_t));

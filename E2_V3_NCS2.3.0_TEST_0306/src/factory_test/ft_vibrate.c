@@ -59,6 +59,7 @@
 
 static bool ft_vib_working = false;
 static bool ft_vib_start_flag = false;
+static bool ft_vib_stop_flag = false;
 static bool ft_vib_testing = false;
 static bool update_show_flag = false;
 
@@ -137,6 +138,9 @@ static void FTMenuVibFailHander(void)
 
 static void FTMenuVibSle1Hander(void)
 {
+	ft_vib_start_flag = false;
+	ft_vib_stop_flag = false;
+	ft_vib_testing = false;
 	vibrate_off();
 
 	switch(g_ft_status)
@@ -160,9 +164,7 @@ static void FTMenuVibStopTest(void)
 {
 	if(ft_vib_testing)
 	{		
-		ft_vib_testing = false;
-		vibrate_off();
-		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+		ft_vib_stop_flag = true;
 	}
 }
 
@@ -170,9 +172,7 @@ static void FTMenuVibStartTest(void)
 {
 	if(!ft_vib_testing)
 	{
-		ft_vib_testing = true;
-		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
-		k_timer_start(&vib_test_timer, K_MSEC(1000), K_NO_WAIT);
+		ft_vib_start_flag = true;
 	}
 }
 
@@ -334,7 +334,19 @@ void FTMenuVibrateProcess(void)
 	if(ft_vib_start_flag)
 	{
 		vibrate_on(VIB_RHYTHMIC, 1000, 1000);
+		
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 		ft_vib_start_flag = false;
+		ft_vib_testing = true;
+	}
+
+	if(ft_vib_stop_flag)
+	{
+		vibrate_off();
+		
+		scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
+		ft_vib_stop_flag = false;
+		ft_vib_testing = false;
 	}
 }
 
@@ -349,7 +361,11 @@ void FTVibrateStatusUpdate(bool flag)
 
 void ExitFTMenuVibrate(void)
 {
+	ft_vib_start_flag = false;
+	ft_vib_stop_flag = false;
+	ft_vib_testing = false;
 	vibrate_off();
+	
 	ReturnFTMainMenu();
 }
 

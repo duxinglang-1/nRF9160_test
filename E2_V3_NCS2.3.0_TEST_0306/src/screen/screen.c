@@ -1861,12 +1861,16 @@ void PowerOffShowStatus(void)
 
 	LCD_ShowImg_From_Flash(PWR_OFF_ICON_X, PWR_OFF_ICON_Y, IMG_PWROFF_BUTTON_ADDR);
 
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+	ClearAllKeyHandler();
+#endif
 	SetLeftKeyUpHandler(poweroff_cancel);
 	SetLeftKeyLongPressHandler(poweroff_confirm);
+	
 #ifdef CONFIG_TOUCH_SUPPORT
 	clear_all_touch_event_handle();
-	register_touch_event_handle(TP_EVENT_LONG_PRESS, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 
+	register_touch_event_handle(TP_EVENT_LONG_PRESS, PWR_OFF_ICON_X, PWR_OFF_ICON_X+PWR_OFF_ICON_W, PWR_OFF_ICON_Y, PWR_OFF_ICON_Y+PWR_OFF_ICON_H, poweroff_confirm);
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 
  #ifdef NB_SIGNAL_TEST
@@ -3691,6 +3695,7 @@ void EnterSettingsScreen(void)
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
+	ClearAllKeyHandler();
 	if(!FactorySmtTestFinished())
 		SetLeftKeyUpHandler(EnterFactorySmtTest);
 	else
@@ -9219,6 +9224,7 @@ void EnterIdleScreen(void)
 	scr_msg[SCREEN_ID_IDLE].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_IDLE].status = SCREEN_STATUS_CREATING;
 
+	ClearAllKeyHandler();
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterNBTestScreen);
 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
@@ -10170,9 +10176,11 @@ void EnterFTSmtResultsScreen(void)
 	scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FT_SMT_RESULT_INFOR].status = SCREEN_STATUS_CREATING;
 
+	ClearAllKeyHandler();
 	SetLeftKeyUpHandler(EnterFTAssemResultsScreen);
 	SetRightKeyUpHandler(ExitFTSmtResultsScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAssemResultsScreen);
 	if(!FactorySmtTestFinished())
 		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
@@ -10469,9 +10477,11 @@ void EnterFTAssemResultsScreen(void)
 	scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].act = SCREEN_ACTION_ENTER;
 	scr_msg[SCREEN_ID_FT_ASSEM_RESULT_INFOR].status = SCREEN_STATUS_CREATING;
 
+	ClearAllKeyHandler();
 	SetLeftKeyUpHandler(EnterFTAgingTest);
 	SetRightKeyUpHandler(ExitFTAssemResultsScreen);
 #ifdef CONFIG_TOUCH_SUPPORT
+	clear_all_touch_event_handle();
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAgingTest);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTSmtResultsScreen);
 #endif	

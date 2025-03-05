@@ -6725,7 +6725,7 @@ void NotifyShow(void)
 						break;
 				}
 
-				if(byte_no < text_len)
+				if(w >= (str_w-2*offset_w))
 				{
 					i--;
 					byte_no--;

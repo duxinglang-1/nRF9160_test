@@ -157,7 +157,7 @@ static void AgingStartTest(void)
 {
 	ft_aging_is_running = true;
 	ft_aging_change_flag = true;
-	k_timer_start(&ft_aging_stop_timer, K_HOURS(4), K_NO_WAIT);
+	k_timer_start(&ft_aging_stop_timer, FT_AGING_CONTINUE_TIME, K_NO_WAIT);
 }
 
 static void AgingTestPreExit(void)

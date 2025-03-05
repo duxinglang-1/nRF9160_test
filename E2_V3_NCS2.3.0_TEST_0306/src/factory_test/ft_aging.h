@@ -6,6 +6,9 @@
 ** Modified Date:      		2023-12-12 
 ** Version:			    	V1.0
 ******************************************************************************************************/
+#include <zephyr/kernel.h>
+
+#define FT_AGING_CONTINUE_TIME	K_HOURS(4)
 
 typedef enum
 {

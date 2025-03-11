@@ -2080,9 +2080,11 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				case 1://SOS Alarm
 					SOSRecLocatNotify(ptr+1);
 					break;
+			#ifdef CONFIG_FALL_DETECT_SUPPORT		
 				case 2://Fall Alarm
-					//FallRecLocatNotify(ptr+1);
+					FallRecLocatNotify(ptr+1);
 					break;
+			#endif		
 				}
 			}
 		}

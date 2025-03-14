@@ -1987,7 +1987,7 @@ void SettingsUpdateStatus(void)
 															{0x65E5,0x672C,0x8A9E,0x0000},//日本語
 														  #endif
 														  #ifdef LANGUAGE_KR_ENABLE
-															{0xD55C,0xAD6D,0xC778,0x0000},//???
+															{0xD55C,0xAD6D,0xC5B4,0x0000},//???
 														  #endif
 														  #ifdef LANGUAGE_RU_ENABLE
 															{0x0420,0x0443,0x0441,0x0441,0x043A,0x0438,0x0439,0x0000},//Русский
@@ -2015,16 +2015,16 @@ void SettingsUpdateStatus(void)
 														  #endif
 														  #ifdef LANGUAGE_DE_ENABLE
 															{
-																{0x0053,0x0069,0x0063,0x0068,0x0074,0x0000},//Sicht
+																{0x00DC,0x0062,0x0070,0x0072,0x002E,0x0000},//übpr.
 																{0x0000},//null
-																{0x005A,0x0075,0x0072,0x00FC,0x0063,0x006B,0x0073,0x0065,0x0074,0x007A,0x0065,0x006E,0x0000},//Zurücksetzen
+																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
 															},
 														  #endif
 														  #ifdef LANGUAGE_FR_ENABLE
 															{
 																{0x0056,0x006F,0x0069,0x0072,0x0000},//Voir
 																{0x0000},//null
-																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0069,0x0061,0x006C,0x0069,0x0073,0x0065,0x0072,0x0000},//Réinitialiser
+																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0000},//Réinit
 															},
 														  #endif
 														  #ifdef LANGUAGE_IT_ENABLE
@@ -2243,47 +2243,19 @@ void SettingsUpdateStatus(void)
 				
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(WHITE);
-				switch(global_settings.language)
-				{
-			   #ifdef LANGUAGE_JP_ENABLE
-				case LANGUAGE_JP:
-					if((settings_menu.index == 3) && (i == 1))//"Caremate QR" be showed as english character
-						copy_len = 12;
-					else
-						copy_len = 6;
-					break;
-			   #endif
-			   
-			   #ifdef LANGUAGE_AR_ENABLE
-				case LANGUAGE_AR:
-					copy_len = 14;
-					break;
-			   #endif
-
-			   #ifdef LANGUAGE_EN_ENABLE
-				case LANGUAGE_EN:
-					copy_len = MENU_NAME_STR_MAX;
-					break;
-			   #endif
-			   
-				default:
-					copy_len = 12;
-					break;
-				}
-				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], copy_len);
-
+				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], MENU_NAME_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
-
-			#ifdef LANGUAGE_AR_ENABLE	
+			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									tmpbuf);
 				else
-			#endif		
+			  #endif		
 					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									tmpbuf);
+			
 				LCD_SetFontColor(green_clor);
 				switch(settings_menu.index)
 				{
@@ -2494,7 +2466,8 @@ void SettingsUpdateStatus(void)
 	case SETTINGS_MENU_LANGUAGE:
 		{
 			LCD_Clear(BLACK);
-			
+			LCD_SetFontColor(WHITE);
+
 			if(settings_menu.count > SETTINGS_SUB_MENU_MAX_PER_PG)
 				count = (settings_menu.count - settings_menu.index >= SETTINGS_SUB_MENU_MAX_PER_PG) ? SETTINGS_SUB_MENU_MAX_PER_PG : settings_menu.count - settings_menu.index;
 			else
@@ -2524,9 +2497,7 @@ void SettingsUpdateStatus(void)
 				}
 
 			#ifdef FONTMAKER_UNICODE_FONT
-				LCD_SetFontColor(WHITE);
 				LCD_MeasureUniString(settings_menu.name[global_settings.language][i+settings_menu.index], &w, &h);
-				
 			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 				{
@@ -2574,6 +2545,7 @@ void SettingsUpdateStatus(void)
 			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
+
 			if(language_bk == LANGUAGE_MAX)
 				language_bk = global_settings.language;
 			
@@ -3033,6 +3005,7 @@ void SettingsUpdateStatus(void)
 	case SETTINGS_MENU_TEMP:
 		{
 			LCD_Clear(BLACK);
+			LCD_SetFontColor(WHITE);
 			
 			for(i=0;i<settings_menu.count;i++)
 			{
@@ -3060,10 +3033,8 @@ void SettingsUpdateStatus(void)
 				}
 				
 			#ifdef FONTMAKER_UNICODE_FONT
-				LCD_SetFontColor(WHITE);
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
-
 			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
 					LCD_ShowUniStringRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
@@ -3143,6 +3114,7 @@ void SettingsUpdateStatus(void)
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
 									settings_menu.name[global_settings.language][i+settings_menu.index]);
+
 				LCD_SetFontColor(WHITE);
 			  #ifdef CONFIG_FACTORY_TEST_SUPPORT	
 				if((settings_menu.index == 0) && (i == 2))
@@ -3348,7 +3320,7 @@ void SettingsShowStatus(void)
 												{0x65E5,0x672C,0x8A9E,0x0000},//日本語
 											  #endif
 											  #ifdef LANGUAGE_KR_ENABLE
-												{0xD55C,0xAD6D,0xC778,0x0000},//???
+												{0xD55C,0xAD6D,0xC5B4,0x0000},//???
 											  #endif
 											  #ifdef LANGUAGE_RU_ENABLE
 												{0x0420,0x0443,0x0441,0x0441,0x043A,0x0438,0x0439,0x0000},//Русский
@@ -3503,15 +3475,7 @@ void SettingsShowStatus(void)
 
 	#ifdef FONTMAKER_UNICODE_FONT
 		LCD_SetFontColor(WHITE);
-		switch(global_settings.language)
-		{
-		case LANGUAGE_EN:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
-			break;
-		default:
-			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], 12);
-			break;
-		}
+		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
 		LCD_MeasureUniString(tmpbuf, &w, &h);
 	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)

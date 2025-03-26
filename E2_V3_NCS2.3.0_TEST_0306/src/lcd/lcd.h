@@ -113,6 +113,8 @@ void LCD_dis_pic_trans_rotate(uint16_t x, uint16_t y, unsigned char *color, uint
 void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height);
 void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p);
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p);
+void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p);
+void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p);
 #endif/*FONTMAKER_UNICODE_FONT*/
 
 #endif

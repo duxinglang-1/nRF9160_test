@@ -3067,7 +3067,6 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 	}
 }
 
-#ifdef LANGUAGE_AR_ENABLE
 void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
 {
 	int16_t str_x=x,str_y=y,str_w,str_h;
@@ -3139,7 +3138,6 @@ void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_
 		next = p+1;
 	}
 }
-#endif
 
 //显示中英文字符串
 //x,y:起点坐标
@@ -3165,7 +3163,6 @@ void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 //显示中英文字符串
 //x,y:起点坐标
 //*p:字符串起始地址	
-#ifdef LANGUAGE_AR_ENABLE
 void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 {
 	int16_t str_x=x,str_y=y;
@@ -3228,7 +3225,112 @@ void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 		next = p+1;
 	}
 }
-#endif
+
+void LCD_SmartShowUniString(uint16_t x1, uint16_t x2, uint16_t y, uint16_t *p)
+{
+	bool r2l_flag = false;
+	uint8_t show_arr = 0;	//0:idle, 1:l2r, 2:r2l
+	uint16_t j,tmpbuf[128] = {0};
+	uint16_t str_l2r=x1,str_r2l=x2;
+	uint16_t show_w,show_h;
+
+	if((x2 >= LCD_WIDTH)||(y >= LCD_HEIGHT))
+		return;
+
+	while(*p)
+	{
+		if(mmi_ucs2IsRtLchar(*p))
+		{
+			if(show_arr == 0)
+				show_arr = 2;
+			
+			if(r2l_flag)
+			{
+				tmpbuf[j++] = *(p++);
+				if(*p == 0x0020)
+				{
+					tmpbuf[j++] = *(p++);
+				}
+			}
+			else
+			{
+				r2l_flag = true;
+				
+				if(j == 0)
+				{
+					tmpbuf[j++] = *(p++);
+				}
+				else
+				{
+					LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+					if((str_l2r != x1) && (show_arr == 2))
+						str_l2r -= show_w;
+					LCD_ShowUniString(str_l2r,y,tmpbuf);
+					
+					if(show_arr == 1)
+						str_l2r += show_w;
+					str_r2l = str_l2r;
+					
+					j = 0;
+					memset(tmpbuf, 0x00, sizeof(tmpbuf));
+					tmpbuf[j++] = *(p++);
+				}
+			}
+		}
+		else
+		{
+			if(show_arr == 0)
+				show_arr = 1;
+			
+			if(!r2l_flag)
+			{
+				tmpbuf[j++] = *(p++);
+			}
+			else
+			{
+				r2l_flag = false;
+				
+				if(j == 0)
+				{
+					tmpbuf[j++] = *(p++);
+				}
+				else
+				{
+					LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+					if((str_r2l != x2) && (show_arr == 1))
+						str_r2l += show_w;
+					LCD_ShowUniStringRtoL(str_r2l,y,tmpbuf);
+					
+					if(show_arr == 2)
+						str_r2l -= show_w;
+					str_l2r = str_r2l;
+					
+					j = 0;
+					memset(tmpbuf, 0x00, sizeof(tmpbuf));
+					tmpbuf[j++] = *(p++);
+				}
+			}
+		}
+	}
+
+	if(j > 0)
+	{
+		if(r2l_flag)
+		{
+			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+			if((str_r2l != x2) && (show_arr == 1))
+				str_r2l += show_w;
+			LCD_ShowUniStringRtoL(str_r2l,y,tmpbuf);
+		}
+		else
+		{
+			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+			if((str_l2r != x1) && (show_arr == 2))
+				str_l2r -= show_w;
+			LCD_ShowUniString(str_l2r,y,tmpbuf);
+		}
+	}
+}
 
 #elif defined(FONTMAKER_MBCS_FONT)
 //根据字体测量字符的宽度

@@ -521,3 +521,13 @@ uint16_t *ASCTOUCS2(uint8_t *input)
 	return tmpbuf;
 }
 
+bool mmi_ucs2IsRtLchar(uint16_t character)
+{
+	if(((character >= 0x0600) && (character <= 0x06FF))		//0600-06FF #阿拉伯文 (Arabic)
+		||((character >= 0x0750) && (character <= 0x077F))	//0750-077F #阿拉伯文补充 (Arabic Supplement)
+		||((character >= 0xFB50) && (character <= 0xFDFF))	//FB50-FDFF #阿拉伯表達形式A (Arabic Presentation Form-A)
+		)
+		return true;
+	else
+		return false;
+}

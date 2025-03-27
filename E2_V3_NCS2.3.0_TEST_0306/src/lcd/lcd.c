@@ -3226,24 +3226,19 @@ void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
 	}
 }
 
-void LCD_SmartShowUniString(uint16_t x1, uint16_t x2, uint16_t y, uint16_t *p)
+void LCD_SmartShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 {
 	bool r2l_flag = false;
-	uint8_t show_arr = 0;	//0:idle, 1:l2r, 2:r2l
 	uint16_t j,tmpbuf[128] = {0};
-	uint16_t str_l2r=x1,str_r2l=x2;
-	uint16_t show_w,show_h;
+	uint16_t show_x=x,show_w,show_h;
 
-	if((x2 >= LCD_WIDTH)||(y >= LCD_HEIGHT))
+	if((!g_language_r2l && (x >= LCD_WIDTH))||(y >= LCD_HEIGHT))
 		return;
 
 	while(*p)
 	{
 		if(mmi_ucs2IsRtLchar(*p))
 		{
-			if(show_arr == 0)
-				show_arr = 2;
-			
 			if(r2l_flag)
 			{
 				tmpbuf[j++] = *(p++);
@@ -3263,13 +3258,16 @@ void LCD_SmartShowUniString(uint16_t x1, uint16_t x2, uint16_t y, uint16_t *p)
 				else
 				{
 					LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
-					if((str_l2r != x1) && (show_arr == 2))
-						str_l2r -= show_w;
-					LCD_ShowUniString(str_l2r,y,tmpbuf);
-					
-					if(show_arr == 1)
-						str_l2r += show_w;
-					str_r2l = str_l2r;
+					if(g_language_r2l)
+					{
+						show_x -= show_w;
+						LCD_ShowUniString(show_x, y, tmpbuf);
+					}
+					else
+					{
+						LCD_ShowUniString(show_x, y, tmpbuf);
+						show_x += show_w;
+					}
 					
 					j = 0;
 					memset(tmpbuf, 0x00, sizeof(tmpbuf));
@@ -3279,9 +3277,6 @@ void LCD_SmartShowUniString(uint16_t x1, uint16_t x2, uint16_t y, uint16_t *p)
 		}
 		else
 		{
-			if(show_arr == 0)
-				show_arr = 1;
-			
 			if(!r2l_flag)
 			{
 				tmpbuf[j++] = *(p++);
@@ -3297,13 +3292,16 @@ void LCD_SmartShowUniString(uint16_t x1, uint16_t x2, uint16_t y, uint16_t *p)
 				else
 				{
 					LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
-					if((str_r2l != x2) && (show_arr == 1))
-						str_r2l += show_w;
-					LCD_ShowUniStringRtoL(str_r2l,y,tmpbuf);
-					
-					if(show_arr == 2)
-						str_r2l -= show_w;
-					str_l2r = str_r2l;
+					if(g_language_r2l)
+					{
+						LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+						show_x -= show_w;
+					}
+					else
+					{
+						show_x += show_w;
+						LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+					}
 					
 					j = 0;
 					memset(tmpbuf, 0x00, sizeof(tmpbuf));
@@ -3318,16 +3316,28 @@ void LCD_SmartShowUniString(uint16_t x1, uint16_t x2, uint16_t y, uint16_t *p)
 		if(r2l_flag)
 		{
 			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
-			if((str_r2l != x2) && (show_arr == 1))
-				str_r2l += show_w;
-			LCD_ShowUniStringRtoL(str_r2l,y,tmpbuf);
+			if(g_language_r2l)
+			{
+				LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+			}
+			else
+			{
+				show_x += show_w;
+				LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+			}
 		}
 		else
 		{
 			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
-			if((str_l2r != x1) && (show_arr == 2))
-				str_l2r -= show_w;
-			LCD_ShowUniString(str_l2r,y,tmpbuf);
+			if(g_language_r2l)
+			{
+				show_x -= show_w;
+				LCD_ShowUniString(show_x, y, tmpbuf);
+			}
+			else
+			{
+				LCD_ShowUniString(show_x, y, tmpbuf);
+			}
 		}
 	}
 }

@@ -74,7 +74,9 @@ typedef enum{
 typedef enum
 {
 #ifndef FW_FOR_CN
+  #ifdef LANGUAGE_EN_ENABLE
 	LANGUAGE_EN,					//English
+  #endif	
   #ifdef LANGUAGE_DE_ENABLE
 	LANGUAGE_DE,					//Deutsch
   #endif

@@ -20,10 +20,26 @@
 #include "logger.h"
 
 #ifdef FW_FOR_CN
-#ifdef LANGUAGE_CN_ENABLE
+	#ifdef LANGUAGE_CN_ENABLE
+	#else
+		#error "In the version of chinese, language chinese must to be enabled"
+	#endif
 #else
-#error "In the version of FW_FOR_CN, language chinese must be enabled"
-#endif
+	#if defined(LANGUAGE_EN_ENABLE)\
+		||defined(LANGUAGE_DE_ENABLE)\
+		||defined(LANGUAGE_FR_ENABLE)\
+		||defined(LANGUAGE_IT_ENABLE)\
+		||defined(LANGUAGE_ES_ENABLE)\
+		||defined(LANGUAGE_PT_ENABLE)\
+		||defined(LANGUAGE_PL_ENABLE)\
+		||defined(LANGUAGE_SE_ENABLE)\
+		||defined(LANGUAGE_JP_ENABLE)\
+		||defined(LANGUAGE_KR_ENABLE)\
+		||defined(LANGUAGE_RU_ENABLE)\
+		||defined(LANGUAGE_AR_ENABLE)
+	#else
+		#error "In the version of foreign, at least one foreign language needs to be enabled"
+	#endif
 #endif/*FW_FOR_CN*/
 
 bool need_save_settings = false;
@@ -107,9 +123,9 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	TEMP_UINT_C,			//Centigrade
 	TIME_FORMAT_24,			//24 format
 #ifdef FW_FOR_CN	
-	LANGUAGE_CHN,			//language
+	0,						//language
 #else
-	LANGUAGE_EN,			//language
+	0,						//language
 #endif
 	DATE_FORMAT_YYYYMMDD,	//date format
 	CLOCK_MODE_DIGITAL,		//colck mode

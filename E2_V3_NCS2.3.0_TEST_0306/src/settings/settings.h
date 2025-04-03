@@ -6,11 +6,33 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
+#define FW_FOR_EU	//欧洲版本
+//#define FW_FOR_AJ	//日美版本
 
 #ifdef FW_FOR_CN
 #define LANGUAGE_CN_ENABLE		//Chinese
 #define LANGUAGE_EN_ENABLE		//English
+
+#elif defined(FW_FOR_EU)
+#define LANGUAGE_EN_ENABLE		//English
+#define LANGUAGE_DE_ENABLE		//Deutsch
+#define LANGUAGE_FR_ENABLE		//French
+#define LANGUAGE_IT_ENABLE		//Italian
+#define LANGUAGE_ES_ENABLE		//Spanish
+#define LANGUAGE_PT_ENABLE		//Portuguese
+#define LANGUAGE_PL_ENABLE		//Polish
+#define LANGUAGE_SE_ENABLE		//Swedish
+#define LANGUAGE_AR_ENABLE		//Arabic
+
+#elif defined(FW_FOR_AJ)
+#define LANGUAGE_EN_ENABLE		//English
+#define LANGUAGE_FR_ENABLE		//French
+#define LANGUAGE_ES_ENABLE		//Spanish
+#define LANGUAGE_PT_ENABLE		//Portuguese
+#define LANGUAGE_JP_ENABLE		//Japanese
+#define LANGUAGE_KR_ENABLE		//Korea
+
 #else
 #define LANGUAGE_EN_ENABLE		//English
 #define LANGUAGE_DE_ENABLE		//Deutsch
@@ -33,22 +55,30 @@
 #define MENU_OPT_STR_MAX	10
 #define MENU_NOTIFY_STR_MAX	32
 
-#define VERSION_STR	"V3.4.5_250328"
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-#define LANG_BRANCH	"FT"
-#define FALL_BRAMCH ""
-#else
+#define VERSION_STR	"V3.4.5_"
+#define DATE_BRANCH	"250403"
+
 #ifdef FW_FOR_CN
-#define LANG_BRANCH	"BC"
+#define AREA_BRANCH	"CN"
 #else
-#define LANG_BRANCH	"BU"
+#ifdef FW_FOR_EU
+#define AREA_BRANCH	"EU"
+#elif defined(FW_FOR_AJ)
+#define AREA_BRANCH	"AJ"
+#else
+#define AREA_BRANCH	"WW"
 #endif
+#endif
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#define FALL_BRANCH	"FT"
+#else
 #ifdef CONFIG_FALL_DETECT_SUPPORT
-#define FALL_BRAMCH	"F3.4.2"
+#define FALL_BRANCH	"F3.4.2"
 #else
-#define FALL_BRAMCH ""
-#endif
-#endif
+#define FALL_BRANCH ""
+#endif/*CONFIG_FALL_DETECT_SUPPORT*/
+#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"

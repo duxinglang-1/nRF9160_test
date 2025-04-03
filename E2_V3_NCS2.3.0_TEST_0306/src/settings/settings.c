@@ -48,7 +48,7 @@ bool need_reset_settings = false;
 bool need_reset_bk_level = false;
 bool g_language_r2l = false;
 
-uint8_t g_fw_version[64] = VERSION_STR LANG_BRANCH FALL_BRAMCH;
+uint8_t g_fw_version[64] = VERSION_STR DATE_BRANCH AREA_BRANCH FALL_BRANCH;
 
 RESET_STATUS g_reset_status = RESET_STATUS_IDLE;
 

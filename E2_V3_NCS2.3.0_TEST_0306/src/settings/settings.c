@@ -112,7 +112,11 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	SETTINGS_STATUS_NORMAL,	//status flag
 	true,					//temp turn on
 	true,					//heart rate turn on
+#ifdef FW_FOR_AJ
+	false,					//blood pressure turn off
+#else
 	true,					//blood pressure turn on
+#endif	
 	true,					//blood oxygen turn on		
 	true,					//wake screen by wrist
 	false,					//wrist off check

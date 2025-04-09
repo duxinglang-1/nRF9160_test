@@ -2539,7 +2539,7 @@ void SettingsUpdateStatus(void)
 		 	if(!FactorySmtTestFinished())
 		 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
 			else
-				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTSmtResultsScreen);
+				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryAssemTest);
 		 #else
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -3790,7 +3790,7 @@ void EnterSettingsScreen(void)
 	if(!FactorySmtTestFinished())
 		SetLeftKeyUpHandler(EnterFactorySmtTest);
 	else
-		SetLeftKeyUpHandler(EnterFTSmtResultsScreen);
+		SetLeftKeyUpHandler(EnterFactoryAssemTest);
 #else
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
  	if((strlen(g_ui_ver) == 0) 
@@ -3832,7 +3832,7 @@ void EnterSettingsScreen(void)
  	if(!FactorySmtTestFinished())
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
 	else
-		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTSmtResultsScreen);
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryAssemTest);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -10773,7 +10773,7 @@ void EnterFTSmtResultsScreen(void)
 	if(!FactorySmtTestFinished())
 		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
 	else
-		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
+		register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryAssemTest);
 #endif
 }
 

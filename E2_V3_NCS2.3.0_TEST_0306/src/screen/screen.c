@@ -1199,11 +1199,11 @@ void IdleUpdateBatSoc(void)
 	uint8_t strbuf[128] = {0};
 
 	if(g_bat_soc >= 100)
-		sprintf(strbuf, "%d%%", g_bat_soc);
+		sprintf(strbuf, "%d %%", g_bat_soc);
 	else if(g_bat_soc >= 10)
-		sprintf(strbuf, "   %d%%", g_bat_soc);
+		sprintf(strbuf, "   %d %%", g_bat_soc);
 	else
-		sprintf(strbuf, "      %d%%", g_bat_soc);
+		sprintf(strbuf, "      %d %%", g_bat_soc);
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -1255,11 +1255,11 @@ void IdleShowBatSoc(void)
 	uint8_t strbuf[128] = {0};
 
 	if(g_bat_soc >= 100)
-		sprintf(strbuf, "%d%%", g_bat_soc);
+		sprintf(strbuf, "%d %%", g_bat_soc);
 	else if(g_bat_soc >= 10)
-		sprintf(strbuf, "   %d%%", g_bat_soc);
+		sprintf(strbuf, "   %d %%", g_bat_soc);
 	else
-		sprintf(strbuf, "      %d%%", g_bat_soc);
+		sprintf(strbuf, "      %d %%", g_bat_soc);
 
 #ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_20);
@@ -3319,7 +3319,8 @@ void SettingsUpdateStatus(void)
 			LCD_ReSetFontColor();
 
 		#ifdef CONFIG_QRCODE_SUPPORT
-			show_QR_code(strlen(SETTINGS_CAREMATE_URL), SETTINGS_CAREMATE_URL);
+			sprintf(tmpbuf, "%s%s", SETTINGS_CAREMATE_URL, g_imei);
+			show_QR_code(strlen(tmpbuf), tmpbuf);
 		#else
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);

@@ -81,9 +81,9 @@
 #endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
 #ifdef FW_FOR_CN
-#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login?imei="
 #else
-#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login"
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login?imei="
 #endif
 
 typedef void(*menu_handler)(void);

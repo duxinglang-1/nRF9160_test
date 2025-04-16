@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-//#define FW_FOR_CN	//中文版本
-#define FW_FOR_EU	//欧洲版本
+#define FW_FOR_CN	//中文版本
+//#define FW_FOR_EU	//欧洲版本
 //#define FW_FOR_AJ	//美日版本
 
 #ifdef FW_FOR_CN
@@ -56,7 +56,7 @@
 #define MENU_NOTIFY_STR_MAX	32
 
 #define VERSION_STR	"V3.4.5_"
-#define DATE_BRANCH	"250403"
+#define DATE_BRANCH	"250416"
 
 #ifdef FW_FOR_CN
 #define AREA_BRANCH	"CN"

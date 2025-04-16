@@ -175,7 +175,7 @@ static void FTMenuPMUUpdate(void)
 					mmi_ucs2cat((uint8_t*)unibuf, (uint8_t*)charg_unlink_str);
 				LCD_MeasureUniString(unibuf, &w, &h);
 				LCD_ShowUniString(FT_PMU_MENU_STR_X+(FT_PMU_MENU_STR_W-w)/2, FT_PMU_MENU_STR_Y+(FT_PMU_MENU_STR_H-h)/2+1*(FT_PMU_MENU_STR_H+FT_PMU_MENU_STR_OFFSET_Y), unibuf);
-				}
+			}
 		}
 
 		ft_pmu_change_flag = 0;

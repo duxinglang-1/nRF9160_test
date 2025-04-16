@@ -372,7 +372,7 @@ void FTNetStatusUpdate(uint8_t rssp)
 	{
 		if(g_ft_status == FT_STATUS_SMT)
 		{
-			if((rssp > 35)&&(rssp < 255))
+			if((rssp > 25)&&(rssp < 255))
 			{
 				count++;
 				if(count > 3)

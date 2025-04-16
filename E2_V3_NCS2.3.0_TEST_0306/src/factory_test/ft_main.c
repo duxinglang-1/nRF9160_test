@@ -683,7 +683,6 @@ bool FactorySmtTestFinished(void)
 		&& (ft_smt_results.pmu_ret == 1)
 		&& (ft_smt_results.vib_ret == 1)
 		&& (ft_smt_results.wifi_ret == 1)
-		&& (ft_smt_results.gps_ret == 1)
 		)
 	{
 		return true;

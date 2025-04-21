@@ -1163,7 +1163,7 @@ void IMUMsgProcess(void)
 		}
 	}
 
-	#ifdef CONFIG_FALL_DETECT_SUPPORT
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 	if(int2_event) //fall
 	{
 	#ifdef IMU_DEBUG

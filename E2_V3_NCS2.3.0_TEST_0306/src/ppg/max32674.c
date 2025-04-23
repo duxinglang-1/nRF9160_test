@@ -2130,7 +2130,7 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 				PPGStopCheck();
 
 			infor.img_count = 0;
-			mmi_ucs2cpy(infor.text, (uint8_t*)&str_timing_note[global_settings.language]);
+			mmi_ucs2cpy(infor.text, str_timing_note[global_settings.language]);
 			DisplayPopUp(infor);
 
 			g_ppg_data = data_type;
@@ -2211,7 +2211,7 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 														#endif
 															};
 			infor.img_count = 0;
-			mmi_ucs2cpy(infor.text, (uint8_t*)str_running_note[global_settings.language]);
+			mmi_ucs2cpy(infor.text, str_running_note[global_settings.language]);
 			DisplayPopUp(infor);
 			return;
 		}

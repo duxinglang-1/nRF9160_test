@@ -846,7 +846,7 @@ void EnterFactoryTestResults(void)
 	infor.type = NOTIFY_TYPE_POPUP;
 	infor.img_count = 0;
 	
-	mmi_ucs2cpy(infor.text, (uint8_t*)&str_notify[global_settings.language]);
+	mmi_ucs2cpy(infor.text, str_notify[global_settings.language]);
 	DisplayPopUp(infor);
 #endif/*CONFIG_QRCODE_SUPPORT*/
 }

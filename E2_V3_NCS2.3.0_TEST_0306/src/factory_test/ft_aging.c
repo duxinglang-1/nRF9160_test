@@ -206,19 +206,19 @@ static void AgingTestUpdate(void)
 		switch(aging_status)
 		{
 		case AGING_PPG:
-			mmi_ucs2cpy((uint8_t*)show_str, (uint8_t*)ppg_str);
+			mmi_ucs2cpy(show_str, ppg_str);
 			break;
 		case AGING_WIFI:
-			mmi_ucs2cpy((uint8_t*)show_str, (uint8_t*)wifi_str);
+			mmi_ucs2cpy(show_str, wifi_str);
 			break;
 		case AGING_GPS:
-			mmi_ucs2cpy((uint8_t*)show_str, (uint8_t*)gps_str);
+			mmi_ucs2cpy(show_str, gps_str);
 			break;
 		case AGING_VIB:
-			mmi_ucs2cpy((uint8_t*)show_str, (uint8_t*)vib_str);
+			mmi_ucs2cpy(show_str, vib_str);
 			break;
 		case AGING_TEMP:
-			mmi_ucs2cpy((uint8_t*)show_str, (uint8_t*)temp_str);
+			mmi_ucs2cpy(show_str, temp_str);
 			break;
 		}
 

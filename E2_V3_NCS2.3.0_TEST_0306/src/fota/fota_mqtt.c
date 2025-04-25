@@ -295,6 +295,18 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 		fota_cur_status = FOTA_STATUS_ERROR;
 		k_timer_start(&fota_timer, K_SECONDS(FOTA_RESULT_NOTIFY_TIMEOUT), K_NO_WAIT);
 		break;
+		
+	case FOTA_DOWNLOAD_EVT_ERASE_PENDING:
+	#ifdef FOTA_DEBUG	
+		LOGD("erase pending");
+	#endif
+		break;
+
+	case FOTA_DOWNLOAD_EVT_ERASE_DONE:
+	#ifdef FOTA_DEBUG	
+		LOGD("erase done");
+	#endif
+		break;
 
 	case FOTA_DOWNLOAD_EVT_PROGRESS:
 	#ifdef FOTA_DEBUG
@@ -421,7 +433,7 @@ void FotaMsgProc(void)
 
 	if(fota_run_flag)
 	{
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(100));
 	}
 }
 

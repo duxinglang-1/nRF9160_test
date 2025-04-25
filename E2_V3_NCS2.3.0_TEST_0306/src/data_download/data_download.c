@@ -785,6 +785,6 @@ void DlMsgProc(void)
 
 	if(dl_run_flag)
 	{
-		k_sleep(K_MSEC(10));
+		k_sleep(K_MSEC(50));
 	}
 }

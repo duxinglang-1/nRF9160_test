@@ -3411,7 +3411,10 @@ void SettingsUpdateStatus(void)
 	LCD_ReSetFontColor();
 
 #ifndef CONFIG_FACTORY_TEST_SUPPORT
-	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
+	if(settings_menu.id == SETTINGS_MENU_CAREMATE_QR)
+		k_timer_start(&mainmenu_timer, K_SECONDS(10), K_NO_WAIT);
+	else
+		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
 #endif
 }
 

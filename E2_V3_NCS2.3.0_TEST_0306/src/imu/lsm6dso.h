@@ -59,6 +59,8 @@ extern uint16_t g_last_steps;
 extern uint16_t g_steps;
 extern uint16_t g_calorie;
 extern uint16_t g_distance;
+extern float pre_1;
+extern float pre_last;
 
 extern sport_record_t last_sport;
 

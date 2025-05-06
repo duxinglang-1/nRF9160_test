@@ -68,6 +68,14 @@ bool int1_event = false;
 bool int2_event = false;
 bool RUN_FD_FLAG = false;
 
+#ifdef CONFIG_PRESSURE_SUPPORT
+extern float fall_prs;
+extern float pre_1;
+extern bool fall_pre_check;
+extern bool fall_result_pre_flag;
+float pre_last = 0.0;
+#endif
+
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 lsm6dso_all_sources_t all_source;
 
@@ -134,24 +142,27 @@ const uint8_t lsm6so_prg_wrist_tilt[] = {
   0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
 };
 
-static struct k_work_q *imu_work_q;
-
 static bool imu_check_ok = false;
 static uint8_t whoamI, rst;
+static struct k_work_q *imu_work_q;
 static struct device *i2c_imu;
 static struct device *gpio_imu = NULL;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
-//#ifdef CONFIG_FALL_DETECT_SUPPORT
-//static bool fall_check_flag = false;
-//#endif
+
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+bool fall_check_flag = false;
+static struct k_work_delayable fall_work;
+static void fall_check_detection(struct k_work *item);
+#endif
 
 uint16_t g_last_steps = 0;
 uint16_t g_steps = 0;
 uint16_t g_calorie = 0;
 uint16_t g_distance = 0;
+static int pre_min = 0;
 
 #ifdef CONFIG_STEP_SUPPORT
 void ClearAllStepRecData(void)
@@ -656,6 +667,16 @@ void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 }
 #endif
 
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+static void fall_check_detection(struct k_work *item)
+{
+	fall_check_flag = true;
+	fall_detection();
+	imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
+	fall_check_flag = false;
+}
+#endif
+
 uint8_t IMU_GetID(void)
 {
 	uint8_t sensor_id = 0;
@@ -693,6 +714,9 @@ void IMU_init(struct k_work_q *work_q)
 	if(!imu_check_ok)
 		return;
 
+#ifdef CONFIG_FALL_DETECT_SUPPORT	
+	k_work_init_delayable(&fall_work, fall_check_detection);
+#endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
@@ -770,6 +794,10 @@ void IMUMsgProcess(void)
 	#endif
 		int1_event = false;
 
+	#if CONFIG_PRESSURE_SUPPORT
+		pre_last = pre_1;
+	#endif
+
 		if(!imu_check_ok || !is_wearing())
 			return;
 
@@ -786,7 +814,7 @@ void IMUMsgProcess(void)
 		}
 	}
 
-	#ifdef CONFIG_FALL_DETECT_SUPPORT
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 	if(int2_event && global_settings.fall_check) //fall
 	{
 	#ifdef IMU_DEBUG
@@ -806,7 +834,7 @@ void IMUMsgProcess(void)
 				tap_detection();
 			}
 		#else
-			fall_detection();
+			k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
 		#endif
 		}
 
@@ -816,15 +844,19 @@ void IMUMsgProcess(void)
 	if(RUN_FD_FLAG)
 	{
 		RUN_FD_FLAG = false;
-		fall_detection();
+		
+		k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
 	}
 
 	if(fall_result)
 	{
 		fall_result = false;
-		//LOGD("Checking for activity");
 
-		#if 0 // Activity detection
+	#ifdef CONFIG_PRESSURE_SUPPORT
+		fall_pre_check = true; // pre
+	#endif
+
+	#if 0 // Activity detection
 		k_timer_start(&imu_activity_timer, K_SECONDS(3), K_NO_WAIT);
 
 		while(1)
@@ -843,27 +875,40 @@ void IMUMsgProcess(void)
 				break;
 			}
 		}
-		#else
-		#if 1 // SCC detections
+	#else
+	  #if 1 // SCC detections
 		StartSCC();
 		k_timer_start(&fall_scc_timer, K_SECONDS(9), K_NO_WAIT);
-		#else
+	  #else
+	   #ifdef CONFIG_PRESSURE_SUPPORT
+		//.....
+	   #else
 		FallTrigger();
-		#endif
-		#endif
+	   #endif
+	  #endif
+	#endif
 	}
 	
 	if(SCC_check_ok)
 	{
+	#ifdef CONFIG_PRESSURE_SUPPORT
 		SCC_check_ok = false;
 
+		fall_prs = pre_1;
+		if((fall_prs - pre_last) >= 5) // 1m = +-11pa
+		{
+			FallTrigger();
+		}
+	#else
+		SCC_check_ok = false;
 		FallTrigger();
+	#endif
 	}
-
-	//if(fall_check_flag)
-	//{
-		//k_sleep(K_MSEC(3));
-	//}
+	
+	if(fall_check_flag)
+	{
+		k_sleep(K_MSEC(3));
+	}
 #endif
 }
 #endif/*CONFIG_IMU_SUPPORT*/

@@ -9,7 +9,6 @@
 
 //#define IMU_DEBUG
 
-int fall_flag2335 = 0;
 //static int32_t check_ok = 0;
 
 volatile bool hist_buff_flag      = false;
@@ -22,10 +21,10 @@ static float angular_rate_mdps[3];
 static float acceleration_g[3];
 static float angular_rate_dps[3];
 static uint8_t rst;
-//float verify_acc_magn[VERIFY_DATA_BUF_LEN*2] = {0};
+float verify_acc_magn[VERIFY_DATA_BUF_LEN*2] = {0}; // 1
 float std_devi=0;
 float acc_magn_square=0, cur_angle=0, cur_max_gyro_magn=0, cur_fuzzy_output=0;
-char tmp_buf[128] = {0};
+//char tmp_buf[128] = {0};
 //uint8_t twi_tx_buffer[TWI_BUFFER_SIZE];
 
 //char check_log[256] = {0};
@@ -33,17 +32,18 @@ char tmp_buf[128] = {0};
 float acc_x_hist_buffer[PATTERN_LEN]  = {0}, acc_y_hist_buffer[PATTERN_LEN]   = {0}, acc_z_hist_buffer[PATTERN_LEN]   = {0};
 float gyro_x_hist_buffer[PATTERN_LEN] = {0}, gyro_y_hist_buffer[PATTERN_LEN]  = {0}, gyro_z_hist_buffer[PATTERN_LEN]  = {0};
 
-//float accel_tempX[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempY[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempZ[ACC_GYRO_FIFO_BUF_LEN] = {0};
-//float gyro_tempX[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempY[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempZ[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+//float accel_tempX[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempY[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempZ[ACC_GYRO_FIFO_BUF_LEN] = {0}; // 1
+//float gyro_tempX[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempY[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempZ[ACC_GYRO_FIFO_BUF_LEN]  = {0}; // 1
 
 float acc_x_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0};
-float gyro_x_cur_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+//float gyro_x_cur_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}; // 1
+float gyro_y_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
 
-//float acc_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0};
-//float gyro_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+//float acc_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}; // 1
+//float gyro_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}; // 1
 
 float acc_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]   = {0};
-//float gyro_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+//float gyro_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}; // 1
 
 volatile uint8_t suspicion_rules[9][3] =
 {
@@ -101,7 +101,7 @@ static void sensor_reset(void)
 	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_104Hz);
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
 
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g); //2
+	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_4g); //4
 	lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
 	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
@@ -194,9 +194,9 @@ static void historic_buffer(void)
 static void curr_vrif_buffers(void)
 {
 	float gyro_tempX[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempY[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempZ[ACC_GYRO_FIFO_BUF_LEN]  = {0};
-	float gyro_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
-	float gyro_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0};
 	float accel_tempX[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempY[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempZ[ACC_GYRO_FIFO_BUF_LEN] = {0};
+
+	float gyro_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
 	float acc_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0};
 
 	uint16_t buff_counter = 0;
@@ -251,9 +251,9 @@ static void curr_vrif_buffers(void)
 						acc_x_cur_buffer[i]  = accel_tempX[i_rev];
 						acc_y_cur_buffer[i]  = accel_tempY[i_rev];
 						acc_z_cur_buffer[i]  = accel_tempZ[i_rev];
-						gyro_x_cur_buffer[i] = gyro_tempX[i_rev];
-						gyro_y_cur_buffer[i] = gyro_tempY[i_rev];
-						gyro_z_cur_buffer[i] = gyro_tempZ[i_rev];
+						gyro_x_vrif_buffer[i] = gyro_tempX[i_rev]; // gyro_x_cur_buffer
+						gyro_y_vrif_buffer[i] = gyro_tempY[i_rev]; // gyro_y_cur_buffer
+						gyro_z_vrif_buffer[i] = gyro_tempZ[i_rev]; // gyro_z_cur_buffer
 						buff_counter++;
 						i_rev--;
 					}
@@ -278,12 +278,12 @@ static void curr_vrif_buffers(void)
 				{
 					for (uint8_t k = 0; k < ACC_GYRO_FIFO_BUF_LEN; k++)
 					{
-						acc_x_vrif_buffer_1[k]  = accel_tempX[k_rev];
-						acc_y_vrif_buffer_1[k]  = accel_tempY[k_rev];
-						acc_z_vrif_buffer_1[k]  = accel_tempZ[k_rev];
-						gyro_x_vrif_buffer_1[k] = gyro_tempX[k_rev];
-						gyro_y_vrif_buffer_1[k] = gyro_tempY[k_rev];
-						gyro_z_vrif_buffer_1[k] = gyro_tempZ[k_rev];
+						acc_x_vrif_buffer[k]  = accel_tempX[k_rev]; //acc_x_vrif_buffer_1
+						acc_y_vrif_buffer[k]  = accel_tempY[k_rev]; // _1
+						acc_z_vrif_buffer[k]  = accel_tempZ[k_rev]; // _1
+						gyro_x_vrif_buffer[k] = gyro_tempX[k_rev]; //gyro_x_vrif_buffer_1
+						gyro_y_vrif_buffer[k] = gyro_tempY[k_rev]; //gyro_y_vrif_buffer_1
+						gyro_z_vrif_buffer[k] = gyro_tempZ[k_rev]; //gyro_z_vrif_buffer_1
 						buff_counter++;
 						k_rev--;
 					}
@@ -409,7 +409,7 @@ static float fall_verification_fifo_skip(void)
 {
 	volatile uint16_t i;
 	volatile float std_deviation = 0, variance=0,average = 0;
-	float verify_acc_magn[VERIFY_DATA_BUF_LEN*2] = {0};
+	//float verify_acc_magn[VERIFY_DATA_BUF_LEN*2] = {0};
 
 	memset(verify_acc_magn,0x00,VERIFY_DATA_BUF_LEN);
 	//compute acc magnitude
@@ -527,6 +527,7 @@ static float fuzzy_analyse(float angle, float max_gyro_magn)
 	return output_value;
 }
 
+#if 0
 /*******************************************************************************************************
 * description:
 *	Get the string in the buffer by check the separator
@@ -572,6 +573,7 @@ bool get_parameter_in_strbuffer(uint8_t *inbuffer, uint8_t *outbuffer, uint8_t *
 		}
 	}
 }
+
 #if 0
 void author_data_encode(uint8_t *buffer, uint32_t *buflen)
 {
@@ -768,6 +770,7 @@ int32_t author_data_decode(uint8_t *chip_ID, char *IMEI, char *buf, uint32_t len
 	}
 	//return 0;
 }
+#endif
 
 void fall_detection(void)//(char *check_code)
 {
@@ -794,7 +797,7 @@ void fall_detection(void)//(char *check_code)
 		if(curr_vrif_buff_flag)
 		{   
 			acc_magn_square = acceleration_analyse_fifo();
-			if(acc_magn_square > 38)
+			if(acc_magn_square > 38) // 4g=38, 2g=10
 			{
 				cur_angle = angle_analyse_fifo();
 				cur_max_gyro_magn = gyroscope_analyse_fifo();
@@ -822,7 +825,7 @@ void fall_detection(void)//(char *check_code)
 				fall_result = false;
 			}
 			curr_vrif_buff_flag = false;
-			imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
+			//imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
 		}
 	}
 	else

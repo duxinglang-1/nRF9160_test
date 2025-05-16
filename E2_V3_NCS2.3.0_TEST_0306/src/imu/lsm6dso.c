@@ -88,11 +88,13 @@ const uint8_t lsm6so_prg_wrist_tilt[] = {
 */
 
 /*fall + tap trigger FSM*/
+/*
 const uint8_t falltrigger[] = {
       0x91, 0x00, 0x18, 0x00, 0x0E, 0x00, 0xCD, 0x3C,
       0x66, 0x36, 0xA8, 0x00, 0x00, 0x06, 0x23, 0X00,
       0x33, 0x63, 0x33, 0xA5, 0x57, 0x44, 0x22, 0X00,
      };
+*/
 
 static void imu_activity_confirm_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(imu_activity_timer, imu_activity_confirm_timerout, NULL);
@@ -449,12 +451,11 @@ void imu_sensor_init(void)
 
 	//Activity detection
     //Set duration for Activity detection to 9.62 ms (= 1 * 1 / ODR_XL)
-    lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01); // ����Ѽ��ʱ������?
-    //Set duration for Inactivity detection to 4.92 s (= 1 * 512 / ODR_XL) ���ûģʽ�½���˯��ģʽ֮ǰ�ĳ���ʱ��
-    lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01); // ���趨�Ļ˯�߳���ʱ����û�н�һ���Ļ�����������Զ�����͹���ģ�?
+    lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
+    //Set duration for Inactivity detection to 4.92 s (= 1 * 512 / ODR_XL) 
+    lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
     //Set Activity/Inactivity threshold to 31.25 mg (= 1* FS_XL / 2^6)
-    lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01); // ���û�����ֵ,����������⵽�ļ��ٶȻ���ٶȵȲ������������ֵʱ�����������ӵ͹���ģʽ���ѵ���?ģʽ,
-	//  ���ýϸߵ���ֵ���������ѵķ��գ������ܻή�ͶԽ�С�����ļ������?
+    lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01);
     //Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down
     //lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
 
@@ -567,6 +568,28 @@ void imu_sensor_init(void)
 }
 #endif
 
+void tilt_enable(void)
+{
+	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
+	lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
+	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 1);
+	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
+	//fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_DISABLE;
+	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
+	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
+	fsm_addr = LSM6DSO_START_FSM_ADD;
+
+	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)lsm6so_prg_wrist_tilt, 
+						sizeof(lsm6so_prg_wrist_tilt));
+	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
+	
+	// route wrist tilt to INT1 pin
+	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
+	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+}
+
 static bool sensor_init(void)
 {
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
@@ -574,6 +597,7 @@ static bool sensor_init(void)
 		return false;
 
 	imu_sensor_init();
+
 	return true;
 }
 
@@ -794,10 +818,6 @@ void IMUMsgProcess(void)
 	#endif
 		int1_event = false;
 
-	#if CONFIG_PRESSURE_SUPPORT
-		pre_last = pre_1;
-	#endif
-
 		if(!imu_check_ok || !is_wearing())
 			return;
 
@@ -821,11 +841,15 @@ void IMUMsgProcess(void)
 		LOGD("int2 evt!");
 	#endif
 
-		if(!imu_check_ok || !is_wearing())
+		if(!imu_check_ok || !is_wearing() || fall_result)
 			return;
 		
 		if(is_tap())
 		{
+		#if CONFIG_PRESSURE_SUPPORT
+			pre_last = pre_1;
+		#endif
+
 		#if 0 //Tap detection
 			k_timer_start(&tap_detect_timer, K_SECONDS(3), K_NO_WAIT);
 
@@ -891,16 +915,17 @@ void IMUMsgProcess(void)
 	
 	if(SCC_check_ok)
 	{
-	#ifdef CONFIG_PRESSURE_SUPPORT
 		SCC_check_ok = false;
 
+		tilt_enable();
+
+	#ifdef CONFIG_PRESSURE_SUPPORT
 		fall_prs = pre_1;
 		if((fall_prs - pre_last) >= 5) // 1m = +-11pa
 		{
 			FallTrigger();
 		}
 	#else
-		SCC_check_ok = false;
 		FallTrigger();
 	#endif
 	}

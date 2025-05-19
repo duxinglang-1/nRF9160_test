@@ -63,7 +63,7 @@ static struct k_work_q nb_work_q;
 
 #ifdef CONFIG_IMU_SUPPORT
 K_THREAD_STACK_DEFINE(imu_stack_area,
-              4096);
+              2048);
 static struct k_work_q imu_work_q;
 #endif
 

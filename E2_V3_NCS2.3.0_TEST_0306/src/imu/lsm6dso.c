@@ -69,10 +69,10 @@ bool int2_event = false;
 bool RUN_FD_FLAG = false;
 
 #ifdef CONFIG_PRESSURE_SUPPORT
-extern float fall_prs;
-extern float pre_1;
 extern bool fall_pre_check;
 extern bool fall_result_pre_flag;
+extern float fall_prs;
+extern float pre_1;
 float pre_last = 0.0;
 #endif
 
@@ -156,8 +156,8 @@ bool imu_redraw_steps_flag = true;
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 bool fall_check_flag = false;
-static struct k_work_delayable fall_work;
-static void fall_check_detection(struct k_work *item);
+//static struct k_work_delayable fall_work;
+//static void fall_check_detection(struct k_work *item);
 #endif
 
 uint16_t g_last_steps = 0;
@@ -568,6 +568,7 @@ void imu_sensor_init(void)
 }
 #endif
 
+#if 0
 void tilt_enable(void)
 {
 	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
@@ -589,6 +590,7 @@ void tilt_enable(void)
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
 }
+#endif
 
 static bool sensor_init(void)
 {
@@ -738,9 +740,9 @@ void IMU_init(struct k_work_q *work_q)
 	if(!imu_check_ok)
 		return;
 
-#ifdef CONFIG_FALL_DETECT_SUPPORT	
-	k_work_init_delayable(&fall_work, fall_check_detection);
-#endif
+//#ifdef CONFIG_FALL_DETECT_SUPPORT	
+//	k_work_init_delayable(&fall_work, fall_check_detection);
+//#endif
 #ifdef IMU_DEBUG
 	LOGD("IMU_init done!");
 #endif
@@ -858,7 +860,8 @@ void IMUMsgProcess(void)
 				tap_detection();
 			}
 		#else
-			k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
+			//k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
+			fall_detection();
 		#endif
 		}
 
@@ -869,16 +872,13 @@ void IMUMsgProcess(void)
 	{
 		RUN_FD_FLAG = false;
 		
-		k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
+		//k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
+		fall_detection();
 	}
 
 	if(fall_result)
 	{
 		fall_result = false;
-
-	#ifdef CONFIG_PRESSURE_SUPPORT
-		fall_pre_check = true; // pre
-	#endif
 
 	#if 0 // Activity detection
 		k_timer_start(&imu_activity_timer, K_SECONDS(3), K_NO_WAIT);
@@ -917,7 +917,7 @@ void IMUMsgProcess(void)
 	{
 		SCC_check_ok = false;
 
-		tilt_enable();
+		//tilt_enable();
 
 	#ifdef CONFIG_PRESSURE_SUPPORT
 		fall_prs = pre_1;

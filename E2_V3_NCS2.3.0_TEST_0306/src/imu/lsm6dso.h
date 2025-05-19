@@ -59,8 +59,11 @@ extern uint16_t g_last_steps;
 extern uint16_t g_steps;
 extern uint16_t g_calorie;
 extern uint16_t g_distance;
+
+#ifdef CONFIG_PRESSURE_SUPPORT
 extern float pre_1;
 extern float pre_last;
+#endif
 
 extern sport_record_t last_sport;
 
@@ -74,8 +77,8 @@ extern void fall_detection(void); //fall detection algorithm, if a fall happens,
 
 /*wrist tilt*/
 extern bool is_tilt(void); //detect if a tilt happened
-extern void disable_tilt_detection(void); //disable wrist tilt detection
-extern void enable_tilt_detection(void); //enable wrist tilt detection
+//extern void disable_tilt_detection(void); //disable wrist tilt detection
+//extern void enable_tilt_detection(void); //enable wrist tilt detection
 
 /*step counter*/
 extern bool int1_event;

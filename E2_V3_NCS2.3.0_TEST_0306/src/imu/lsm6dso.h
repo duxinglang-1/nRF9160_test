@@ -51,14 +51,9 @@ typedef struct
 	sleep_data sleep[24];
 }sleep_rec2_data;
 
-extern bool reset_steps;
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 extern bool fall_wait_gps;
 #endif
-extern uint16_t g_last_steps;
-extern uint16_t g_steps;
-extern uint16_t g_calorie;
-extern uint16_t g_distance;
 
 #ifdef CONFIG_PRESSURE_SUPPORT
 extern float pre_1;
@@ -82,15 +77,5 @@ extern bool is_tilt(void); //detect if a tilt happened
 
 /*step counter*/
 extern bool int1_event;
-extern void GetImuSteps(uint16_t *steps);
-extern void ReSetImuSteps(void);
-extern void UpdateIMUData(void);
-extern void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance);
-extern void lsm6dso_sensitivity(void);
-
-/*sleep monitor*/
-extern void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, int hr, int hour, int minute, int charging);
-extern int get_light_sleep_time(void); //return light sleep time in minutes
-extern int get_deep_sleep_time(void); //return deep sleep time in minutes
 
 #endif/*CONFIG_IMU_SUPPORT*/

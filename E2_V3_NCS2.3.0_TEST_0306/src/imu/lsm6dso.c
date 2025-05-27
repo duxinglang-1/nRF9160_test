@@ -63,6 +63,7 @@ lsm6dso_pin_int2_route_t int2_route;
 stmdev_ctx_t imu_dev_ctx;
 
 bool SCC_check_ok = false;
+bool SCC_fall_chek = false;
 
 bool int1_event = false;
 bool int2_event = false;
@@ -151,192 +152,12 @@ static struct device *i2c_imu;
 static struct device *gpio_imu = NULL;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
-bool reset_steps = false;
-bool imu_redraw_steps_flag = true;
-
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 bool fall_check_flag = false;
-//static struct k_work_delayable fall_work;
-//static void fall_check_detection(struct k_work *item);
+static struct k_work_delayable fall_work;
+static void fall_check_detection(struct k_work *item);
 #endif
 
-uint16_t g_last_steps = 0;
-uint16_t g_steps = 0;
-uint16_t g_calorie = 0;
-uint16_t g_distance = 0;
-static int pre_min = 0;
-
-#ifdef CONFIG_STEP_SUPPORT
-void ClearAllStepRecData(void)
-{
-	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
-
-	g_last_steps = 0;
-	g_steps = 0;
-	g_distance = 0;
-	g_calorie = 0;
-		
-	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-}
-
-void SetCurDayStepRecData(uint16_t data)
-{
-	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
-	step_rec2_data *p_step,tmp_step = {0};
-	sys_date_timer_t temp_date = {0};
-	
-	memcpy(&temp_date, &date_time, sizeof(sys_date_timer_t));
-
-	tmp_step.year = temp_date.year;
-	tmp_step.month = temp_date.month;
-	tmp_step.day = temp_date.day;
-	tmp_step.steps[temp_date.hour] = data;
-
-	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	p_step = tmpbuf;
-	if((p_step->year == 0xffff || p_step->year == 0x0000)
-		||(p_step->month == 0xff || p_step->month == 0x00)
-		||(p_step->day == 0xff || p_step->day == 0x00)
-		||((p_step->year == temp_date.year)&&(p_step->month == temp_date.month)&&(p_step->day == temp_date.day))
-		)
-	{
-		//直接覆盖写在第一条
-		p_step->year = temp_date.year;
-		p_step->month = temp_date.month;
-		p_step->day = temp_date.day;
-		p_step->steps[temp_date.hour] = data;
-		SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	}
-	else if((temp_date.year < p_step->year)
-			||((temp_date.year == p_step->year)&&(temp_date.month < p_step->month))
-			||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day < p_step->day))
-			)
-	{
-		uint8_t databuf[STEP_REC2_DATA_SIZE] = {0};
-		
-		//插入新的第一条,旧的第一条到第六条往后挪，丢掉最后一个
-		memcpy(&databuf[0*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
-		memcpy(&databuf[1*sizeof(step_rec2_data)], &tmpbuf[0*sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
-		SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	}
-	else
-	{
-		uint8_t databuf[STEP_REC2_DATA_SIZE] = {0};
-		
-		//寻找合适的插入位置
-		for(i=0;i<7;i++)
-		{
-			p_step = tmpbuf+i*sizeof(step_rec2_data);
-			if((p_step->year == 0xffff || p_step->year == 0x0000)
-				||(p_step->month == 0xff || p_step->month == 0x00)
-				||(p_step->day == 0xff || p_step->day == 0x00)
-				||((p_step->year == temp_date.year)&&(p_step->month == temp_date.month)&&(p_step->day == temp_date.day))
-				)
-			{
-				//直接覆盖写
-				p_step->year = temp_date.year;
-				p_step->month = temp_date.month;
-				p_step->day = temp_date.day;
-				p_step->steps[temp_date.hour] = data;
-				SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-				return;
-			}
-			else if((temp_date.year > p_step->year)
-				||((temp_date.year == p_step->year)&&(temp_date.month > p_step->month))
-				||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day > p_step->day))
-				)
-			{
-				if(i < 6)
-				{
-					p_step++;
-					if((temp_date.year < p_step->year)
-						||((temp_date.year == p_step->year)&&(temp_date.month < p_step->month))
-						||((temp_date.year == p_step->year)&&(temp_date.month == p_step->month)&&(temp_date.day < p_step->day))
-						)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		if(i<6)
-		{
-			//找到位置，插入新数据，老数据整体往后挪，丢掉最后一个
-			memcpy(&databuf[0*sizeof(step_rec2_data)], &tmpbuf[0*sizeof(step_rec2_data)], (i+1)*sizeof(step_rec2_data));
-			memcpy(&databuf[(i+1)*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
-			memcpy(&databuf[(i+2)*sizeof(step_rec2_data)], &tmpbuf[(i+1)*sizeof(step_rec2_data)], (7-(i+2))*sizeof(step_rec2_data));
-			SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-		}
-		else
-		{
-			//未找到位置，直接接在末尾，老数据整体往前移，丢掉最前一个
-			memcpy(&databuf[0*sizeof(step_rec2_data)], &tmpbuf[1*sizeof(step_rec2_data)], 6*sizeof(step_rec2_data));
-			memcpy(&databuf[6*sizeof(step_rec2_data)], &tmp_step, sizeof(step_rec2_data));
-			SpiFlash_Write(databuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-		}
-	}	
-}
-
-void GetCurDayStepRecData(uint16_t *databuf)
-{
-	uint8_t i,tmpbuf[STEP_REC2_DATA_SIZE] = {0};
-	step_rec2_data step_rec2 = {0};
-	
-	if(databuf == NULL)
-		return;
-
-	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
-	for(i=0;i<7;i++)
-	{
-		memcpy(&step_rec2, &tmpbuf[i*sizeof(step_rec2_data)], sizeof(step_rec2_data));
-		if((step_rec2.year == 0xffff || step_rec2.year == 0x0000)||(step_rec2.month == 0xff || step_rec2.month == 0x00)||(step_rec2.day == 0xff || step_rec2.day == 0x00))
-			continue;
-		
-		if((step_rec2.year == date_time.year)&&(step_rec2.month == date_time.month)&&(step_rec2.day == date_time.day))
-		{
-			memcpy(databuf, step_rec2.steps, sizeof(step_rec2.steps));
-			break;
-		}
-	}
-}
-
-void StepsDataInit(bool reset_flag)
-{
-	bool flag = false;
-	
-	if((last_sport.step_rec.timestamp.year == date_time.year)
-		&&(last_sport.step_rec.timestamp.month == date_time.month)
-		&&(last_sport.step_rec.timestamp.day == date_time.day)
-		)
-	{
-		flag = true;
-	}
-
-	if(reset_flag)
-	{
-		if(!flag)
-		{
-			g_steps -= g_last_steps;
-			g_distance = 0.7*g_steps;
-			g_calorie = (0.8214*60*g_distance)/1000;
-			g_last_steps = 0;
-
-			imu_redraw_steps_flag = true;
-		}
-	}
-	else
-	{
-		if(flag)
-		{
-			g_last_steps = last_sport.step_rec.steps;
-			g_steps = last_sport.step_rec.steps;
-			g_distance = last_sport.step_rec.distance;
-			g_calorie = last_sport.step_rec.calorie;
-		}
-	}
-}
-#endif
 
 static uint8_t init_i2c(void)
 {
@@ -568,30 +389,6 @@ void imu_sensor_init(void)
 }
 #endif
 
-#if 0
-void tilt_enable(void)
-{
-	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
-	lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
-	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 1);
-	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
-	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
-	//fsm_enable.fsm_enable_a.fsm2_en = PROPERTY_DISABLE;
-	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
-	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
-	fsm_addr = LSM6DSO_START_FSM_ADD;
-
-	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, (uint8_t*)lsm6so_prg_wrist_tilt, 
-						sizeof(lsm6so_prg_wrist_tilt));
-	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
-	
-	// route wrist tilt to INT1 pin
-	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-}
-#endif
-
 static bool sensor_init(void)
 {
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
@@ -625,127 +422,12 @@ static bool sensor_init(void)
 	*sensor_z = acceleration_mg[2];
 }*/
 
-#ifdef CONFIG_STEP_SUPPORT
-void ReSetImuSteps(void)
-{
-	lsm6dso_steps_reset(&imu_dev_ctx);
-
-	g_last_steps = 0;
-	g_steps = 0;
-	g_distance = 0;
-	g_calorie = 0;
-	
-	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
-	last_sport.step_rec.timestamp.day = date_time.day;
-	last_sport.step_rec.timestamp.hour = date_time.hour;
-	last_sport.step_rec.timestamp.minute = date_time.minute;
-	last_sport.step_rec.timestamp.second = date_time.second;
-	last_sport.step_rec.timestamp.week = date_time.week;
-	last_sport.step_rec.steps = g_steps;
-	last_sport.step_rec.distance = g_distance;
-	last_sport.step_rec.calorie = g_calorie;
-	save_cur_sport_to_record(&last_sport);	
-}
-
-void GetImuSteps(uint16_t *steps)
-{
-	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
-}
-
-void UpdateIMUData(void)
-{
-	uint16_t steps;
-	
-	GetImuSteps(&steps);
-
-	g_steps = steps+g_last_steps;
-	g_distance = 0.7*g_steps;
-	g_calorie = (0.8214*60*g_distance)/1000;
-
-#ifdef IMU_DEBUG
-	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
-#endif
-
-	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
-	last_sport.step_rec.timestamp.day = date_time.day;
-	last_sport.step_rec.timestamp.hour = date_time.hour;
-	last_sport.step_rec.timestamp.minute = date_time.minute;
-	last_sport.step_rec.timestamp.second = date_time.second;
-	last_sport.step_rec.timestamp.week = date_time.week;
-	last_sport.step_rec.steps = g_steps;
-	last_sport.step_rec.distance = g_distance;
-	last_sport.step_rec.calorie = g_calorie;
-	save_cur_sport_to_record(&last_sport);
-	
-	//StepCheckSendLocationData(g_steps);
-}
-
-void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
-{
-	if(steps != NULL)
-		*steps = g_steps;
-	if(calorie != NULL)
-		*calorie = g_calorie;
-	if(distance != NULL)
-		*distance = g_distance;
-}
-#endif
-
-#ifdef CONFIG_FALL_DETECT_SUPPORT
-static void fall_check_detection(struct k_work *item)
-{
-	fall_check_flag = true;
-	fall_detection();
-	imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
-	fall_check_flag = false;
-}
-#endif
-
 uint8_t IMU_GetID(void)
 {
 	uint8_t sensor_id = 0;
 	
 	lsm6dso_device_id_get(&imu_dev_ctx, &sensor_id);
 	return sensor_id;
-}
-
-void IMU_init(struct k_work_q *work_q)
-{
-#ifdef IMU_DEBUG
-	LOGD("IMU_init");
-#endif
-
-#ifdef CONFIG_STEP_SUPPORT
-	get_cur_sport_from_record(&last_sport);
-#ifdef IMU_DEBUG
-	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
-#endif
-	StepsDataInit(false);
-#endif
-
-	imu_work_q = work_q;
-
-	if(init_i2c() != 0)
-		return;
-	
-	init_gpio();
-
-	imu_dev_ctx.write_reg = platform_write;
-	imu_dev_ctx.read_reg = platform_read;
-	imu_dev_ctx.handle = i2c_imu;
-
-	imu_check_ok = sensor_init();
-	if(!imu_check_ok)
-		return;
-
-//#ifdef CONFIG_FALL_DETECT_SUPPORT	
-//	k_work_init_delayable(&fall_work, fall_check_detection);
-//#endif
-#ifdef IMU_DEBUG
-	LOGD("IMU_init done!");
-#endif
 }
 
 /*@brief Check if a wrist tilt happend
@@ -794,6 +476,45 @@ static void fall_scc_confirm_timerout(struct k_timer *timer_id)
 	{
 		SCC_check_ok = true;
 	}
+
+	SCC_fall_chek = false;
+}
+
+#if 1
+static void fall_check_detection(struct k_work *item)
+{
+	fall_check_flag = true;
+	fall_detection();
+	fall_check_flag = false;
+}
+#endif
+
+void IMU_init(struct k_work_q *work_q)
+{
+#ifdef IMU_DEBUG
+	LOGD("IMU_init");
+#endif
+
+	imu_work_q = work_q;
+
+	if(init_i2c() != 0)
+		return;
+
+	init_gpio();
+
+	imu_dev_ctx.write_reg = platform_write;
+	imu_dev_ctx.read_reg = platform_read;
+	imu_dev_ctx.handle = i2c_imu;
+
+	imu_check_ok = sensor_init();
+	if(!imu_check_ok)
+		return;
+
+	k_work_init_delayable(&fall_work, fall_check_detection);
+
+#ifdef IMU_DEBUG
+	LOGD("IMU_init done!");
+#endif
 }
 
 void IMUMsgProcess(void)
@@ -813,7 +534,7 @@ void IMUMsgProcess(void)
 		return;
 	}
 
-	if(int1_event)	//tilt
+	if(int1_event && !fall_check_flag)	//tilt, When running due to a fall, it is prohibited to trigger the wrist lift to light up the screen 
 	{
 	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
@@ -843,36 +564,37 @@ void IMUMsgProcess(void)
 		LOGD("int2 evt!");
 	#endif
 
-		if(!imu_check_ok || !is_wearing() || fall_result)
+		int2_event = false;
+
+		if(!imu_check_ok || !is_wearing() || fall_result || fall_check_flag || SCC_fall_chek)
 			return;
-		
+
 		if(is_tap())
 		{
-		#if CONFIG_PRESSURE_SUPPORT
+			#if CONFIG_PRESSURE_SUPPORT
 			pre_last = pre_1;
-		#endif
+			#endif
 
-		#if 0 //Tap detection
+			#if 0 //Tap detection
 			k_timer_start(&tap_detect_timer, K_SECONDS(3), K_NO_WAIT);
 
 			if(k_timer_remaining_get(&tap_detect_timer)>=0)
 			{
 				tap_detection();
 			}
-		#else
-			//k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
-			fall_detection();
-		#endif
+			#else
+				k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
+				//fall_check_flag = true;
+				//fall_detection();
+				//fall_check_flag = false;
+			#endif
 		}
-
-		int2_event = false;
 	}
 
 	if(RUN_FD_FLAG)
 	{
 		RUN_FD_FLAG = false;
-		
-		//k_work_schedule_for_queue(imu_work_q, &fall_work, K_NO_WAIT);
+
 		fall_detection();
 	}
 
@@ -901,6 +623,9 @@ void IMUMsgProcess(void)
 		}
 	#else
 	  #if 1 // SCC detections
+
+		SCC_fall_chek = true;
+
 		StartSCC();
 		k_timer_start(&fall_scc_timer, K_SECONDS(9), K_NO_WAIT);
 	  #else
@@ -916,8 +641,6 @@ void IMUMsgProcess(void)
 	if(SCC_check_ok)
 	{
 		SCC_check_ok = false;
-
-		//tilt_enable();
 
 	#ifdef CONFIG_PRESSURE_SUPPORT
 		fall_prs = pre_1;

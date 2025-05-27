@@ -825,11 +825,12 @@ void fall_detection(void)//(char *check_code)
 				fall_result = false;
 			}
 			curr_vrif_buff_flag = false;
-			imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
+			//imu_sensor_init(); //resets the algorithm, will work continuosly on every tap
 		}
 	}
 	else
 	{
 		fall_result = false;
 	}
+	imu_sensor_init();
 }

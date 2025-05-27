@@ -56,7 +56,7 @@
 #define MENU_NOTIFY_STR_MAX	32
 
 #define VERSION_STR	"V3.4.5_"
-#define DATE_BRANCH	"250519"
+#define DATE_BRANCH	"250527"
 
 #ifdef FW_FOR_CN
 #define AREA_BRANCH	"CN"

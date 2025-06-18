@@ -1942,11 +1942,6 @@ void SettingsUpdateStatus(void)
 	
 	k_timer_stop(&mainmenu_timer);
 
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_20);
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-#endif
 	LCD_SetFontBgColor(bg_clor);
 
 #ifdef CONFIG_TOUCH_SUPPORT
@@ -2008,101 +2003,101 @@ void SettingsUpdateStatus(void)
 														#ifndef FW_FOR_CN
 														  #ifdef LANGUAGE_EN_ENABLE
 															{
-																{0x0056,0x0069,0x0065,0x0077,0x0000},//View
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_DE_ENABLE
 															{
-																{0x00DC,0x0062,0x0070,0x0072,0x002E,0x0000},//übpr.
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_FR_ENABLE
 															{
-																{0x0056,0x006F,0x0069,0x0072,0x0000},//Voir
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x00E9,0x0069,0x006E,0x0069,0x0074,0x0000},//Réinit
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_IT_ENABLE
 															{
-																{0x0056,0x0069,0x0073,0x0074,0x0061,0x0000},//Vista
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_ES_ENABLE
 															{
-																{0x0056,0x0065,0x0072,0x0000},//Ver
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_PT_ENABLE
 															{
-																{0x0056,0x0065,0x0072,0x0000},//Ver
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0064,0x0065,0x0066,0x0069,0x006E,0x0069,0x0072,0x0000},//Redefinir
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_PL_ENABLE
 															{
-																{0x005A,0x006F,0x0062,0x002E,0x0000},//Zob.
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_SE_ENABLE
 															{
-																{0x0056,0x0069,0x0073,0x0061,0x0000},//Visa
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x00C5,0x0074,0x0065,0x0072,0x002E,0x0000},//?ter.
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_JP_ENABLE
 															{
-																{0x78BA,0x8A8D,0x0000},//確認
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x521D,0x671F,0x5316,0x0000},//初期化
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_KR_ENABLE
 															{
-																{0xD655,0xC778,0x0000},//??
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0xCD08,0xAE30,0xD654,0x0000},//???
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_RU_ENABLE
 															{
-																{0x0412,0x0438,0x0434,0x0000},//Вид
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0421,0x0431,0x0440,0x043E,0x0441,0x0000},//Сброс
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_AR_ENABLE
 															{
-																{0x0645,0x0639,0x0627,0x064A,0x0646,0x0629,0x0000},//??????
+																{0x003C,0x0000},//<
 																{0x0000},//null
-																{0x0625,0x0639,0x0627,0x062F,0x0629,0x0020,0x0636,0x0628,0x0637,0x0000},//????? ???
+																{0x003C,0x0000},//<
 															},
 														  #endif
 														#else
 														  #ifdef LANGUAGE_CN_ENABLE
 															{
-																{0x67E5,0x770B,0x0000},//查看
+																{0x003E,0x0000},//>
 																{0x0000},//空白
-																{0x91CD,0x7F6E,0x0000},//重置
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														  #ifdef LANGUAGE_EN_ENABLE
 															{
-																{0x0056,0x0069,0x0065,0x0077,0x0000},//View
+																{0x003E,0x0000},//>
 																{0x0000},//null
-																{0x0052,0x0065,0x0073,0x0065,0x0074,0x0000},//Reset
+																{0x003E,0x0000},//>
 															},
 														  #endif
 														#endif	
@@ -2230,7 +2225,7 @@ void SettingsUpdateStatus(void)
 			entry_setting_bk_flag = false;
 			
 			LCD_Clear(BLACK);
-			
+
 			for(i=0;i<SETTINGS_MAIN_MENU_MAX_PER_PG;i++)
 			{
 				uint8_t copy_len;
@@ -2242,6 +2237,7 @@ void SettingsUpdateStatus(void)
 				LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), IMG_SET_INFO_BG_ADDR);
 				
 			#ifdef FONTMAKER_UNICODE_FONT
+				LCD_SetFontSize(FONT_SIZE_28);
 				LCD_SetFontColor(WHITE);
 				mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i+settings_menu.index], MENU_NAME_STR_MAX);
 				LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -2263,6 +2259,7 @@ void SettingsUpdateStatus(void)
 					switch(i)
 					{
 					case 0:
+						LCD_SetFontSize(FONT_SIZE_20);
 						memset(tmpbuf, 0, sizeof(tmpbuf));
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)lang_sle_str[global_settings.language], MENU_OPT_STR_MAX);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -2278,6 +2275,7 @@ void SettingsUpdateStatus(void)
 												tmpbuf);
 						break;
 					case 1:
+						LCD_SetFontSize(FONT_SIZE_20);
 						memset(tmpbuf, 0, sizeof(tmpbuf));
 						mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)level_str[global_settings.language][global_settings.backlight_level], MENU_OPT_STR_MAX+2);
 						LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -2467,6 +2465,11 @@ void SettingsUpdateStatus(void)
 		{
 			LCD_Clear(BLACK);
 			LCD_SetFontColor(WHITE);
+		#ifdef FONTMAKER_UNICODE_FONT
+			LCD_SetFontSize(FONT_SIZE_28);
+		#else
+			LCD_SetFontSize(FONT_SIZE_16);
+		#endif
 
 			if(settings_menu.count > SETTINGS_SUB_MENU_MAX_PER_PG)
 				count = (settings_menu.count - settings_menu.index >= SETTINGS_SUB_MENU_MAX_PER_PG) ? SETTINGS_SUB_MENU_MAX_PER_PG : settings_menu.count - settings_menu.index;
@@ -2545,6 +2548,11 @@ void SettingsUpdateStatus(void)
 			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
+		#ifdef FONTMAKER_UNICODE_FONT
+			LCD_SetFontSize(FONT_SIZE_20);
+		#else
+			LCD_SetFontSize(FONT_SIZE_16);
+		#endif
 
 			if(language_bk == LANGUAGE_MAX)
 				language_bk = global_settings.language;
@@ -2937,6 +2945,11 @@ void SettingsUpdateStatus(void)
 			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
+		#ifdef FONTMAKER_UNICODE_FONT
+			LCD_SetFontSize(FONT_SIZE_20);
+		#else
+			LCD_SetFontSize(FONT_SIZE_16);
+		#endif
 
 			mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)str_notify[global_settings.language], MENU_NOTIFY_STR_MAX);
 			LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -3006,7 +3019,12 @@ void SettingsUpdateStatus(void)
 		{
 			LCD_Clear(BLACK);
 			LCD_SetFontColor(WHITE);
-			
+		#ifdef FONTMAKER_UNICODE_FONT
+			LCD_SetFontSize(FONT_SIZE_28);
+		#else
+			LCD_SetFontSize(FONT_SIZE_16);
+		#endif
+
 			for(i=0;i<settings_menu.count;i++)
 			{
 				uint16_t tmpbuf[128] = {0};
@@ -3110,7 +3128,7 @@ void SettingsUpdateStatus(void)
 
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_SetFontColor(menu_color);
-				LCD_SetFontSize(FONT_SIZE_20);
+				LCD_SetFontSize(FONT_SIZE_28);
 				LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y-5,
 									settings_menu.name[global_settings.language][i+settings_menu.index]);
@@ -3190,6 +3208,11 @@ void SettingsUpdateStatus(void)
 			LCD_Clear(BLACK);
 			LCD_ReSetFontBgColor();
 			LCD_ReSetFontColor();
+		#ifdef FONTMAKER_UNICODE_FONT
+			LCD_SetFontSize(FONT_SIZE_20);
+		#else
+			LCD_SetFontSize(FONT_SIZE_16);
+		#endif
 
 		#ifdef CONFIG_QRCODE_SUPPORT
 			sprintf(tmpbuf, "%s%s", SETTINGS_CAREMATE_URL, g_imei);
@@ -3463,12 +3486,6 @@ void SettingsShowStatus(void)
 	uint16_t green_clor = 0x07e0;
 	
 	LCD_Clear(BLACK);
-
-#ifdef FONTMAKER_UNICODE_FONT
-	LCD_SetFontSize(FONT_SIZE_20);
-#else
-	LCD_SetFontSize(FONT_SIZE_16);
-#endif
 	LCD_SetFontBgColor(bg_clor);
 
 	for(i=0;i<SETTINGS_MAIN_MENU_MAX_PER_PG;i++)
@@ -3478,6 +3495,7 @@ void SettingsShowStatus(void)
 		LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), IMG_SET_INFO_BG_ADDR);
 
 	#ifdef FONTMAKER_UNICODE_FONT
+		LCD_SetFontSize(FONT_SIZE_28);
 		LCD_SetFontColor(WHITE);
 		mmi_ucs2smartcpy((uint8_t*)tmpbuf, (uint8_t*)settings_menu.name[global_settings.language][i], MENU_NAME_STR_MAX);
 		LCD_MeasureUniString(tmpbuf, &w, &h);
@@ -3496,6 +3514,7 @@ void SettingsShowStatus(void)
 		switch(i)
 		{
 		case 0:
+			LCD_SetFontSize(FONT_SIZE_20);
 			LCD_MeasureUniString(menu_sle_str[global_settings.language], &w, &h);
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
@@ -3509,6 +3528,7 @@ void SettingsShowStatus(void)
 									menu_sle_str[global_settings.language]);
 			break;
 		case 1:
+			LCD_SetFontSize(FONT_SIZE_20);
 			LCD_MeasureUniString(level_str[global_settings.language][global_settings.backlight_level], &w, &h);
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
@@ -6082,7 +6102,7 @@ void HRShowStatus(void)
 												{0x0046,0x0072,0x00E9,0x0071,0x0075,0x0065,0x006E,0x0063,0x0065,0x0020,0x0063,0x0061,0x0072,0x0064,0x0069,0x0061,0x0071,0x0075,0x0065,0x0000},//Fréquence cardiaque
 											  #endif
 											  #ifdef LANGUAGE_IT_ENABLE
-												{0x0046,0x0072,0x0065,0x0071,0x0075,0x0065,0x006E,0x007A,0x0061,0x0020,0x0063,0x0061,0x0072,0x0064,0x0069,0x0061,0x0063,0x0061,0x0000},//Frequenza cardiaca
+												{0x0046,0x0072,0x0065,0x0071,0x0075,0x0065,0x006E,0x007A,0x0061,0x0020,0x0043,0x0061,0x0072,0x0064,0x0069,0x0061,0x0063,0x0061,0x0000},//Frequenza Cardiaca
 											  #endif
 											  #ifdef LANGUAGE_ES_ENABLE
 												{0x0046,0x0072,0x0065,0x0063,0x0075,0x0065,0x006E,0x0063,0x0069,0x0061,0x0020,0x0063,0x0061,0x0072,0x0064,0x0069,0x0061,0x0063,0x0061,0x0000},//Frecuencia cardiaca

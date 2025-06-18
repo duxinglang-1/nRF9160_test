@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
 
 #ifdef FW_FOR_CN
 #define LANGUAGE_CN_ENABLE		//Chinese
@@ -33,18 +33,18 @@
 #define MENU_OPT_STR_MAX	10
 #define MENU_NOTIFY_STR_MAX	32
 
-#define VERSION_STR	"V3.4.5_250329"
+#define VERSION_STR	"3.4.5_50330"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
 #define FALL_BRANCH ""
 #else
 #ifdef FW_FOR_CN
-#define LANG_BRANCH	"BC"
+#define LANG_BRANCH	"C"
 #else
-#define LANG_BRANCH	"BU"
+#define LANG_BRANCH	"U"
 #endif
 #ifdef CONFIG_FALL_DETECT_SUPPORT
-#define FALL_BRANCH	"F3.4.2"
+#define FALL_BRANCH	"F4.2"
 #else
 #define FALL_BRANCH ""
 #endif/*CONFIG_FALL_DETECT_SUPPORT*/

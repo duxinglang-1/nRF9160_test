@@ -8402,6 +8402,11 @@ void FOTAShowStatus(void)
 											};
 
 	LCD_Clear(BLACK);
+#ifdef FONTMAKER_UNICODE_FONT
+	LCD_SetFontSize(FONT_SIZE_20);
+#else	
+	LCD_SetFontSize(FONT_SIZE_16);
+#endif
 	
 	LCD_ShowImg_From_Flash(FOTA_LOGO_X, FOTA_LOGO_Y, IMG_OTA_LOGO_ADDR);
 	LCD_ShowImg_From_Flash(FOTA_YES_X, FOTA_YES_Y, IMG_OTA_YES_ADDR);

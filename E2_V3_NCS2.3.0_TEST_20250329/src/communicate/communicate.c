@@ -1259,7 +1259,7 @@ void SendSettingsData(void)
   #endif
   #ifdef LANGUAGE_JP_ENABLE
 	case LANGUAGE_JP:	//Japanese
-		strcat(reply, "jp");
+		strcat(reply, "ja");
 		break;
   #endif
   #ifdef LANGUAGE_RU_ENABLE
@@ -1269,7 +1269,7 @@ void SendSettingsData(void)
   #endif
   #ifdef LANGUAGE_SE_ENABLE
 	case LANGUAGE_SE:	//Swedish
-		strcat(reply, "se");
+		strcat(reply, "sv");
 		break;
   #endif
   #ifdef LANGUAGE_PL_ENABLE
@@ -1279,7 +1279,7 @@ void SendSettingsData(void)
   #endif
   #ifdef LANGUAGE_GR_ENABLE
 	case LANGUAGE_GR:	//Greece
-		strcat(reply, "gr");
+		strcat(reply, "el");
 		break;
   #endif
   #ifdef LANGUAGE_AR_ENABLE
@@ -1294,7 +1294,7 @@ void SendSettingsData(void)
   #endif
   #ifdef LANGUAGE_DK_ENABLE
 	case LANGUAGE_DK:	//Danish
-		strcat(reply, "dk");
+		strcat(reply, "da");
 		break;
   #endif
   #ifdef LANGUAGE_FI_ENABLE

@@ -2487,8 +2487,12 @@ void PPG_init(void)
 		g_bpt.diastolic = last_health.bpt_rec.bpt.diastolic;
 	}
 
+#if 1	//xb test 2025-07-07
+	PPG_Sensor_Init();
+#else
 	if(!sh_init_interface())
 		return;
+#endif
 
 #ifdef PPG_DEBUG	
 	LOGD("PPG_init done!");

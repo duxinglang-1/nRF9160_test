@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include "datetime.h"
 #include "settings.h"
+#include "Inner_flash.h"
 #include "lcd.h"
 #include "font.h"
 #ifdef CONFIG_IMU_SUPPORT
@@ -534,7 +535,11 @@ void UpdateSystemTime(void)
 		}
 	}
 	date_time_changed = date_time_changed|0x01;
+
+#ifdef CONFIG_PRESSURE_SUPPORT	
 	GetPressure(&prs);
+#endif
+
 	//每分钟保存一次时间
 	if((date_time_changed&0x02) != 0)
 	{

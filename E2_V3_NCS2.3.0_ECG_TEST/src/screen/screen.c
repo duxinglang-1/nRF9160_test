@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#include "Inner_flash.h"
 #include "settings.h"
 #include "lcd.h"
 #include "font.h"

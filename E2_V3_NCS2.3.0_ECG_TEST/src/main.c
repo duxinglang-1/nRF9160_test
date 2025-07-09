@@ -723,12 +723,12 @@ void system_init(void)
 #ifdef CONFIG_PPG_SUPPORT
 	PPG_i2c_off();
 #endif
-	pmu_init();
+	//pmu_init();
 	key_init();
-	LCD_Init();
-	flash_init();
+	//LCD_Init();
+	//flash_init();
 	
-	ShowBootUpLogo();
+	//ShowBootUpLogo();
 	
 #ifdef CONFIG_PPG_SUPPORT	
 	PPG_init();
@@ -827,7 +827,7 @@ int main(void)
 		TimeMsgProcess();
 		NBMsgProcess();
 		GPSMsgProcess();
-		PMUMsgProcess();
+		//PMUMsgProcess();
 	#ifdef CONFIG_IMU_SUPPORT	
 		IMUMsgProcess();
 	#ifdef CONFIG_FALL_DETECT_SUPPORT

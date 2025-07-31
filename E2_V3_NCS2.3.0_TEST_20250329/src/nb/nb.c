@@ -3404,7 +3404,7 @@ void NBMsgProcess(void)
 
 	if(nb_connecting_flag || mqtt_connecting_flag || mqtt_connected)
 	{
-		k_sleep(K_MSEC(5));
+		k_sleep(K_MSEC(10));
 	}
 }
 

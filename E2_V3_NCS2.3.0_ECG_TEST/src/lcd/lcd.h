@@ -15,12 +15,14 @@
 //#include "boards.h"
 
 //#define LCD_R108101_GC9307
-#define LCD_ORCZ010903C_GC9A01
+//#define LCD_ORCZ010903C_GC9A01
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
 //#define LCD_ORCT012210N_ST7789V2
 //#define LCD_VGM068A4W01_SH1106G
 //#define LCD_VGM096064A6W01_SP5090
+#define LCD_EQTAC175T1371_CO5300
+
 
 //#define LCD_TYPE_PARALLEL		//并口
 //#define LCD_TYPE_I2C			//I2C
@@ -30,7 +32,7 @@
 
 #define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
-#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
+//#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
 //LCD睡眠唤醒
 extern bool lcd_sleep_in;

@@ -60,7 +60,7 @@ static void LCD_SPI_Init(void)
 	}
 
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	spi_cfg.frequency = 4000000;
+	spi_cfg.frequency = 8000000;
 	spi_cfg.slave = 0;
 
 #ifndef SPI_MUIT_BY_CS
@@ -348,6 +348,10 @@ void LCD_SleepIn(void)
 	WriteComm(0x10);//Sleep in	
 	Delay(120);
 
+	gpio_pin_set(gpio_lcd, EN, 0);
+
+	LOGD("lcd sleep in!");
+
 	lcd_is_sleeping = true;
 }
 
@@ -383,10 +387,14 @@ void LCD_SleepOut(void)
 
 	if(!lcd_is_sleeping)
 		return;
+
+	gpio_pin_set(gpio_lcd, EN, 1);
 	
 	WriteComm(0x11);//Sleep out	
 	Delay(120);     
 	WriteComm(0x29);//Display on
+	
+	LOGD("lcd sleep out!");
 
 	lcd_is_sleeping = false;
 }
@@ -465,13 +473,13 @@ void LCD_Init(void)
 	LCD_SPI_Init();
 
 	gpio_pin_set(gpio_lcd, EN, 1);
-	Delay(20);
+	
 	gpio_pin_set(gpio_lcd, RST, 1);
-	Delay(200);
+	Delay(10);
 	gpio_pin_set(gpio_lcd, RST, 0);
-	Delay(800);
+	Delay(10);
 	gpio_pin_set(gpio_lcd, RST, 1);
-	Delay(800);
+	Delay(80);
 
 #if 1 //xb test 2025.05.22
  #if 0

@@ -662,7 +662,6 @@ void mqtt_unlink(void)
 static void mqtt_link(struct k_work_q *work_q)
 {
 	int err;
-	static bool init_flag = false;
 	
 #ifdef NB_DEBUG
 	LOGD("begin");
@@ -679,11 +678,7 @@ static void mqtt_link(struct k_work_q *work_q)
 	mqtt_connecting_flag = true;
 	//k_timer_start(&mqtt_connect_timer, K_SECONDS(3*60), K_NO_WAIT);
 
-	if(!init_flag)
-	{
-		client_init(&client);
-		init_flag = true;
-	}
+	client_init(&client);
 
 	err = mqtt_connect(&client);
 	if(err != 0)

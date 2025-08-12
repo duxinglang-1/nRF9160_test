@@ -16,8 +16,11 @@
 
 #define TP_I2C_ADDRESS			0x15
 #define TP_UPDATE_I2C_ADDRESS	0x6A
-#define TP_CST816S_ID			0xB4
-#define TP_CST816T_ID			0xB5
+
+#define TP_SET_BOOT_CMD_1		0xAA	//cst716,cst826,cst830,cst836u
+#define TP_SET_BOOT_CMD_2		0xAB	//cst816s,cst816d,cst816t,cst820
+#define TP_GET_BOOT_RET_1		0x55	//cst716,cst816s,cst826,cst830,CST836U
+#define TP_GET_BOOT_RET_2		0xC1	//cst816d,cst816t,cst820
 
 #define TP_REG_GESTURE				0x01
 #define TP_REG_FINGER_NUM			0x02
@@ -29,9 +32,11 @@
 #define TP_REG_BPC0_L				0xB1
 #define TP_REG_BPC1_H				0xB2
 #define TP_REG_BPC1_L				0xB3
-#define TP_REG_CHIPID				0xA7
+#define TP_REG_FW_VER_2				0xA6	//CST826,CST830,CST836U
+#define TP_REG_CHIPID_1				0xA7	//CST716,CST816S,CST816T,CST816D,CST820
 #define TP_REG_PROJID				0xA8
-#define TP_REG_FW_VER				0xA9
+#define TP_REG_FW_VER_1				0xA9	//CST716,CST816S,CST816T,CST816D,CST820
+#define TP_REG_CHIPID_2				0xAA	//CST826,CST830,CST836U
 #define TP_REG_SLEEP_MODE			0xE5
 #define TP_REG_ERR_RESET			0xEA
 #define TP_REG_LONG_PRESS_TICK		0xEB
@@ -79,8 +84,14 @@ typedef enum
 
 typedef enum
 {
+	TP_CST826  = 0x11,
+	TP_CST830  = 0x12,
+	TP_CST836U = 0x13,
+	TP_CST716  = 0x20,
 	TP_CST816S = 0xB4,
 	TP_CST816T = 0xB5,
+	TP_CST816D = 0xB6,
+	TP_CST820  = 0xB7,
 	TP_MAX 	   = 0xFF,
 }TP_CHIP_TYPE;
 

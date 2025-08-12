@@ -16,12 +16,13 @@
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
 #include "CST816.h"
-#include "CST816S_update.h"
-#include "CST816T_update.h"
+//#include "CST816S_update.h"
+//#include "CST816T_update.h"
+#include "CST820_update.h"
 #include "logger.h"
 
-//#define TP_DEBUG
-//#define TP_TEST
+#define TP_DEBUG
+#define TP_TEST
 
 #if defined(TP_DEBUG)||defined(TP_TEST)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
@@ -38,8 +39,8 @@
 #define TP_PORT	""
 #endif
 
-#define TP_RESET		16
-#define TP_EINT			25
+#define TP_RESET		24
+#define TP_EINT			0
 #define TP_SCL			1
 #define TP_SDA			0
 #endif
@@ -60,6 +61,61 @@ static struct gpio_callback gpio_cb;
 
 static TPInfo tp_event_info = {0};
 static TpEventNode *tp_event_tail = NULL;
+
+void test_i2c(void)
+{
+	struct device *i2c_dev;
+	struct device *dev0;
+
+	dev0 = DEVICE_DT_GET(TP_PORT);
+	gpio_pin_configure(dev0, 0, GPIO_OUTPUT);
+	gpio_pin_set(dev0, 0, 1);
+#ifdef TP_DEBUG
+	LOGD("Starting i2c scanner...");
+#endif
+	i2c_dev = DEVICE_DT_GET(TP_DEV);
+	if(!i2c_dev)
+	{
+	#ifdef TP_DEBUG
+		LOGD("I2C: Device driver not found.");
+	#endif
+		return;
+	}
+	i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	uint8_t error = 0u;
+#ifdef TP_DEBUG
+	LOGD("Value of NRF_TWIM1_NS->PSEL.SCL: %ld",NRF_TWIM1_NS->PSEL.SCL);
+	LOGD("Value of NRF_TWIM1_NS->PSEL.SDA: %ld",NRF_TWIM1_NS->PSEL.SDA);
+	LOGD("Value of NRF_TWIM1_NS->FREQUENCY: %ld",NRF_TWIM1_NS->FREQUENCY);
+	LOGD("26738688 -> 100k");
+	LOGD("67108864 -> 250k");
+	LOGD("104857600 -> 400k");
+#endif
+	for (uint8_t i = 0; i < 0x7f; i++)
+	{
+		struct i2c_msg msgs[1];
+		uint8_t dst = 1;
+
+		/* Send the address to read from */
+		msgs[0].buf = &dst;
+		msgs[0].len = 1U;
+		msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+		error = i2c_transfer(i2c_dev, &msgs[0], 1, i);
+		if(error == 0)
+		{
+		#ifdef TP_DEBUG
+			LOGD("0x%2x device address found on I2C Bus", i);
+		#endif
+		}
+		else
+		{
+		#ifdef TP_DEBUG
+			//LOGD("error %d", error);
+		#endif
+		}
+	}
+}
 
 #if defined(TP_DEBUG)||defined(TP_TEST)
 static uint8_t init_i2c(void)
@@ -136,9 +192,9 @@ static void tp_reset(void)
 {
 	gpio_pin_configure(gpio_ctp, TP_RESET, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ctp, TP_RESET, 0);
-	k_sleep(K_MSEC(10));
+	k_sleep(K_MSEC(20));
 	gpio_pin_set(gpio_ctp, TP_RESET, 1);
-	k_sleep(K_MSEC(50));
+	k_sleep(K_MSEC(100));
 }
 
 static int cst816s_enter_bootmode(void)
@@ -250,6 +306,9 @@ static uint32_t cst816s_read_checksum(void)
 
 	checksum.sum = 0;
 	platform_read_word(0xA008,checksum.buf,2);
+#ifdef TP_DEBUG
+	LOGD("checksum:0x%x", checksum.sum);
+#endif	
 	return checksum.sum;
 }
 
@@ -271,15 +330,22 @@ bool ctp_hynitron_update(void)
 		switch(tp_chip_id)
 		{
 		case TP_CST816S:
-			if(sizeof(cst816s_app_bin) > 10)
-				ptr = cst816s_app_bin;
-			else
-				return false;
+			//if(sizeof(cst816s_app_bin) > 10)
+			//	ptr = cst816s_app_bin;
+			//else
+			//	return false;
 			break;
 			
 		case TP_CST816T:
-			if(sizeof(cst816t_app_bin) > 10)
-				ptr = cst816t_app_bin;
+			//if(sizeof(cst816t_app_bin) > 10)
+			//	ptr = cst816t_app_bin;
+			//else
+			//	return false;
+			break;
+
+		case TP_CST820:
+			if(sizeof(cst820_app_bin) > 10)
+				ptr = cst820_app_bin;
 			else
 				return false;
 			break;
@@ -288,6 +354,9 @@ bool ctp_hynitron_update(void)
 		startAddr = *(ptr+1)<<8 | *(ptr+0);
 		length = *(ptr+3)<<8 | *(ptr+2);
 		checksum = *(ptr+5)<<8 | *(ptr+4);  
+	#ifdef TP_DEBUG
+		LOGD("checksum:0x%x", checksum);
+	#endif
 
 		if(cst816s_read_checksum()!= checksum)
 		{
@@ -296,7 +365,7 @@ bool ctp_hynitron_update(void)
 			cst816s_update(startAddr, length, ptr+6);
 			cst816s_read_checksum();
 
-			LCD_ShowString(20,180,"complete update!");
+			LCD_ShowString(20,200,"complete update!");
 		}
 
 		tp_reset();
@@ -598,6 +667,10 @@ void touch_panel_event_handle(TP_EVENT tp_type, uint16_t x_pos, uint16_t y_pos)
 #if defined(TP_DEBUG)||defined(TP_TEST)
 void CaptouchInterruptHandle(void)
 {
+#ifdef TP_DEBUG
+	LOGD("tp_int_trigt");
+#endif
+
 	tp_int_flag = true;
 }
 
@@ -656,8 +729,8 @@ void tp_interrupt_proc(void)
 
 void tp_get_id(uint8_t *chip_id, uint8_t *fw_ver)
 {
-	platform_read(TP_REG_CHIPID, chip_id, 1);
-	platform_read(TP_REG_FW_VER, fw_ver, 1);
+	platform_read(TP_REG_CHIPID_1, chip_id, 1);
+	platform_read(TP_REG_FW_VER_1, fw_ver, 1);
 
 #ifdef TP_DEBUG
 	LOGD("chip_id:0x%x, fw_ver:0x%x", *chip_id, *fw_ver);
@@ -675,6 +748,10 @@ void tp_set_auto_sleep(void)
 		break;
 		
 	case TP_CST816T:
+		data[0] = 0;
+		break;
+
+	case TP_CST820:
 		data[0] = 0;
 		break;
 	}
@@ -698,15 +775,17 @@ void tp_init(void)
 		return;
 	}
 
-	init_i2c();
-
+	tp_reset();
+	//test_i2c();
+	//return;
+	
 	gpio_pin_configure(gpio_ctp, TP_EINT, flag);
 	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_DISABLE);
 	gpio_init_callback(&gpio_cb, CaptouchInterruptHandle, BIT(TP_EINT));
 	gpio_add_callback(gpio_ctp, &gpio_cb);
 	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_EDGE_FALLING);
 
-	tp_reset();
+	init_i2c();
 
 	tp_get_id(&tp_chip_id, &tp_fw_ver);
 	switch(tp_chip_id)
@@ -714,7 +793,7 @@ void tp_init(void)
 	case TP_CST816S:
 		if(tp_fw_ver < 0x02)
 		{
-			ctp_hynitron_update();
+			//ctp_hynitron_update();
 		}
 		break;
 
@@ -724,6 +803,13 @@ void tp_init(void)
 	#elif defined(ORC_CST816T)
 		if(tp_fw_ver < 0x05)
 	#endif
+		{
+			//ctp_hynitron_update();
+		}
+		break;
+
+	case TP_CST820:
+		if(tp_fw_ver < 0xD5)
 		{
 			ctp_hynitron_update();
 		}
@@ -746,11 +832,11 @@ void test_tp(void)
 	LCD_ShowUniString((LCD_WIDTH-w)/2,20,tmpbuf);
 #else
 	sprintf(tmpbuf, "TP_TEST");
-	LCD_SetFontSize(FONT_SIZE_28);
+	LCD_SetFontSize(FONT_SIZE_32);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
 #endif	
-	//tp_init();
+	tp_init();
 }
 #endif
 
@@ -787,14 +873,14 @@ void tp_show_infor(void)
 		break;
 	}
 
-	LCD_SetFontSize(FONT_SIZE_28);
+	LCD_SetFontSize(FONT_SIZE_32);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_Fill(0, 80, LCD_WIDTH, h, BLACK);
 	LCD_ShowString((LCD_WIDTH-w)/2,80,tmpbuf);	
 	
 	sprintf(tmpbuf, "x:%03d, y:%03d", tp_msg.x_pos, tp_msg.y_pos);
 	LCD_MeasureString(tmpbuf, &w, &h);
-	LCD_ShowString((LCD_WIDTH-w)/2,110,tmpbuf);
+	LCD_ShowString((LCD_WIDTH-w)/2,120,tmpbuf);
 }
 
 void TPMsgProcess(void)

@@ -776,8 +776,6 @@ void tp_init(void)
 	}
 
 	tp_reset();
-	//test_i2c();
-	//return;
 	
 	gpio_pin_configure(gpio_ctp, TP_EINT, flag);
 	gpio_pin_interrupt_configure(gpio_ctp, TP_EINT, GPIO_INT_DISABLE);
@@ -809,7 +807,7 @@ void tp_init(void)
 		break;
 
 	case TP_CST820:
-		if(tp_fw_ver < 0xD5)
+		if(tp_fw_ver < 0x02)
 		{
 			ctp_hynitron_update();
 		}

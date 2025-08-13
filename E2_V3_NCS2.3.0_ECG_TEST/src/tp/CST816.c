@@ -807,7 +807,7 @@ void tp_init(void)
 		break;
 
 	case TP_CST820:
-		if(tp_fw_ver < 0x02)
+		if(tp_fw_ver < 0x03)
 		{
 			ctp_hynitron_update();
 		}

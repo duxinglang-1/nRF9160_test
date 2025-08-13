@@ -573,9 +573,9 @@ void IdleShowSystemDate(void)
 	LCD_SetFontSize(FONT_SIZE_32);
 
 	sprintf((char*)str_date, "%02d", date_time.day);
-	LCD_ShowString(IDLE_DATE_DAY_X,IDLE_DATE_DAY_Y,str_date);
+	LCD_ShowString(IDLE_DATE_DAY_EN_X,IDLE_DATE_DAY_EN_Y,str_date);
 	strcpy((char*)str_date, str_mon[date_time.month-1]);
-	LCD_ShowString(IDLE_DATE_MON_X,IDLE_DATE_MON_Y,str_date);
+	LCD_ShowString(IDLE_DATE_MON_EN_X,IDLE_DATE_MON_EN_Y,str_date);
 #endif
 }
 

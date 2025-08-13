@@ -30,7 +30,7 @@
 
 //#define LCD_SHOW_ROTATE_180		//屏旋转180度显示
 
-#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
 //#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
@@ -111,7 +111,7 @@ void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height);
 void LCD_dis_pic_trans(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans);
 void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned int rotate);
 void LCD_dis_pic_trans_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate);
-#ifdef FONTMAKER_UNICODE_FONT
+#if 1//def FONTMAKER_UNICODE_FONT
 void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height);
 void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p);
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p);

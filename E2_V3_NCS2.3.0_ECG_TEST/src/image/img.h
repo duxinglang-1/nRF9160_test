@@ -63,6 +63,10 @@ typedef struct _PALETTE
 仅在256色模式下存在调色板数据结构,调色板数据结构紧跟在数据结构HEADGRAY之后。
 */
 
+#if 1
+extern unsigned char gImage_jjph_gc_200x200[80008];
+#endif
+
 #if 0
 //battery(2)
 extern unsigned char IMG_BAT_RECT_RED[968];

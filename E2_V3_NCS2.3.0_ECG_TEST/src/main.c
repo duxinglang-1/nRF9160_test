@@ -400,13 +400,16 @@ void test_show_image(void)
 	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
 	
-	LCD_Clear(BLACK);
+	LCD_Clear(WHITE);
 	
-	//LCD_get_pic_size(peppa_pig_160X160, &w, &h);
+	LCD_get_pic_size(gImage_jjph_gc_200x200, &w, &h);
+	x = w > LCD_WIDTH ? 0 : (LCD_WIDTH - w)/2;
+	y = h > LCD_HEIGHT ? 0 : (LCD_HEIGHT - h)/2; 
+	LCD_dis_pic(x, y, gImage_jjph_gc_200x200);
+
 	//LCD_dis_pic_rotate(0,200,peppa_pig_160X160,270);
-	//LCD_dis_pic(0, 0, peppa_pig_160X160);
-	LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
-	LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
+	//LCD_get_pic_size_from_flash(IMG_STEP_UNIT_CN_ICON_ADDR, &w, &h);
+	//LCD_dis_pic_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_STEP_UNIT_CN_ICON_ADDR);
 	//LCD_dis_pic_rotate_from_flash((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, IMG_ANALOG_CLOCK_HAND_HOUR_ADDR, 270);
 	//LCD_dis_pic_angle_from_flash(0, 0, IMG_ANALOG_CLOCK_HAND_SEC_ADDR, 360);
 	while(0)
@@ -537,7 +540,7 @@ void test_show_color(void)
 
 void test_show_string(void)
 {
-	uint16_t x,y,w,h;
+	uint16_t x=0,y=0,w,h;
 	uint8_t tmpbuf[256] = {0};
 	uint8_t enbuf[64] = {0};
 	uint8_t cnbuf[64] = {0};
@@ -550,13 +553,6 @@ void test_show_string(void)
 	
 	POINT_COLOR=WHITE;								//画笔颜色
 	BACK_COLOR=BLACK;  								//背景色 
-
-	LCD_SetFontSize(FONT_SIZE_20);
-	LCD_Fill((LCD_WIDTH-180)/2, 60, 180, 100, BLACK);
- 	mmi_asc_to_ucs2(tmpbuf, " G:153853,160004\nIR:401502,403683\n R:425776,428105\nhr:0 spo2:0");
- 	LCD_ShowUniStringInRect((LCD_WIDTH-180)/2, 60, 180, 100, (uint16_t*)tmpbuf);
-
-	return;
 
 #ifdef FONTMAKER_UNICODE_FONT
 #if 0//def FONT_64
@@ -613,7 +609,7 @@ void test_show_string(void)
 	LCD_ShowUniString(x,y,en_unibuf);
 #endif
 #else
-	strcpy(enbuf, "August Shenzhen Digital Ltd");
+	strcpy(enbuf, "AugustShenzhenDigitalLtd");
 	strcpy(cnbuf, "深圳市奥科斯数码有限公司");
 	strcpy(jpbuf, "深セン市オーコスデジタル有限会社");
 
@@ -625,20 +621,13 @@ void test_show_string(void)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
 
-	LCD_MeasureString(enbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;	
-	LCD_ShowString(x,y,enbuf);
-	
-	LCD_MeasureString(cnbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;
-	LCD_ShowString(x,y,cnbuf);
-	
-	LCD_MeasureString(jpbuf,&w,&h);
-	x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
-	y = y + h + 2;
-	LCD_ShowString(x,y,jpbuf);
+	for(uint8_t i=0;i<14;i++)
+	{
+		LCD_MeasureString(enbuf,&w,&h);
+		//x = (w > LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
+		LCD_ShowString(x,y,enbuf);
+		y = y + h + 0;	
+	}
 
 #if 0
 #ifdef FONT_24
@@ -723,9 +712,9 @@ void system_init(void)
 #ifdef CONFIG_PPG_SUPPORT
 	PPG_i2c_off();
 #endif
-	//pmu_init();
+	pmu_init();
 	key_init();
-	//LCD_Init();
+	LCD_Init();
 	//flash_init();
 	
 	//ShowBootUpLogo();
@@ -736,7 +725,7 @@ void system_init(void)
 #ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
 #endif
-	ble_init();
+	//ble_init();
 #ifdef CONFIG_WIFI_SUPPORT
 	wifi_init();
 #endif
@@ -752,7 +741,7 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
-	LogInit();
+	//LogInit();
 
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
@@ -800,7 +789,7 @@ int main(void)
 	system_init();
 
 //	test_show_string();
-//	test_show_image();
+	test_show_image();
 //	test_show_color();
 //	test_show_stripe();
 //	test_nvs();
@@ -821,7 +810,7 @@ int main(void)
 //	test_wifi();
 //	LogInit();
 
-	while(1)
+	while(0)
 	{
 		KeyMsgProcess();
 		TimeMsgProcess();

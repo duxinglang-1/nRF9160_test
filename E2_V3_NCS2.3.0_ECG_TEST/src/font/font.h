@@ -18,7 +18,7 @@
 #define FONT_68
 
 //#define FONTMAKER_MBCS_FONT		//fontmake根据RM提供的矢量字库转换成的mbcs编码点阵字库数据
-#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
+//#define FONTMAKER_UNICODE_FONT	//fontmake根据RM提供的矢量字库转换成的unicode编码点阵字库数据
 
 #ifdef FONTMAKER_MBCS_FONT
 #define FONT_MBCS_HEAD_FLAG_0	0x4D

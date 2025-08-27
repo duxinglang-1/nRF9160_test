@@ -21,7 +21,7 @@
 #include "CST820_update.h"
 #include "logger.h"
 
-#define TP_DEBUG
+//#define TP_DEBUG
 #define TP_TEST
 
 #if defined(TP_DEBUG)||defined(TP_TEST)

@@ -947,7 +947,7 @@ void SettingsMainMenu7Proc(void)
 	else
 #endif		
 	{
-	#if 1	//xb add 2024-03-19 ��ǿ���������һ�ΰ汾��Ϣ
+	#ifdef CONFIG_FOTA_DOWNLOAD	//xb add 2024-03-19
 		EnterVerCheckScreen();
 	#else
 		main_menu_index_bk = settings_menu.index;

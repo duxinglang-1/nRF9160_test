@@ -364,6 +364,14 @@ config PPG_DATA_UPDATE
 config PPG_DATA_DOWNLOAD_FILE
 	string "The file to download"
 
+# STR
+config STR_DATA_UPDATE
+	bool "str update support"
+	default n
+config STR_DATA_DOWNLOAD_FILE
+	string "The file to download"
+	
+
 config USE_HTTPS
 	bool
 	prompt "Use HTTPS for download"

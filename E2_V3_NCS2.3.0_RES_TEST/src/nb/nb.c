@@ -41,7 +41,7 @@
 #endif
 #include "logger.h"
 
-//#define NB_DEBUG
+#define NB_DEBUG
 
 #define MQTT_CONNECTED_KEEP_TIME	(60)
 
@@ -162,6 +162,7 @@ uint8_t g_new_ble_ver[64] = {0};
 uint8_t g_new_wifi_ver[64] = {0};
 uint8_t g_new_ui_ver[16] = {0};
 uint8_t g_new_font_ver[16] = {0};
+uint8_t g_new_str_ver[16] = {0};
 uint8_t g_new_ppg_ver[16] = {0};
 uint8_t g_timezone[5] = {0};
 
@@ -1950,11 +1951,20 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
-				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_font_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_font_ver);
-			else
-				copylen = (ptr1-ptr) < sizeof(g_new_font_ver) ? (ptr1-ptr) : sizeof(g_new_font_ver);
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_font_ver) ? (ptr1-ptr) : sizeof(g_new_font_ver);
 			memset(g_new_font_ver, 0x00, sizeof(g_new_font_ver));
 			memcpy(g_new_font_ver, ptr, copylen);
+
+			//str ver
+			ptr = ptr1+1;
+			ptr1 = strstr(ptr, ",");
+			if(ptr1 == NULL)
+				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_str_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_str_ver);
+			else
+				copylen = (ptr1-ptr) < sizeof(g_new_str_ver) ? (ptr1-ptr) : sizeof(g_new_str_ver);
+			memset(g_new_str_ver, 0x00, sizeof(g_new_str_ver));
+			memcpy(g_new_str_ver, ptr, copylen);
 		}
 		else if(strcmp(strcmd, "S15") == 0)
 		{

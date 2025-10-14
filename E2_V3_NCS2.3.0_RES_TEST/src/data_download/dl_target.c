@@ -26,6 +26,10 @@ DEF_DL_TARGET(ui);
 #include "dl_target_font.h"
 DEF_DL_TARGET(font);
 #endif
+#ifdef CONFIG_STR_DATA_UPDATE
+#include "dl_target_str.h"
+DEF_DL_TARGET(str);
+#endif
 #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 #include "dl_target_ppg.h"
 DEF_DL_TARGET(ppg);
@@ -51,6 +55,12 @@ int dl_target_init(DL_DATA_TYPE data_type, size_t file_size, dl_target_callback_
 	#ifdef CONFIG_FONT_DATA_UPDATE
 	case DL_DATA_FONT:
 		new_target = &dl_target_font;
+		break;
+	#endif
+
+	#ifdef CONFIG_STR_DATA_UPDATE
+	case DL_DATA_STR:
+		new_target = &dl_target_str;
 		break;
 	#endif
 

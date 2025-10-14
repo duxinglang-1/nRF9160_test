@@ -155,6 +155,10 @@ static void DlSaveData(void)
 			SpiFlash_Write(p_data, FONT_VER_ADDR, data_len);
 			break;
 
+		case DL_DATA_STR:
+			SpiFlash_Write(p_data, STR_VER_ADDR, data_len);
+			break;
+
 		case DL_DATA_PPG:
 			SpiFlash_Write(p_data, PPG_ALGO_VER_ADDR, data_len);
 			break;
@@ -441,6 +445,17 @@ static void dl_transfer_start(struct k_work *unused)
 		break;
 	#endif
 
+	#ifdef CONFIG_STR_DATA_UPDATE
+	case DL_DATA_STR:
+		if(strncmp(g_imsi, "460", strlen("460")) == 0)
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_CN);
+		else
+			strcpy(dl_host, CONFIG_DATA_DOWNLOAD_HOST_HK);
+		strcpy(dl_file, g_prj_dir);
+		strcat(dl_file, CONFIG_STR_DATA_DOWNLOAD_FILE);		
+		break;
+	#endif
+
 	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
 		if(strncmp(g_imsi, "460", strlen("460")) == 0)
@@ -450,7 +465,7 @@ static void dl_transfer_start(struct k_work *unused)
 		strcpy(dl_file, g_prj_dir);
 		strcat(dl_file, CONFIG_PPG_DATA_DOWNLOAD_FILE);
 		break;
-	#endif		
+	#endif
 	}
 	
 	retval = dl_download_start(dl_host, dl_file, sec_tag);
@@ -564,6 +579,33 @@ void dl_font_start(void)
 }
 #endif
 
+#ifdef CONFIG_STR_DATA_UPDATE
+void dl_str_prev(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	PrevDlStrScreen();
+}
+
+void dl_str_exit(void)
+{
+	dl_run_flag = false;
+	dl_cur_status = DL_STATUS_MAX;
+	LCD_Set_BL_Mode(LCD_BL_AUTO);
+	ExitDlStrScreen();
+}
+
+void dl_str_start(void)
+{
+	dl_run_flag = true;
+	g_dl_data_type = DL_DATA_STR;
+	dl_cur_status = DL_STATUS_PREPARE;
+	
+	EnterDlScreen();
+}
+#endif
+
 #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 void dl_ppg_prev(void)
 {
@@ -607,6 +649,12 @@ void dl_prev(void)
 		break;
 	#endif
 
+	#ifdef CONFIG_STR_DATA_UPDATE
+	case DL_DATA_STR:
+		dl_str_prev();
+		break;
+	#endif
+
 	#if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	case DL_DATA_PPG:
 		dl_ppg_prev();
@@ -628,6 +676,12 @@ void dl_exit(void)
 	#ifdef CONFIG_FONT_DATA_UPDATE
 	case DL_DATA_FONT:
 		dl_font_exit();
+		break;
+	#endif
+
+	#ifdef CONFIG_STR_DATA_UPDATE
+	case DL_DATA_STR:
+		dl_str_exit();
 		break;
 	#endif
 
@@ -708,6 +762,10 @@ void dl_handler(const struct download_evt *evt)
 			DlReceiveData(g_new_font_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_font_ver, g_new_font_ver);		
 			break;
+		case DL_DATA_STR:
+			DlReceiveData(g_new_str_ver, 16, DATA_RESOURCE_VER);
+			strcpy(g_str_ver, g_new_str_ver);		
+			break;	
 		case DL_DATA_PPG:
 			DlReceiveData(g_new_ppg_ver, 16, DATA_RESOURCE_VER);
 			strcpy(g_ppg_algo_ver, g_new_ppg_ver);				

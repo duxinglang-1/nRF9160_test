@@ -405,6 +405,10 @@ void FotaMsgProc(void)
 		{
 			dl_font_start();
 		}
+		else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0))
+		{
+			dl_str_start();
+		}
 	#ifdef CONFIG_PPG_SUPPORT
 		else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 		{

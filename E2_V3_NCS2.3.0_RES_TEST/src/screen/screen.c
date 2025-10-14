@@ -377,6 +377,8 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 			case DL_STATUS_ERROR:
 				if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0))
 					dl_font_start();
+				else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0))
+					dl_str_start();
 			#if defined(CONFIG_PPG_SUPPORT)
 				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
@@ -398,6 +400,29 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 
 			case DL_STATUS_FINISHED:
 			case DL_STATUS_ERROR:
+				if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0))
+					dl_str_start();
+			#if defined(CONFIG_PPG_SUPPORT)
+				else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+					dl_ppg_start();
+				else
+			#endif		
+				{
+					dl_reboot_confirm();
+				}
+				break;
+			}
+			break;
+
+		case DL_DATA_STR:
+			switch(get_dl_status())
+			{
+			case DL_STATUS_PREPARE:
+				dl_start();
+				break;
+
+			case DL_STATUS_FINISHED:
+			case DL_STATUS_ERROR:
 			#if defined(CONFIG_PPG_SUPPORT)
 				if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 					dl_ppg_start();
@@ -408,7 +433,7 @@ void MainMenuTimerOutCallBack(struct k_timer *timer_id)
 				}
 				break;
 			}
-			break;
+			break;	
 			
 		case DL_DATA_PPG:
 			switch(get_dl_status())
@@ -1881,10 +1906,11 @@ void PowerOffShowStatus(void)
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
   	if((strlen(g_ui_ver) == 0) 
 		|| (strlen(g_font_ver) == 0)
+		|| (strlen(g_str_ver) == 0)
 		|| (strlen(g_ppg_algo_ver) == 0)
 		)
 	{
-		SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+		SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_str_ver, g_ppg_algo_ver);
 	}
 
    #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
@@ -1895,7 +1921,11 @@ void PowerOffShowStatus(void)
 	else
    #endif	
 	{
-		if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		{
+			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_str_start);
+		}
+		else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		{
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
 		}
@@ -2418,6 +2448,10 @@ void SettingsUpdateStatus(void)
 			else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 			{
 				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+			}
+			else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+			{
+				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_str_start);
 			}
 		   #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 			else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
@@ -3688,10 +3722,11 @@ void EnterSettingsScreen(void)
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
  	if((strlen(g_ui_ver) == 0) 
 		|| (strlen(g_font_ver) == 0)
+		|| (strlen(g_str_ver) == 0)
 		|| (strlen(g_ppg_algo_ver) == 0)
 		)
 	{
-		SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+		SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_str_ver, g_ppg_algo_ver);
 	}
  
   	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -3701,6 +3736,10 @@ void EnterSettingsScreen(void)
 	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		SetLeftKeyUpHandler(dl_font_start);
+	}
+	else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		SetLeftKeyUpHandler(dl_str_start);
 	}
   #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
@@ -3735,6 +3774,10 @@ void EnterSettingsScreen(void)
 	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_font_start);
+	}
+	else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, dl_str_start);
 	}
    #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
@@ -7769,6 +7812,32 @@ void DlShowStatus(void)
 		strcpy(str_title, "FONT Upgrade");
 	#endif
 		break;
+	case DL_DATA_STR:
+	#ifdef FONTMAKER_UNICODE_FONT
+		switch(global_settings.language)
+		{
+	 #if defined(LANGUAGE_CN_ENABLE)||defined(LANGUAGE_JP_ENABLE)||defined(LANGUAGE_KR_ENABLE)
+	   #ifdef LANGUAGE_CN_ENABLE
+	  	case LANGUAGE_CHN:
+	   #endif
+	   #ifdef LANGUAGE_JP_ENABLE
+	  	case LANGUAGE_JP:
+	   #endif
+	   #ifdef LANGUAGE_KR_ENABLE
+		case LANGUAGE_KR:
+	   #endif		
+			mmi_ucs2smartcpy(str_title, (uint8_t*)str_font_title[global_settings.language], 16);
+			break;
+	 #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JP_ENABLE||LANGUAGE_KR_ENABLE*/
+	  
+		default:
+			mmi_ucs2smartcpy(str_title, (uint8_t*)str_font_title[global_settings.language], 18);
+			break;
+		}
+	#else
+		strcpy(str_title, "STR Upgrade");
+	#endif
+		break;
 	case DL_DATA_PPG:
 	#ifdef FONTMAKER_UNICODE_FONT
 		switch(global_settings.language)
@@ -8274,6 +8343,8 @@ void ExitDlImgScreen(void)
 {
 	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_font_start();
+	else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		dl_str_start();
 #if defined(CONFIG_PPG_SUPPORT)
 	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 		dl_ppg_start();
@@ -8294,6 +8365,30 @@ void PrevDlFontScreen(void)
 
 void ExitDlFontScreen(void)
 {
+	if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		dl_str_start();
+#if defined(CONFIG_PPG_SUPPORT)
+	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
+		dl_ppg_start();
+	else
+#endif
+	EnterPoweroffScreen();
+}
+#endif
+
+#ifdef CONFIG_STR_DATA_UPDATE
+void PrevDlStrScreen(void)
+{
+	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		dl_font_start();
+	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		dl_img_start();
+	else
+		EnterSettings();
+}
+
+void ExitDlStrScreen(void)
+{
 #if defined(CONFIG_PPG_SUPPORT)
 	if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))
 		dl_ppg_start();
@@ -8306,7 +8401,9 @@ void ExitDlFontScreen(void)
 #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 void PrevDlPpgScreen(void)
 {
-	if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+		dl_str_start();
+	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_font_start();
 	else if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 		dl_img_start();
@@ -8912,6 +9009,10 @@ void ExitFOTAScreen(void)
 	else if((strcmp(g_new_font_ver,g_font_ver) != 0) && (strlen(g_new_font_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
 	{
 		dl_font_start();
+	}
+	else if((strcmp(g_new_str_ver,g_str_ver) != 0) && (strlen(g_new_str_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
+	{
+		dl_str_start();
 	}
   #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 	else if((strcmp(g_new_ppg_ver,g_ppg_algo_ver) != 0) && (strlen(g_new_ppg_ver) > 0))

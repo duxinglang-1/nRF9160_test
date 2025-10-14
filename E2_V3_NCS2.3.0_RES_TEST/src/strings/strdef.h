@@ -1,7 +1,7 @@
 /****************************************Copyright (c)************************************************
 ** File name:			    strdef.h
 ** Created by:				Biao.X
-** Created date:			2025-10-13 18:01:56
+** Created date:			2025-10-14 15:41:29
 ******************************************************************************************************/
 typedef enum
 {
@@ -75,6 +75,7 @@ typedef enum
 	STR_ID_MAKESURE_BAT_SOC,
 	STR_ID_UI_UPGRADE,
 	STR_ID_FONT_UPGRADE,
+	STR_ID_STR_UPGRADE,
 	STR_ID_PPG_ALGORITHM_UPGRADE,
 	STR_ID_SOS_LOCATION_FRONT,
 	STR_ID_FALL_LOCATION_FRONT,

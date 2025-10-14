@@ -276,7 +276,7 @@
 #define IMG_RESET_YES_ADDR					(IMG_RESET_SUCCESS_END)
 #define IMG_RESET_YES_SIZE					(3208)
 #define IMG_RESET_YES_END					(IMG_RESET_YES_ADDR+IMG_RESET_YES_SIZE)
-//3 dot gif(3)
+//dot gif(3)
 #define IMG_RUNNING_ANI_1_ADDR				(IMG_RESET_YES_END)
 #define IMG_RUNNING_ANI_1_SIZE				(2114)
 #define IMG_RUNNING_ANI_1_END				(IMG_RUNNING_ANI_1_ADDR+IMG_RUNNING_ANI_1_SIZE)
@@ -933,8 +933,8 @@
 #define PPG_ALGO_END_ADDR					0x77ffff
 /***************************************************ppg algo end*****************************************************/
 
-/***************************************************data begin*******************************************************/
-//记录数据 flash里占用512K的空间(0x780000~0x7fffff)
+/*************************************************health data begin**************************************************/
+//记录数据 flash里占用128K的空间(0x780000~0x79ffff)
 #define DATA_START_ADDR						0x780000
 //PPG DATA
 #define PPG_BPT_CAL_DATA_ADDR				(DATA_START_ADDR)
@@ -942,65 +942,80 @@
 #define PPG_BPT_CAL_DATA_END				(PPG_BPT_CAL_DATA_ADDR+PPG_BPT_CAL_DATA_SIZE)
 //单次测量(100组数据)
 #define PPG_HR_REC1_DATA_ADDR				(PPG_BPT_CAL_DATA_END)
-#define PPG_HR_REC1_DATA_SIZE				(100*sizeof(ppg_hr_rec1_data))
+#define PPG_HR_REC1_DATA_SIZE				(100*sizeof(ppg_hr_rec1_data))//800
 #define PPG_HR_REC1_DATA_END				(PPG_HR_REC1_DATA_ADDR+PPG_HR_REC1_DATA_SIZE)
 
 #define PPG_SPO2_REC1_DATA_ADDR				(PPG_HR_REC1_DATA_END)
-#define PPG_SPO2_REC1_DATA_SIZE				(100*sizeof(ppg_spo2_rec1_data))
+#define PPG_SPO2_REC1_DATA_SIZE				(100*sizeof(ppg_spo2_rec1_data))//800
 #define PPG_SPO2_REC1_DATA_END				(PPG_SPO2_REC1_DATA_ADDR+PPG_SPO2_REC1_DATA_SIZE)
 
 #define PPG_BPT_REC1_DATA_ADDR				(PPG_SPO2_REC1_DATA_END)
-#define PPG_BPT_REC1_DATA_SIZE				(100*sizeof(ppg_bpt_rec1_data))
+#define PPG_BPT_REC1_DATA_SIZE				(100*sizeof(ppg_bpt_rec1_data))//900
 #define PPG_BPT_REC1_DATA_END				(PPG_BPT_REC1_DATA_ADDR+PPG_BPT_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define PPG_HR_REC2_DATA_ADDR				(PPG_BPT_REC1_DATA_END)
-#define PPG_HR_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(hr_rec2_nod))
+#define PPG_HR_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(hr_rec2_nod))//4704
 #define PPG_HR_REC2_DATA_END				(PPG_HR_REC2_DATA_ADDR+PPG_HR_REC2_DATA_SIZE)
 
 #define PPG_SPO2_REC2_DATA_ADDR				(PPG_HR_REC2_DATA_END)
-#define PPG_SPO2_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(spo2_rec2_nod))
+#define PPG_SPO2_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(spo2_rec2_nod))//4704
 #define PPG_SPO2_REC2_DATA_END				(PPG_SPO2_REC2_DATA_ADDR+PPG_SPO2_REC2_DATA_SIZE)
 
 #define PPG_BPT_REC2_DATA_ADDR				(PPG_SPO2_REC2_DATA_END)
-#define PPG_BPT_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(bpt_rec2_nod))
+#define PPG_BPT_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(bpt_rec2_nod))//5376
 #define PPG_BPT_REC2_DATA_END				(PPG_BPT_REC2_DATA_ADDR+PPG_BPT_REC2_DATA_SIZE)
 
 //TEMP DATA
 //单次测量(100组数据)
 #define TEMP_REC1_DATA_ADDR					(PPG_BPT_REC2_DATA_END)
-#define TEMP_REC1_DATA_SIZE					(100*sizeof(temp_rec1_data))
+#define TEMP_REC1_DATA_SIZE					(100*sizeof(temp_rec1_data))//900
 #define TEMP_REC1_DATA_END					(TEMP_REC1_DATA_ADDR+TEMP_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define TEMP_REC2_DATA_ADDR					(TEMP_REC1_DATA_END)
-#define TEMP_REC2_DATA_SIZE					(TEMP_REC2_MAX_COUNT*sizeof(temp_rec2_nod))
+#define TEMP_REC2_DATA_SIZE					(TEMP_REC2_MAX_COUNT*sizeof(temp_rec2_nod))//5376
 #define TEMP_REC2_DATA_END					(TEMP_REC2_DATA_ADDR+TEMP_REC2_DATA_SIZE)
 
 //IMU DATA
 //STEP
 //单次测量(100组数据)
 #define STEP_REC1_DATA_ADDR					(TEMP_REC2_DATA_END)
-#define STEP_REC1_DATA_SIZE					(100*(7+2))
+#define STEP_REC1_DATA_SIZE					(100*(7+2))//900
 #define STEP_REC1_DATA_END					(STEP_REC1_DATA_ADDR+STEP_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define STEP_REC2_DATA_ADDR					(STEP_REC1_DATA_END)
-#define STEP_REC2_DATA_SIZE					(7*(4+24*2))
+#define STEP_REC2_DATA_SIZE					(7*(4+24*2))//364
 #define STEP_REC2_DATA_END					(STEP_REC2_DATA_ADDR+STEP_REC2_DATA_SIZE)
 //SLEEP
 //单次测量(100组数据)
 #define SLEEP_REC1_DATA_ADDR				(STEP_REC2_DATA_END)
-#define SLEEP_REC1_DATA_SIZE				(100*(7+4))
+#define SLEEP_REC1_DATA_SIZE				(100*(7+4))//1100
 #define SLEEP_REC1_DATA_END					(SLEEP_REC1_DATA_ADDR+SLEEP_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define SLEEP_REC2_DATA_ADDR				(SLEEP_REC1_DATA_END)
-#define SLEEP_REC2_DATA_SIZE				(7*(4+24*4))
+#define SLEEP_REC2_DATA_SIZE				(7*(4+24*4))//700
 #define SLEEP_REC2_DATA_END					(SLEEP_REC2_DATA_ADDR+SLEEP_REC2_DATA_SIZE)
 
-#define DATA_END_ADDR						0x7fffff
-/****************************************************date end********************************************************/
+#define DATA_END_ADDR						0x79ffff
+/*************************************************health date end****************************************************/
 
+/************************************************strlib data begin***************************************************/
+//字符串数据 flash里占用384K的空间(0x7a0000~0x800000)
+#define STR_START_ADDR					0x7a0000
+
+#define STR_VER_ADDR					STR_START_ADDR
+#define STR_VER_SIZE					(16)
+#define STR_VER_END						(STR_VER_ADDR+STR_VER_SIZE)
+
+#define STR_DATA_ADDR					STR_VER_END
+#define STR_DATA_SIZE					(31122)
+#define STR_DATA_END					(STR_DATA_ADDR+STR_DATA_SIZE)
+
+#define STR_END_ADDR					0x800000
+/*************************************************strlib data end****************************************************/
 
 extern uint8_t g_ui_ver[16];
 extern uint8_t g_font_ver[16];
+extern uint8_t g_str_ver[16];
 extern uint8_t g_ppg_algo_ver[16];
 
 void SPI_Flash_Init(void);

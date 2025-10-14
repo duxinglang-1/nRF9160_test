@@ -50,6 +50,7 @@ typedef enum
 {
 	DL_DATA_IMG,
 	DL_DATA_FONT,
+	DL_DATA_STR,
 	DL_DATA_PPG,
 	DL_DATA_MAX
 }DL_DATA_TYPE;
@@ -101,6 +102,11 @@ extern void dl_img_start(void);
 extern void dl_font_prev(void);
 extern void dl_font_exit(void);
 extern void dl_font_start(void);
+#endif
+#ifdef CONFIG_STR_DATA_UPDATE
+extern void dl_str_prev(void);
+extern void dl_str_exit(void);
+extern void dl_str_start(void);
 #endif
 #if defined(CONFIG_PPG_DATA_UPDATE)&&defined(CONFIG_PPG_SUPPORT)
 extern void dl_ppg_prev(void);

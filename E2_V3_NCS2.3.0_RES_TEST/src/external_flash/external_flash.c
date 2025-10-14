@@ -43,6 +43,7 @@ static struct spi_cs_control spi_cs_ctr;
 
 uint8_t g_ui_ver[16] = {0};
 uint8_t g_font_ver[16] = {0};
+uint8_t g_str_ver[16] = {0};
 uint8_t g_ppg_algo_ver[16] = {0};
 
 void SpiFlash_CS_LOW(void)
@@ -595,16 +596,20 @@ uint8_t SpiFlash_Read(uint8_t *pBuffer,uint32_t ReadAddr,uint32_t size)
 ** 描  述：读取存储在flash当中的几组数据库的版本号
 ** 参  数：ui_ver：存放读取到的ui版本的buffer       
 **         font_ver：存放读取到的font版本的buffer       
+**         str_ver：存放读取到的str版本的buffer       
 **         ppg_ver：存放读取到的ppg版本的buffer       
 ** 返回值：
 ******************************************************************************/
-void SPIFlash_Read_DataVer(uint8_t *ui_ver, uint8_t *font_ver, uint8_t *ppg_ver)
+void SPIFlash_Read_DataVer(uint8_t *ui_ver, uint8_t *font_ver, uint8_t *str_ver, uint8_t *ppg_ver)
 {
 	if(ui_ver != NULL)
 		SpiFlash_Read(ui_ver, IMG_VER_ADDR, 16);
 	
 	if(font_ver != NULL)
 		SpiFlash_Read(font_ver, FONT_VER_ADDR, 16);
+
+	if(str_ver != NULL)
+		SpiFlash_Read(str_ver, STR_VER_ADDR, 16);	
 	
 #ifdef CONFIG_PPG_SUPPORT
 	if(ppg_ver != NULL)
@@ -653,7 +658,7 @@ void flash_init(void)
 
 	SPI_Flash_Init();
 
-	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_ppg_algo_ver);
+	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_str_ver, g_ppg_algo_ver);
 }
 
 void test_flash_write_and_read(uint8_t *buf, uint32_t len)

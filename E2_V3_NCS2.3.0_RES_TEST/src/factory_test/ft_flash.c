@@ -100,14 +100,15 @@ static void FTMenuFlashSle2Hander(void)
 void FTFlashStatusUpdate(void)
 {
 	uint16_t flash_id;
-	uint8_t ui_version[16],font_version[16],ppg_version[16];
+	uint8_t ui_version[16],font_version[16],str_version[16],ppg_version[16];
 	
 	flash_id = SpiFlash_ReadID();
 	if(flash_id == W25Q64_ID)
 	{
-		SPIFlash_Read_DataVer(&ui_version, &font_version, &ppg_version);
+		SPIFlash_Read_DataVer(&ui_version, &font_version, &str_version, &ppg_version);
 		if((ui_version[0] != 0xff && ui_version[0] != 0x00)
 			&&(font_version[0] != 0xff && font_version[0] != 0x00)
+			&&(str_version[0] != 0xff && str_version[0] != 0x00)
 			&&(ppg_version[0] != 0xff && ppg_version[0] != 0x00))
 		{
 			ft_flash_checked = true;

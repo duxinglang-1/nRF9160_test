@@ -1243,7 +1243,7 @@ void SendSettingsData(void)
 		break;
   #endif
   #ifdef LANGUAGE_IT_ENABLE
-	case LANGUAGE_ITA:	//Italian
+	case LANGUAGE_IT:	//Italian
 		strcat(reply, "it");
 		break;
   #endif
@@ -1257,8 +1257,8 @@ void SendSettingsData(void)
 		strcat(reply, "pt");
 		break;
   #endif
-  #ifdef LANGUAGE_JP_ENABLE
-	case LANGUAGE_JP:	//Japanese
+  #ifdef LANGUAGE_JA_ENABLE
+	case LANGUAGE_JA:	//Japanese
 		strcat(reply, "ja");
 		break;
   #endif
@@ -1267,8 +1267,8 @@ void SendSettingsData(void)
 		strcat(reply, "ru");
 		break;
   #endif
-  #ifdef LANGUAGE_SE_ENABLE
-	case LANGUAGE_SE:	//Swedish
+  #ifdef LANGUAGE_SV_ENABLE
+	case LANGUAGE_SV:	//Swedish
 		strcat(reply, "sv");
 		break;
   #endif
@@ -1314,7 +1314,7 @@ void SendSettingsData(void)
   #endif
 #else
   #ifdef LANGUAGE_CN_ENABLE
-	case LANGUAGE_CHN:	//Chinese
+	case LANGUAGE_CN:	//Chinese
 		strcat(reply, "zh");
 		break;
   #endif

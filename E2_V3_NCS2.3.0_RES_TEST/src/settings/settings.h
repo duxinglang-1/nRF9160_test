@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
 
 #ifdef FW_FOR_CN
 #define LANGUAGE_CN_ENABLE		//Chinese
@@ -19,8 +19,8 @@
 #define LANGUAGE_ES_ENABLE		//Spanish
 #define LANGUAGE_PT_ENABLE		//Portuguese
 #define LANGUAGE_PL_ENABLE		//Polish
-#define LANGUAGE_SE_ENABLE		//Swedish
-#define LANGUAGE_JP_ENABLE		//Japanese
+#define LANGUAGE_SV_ENABLE		//Swedish
+#define LANGUAGE_JA_ENABLE		//Japanese
 #define LANGUAGE_KR_ENABLE		//Korea
 #define LANGUAGE_RU_ENABLE		//Russian
 #define LANGUAGE_AR_ENABLE		//Arabic
@@ -73,67 +73,25 @@ typedef enum{
 
 typedef enum
 {
-#ifndef FW_FOR_CN
-  #ifdef LANGUAGE_EN_ENABLE
+	LANGUAGE_CN,					//Chinese
 	LANGUAGE_EN,					//English
-  #endif	
-  #ifdef LANGUAGE_DE_ENABLE
 	LANGUAGE_DE,					//Deutsch
-  #endif
-  #ifdef LANGUAGE_FR_ENABLE
 	LANGUAGE_FR,					//French
-  #endif
-  #ifdef LANGUAGE_IT_ENABLE
-	LANGUAGE_ITA,					//Italian
-  #endif
-  #ifdef LANGUAGE_ES_ENABLE
+	LANGUAGE_IT,					//Italian
 	LANGUAGE_ES,					//Spanish
-  #endif
-  #ifdef LANGUAGE_PT_ENABLE
 	LANGUAGE_PT,					//Portuguese
-  #endif
-  #ifdef LANGUAGE_PL_ENABLE
 	LANGUAGE_PL,					//Polish
-  #endif
-  #ifdef LANGUAGE_SE_ENABLE
-	LANGUAGE_SE,					//Swedish
-  #endif	
-  #ifdef LANGUAGE_JP_ENABLE	
-	LANGUAGE_JP,					//Japanese
-  #endif	
-  #ifdef LANGUAGE_KR_ENABLE	
+	LANGUAGE_SV,					//Swedish
+	LANGUAGE_JA,					//Japanese
 	LANGUAGE_KR,					//Korea
-  #endif	
-  #ifdef LANGUAGE_RU_ENABLE	
 	LANGUAGE_RU,					//Russian
-  #endif	
-  #ifdef LANGUAGE_AR_ENABLE	
 	LANGUAGE_AR,					//Arabic
-  #endif	
-#else
-  #ifdef LANGUAGE_CN_ENABLE
-	LANGUAGE_CHN,					//Chinese
-  #endif	
-  #ifdef LANGUAGE_EN_ENABLE	
-	LANGUAGE_EN,					//English
-  #endif	
-#endif	
-	LANGUAGE_MAX,
-#ifdef LANGUAGE_DK_ENABLE	
 	LANGUAGE_DK,					//Danish
-#endif
-#ifdef LANGUAGE_FI_ENABLE
 	LANGUAGE_FI,					//Finnish
-#endif
-#ifdef LANGUAGE_NL_ENABLE
 	LANGUAGE_NL,					//Dutch
-#endif
-#ifdef LANGUAGE_NO_ENABLE
 	LANGUAGE_NO,					//Norwegian
-#endif
-#ifdef LANGUAGE_GR_ENABLE
 	LANGUAGE_GR,					//Greece
-#endif
+	LANGUAGE_MAX
 }LANGUAGE_SET;
 
 typedef enum
@@ -210,7 +168,7 @@ typedef struct
 	MENU_ID id;
 	uint8_t index;
 	uint8_t count;
-	uint16_t *name[LANGUAGE_MAX][MENU_MAX_COUNT];
+	uint16_t name[MENU_MAX_COUNT];
 	menu_handler sel_handler[MENU_MAX_COUNT];
 	menu_handler pg_handler[4];
 }settings_menu_t;
@@ -278,6 +236,7 @@ extern uint8_t g_fw_version[64];
 extern global_settings_t global_settings;
 extern settings_menu_t settings_menu;
 extern RESET_STATUS g_reset_status;
+extern const LANGUAGE_SET LANG_MENU_ITEM[];
 
 extern void InitSystemSettings(void);
 extern void SaveSystemSettings(void);

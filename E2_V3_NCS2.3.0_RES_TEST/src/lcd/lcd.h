@@ -89,6 +89,13 @@ typedef enum
 	LCD_BL_MAX
 }LCD_BL_MODE;
 
+typedef enum
+{
+	SHOW_ALIGN_CENTER,
+	SHOW_ALIGN_BOUNDARY,
+	SHOW_ALIGN_MAX
+}LCD_SHOW_ALIGN_ENUM;
+
 void LCD_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void LCD_Pic_Fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char *color);
 void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);

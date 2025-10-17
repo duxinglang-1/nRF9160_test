@@ -635,7 +635,7 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 		}
 		break;
 		
-	case LANGUAGE_CHN:
+	case LANGUAGE_CN:
 		if(((R_code>=0xA1)&&(R_code<=0xFE))&&((C_code>=0xA1)&&(C_code<=0xFE)))
 		{
 			index = 94*(R_code-0xA1)+(C_code-0xA1);
@@ -3045,7 +3045,6 @@ void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
 	int16_t str_x=x,str_y=y,str_w,str_h;
 	uint8_t w=0;
 	uint16_t end=0x000a;
-	font_arabic_forms arab_al_froms = {0x00};
 
 	str_w = x+width;
 	if(str_w >= LCD_WIDTH)
@@ -3339,6 +3338,216 @@ void LCD_SmartShowUniString(uint16_t x, uint16_t y, uint16_t *p)
 				LCD_ShowUniString(show_x, y, tmpbuf);
 			}
 		}
+	}
+}
+
+void LCD_AdaptShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p, LCD_SHOW_ALIGN_ENUM mode)
+{
+	uint16_t str_x = x, str_y = y, str_w, str_h;
+	uint16_t show_x, show_y, show_w, show_h;
+	uint8_t w = 0;
+	uint16_t i = 0, end = 0x000a, space = 0x0020;
+	uint16_t *ptr = NULL, tmpbuf[COL] = {0};
+
+	str_w = x+width;
+	if(str_w >= LCD_WIDTH)
+		str_w = LCD_WIDTH;
+
+	str_h = y+height;
+	while(*p)
+	{       
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
+		if(*p==0x0000)break;//退出
+
+		w = LCD_Measure_Uni_Byte(*p);
+		if((str_x+w) >= str_w)
+		{
+			if(ptr)
+			{
+				uint16_t j=0,k;
+
+				while(tmpbuf[j])
+				{
+					if(tmpbuf[j] == space)
+						k = j;
+
+					j++;
+				}
+				tmpbuf[k+1] = 0x0000;
+
+				p = ptr + 1;
+				ptr = NULL;
+
+				w = LCD_Measure_Uni_Byte(*p);
+			}
+
+			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+			if(mode == SHOW_ALIGN_CENTER)
+				show_x = x+(width-show_w)/2;
+			else
+				show_x = x;
+			
+			LCD_ShowUniString(show_x, str_y, tmpbuf);
+
+			i = 0;
+			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
+
+			str_x = x;
+			str_y += system_font;
+			if(str_y >= str_h)
+				return;//退出
+		}
+
+		if(*p == space)
+			ptr = p;
+
+		tmpbuf[i++] = *p;
+		str_x += w;
+		
+		p++;
+	}
+
+	if(mmi_ucs2strlen(tmpbuf) > 0)
+	{
+		LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+		if(mode == SHOW_ALIGN_CENTER)
+			show_x = x+(width-show_w)/2;
+		else
+			show_x = x;
+
+		if(str_y == y)
+			LCD_ShowUniString(show_x, y+(height-show_h)/2, tmpbuf);
+		else
+			LCD_ShowUniString(show_x, str_y, tmpbuf);
+	}
+}
+
+void LCD_AdaptShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p, LCD_SHOW_ALIGN_ENUM mode)
+{
+	uint16_t str_x=x, str_y=y, str_w, str_h;
+	uint16_t i, show_x, show_y, show_w, show_h;
+	uint16_t *pre, *next, show;
+	uint8_t w = 0;
+	uint16_t end = 0x000a, space = 0x0020;
+	uint16_t *ptr = NULL, tmpbuf[COL] = {0};
+	font_arabic_forms arab_al_froms = {0x00};
+
+	if(g_language_r2l)
+	{
+		str_w = 0;
+		if(x > width)
+			str_w = x-width;
+	}
+
+	str_h = y+height;
+
+	pre = NULL;
+	next = p+1;
+	while(*p)
+	{   
+		uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+		
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
+		if(*p==0x0000)break;//退出
+
+		show = *p;
+
+		if((*next != 0x0000)&&(*next != space))
+		{
+			if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+			{
+				p = next;
+				goto do_show;
+			}
+		}
+		
+		if((pre != NULL)&&(*pre != space))
+			flag |= 0b00000010;
+		if((*next != 0x0000)&&(*next != space))
+			flag |= 0b00000001;
+		if(flag != 0)
+		{
+			LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+			switch(flag)
+			{
+			case 1:
+				show = arab_al_froms.initial;
+				break;
+			case 2:
+				show = arab_al_froms.final;
+				break;
+			case 3:
+				show = arab_al_froms.medial;
+				break;
+			}
+		}
+	
+	do_show:
+
+		w = LCD_Measure_Uni_Byte(show);
+		if((str_x-w) <= str_w)
+		{
+			if(ptr)
+			{
+				uint16_t j=0,k;
+
+				while(tmpbuf[j])
+				{
+					if(tmpbuf[j] == space)
+						k = j;
+
+					j++;
+				}
+				tmpbuf[k+1] = 0x0000;
+
+				p = ptr + 1;
+				ptr = NULL;
+
+				w = LCD_Measure_Uni_Byte(*p);
+			}
+
+			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+			if(mode == SHOW_ALIGN_CENTER)
+				show_x = x-(width-show_w)/2;
+			else
+				show_x = x;
+			
+			LCD_ShowUniStringRtoL(show_x, str_y, tmpbuf);
+
+			i = 0;
+			memset(tmpbuf, 0x0000, sizeof(tmpbuf));
+		
+			str_x = x;
+			str_y += system_font;
+			if(str_y >= str_h)
+				return;//退出
+		}
+
+		if(*p == space)
+			ptr = p;
+
+		tmpbuf[i++] = *p;
+		str_x -= w;
+		pre = p;
+		
+		p++;
+		next = p+1;
+	}
+
+	if(mmi_ucs2strlen(tmpbuf) > 0)
+	{
+		LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+		if(mode == SHOW_ALIGN_CENTER)
+			show_x = x-(width-show_w)/2;
+		else
+			show_x = x;
+
+		if(str_y == y)
+			LCD_ShowUniStringRtoL(show_x, y+(height-show_h)/2, tmpbuf);
+		else
+			LCD_ShowUniStringRtoL(show_x, str_y, tmpbuf);
 	}
 }
 

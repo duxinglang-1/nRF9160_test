@@ -886,7 +886,7 @@ void GetSystemWeekStrings(uint8_t *str_week)
 	{
 #ifdef FW_FOR_CN
   #ifdef LANGUAGE_CN_ENABLE
-	case LANGUAGE_CHN:
+	case LANGUAGE_CN:
 		strcpy((char*)str_week, (const char*)week_chn[date_time.week]);
 		break;
   #endif		

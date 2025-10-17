@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include "external_flash.h"
+#include "lcd.h"
 #include "settings.h"
 #include "strings.h"
 #include "strdef.h"
@@ -192,6 +193,36 @@ void LCD_ShowUniStrRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t h
 	if(ptr)
 	{
 		LCD_ShowUniStringRtoLInRect(x, y, width, height, ptr);
+		k_free(ptr);
+	}
+}
+
+void LCD_AdaptShowUniStrInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, RES_STRINGS_ID str_id, LCD_SHOW_ALIGN_ENUM mode)
+{
+	uint16_t *ptr;
+
+	if(str_id >= STR_ID_MAX)
+		return;
+
+	ptr = GetStrDataFromFlashByID(str_id);
+	if(ptr)
+	{
+		LCD_AdaptShowUniStringInRect(x, y, width, height, ptr, mode);
+		k_free(ptr);
+	}
+}
+
+void LCD_AdaptShowUniStrRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, RES_STRINGS_ID str_id, LCD_SHOW_ALIGN_ENUM mode)
+{
+	uint16_t *ptr;
+
+	if(str_id >= STR_ID_MAX)
+		return;
+
+	ptr = GetStrDataFromFlashByID(str_id);
+	if(ptr)
+	{
+		LCD_AdaptShowUniStringRtoLInRect(x, y, width, height, ptr, mode);
 		k_free(ptr);
 	}
 }

@@ -1,7 +1,7 @@
 /****************************************Copyright (c)************************************************
 ** File name:			    strdef.h
 ** Created by:				Biao.X
-** Created date:			2025-10-14 15:41:29
+** Created date:			2025-10-16 15:27:54
 ******************************************************************************************************/
 typedef enum
 {
@@ -23,6 +23,15 @@ typedef enum
 	STR_ID_SCR_BRIGHT,
 	STR_ID_TEMP_DSP,
 	STR_ID_DEVICE_INFO,
+	STR_ID_DEVICE_IMEI,
+	STR_ID_DEVICE_IMSI,
+	STR_ID_DEVICE_ICCID,
+	STR_ID_DEVICE_MCU,
+	STR_ID_DEVICE_MODEM,
+	STR_ID_DEVICE_PPG,
+	STR_ID_DEVICE_WiFi,
+	STR_ID_DEVICE_BLE,
+	STR_ID_DEVICE_BLE_MAC,
 	STR_ID_CAREMATE_QR,
 	STR_ID_FACTORY_DEFAULT,
 	STR_ID_OTA,
@@ -34,6 +43,8 @@ typedef enum
 	STR_ID_LEVEL_4,
 	STR_ID_VIEW,
 	STR_ID_RESET,
+	STR_ID_LEFT_ARROW,
+	STR_ID_RIGHT_ARROW,
 	STR_ID_WEEK_SUN,
 	STR_ID_WEEK_MON,
 	STR_ID_WEEK_TUE,

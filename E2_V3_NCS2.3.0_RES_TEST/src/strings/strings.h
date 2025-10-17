@@ -29,6 +29,7 @@ typedef struct
 {
 	uint16_t str_count;
 	uint16_t lang_count;
+	uint32_t index_len;
 	dataindex *p_index;
 }strlib_infor_t;
 

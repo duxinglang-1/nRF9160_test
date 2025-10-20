@@ -540,7 +540,7 @@ void UpdateSystemTime(void)
 		SaveSystemDateTime();
 		date_time_changed = date_time_changed&0xFD;
 
-	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)&&(defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT))
+	#if !defined(NB_SIGNAL_TEST)&&(defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT))
 		if(1
 		  #ifdef CONFIG_FOTA_DOWNLOAD
 			&& (!fota_is_running())
@@ -714,24 +714,31 @@ void UpdateSystemTime(void)
 	{		
 		date_time_changed = date_time_changed&0xFB;
 
-	#if !defined(NB_SIGNAL_TEST)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
-	 #ifdef CONFIG_IMU_SUPPORT
-	  #ifdef CONFIG_STEP_SUPPORT
-		save_step_data_flag = true;
-	  #endif
-	  #ifdef CONFIG_SLEEP_SUPPORT
-		save_sleep_data_flag = true;
-	  	if(date_time.hour == SLEEP_TIME_START)
-	  	{
-	  		reset_sleep_data = true;
-	  	}
-	  #endif
-	 #endif
-	#endif
-	
-		if(date_time.hour == 3)	//xb ddd 2024-03-14 Upload a synchronization packet at 03:00 for the backend to calibrate the watch's time.
+		if(1
+		#ifdef CONFIG_FACTORY_TEST_SUPPORT
+			&& (!FactoryTestActived())
+		#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
+		)
 		{
-			SyncSendHealthData();
+		#if !defined(NB_SIGNAL_TEST)
+		 #ifdef CONFIG_IMU_SUPPORT
+		  #ifdef CONFIG_STEP_SUPPORT
+			save_step_data_flag = true;
+		  #endif
+		  #ifdef CONFIG_SLEEP_SUPPORT
+			save_sleep_data_flag = true;
+		  	if(date_time.hour == SLEEP_TIME_START)
+		  	{
+		  		reset_sleep_data = true;
+		  	}
+		  #endif
+		 #endif
+		#endif
+		
+			if(date_time.hour == 3)	//xb ddd 2024-03-14 Upload a synchronization packet at 03:00 for the backend to calibrate the watch's time.
+			{
+				SyncSendHealthData();
+			}
 		}
 	}
 

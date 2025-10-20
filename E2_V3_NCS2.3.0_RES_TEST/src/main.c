@@ -15,6 +15,7 @@
 #include <modem/nrf_modem_lib.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
+#include "strdef.h"
 #include "datetime.h"
 #include "font.h"
 #include "img.h"
@@ -257,7 +258,7 @@ void idle_show_analog_clock(void)
 #endif
 
 	sprintf((char*)str_date, "%02d/%02d", date_time.day,date_time.month);
-	if(global_settings.language == LANGUAGE_CHN)
+	if(global_settings.language == LANGUAGE_CN)
 		strcpy(str_week, week_cn[date_time.week]);
 	else
 		strcpy(str_week, week_en[date_time.week]);
@@ -564,14 +565,15 @@ void test_show_string(void)
 #elif defined(FONT_16)
 	LCD_SetFontSize(FONT_SIZE_16);					//设置字体大小
 #endif
-	LCD_MeasureUniString(test_buf, &w, &h);
+	//LCD_MeasureUniString(test_buf, &w, &h);
+	LCD_MeasureUniStr(STR_ID_SENSOR_IS_RUNNING, &w, &h);
 	if(g_language_r2l)
 		x = (w >= LCD_WIDTH)? LCD_WIDTH-1 : (LCD_WIDTH+w)/2;
 	else
 		x = (w >= LCD_WIDTH)? 0 : (LCD_WIDTH-w)/2;
 	y = (h >= LCD_HEIGHT)? 0 : (LCD_HEIGHT-h)/2;
 	//LCD_ShowUniString(x,y,test_buf);
-	LCD_SmartShowUniString(x, y, test_buf);
+	LCD_SmartShowUniStr(x, y, STR_ID_SENSOR_IS_RUNNING);
 #else
 
 	strcpy(enbuf, "August Shenzhen Digital Ltd");

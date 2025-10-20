@@ -33,7 +33,6 @@
 #include "external_flash.h"
 #include "screen.h"
 #include "ucs2.h"
-#include "strdef.h"
 #include "nb.h"
 #include "sos.h"
 #ifdef CONFIG_ALARM_SUPPORT
@@ -1315,8 +1314,6 @@ void PowerOffShowStatus(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
- 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTAgingTest);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
   	if((strlen(g_ui_ver) == 0) 
@@ -1420,7 +1417,7 @@ void SettingsUpdateStatus(void)
 				LCD_MeasureUniStr(settings_menu.name[i+settings_menu.index], &w, &h);
 			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
-					LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									settings_menu.name[i+settings_menu.index]);
 				else
@@ -1439,7 +1436,7 @@ void SettingsUpdateStatus(void)
 						LCD_MeasureUniStr(STR_ID_LANGUAGE_NAME_SHOW, &w, &h);
 					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
-							LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+							LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												STR_ID_LANGUAGE_NAME_SHOW);
 						else
@@ -1452,7 +1449,7 @@ void SettingsUpdateStatus(void)
 						LCD_MeasureUniStr(level_str[global_settings.backlight_level], &w, &h);
 					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
-							LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+							LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												level_str[global_settings.backlight_level]);
 						else
@@ -1488,7 +1485,7 @@ void SettingsUpdateStatus(void)
 						if(g_language_r2l)
 						{
 							LCD_MeasureUniStr(STR_ID_LEFT_ARROW, &w, &h);
-							LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+							LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 													SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 													STR_ID_LEFT_ARROW);
 						}
@@ -1507,7 +1504,7 @@ void SettingsUpdateStatus(void)
 					if(g_language_r2l)
 					{
 						LCD_MeasureUniStr(STR_ID_LEFT_ARROW, &w, &h);
-						LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+						LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												STR_ID_LEFT_ARROW);
 					}
@@ -1537,11 +1534,6 @@ void SettingsUpdateStatus(void)
 		#ifdef CONFIG_TOUCH_SUPPORT
 		 #ifdef NB_SIGNAL_TEST
 			register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
-		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-		 	if(!FactorySmtTestFinished())
-		 		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
-			else
-				register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFTSmtResultsScreen);
 		 #else
 		  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 			if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -1575,8 +1567,6 @@ void SettingsUpdateStatus(void)
 		  #else
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
 		  #endif
-		 #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
 		 #elif defined(CONFIG_SYNC_SUPPORT)
 			register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
 		 #elif defined(CONFIG_PPG_SUPPORT)
@@ -1641,7 +1631,7 @@ void SettingsUpdateStatus(void)
 				{
 					if(LANG_MENU_ITEM[i+settings_menu.index] == LANGUAGE_AR)
 					{
-						LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+						LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 											settings_menu.name[i+settings_menu.index]);
 					}
@@ -1659,7 +1649,7 @@ void SettingsUpdateStatus(void)
 					if(LANG_MENU_ITEM[i+settings_menu.index] == LANGUAGE_AR)
 					{
 						//Arabic names should be displayed from right to left even in other language settings
-						LCD_ShowUniStrRtoL(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X+w,
+						LCD_SmartShowUniStr(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X+w,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[i+settings_menu.index]);
 					}
@@ -1687,7 +1677,7 @@ void SettingsUpdateStatus(void)
 		
 	case SETTINGS_MENU_FACTORY_RESET:
 		{
-			static LANGUAGE_SET language_bk = LANGUAGE_MAX;
+			static RES_LANGUAGES_ID language_bk = LANGUAGE_MAX;
 			
 			LCD_Clear(BLACK);
 			LCD_SetFontBgColor(BLACK);
@@ -1711,7 +1701,7 @@ void SettingsUpdateStatus(void)
 					LCD_MeasureUniStr(STR_ID_RESET_TO_FACTORY_SETTINGS, &w, &h);
 				  #ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
-						LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2), 
+						LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_RESET_STR_X+(SETTINGS_MENU_RESET_STR_W-w)/2), 
 												SETTINGS_MENU_RESET_STR_Y+(SETTINGS_MENU_RESET_STR_H-h)/2, 
 												STR_ID_RESET_TO_FACTORY_SETTINGS);
 					else
@@ -1752,7 +1742,7 @@ void SettingsUpdateStatus(void)
 					LCD_MeasureUniStr(STR_ID_RESETTING_IN_PROGRESS, &w, &h);
 				  #ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
-						LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
+						LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 												SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 												STR_ID_RESETTING_IN_PROGRESS);
 					else
@@ -1777,7 +1767,7 @@ void SettingsUpdateStatus(void)
 					LCD_MeasureUniStr(STR_ID_RESET_COMPLETED, &w, &h);
 				  #ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
-						LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
+						LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 												SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 												STR_ID_RESET_COMPLETED);
 					else
@@ -1799,7 +1789,7 @@ void SettingsUpdateStatus(void)
 					LCD_MeasureUniString(STR_ID_RESET_FAILED, &w, &h);
 				#ifdef LANGUAGE_AR_ENABLE	
 					if(g_language_r2l)
-						LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
+						LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_RESET_NOTIFY_X+(SETTINGS_MENU_RESET_NOTIFY_W-w)/2), 
 										SETTINGS_MENU_RESET_NOTIFY_Y+(SETTINGS_MENU_RESET_NOTIFY_H-h)/2, 
 										STR_ID_RESET_FAILED);
 					else
@@ -1827,7 +1817,7 @@ void SettingsUpdateStatus(void)
 			LCD_MeasureUniStr(STR_ID_LATEST_VERSION, &w, &h);
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
-				LCD_ShowUniStrRtoL(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, STR_ID_LATEST_VERSION);
+				LCD_SmartShowUniStr(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, STR_ID_LATEST_VERSION);
 			else
 		#endif
 				LCD_ShowUniStr((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, STR_ID_LATEST_VERSION);
@@ -1923,7 +1913,7 @@ void SettingsUpdateStatus(void)
 				LCD_MeasureUniStr(settings_menu.name[i], &w, &h);
 			  #ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
-					LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+					LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[i]);
 				else
@@ -2005,11 +1995,19 @@ void SettingsUpdateStatus(void)
 				LCD_SetFontColor(WHITE);
 			  #ifdef CONFIG_FACTORY_TEST_SUPPORT	
 				if((settings_menu.index == 0) && (i == 2))
+				{
 					LCD_SetFontSize(FONT_SIZE_16);
+					LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+20,
+										menu_sle_str[i+settings_menu.index]);
+				}
+				else
 			  #endif
-			  	LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
-									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
-									menu_sle_str[i+settings_menu.index]);
+			  	{
+			  		LCD_ShowUniString(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_STR_OFFSET_Y+15,
+										menu_sle_str[i+settings_menu.index]);
+			  	}
 			#endif
 
 			#ifdef CONFIG_TOUCH_SUPPORT
@@ -2044,7 +2042,7 @@ void SettingsUpdateStatus(void)
 			LCD_MeasureUniStr(STR_ID_FUN_BEING_DEVELOPED, &w, &h);
 		  #ifdef LANGUAGE_AR_ENABLE
 			if(g_language_r2l)
-				LCD_ShowUniStrRtoL(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, STR_ID_FUN_BEING_DEVELOPED);
+				LCD_SmartShowUniStr(LCD_WIDTH-(LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, STR_ID_FUN_BEING_DEVELOPED);
 			else
 		  #endif
 				LCD_ShowUniStr((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, STR_ID_FUN_BEING_DEVELOPED);
@@ -2128,12 +2126,10 @@ void SettingsUpdateStatus(void)
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
 
-#ifndef CONFIG_FACTORY_TEST_SUPPORT
 	if(settings_menu.id == SETTINGS_MENU_CAREMATE_QR)
 		k_timer_start(&mainmenu_timer, K_SECONDS(8), K_NO_WAIT);
 	else
 		k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
-#endif
 }
 
 void SettingsShowStatus(void)
@@ -2158,7 +2154,7 @@ void SettingsShowStatus(void)
 		LCD_MeasureUniStr(settings_menu.name[i], &w, &h);
 	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
-			LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+			LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
 							SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 							settings_menu.name[i]);
 		else
@@ -2174,7 +2170,7 @@ void SettingsShowStatus(void)
 			LCD_MeasureUniStr(STR_ID_LANGUAGE_NAME_SHOW, &w, &h);
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
-				LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+				LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									STR_ID_LANGUAGE_NAME_SHOW);
 			else
@@ -2187,7 +2183,7 @@ void SettingsShowStatus(void)
 			LCD_MeasureUniStr(level_str[global_settings.backlight_level], &w, &h);
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
-				LCD_ShowUniStrRtoL(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+				LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
 									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 									level_str[global_settings.backlight_level]);
 			else
@@ -2275,10 +2271,8 @@ void SettingsShowStatus(void)
 	LCD_ReSetFontBgColor();
 	LCD_ReSetFontColor();
 
-#ifndef CONFIG_FACTORY_TEST_SUPPORT
 	k_timer_stop(&mainmenu_timer);
 	k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
-#endif
 }
 
 void SettingsScreenProcess(void)
@@ -2337,12 +2331,6 @@ void EnterSettingsScreen(void)
 
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterPoweroffScreen);
-#elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	ClearAllKeyHandler();
-	if(!FactorySmtTestFinished())
-		SetLeftKeyUpHandler(EnterFactorySmtTest);
-	else
-		SetLeftKeyUpHandler(EnterFactoryAssemTest);
 #else
  #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
  	if((strlen(g_ui_ver) == 0) 
@@ -2385,11 +2373,6 @@ void EnterSettingsScreen(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
- 	if(!FactorySmtTestFinished())
-		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactorySmtTest);
-	else
-		register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterFactoryAssemTest);
  #else
   #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	if((strcmp(g_new_ui_ver,g_ui_ver) != 0) && (strlen(g_new_ui_ver) > 0) && (strcmp(g_new_fw_ver, g_fw_version) == 0))
@@ -2423,8 +2406,6 @@ void EnterSettingsScreen(void)
   #else
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterGPSTestScreen);
   #endif
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterIdleScreen);
  #else
   #ifdef CONFIG_SYNC_SUPPORT
   	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSyncDataScreen);
@@ -6408,8 +6389,6 @@ void EnterIdleScreen(void)
 	ClearAllKeyHandler();
 #ifdef NB_SIGNAL_TEST
 	SetLeftKeyUpHandler(EnterNBTestScreen);
-#elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-	SetLeftKeyUpHandler(EnterSettings);
 #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
    #ifdef CONFIG_STEP_SUPPORT
@@ -6428,12 +6407,7 @@ void EnterIdleScreen(void)
   #endif
 #endif
 
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-	if(FactorySmtTestFinished())
-		SetRightKeyLongPressHandler(EnterFactoryAssemTest);
-#else
 	SetRightKeyLongPressHandler(SOSTrigger);
-#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 	SetRightKeyUpHandler(EnterIdleScreen);
 
 #ifdef CONFIG_TOUCH_SUPPORT
@@ -6441,9 +6415,6 @@ void EnterIdleScreen(void)
 
  #ifdef NB_SIGNAL_TEST
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterNBTestScreen);
- 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
- #elif defined(CONFIG_FACTORY_TEST_SUPPORT)
-  	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterSettings);
  	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, EnterPoweroffScreen);
  #else
   #if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))

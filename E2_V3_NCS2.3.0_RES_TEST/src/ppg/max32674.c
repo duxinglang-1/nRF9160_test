@@ -19,7 +19,7 @@
 #include <nrfx.h>
 #include "uart_ble.h"
 #include "Max32674.h"
-#include "strdef.h"
+#include "settings.h"
 #include "screen.h"
 #include "max_sh_interface.h"
 #include "max_sh_api.h"

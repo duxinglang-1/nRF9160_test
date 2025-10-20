@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
+#include "strdef.h"
 
 //#define FW_FOR_CN	//ÖÐÎÄ°æ±¾
 
@@ -34,21 +35,19 @@
 #define MENU_NOTIFY_STR_MAX	32
 
 #define VERSION_STR	"3.4.5_51014"
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-#define LANG_BRANCH	"FT"
-#define FALL_BRANCH ""
-#else
+
 #ifdef FW_FOR_CN
 #define LANG_BRANCH	"C"
 #else
 #define LANG_BRANCH	"U"
 #endif
+
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 #define FALL_BRANCH	"F4.2"
 #else
 #define FALL_BRANCH ""
 #endif/*CONFIG_FALL_DETECT_SUPPORT*/
-#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
+
 
 #ifdef FW_FOR_CN
 #define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login?imei="
@@ -70,29 +69,6 @@ typedef enum{
 	DATE_FORMAT_DDMMYYYY,
 	DATE_FORMAT_MAX
 }DATE_FORMAT;
-
-typedef enum
-{
-	LANGUAGE_CN,					//Chinese
-	LANGUAGE_EN,					//English
-	LANGUAGE_DE,					//Deutsch
-	LANGUAGE_FR,					//French
-	LANGUAGE_IT,					//Italian
-	LANGUAGE_ES,					//Spanish
-	LANGUAGE_PT,					//Portuguese
-	LANGUAGE_PL,					//Polish
-	LANGUAGE_SV,					//Swedish
-	LANGUAGE_JA,					//Japanese
-	LANGUAGE_KR,					//Korea
-	LANGUAGE_RU,					//Russian
-	LANGUAGE_AR,					//Arabic
-	LANGUAGE_DK,					//Danish
-	LANGUAGE_FI,					//Finnish
-	LANGUAGE_NL,					//Dutch
-	LANGUAGE_NO,					//Norwegian
-	LANGUAGE_GR,					//Greece
-	LANGUAGE_MAX
-}LANGUAGE_SET;
 
 typedef enum
 {
@@ -214,7 +190,7 @@ typedef struct
 	uint32_t health_interval;
 	TEMP_UNIT temp_unit;
 	TIME_FORMAT time_format;
-	LANGUAGE_SET language;
+	RES_LANGUAGES_ID language;
 	DATE_FORMAT date_format;
 	CLOCK_MODE idle_colck_mode;
 	BACKLIGHT_TIME backlight_time;
@@ -236,7 +212,7 @@ extern uint8_t g_fw_version[64];
 extern global_settings_t global_settings;
 extern settings_menu_t settings_menu;
 extern RESET_STATUS g_reset_status;
-extern const LANGUAGE_SET LANG_MENU_ITEM[];
+extern const RES_LANGUAGES_ID LANG_MENU_ITEM[];
 
 extern void InitSystemSettings(void);
 extern void SaveSystemSettings(void);

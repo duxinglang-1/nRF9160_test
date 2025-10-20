@@ -25,7 +25,6 @@
 #include "key.h"
 #include "gps.h"
 #include "screen.h"
-#include "strdef.h"
 #include "fall.h"
 #ifdef CONFIG_WIFI_SUPPORT
 #include "esp8266.h"

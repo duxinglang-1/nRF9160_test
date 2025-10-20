@@ -18,7 +18,6 @@
 #include "codetrans.h"
 #include "inner_flash.h"
 #include "logger.h"
-#include "strdef.h"
 
 #ifdef FW_FOR_CN
 	#ifdef LANGUAGE_CN_ENABLE
@@ -108,7 +107,7 @@ const sys_date_timer_t FACTORY_DEFAULT_TIME =
 	0		//0=sunday
 };
 
-const LANGUAGE_SET LANG_MENU_ITEM[] = 
+const RES_LANGUAGES_ID LANG_MENU_ITEM[] = 
 {
 #ifndef FW_FOR_CN
   #ifdef LANGUAGE_EN_ENABLE
@@ -817,7 +816,7 @@ void SettingsMainMenu6Proc(void)
 
 void SettingsMainMenu7Proc(void)
 {
-#if defined(CONFIG_FOTA_DOWNLOAD)&&!defined(CONFIG_FACTORY_TEST_SUPPORT)
+#if defined(CONFIG_FOTA_DOWNLOAD)
 	extern uint8_t g_new_fw_ver[64];
 
 	if(((strcmp(g_new_fw_ver,g_fw_version) != 0) && (strlen(g_new_fw_ver) > 0))

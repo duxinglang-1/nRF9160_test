@@ -23,7 +23,6 @@
 #include "lcd.h"
 #include "screen.h"
 #include "settings.h"
-#include "strdef.h"
 #include "gps.h"
 #include "screen.h"
 #ifdef CONFIG_WIFI_SUPPORT

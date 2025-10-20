@@ -15,7 +15,6 @@
 #include <modem/nrf_modem_lib.h>
 #include <dk_buttons_and_leds.h>
 #include "lcd.h"
-#include "strdef.h"
 #include "datetime.h"
 #include "font.h"
 #include "img.h"

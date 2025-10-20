@@ -1,8 +1,26 @@
 /****************************************Copyright (c)************************************************
 ** File name:			    strdef.h
 ** Created by:				Biao.X
-** Created date:			2025-10-17 15:19:47
+** Created date:			2025-10-20 16:08:00
 ******************************************************************************************************/
+typedef enum
+{
+	LANGUAGE_CN,
+	LANGUAGE_EN,
+	LANGUAGE_DE,
+	LANGUAGE_FR,
+	LANGUAGE_IT,
+	LANGUAGE_ES,
+	LANGUAGE_PT,
+	LANGUAGE_PL,
+	LANGUAGE_SV,
+	LANGUAGE_JA,
+	LANGUAGE_KR,
+	LANGUAGE_RU,
+	LANGUAGE_AR,
+	LANGUAGE_MAX
+}RES_LANGUAGES_ID;
+
 typedef enum
 {
 	STR_ID_LANGUAGES,

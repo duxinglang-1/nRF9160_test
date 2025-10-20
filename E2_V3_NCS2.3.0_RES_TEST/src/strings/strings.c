@@ -14,7 +14,6 @@
 #include "lcd.h"
 #include "settings.h"
 #include "strings.h"
-#include "strdef.h"
 
 strlib_infor_t strlib_infor = {0};
 

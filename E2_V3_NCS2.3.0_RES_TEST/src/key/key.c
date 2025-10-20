@@ -165,7 +165,7 @@ fast_key_struct *fast_key_sum[] = {
 FastKeyFunc fast_key_fun_sum[] = {
 										EnterDumpTest,
 									#ifdef CONFIG_FACTORY_TEST_SUPPORT
-										EnterFactorySmtTest,
+										EnterFactoryTest,
 									#endif	
 									#ifdef CONFIG_QRCODE_SUPPORT
 										EnterDeviceScreen,

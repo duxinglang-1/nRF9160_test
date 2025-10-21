@@ -41,7 +41,7 @@
 #endif
 #include "logger.h"
 
-#define NB_DEBUG
+//#define NB_DEBUG
 
 #define MQTT_CONNECTED_KEEP_TIME	(60)
 
@@ -2708,9 +2708,7 @@ void GetModemInfor(void)
 
 	if(strlen(g_imsi) > 0)
 	{
-	#ifndef CONFIG_FACTORY_TEST_SUPPORT
-		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_NO_WAIT);
-	#endif
+		k_work_schedule_for_queue(app_work_q, &nb_link_work, K_SECONDS(10));//xb add 2025-10-20 Reserve 10 seconds for entering factory testing mode
 	}
 }
 

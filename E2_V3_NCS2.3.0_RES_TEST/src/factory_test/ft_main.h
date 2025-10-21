@@ -113,6 +113,7 @@ extern const ft_menu_t FT_ASSEM_MENU_MAIN;
 extern bool FactorySmtTestFinished(void);
 extern bool FactoryTestActived(void);
 extern void FactoryTestProccess(void);
+extern void EnterFactoryTest(void);
 extern void EnterFactorySmtTest(void);
 extern void EnterFactoryAssemTest(void);
 extern void EnterFactoryTestResults(void);

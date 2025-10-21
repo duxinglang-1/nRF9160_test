@@ -29,18 +29,20 @@ uint16_t *GetStrDataFromFlashByID(RES_STRINGS_ID str_id)
 
 	if(strlib_infor.str_count == 0 || strlib_infor.lang_count == 0)
 	{
-		SpiFlash_Read(data, STR_DATA_ADDR, 4);
-		strlib_infor.str_count = (data[1]<<8) + data[0];
-		strlib_infor.lang_count = (data[3]<<8) + data[2];
-		strlib_infor.index_len = strlib_infor.str_count*strlib_infor.lang_count*sizeof(dataindex);
-		if(strlib_infor.index_len == 0)
-			return NULL;
+		uint16_t str_num, lang_num;
 		
+		SpiFlash_Read(data, STR_DATA_ADDR, 4);
+		str_num = (data[1]<<8) + data[0];
+		lang_num = (data[3]<<8) + data[2];
+		if((str_num == 0x0000)||(str_num == 0xFFFF)||(lang_num == 0x0000)||(lang_num == 0xFFFF))
+			return NULL;
+
+		strlib_infor.str_count = str_num;
+		strlib_infor.lang_count = lang_num;
+		strlib_infor.index_len = strlib_infor.str_count*strlib_infor.lang_count*sizeof(dataindex);
 		strlib_infor.p_index = k_malloc(strlib_infor.lang_count*sizeof(dataindex));
 		if(strlib_infor.p_index == NULL)
-		{
 			return NULL;
-		}
 	}
 
 	SpiFlash_Read((uint8_t*)strlib_infor.p_index, STR_DATA_ADDR+4+str_id*strlib_infor.lang_count*sizeof(dataindex), strlib_infor.lang_count*sizeof(dataindex));

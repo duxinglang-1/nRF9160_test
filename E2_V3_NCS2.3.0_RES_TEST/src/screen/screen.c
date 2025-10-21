@@ -1649,7 +1649,7 @@ void SettingsUpdateStatus(void)
 					if(LANG_MENU_ITEM[i+settings_menu.index] == LANGUAGE_AR)
 					{
 						//Arabic names should be displayed from right to left even in other language settings
-						LCD_SmartShowUniStr(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X+w,
+						LCD_ShowUniStrRtoL(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X+w,
 										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 										settings_menu.name[i+settings_menu.index]);
 					}
@@ -4919,9 +4919,12 @@ void NotifyUpdate(void)
 		break;
 		
 	case NOTIFY_ALIGN_BOUNDARY:
-		x = (notify_msg.x+offset_w);
-		y = (notify_msg.y+offset_h);
-		LCD_ShowUniStringInRect(x, y, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+	#ifdef LANGUAGE_AR_ENABLE	
+		if(g_language_r2l)
+			LCD_ShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+		else
+	#endif		
+			LCD_ShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
 		break;
 	}
 }

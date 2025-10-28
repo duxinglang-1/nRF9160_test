@@ -451,44 +451,16 @@ const settings_menu_t SETTING_MENU_DEVICE =
 {
 	SETTINGS_MENU_DEVICE,
 	0,
-#ifdef CONFIG_FACTORY_TEST_SUPPORT
-	9,
-#else
 	3,
-#endif	
 	{
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT
-		STR_ID_DEVICE_IMEI,
-		STR_ID_DEVICE_IMSI,
-		STR_ID_DEVICE_ICCID,
-		STR_ID_DEVICE_MCU,
-		STR_ID_DEVICE_MODEM,
-		STR_ID_DEVICE_PPG,
-		STR_ID_DEVICE_WiFi,
-		STR_ID_DEVICE_BLE,
-		STR_ID_DEVICE_BLE_MAC,
-	#else
 		STR_ID_DEVICE_IMEI,		//IMEI:
 		STR_ID_DEVICE_IMSI,		//IMSI:
 		STR_ID_DEVICE_MCU,		//MCU:
-	#endif
 	},
 	{
-	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		SettingsMenuDeviceProc,
 		SettingsMenuDeviceProc,
 		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-	#else
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-		SettingsMenuDeviceProc,
-	#endif
 	},
 	{	
 		//page proc func

@@ -97,8 +97,13 @@ void LCD_get_pic_size_from_flash(uint32_t pic_addr, uint16_t *width, uint16_t *h
 //color:颜色
 void LCD_Fast_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
 {	   
+#ifdef LCD_EQTAC175T1371_CO5300
+	BlockWrite(x,y,2,2);	//定坐标
+	DispColor(4, color);
+#else
 	BlockWrite(x,y,1,1);	//定坐标
-	WriteOneDot(color);				//画点函数	
+	WriteOneDot(color); //显示颜色 
+#endif	
 }	 
 
 //在指定区域内填充单个颜色

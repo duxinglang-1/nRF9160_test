@@ -138,7 +138,6 @@ void LCD_FillExtra(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t color
 }
 #endif
 
-
 void LCD_FillColor(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {          
 	uint32_t i;
@@ -2835,6 +2834,40 @@ void LCD_dis_img(uint16_t x, uint16_t y, unsigned char *color)
 #endif/*LCD_VGM068A4W01_SH1106G||LCD_VGM096064A6W01_SP5090*/
 
 #ifdef FONTMAKER_UNICODE_FONT
+bool LCD_FindArabAlphabetFromSpecial(uint16_t front, uint16_t rear, uint16_t *deform)
+{
+	uint8_t i,count=sizeof(ara_froms_spec)/sizeof(ara_froms_spec[0]);
+	
+	for(i=0;i<count;i++)
+	{
+		if((front == ara_froms_spec[i].front) && (rear == ara_froms_spec[i].rear))
+		{
+			*deform = ara_froms_spec[i].deform;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool LCD_FindArabAlphabetFrom(uint16_t alphabet, font_arabic_forms *from)
+{
+	uint8_t i,count=sizeof(ara_froms)/sizeof(ara_froms[0]);
+
+	from->final = from->medial = from->initial = from->isolated = alphabet;
+	
+	for(i=0;i<count;i++)
+	{
+		if(alphabet == ara_froms[i].isolated)
+		{
+			memcpy(from, &ara_froms[i], sizeof(font_arabic_forms));
+			return true;
+		}
+	}
+
+	return false;
+}
+
 //根据字体测量字符的宽度
 //word:unicode字符
 uint8_t LCD_Measure_Uni_Byte(uint16_t word)
@@ -2961,6 +2994,9 @@ uint8_t LCD_Measure_Uni_Byte(uint16_t word)
 void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 {
 	uint8_t font_size;
+	uint16_t *pre,*next,show;
+	uint16_t space=0x0020;
+	font_arabic_forms arab_al_froms = {0x00};
 
 	*width = 0;
 	*height = 0;
@@ -2970,11 +3006,356 @@ void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height)
 
 	(*height) = system_font;
 
+	pre = NULL;
+	next = p+1;
 	while(*p)
 	{
-		(*width) += LCD_Measure_Uni_Byte(*p);
+		uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+		
+		show = *p;
+
+	#ifndef FW_FOR_CN
+		if((*next != 0x0000)&&(*next != space))
+		{
+			if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+			{
+				p = next;
+				goto do_measure;
+			}
+		}
+	
+		if((pre != NULL)&&(*pre != space))
+			flag |= 0b00000010;
+		if((*next != 0x0000)&&(*next != space))
+			flag |= 0b00000001;
+
+		if(flag != 0)
+		{
+			LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+			switch(flag)
+			{
+			case 1:
+				show = arab_al_froms.initial;
+				break;
+			case 2:
+				show = arab_al_froms.final;
+				break;
+			case 3:
+				show = arab_al_froms.medial;
+				break;
+			}
+		}
+	#endif
+
+	do_measure:
+		(*width) += LCD_Measure_Uni_Byte(show);
+
+		pre = p;
 		p++;
+		next = p+1;
 	}  
+}
+
+void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
+{
+	int16_t str_x=x,str_y=y,str_w,str_h;
+	uint8_t w=0;
+	uint16_t end=0x000a;
+	font_arabic_forms arab_al_froms = {0x00};
+
+	str_w = x+width;
+	if(str_w >= LCD_WIDTH)
+		str_w = LCD_WIDTH;
+
+	str_h = y+height;
+	while(*p)
+	{       
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
+		if(*p==0x0000)break;//退出
+		w = LCD_Measure_Uni_Byte(*p);
+		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
+		if(str_y>=str_h)break;//退出
+		LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		str_x += w;
+		
+		p++;
+	}
+}
+
+void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
+{
+	int16_t str_x=x,str_y=y,str_w,str_h;
+	uint16_t *pre,*next,show;
+	uint8_t w=0;
+	uint16_t end=0x000a,space=0x0020;
+	font_arabic_forms arab_al_froms = {0x00};
+
+	if(g_language_r2l)
+	{
+		str_w = 0;
+		if(x > width)
+			str_w = x-width;
+	}
+
+	str_h = y+height;
+
+	pre = NULL;
+	next = p+1;
+	while(*p)
+	{   
+		uint8_t flag = 0;//0b00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+		
+		if(*p==end){str_x=x;str_y+=system_font;p++;}
+		if(str_y>=str_h)break;//退出
+		if(*p==0x0000)break;//退出
+
+		show = *p;
+
+		if((*next != 0x0000)&&(*next != space))
+		{
+			if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+			{
+				p = next;
+				goto do_show;
+			}
+		}
+		
+		if((pre != NULL)&&(*pre != space))
+			flag |= 0b00000010;
+		if((*next != 0x0000)&&(*next != space))
+			flag |= 0b00000001;
+		if(flag != 0)
+		{
+			LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+			switch(flag)
+			{
+			case 1:
+				show = arab_al_froms.initial;
+				break;
+			case 2:
+				show = arab_al_froms.final;
+				break;
+			case 3:
+				show = arab_al_froms.medial;
+				break;
+			}
+		}
+	
+	do_show:
+		w = LCD_Measure_Uni_Byte(show);
+		if((str_x-w)<=str_w){str_x=x-w;str_y+=system_font;}
+		if(str_y>=str_h)break;//退出
+		str_x -= w;
+		LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
+		
+		pre = p;
+		p++;
+		next = p+1;
+	}
+}
+
+//显示中英文字符串
+//x,y:起点坐标
+//*p:字符串起始地址	
+void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
+{
+	int16_t str_x=x,str_y=y;
+	uint8_t width;
+
+	if((str_x >= LCD_WIDTH)||(str_y >= LCD_HEIGHT))
+		return;
+
+	while(*p)
+	{
+		if(str_x>=LCD_WIDTH)break;//退出
+		width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
+		str_x += width;
+
+		p++;
+	}
+}
+
+//显示中英文字符串
+//x,y:起点坐标
+//*p:字符串起始地址	
+void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p)
+{
+	int16_t str_x=x,str_y=y;
+	uint16_t *pre,*next,show;
+	uint16_t space=0x0020;
+	uint8_t width=0;
+	font_arabic_forms arab_al_froms = {0x00};
+
+	if((str_x >= LCD_WIDTH)||(str_y >= LCD_HEIGHT))
+		return;
+
+	pre = NULL;
+	next = p+1;
+	while(*p)
+	{
+		uint8_t flag = 0;//0x00000000:isolated; 0b00000001:initial; 0b00000011:medial; 0b00000010:final
+		
+		if(str_x<=0)break;//退出
+
+		show = *p;
+
+		if((*next != 0x0000)&&(*next != space))
+		{
+			if(LCD_FindArabAlphabetFromSpecial(*p, *next, &show))
+			{
+				p = next;
+				goto do_show;
+			}
+		}
+		
+		if((pre != NULL)&&(*pre != space))
+			flag |= 0b00000010;
+		if((*next != 0x0000)&&(*next != space))
+			flag |= 0b00000001;
+		if(flag != 0)
+		{
+			LCD_FindArabAlphabetFrom(*p, &arab_al_froms);
+			switch(flag)
+			{
+			case 1:
+				show = arab_al_froms.initial;
+				break;
+			case 2:
+				show = arab_al_froms.final;
+				break;
+			case 3:
+				show = arab_al_froms.medial;
+				break;
+			}
+		}
+
+	do_show:
+		width = LCD_Measure_Uni_Byte(show);
+		if(str_x<=width)break;//退出
+		str_x -= width;
+		LCD_Show_Uni_Char_from_flash(str_x,str_y,show,0);
+
+		pre = p;
+		p++;
+		next = p+1;
+	}
+}
+
+void LCD_SmartShowUniString(uint16_t x, uint16_t y, uint16_t *p)
+{
+	bool r2l_flag = false;
+	uint16_t j,tmpbuf[128] = {0};
+	uint16_t show_x=x,show_w,show_h;
+
+	if((!g_language_r2l && (x >= LCD_WIDTH))||(y >= LCD_HEIGHT))
+		return;
+
+	while(*p)
+	{
+		if(mmi_ucs2IsRtLchar(*p))
+		{
+			if(r2l_flag)
+			{
+				tmpbuf[j++] = *(p++);
+				if(*p == 0x0020)
+				{
+					tmpbuf[j++] = *(p++);
+				}
+			}
+			else
+			{
+				r2l_flag = true;
+				
+				if(j == 0)
+				{
+					tmpbuf[j++] = *(p++);
+				}
+				else
+				{
+					LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+					if(g_language_r2l)
+					{
+						show_x -= show_w;
+						LCD_ShowUniString(show_x, y, tmpbuf);
+					}
+					else
+					{
+						LCD_ShowUniString(show_x, y, tmpbuf);
+						show_x += show_w;
+					}
+					
+					j = 0;
+					memset(tmpbuf, 0x00, sizeof(tmpbuf));
+					tmpbuf[j++] = *(p++);
+				}
+			}
+		}
+		else
+		{
+			if(!r2l_flag)
+			{
+				tmpbuf[j++] = *(p++);
+			}
+			else
+			{
+				r2l_flag = false;
+				
+				if(j == 0)
+				{
+					tmpbuf[j++] = *(p++);
+				}
+				else
+				{
+					LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+					if(g_language_r2l)
+					{
+						LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+						show_x -= show_w;
+					}
+					else
+					{
+						show_x += show_w;
+						LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+					}
+					
+					j = 0;
+					memset(tmpbuf, 0x00, sizeof(tmpbuf));
+					tmpbuf[j++] = *(p++);
+				}
+			}
+		}
+	}
+
+	if(j > 0)
+	{
+		if(r2l_flag)
+		{
+			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+			if(g_language_r2l)
+			{
+				LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+			}
+			else
+			{
+				show_x += show_w;
+				LCD_ShowUniStringRtoL(show_x, y, tmpbuf);
+			}
+		}
+		else
+		{
+			LCD_MeasureUniString(tmpbuf, &show_w, &show_h);
+			if(g_language_r2l)
+			{
+				show_x -= show_w;
+				LCD_ShowUniString(show_x, y, tmpbuf);
+			}
+			else
+			{
+				LCD_ShowUniString(show_x, y, tmpbuf);
+			}
+		}
+	}
 }
 
 #elif defined(FONTMAKER_MBCS_FONT)
@@ -3231,145 +3612,6 @@ void LCD_ShowString(uint16_t x,uint16_t y,uint8_t *p)
 	}
 }
 
-#ifdef FONTMAKER_UNICODE_FONT
-void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p)
-{
-	uint16_t str_x=x,str_y=y,str_w,str_h;
-	uint8_t w=0;
-	uint16_t end=0x000a;
-	
-	str_w = width+x;
-	str_h = height+y;
-	while(*p)
-	{       
-		if(str_x>=str_w){str_x=x;str_y+=system_font;}
-		if(*p==end){str_x=x;str_y+=system_font;p++;}
-		if(str_y>=str_h)break;//退出
-		if(*p==0x0000)break;//退出
-		w = LCD_Measure_Uni_Byte(*p);
-		if((str_x+w)>=str_w){str_x=x;str_y+=system_font;}
-		if(str_y>=str_h)break;//退出
-		w = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
-		str_x += w;
-		p++;
-	}
-}
-
-//显示中英文字符串
-//x,y:起点坐标
-//*p:字符串起始地址	
-void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p)
-{
-	uint16_t str_x=x,str_y=y;
-	uint8_t width;
-
-	while(*p)
-	{       
-		if(str_x>=LCD_WIDTH)break;//退出
-		if(str_y>=LCD_HEIGHT)break;//退出
-
-		width = LCD_Show_Uni_Char_from_flash(str_x,str_y,*p,0);
-		str_x += width;
-		p++;
-	}
-}
-#endif/*FONTMAKER_UNICODE_FONT*/
-
-#if 0
-//m^n函数
-//返回值:m^n次方.
-uint32_t LCD_Pow(uint8_t m,uint8_t n)
-{
-	uint32_t result=1;	 
-	while(n--)result*=m;    
-	return result;
-}
-
-//显示数字,高位为0,则不显示
-//x,y :起点坐标	 
-//len :数字的位数
-//color:颜色 
-//num:数值(0~4294967295);	 
-void LCD_ShowNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len)
-{         	
-	uint8_t t,temp;
-	uint8_t enshow=0;						   
-	for(t=0;t<len;t++)
-	{
-		temp=(num/LCD_Pow(10,len-t-1))%10;
-		if(enshow==0&&t<(len-1))
-		{
-			if(temp==0)
-			{
-			#ifdef IMG_FONT_FROM_FLASH
-				LCD_ShowChar_from_flash(x+(system_font/2)*t,y,' ',0);
-			#else
-				LCD_ShowChar(x+(system_font/2)*t,y,' ',0);
-			#endif
-				continue;
-			}
-			else 
-				enshow=1; 
-		 	 
-		}
-	#ifdef IMG_FONT_FROM_FLASH
-		LCD_ShowChar_from_flash(x+(system_font/2)*t,y,temp+'0',0);
-	#else
-	 	LCD_ShowChar(x+(system_font/2)*t,y,temp+'0',0); 
-	#endif
-	}
-}
-
-//显示数字,高位为0,还是显示
-//x,y:起点坐标
-//num:数值(0~999999999);	 
-//len:长度(即要显示的位数)
-//mode:
-//[7]:0,不填充;1,填充0.
-//[6:1]:保留
-//[0]:0,非叠加显示;1,叠加显示.
-void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t mode)
-{  
-	uint8_t t,temp;
-	uint8_t enshow=0;						   
-	for(t=0;t<len;t++)
-	{
-		temp=(num/LCD_Pow(10,len-t-1))%10;
-		if(enshow==0&&t<(len-1))
-		{
-			if(temp==0)
-			{
-				if(mode&0X80)
-				{
-				#ifdef IMG_FONT_FROM_FLASH
-					LCD_ShowChar_from_flash(x+(system_font/2)*t,y,'0',mode&0X01);
-				#else
-					LCD_ShowChar(x+(system_font/2)*t,y,'0',mode&0X01);
-				#endif
-				}
-				else 
-				{
-				#ifdef IMG_FONT_FROM_FLASH
-					LCD_ShowChar_from_flash(x+(system_font/2)*t,y,' ',mode&0X01);
-				#else
-					LCD_ShowChar(x+(system_font/2)*t,y,' ',mode&0X01); 
-				#endif
-				}
-				
- 				continue;
-			}
-			else 
-				enshow=1; 
-		}
-	#ifdef IMG_FONT_FROM_FLASH
-		LCD_ShowChar_from_flash(x+(system_font/2)*t,y,temp+'0',mode&0X01);
-	#else
-	 	LCD_ShowChar(x+(system_font/2)*t,y,temp+'0',mode&0X01);
-	#endif
-	}
-} 
-#endif
-
 //根据字体测量字符串的长度和高度
 //p:字符串指针
 //width,height:返回的字符串宽度和高度变量地址
@@ -3442,8 +3684,6 @@ void LCDMsgProcess(void)
 {
 	if(lcd_sleep_in)
 	{
-		lcd_sleep_in = false;
-
 		if(LCD_Get_BL_Mode() != LCD_BL_ALWAYS_ON)
 		{
 			LCD_BL_Off();
@@ -3457,12 +3697,12 @@ void LCDMsgProcess(void)
 			
 			LCD_SleepIn();
 		}
+		
+		lcd_sleep_in = false;
 	}
 
 	if(lcd_sleep_out)
 	{
-		lcd_sleep_out = false;
-	
 		LCD_SleepOut();
 		
 		if(IsInIdleScreen())
@@ -3473,5 +3713,7 @@ void LCDMsgProcess(void)
 		}
 
 		LCD_BL_On();
+
+		lcd_sleep_out = false;
 	}
 }

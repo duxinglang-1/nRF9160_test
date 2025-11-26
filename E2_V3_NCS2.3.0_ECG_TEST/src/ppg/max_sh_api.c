@@ -262,22 +262,6 @@ void accel_data_rx(void * p_accel_data, uint8_t* data_ptr)
 	//LOGD("x:%d, y:%d, z:%d", sample->x, sample->y, sample->z);
 }
 
-void max86176_ecg_data_rx(void * p_ecg_data, uint8_t* data_ptr)
-{
-	max86176_ecg_data *sample = (max86176_ecg_data*)p_ecg_data;
-	uint8_t *p_ecg;
-	
-	memcpy(sample, data_ptr, sizeof(max86176_ecg_data));
-
-	p_ecg = (uint8_t*)sample;
-	
-	for(uint8_t i=0;i<16;i++)
-	{
-		LOGD("ecg_%d:%x %x %x", i+1,p_ecg[0],p_ecg[1],p_ecg[2]);
-		p_ecg += 3;
-	}
-}
-
 void max86176_data_rx(void * p_ppg_data, uint8_t* data_ptr)
 {
 	max86176_data * sample = (max86176_data *)p_ppg_data;

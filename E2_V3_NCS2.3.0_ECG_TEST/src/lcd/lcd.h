@@ -15,14 +15,13 @@
 //#include "boards.h"
 
 //#define LCD_R108101_GC9307
-//#define LCD_ORCZ010903C_GC9A01
+#define LCD_ORCZ010903C_GC9A01
 //#define LCD_R154101_ST7796S
 //#define LCD_LH096TIG11G_ST7735SV
 //#define LCD_ORCT012210N_ST7789V2
 //#define LCD_VGM068A4W01_SH1106G
 //#define LCD_VGM096064A6W01_SP5090
-#define LCD_EQTAC175T1371_CO5300
-
+//#define LCD_EQTAC175T1371_CO5300
 
 //#define LCD_TYPE_PARALLEL		//并口
 //#define LCD_TYPE_I2C			//I2C
@@ -30,9 +29,9 @@
 
 //#define LCD_SHOW_ROTATE_180		//屏旋转180度显示
 
-//#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
+#define IMG_FONT_FROM_FLASH		//图片和字库存放在外部FLASH中
 
-//#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
+#define LCD_BACKLIGHT_CONTROLED_BY_PMU	//由PMU控制屏幕背光
 
 //LCD睡眠唤醒
 extern bool lcd_sleep_in;
@@ -111,10 +110,12 @@ void LCD_get_pic_size(unsigned char *color, uint16_t *width, uint16_t *height);
 void LCD_dis_pic_trans(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans);
 void LCD_dis_pic_rotate(uint16_t x, uint16_t y, unsigned char *color, unsigned int rotate);
 void LCD_dis_pic_trans_rotate(uint16_t x, uint16_t y, unsigned char *color, uint16_t trans, unsigned int rotate);
-#if 1//def FONTMAKER_UNICODE_FONT
+#ifdef FONTMAKER_UNICODE_FONT
 void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height);
 void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p);
 void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p);
+void LCD_ShowUniStringRtoL(uint16_t x, uint16_t y, uint16_t *p);
+void LCD_ShowUniStringRtoLInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p);
 #endif/*FONTMAKER_UNICODE_FONT*/
 
 #endif

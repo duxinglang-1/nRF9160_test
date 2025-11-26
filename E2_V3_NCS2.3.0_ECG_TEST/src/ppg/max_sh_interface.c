@@ -61,7 +61,9 @@
 #define PPG_INT_PIN		13
 #define PPG_MFIO_PIN	14
 #define PPG_RST_PIN		16
+#define PPG_PWR_H_PIN	6
 #define PPG_EN_PIN		17
+#define ECG_SW_PIN		28
 #define PPG_I2C_EN_PIN	29
 
 #define MAX32674_I2C_ADD     0x55
@@ -121,8 +123,12 @@ void PPG_i2c_off(void)
 
 void PPG_Enable(void)
 {
+	gpio_pin_configure(gpio_ppg, PPG_PWR_H_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_PWR_H_PIN, 1);
+
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
+
 	
 	k_sleep(K_MSEC(20));
 
@@ -178,7 +184,13 @@ static void sh_init_gpio(void)
 	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT_PIN, GPIO_INT_ENABLE|GPIO_INT_EDGE_FALLING);
 #else
 	gpio_pin_configure(gpio_ppg, PPG_INT_PIN, GPIO_INPUT);
-#endif	
+#endif
+
+	gpio_pin_configure(gpio_ppg, PPG_PWR_H_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, PPG_PWR_H_PIN, 1);
+	gpio_pin_configure(gpio_ppg, ECG_SW_PIN, GPIO_OUTPUT);
+	gpio_pin_set(gpio_ppg, ECG_SW_PIN, 0);
+	
 	gpio_pin_configure(gpio_ppg, PPG_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_EN_PIN, 1);
 	k_sleep(K_MSEC(20));
@@ -186,9 +198,6 @@ static void sh_init_gpio(void)
 	gpio_pin_configure(gpio_ppg, PPG_I2C_EN_PIN, GPIO_OUTPUT);
 	gpio_pin_set(gpio_ppg, PPG_I2C_EN_PIN, 1);
 
-	gpio_pin_configure(gpio_ppg, 29, GPIO_OUTPUT);
-	gpio_pin_set(gpio_ppg, 29, 1);
-	
 	//PPGÄ£Ê½Ñ¡Ôñ(bootload\application)
 	gpio_pin_configure(gpio_ppg, PPG_RST_PIN, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_ppg, PPG_MFIO_PIN, GPIO_OUTPUT);
@@ -758,16 +767,8 @@ int sh_spi_status(uint8_t * spi_status)
 int sh_sensor_enable_(int idx, int mode, uint8_t ext_mode)
 {
 	uint8_t ByteSeq[] = {0x44, (uint8_t)idx, (uint8_t)mode, ext_mode};
-	int status;
 
-	if(mode == 2)
-	{
-		status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_DUMP_REG_SLEEP_MS);
-	}
-	else
-	{
-		status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_ENABLE_SENSOR_SLEEP_MS);
-	}
+	int status = sh_write_cmd( &ByteSeq[0],sizeof(ByteSeq), 5 * SS_ENABLE_SENSOR_SLEEP_MS);
     return status;
 }
 
@@ -817,29 +818,6 @@ int sensorhub_set_algo_submode( const uint8_t algo_op_mode , const uint8_t algo_
 	return status;
 }
 
-int sensorhub_enable_ecg_sensor(void)
-{
-	int ret = 0;
-
-	/* Enabling OS6X with host supplies data */
-	ret = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 2, SH_INPUT_DATA_DIRECT_SENSOR);
-	g_algo_sensor_stat.max86176_enabled = 1;
-
-	return ret;
-
-}
-
-int sensorhub_disable_ecg_sensor(void)
-{
-	int ret = 0;
-
-	/* Enabling OS6X with host supplies data */
-	ret = sh_sensor_disable(SH_SENSORIDX_MAX86176);
-	g_algo_sensor_stat.max86176_enabled = 0;
-
-	return ret;
-}
-
 int sensorhub_enable_sensors()
 {
 	int ret = 0;
@@ -850,7 +828,7 @@ int sensorhub_enable_sensors()
 	{
 		/* Enabling OS6X with host supplies data */
 		ret = sh_sensor_enable_(SH_SENSORIDX_MAX86176, 1, SH_INPUT_DATA_DIRECT_SENSOR);
-		g_algo_sensor_stat.max86176_enabled = 1;
+		g_algo_sensor_stat.max86176_enabled =1;
 	}
 
 	return ret;
@@ -1424,9 +1402,6 @@ need_update:
 		LCD_SleepOut();
 	}
 
-	sh_get_reg(SH_SENSORIDX_MAX86176, 0xff, &u8_rxbuf[0]);
-	LOGD("id:%x", u8_rxbuf[0]);
-	
 	PPG_i2c_off();
 	PPG_Power_Off();
 	PPG_Disable();

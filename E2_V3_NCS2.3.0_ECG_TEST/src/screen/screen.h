@@ -35,19 +35,19 @@ extern "C" {
 #define IDLE_TIME_W				153
 #define IDLE_TIME_H				60
 #define IDLE_TIME_X				((LCD_WIDTH-IDLE_TIME_W)/2)
-#define IDLE_TIME_Y				50
+#define IDLE_TIME_Y				48
 #define IDLE_TIME_NUM_W			34
 #define IDLE_TIME_NUM_H			60
 #define IDLE_TIME_COLON_W		17
 #define IDLE_TIME_COLON_H		60
-#define IDLE_DATE_MON_EN_W		50
+#define IDLE_DATE_MON_EN_W		65
 #define IDLE_DATE_MON_EN_H		26
 #define IDLE_DATE_MON_EN_X		142
 #define IDLE_DATE_MON_EN_Y		106
 #define IDLE_DATE_DAY_EN_W		24
 #define IDLE_DATE_DAY_EN_H		20
 #define IDLE_DATE_DAY_EN_X		115
-#define IDLE_DATE_DAY_EN_Y		106
+#define IDLE_DATE_DAY_EN_Y		105
 #define IDLE_DATE_NUM_EN_W		12
 #define IDLE_DATE_NUM_EN_H		20
 #define IDLE_DATE_MON_CN_W		100
@@ -62,45 +62,44 @@ extern "C" {
 #define IDLE_DATE_NUM_CN_H		24
 #define IDLE_WEEK_EN_W			50
 #define IDLE_WEEK_EN_H			26
-#define IDLE_WEEK_EN_X			60
+#define IDLE_WEEK_EN_X			50
 #define IDLE_WEEK_EN_Y			106
 #define IDLE_WEEK_CN_W			45
 #define IDLE_WEEK_CN_H			26
 #define IDLE_WEEK_CN_X			150
 #define IDLE_WEEK_CN_Y			106
 
-
 //ble
 #define IDLE_BLE_W		50
 #define IDLE_BLE_H		30
 #define IDLE_BLE_X		((LCD_WIDTH-IDLE_BLE_W)/2)
-#define IDLE_BLE_Y		5
+#define IDLE_BLE_Y		4
 
 //network mode
 #define IDLE_NET_MODE_W		12
 #define IDLE_NET_MODE_H		16
 #define IDLE_NET_MODE_X		108
-#define IDLE_NET_MODE_Y		34
+#define IDLE_NET_MODE_Y		33
 
 //battery soc
 #define IDLE_BAT_W		30
 #define IDLE_BAT_H		16
 #define IDLE_BAT_X		169
-#define IDLE_BAT_Y		34
+#define IDLE_BAT_Y		32
 #define IDLE_BAT_PERCENT_W		44
 #define IDLE_BAT_PERCENT_H		18
 #define IDLE_BAT_PERCENT_X		120
-#define IDLE_BAT_PERCENT_Y		32
+#define IDLE_BAT_PERCENT_Y		30
 #define IDLE_BAT_INNER_RECT_W	22
 #define IDLE_BAT_INNER_RECT_H	10
 #define IDLE_BAT_INNER_RECT_X	172
-#define IDLE_BAT_INNER_RECT_Y	37
+#define IDLE_BAT_INNER_RECT_Y	35
 
 //NB signal
 #define IDLE_SIGNAL_W		54
 #define IDLE_SIGNAL_H		12
 #define IDLE_SIGNAL_X		45
-#define IDLE_SIGNAL_Y		35
+#define IDLE_SIGNAL_Y		34
 
 //idle circle bg
 #define IDLE_CIRCLE_BG_W	192
@@ -478,7 +477,7 @@ extern "C" {
 #define HR_ICON_H					60
 #define HR_ICON_X					((LCD_WIDTH-HR_ICON_W)/2)
 #define HR_ICON_Y					66
-#define HR_NOTIFY_W					LCD_WIDTH
+#define HR_NOTIFY_W					(LCD_WIDTH-10)
 #define HR_NOTIFY_H					30
 #define HR_NOTIFY_X					((LCD_WIDTH-HR_NOTIFY_W)/2)
 #define HR_NOTIFY_Y					140
@@ -522,7 +521,7 @@ extern "C" {
 #define SPO2_ICON_H					60
 #define SPO2_ICON_X					((LCD_WIDTH-SPO2_ICON_W)/2)
 #define SPO2_ICON_Y					66
-#define SPO2_NOTIFY_W				LCD_WIDTH
+#define SPO2_NOTIFY_W				(LCD_WIDTH-10)
 #define SPO2_NOTIFY_H				30
 #define SPO2_NOTIFY_X				((LCD_WIDTH-SPO2_NOTIFY_W)/2)
 #define SPO2_NOTIFY_Y				140
@@ -572,7 +571,7 @@ extern "C" {
 #define BP_ICON_H					60
 #define BP_ICON_X					((LCD_WIDTH-BP_ICON_W)/2)
 #define BP_ICON_Y					66
-#define BP_NOTIFY_W					LCD_WIDTH
+#define BP_NOTIFY_W					(LCD_WIDTH-10)
 #define BP_NOTIFY_H					30
 #define BP_NOTIFY_X					((LCD_WIDTH-BP_NOTIFY_W)/2)
 #define BP_NOTIFY_Y					140
@@ -622,7 +621,7 @@ extern "C" {
 #define TEMP_ICON_H					60
 #define TEMP_ICON_X					((LCD_WIDTH-TEMP_ICON_W)/2)
 #define TEMP_ICON_Y					66
-#define TEMP_NOTIFY_W				LCD_WIDTH
+#define TEMP_NOTIFY_W				(LCD_WIDTH-10)
 #define TEMP_NOTIFY_H				30
 #define TEMP_NOTIFY_X				((LCD_WIDTH-TEMP_NOTIFY_W)/2)
 #define TEMP_NOTIFY_Y				140
@@ -678,12 +677,32 @@ extern "C" {
 #define SETTINGS_MENU_BG_Y			40
 #define SETTINGS_MENU_BG_OFFSET_Y	5
 #define SETTINGS_MENU_STR_OFFSET_X	5			
-#define SETTINGS_MENU_STR_OFFSET_Y	15
+#define SETTINGS_MENU_STR_OFFSET_Y	5
 
-#define SETTINGS_MEUN_PAGE_DOT_W	6
-#define SETTINGS_MEUN_PAGE_DOT_H	22
-#define SETTINGS_MEUN_PAGE_DOT_X	226
-#define SETTINGS_MEUN_PAGE_DOT_Y	((LCD_HEIGHT-SETTINGS_MEUN_PAGE_DOT_H)/2)
+#define SETTINGS_MEUN_PAGE2_DOT_W	6
+#define SETTINGS_MEUN_PAGE2_DOT_H	22
+#define SETTINGS_MEUN_PAGE2_DOT_X	226
+#define SETTINGS_MEUN_PAGE2_DOT_Y	((LCD_HEIGHT-SETTINGS_MEUN_PAGE2_DOT_H)/2)
+
+#define SETTINGS_MEUN_PAGE3_DOT_W	6
+#define SETTINGS_MEUN_PAGE3_DOT_H	28
+#define SETTINGS_MEUN_PAGE3_DOT_X	226
+#define SETTINGS_MEUN_PAGE3_DOT_Y	((LCD_HEIGHT-SETTINGS_MEUN_PAGE3_DOT_H)/2)
+
+#define SETTINGS_MEUN_PAGE4_DOT_W	6
+#define SETTINGS_MEUN_PAGE4_DOT_H	39
+#define SETTINGS_MEUN_PAGE4_DOT_X	226
+#define SETTINGS_MEUN_PAGE4_DOT_Y	((LCD_HEIGHT-SETTINGS_MEUN_PAGE4_DOT_H)/2)
+
+#define SETTINGS_MEUN_PAGE5_DOT_W	6
+#define SETTINGS_MEUN_PAGE5_DOT_H	50
+#define SETTINGS_MEUN_PAGE5_DOT_X	226
+#define SETTINGS_MEUN_PAGE5_DOT_Y	((LCD_HEIGHT-SETTINGS_MEUN_PAGE5_DOT_H)/2)
+
+#define SETTINGS_MEUN_PAGE6_DOT_W	6
+#define SETTINGS_MEUN_PAGE6_DOT_H	61
+#define SETTINGS_MEUN_PAGE6_DOT_X	226
+#define SETTINGS_MEUN_PAGE6_DOT_Y	((LCD_HEIGHT-SETTINGS_MEUN_PAGE6_DOT_H)/2)
 
 #define SETTINGS_MENU_TEMP_UNIT_W	35
 #define SETTINGS_MENU_TEMP_UNIT_H	36
@@ -809,10 +828,11 @@ typedef enum
 	SCREEN_ID_NOTIFY,
 	SCREEN_ID_POWEROFF,
 	SCREEN_ID_SYNC,
-	SCREEN_ID_VER_CHECK,
 	SCREEN_ID_FOTA,
 	SCREEN_ID_DL,
 	SCREEN_ID_FACTORY_TEST,
+	SCREEN_ID_FT_SMT_RESULT_INFOR,
+	SCREEN_ID_FT_ASSEM_RESULT_INFOR,
 	SCREEN_ID_AGING_TEST,
 	SCREEN_ID_DEVICE_INFOR,
 	SCREEN_ID_MAX
@@ -893,6 +913,8 @@ extern void EnterFOTAScreen(void);
 extern void DisplayPopUp(notify_infor infor);
 #ifdef CONFIG_QRCODE_SUPPORT
 extern void EnterDeviceScreen(void);
+extern void EnterFTSmtResultsScreen(void);
+extern void EnterFTAssemResultsScreen(void);
 #endif
 extern void EnterFallScreen(void);
 

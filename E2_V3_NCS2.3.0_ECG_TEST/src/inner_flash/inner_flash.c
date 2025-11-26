@@ -17,6 +17,9 @@
 #ifdef CONFIG_IMU_SUPPORT
 #include "lsm6dso.h"
 #endif
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+#include "ft_main.h"
+#endif
 #include "logger.h"
 
 //#define INNER_FLASH_DEBUG
@@ -133,6 +136,60 @@ void SaveSettingsToInnerFlash(global_settings_t settings)
 {
 	nvs_write(&fs, SETTINGS_ID, &settings, sizeof(global_settings_t));
 }
+
+#ifdef CONFIG_FACTORY_TEST_SUPPORT
+void ReadFtStatusFromInnerFlash(uint8_t *status)
+{
+	nvs_read(&fs, FT_STATUS_ID, status, sizeof(uint8_t));
+}
+
+void ReadFtResultsFromInnerFlash(FT_STATUS status, void *results)
+{
+	int err;
+	
+	if(!nvs_init_flag)
+	{
+		err = nvs_setup();
+		if(err)
+		{
+		#ifdef INNER_FLASH_DEBUG
+			LOGD("Flash Init failed, return!");
+		#endif
+			return;
+		}
+	}
+
+	switch(status)
+	{
+	case FT_STATUS_SMT:
+		nvs_read(&fs, FT_SMT_RESULTS_ID, results, sizeof(ft_smt_results_t));
+		break;
+		
+	case FT_STATUS_ASSEM:
+		nvs_read(&fs, FT_ASSEM_RESULTS_ID, results, sizeof(ft_assem_results_t));
+		break;
+	}
+}
+
+void SaveFtStatusToInnerFlash(uint8_t status)
+{
+	nvs_write(&fs, FT_STATUS_ID, &status, sizeof(uint8_t));
+}
+
+void SaveFtResultsToInnerFlash(FT_STATUS status, void *results)
+{
+	switch(status)
+	{
+	case FT_STATUS_SMT:
+		nvs_write(&fs, FT_SMT_RESULTS_ID, results, sizeof(ft_smt_results_t));
+		break;
+		
+	case FT_STATUS_ASSEM:
+		nvs_write(&fs, FT_ASSEM_RESULTS_ID, results, sizeof(ft_assem_results_t));
+		break;
+	}
+}
+#endif
 
 void ReadDateTimeFromInnerFlash(sys_date_timer_t *time)
 {

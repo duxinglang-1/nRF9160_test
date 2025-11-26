@@ -6,11 +6,11 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(UART_TX, 0, 22)>;
+			psels = <NRF_PSEL(UART_TX, 0, 12)>;
 		};
 		group2
 		{
-			psels = <NRF_PSEL(UART_RX, 0, 23)>;
+			psels = <NRF_PSEL(UART_RX, 0, 11)>;
 			bias-pull-up;
 		};
 	};
@@ -19,8 +19,8 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(UART_TX, 0, 22)>,
-							<NRF_PSEL(UART_RX, 0, 23)>;
+			psels = <NRF_PSEL(UART_TX, 0, 12)>,
+							<NRF_PSEL(UART_RX, 0, 11)>;
 			low-power-enable;
 		};
 	};
@@ -40,6 +40,27 @@
 		{
 			psels = <NRF_PSEL(UART_TX, 0, 18)>,
 							<NRF_PSEL(UART_RX, 0, 19)>;
+			low-power-enable;
+		};
+	};
+	
+	spi0_default: spi0_default
+	{
+		group1
+		{
+			psels = <NRF_PSEL(SPIM_SCK,  0, 4)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+							<NRF_PSEL(SPIM_MISO, 0, 12)>;
+		};
+	};
+
+	spi0_sleep: spi0_sleep
+	{
+		group1
+		{
+			psels = <NRF_PSEL(SPIM_SCK,  0, 4)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+							<NRF_PSEL(SPIM_MISO, 0, 12)>;
 			low-power-enable;
 		};
 	};
@@ -69,9 +90,9 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(SPIM_SCK,  0, 1)>,
-							<NRF_PSEL(SPIM_MOSI, 0, 30)>,
-							<NRF_PSEL(SPIM_MISO, 0, 31)>;
+			psels = <NRF_PSEL(SPIM_SCK,  0, 22)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 20)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
 		};
 	};
 
@@ -79,9 +100,9 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(SPIM_SCK,  0, 1)>,
-							<NRF_PSEL(SPIM_MOSI, 0, 30)>,
-							<NRF_PSEL(SPIM_MISO, 0, 31)>;
+			psels = <NRF_PSEL(SPIM_SCK,  0, 22)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 20)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
 			low-power-enable;
 		};
 	};
@@ -90,8 +111,8 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(TWIM_SDA, 0, 25)>,
-							<NRF_PSEL(TWIM_SCL, 0, 26)>;
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+							<NRF_PSEL(TWIM_SCL, 0, 31)>;
 		};
 	};
 
@@ -99,8 +120,8 @@
 	{
 		group1
 		{
-			psels = <NRF_PSEL(TWIM_SDA, 0, 25)>,
-							<NRF_PSEL(TWIM_SCL, 0, 26)>;
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+							<NRF_PSEL(TWIM_SCL, 0, 31)>;
 			low-power-enable;
 		};
 	};
@@ -109,7 +130,7 @@
 
 &uart0{
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
+	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
@@ -122,6 +143,14 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi0{
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 

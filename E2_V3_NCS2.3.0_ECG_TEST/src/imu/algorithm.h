@@ -1,3 +1,15 @@
+#ifndef ALGORITHM_H__
+#define ALGORITHM_H__
+
+// Versions: August.FD_20240626
+// 0.15F,45.0f,20,45,85,185,305,<65,4g
+
+#include <stdio.h> 
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "lsm6dso_reg.h"
+
 typedef union{
   int16_t i16bit[3];
   uint8_t u8bit[6];
@@ -37,15 +49,15 @@ typedef union{
 #define	WEIGHT_VALUE_30               30
 #define	WEIGHT_VALUE_50               50
 
-//define default thresholds
-#define ACC_MAGN_TRIGGER_THRES_DEF    9.0f 	 // for acc trigger
-#define FUZZY_OUT_THRES_DEF           45.0f	 // for fuzzy output
+//define default thresholds 
+#define ACC_MAGN_TRIGGER_THRES_DEF    9.0f 	 // 9.0 for acc trigger, 7.0-10.0的范围内设置。数值越小越容易通过判定
+#define FUZZY_OUT_THRES_DEF           45.0f //46.0f	 // 46.0 for fuzzy output, 40.0-50.0的范围内调整。数值越小越容易通过判定
 #define STD_SVMG_SECOND_STAGE         12.0f
-#define STD_VARIANCE_THRES_DEF        0.13f  	 // for Standard Deviation
+#define STD_VARIANCE_THRES_DEF        0.15f  	 // 0.15 for Standard Deviation, 0.1-0.2的范围内调整。数值越大越容易通过判定
 #define PEAKS_NO_THRES                8       //number of peaks threshold
 #define PEAK_THRES                    11.0f
 #define MAX_GYROSCOPE_THRESHOLD       200  //max gyroscope threshold
-#define MAX_ANGLE_THRESHOLD           40
+#define MAX_ANGLE_THRESHOLD           40   
 #define	get_acc_magn(x)               x   //do nothing
 #define	get_gyro_magn(x)              x   //do noting
 
@@ -53,90 +65,14 @@ typedef union{
 //define minimum function
 #define min(a,b) ((a)<(b)?(a):(b))
 
-stmdev_ctx_t imu_dev_ctx;
-lsm6dso_pin_int1_route_t int1_route;
-lsm6dso_pin_int2_route_t int2_route;
-lsm6dso_all_sources_t all_source;
-
-lsm6dso_emb_fsm_enable_t fsm_enable;
-uint16_t fsm_addr;
-
-volatile bool hist_buff_flag      = false;
-volatile bool curr_vrif_buff_flag = false;
-
-bool int1_event = false;
-bool int2_event = false;
-bool fall_result = false;
-
-static axis3bit16_t data_raw_acceleration;
-static axis3bit16_t data_raw_angular_rate;
-static float acceleration_mg[3];
-static float angular_rate_mdps[3];
-static float acceleration_g[3];
-static float angular_rate_dps[3];
-static uint8_t whoamI, rst;
-float verify_acc_magn[VERIFY_DATA_BUF_LEN*2] = {0};
-float std_devi=0;
-float acc_magn_square=0, cur_angle=0, cur_max_gyro_magn=0, cur_fuzzy_output=0;
-
-//static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_ID);
-static volatile bool m_xfer_done = false;
+extern stmdev_ctx_t imu_dev_ctx;
+extern lsm6dso_pin_int2_route_t int2_route;
 
 
-//uint8_t twi_tx_buffer[TWI_BUFFER_SIZE];
+void fall_detection(void); //(char *check_code);
 
-float acc_x_hist_buffer[PATTERN_LEN]  = {0}, acc_y_hist_buffer[PATTERN_LEN]   = {0}, acc_z_hist_buffer[PATTERN_LEN]   = {0};
-float gyro_x_hist_buffer[PATTERN_LEN] = {0}, gyro_y_hist_buffer[PATTERN_LEN]  = {0}, gyro_z_hist_buffer[PATTERN_LEN]  = {0};
 
-float accel_tempX[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempY[ACC_GYRO_FIFO_BUF_LEN] = {0}, accel_tempZ[ACC_GYRO_FIFO_BUF_LEN] = {0};
-float gyro_tempX[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempY[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_tempZ[ACC_GYRO_FIFO_BUF_LEN]  = {0};
 
-float acc_x_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0};
-float gyro_x_cur_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_cur_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
+#endif
 
-float acc_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]   = {0};
-float gyro_x_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer[ACC_GYRO_FIFO_BUF_LEN]  = {0};
 
-float acc_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, acc_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]   = {0}, acc_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]   = {0};
-float gyro_x_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN] = {0}, gyro_y_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0}, gyro_z_vrif_buffer_1[ACC_GYRO_FIFO_BUF_LEN]  = {0};
-
-volatile uint8_t suspicion_rules[9][3] =
-{
-  LOW_MS     , LOW_MS     , LOW_MS    ,
-  LOW_MS     , MEDIUM_MS  , LOW_MS    ,
-  LOW_MS     , HIGH_MS    , LOW_MS    ,
-  MEDIUM_MS  , LOW_MS     , LOW_MS    ,
-  MEDIUM_MS  , MEDIUM_MS  , MEDIUM_MS ,
-  MEDIUM_MS  , HIGH_MS    , HIGH_MS   ,
-  HIGH_MS    , LOW_MS     , LOW_MS    ,
-  HIGH_MS    , MEDIUM_MS  , MEDIUM_MS ,
-  HIGH_MS    , HIGH_MS    , HIGH_MS
-};
-
-/*wrist tilt detection FSM*/
-
-// Old version.
-/*const uint8_t lsm6so_prg_wrist_tilt[] = {
-      0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x00, 0x00,
-      0x20, 0x00, 0x00, 0x0D, 0x06, 0x23, 0x00, 0x53,
-      0x33, 0x74, 0x44, 0x22,
-    };
-*/
-// new version from ucf file. check wrist_tilt.ucf file.
-const uint8_t lsm6so_prg_wrist_tilt[] = {
-  0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x8E, 0x31, 0x20, 0x00, 
-  0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
-};
-
-// new version from Unico-GUI. Check picture.
-/*const uint8_t lsm6so_prg_wrist_tilt[] = {
-  0x52, 0x00, 0x14, 0x20, 0x0D, 0x0F, 0x8E, 0x31, 0x20, 0x00, 
-  0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
-};*/
-
-/*fall + tap trigger FSM*/
-const uint8_t falltrigger[] = {
-      0x91, 0x00, 0x18, 0x00, 0x0E, 0x00, 0xCD, 0x3C,
-      0x66, 0x36, 0xA8, 0x00, 0x00, 0x06, 0x23, 0X00,
-      0x33, 0x63, 0x33, 0xA5, 0x57, 0x44, 0x22, 0X00,
-     };

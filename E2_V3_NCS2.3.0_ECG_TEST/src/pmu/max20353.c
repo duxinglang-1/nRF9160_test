@@ -45,7 +45,6 @@
 #define PMU_EINT		8
 
 static bool pmu_check_ok = false;
-static uint8_t last_bat_soc = 0;
 static uint8_t PMICStatus[4], PMICInts[3];
 static struct device *i2c_pmu;
 static struct device *gpio_pmu;
@@ -516,37 +515,15 @@ void pmu_battery_update(void)
 #ifdef PMU_DEBUG
 	LOGD("SOC:%d", g_bat_soc);
 #endif	
-
-	if(g_bat_soc > 100)
+	if(g_bat_soc > 97)
 		g_bat_soc = 100;
 
 	if(charger_is_connected)
 	{
-		if(g_chg_status == BAT_CHARGING_FINISHED)
-			g_bat_soc = 100;
-		
-		last_bat_soc = g_bat_soc;
 		g_bat_level = BAT_LEVEL_NORMAL;
 	}
 	else
 	{
-		if(g_bat_soc > last_bat_soc)
-		{
-			g_bat_soc = last_bat_soc;
-		}
-		else
-		{
-			if(last_bat_soc > (g_bat_soc+1))
-			{
-				last_bat_soc--;
-				g_bat_soc = last_bat_soc;
-			}
-			else
-			{
-				last_bat_soc = g_bat_soc;
-			}
-		}
-
 		if(g_bat_soc < 4)
 		{
 			g_bat_level = BAT_LEVEL_VERY_LOW;
@@ -623,6 +600,7 @@ void pmu_status_update(void)
 			#ifdef PMU_DEBUG
 				LOGD("change to finished!");
 			#endif
+				charging_count = 0;
 				g_chg_status = BAT_CHARGING_FINISHED;
 				lcd_sleep_out = true;
 				flag = true;
@@ -643,10 +621,7 @@ void pmu_status_update(void)
 		#ifdef PMU_DEBUG
 			LOGD("g_bat_soc:%d", g_bat_soc);
 		#endif
-			if(g_bat_soc >= 95)
-				g_bat_soc = 100;
-
-			last_bat_soc = g_bat_soc;
+			g_bat_soc = 100;
 		#endif
 
 			lcd_sleep_out = true;
@@ -677,13 +652,11 @@ void pmu_status_update(void)
 	#ifdef PMU_DEBUG
 		LOGD("soc:%d", g_bat_soc);
 	#endif
-		if(g_bat_soc > 100)
+		if(g_bat_soc > 97)
 			g_bat_soc = 100;
-
 		if(g_chg_status == BAT_CHARGING_FINISHED)
 			g_bat_soc = 100;
-		
-		last_bat_soc = g_bat_soc;
+
 		g_bat_level = BAT_LEVEL_NORMAL;
 	#endif
 
@@ -696,32 +669,8 @@ void pmu_status_update(void)
 	#ifdef PMU_DEBUG
 		LOGD("soc:%d", g_bat_soc);
 	#endif
-		if(g_bat_soc > 100)
+		if(g_bat_soc > 97)
 			g_bat_soc = 100;
-
-		if(g_bat_soc > last_bat_soc)
-		{
-			g_bat_soc = last_bat_soc;
-		}
-		else
-		{
-			if(charger_is_connected)
-			{
-				g_bat_soc = last_bat_soc;
-			}
-			else
-			{
-				if(last_bat_soc > (g_bat_soc+1))
-				{
-					last_bat_soc--;
-					g_bat_soc = last_bat_soc;
-				}
-				else
-				{
-					last_bat_soc = g_bat_soc;
-				}
-			}
-		}
 		
 		if(g_bat_soc < 4)
 		{
@@ -806,15 +755,12 @@ bool pmu_interrupt_proc(void)
 			#ifdef PMU_DEBUG
 				LOGD("charging finished!");
 			#endif
-
 			#ifdef BATTERY_SOC_GAUGE
 				g_bat_soc = MAX20353_CalculateSOC();
 			#ifdef PMU_DEBUG
 				LOGD("g_bat_soc:%d", g_bat_soc);
 			#endif
-
 				g_bat_soc = 100;
-				last_bat_soc = g_bat_soc;
 			#endif
 
 				lcd_sleep_out = true;
@@ -859,26 +805,9 @@ bool pmu_interrupt_proc(void)
 
 		#ifdef BATTERY_SOC_GAUGE	
 			g_bat_soc = MAX20353_CalculateSOC();
-			if(g_bat_soc > 100)
+			if(g_bat_soc > 97)
 				g_bat_soc = 100;
-			
-			if(g_bat_soc > last_bat_soc)
-			{
-				g_bat_soc = last_bat_soc;
-			}
-			else
-			{
-				if(last_bat_soc > (g_bat_soc+1))
-				{
-					last_bat_soc--;
-					g_bat_soc = last_bat_soc;
-				}
-				else
-				{
-					last_bat_soc = g_bat_soc;
-				}
-			}
-			
+						
 			if(g_bat_soc < 4)
 			{
 				g_bat_level = BAT_LEVEL_VERY_LOW;
@@ -1071,10 +1000,11 @@ void MAX20353_InitData(void)
 		InitCharger();
 	#ifdef BATTERY_SOC_GAUGE	
 		g_bat_soc = MAX20353_CalculateSOC();
-		if(g_bat_soc>100)
+		if(g_bat_soc > 97)
 			g_bat_soc = 100;
-		last_bat_soc = g_bat_soc;
-
+		if(g_chg_status == BAT_CHARGING_FINISHED)
+			g_bat_soc = 100;
+		
 		if(g_chg_status != BAT_CHARGING_PROGRESS)
 		{
 			if(g_bat_soc < 4)
@@ -1104,9 +1034,8 @@ void MAX20353_InitData(void)
 		
 	#ifdef BATTERY_SOC_GAUGE	
 		g_bat_soc = MAX20353_CalculateSOC();
-		if(g_bat_soc>100)
+		if(g_bat_soc > 97)
 			g_bat_soc = 100;
-		last_bat_soc = g_bat_soc;
 
 		if(g_bat_soc < 4)
 		{

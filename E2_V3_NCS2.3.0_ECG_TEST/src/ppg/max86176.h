@@ -9,10 +9,10 @@
 #ifndef __MAX86176_H__
 #define __MAX86176_H__
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)
-#define PPG_DEV DT_NODELABEL(spi3)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay)
+#define PPG_DEV DT_NODELABEL(spi0)
 #else
-#error "spi3 devicetree node is disabled"
+#error "spi0 devicetree node is disabled"
 #define PPG_DEV	""
 #endif
 
@@ -23,9 +23,17 @@
 #define PPG_PORT	""
 #endif
 
-#define PPG_CS_PIN			0
-#define PPG_INT1_PIN		2
-#define PPG_INT2_PIN		3
+void ECG_Sensor_Init(void);
+void Max86176_onAfeInt(void);
+
+extern bool ppg_int1_flag;
+extern bool ppg_int2_flag;
+#define PPG_CS_PIN			3
+#define PPG_INT1_PIN		1
+#define PPG_INT2_PIN		1
+#define ECG_PWR_H_PIN		6
+#define ECG_PWR_L_PIN		17
+#define ECG_SW_PIN		    28
 
 #define MAX86176_PART_ID	0x39
 
@@ -1044,6 +1052,13 @@
 #define NUM_MEAS_PER_FRAME		3	/* number of enabled measurments */
 #define NUM_PPG_PER_MEAS		2	/* number of enabled PPG channels */
 #define NUM_SAMPLES_PER_INT		(NUM_FRAMES_PER_INT*NUM_MEAS_PER_FRAME*NUM_PPG_PER_MEAS+EXTRABUFFER)	/* number of samples in FIFO that generates a FIFO_A_FULL interrupt */
+
+//#define FILTERORDER 				161
+#define FILTERORDER 				81
+//#define NRCOEFF (0.992) 采样频率为512
+#define NRCOEFF (0.9758)  /* 采样频率为128 */
+
+
 
 typedef enum
 {

@@ -8,28 +8,51 @@
 
 #define FW_FOR_CN	//ÖÐÎÄ°æ±¾
 
-#define ALARM_MAX	8
-#define MENU_MAX_COUNT	10
-#define MENU_NAME_MAX	25
-#define MENU_NAME_STR_MAX	13
-#define MENU_OPT_STR_MAX	7
-#define MENU_NOTIFY_STR_MAX	28
+#ifdef FW_FOR_CN
+#define LANGUAGE_CN_ENABLE		//Chinese
+#define LANGUAGE_EN_ENABLE		//English
+#else
+#define LANGUAGE_EN_ENABLE		//English
+#define LANGUAGE_DE_ENABLE		//Deutsch
+#define LANGUAGE_FR_ENABLE		//French
+#define LANGUAGE_IT_ENABLE		//Italian
+#define LANGUAGE_ES_ENABLE		//Spanish
+#define LANGUAGE_PT_ENABLE		//Portuguese
+#define LANGUAGE_PL_ENABLE		//Polish
+#define LANGUAGE_SE_ENABLE		//Swedish
+#define LANGUAGE_JP_ENABLE		//Japanese
+#define LANGUAGE_KR_ENABLE		//Korea
+#define LANGUAGE_RU_ENABLE		//Russian
+#define LANGUAGE_AR_ENABLE		//Arabic
+#endif
 
-#define VERSION_STR	"V3.4.3_20240416"
+#define ALARM_MAX	8
+#define MENU_MAX_COUNT	15
+#define MENU_NAME_MAX	25
+#define MENU_NAME_STR_MAX	15
+#define MENU_OPT_STR_MAX	10
+#define MENU_NOTIFY_STR_MAX	32
+
+#define VERSION_STR	"3.4.5_50402"
 #ifdef CONFIG_FACTORY_TEST_SUPPORT
 #define LANG_BRANCH	"FT"
+#define FALL_BRANCH ""
 #else
 #ifdef FW_FOR_CN
-#define LANG_BRANCH	"BC"
+#define LANG_BRANCH	"C"
 #else
-#define LANG_BRANCH	"BU"
+#define LANG_BRANCH	"U"
 #endif
-#endif
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+#define FALL_BRANCH	"F4.2"
+#else#define FALL_BRANCH ""
+#endif/*CONFIG_FALL_DETECT_SUPPORT*/
+#endif/*CONFIG_FACTORY_TEST_SUPPORT*/
 
 #ifdef FW_FOR_CN
-#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login"
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.cn/login?imei="
 #else
-#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login"
+#define SETTINGS_CAREMATE_URL	"https://caremate.audarhealth.com/login?imei="
 #endif
 
 typedef void(*menu_handler)(void);
@@ -49,19 +72,67 @@ typedef enum{
 
 typedef enum
 {
-	LANGUAGE_BEGIN,
 #ifndef FW_FOR_CN
-	LANGUAGE_EN = LANGUAGE_BEGIN,	//English
-	LANGUAGE_DE,					//Deutsch
-	LANGUAGE_FR,					//French
-	LANGUAGE_ITA,					//Italian
-	LANGUAGE_ES,					//Spanish
-	LANGUAGE_PT,					//Portuguese
-#else
-	LANGUAGE_CHN = LANGUAGE_BEGIN,	//Chinese
+  #ifdef LANGUAGE_EN_ENABLE
 	LANGUAGE_EN,					//English
+  #endif	
+  #ifdef LANGUAGE_DE_ENABLE
+	LANGUAGE_DE,					//Deutsch
+  #endif
+  #ifdef LANGUAGE_FR_ENABLE
+	LANGUAGE_FR,					//French
+  #endif
+  #ifdef LANGUAGE_IT_ENABLE
+	LANGUAGE_ITA,					//Italian
+  #endif
+  #ifdef LANGUAGE_ES_ENABLE
+	LANGUAGE_ES,					//Spanish
+  #endif
+  #ifdef LANGUAGE_PT_ENABLE
+	LANGUAGE_PT,					//Portuguese
+  #endif
+  #ifdef LANGUAGE_PL_ENABLE
+	LANGUAGE_PL,					//Polish
+  #endif
+  #ifdef LANGUAGE_SE_ENABLE
+	LANGUAGE_SE,					//Swedish
+  #endif	
+  #ifdef LANGUAGE_JP_ENABLE	
+	LANGUAGE_JP,					//Japanese
+  #endif	
+  #ifdef LANGUAGE_KR_ENABLE	
+	LANGUAGE_KR,					//Korea
+  #endif	
+  #ifdef LANGUAGE_RU_ENABLE	
+	LANGUAGE_RU,					//Russian
+  #endif	
+  #ifdef LANGUAGE_AR_ENABLE	
+	LANGUAGE_AR,					//Arabic
+  #endif	
+#else
+  #ifdef LANGUAGE_CN_ENABLE
+	LANGUAGE_CHN,					//Chinese
+  #endif	
+  #ifdef LANGUAGE_EN_ENABLE	
+	LANGUAGE_EN,					//English
+  #endif	
 #endif	
-	LANGUAGE_MAX
+	LANGUAGE_MAX,
+#ifdef LANGUAGE_DK_ENABLE	
+	LANGUAGE_DK,					//Danish
+#endif
+#ifdef LANGUAGE_FI_ENABLE
+	LANGUAGE_FI,					//Finnish
+#endif
+#ifdef LANGUAGE_NL_ENABLE
+	LANGUAGE_NL,					//Dutch
+#endif
+#ifdef LANGUAGE_NO_ENABLE
+	LANGUAGE_NO,					//Norwegian
+#endif
+#ifdef LANGUAGE_GR_ENABLE
+	LANGUAGE_GR,					//Greece
+#endif
 }LANGUAGE_SET;
 
 typedef enum
@@ -138,7 +209,7 @@ typedef struct
 	MENU_ID id;
 	uint8_t index;
 	uint8_t count;
-	uint16_t name[LANGUAGE_MAX][MENU_MAX_COUNT][MENU_NAME_MAX];
+	uint16_t *name[LANGUAGE_MAX][MENU_MAX_COUNT];
 	menu_handler sel_handler[MENU_MAX_COUNT];
 	menu_handler pg_handler[4];
 }settings_menu_t;
@@ -172,9 +243,10 @@ typedef struct
 typedef struct
 {
 	SETTINGS_STATUS flag;
+	bool temp_is_on;				//temp
 	bool hr_is_on;					//heart rate
-	bool bp_is_on;					//blood pressure
-	bool bo_is_on;					//blood oxygen
+	bool bpt_is_on;					//blood pressure
+	bool spo2_is_on;				//blood oxygen
 	bool wake_screen_by_wrist;
 	bool wrist_off_check;
 	bool fall_check;		
@@ -197,6 +269,7 @@ typedef struct
 extern bool need_save_time;
 extern bool need_save_settings;
 extern bool need_reset_settings;
+extern bool g_language_r2l;
 
 extern uint8_t screen_id;
 extern uint8_t g_fw_version[64];

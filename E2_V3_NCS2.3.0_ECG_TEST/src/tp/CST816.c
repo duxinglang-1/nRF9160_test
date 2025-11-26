@@ -823,6 +823,7 @@ void test_tp(void)
 	uint16_t w,h;
 	uint8_t tmpbuf[128] = {0};
 
+#if 0
 #ifdef FONTMAKER_UNICODE_FONT
 	mmi_asc_to_ucs2(tmpbuf, "TP_TEST");
 	LCD_SetFontSize(FONT_SIZE_36);
@@ -833,7 +834,8 @@ void test_tp(void)
 	LCD_SetFontSize(FONT_SIZE_32);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,20,tmpbuf);
-#endif	
+#endif
+#endif
 	tp_init();
 }
 #endif
@@ -871,6 +873,7 @@ void tp_show_infor(void)
 		break;
 	}
 
+#if 0
 	LCD_SetFontSize(FONT_SIZE_32);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_Fill(0, 80, LCD_WIDTH, h, BLACK);
@@ -879,6 +882,7 @@ void tp_show_infor(void)
 	sprintf(tmpbuf, "x:%03d, y:%03d", tp_msg.x_pos, tp_msg.y_pos);
 	LCD_MeasureString(tmpbuf, &w, &h);
 	LCD_ShowString((LCD_WIDTH-w)/2,120,tmpbuf);
+#endif	
 }
 
 void TPMsgProcess(void)

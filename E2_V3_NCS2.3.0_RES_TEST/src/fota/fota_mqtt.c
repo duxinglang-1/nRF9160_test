@@ -80,7 +80,7 @@ static int modem_configure(void)
 
 	if(nrf_modem_at_cmd(buf, sizeof(buf), "AT%%XEPCO=0") == 0)
 	{
-	#ifdef NB_DEBUG
+	#ifdef FOTA_DEBUG
 		LOGD("XEPCO:%s", buf);
 	#endif
 	}

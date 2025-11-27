@@ -233,7 +233,7 @@ void APP_set_language(uint8_t *buf, uint32_t len)
 #endif
 
 	if(buf[7] == 0x00)
-		global_settings.language = LANGUAGE_CHN;
+		global_settings.language = LANGUAGE_CN;
 	else if(buf[7] == 0x01)
 		global_settings.language = LANGUAGE_EN;
 	else if(buf[7] == 0x02)
@@ -1129,7 +1129,7 @@ void APP_get_hr(uint8_t *buf, uint32_t len)
 
 		case 0x02://单次测量心率
 			get_cur_health_from_record(&last_data);
-			MCU_send_app_get_ppg_data(PPG_DATA_HR, &last_data.hr);
+			MCU_send_app_get_ppg_data(PPG_DATA_HR, &last_data.hr_rec);
 			break;
 		}
 	}

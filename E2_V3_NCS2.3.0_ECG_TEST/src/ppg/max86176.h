@@ -26,11 +26,10 @@
 void ECG_Sensor_Init(void);
 void Max86176_onAfeInt(void);
 
-extern bool ppg_int1_flag;
-extern bool ppg_int2_flag;
+extern bool ecg_int_flag;
+
 #define PPG_CS_PIN			3
-#define PPG_INT1_PIN		1
-#define PPG_INT2_PIN		1
+#define ECG_INT_PIN			13
 #define ECG_PWR_H_PIN		6
 #define ECG_PWR_L_PIN		17
 #define ECG_SW_PIN		    28

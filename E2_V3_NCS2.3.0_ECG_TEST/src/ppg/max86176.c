@@ -77,15 +77,14 @@ LOG_MODULE_REGISTER(MAX86176, CONFIG_LOG_DEFAULT_LEVEL);
 
 struct device *spi_ppg;
 struct device *gpio_ppg;
-static struct gpio_callback gpio_cb1, gpio_cb2;
+static struct gpio_callback gpio_cb;
 
 static struct spi_buf_set tx_bufs, rx_bufs;
 static struct spi_buf tx_buff, rx_buff;
 
 static struct spi_config spi_cfg;
 static struct spi_cs_control spi_cs_ctr;
-bool ppg_int1_flag = false;
-bool ppg_int2_flag = false;
+bool ecg_int_flag = false;
 
 bool gUseSpi = true;
 uint8_t gReadBuf[NUM_SAMPLES_PER_INT * NUM_BYTES_PER_SAMPLE * EXTRABUFFER]; // array to store register reads
@@ -137,16 +136,10 @@ static void PPG_CS_HIGH(void)
 	gpio_pin_set(gpio_ppg, PPG_CS_PIN, 1);
 }
 
-void PPG_Int1_Event(void)
+void ECG_Int_Event(void)
 {
-	LOG_INF("INT1 Event");
-	ppg_int1_flag = true;
-}
-
-void PPG_Int2_Event(void)
-{
-	// LOG_INF("INT2 Event");
-	ppg_int2_flag = true;
+	LOG_INF("INT Event");
+	ecg_int_flag = true;
 }
 
 static void PPG_gpio_Init(void)
@@ -174,17 +167,11 @@ static void PPG_gpio_Init(void)
 	gpio_pin_set(gpio_ppg, PPG_CS_PIN, 1);
 
 	// interrupt
-	gpio_pin_configure(gpio_ppg, PPG_INT1_PIN, flag);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT1_PIN, GPIO_INT_DISABLE);
-	gpio_init_callback(&gpio_cb1, PPG_Int1_Event, BIT(PPG_INT1_PIN));
-	gpio_add_callback(gpio_ppg, &gpio_cb1);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT1_PIN, GPIO_INT_ENABLE | GPIO_INT_EDGE_FALLING);
-
-	gpio_pin_configure(gpio_ppg, PPG_INT2_PIN, flag);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT2_PIN, GPIO_INT_DISABLE);
-	gpio_init_callback(&gpio_cb2, PPG_Int2_Event, BIT(PPG_INT2_PIN));
-	gpio_add_callback(gpio_ppg, &gpio_cb2);
-	gpio_pin_interrupt_configure(gpio_ppg, PPG_INT2_PIN, GPIO_INT_ENABLE | GPIO_INT_EDGE_FALLING);
+	gpio_pin_configure(gpio_ppg, ECG_INT_PIN, flag);
+	gpio_pin_interrupt_configure(gpio_ppg, ECG_INT_PIN, GPIO_INT_DISABLE);
+	gpio_init_callback(&gpio_cb, ECG_Int_Event, BIT(ECG_INT_PIN));
+	gpio_add_callback(gpio_ppg, &gpio_cb);
+	gpio_pin_interrupt_configure(gpio_ppg, ECG_INT_PIN, GPIO_INT_ENABLE | GPIO_INT_EDGE_FALLING);
 }
 
 static void PPG_SPI_Init(void)

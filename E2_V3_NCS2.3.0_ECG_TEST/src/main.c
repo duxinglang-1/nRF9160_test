@@ -731,14 +731,15 @@ void system_init(void)
 	LCD_Init();
 	flash_init();
 	
-	ShowBootUpLogo();
+	//ShowBootUpLogo();
+	EnterIdleScreen();
 	
 #ifdef CONFIG_PPG_SUPPORT	
 	//PPG_init();
 #endif
-	ECG_Sensor_Init();
-	LOGD("eng init end");
-
+#ifdef CONFIG_ECG_SUPPORT
+	//ECG_init();
+#endif
 #ifdef CONFIG_AUDIO_SUPPORT	
 	audio_init();
 #endif
@@ -845,6 +846,9 @@ int main(void)
 	#endif
 	#ifdef CONFIG_PPG_SUPPORT	
 		PPGMsgProcess();
+	#endif
+	#ifdef CONFIG_ECG_SUPPORT
+		ECGMsgProcess();
 	#endif
 		LCDMsgProcess();
 	#ifdef CONFIG_TOUCH_SUPPORT

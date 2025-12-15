@@ -290,6 +290,12 @@ config PPG_SUPPORT
 	default n
 endmenu #PPG
 
+menu "ECG"
+config ECG_SUPPORT
+	bool "ecg support"
+	default n
+endmenu #ECG
+	
 menu "IMU"
 config IMU_SUPPORT
 	bool "imu support"

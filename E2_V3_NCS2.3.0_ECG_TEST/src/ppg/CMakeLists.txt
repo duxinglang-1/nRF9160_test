@@ -6,7 +6,6 @@
 
 zephyr_include_directories(.)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/max32674.c)
-target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/max86176.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/max_sh_interface.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/max_sh_fw_upgrade.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/max_sh_api.c)

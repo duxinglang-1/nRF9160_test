@@ -1,0 +1,452 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
+#
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+
+menu "GPS"
+config GPS_SUPPORT
+	bool "gps support"
+	default n
+endmenu #GPS
+
+menu "GNSS"
+choice
+	default GNSS_SAMPLE_MODE_CONTINUOUS
+	prompt "Select GNSS operation mode"
+
+config GNSS_SAMPLE_MODE_CONTINUOUS
+	bool "Continuous tracking"
+
+config GNSS_SAMPLE_MODE_PERIODIC
+	bool "Periodic fixes"
+
+config GNSS_SAMPLE_MODE_TTFF_TEST
+	bool "Time-to-first-fix (TTFF) test mode"
+	select GNSS_SAMPLE_NMEA_ONLY
+endchoice
+
+if GNSS_SAMPLE_MODE_PERIODIC
+config GNSS_SAMPLE_PERIODIC_INTERVAL
+	int "Fix interval for periodic fixes"
+	range 10 65535
+	default 120
+	help
+	  Fix interval (in seconds) for periodic fixes.
+config GNSS_SAMPLE_PERIODIC_TIMEOUT
+	int "Fix timeout for periodic fixes"
+	range 0 65535
+	default 120
+	help
+	  Fix timeout (in seconds) for periodic fixes.
+	  If set to zero, GNSS is allowed to run indefinitely until a valid PVT estimate is produced.
+endif # GNSS_SAMPLE_MODE_PERIODIC
+
+if GNSS_SAMPLE_MODE_TTFF_TEST
+config GNSS_SAMPLE_MODE_TTFF_TEST_COLD_START
+	bool "Delete GNSS data before each start (cold start)"
+	help
+	  When enabled, deletes all stored data from GNSS to force a cold start every time GNSS is started.
+config GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL
+	int "Time to wait between TTFF tests in seconds"
+	range 1 604800
+	default 120
+endif # GNSS_SAMPLE_MODE_TTFF_TEST
+
+config GNSS_SAMPLE_NMEA_ONLY
+	bool "Output only NMEA strings"
+	help
+	  Outputs only NMEA strings from the GNSS.
+
+choice
+	default GNSS_SAMPLE_ANTENNA_ONBOARD
+	prompt "Select which antenna to use for GNSS"
+
+config GNSS_SAMPLE_ANTENNA_ONBOARD
+	bool "Use onboard antenna"
+
+config GNSS_SAMPLE_ANTENNA_EXTERNAL
+	bool "Use external antenna"
+endchoice
+
+config GNSS_SAMPLE_AT_MAGPIO
+	string "AT%XMAGPIO command"
+	# default "AT\%XMAGPIO=1,0,0,1,1,1574,1577" if BOARD_NRF9160DK_NRF9160_NS
+	# default "AT\%XMAGPIO=1,1,1,7,1,746,803,2,698,748,2,1710,2200,3,824,894,4,880,960,5,791,849,7,1565,1586" if BOARD_THINGY91_NRF9160_NS
+	default "AT\%XMAGPIO=1,1,1,7,1,746,803,2,698,748,2,1710,2200,3,824,894,4,880,960,5,791,849,7,1565,1586"
+	help
+	  Defines the AT%XMAGPIO command to be sent to GNSS module. Leave
+	  empty if this command should not be sent.
+
+config GNSS_SAMPLE_AT_COEX0
+	string "AT%XCOEX0 command"
+	# default "AT\%XCOEX0=1,1,1565,1586" if (BOARD_NRF9160DK_NRF9160_NS || BOARD_THINGY91_NRF9160_NS) && GNSS_SAMPLE_ANTENNA_ONBOARD
+	# default "AT\%XCOEX0" if (BOARD_NRF9160DK_NRF9160_NS || BOARD_THINGY91_NRF9160_NS) && GNSS_SAMPLE_ANTENNA_EXTERNAL
+	default "AT\%XCOEX0=1,1,1565,1586"
+	help
+	  Defines the AT%XCOEX0 command to be sent to GNSS module. Leave
+	  empty if this command should not be sent.
+
+endmenu #GNSS
+
+choice
+	default GNSS_SAMPLE_ASSISTANCE_NONE
+	prompt "Select whether GNSS assistance is used or not"
+
+config GNSS_SAMPLE_ASSISTANCE_NONE
+	bool "Assistance not used"
+
+config GNSS_SAMPLE_ASSISTANCE_NRF_CLOUD
+	bool "Use nRF Cloud A-GPS or P-GPS"
+	select NRF_CLOUD_REST
+	imply NRF_CLOUD_AGPS
+	select MODEM_JWT
+	select MODEM_INFO
+	select DATE_TIME
+
+config GNSS_SAMPLE_ASSISTANCE_SUPL
+	bool "Use SUPL A-GPS"
+	select SUPL_CLIENT_LIB
+
+config GNSS_SAMPLE_ASSISTANCE_MINIMAL
+	bool "Use factory almanac, LTE network time and MCC based location"
+	select GNSS_SAMPLE_LTE_ON_DEMAND
+	select SETTINGS
+	select FCB
+	select FLASH
+	select FLASH_MAP
+endchoice
+
+if !GNSS_SAMPLE_ASSISTANCE_NONE
+config GNSS_SAMPLE_LTE_ON_DEMAND
+	bool "LTE is activated only when needed to fetch A-GPS data"
+	depends on !NRF_CLOUD_PGPS
+	help
+	  Activates LTE only when it is needed to fetch A-GPS data. This is not supported when
+	  P-GPS is enabled.
+
+endif # !GNSS_SAMPLE_ASSISTANCE_NONE
+
+if GNSS_SAMPLE_ASSISTANCE_SUPL
+config GNSS_SAMPLE_SUPL_HOSTNAME
+	string "SUPL server hostname"
+	default "supl.google.com"
+	help
+	  SUPL server hostname.
+
+config GNSS_SAMPLE_SUPL_PORT
+	int "SUPL server port number"
+	range 0 65535
+	default 7276
+	help
+	  SUPL server port number.
+endif # GNSS_SAMPLE_ASSISTANCE_SUPL
+
+if GNSS_SAMPLE_MODE_CONTINUOUS
+choice
+	default GNSS_SAMPLE_POWER_SAVING_DISABLED
+	prompt "Select GNSS power saving mode (duty-cycling)"
+
+config GNSS_SAMPLE_POWER_SAVING_DISABLED
+	bool "No power saving"
+
+config GNSS_SAMPLE_POWER_SAVING_MODERATE
+	bool "Power saving without significant performance degradation"
+
+config GNSS_SAMPLE_POWER_SAVING_HIGH
+	bool "Power saving with acceptable performance degradation"
+endchoice
+endif # GNSS_SAMPLE_MODE_CONTINUOUS
+
+config GNSS_SAMPLE_LOW_ACCURACY
+	bool "Allow low accuracy fixes"
+	help
+	  Allows fixes with lower accuracy.
+
+if GNSS_SAMPLE_ASSISTANCE_MINIMAL && GNSS_SAMPLE_LOW_ACCURACY
+config GNSS_SAMPLE_ASSISTANCE_REFERENCE_ALT
+	int "Reference altitude for 3-sat first fix in meters"
+	range -32767 32767
+	default -32767
+	help
+	  Reference altitude for 3-sat first fix in meters above the reference ellipsoid surface.
+	  The default value -32767 implies that reference altitude is not injected.
+endif # GNSS_SAMPLE_ASSISTANCE_MINIMAL && GNSS_SAMPLE_LOW_ACCURACY
+
+menu "MQTT simple sample"
+config APPLICATION_WORKQUEUE_STACK_SIZE
+	int "Application workqueue stack size"
+	default 1024
+
+config APPLICATION_WORKQUEUE_PRIORITY
+	int "Application workqueue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	
+config MQTT_LOG_PUB_TOPIC
+	string "MQTT log publish topic"
+	default "device/e2/pushlog"
+
+config MQTT_PUB_TOPIC
+	string "MQTT publish topic"
+	default "device/e2/pushdata"
+
+config MQTT_SUB_TOPIC
+	string "MQTT subscribe topic"
+	default "my/subscribe/topic"
+
+config MQTT_CLIENT_ID
+	string "MQTT Client ID"
+	default "my-client-id"
+
+config MQTT_USER_NAME
+	string "MQTT user name"
+	default "admin123"
+	
+config MQTT_PASSWORD
+	string "MQTT password"
+	default "admin123"
+
+config MQTT_DOMESTIC_BROKER_HOSTNAME
+	string "MQTT broker hostname"
+	default "mqtt.eclipse.org"
+
+config MQTT_DOMESTIC_BROKER_PORT
+	int "MQTT broker port"
+	default 1883
+	
+config MQTT_FOREIGN_BROKER_HOSTNAME
+	string "MQTT broker hostname"
+	default "mqtt.eclipse.org"
+
+config MQTT_FOREIGN_BROKER_PORT
+	int "MQTT broker port"
+	default 1883
+
+config MQTT_MESSAGE_BUFFER_SIZE
+	int "MQTT message buffer size"
+	default 128
+
+config MQTT_PAYLOAD_BUFFER_SIZE
+	int "MQTT payload buffer size"
+	default 128
+
+config SEC_TAG
+	int "Security tag to use for the connection"
+	default 16842753
+
+config PEER_VERIFY
+	int "Peer verify parameter for mqtt_client"
+	default 1
+	help
+		Set to 0 for VERIFY_NONE, 1 for VERIFY_OPTIONAL, and 2 for VERIFY_REQUIRED.
+
+config MODEM_AUTO_REQUEST_POWER_SAVING_FEATURES
+	bool "Auto request power saving features"
+	default y
+
+config LTE_EDRX_ENABLE
+	bool "Enable LTE enhanced Discontinuous Reception"
+
+config LTE_RAI_ENABLE
+	bool "Enable LTE Release Assistance Indication"
+endmenu
+
+menu "WATCH DOG"
+config WATCHDOG_TIMEOUT_MSEC
+	int "Watchdog timeout in milliseconds"
+	default 10000
+endmenu
+
+menu "ANIMATION"
+config ANIMATION_SUPPORT
+	bool "animation support"
+	default n
+endmenu #ANIMATION
+
+menu "ANIMATION"
+config ANIMATION_SUPPORT
+	bool "animation support"
+	default n
+endmenu #ANIMATION
+
+menu "TOUCH"
+config TOUCH_SUPPORT
+	bool "touch support"
+	default n
+endmenu #TOUCH
+
+menu "WIFI"
+config WIFI_SUPPORT
+	bool "wifi support"
+	default n
+endmenu #WIFI
+
+menu "PPG"
+config PPG_SUPPORT
+	bool "ppg support"
+	default n
+endmenu #PPG
+
+menu "ECG"
+config ECG_SUPPORT
+	bool "ecg support"
+	default n
+endmenu #ECG
+	
+menu "IMU"
+config IMU_SUPPORT
+	bool "imu support"
+	default n
+config STEP_SUPPORT
+	bool "step support"
+	default n		
+config SLEEP_SUPPORT
+	bool "sleep support"
+	default n		
+config FALL_DETECT_SUPPORT
+	bool "fall detect support"
+	default n		
+endmenu #IMU
+
+menu "AUDIO"
+config AUDIO_SUPPORT
+	bool "ppg support"
+	default n
+endmenu #AUDIO
+
+menu "BLE"
+config BLE_SUPPORT
+	bool "ble support"
+	default n
+endmenu #BLE
+
+menu "SYNC"
+config SYNC_SUPPORT
+	bool "sync support"
+	default n
+endmenu #SYNC
+
+menu "TEMPERATURE"
+config TEMP_SUPPORT
+	bool "temperature support"
+	default n
+endmenu #TEMPERATURE
+
+menu "PRESSURE"
+config PRESSURE_SUPPORT
+	bool "pressure support"
+	default n
+endmenu #PRESSURE
+
+menu "CRC"
+config CRC_SUPPORT
+	bool "crc check support"
+	default n
+endmenu #CRC
+
+menu "DATA_DOWNLOAD"
+config DATA_DOWNLOAD_SUPPORT
+	bool "data download support"
+	default n
+config DATA_DOWNLOAD_HOST_CN
+	string "Download host name(cn)"	
+config DATA_DOWNLOAD_HOST_HK
+	string "Download host name(hk)"	
+# IMG	
+config IMG_DATA_UPDATE
+	bool "img update support"
+	default n
+config IMG_DATA_DOWNLOAD_FILE
+	string "The file to download"
+
+# FONT
+config FONT_DATA_UPDATE
+	bool "font update support"
+	default n
+config FONT_DATA_DOWNLOAD_FILE
+	string "The file to download"
+
+# PPG
+config PPG_DATA_UPDATE
+	bool "ppg update support"
+	default n
+config PPG_DATA_DOWNLOAD_FILE
+	string "The file to download"
+
+config USE_HTTPS
+	bool
+	prompt "Use HTTPS for download"
+	depends on DOWNLOAD_CLIENT_TLS	
+endmenu #DATA_DOWNLOAD 
+
+menu "IMG_UPDATE"
+config DL_TARGET_UI
+	bool "img ui update support"
+	default n
+endmenu #IMG_UPDATE
+
+menu "FOTA_MQTT"
+config FOTA_DOWNLOAD_HOST_CN
+	string "Download host name(cn)"
+config FOTA_DOWNLOAD_HOST_HK
+	string "Download host name(hk)"
+
+config FOTA_DOWNLOAD_FILE
+	string "The file to download"
+
+config APPLICATION_VERSION
+	int "Application version"
+	default 1
+
+config USE_HTTPS
+	bool
+	prompt "Use HTTPS for download"
+	depends on DOWNLOAD_CLIENT_TLS
+endmenu #FOTA_MQTT
+
+menu "BAT CODE"
+config BARCODE_SUPPORT
+	bool "bar code support"
+	default n
+endmenu #BAT CODE
+
+menu "QR CODE"
+config QRCODE_SUPPORT
+	bool "qr code support"
+	default n
+endmenu #QR CODE
+
+menu "WRIST CHECK"
+config WRIST_CHECK_SUPPORT
+	bool "wrist check support"
+	default n
+endmenu #WRIST CHECK
+
+menu "FACTORY_TEST"
+config FACTORY_TEST_SUPPORT
+	bool "factory test support"
+	default n
+endmenu #FACTORY_TEST_SUPPORT
+
+menu "FAST_KEY"
+config FAST_KEY_SUPPORT
+	bool "fast key support"
+	default n
+endmenu #FAST_KEY_SUPPORT
+
+menu "ALARM_SUPPORT"
+config ALARM_SUPPORT
+	bool "alarm support"
+	default n
+endmenu #ALARM_SUPPORT
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
+
+module = APPLICATION_MODULE
+module-str = Application module
+source "subsys/logging/Kconfig.template.log_config"

@@ -344,7 +344,7 @@ void LCD_SleepIn(void)
 	WriteComm(0x10);//Sleep in	
 	Delay(120);
 
-	gpio_pin_set(gpio_lcd, EN, 0);
+	//gpio_pin_set(gpio_lcd, EN, 0);
 
 	LOGD("lcd sleep in!");
 
@@ -384,7 +384,7 @@ void LCD_SleepOut(void)
 	if(!lcd_is_sleeping)
 		return;
 
-	gpio_pin_set(gpio_lcd, EN, 1);
+	//gpio_pin_set(gpio_lcd, EN, 1);
 	
 	WriteComm(0x11);//Sleep out	
 	Delay(120);     
@@ -514,7 +514,7 @@ void LCD_Init(void)
 
 	LCD_Clear(BLACK);		//清屏为黑色
 	Delay(30);
-
+	
 	//点亮背光
 #ifdef LCD_BACKLIGHT_CONTROLED_BY_PMU
 	Set_Screen_Backlight_On();

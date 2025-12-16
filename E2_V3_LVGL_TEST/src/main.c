@@ -400,7 +400,7 @@ void test_show_image(void)
 	uint8_t i=0;
 	uint16_t x,y,w=0,h=0;
 	
-	LCD_Clear(BLACK);
+	LCD_Clear(WHITE);
 	
 	LCD_get_pic_size(gImage_jjph_gc_200x200, &w, &h);
 	LCD_dis_pic((LCD_WIDTH-w)/2, (LCD_HEIGHT-h)/2, gImage_jjph_gc_200x200);
@@ -729,11 +729,14 @@ void system_init(void)
 	pmu_init();
 	key_init();
 	LCD_Init();
-	flash_init();
+	//flash_init();
 	
 	//ShowBootUpLogo();
-	EnterIdleScreen();
-	
+	//EnterIdleScreen();
+
+#ifdef CONFIG_TOUCH_SUPPORT
+	tp_init();
+#endif
 #ifdef CONFIG_PPG_SUPPORT	
 	//PPG_init();
 #endif
@@ -759,7 +762,7 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
-	LogInit();
+	//LogInit();
 
 	//NB_init(&nb_work_q);
 	//GPS_init(&gps_work_q);
@@ -810,8 +813,8 @@ int main(void)
 
 //	test_show_lines();
 //	test_show_string();
-//	test_show_image();
-	test_show_color();
+	test_show_image();
+//	test_show_color();
 //	test_show_stripe();
 //	test_nvs();
 //	test_flash();
@@ -831,7 +834,7 @@ int main(void)
 //	test_wifi();
 //	LogInit();
 
-	while(0)
+	while(1)
 	{
 		KeyMsgProcess();
 		TimeMsgProcess();
@@ -889,7 +892,7 @@ int main(void)
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FactoryTestProccess();
 	#endif
-		LogMsgProcess();
+		//LogMsgProcess();
 		system_init_completed();
 		k_cpu_idle();
 	}

@@ -18,7 +18,7 @@
 #include "CST816.h"
 //#include "CST816S_update.h"
 //#include "CST816T_update.h"
-#include "CST820_update.h"
+//#include "CST820_update.h"
 #include "logger.h"
 
 //#define TP_DEBUG
@@ -344,10 +344,10 @@ bool ctp_hynitron_update(void)
 			break;
 
 		case TP_CST820:
-			if(sizeof(cst820_app_bin) > 10)
-				ptr = cst820_app_bin;
-			else
-				return false;
+			//if(sizeof(cst820_app_bin) > 10)
+			//	ptr = cst820_app_bin;
+			//else
+			//	return false;
 			break;
 		}
 
@@ -809,7 +809,7 @@ void tp_init(void)
 	case TP_CST820:
 		if(tp_fw_ver < 0x03)
 		{
-			ctp_hynitron_update();
+			//ctp_hynitron_update();
 		}
 		break;
 		

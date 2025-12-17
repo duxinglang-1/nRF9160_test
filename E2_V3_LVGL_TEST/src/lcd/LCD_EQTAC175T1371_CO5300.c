@@ -475,41 +475,45 @@ void LCD_Init(void)
 	gpio_pin_set(gpio_lcd, RST, 1);
 	Delay(120);
 
+	//Reset dual & quad SPI to single SPI 
 	WriteComm(0xFE);
 	WriteData(0x00);
-
+	//SPI write SRAM disable
 	WriteComm(0xC4);
 	WriteData(0x80);
-	
+	//turn off the Tearing Effect output signal
 	WriteComm(0x35);
 	WriteData(0x00);
 	//55 RGB565, 66 RGB666, 77 RGB888
 	WriteComm(0x3A);
 	WriteData(0x55);
-	
+	//Display direction 00 x inc,y inc;40 x dec,y inc;80 x inc,y dec;C0 x dec,y dec 
+	WriteComm(0x36);
+	WriteData(0x00);
+	//Display Dimming Control On/Off.
 	WriteComm(0x53);
 	WriteData(0x20);
-	
+	//adjust brightness value. 00~FF
 	WriteComm(0x51);
 	WriteData(0xFF);
-
 	//Column Address Set
 	WriteComm(0x2A);     
 	WriteData(0x00);   
 	WriteData(0x00);   //0
 	WriteData(0x01);   
 	WriteData(0x85);   //389
-	
 	//Row Address Set
 	WriteComm(0x2B);     
 	WriteData(0x00);   
 	WriteData(0x00);   
 	WriteData(0x01);   
 	WriteData(0xC1);   //449
-
+	//Sleep out
 	WriteComm(0x11);
 	Delay(120);
+	//Display On
 	WriteComm(0x29);
+	//Memory Start Write
 	WriteComm(0x2C);
 
 	LCD_Clear(BLACK);		//ÇåÆÁÎªºÚÉ«

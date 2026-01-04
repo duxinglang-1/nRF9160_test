@@ -516,14 +516,19 @@ void IdleShowSystemDate(void)
 
 void IdleShowSystemTime(void)
 {
+	uint8_t dis_hour;
 	static bool flag = false;
 	uint32_t img_num[10] = {IMG_FONT_60_NUM_0_ADDR,IMG_FONT_60_NUM_1_ADDR,IMG_FONT_60_NUM_2_ADDR,IMG_FONT_60_NUM_3_ADDR,IMG_FONT_60_NUM_4_ADDR,
 							IMG_FONT_60_NUM_5_ADDR,IMG_FONT_60_NUM_6_ADDR,IMG_FONT_60_NUM_7_ADDR,IMG_FONT_60_NUM_8_ADDR,IMG_FONT_60_NUM_9_ADDR};
 
 	flag = !flag;
 
-	LCD_ShowImg_From_Flash(IDLE_TIME_X+0*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[date_time.hour/10]);
-	LCD_ShowImg_From_Flash(IDLE_TIME_X+1*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[date_time.hour%10]);
+	dis_hour = date_time.hour;
+	if((global_settings.time_format == TIME_FORMAT_12) && (date_time.hour > 12))
+		dis_hour = date_time.hour-12;
+	
+	LCD_ShowImg_From_Flash(IDLE_TIME_X+0*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[dis_hour/10]);
+	LCD_ShowImg_From_Flash(IDLE_TIME_X+1*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[dis_hour%10]);
 	
 	if(flag)
 		LCD_ShowImg_From_Flash(IDLE_TIME_X+2*IDLE_TIME_NUM_W, IDLE_TIME_Y, IMG_FONT_60_COLON_ADDR);
@@ -1469,7 +1474,7 @@ void SettingsUpdateStatus(void)
 					}
 					break;
 				case 3:
-					if(i == 1)
+					if(i == 2)
 					{
 					#ifdef LANGUAGE_AR_ENABLE
 						if(g_language_r2l)
@@ -1891,6 +1896,65 @@ void SettingsUpdateStatus(void)
 				LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), IMG_SET_INFO_BG_ADDR);
 
 				if(i == global_settings.temp_unit)
+				{
+				#ifdef LANGUAGE_AR_ENABLE
+					if(g_language_r2l)
+						LCD_ShowImg_From_Flash(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X)-SETTINGS_MENU_SEL_DOT_W, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
+					else
+				#endif
+						LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_YES_ADDR);
+				}
+				else
+				{
+				#ifdef LANGUAGE_AR_ENABLE
+					if(g_language_r2l)
+						LCD_ShowImg_From_Flash(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X)-SETTINGS_MENU_SEL_DOT_W, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
+					else
+				#endif		
+						LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X+SETTINGS_MENU_SEL_DOT_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_SEL_DOT_Y, IMG_SELECT_ICON_NO_ADDR);
+				}
+				
+			#ifdef FONTMAKER_UNICODE_FONT
+				LCD_MeasureUniStr(settings_menu.name[i], &w, &h);
+			  #ifdef LANGUAGE_AR_ENABLE	
+				if(g_language_r2l)
+					LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X),
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+										settings_menu.name[i]);
+				else
+			  #endif
+					LCD_ShowUniStr(SETTINGS_MENU_BG_X+SETTINGS_MENU_STR_OFFSET_X,
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+										settings_menu.name[i]);
+			#endif
+
+			#ifdef CONFIG_TOUCH_SUPPORT
+				register_touch_event_handle(TP_EVENT_SINGLE_CLICK, 
+											SETTINGS_MENU_BG_X, 
+											SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W, 
+											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), 
+											SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+SETTINGS_MENU_BG_H, 
+											settings_menu.sel_handler[i]);
+			#endif
+			}
+		}
+		break;
+
+	case SETTINGS_MENU_TIME_FORMAT:
+		{
+			LCD_Clear(BLACK);
+			LCD_SetFontColor(WHITE);
+		#ifdef FONTMAKER_UNICODE_FONT
+			LCD_SetFontSize(FONT_SIZE_28);
+		#else
+			LCD_SetFontSize(FONT_SIZE_16);
+		#endif
+
+			for(i=0;i<settings_menu.count;i++)
+			{
+				LCD_ShowImg_From_Flash(SETTINGS_MENU_BG_X, SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y), IMG_SET_INFO_BG_ADDR);
+
+				if(i == global_settings.time_format)
 				{
 				#ifdef LANGUAGE_AR_ENABLE
 					if(g_language_r2l)

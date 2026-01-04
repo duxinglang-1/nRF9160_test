@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include "strdef.h"
 
-#define FW_FOR_CN	//中文版本
+//#define FW_FOR_CN	//中文版本
 
 #ifdef FW_FOR_CN
 #define LANGUAGE_CN_ENABLE		//Chinese
@@ -57,13 +57,15 @@
 
 typedef void(*menu_handler)(void);
 
-typedef enum{
-	TIME_FORMAT_24,
+typedef enum
+{
 	TIME_FORMAT_12,
+	TIME_FORMAT_24,
 	TIME_FORMAT_MAX
 }TIME_FORMAT;
 
-typedef enum{
+typedef enum
+{
 	DATE_FORMAT_YYYYMMDD,
 	DATE_FORMAT_MMDDYYYY,
 	DATE_FORMAT_DDMMYYYY,
@@ -117,6 +119,7 @@ typedef enum
 	SETTINGS_MENU_OTA,
 	SETTINGS_MENU_BRIGHTNESS,
 	SETTINGS_MENU_TEMP,
+	SETTINGS_MENU_TIME_FORMAT,
 	SETTINGS_MENU_DEVICE,
 	SETTINGS_MENU_SIM,
 	SETTINGS_MENU_FW,

@@ -1,7 +1,7 @@
 /****************************************Copyright (c)************************************************
 ** File name:			    strdef.h
 ** Created by:				Biao.X
-** Created date:			2025-10-20 16:08:00
+** Created date:			2026-01-04 08:59:17
 ******************************************************************************************************/
 typedef enum
 {
@@ -40,6 +40,7 @@ typedef enum
 	STR_ID_LANGUAGE_NAME_SHOW,
 	STR_ID_SCR_BRIGHT,
 	STR_ID_TEMP_DSP,
+	STR_ID_TIMR_FORMAT,
 	STR_ID_DEVICE_INFO,
 	STR_ID_DEVICE_IMEI,
 	STR_ID_DEVICE_IMSI,
@@ -55,6 +56,8 @@ typedef enum
 	STR_ID_OTA,
 	STR_ID_CELSIUS,
 	STR_ID_FAHRENHEIT,
+	STR_ID_12H,
+	STR_ID_24H,
 	STR_ID_LEVEL_1,
 	STR_ID_LEVEL_2,
 	STR_ID_LEVEL_3,

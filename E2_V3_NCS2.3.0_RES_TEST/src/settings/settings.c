@@ -76,6 +76,7 @@ static void SettingsMainMenu4Proc(void);
 static void SettingsMainMenu5Proc(void);
 static void SettingsMainMenu6Proc(void);
 static void SettingsMainMenu7Proc(void);
+static void SettingsMainMenu8Proc(void);
 static void SettingsMenuLang1Proc(void);
 static void SettingsMenuLang2Proc(void);
 static void SettingsMenuLang3Proc(void);
@@ -88,6 +89,8 @@ static void SettingsMenuBrightness2Proc(void);
 static void SettingsMenuBrightness3Proc(void);
 static void SettingsMenuTemp1Proc(void);
 static void SettingsMenuTemp2Proc(void);
+static void SettingsMenuTimeFormat1Proc(void);
+static void SettingsMenuTimeFormat2Proc(void);
 static void SettingsMenuPgUpProc(void);
 static void SettingsMenuPgDownProc(void);
 static void SettingsMenuPgLeftProc(void);
@@ -244,11 +247,12 @@ const settings_menu_t SETTING_MAIN_MENU =
 {
 	SETTINGS_MENU_MAIN,
 	0,
-	7,
+	8,
 	{
 		STR_ID_LANGUAGES,
 		STR_ID_SCR_BRIGHT,
 		STR_ID_TEMP_DSP,
+		STR_ID_TIMR_FORMAT,
 		STR_ID_DEVICE_INFO,
 		STR_ID_CAREMATE_QR,
 		STR_ID_FACTORY_DEFAULT,
@@ -263,6 +267,7 @@ const settings_menu_t SETTING_MAIN_MENU =
 		SettingsMainMenu5Proc,
 		SettingsMainMenu6Proc,
 		SettingsMainMenu7Proc,
+		SettingsMainMenu8Proc,
 	},
 	{	
 		//page proc func
@@ -437,6 +442,28 @@ const settings_menu_t SETTING_MENU_TEMP =
 	{
 		SettingsMenuTemp1Proc,
 		SettingsMenuTemp2Proc,
+	},
+	{	
+		//page proc func
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+		SettingsMenuDumpProc,
+	},	
+};
+
+const settings_menu_t SETTING_TIME_FORMAT = 
+{
+	SETTINGS_MENU_TIME_FORMAT,
+	0,
+	2,
+	{
+		STR_ID_12H,
+		STR_ID_24H,
+	},
+	{
+		SettingsMenuTimeFormat1Proc,
+		SettingsMenuTimeFormat2Proc,
 	},
 	{	
 		//page proc func
@@ -754,7 +781,7 @@ void SettingsMainMenu4Proc(void)
 {
 	main_menu_index_bk = settings_menu.index;
 	
-	memcpy(&settings_menu, &SETTING_MENU_DEVICE, sizeof(settings_menu_t));
+	memcpy(&settings_menu, &SETTING_TIME_FORMAT, sizeof(settings_menu_t));
 
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
@@ -766,7 +793,7 @@ void SettingsMainMenu5Proc(void)
 {
 	main_menu_index_bk = settings_menu.index;
 	
-	memcpy(&settings_menu, &SETTING_MENU_CAREMATE_QR, sizeof(settings_menu_t));
+	memcpy(&settings_menu, &SETTING_MENU_DEVICE, sizeof(settings_menu_t));
 
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
@@ -778,7 +805,7 @@ void SettingsMainMenu6Proc(void)
 {
 	main_menu_index_bk = settings_menu.index;
 	
-	memcpy(&settings_menu, &SETTING_MENU_FACTORY_RESET, sizeof(settings_menu_t));
+	memcpy(&settings_menu, &SETTING_MENU_CAREMATE_QR, sizeof(settings_menu_t));
 
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
@@ -787,6 +814,18 @@ void SettingsMainMenu6Proc(void)
 }
 
 void SettingsMainMenu7Proc(void)
+{
+	main_menu_index_bk = settings_menu.index;
+	
+	memcpy(&settings_menu, &SETTING_MENU_FACTORY_RESET, sizeof(settings_menu_t));
+
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMainMenu8Proc(void)
 {
 #if defined(CONFIG_FOTA_DOWNLOAD)
 	extern uint8_t g_new_fw_ver[64];
@@ -971,6 +1010,40 @@ void SettingsMenuTemp2Proc(void)
 	if(global_settings.temp_unit != TEMP_UINT_F)
 	{
 		global_settings.temp_unit = TEMP_UINT_F;
+		need_save_settings = true;
+	}
+
+	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
+	settings_menu.index = main_menu_index_bk;
+	
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMenuTimeFormat1Proc(void)
+{
+	if(global_settings.time_format != TIME_FORMAT_12)
+	{
+		global_settings.time_format = TIME_FORMAT_12;
+		need_save_settings = true;
+	}
+
+	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
+	settings_menu.index = main_menu_index_bk;
+	
+	if(screen_id == SCREEN_ID_SETTINGS)
+	{
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+
+void SettingsMenuTimeFormat2Proc(void)
+{
+	if(global_settings.time_format != TIME_FORMAT_24)
+	{
+		global_settings.time_format = TIME_FORMAT_24;
 		need_save_settings = true;
 	}
 

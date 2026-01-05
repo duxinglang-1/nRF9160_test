@@ -526,7 +526,7 @@ void IdleShowSystemTime(void)
 	dis_hour = date_time.hour;
 	if((global_settings.time_format == TIME_FORMAT_12) && (date_time.hour > 12))
 		dis_hour = date_time.hour-12;
-	
+
 	LCD_ShowImg_From_Flash(IDLE_TIME_X+0*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[dis_hour/10]);
 	LCD_ShowImg_From_Flash(IDLE_TIME_X+1*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[dis_hour%10]);
 	
@@ -537,6 +537,15 @@ void IdleShowSystemTime(void)
 	
 	LCD_ShowImg_From_Flash(IDLE_TIME_X+2*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y, img_num[date_time.minute/10]);
 	LCD_ShowImg_From_Flash(IDLE_TIME_X+3*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y, img_num[date_time.minute%10]);
+	if(global_settings.time_format == TIME_FORMAT_12)
+	{
+		LCD_SetFontSize(FONT_SIZE_28);
+		
+		if(date_time.hour >= 12)
+			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+32, STR_ID_PM);
+		else
+			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+32, STR_ID_AM);
+	}
 }
 
 void IdleShowSystemWeek(void)

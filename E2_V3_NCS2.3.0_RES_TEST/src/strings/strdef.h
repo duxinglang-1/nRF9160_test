@@ -1,7 +1,7 @@
 /****************************************Copyright (c)************************************************
 ** File name:			    strdef.h
 ** Created by:				Biao.X
-** Created date:			2026-01-04 08:59:17
+** Created date:			2026-01-05 13:59:34
 ******************************************************************************************************/
 typedef enum
 {
@@ -58,6 +58,8 @@ typedef enum
 	STR_ID_FAHRENHEIT,
 	STR_ID_12H,
 	STR_ID_24H,
+	STR_ID_AM,
+	STR_ID_PM,
 	STR_ID_LEVEL_1,
 	STR_ID_LEVEL_2,
 	STR_ID_LEVEL_3,

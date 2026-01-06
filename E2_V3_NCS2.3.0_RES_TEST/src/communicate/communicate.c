@@ -1325,6 +1325,9 @@ void SendSettingsData(void)
   #endif
 #endif	
 	}
+
+	sprintf(tmpbuf, ",%d", global_settings.time_format);
+	strcat(reply, tmpbuf);
 	
 	NBSendSettingsData(reply, strlen(reply));
 }

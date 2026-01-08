@@ -1475,26 +1475,35 @@ void SettingsUpdateStatus(void)
 					case 2:
 					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
+						{
+							LCD_MeasureUniStr(STR_ID_LEFT_ARROW, &w, &h);
+							LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+													SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+													STR_ID_LEFT_ARROW);
+						}
+						else
+					#endif
+						{
+							LCD_MeasureUniStr(STR_ID_RIGHT_ARROW, &w, &h);
+							LCD_ShowUniStr(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
+												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+												STR_ID_RIGHT_ARROW);
+						}
+						break;
+					}
+					break;
+				case 3:
+					switch(i)
+					{
+					case 0:
+					#ifdef LANGUAGE_AR_ENABLE	
+						if(g_language_r2l)
 							LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_TEMP_UNIT_X-SETTINGS_MENU_TEMP_UNIT_W, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
 						else
 					#endif		
 							LCD_ShowImg_From_Flash(SETTINGS_MENU_TEMP_UNIT_X, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
 						break;
-					}
-					break;
-				case 3:
-					if(i == 2)
-					{
-					#ifdef LANGUAGE_AR_ENABLE
-						if(g_language_r2l)
-							LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_QR_ICON_X-SETTINGS_MENU_QR_ICON_W, SETTINGS_MENU_QR_ICON_Y, IMG_SET_QR_ICON_ADDR);
-						else
-					#endif		
-							LCD_ShowImg_From_Flash(SETTINGS_MENU_QR_ICON_X, SETTINGS_MENU_QR_ICON_Y, IMG_SET_QR_ICON_ADDR);
-					}
-					else
-					{
-						
+					case 1:
 					#ifdef LANGUAGE_AR_ENABLE	
 						if(g_language_r2l)
 						{
@@ -1511,6 +1520,15 @@ void SettingsUpdateStatus(void)
 												SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
 												STR_ID_RIGHT_ARROW);
 						}
+						break;
+					case 2:
+					#ifdef LANGUAGE_AR_ENABLE
+						if(g_language_r2l)
+							LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_QR_ICON_X-SETTINGS_MENU_QR_ICON_W, SETTINGS_MENU_QR_ICON_Y, IMG_SET_QR_ICON_ADDR);
+						else
+					#endif		
+							LCD_ShowImg_From_Flash(SETTINGS_MENU_QR_ICON_X, SETTINGS_MENU_QR_ICON_Y, IMG_SET_QR_ICON_ADDR);
+						break;
 					}
 					break;
 				case 6:
@@ -2171,7 +2189,6 @@ void SettingsShowStatus(void)
 {
 	uint16_t i,x,y,w,h;
 	uint16_t level_str[4] = {STR_ID_LEVEL_1, STR_ID_LEVEL_2, STR_ID_LEVEL_3, STR_ID_LEVEL_4};
-	uint32_t img_addr[2] = {IMG_SET_TEMP_UNIT_C_ICON_ADDR, IMG_SET_TEMP_UNIT_F_ICON_ADDR};
 	uint16_t bg_clor = 0x2124;
 	uint16_t green_clor = 0x07e0;
 	
@@ -2230,10 +2247,20 @@ void SettingsShowStatus(void)
 		case 2:
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
-				LCD_ShowImg_From_Flash(LCD_WIDTH-SETTINGS_MENU_TEMP_UNIT_X-SETTINGS_MENU_TEMP_UNIT_W, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
+			{
+				LCD_MeasureUniStr(STR_ID_LEFT_ARROW, &w, &h);
+				LCD_SmartShowUniStr(LCD_WIDTH-(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w),
+										SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+										STR_ID_LEFT_ARROW);
+			}
 			else
-		#endif		
-				LCD_ShowImg_From_Flash(SETTINGS_MENU_TEMP_UNIT_X, SETTINGS_MENU_TEMP_UNIT_Y, img_addr[global_settings.temp_unit]);
+		#endif
+			{
+				LCD_MeasureUniStr(STR_ID_RIGHT_ARROW, &w, &h);
+				LCD_ShowUniStr(SETTINGS_MENU_BG_X+SETTINGS_MENU_BG_W-SETTINGS_MENU_STR_OFFSET_X-w,
+									SETTINGS_MENU_BG_Y+i*(SETTINGS_MENU_BG_H+SETTINGS_MENU_BG_OFFSET_Y)+(SETTINGS_MENU_BG_H-h)/2,
+									STR_ID_RIGHT_ARROW);
+			}
 			break;
 		}
 	#endif	

@@ -251,8 +251,8 @@ const settings_menu_t SETTING_MAIN_MENU =
 	{
 		STR_ID_LANGUAGES,
 		STR_ID_SCR_BRIGHT,
-		STR_ID_TEMP_DSP,
 		STR_ID_TIMR_FORMAT,
+		STR_ID_TEMP_DSP,
 		STR_ID_DEVICE_INFO,
 		STR_ID_CAREMATE_QR,
 		STR_ID_FACTORY_DEFAULT,
@@ -769,7 +769,7 @@ void SettingsMainMenu3Proc(void)
 {
 	main_menu_index_bk = settings_menu.index;
 	
-	memcpy(&settings_menu, &SETTING_MENU_TEMP, sizeof(settings_menu_t));
+	memcpy(&settings_menu, &SETTING_TIME_FORMAT, sizeof(settings_menu_t));
 
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{
@@ -781,7 +781,7 @@ void SettingsMainMenu4Proc(void)
 {
 	main_menu_index_bk = settings_menu.index;
 	
-	memcpy(&settings_menu, &SETTING_TIME_FORMAT, sizeof(settings_menu_t));
+	memcpy(&settings_menu, &SETTING_MENU_TEMP, sizeof(settings_menu_t));
 
 	if(screen_id == SCREEN_ID_SETTINGS)
 	{

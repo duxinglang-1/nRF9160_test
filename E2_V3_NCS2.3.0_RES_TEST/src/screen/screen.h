@@ -543,7 +543,7 @@ extern "C" {
 #define SPO2_BG_Y					80
 #define SPO2_UP_ARRAW_W				14
 #define SPO2_UP_ARRAW_H				17
-#define SPO2_UP_ARRAW_X				47
+#define SPO2_UP_ARRAW_X				43
 #define SPO2_UP_ARRAW_Y				188
 #define SPO2_UP_NUM_W				14
 #define SPO2_UP_NUM_H				24
@@ -551,7 +551,7 @@ extern "C" {
 #define SPO2_UP_PERC_H				24
 #define SPO2_UP_STR_W				65
 #define SPO2_UP_STR_H				24
-#define SPO2_UP_STR_X				64
+#define SPO2_UP_STR_X				60
 #define SPO2_UP_STR_Y				184
 #define SPO2_DOWN_ARRAW_W			14
 #define SPO2_DOWN_ARRAW_H			17

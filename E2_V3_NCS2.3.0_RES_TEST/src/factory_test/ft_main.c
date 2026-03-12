@@ -524,9 +524,6 @@ static void FactoryTestMainShow(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestNextExit);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestPreExit);	
 #endif		
-
-	//xb add 2023-03-15 Turn off the modem after entering the ft menu to prevent jamming.
-	FTPreReadyNet();
 }
 
 static void FactoryTestMainProcess(void)

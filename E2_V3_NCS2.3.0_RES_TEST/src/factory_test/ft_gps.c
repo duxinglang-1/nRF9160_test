@@ -17,6 +17,7 @@
 #include "settings.h"
 #include "key.h"
 #include "gps.h"
+#include "logger.h"
 #include "ft_main.h"
 #include "ft_gps.h"
 				
@@ -126,6 +127,7 @@ static void FTMenuGPSStopTest(void)
 static void FTMenuGPSStartTest(void)
 {
 	ft_gps_checking = true;
+	SetModemTurnOff();
 	FTMenuGPSInit();
 	SetModemTurnOn();
 	FTStartGPS();
@@ -303,7 +305,7 @@ void FTGPSStatusUpdate(bool flag)
 		if(flag)
 		{
 			count++;
-			if(count > 3)
+			if(count > 1)
 			{
 				count = 0;
 				ft_gps_check_ok = true;

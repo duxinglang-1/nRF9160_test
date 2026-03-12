@@ -187,7 +187,6 @@ void FallPlayAlarmEn(void)
 
 void AudioInterruptHandle(void)
 {
-	LOGD("begin");
 	audio_trige_flag = true;
 }
 

@@ -263,7 +263,7 @@ void FTWifiStatusUpdate(uint8_t node_count)
 		if(node_count > 0)
 		{
 			count++;
-			if(count > 3)
+			if(count > 1)
 			{
 				count = 0;
 				ft_wifi_check_ok = true;

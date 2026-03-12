@@ -575,7 +575,12 @@ static void FactoryTestNextExit(void)
 	}
 	
 	SetModemTurnOn();
+
+#ifdef CONFIG_QRCODE_SUPPORT	
 	EnterFTSmtResultsScreen();
+#else
+	EnterFTAgingTest();
+#endif
 }
 
 void EnterFactoryTestScreen(void)

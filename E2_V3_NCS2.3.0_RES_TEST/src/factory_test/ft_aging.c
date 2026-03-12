@@ -163,7 +163,15 @@ static void AgingStartTest(void)
 static void AgingTestPreExit(void)
 {
 	AgingStopTest();
+
+#ifdef CONFIG_QRCODE_SUPPORT
 	EnterFTAssemResultsScreen();
+#else
+	if(!FactorySmtTestFinished())
+		EnterFactorySmtTest();
+	else
+		EnterFactoryAssemTest();
+#endif
 }
 
 static void AgingTestNextExit(void)

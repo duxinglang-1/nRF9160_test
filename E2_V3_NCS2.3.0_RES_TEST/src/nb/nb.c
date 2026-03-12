@@ -936,13 +936,6 @@ void FTStartNet(void)
 {
 	test_nb_on = true;
 }
-
-void FTPreReadyNet(void)
-{
-	struct k_work_sync work_sync;
-
-	//SetModemTurnOff();
-}
 #endif
 
 void NBGetNetMode(uint8_t *at_mode_set)

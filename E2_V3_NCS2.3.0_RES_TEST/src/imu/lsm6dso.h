@@ -64,6 +64,7 @@ extern sport_record_t last_sport;
 
 extern void IMU_init(struct k_work_q *work_q);
 extern void IMUMsgProcess(void);
+extern void imu_sensor_off(void);
 
 /*fall detection*/
 extern bool int2_event; //trigger of fall-detection

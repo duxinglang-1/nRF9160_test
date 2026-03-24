@@ -573,6 +573,11 @@ static void FactoryTestNextExit(void)
 	
 	SetModemTurnOn();
 
+#ifdef CONFIG_IMU_SUPPORT
+	// Arvin_add_2026.03.12
+	imu_sensor_init();
+#endif
+
 #ifdef CONFIG_QRCODE_SUPPORT	
 	EnterFTSmtResultsScreen();
 #else
@@ -596,6 +601,9 @@ void EnterFactoryTestScreen(void)
 #ifdef CONFIG_WIFI_SUPPORT
 	if(wifi_is_working())
 		MenuStopWifi();
+#endif
+#ifdef CONFIG_IMU_SUPPORT
+	imu_sensor_off();//Arvin add 2026-03-12
 #endif
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);

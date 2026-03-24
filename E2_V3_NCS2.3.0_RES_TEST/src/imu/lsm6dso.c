@@ -71,14 +71,6 @@ bool RUN_FD_FLAG = false;
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 lsm6dso_all_sources_t all_source;
 
-/*
-// Ì§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿?
-const uint8_t lsm6so_prg_wrist_tilt[] = {
-  0x52, 0x00, 0x14, 0x00, 0x0D, 0x00, 0x00, 0x00, 0x80, 0x00, 
-  0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
-};
-*/
-
 /*fall + tap trigger FSM*/
 const uint8_t falltrigger[] = {
       0x91, 0x00, 0x18, 0x00, 0x0E, 0x00, 0xCD, 0x3C,
@@ -413,6 +405,10 @@ uint8_t init_gpio(void)
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 void imu_sensor_init(void)
 {
+	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
+	if(whoamI != LSM6DSO_ID)
+		return;
+
 	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
 	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
@@ -438,12 +434,11 @@ void imu_sensor_init(void)
 
 	//Activity detection
     //Set duration for Activity detection to 9.62 ms (= 1 * 1 / ODR_XL)
-    lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01); // ï¿½î¶¯ï¿½ï¿½ï¿½Ñ¼ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿?
-    //Set duration for Inactivity detection to 4.92 s (= 1 * 512 / ODR_XL) ï¿½ï¿½ï¿½Ã»î¶¯Ä£Ê½ï¿½Â½ï¿½ï¿½ï¿½Ë¯ï¿½ï¿½Ä£Ê½Ö®Ç°ï¿½Ä³ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
-    lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01); // ï¿½ï¿½ï¿½è¶¨ï¿½Ä»î¶¯Ë¯ï¿½ß³ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ð½ï¿½Ò»ï¿½ï¿½ï¿½Ä»î¶¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½Í¹ï¿½ï¿½ï¿½Ä£Ê?
+    lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
+    //Set duration for Inactivity detection to 4.92 s (= 1 * 512 / ODR_XL)
+    lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
     //Set Activity/Inactivity threshold to 31.25 mg (= 1* FS_XL / 2^6)
-    lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01); // ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Öµ,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½âµ½ï¿½Ä¼ï¿½ï¿½Ù¶È»ï¿½ï¿½ï¿½Ù¶ÈµÈ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÓµÍ¹ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½Ñµï¿½ï¿½î¶?Ä£Ê½,
-	//  ï¿½ï¿½ï¿½Ã½Ï¸ßµï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÑµÄ·ï¿½ï¿½Õ£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü»á½µï¿½Í¶Ô½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿?
+    lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01);
     //Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down
     //lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
 
@@ -555,6 +550,71 @@ void imu_sensor_init(void)
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
 }
 #endif
+
+/**
+ * @brief  LSM6DSO½øÈëÐÝÃßÄ£Ê½£¬×îÐ¡»¯µçÁ÷ÏûºÄ
+ */
+void imu_sensor_off(void)
+{
+    //  ½ûÓÃËùÓÐÇ¶ÈëÊ½¹¦ÄÜ£¨±ØÐëÔÚ¹Ø±Õ´«¸ÐÆ÷Ç°£©
+    // ½ûÓÃ¼Æ²½Æ÷
+    lsm6dso_pedo_md_t pedo_mode = LSM6DSO_PEDO_DISABLE;
+    lsm6dso_pedo_sens_set(&imu_dev_ctx, pedo_mode);
+    
+    // ½ûÓÃÇãÐ±¼ì²â
+    uint8_t tilt_enable = 0;
+    lsm6dso_tilt_sens_set(&imu_dev_ctx, tilt_enable);
+    
+    // ½ûÓÃFSM£¨ÓÐÏÞ×´Ì¬»ú£©
+    lsm6dso_emb_fsm_enable_t fsm_enable = {0};
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_DISABLE;
+    lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);
+    
+    //  ½ûÓÃËùÓÐÖÐ¶Ï
+    
+    // ½ûÓÃINT1ËùÓÐÖÐ¶Ï
+    lsm6dso_pin_int1_route_t int1_route = {0};
+    lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+    
+    // ½ûÓÃINT2ËùÓÐÖÐ¶Ï
+    lsm6dso_pin_int2_route_t int2_route = {0};
+    lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
+    
+    // ½ûÓÃÇ¶ÈëÊ½¹¦ÄÜÖÐ¶Ï
+	lsm6dso_pin_int1_route_t int1_config = {0};
+    lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_config);
+    
+    lsm6dso_pin_int2_route_t int2_config = {0};
+    lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_config);
+    
+    // ¹Ø±ÕFIFO
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_NOT_BATCHED);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_NOT_BATCHED);
+
+	lsm6dso_fifo_mode_t fifo_mode = LSM6DSO_BYPASS_MODE;
+    lsm6dso_fifo_mode_set(&imu_dev_ctx, fifo_mode);
+    
+    // ¹Ø¼ü£º¹Ø±Õ´«¸ÐÆ÷£¨×î´ó³Ì¶ÈÊ¡µç£©**
+    
+    // ¹Ø±Õ¼ÓËÙ¶È¼Æ£¨ÉèÖÃODRÎªOFF£©
+    lsm6dso_odr_xl_t xl_odr = LSM6DSO_XL_ODR_OFF;
+    lsm6dso_xl_data_rate_set(&imu_dev_ctx, xl_odr);
+    
+    // ¹Ø±ÕÍÓÂÝÒÇ£¨ÉèÖÃODRÎªOFF£©
+    lsm6dso_odr_g_t gy_odr = LSM6DSO_GY_ODR_OFF;
+    lsm6dso_gy_data_rate_set(&imu_dev_ctx, gy_odr);
+    
+    // ÆôÓÃÍÓÂÝÒÇË¯ÃßÄ£Ê½
+    uint8_t gy_sleep_mode = PROPERTY_ENABLE;
+    lsm6dso_gy_sleep_mode_set(&imu_dev_ctx, gy_sleep_mode);
+    
+    // ÉèÖÃ³¬µÍ¹¦ºÄÄ£Ê½
+    lsm6dso_xl_hm_mode_t xl_power_mode = LSM6DSO_ULTRA_LOW_POWER_MD;
+    lsm6dso_xl_power_mode_set(&imu_dev_ctx, xl_power_mode);
+    
+    lsm6dso_g_hm_mode_t gy_power_mode = LSM6DSO_GY_HIGH_PERFORMANCE;
+    lsm6dso_gy_power_mode_set(&imu_dev_ctx, gy_power_mode);
+}
 
 static bool sensor_init(void)
 {

@@ -107,22 +107,22 @@ static void FTMenuPMUUpdate(void)
 								{0x0046,0x0041,0x0049,0x004C,0x0000},//FAIL
 							  };
 
-	ft_menu_checked[ft_main_menu_index] = false;
-	switch(g_ft_status)
-	{
-	case FT_STATUS_SMT:
-		ft_smt_results.pmu_ret = 2;
-		SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
-		break;
-		
-	case FT_STATUS_ASSEM:
-		ft_assem_results.pmu_ret = 2;
-		SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
-		break;
-	}
-
 	if(!ft_pmu_checked)
 	{
+		ft_menu_checked[ft_main_menu_index] = false;
+		switch(g_ft_status)
+		{
+		case FT_STATUS_SMT:
+			ft_smt_results.pmu_ret = 2;
+			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
+			break;
+			
+		case FT_STATUS_ASSEM:
+			ft_assem_results.pmu_ret = 2;
+			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
+			break;
+		}
+	
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		//soc
@@ -175,7 +175,7 @@ static void FTMenuPMUUpdate(void)
 					mmi_ucs2cat((uint8_t*)unibuf, (uint8_t*)charg_unlink_str);
 				LCD_MeasureUniString(unibuf, &w, &h);
 				LCD_ShowUniString(FT_PMU_MENU_STR_X+(FT_PMU_MENU_STR_W-w)/2, FT_PMU_MENU_STR_Y+(FT_PMU_MENU_STR_H-h)/2+1*(FT_PMU_MENU_STR_H+FT_PMU_MENU_STR_OFFSET_Y), unibuf);
-				}
+			}
 		}
 
 		ft_pmu_change_flag = 0;

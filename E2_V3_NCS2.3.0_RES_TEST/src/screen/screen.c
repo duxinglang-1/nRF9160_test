@@ -1157,7 +1157,7 @@ void IdleScreenProcess(void)
 		IdleShowHrData();
 		IdleShowSPO2Data();
 	#endif
-	#if 0//defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		IdleShowSportData();
 	#endif
 	#ifdef CONFIG_TEMP_SUPPORT
@@ -1203,7 +1203,7 @@ void IdleScreenProcess(void)
 			IdleShowBleStatus();
 		}
 	#endif
-	#if 0//defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		if(scr_msg[SCREEN_ID_IDLE].para&SCREEN_EVENT_UPDATE_SPORT)
 		{
 			scr_msg[SCREEN_ID_IDLE].para &= (~SCREEN_EVENT_UPDATE_SPORT);
@@ -6110,9 +6110,9 @@ void SleepScreenProcess(void)
 			scr_msg[SCREEN_ID_SLEEP].para &= (~SCREEN_EVENT_UPDATE_BAT);
 			IdleUpdateBatSoc();
 		}
-		if(scr_msg[SCREEN_ID_SLEEP].para&SCREEN_EVENT_UPDATE_SPORT)
+		if(scr_msg[SCREEN_ID_SLEEP].para&SCREEN_EVENT_UPDATE_SLEEP)
 		{
-			scr_msg[SCREEN_ID_SLEEP].para &= (~SCREEN_EVENT_UPDATE_SPORT);
+			scr_msg[SCREEN_ID_SLEEP].para &= (~SCREEN_EVENT_UPDATE_SLEEP);
 			SleepUpdateStatus();
 		}
 		break;
@@ -6344,7 +6344,7 @@ void StepsScreenProcess(void)
 		}
 		break;
 	}
-	
+
 	scr_msg[SCREEN_ID_STEPS].act = SCREEN_ACTION_NO;
 }
 

@@ -103,7 +103,10 @@ void FTFlashStatusUpdate(void)
 	uint8_t ui_version[16],font_version[16],str_version[16],ppg_version[16];
 	
 	flash_id = SpiFlash_ReadID();
-	if(flash_id == W25Q64_ID)
+	if((flash_id == W25Q64DW_ID) 
+		|| (flash_id == W25Q128JW_ID)
+		|| (flash_id == MX25R6435F_ID)
+		)
 	{
 		SPIFlash_Read_DataVer(&ui_version, &font_version, &str_version, &ppg_version);
 		if((ui_version[0] != 0xff && ui_version[0] != 0x00)

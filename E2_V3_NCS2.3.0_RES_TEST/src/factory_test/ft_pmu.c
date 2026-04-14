@@ -109,20 +109,6 @@ static void FTMenuPMUUpdate(void)
 
 	if(!ft_pmu_checked)
 	{
-		ft_menu_checked[ft_main_menu_index] = false;
-		switch(g_ft_status)
-		{
-		case FT_STATUS_SMT:
-			ft_smt_results.pmu_ret = 2;
-			SaveFactoryTestResults(FT_STATUS_SMT, &ft_smt_results);
-			break;
-			
-		case FT_STATUS_ASSEM:
-			ft_assem_results.pmu_ret = 2;
-			SaveFactoryTestResults(FT_STATUS_ASSEM, &ft_assem_results);
-			break;
-		}
-	
 		LCD_SetFontSize(FONT_SIZE_28);
 
 		//soc

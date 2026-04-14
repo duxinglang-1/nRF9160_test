@@ -277,7 +277,7 @@ void FTGPSStatusUpdate(bool flag)
 {
 	static uint8_t count = 0;
 
-	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_GPS))
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_GPS)&&ft_gps_checking)
 	{
 		ft_gps_fixed = flag;
 

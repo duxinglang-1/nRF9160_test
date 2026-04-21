@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include "strdef.h"
+#include "imgdef.h"
 
 #define FW_FOR_CN	//ÖÐÎÄ°æ±¾
 

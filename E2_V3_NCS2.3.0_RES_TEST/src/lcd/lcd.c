@@ -279,16 +279,16 @@ void LCD_Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r)
 #ifdef FONTMAKER_UNICODE_FONT
 uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8_t mode)
 {
+	uint8_t file_id[4],fixed_type;
 	uint16_t temp,t1,t;
 	uint16_t y0=y,x0=x,w,h;
 	uint8_t cbyte=0;		//行扫描，每个字符每一行占用的字节数
 	uint16_t csize=0;		//得到字体一个字符对应点阵集所占的字节数	
-	uint8_t sect=0;
 	uint8_t databuf[2*1024] = {0};
-	uint8_t fontbuf[1024] = {0};
-	uint8_t headbuf[FONT_UNI_HEAD_LEN] = {0};
-	uint8_t secbuf[8*FONT_UNI_SECT_LEN] = {0};
-	uint32_t i=0,index_addr,font_addr,data_addr=0;
+	uint8_t *p_font,fontbuf[1024] = {0};
+	uint8_t n_sect;
+	uint32_t i=0,index_addr,font_addr;
+	sbn_glyph_t sbn_glyph = {0};
 
 	switch(system_font)
 	{
@@ -326,20 +326,34 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 			return; 						//没有的字库
 	}
 
-	//read head data
-	SpiFlash_Read((uint8_t*)&uni_infor.head, font_addr, FONT_UNI_HEAD_LEN);
-	if((uni_infor.head.id[0] != FONT_UNI_HEAD_FLAG_0)
-		||(uni_infor.head.id[1] != FONT_UNI_HEAD_FLAG_1)
-		||(uni_infor.head.id[2] != FONT_UNI_HEAD_FLAG_2))
+	//Read ID
+	SpiFlash_Read(file_id, font_addr, sizeof(file_id));
+	if((file_id[0] != FONT_UNI_HEAD_FLAG_0)
+		||(file_id[1] != FONT_UNI_HEAD_FLAG_1)
+		||(file_id[2] != FONT_UNI_HEAD_FLAG_2))
 	{
 		return;
 	}
 
-	//read sect data
-	SpiFlash_Read((uint8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_LEN, uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
+	fixed_type = file_id[3]>>6;
+	//read head data and sect data
+	switch(fixed_type)
+	{
+	case FONT_HEIGHT_FIXED:
+		SpiFlash_Read((uint8_t*)&uni_infor.head.fixed, font_addr, FONT_UNI_HEAD_FIXED_LEN);
+		SpiFlash_Read((uint8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_FIXED_LEN, uni_infor.head.fixed.sect_num*FONT_UNI_SECT_LEN);
+		n_sect = uni_infor.head.fixed.sect_num;
+		break;
+	case FONT_NOT_FIXED:
+	case FONT_NOT_FIXED_EXT:
+		SpiFlash_Read((uint8_t*)&uni_infor.head.not_fixed, font_addr, FONT_UNI_HEAD_NOT_FIXED_LEN);
+		SpiFlash_Read((uint8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_NOT_FIXED_LEN, uni_infor.head.not_fixed.sect_num*FONT_UNI_SECT_LEN);
+		n_sect = uni_infor.head.not_fixed.sect_num;
+		break;
+	}
 	
 	//read index data
-	for(i=0;i<uni_infor.head.sect_num;i++)
+	for(i=0;i<n_sect;i++)
 	{
 		if((num>=uni_infor.sect[i].first_char)&&((num<=uni_infor.sect[i].last_char)))
 		{
@@ -349,39 +363,71 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 	}
 	
 	SpiFlash_Read(fontbuf, font_addr+index_addr, 4);
-	uni_infor.index.font_addr = 0x03ffffff&(fontbuf[0]+0x100*fontbuf[1]+0x10000*fontbuf[2]+0x1000000*fontbuf[3]);
-	uni_infor.index.width = fontbuf[3]>>2;
-	cbyte = uni_infor.index.width;
-	csize = ((cbyte+7)/8)*system_font;
-	//read font data
-	if(csize > sizeof(fontbuf))
-		csize = sizeof(fontbuf);
-	SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize);
+	switch(fixed_type)
+	{
+	case FONT_HEIGHT_FIXED:
+		uni_infor.index.font_addr = 0x03ffffff&(fontbuf[0]+0x100*fontbuf[1]+0x10000*fontbuf[2]+0x1000000*fontbuf[3]);
+		uni_infor.index.width = fontbuf[3]>>2;
+		cbyte = uni_infor.index.width;
+		csize = ((cbyte+7)/8)*system_font;
+		//read font data
+		if(csize > sizeof(fontbuf))
+			csize = sizeof(fontbuf);
+		SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize);
+		
+		p_font = fontbuf;
+		w = cbyte;
+		h = system_font;
+		break;
+		
+	case FONT_NOT_FIXED:
+	case FONT_NOT_FIXED_EXT:
+		uni_infor.index.font_addr = fontbuf[0]+0x100*fontbuf[1]+0x10000*fontbuf[2]+0x1000000*fontbuf[3];
+		cbyte = uni_infor.head.not_fixed.bbx.width;
+		csize = ((cbyte+7)/8)*uni_infor.head.not_fixed.bbx.height;
+		SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize+sizeof(sbn_glyph_t));
+		memcpy((sbn_glyph_t*)&sbn_glyph, fontbuf, sizeof(sbn_glyph_t));
+		w = sbn_glyph.bbx.width;
+		h = sbn_glyph.bbx.height;
+		cbyte = w;
+		csize = sbn_glyph.bytes;
 
-	w = cbyte;
-	h = system_font;
+		p_font = &fontbuf[7];
+		if(fixed_type == FONT_NOT_FIXED)
+		{
+			x = x + sbn_glyph.bbx.x_offset;
+			y = y + (uni_infor.head.not_fixed.bbx.height - sbn_glyph.bbx.height) + (uni_infor.head.not_fixed.bbx.y_offset - sbn_glyph.bbx.y_offset);
+		}
+		else if(fixed_type == FONT_NOT_FIXED_EXT)
+		{
+			x = x + sbn_glyph.bbx.x_offset;
+			y = y + sbn_glyph.bbx.y_offset;
+		}
+
+		x0 = x;
+		break;
+	}
+
 	if((x+w)>=LCD_WIDTH)
 		w = LCD_WIDTH - x;
 	if((y+h)>=LCD_HEIGHT)
 		h = LCD_HEIGHT - y;
-	//BlockWrite(x0,y0,w,h);	//设置刷新位置
+	BlockWrite(x,y,w,h);
 
-	for(t=0;t<csize;t++)
+	for(i=0,t=0;t<csize;t++)
 	{		
-		uint8_t point_c[2] = {(POINT_COLOR>>8)&0xff, POINT_COLOR&0xff};
-		uint8_t back_c[2] = {(BACK_COLOR>>8)&0xff, BACK_COLOR&0xff};
-		
-		temp = fontbuf[t];
+		temp = p_font[t];
 		for(t1=0;t1<8;t1++)
 		{
-		#ifdef LCD_TYPE_SPI
 			if(temp&0x80)
 			{
-				memcpy(&databuf[2*i], point_c, 2);
+				databuf[2*i] = POINT_COLOR>>8;
+				databuf[2*i+1] = POINT_COLOR;
 			}
 			else if(mode==0)
 			{
-				memcpy(&databuf[2*i], back_c, 2);
+				databuf[2*i] = BACK_COLOR>>8;
+				databuf[2*i+1] = BACK_COLOR;
 			}
 			
 			temp<<=1;
@@ -389,7 +435,6 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 			x++;
 			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
 			{
-				BlockWrite(x0,y,w,1);	//设置刷新位置
 				DispData(2*i, databuf);
 				i=0;
 				
@@ -401,7 +446,6 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 			}
 			if((x-x0)==cbyte)
 			{
-				BlockWrite(x0,y,w,1);	//设置刷新位置
 				DispData(2*i, databuf);
 				i=0;
 				
@@ -410,28 +454,18 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 				if(y>=LCD_HEIGHT)return; //超区域了
 				break;
 			}
-		#else
-			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
-			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
-			temp<<=1;
-			x++;
-			if(x>=LCD_WIDTH)				//超出行区域，直接显示下一行
-			{
-				x=x0;
-				y++;
-				if(y>=LCD_HEIGHT)return;	//超区域了
-				t=t+(cbyte-(t%cbyte))-1;	//获取下一行对应的字节，注意for循环会增加1，所以这里先提前减去1
-				break;				
-			}
-			if((x-x0)==cbyte)
-			{
-				x=x0;
-				y++;
-				if(y>=LCD_HEIGHT)return;	//超区域了
-				break;
-			}
-		#endif
 		}
+	}
+
+	switch(fixed_type)
+	{
+	case FONT_HEIGHT_FIXED:
+		cbyte = uni_infor.index.width;
+		break;
+	case FONT_NOT_FIXED:
+	case FONT_NOT_FIXED_EXT:
+		cbyte = sbn_glyph.dwidth;
+		break;
 	}
 
 	return cbyte;
@@ -1121,6 +1155,13 @@ void LCD_get_pic_size_from_flash(uint32_t pic_addr, uint16_t *width, uint16_t *h
 	uint8_t databuf[6] = {0};
 
 	SpiFlash_Read(databuf, pic_addr, 6);
+	if(databuf[2] == 0xff && databuf[3] == 0xff && databuf[4] == 0xff && databuf[5] == 0xff)
+	{
+		*width = 0;
+		*height = 0;
+		return;
+	}
+	
 	*width = 256*databuf[2]+databuf[3]; 			//获取图片宽度
 	*height = 256*databuf[4]+databuf[5];			//获取图片高度
 }
@@ -1137,7 +1178,9 @@ void LCD_dis_pic_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr)
 	uint32_t datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	SpiFlash_Read(databuf, pic_addr, 8);
-
+	if(databuf[2] == 0xff && databuf[3] == 0xff && databuf[4] == 0xff && databuf[5] == 0xff)
+		return;
+	
 	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
 	h=256*databuf[4]+databuf[5];			//获取图片高度
 
@@ -1209,6 +1252,8 @@ void LCD_dis_pic_trans_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, uin
 	uint32_t datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	SpiFlash_Read(databuf, pic_addr, 8);
+	if(databuf[2] == 0xff && databuf[3] == 0xff && databuf[4] == 0xff && databuf[5] == 0xff)
+		return;
 
 	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
 	h=256*databuf[4]+databuf[5];			//获取图片高度
@@ -1282,6 +1327,8 @@ void LCD_dis_pic_rotate_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, un
 	uint32_t offset,datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	SpiFlash_Read(databuf, pic_addr, 8);
+	if(databuf[2] == 0xff && databuf[3] == 0xff && databuf[4] == 0xff && databuf[5] == 0xff)
+		return;
 
 	w=256*databuf[2]+databuf[3]; 			//获取图片宽度
 	h=256*databuf[4]+databuf[5];			//获取图片高度
@@ -1514,6 +1561,8 @@ void LCD_dis_pic_angle_from_flash(uint16_t x, uint16_t y, uint32_t pic_addr, uns
 	uint32_t datelen,showlen=0,readlen=LCD_DATA_LEN;
 	
 	SpiFlash_Read(databuf, pic_addr, 8);
+	if(databuf[2] == 0xff && databuf[3] == 0xff && databuf[4] == 0xff && databuf[5] == 0xff)
+		return;
 
 	w = 256*databuf[2]+databuf[3]; 			//获取图片宽度
 	h = 256*databuf[4]+databuf[5];			//获取图片高度
@@ -1667,7 +1716,7 @@ void LCD_ShowEn(uint16_t x,uint16_t y,uint8_t num)
  	uint8_t i,databuf[128] = {0};
 	
 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
-
+	y = y/PAGE_H;
 	switch(system_font)
 	{
 	#ifdef FONT_8
@@ -1721,6 +1770,7 @@ void LCD_ShowCn(uint16_t x, uint16_t y, uint16_t num)
 	uint8_t i,databuf[128] = {0};
 	uint16_t index=0;
 
+	y = y/PAGE_H;
 	index=94*((num>>8)-0xa0-1)+1*((num&0x00ff)-0xa0-1);			//offset = (94*(区码-1)+(位码-1))*32
 	switch(system_font)
 	{
@@ -2856,9 +2906,11 @@ bool LCD_FindArabAlphabetFrom(uint16_t alphabet, font_arabic_forms *from)
 //word:unicode字符
 uint8_t LCD_Measure_Uni_Byte(uint16_t word)
 {
+	uint8_t file_id[4],fixed_type,n_sect;
 	uint8_t width,*ptr_font;
 	uint8_t fontbuf[4] = {0};	
 	uint32_t i,index_addr,font_addr=0;
+	sbn_glyph_t sbn_glyph;
 
 #ifdef IMG_FONT_FROM_FLASH
 	switch(system_font)
@@ -2895,23 +2947,36 @@ uint8_t LCD_Measure_Uni_Byte(uint16_t word)
 	#endif
 	
 		default:
-			return;
+			return 0;
 	}
 
 	//read head data
-	SpiFlash_Read((uint8_t*)&uni_infor.head, font_addr, FONT_UNI_HEAD_LEN);
-	if((uni_infor.head.id[0] != FONT_UNI_HEAD_FLAG_0)
-		||(uni_infor.head.id[1] != FONT_UNI_HEAD_FLAG_1)
-		||(uni_infor.head.id[2] != FONT_UNI_HEAD_FLAG_2))
+	SpiFlash_Read(file_id, font_addr, sizeof(file_id));
+	if((file_id[0] != FONT_UNI_HEAD_FLAG_0)
+		||(file_id[1] != FONT_UNI_HEAD_FLAG_1)
+		||(file_id[2] != FONT_UNI_HEAD_FLAG_2))
 	{
-		return;
+		return 0;
 	}
 	
-	//read sect data
-	SpiFlash_Read((uint8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_LEN, uni_infor.head.sect_num*FONT_UNI_SECT_LEN);
+	fixed_type = file_id[3]>>6;
+	switch(fixed_type)
+	{
+	case FONT_HEIGHT_FIXED:
+		SpiFlash_Read((uint8_t*)&uni_infor.head.fixed, font_addr, FONT_UNI_HEAD_FIXED_LEN);
+		SpiFlash_Read((uint8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_FIXED_LEN, uni_infor.head.fixed.sect_num*FONT_UNI_SECT_LEN);
+		n_sect = uni_infor.head.fixed.sect_num;
+		break;
+	case FONT_NOT_FIXED:
+	case FONT_NOT_FIXED_EXT:
+		SpiFlash_Read((uint8_t*)&uni_infor.head.not_fixed, font_addr, FONT_UNI_HEAD_NOT_FIXED_LEN);
+		SpiFlash_Read((uint8_t*)&uni_infor.sect, font_addr+FONT_UNI_HEAD_NOT_FIXED_LEN, uni_infor.head.not_fixed.sect_num*FONT_UNI_SECT_LEN);
+		n_sect = uni_infor.head.not_fixed.sect_num;
+		break;
+	}
 	
 	//read index data
-	for(i=0;i<uni_infor.head.sect_num;i++)
+	for(i=0;i<n_sect;i++)
 	{
 		if((word>=uni_infor.sect[i].first_char)&&((word<=uni_infor.sect[i].last_char)))
 		{
@@ -2921,7 +2986,18 @@ uint8_t LCD_Measure_Uni_Byte(uint16_t word)
 	}
 	
 	SpiFlash_Read(fontbuf, font_addr+index_addr, 4);
-	width = fontbuf[3]>>2;
+	switch(fixed_type)
+	{
+	case FONT_HEIGHT_FIXED:
+		width = fontbuf[3]>>2;
+		break;
+	case FONT_NOT_FIXED:
+	case FONT_NOT_FIXED_EXT:
+		uni_infor.index.font_addr = fontbuf[0]+0x100*fontbuf[1]+0x10000*fontbuf[2]+0x1000000*fontbuf[3];
+		SpiFlash_Read((uint8_t*)&sbn_glyph, font_addr+uni_infor.index.font_addr, sizeof(sbn_glyph_t));
+		width = sbn_glyph.dwidth;
+		break;
+	}
 #else
 	switch(system_font)
 	{
@@ -2950,7 +3026,7 @@ uint8_t LCD_Measure_Uni_Byte(uint16_t word)
 		||(uni_infor.head.id[1] != FONT_UNI_HEAD_FLAG_1)
 		||(uni_infor.head.id[2] != FONT_UNI_HEAD_FLAG_2))
 	{
-		return;
+		return 0;
 	}
 	
 	//read sect data

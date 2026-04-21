@@ -29,13 +29,13 @@
 #endif
 
 #ifdef FONTMAKER_UNICODE_FONT
-#define FONT_UNI_HEAD_FLAG_0	0x55
-#define FONT_UNI_HEAD_FLAG_1	0x46
-#define FONT_UNI_HEAD_FLAG_2	0x4C
-#define FONT_UNI_HEAD_VER		0x11
-#define FONT_UNI_HEAD_LEN		16
-#define FONT_UNI_SECT_LEN		8
-#define FONT_UNI_SECT_NUM_MAX	10
+#define FONT_UNI_HEAD_FLAG_0			0x55
+#define FONT_UNI_HEAD_FLAG_1			0x46
+#define FONT_UNI_HEAD_FLAG_2			0x4C
+#define FONT_UNI_HEAD_FIXED_LEN			16
+#define FONT_UNI_HEAD_NOT_FIXED_LEN		40
+#define FONT_UNI_SECT_LEN				8
+#define FONT_UNI_SECT_NUM_MAX			10
 #endif
 
 typedef enum
@@ -74,7 +74,41 @@ typedef enum
 	FONT_SIZE_MAX
 }SYSTEM_FONT_SIZE;
 
+typedef enum
+{
+	FONT_HEIGHT_FIXED 	= 0b00,
+	FONT_NOT_FIXED 		= 0b10,
+	FONT_NOT_FIXED_EXT 	= 0b11
+}FONT_FIXED_FORMAT;
+
 #ifdef FONTMAKER_UNICODE_FONT
+
+#pragma pack(push, 1)
+
+typedef struct
+{
+	uint8_t width;		//Effective pixel width
+	uint8_t height;		//Effective pixel height
+	int8_t x_offset;	//x is offset from the origin coordinate
+	int8_t y_offset;	//y is offset from the origin coordinate
+}font_bbx_t;
+
+typedef struct
+{
+	uint8_t id[4];			//'U'('S', 'M'), 'F', 'L', X---Unicode(Simple or MBCS) Font Library, X: Version (def: b7 == 1). 
+	uint32_t file_size;		//file size
+	uint32_t head_size;		//file header size
+	uint8_t ScanMode;		//In scanning mode, it is always 0. It can be ignored.
+	uint8_t sect_num;		//Section number
+	uint16_t wCpFlag;		//Codepage flag: bit0~bit13
+	uint32_t bpp;			//Bits per pixel.
+	font_bbx_t bbx;			//Font bounding box.
+	int32_t font_ascent;	//Font ascent.
+	int32_t font_descent;	//Font descent.
+	int32_t glyphs_size;	//character count
+	int32_t glyphs_used;	//valid character count
+}font_uni_head_not_fixed;
+
 typedef struct
 {
 	uint8_t id[4];
@@ -84,13 +118,30 @@ typedef struct
 	uint16_t codepage;
 	uint16_t charnum;
 	uint16_t reserved;
+}font_uni_head_fixed;
+
+typedef struct
+{
+	font_bbx_t bbx;			//The current character's effective pixel width, height, as well as x and y offsets.
+	uint8_t dwidth;			//device width, if it is 0, it indicates (overlapping) composite symbols.
+	uint16_t bytes;			//Bytes (length of bitmap information)
+	uint8_t *bitmap;		//bitmap data
+}sbn_glyph_t;
+
+#pragma pack(pop)
+
+
+typedef union
+{
+	font_uni_head_not_fixed not_fixed;
+	font_uni_head_fixed fixed;
 }font_uni_head;
 
 typedef struct
 {
-	uint16_t first_char;
-	uint16_t last_char;
-	uint32_t index_addr;
+	uint16_t first_char;	//The first character
+	uint16_t last_char;		//The last character
+	uint32_t index_addr;	//The first character points to the offset address of the search table
 }font_uni_sect;
 
 typedef struct

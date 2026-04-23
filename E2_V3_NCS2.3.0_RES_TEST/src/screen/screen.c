@@ -462,6 +462,7 @@ void IdleShowSystemDate(void)
 void IdleShowSystemTime(void)
 {
 	uint8_t dis_hour;
+	uint16_t str_w,str_h;
 	static bool flag = false;
 	uint32_t img_num[10] = {IMG_ID_FONT_53_NUM_0,IMG_ID_FONT_53_NUM_1,IMG_ID_FONT_53_NUM_2,IMG_ID_FONT_53_NUM_3,IMG_ID_FONT_53_NUM_4,
 							IMG_ID_FONT_53_NUM_5,IMG_ID_FONT_53_NUM_6,IMG_ID_FONT_53_NUM_7,IMG_ID_FONT_53_NUM_8,IMG_ID_FONT_53_NUM_9};
@@ -491,11 +492,12 @@ void IdleShowSystemTime(void)
 	if(global_settings.time_format == TIME_FORMAT_12)
 	{
 		LCD_SetFontSize(FONT_SIZE_28);
+		LCD_MeasureUniStr(STR_ID_PM, &str_w, &str_h);
 		
 		if(date_time.hour >= 12)
-			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+32, STR_ID_PM);
+			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+IDLE_TIME_NUM_H-str_h, STR_ID_PM);
 		else
-			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+32, STR_ID_AM);
+			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+IDLE_TIME_NUM_H-str_h, STR_ID_AM);
 	}
 }
 
@@ -524,10 +526,16 @@ void IdleShowSystemWeek(void)
 
 	switch(global_settings.language)
 	{
-  #ifdef LANGUAGE_CN_ENABLE||LANGUAGE_JA_ENABLE||LANGUAGE_KR_ENABLE
    #ifdef LANGUAGE_CN_ENABLE
 	case LANGUAGE_CN:
+		x = IDLE_WEEK_CN_X;
+		y = IDLE_WEEK_CN_Y;
+		w = IDLE_WEEK_CN_W;
+		h = IDLE_WEEK_CN_H;
+		break;
    #endif
+   
+   #if defined(LANGUAGE_JA_ENABLE)||defined(LANGUAGE_KR_ENABLE)
    #ifdef LANGUAGE_JA_ENABLE
 	case LANGUAGE_JA:
    #endif
@@ -539,7 +547,7 @@ void IdleShowSystemWeek(void)
 		w = IDLE_WEEK_CN_W;
 		h = IDLE_WEEK_CN_H;
 		break;
-   #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JA_ENABLE||LANGUAGE_KR_ENABLE*/
+   #endif/*LANGUAGE_JA_ENABLE||LANGUAGE_KR_ENABLE*/
    
    #ifdef LANGUAGE_AR_ENABLE		
 	case LANGUAGE_AR:

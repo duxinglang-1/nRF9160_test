@@ -32,42 +32,42 @@ extern "C" {
 #define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
-#define IDLE_TIME_W				153
-#define IDLE_TIME_H				60
+#define IDLE_TIME_W				132
+#define IDLE_TIME_H				53
 #define IDLE_TIME_X				((LCD_WIDTH-IDLE_TIME_W)/2)
 #define IDLE_TIME_Y				48
-#define IDLE_TIME_NUM_W			34
-#define IDLE_TIME_NUM_H			60
-#define IDLE_TIME_COLON_W		17
-#define IDLE_TIME_COLON_H		60
+#define IDLE_TIME_NUM_W			30
+#define IDLE_TIME_NUM_H			53
+#define IDLE_TIME_COLON_W		12
+#define IDLE_TIME_COLON_H		49
 #define IDLE_DATE_MON_EN_W		65
-#define IDLE_DATE_MON_EN_H		26
+#define IDLE_DATE_MON_EN_H		20
 #define IDLE_DATE_MON_EN_X		142
-#define IDLE_DATE_MON_EN_Y		106
-#define IDLE_DATE_DAY_EN_W		24
+#define IDLE_DATE_MON_EN_Y		100
+#define IDLE_DATE_DAY_EN_W		12
 #define IDLE_DATE_DAY_EN_H		20
 #define IDLE_DATE_DAY_EN_X		115
-#define IDLE_DATE_DAY_EN_Y		105
+#define IDLE_DATE_DAY_EN_Y		102
 #define IDLE_DATE_NUM_EN_W		12
 #define IDLE_DATE_NUM_EN_H		20
 #define IDLE_DATE_MON_CN_W		100
 #define IDLE_DATE_MON_CN_H		26
 #define IDLE_DATE_MON_CN_X		46
-#define IDLE_DATE_MON_CN_Y		106
-#define IDLE_DATE_DAY_CN_W		24
-#define IDLE_DATE_DAY_CN_H		20
+#define IDLE_DATE_MON_CN_Y		100
+#define IDLE_DATE_DAY_CN_W		12
+#define IDLE_DATE_DAY_CN_H		26
 #define IDLE_DATE_DAY_CN_X		63
-#define IDLE_DATE_DAY_CN_Y		110
-#define IDLE_DATE_NUM_CN_W		14
-#define IDLE_DATE_NUM_CN_H		24
+#define IDLE_DATE_DAY_CN_Y		100
+#define IDLE_DATE_NUM_CN_W		12
+#define IDLE_DATE_NUM_CN_H		22
 #define IDLE_WEEK_EN_W			50
-#define IDLE_WEEK_EN_H			26
+#define IDLE_WEEK_EN_H			20
 #define IDLE_WEEK_EN_X			50
-#define IDLE_WEEK_EN_Y			106
+#define IDLE_WEEK_EN_Y			100
 #define IDLE_WEEK_CN_W			45
 #define IDLE_WEEK_CN_H			26
 #define IDLE_WEEK_CN_X			150
-#define IDLE_WEEK_CN_Y			106
+#define IDLE_WEEK_CN_Y			100
 
 //ble
 #define IDLE_BLE_W		50
@@ -110,66 +110,66 @@ extern "C" {
 //idle hr
 #define IDLE_HR_BG_W		66
 #define IDLE_HR_BG_H		66
-#define IDLE_HR_BG_X		87
-#define IDLE_HR_BG_Y		167
+#define IDLE_HR_BG_X		88
+#define IDLE_HR_BG_Y		128
 #define IDLE_HR_ICON_W		22
 #define IDLE_HR_ICON_H		20
-#define IDLE_HR_ICON_X		109
-#define IDLE_HR_ICON_Y		177
+#define IDLE_HR_ICON_X		110
+#define IDLE_HR_ICON_Y		136
 #define IDLE_HR_STR_W		36
 #define IDLE_HR_STR_H		20
 #define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
-#define IDLE_HR_STR_Y		202
+#define IDLE_HR_STR_Y		161
 #define IDLE_HR_NUM_W		12
 #define IDLE_HR_NUM_H		20
 
 //idle spo2
 #define IDLE_SPO2_BG_W		66
 #define IDLE_SPO2_BG_H		66
-#define IDLE_SPO2_BG_X		153
-#define IDLE_SPO2_BG_Y		134
+#define IDLE_SPO2_BG_X		157//153
+#define IDLE_SPO2_BG_Y		135//134
 #define IDLE_SPO2_ICON_W	18
 #define IDLE_SPO2_ICON_H	24
-#define IDLE_SPO2_ICON_X	177
-#define IDLE_SPO2_ICON_Y	138
+#define IDLE_SPO2_ICON_X	181//177
+#define IDLE_SPO2_ICON_Y	140//138
 #define IDLE_SPO2_STR_W		55
 #define IDLE_SPO2_STR_H		20
 #define IDLE_SPO2_STR_X		(IDLE_SPO2_BG_X+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2)
-#define IDLE_SPO2_STR_Y		163
+#define IDLE_SPO2_STR_Y		166
 #define IDLE_SPO2_NUM_W		12
 #define IDLE_SPO2_NUM_H		20
 #define IDLE_SPO2_PERC_W	19
 #define IDLE_SPO2_PERC_H	20
 
 //idle step
-#define IDLE_STEPS_BG_W		66
-#define IDLE_STEPS_BG_H		66
-#define IDLE_STEPS_BG_X		87
-#define IDLE_STEPS_BG_Y		(167-60)
-#define IDLE_STEPS_ICON_W	14
-#define IDLE_STEPS_ICON_H	20
-#define IDLE_STEPS_ICON_X	113
-#define IDLE_STEPS_ICON_Y	(171-60)
-#define IDLE_STEPS_STR_W	60
-#define IDLE_STEPS_STR_H	20
-#define IDLE_STEPS_STR_X	(IDLE_STEPS_BG_X+(IDLE_STEPS_BG_W-IDLE_STEPS_STR_W)/2)
-#define IDLE_STEPS_STR_Y	(192-60)
+#define IDLE_STEPS_BG_W		146
+#define IDLE_STEPS_BG_H		38
+#define IDLE_STEPS_BG_X		((LCD_WIDTH-IDLE_STEPS_BG_W)/2)
+#define IDLE_STEPS_BG_Y		203
+#define IDLE_STEPS_ICON_W	17
+#define IDLE_STEPS_ICON_H	24
+#define IDLE_STEPS_ICON_X	82
+#define IDLE_STEPS_ICON_Y	209
+#define IDLE_STEPS_STR_W	55
+#define IDLE_STEPS_STR_H	23
+#define IDLE_STEPS_STR_X	101
+#define IDLE_STEPS_STR_Y	210
 #define IDLE_STEPS_NUM_W	12
 #define IDLE_STEPS_NUM_H	20
 
 //idle temp
 #define IDLE_TEMP_BG_W		66
 #define IDLE_TEMP_BG_H		66
-#define IDLE_TEMP_BG_X		21
-#define IDLE_TEMP_BG_Y		134
+#define IDLE_TEMP_BG_X		19//21
+#define IDLE_TEMP_BG_Y		135//134
 #define IDLE_TEMP_ICON_W	18
 #define IDLE_TEMP_ICON_H	22
-#define IDLE_TEMP_ICON_X	45
-#define IDLE_TEMP_ICON_Y	141
+#define IDLE_TEMP_ICON_X	43//45
+#define IDLE_TEMP_ICON_Y	142//141
 #define IDLE_TEMP_STR_W		54
 #define IDLE_TEMP_STR_H		20
 #define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
-#define IDLE_TEMP_STR_Y		163
+#define IDLE_TEMP_STR_Y		166
 #define IDLE_TEMP_NUM_W		12
 #define IDLE_TEMP_NUM_H		20
 #define IDLE_TEMP_DOT_W		6
@@ -181,38 +181,50 @@ extern "C" {
 #define NOTIFY_TIMER_INTERVAL	5
 
 //sport
-#define IMU_SEP_LINE_W				99
-#define IMU_SEP_LINE_H				1
-#define IMU_SEP_LINE_X				((LCD_WIDTH-IMU_SEP_LINE_W)/2)
-#define IMU_SEP_LINE_Y				140
 #define IMU_NUM_W					22
 #define IMU_NUM_H					38
 //steps
 #define IMU_STEP_ICON_W				28
 #define IMU_STEP_ICON_H				38
-#define IMU_STEP_ICON_X				40
-#define IMU_STEP_ICON_Y				63
+#define IMU_STEP_ICON_X				45
+#define IMU_STEP_ICON_Y				66
 #define IMU_STEP_UNIT_W				35
 #define IMU_STEP_UNIT_H				15
 #define IMU_STEP_UNIT_X				184
 #define IMU_STEP_UNIT_Y				82
 #define IMU_STEP_STR_W				105
 #define IMU_STEP_STR_H				38
-#define IMU_STEP_STR_X				77
-#define IMU_STEP_STR_Y				63
+#define IMU_STEP_STR_X				81
+#define IMU_STEP_STR_Y				66
+//distance
+#define IMU_DIS_ICON_W				28
+#define IMU_DIS_ICON_H				38
+#define IMU_DIS_ICON_X				45
+#define IMU_DIS_ICON_Y				113
+#define IMU_DIS_UNIT_W				21
+#define IMU_DIS_UNIT_H				14
+#define IMU_DIS_UNIT_X				182
+#define IMU_DIS_UNIT_Y				186
+#define IMU_DIS_STR_W				105
+#define IMU_DIS_STR_H				38
+#define IMU_DIS_STR_X				81
+#define IMU_DIS_STR_Y				113
 //calorie
 #define IMU_CAL_ICON_W				28
 #define IMU_CAL_ICON_H				38
-#define IMU_CAL_ICON_X				40
-#define IMU_CAL_ICON_Y				113
+#define IMU_CAL_ICON_X				45
+#define IMU_CAL_ICON_Y				160
 #define IMU_CAL_UNIT_W				29
 #define IMU_CAL_UNIT_H				14
 #define IMU_CAL_UNIT_X				163
 #define IMU_CAL_UNIT_Y				134
-#define IMU_CAL_STR_W				84
+#define IMU_CAL_STR_W				105
 #define IMU_CAL_STR_H				38
-#define IMU_CAL_STR_X				77
-#define IMU_CAL_STR_Y				113
+#define IMU_CAL_STR_X				81
+#define IMU_CAL_STR_Y				160
+
+//sleep
+//total
 //sleep
 #define IMU_SLEEP_ICON_W			30
 #define IMU_SLEEP_ICON_H			33
@@ -235,22 +247,6 @@ extern "C" {
 #define IMU_SLEEP_M_STR_X			132
 #define IMU_SLEEP_M_STR_Y			163
 
-//distance
-#define IMU_DIS_ICON_W				22
-#define IMU_DIS_ICON_H				28
-#define IMU_DIS_ICON_X				148
-#define IMU_DIS_ICON_Y				145
-#define IMU_DIS_UNIT_W				21
-#define IMU_DIS_UNIT_H				14
-#define IMU_DIS_UNIT_X				182
-#define IMU_DIS_UNIT_Y				186
-#define IMU_DIS_STR_W				56
-#define IMU_DIS_STR_H				28
-#define IMU_DIS_STR_X				126
-#define IMU_DIS_STR_Y				178
-
-//sleep
-//total
 #define SLEEP_SEP_LINE_W			123
 #define SLEEP_SEP_LINE_H			1
 #define SLEEP_SEP_LINE_X			((LCD_WIDTH-SLEEP_SEP_LINE_W)/2)

@@ -254,7 +254,7 @@ void AnimaShow(uint16_t x, uint16_t y, uint32_t *anima_img, uint8_t anima_count,
 	anima_head = anima_show.cache;
 
 #ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImg_From_Flash(anima_show.x, anima_show.y, anima_show.cache->img_addr);
+	LCD_ShowImage(anima_show.x, anima_show.y, anima_show.cache->img_addr);
 #else	
 	LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_show.cache->img_addr);
 #endif
@@ -300,7 +300,7 @@ static void AnimaShowNextImg(void)
 		#endif
 			anima_head = anima_show.cache;
 		#ifdef IMG_FONT_FROM_FLASH
-			LCD_ShowImg_From_Flash(anima_show.x, anima_show.y, anima_head->img_addr);
+			LCD_ShowImage(anima_show.x, anima_show.y, anima_head->img_addr);
 		#else
 			LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
 		#endif
@@ -322,7 +322,7 @@ static void AnimaShowNextImg(void)
 		LOGD("003");
 	#endif
 	#ifdef IMG_FONT_FROM_FLASH
-		LCD_ShowImg_From_Flash(anima_show.x, anima_show.y, anima_head->img_addr);
+		LCD_ShowImage(anima_show.x, anima_show.y, anima_head->img_addr);
 	#else
 		LCD_ShowImg(anima_show.x, anima_show.y, (unsigned char*)anima_head->img_addr);
 	#endif

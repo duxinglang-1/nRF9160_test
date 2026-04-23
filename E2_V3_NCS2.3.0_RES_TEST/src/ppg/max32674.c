@@ -1551,7 +1551,7 @@ void PPGGetSensorHubData(void)
 								ppg_stop_flag = true;
 								if((g_ppg_trigger&TRIGGER_BY_MENU) != 0)
 								{
-									infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+									infor.img[0] = IMG_ID_WRIST_OFF_ICON;
 									infor.img_count = 1;
 									DisplayPopUp(infor);
 								}
@@ -1827,7 +1827,7 @@ void StartPPG(PPG_DATA_TYPE data_type, PPG_TRIGGER_SOURCE trigger_type)
 	case TRIGGER_BY_MENU:
 		if(!is_wearing())
 		{
-			infor.img[0] = IMG_WRIST_OFF_ICON_ADDR;
+			infor.img[0] = IMG_ID_WRIST_OFF_ICON;
 			infor.img_count = 1;
 			DisplayPopUp(infor);
 			return;

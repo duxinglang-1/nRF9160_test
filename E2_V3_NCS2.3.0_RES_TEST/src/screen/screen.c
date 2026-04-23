@@ -386,7 +386,6 @@ void IdleShowSystemDate(void)
 	   #endif
 		}
 
-		LOGD("cn_y:%d", y);
 		LCD_FillColor(x, y, w, h, BLACK);
 		if(date_time.month > 9)
 		{
@@ -413,7 +412,6 @@ void IdleShowSystemDate(void)
  #endif/*LANGUAGE_CN_ENABLE||LANGUAGE_JA_ENABLE||LANGUAGE_KR_ENABLE*/		
 	
 	default:
-		LOGD("en_y:%d", IDLE_DATE_DAY_EN_Y);
 		x = IDLE_DATE_DAY_EN_X;
 		LCD_ShowImage(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day/10]);
 		LCD_ShowImage(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day%10]);
@@ -560,7 +558,6 @@ void IdleShowSystemWeek(void)
 		break;
 	}	
 
-	LOGD("Y:%d", y);
 	LCD_FillColor(x, y, w, h, BLACK);
 	LCD_MeasureUniStr(str_week[date_time.week], &str_w, &str_h);
   #ifdef LANGUAGE_AR_ENABLE	
@@ -729,7 +726,7 @@ void IdleShowNetMode(void)
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 void IdleUpdateSportData(void)
 {
-	uint16_t bg_color = 0x00c3;
+	uint16_t bg_color = 0x028f;
 	uint8_t i,count=1;
 	uint16_t steps_show;
 	uint32_t divisor=10;
@@ -764,7 +761,7 @@ void IdleUpdateSportData(void)
 
 void IdleShowSportData(void)
 {
-	uint16_t bg_color = 0x00c3;
+	uint16_t bg_color = 0x028f;
 	uint8_t i,count=1;
 	uint16_t steps_show;
 	uint32_t divisor=10;
@@ -986,7 +983,7 @@ void IdleUpdateTempData(void)
 		x = IDLE_TEMP_STR_X+(IDLE_TEMP_STR_W-2*IDLE_TEMP_NUM_W-IDLE_TEMP_DOT_W)/2;
 		LCD_ShowImage(x, y, img_num[temp_show/10]);
 		x += IDLE_TEMP_NUM_W;
-		LCD_ShowImage(x, y, IMG_FONT_20_DOT_ADDR);
+		LCD_ShowImage(x, y, IMG_ID_FONT_20_DOT);
 		x += IDLE_TEMP_DOT_W;
 		LCD_ShowImage(x, y, img_num[temp_show%10]);
 	}
@@ -5230,9 +5227,9 @@ void FOTAShowStatus(void)
 	LCD_SetFontSize(FONT_SIZE_16);
 #endif
 	
-	LCD_ShowImage(FOTA_LOGO_X, FOTA_LOGO_Y, IMG_OTA_LOGO_ADDR);
-	LCD_ShowImage(FOTA_YES_X, FOTA_YES_Y, IMG_OTA_YES_ADDR);
-	LCD_ShowImage(FOTA_NO_X, FOTA_NO_Y, IMG_OTA_NO_ADDR);
+	LCD_ShowImage(FOTA_LOGO_X, FOTA_LOGO_Y, IMG_ID_OTA_LOGO);
+	LCD_ShowImage(FOTA_YES_X, FOTA_YES_Y, IMG_ID_OTA_YES);
+	LCD_ShowImage(FOTA_NO_X, FOTA_NO_Y, IMG_ID_OTA_NO);
 
 #ifdef FONTMAKER_UNICODE_FONT
   #ifdef LANGUAGE_AR_ENABLE
@@ -5359,7 +5356,7 @@ void FOTAUpdateStatus(void)
 				is_finished = true;
 				
 				LCD_Clear(BLACK);
-				LCD_ShowImage(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_OTA_FINISH_ICON_ADDR);
+				LCD_ShowImage(FOTA_FINISH_ICON_X, FOTA_FINISH_ICON_Y, IMG_ID_OTA_FINISH_ICON);
 				
 			#ifdef FONTMAKER_UNICODE_FONT
 				LCD_MeasureUniStr(STR_ID_FW_UPGRADE_SUCCESSFUL, &w, &h);
@@ -5391,7 +5388,7 @@ void FOTAUpdateStatus(void)
 			flag = false;
 
 			LCD_Clear(BLACK);
-			LCD_ShowImage(FOTA_FAIL_ICON_X, FOTA_FAIL_ICON_Y, IMG_OTA_FAILED_ICON_ADDR);
+			LCD_ShowImage(FOTA_FAIL_ICON_X, FOTA_FAIL_ICON_Y, IMG_ID_OTA_FAILED_ICON);
 			
 		#ifdef FONTMAKER_UNICODE_FONT
 			LCD_MeasureUniStr(STR_ID_FW_UPGRADE_FAILED, &w, &h);
@@ -5510,9 +5507,9 @@ void FallShowStatus(void)
 {
 	LCD_Clear(BLACK);
 
-	LCD_ShowImage(FALL_ICON_X, FALL_ICON_Y, IMG_FALL_ICON_ADDR);
-	LCD_ShowImage(FALL_YES_X, FALL_YES_Y, IMG_FALL_YES_ADDR);
-	LCD_ShowImage(FALL_NO_X, FALL_NO_Y, IMG_FALL_NO_ADDR);
+	LCD_ShowImage(FALL_ICON_X, FALL_ICON_Y, IMG_ID_FALL_ICON);
+	LCD_ShowImage(FALL_YES_X, FALL_YES_Y, IMG_ID_FALL_YES);
+	LCD_ShowImage(FALL_NO_X, FALL_NO_Y, IMG_ID_FALL_NO);
 
 	FallChangrStatus();
 
@@ -5590,10 +5587,10 @@ void EnterFallScreen(void)
 void SleepUpdateStatus(void)
 {
 	uint16_t total_sleep,deep_sleep,light_sleep;
-	uint32_t img_big_num[10] = {IMG_FONT_38_NUM_0_ADDR,IMG_FONT_38_NUM_1_ADDR,IMG_FONT_38_NUM_2_ADDR,IMG_FONT_38_NUM_3_ADDR,IMG_FONT_38_NUM_4_ADDR,
-								IMG_FONT_38_NUM_5_ADDR,IMG_FONT_38_NUM_6_ADDR,IMG_FONT_38_NUM_7_ADDR,IMG_FONT_38_NUM_8_ADDR,IMG_FONT_38_NUM_9_ADDR};
-	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
-							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+	uint32_t img_big_num[10] = {IMG_ID_FONT_38_NUM_0,IMG_ID_FONT_38_NUM_1,IMG_ID_FONT_38_NUM_2,IMG_ID_FONT_38_NUM_3,IMG_ID_FONT_38_NUM_4,
+								IMG_ID_FONT_38_NUM_5,IMG_ID_FONT_38_NUM_6,IMG_ID_FONT_38_NUM_7,IMG_ID_FONT_38_NUM_8,IMG_ID_FONT_38_NUM_9};
+	uint32_t img_num[10] = {IMG_ID_FONT_24_NUM_0,IMG_ID_FONT_24_NUM_1,IMG_ID_FONT_24_NUM_2,IMG_ID_FONT_24_NUM_3,IMG_ID_FONT_24_NUM_4,
+							IMG_ID_FONT_24_NUM_5,IMG_ID_FONT_24_NUM_6,IMG_ID_FONT_24_NUM_7,IMG_ID_FONT_24_NUM_8,IMG_ID_FONT_24_NUM_9};
 				
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
@@ -5619,19 +5616,19 @@ void SleepShowStatus(void)
 {
 	uint8_t strbuf[64] = {0};
 	uint16_t total_sleep,deep_sleep,light_sleep;
-	uint32_t img_big_num[10] = {IMG_FONT_38_NUM_0_ADDR,IMG_FONT_38_NUM_1_ADDR,IMG_FONT_38_NUM_2_ADDR,IMG_FONT_38_NUM_3_ADDR,IMG_FONT_38_NUM_4_ADDR,
-							IMG_FONT_38_NUM_5_ADDR,IMG_FONT_38_NUM_6_ADDR,IMG_FONT_38_NUM_7_ADDR,IMG_FONT_38_NUM_8_ADDR,IMG_FONT_38_NUM_9_ADDR};
-	uint32_t img_num[10] = {IMG_FONT_24_NUM_0_ADDR,IMG_FONT_24_NUM_1_ADDR,IMG_FONT_24_NUM_2_ADDR,IMG_FONT_24_NUM_3_ADDR,IMG_FONT_24_NUM_4_ADDR,
-							IMG_FONT_24_NUM_5_ADDR,IMG_FONT_24_NUM_6_ADDR,IMG_FONT_24_NUM_7_ADDR,IMG_FONT_24_NUM_8_ADDR,IMG_FONT_24_NUM_9_ADDR};
+	uint32_t img_big_num[10] = {IMG_ID_FONT_38_NUM_0,IMG_ID_FONT_38_NUM_1,IMG_ID_FONT_38_NUM_2,IMG_ID_FONT_38_NUM_3,IMG_ID_FONT_38_NUM_4,
+								IMG_ID_FONT_38_NUM_5,IMG_ID_FONT_38_NUM_6,IMG_ID_FONT_38_NUM_7,IMG_ID_FONT_38_NUM_8,IMG_ID_FONT_38_NUM_9};
+	uint32_t img_num[10] = {IMG_ID_FONT_24_NUM_0,IMG_ID_FONT_24_NUM_1,IMG_ID_FONT_24_NUM_2,IMG_ID_FONT_24_NUM_3,IMG_ID_FONT_24_NUM_4,
+							IMG_ID_FONT_24_NUM_5,IMG_ID_FONT_24_NUM_6,IMG_ID_FONT_24_NUM_7,IMG_ID_FONT_24_NUM_8,IMG_ID_FONT_24_NUM_9};
 
 	
-	LCD_ShowImage(SLEEP_TOTAL_ICON_X, SLEEP_TOTAL_ICON_Y, IMG_SLEEP_ANI_3_ADDR);
-	LCD_ShowImage(SLEEP_TOTAL_UNIT_HR_X, SLEEP_TOTAL_UNIT_HR_Y, IMG_SLEEP_BIG_H_ADDR);
-	LCD_ShowImage(SLEEP_TOTAL_UNIT_MIN_X, SLEEP_TOTAL_UNIT_MIN_Y, IMG_SLEEP_BIG_M_ADDR);
-	LCD_ShowImage(SLEEP_SEP_LINE_X, SLEEP_SEP_LINE_Y, IMG_SLEEP_LINE_ADDR);
+	LCD_ShowImage(SLEEP_TOTAL_ICON_X, SLEEP_TOTAL_ICON_Y, IMG_ID_SLEEP_ANI_3);
+	LCD_ShowImage(SLEEP_TOTAL_UNIT_HR_X, SLEEP_TOTAL_UNIT_HR_Y, IMG_ID_SLEEP_BIG_H);
+	LCD_ShowImage(SLEEP_TOTAL_UNIT_MIN_X, SLEEP_TOTAL_UNIT_MIN_Y, IMG_ID_SLEEP_BIG_M);
+	LCD_ShowImage(SLEEP_SEP_LINE_X, SLEEP_SEP_LINE_Y, IMG_ID_SLEEP_LINE);
 
-	LCD_ShowImage(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, IMG_SLEEP_BEGIN_ADDR);
-	LCD_ShowImage(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, IMG_SLEEP_END_ADDR);
+	LCD_ShowImage(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, IMG_ID_SLEEP_BEGIN);
+	LCD_ShowImage(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, IMG_ID_SLEEP_END);
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	total_sleep = deep_sleep+light_sleep;
@@ -5643,13 +5640,13 @@ void SleepShowStatus(void)
 
 	LCD_ShowImage(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)/10]);
 	LCD_ShowImage(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)%10]);
-	LCD_ShowImage(SLEEP_DEEP_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_FONT_24_COLON_ADDR);
+	LCD_ShowImage(SLEEP_DEEP_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_ID_FONT_24_COLON);
 	LCD_ShowImage(SLEEP_DEEP_STR_MIN_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
 	LCD_ShowImage(SLEEP_DEEP_STR_MIN_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)%10]);
 
 	LCD_ShowImage(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)/10]);
 	LCD_ShowImage(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)%10]);
-	LCD_ShowImage(SLEEP_LIGHT_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_FONT_24_COLON_ADDR);
+	LCD_ShowImage(SLEEP_LIGHT_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_ID_FONT_24_COLON);
 	LCD_ShowImage(SLEEP_LIGHT_STR_MIN_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
 	LCD_ShowImage(SLEEP_LIGHT_STR_MIN_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)%10]);
 }
@@ -5798,9 +5795,9 @@ void StepUpdateStatus(void)
 	uint32_t img_num[10] = {IMG_ID_FONT_38_NUM_0,IMG_ID_FONT_38_NUM_1,IMG_ID_FONT_38_NUM_2,IMG_ID_FONT_38_NUM_3,IMG_ID_FONT_38_NUM_4,
 							IMG_ID_FONT_38_NUM_5,IMG_ID_FONT_38_NUM_6,IMG_ID_FONT_38_NUM_7,IMG_ID_FONT_38_NUM_8,IMG_ID_FONT_38_NUM_9};
 	
-	LCD_Fill(IMU_STEP_STR_X, IMU_STEP_STR_Y, LCD_WIDTH, IMU_NUM_H, BLACK);
-	LCD_Fill(IMU_DIS_STR_X, IMU_DIS_STR_Y, LCD_WIDTH, IMU_NUM_H, BLACK);
-	LCD_Fill(IMU_CAL_STR_X, IMU_CAL_STR_X, LCD_WIDTH, IMU_NUM_H, BLACK);
+	//LCD_Fill(IMU_STEP_STR_X, IMU_STEP_STR_Y, LCD_WIDTH, IMU_NUM_H, BLACK);
+	//LCD_Fill(IMU_DIS_STR_X, IMU_DIS_STR_Y, LCD_WIDTH, IMU_NUM_H, BLACK);
+	//LCD_Fill(IMU_CAL_STR_X, IMU_CAL_STR_X, LCD_WIDTH, IMU_NUM_H, BLACK);
 
 	GetSportData(&steps, &calorie, &distance);
 
@@ -7248,7 +7245,7 @@ void SOSUpdateStatus(void)
 		AnimaStop();
 	#endif
 
-		LCD_ShowImage(SOS_ICON_X, SOS_ICON_Y, IMG_SOS_ANI_4_ADDR);
+		LCD_ShowImage(SOS_ICON_X, SOS_ICON_Y, IMG_ID_SOS_ANI_4);
 		sos_state = SOS_STATUS_RECEIVED;
 		break;
 	
@@ -7262,7 +7259,7 @@ void SOSUpdateStatus(void)
 
 void SOSShowStatus(void)
 {
-	uint32_t img_anima[4] = {IMG_SOS_ANI_1_ADDR,IMG_SOS_ANI_2_ADDR,IMG_SOS_ANI_3_ADDR,IMG_SOS_ANI_4_ADDR};
+	uint32_t img_anima[4] = {IMG_ID_SOS_ANI_1,IMG_ID_SOS_ANI_2,IMG_ID_SOS_ANI_3,IMG_ID_SOS_ANI_4};
 	
 	LCD_Clear(BLACK);
 
@@ -7375,7 +7372,7 @@ void WristShowStatus(void)
 	}
 
 #ifdef IMG_FONT_FROM_FLASH
-	LCD_ShowImage(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON_ADDR);
+	LCD_ShowImage(FALL_ICON_X, FALL_ICON_Y, IMG_ID_WRIST_ICON);
 	LCD_ShowImage(x, y, img_addr);
 #else
 	LCD_ShowImg(FALL_ICON_X, FALL_ICON_Y, IMG_WRIST_ICON);

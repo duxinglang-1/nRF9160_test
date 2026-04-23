@@ -480,7 +480,7 @@ void imu_sensor_init(void)
 	
 #ifdef CONFIG_STEP_SUPPORT
 	//Enable step counts algorithm
-	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); // LSM6DSO_PEDO_BASE_MODE 虚假步数抑制高级模式
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ_ADV_MODE); // LSM6DSO_PEDO_BASE_MODE 虚假步数抑制高级模式
 #endif
 	
 	// route tap and activity to INT2 pin
@@ -680,7 +680,7 @@ void lsm6dso_sensitivity(void)
 	lsm6dso_pedo_debounce_steps_set(&imu_dev_ctx, &deb_step);
 
 	//Set the sensitivity of the sensor,该函数用于设置两次有效步之间的最小时间间隔（单位：毫秒），避免因高频振动或快速动作导致单次动作被误判为多步。
-	uint8_t delay_time[10] = {0x14, 0x00}; // 32U
+	uint8_t delay_time[10] = {0x0f, 0x00}; // 32U
 	//Lower Limit is 0 and Upper Limit is 50(32 in Hex), the delay time is 320ms
 	// 建议改为 0x000F(~300ms) 或 0x0014(~400ms)，能有效过滤手持抖动等误触发，同时不漏计正常步行。
 	// 加速度ODR为26Hz：300ms对应值为15(0x0F),400ms对应值为20(0x14)

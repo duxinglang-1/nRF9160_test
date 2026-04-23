@@ -69,14 +69,17 @@ bool int2_event = false;
 bool RUN_FD_FLAG = false;
 
 #ifdef CONFIG_FALL_DETECT_SUPPORT
-lsm6dso_all_sources_t all_source;
+//lsm6dso_all_sources_t all_source;
+bool fall_check_flag = false;
 
 /*fall + tap trigger FSM*/
+/*
 const uint8_t falltrigger[] = {
       0x91, 0x00, 0x18, 0x00, 0x0E, 0x00, 0xCD, 0x3C,
       0x66, 0x36, 0xA8, 0x00, 0x00, 0x06, 0x23, 0X00,
       0x33, 0x63, 0x33, 0xA5, 0x57, 0x44, 0x22, 0X00,
      };
+*/
 
 static void imu_activity_confirm_timerout(struct k_timer *timer_id);
 K_TIMER_DEFINE(imu_activity_timer, imu_activity_confirm_timerout, NULL);
@@ -126,26 +129,24 @@ const uint8_t lsm6so_prg_wrist_tilt[] = {
   0x00, 0x0D, 0x06, 0x23, 0x00, 0x53, 0x33, 0x74, 0x44, 0x22,
 };
 
-static struct k_work_q *imu_work_q;
-
 static bool imu_check_ok = false;
 static uint8_t whoamI, rst;
+static struct k_work_q *imu_work_q;
 static struct device *i2c_imu;
 static struct device *gpio_imu = NULL;
 static struct gpio_callback gpio_cb1,gpio_cb2;
 
+static axis3bit16_t data_raw_acceleration;
+static float acceleration_mg[3];
+
+#ifdef CONFIG_STEP_SUPPORT
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
-//#ifdef CONFIG_FALL_DETECT_SUPPORT
-//static bool fall_check_flag = false;
-//#endif
-
 uint16_t g_last_steps = 0;
 uint16_t g_steps = 0;
 uint16_t g_calorie = 0;
 uint16_t g_distance = 0;
 
-#ifdef CONFIG_STEP_SUPPORT
 void ClearAllStepRecData(void)
 {
 	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
@@ -402,7 +403,6 @@ uint8_t init_gpio(void)
 	return 0;
 }
 
-#ifdef CONFIG_FALL_DETECT_SUPPORT
 void imu_sensor_init(void)
 {
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);
@@ -427,7 +427,7 @@ void imu_sensor_init(void)
 	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_BATCHED_AT_104Hz);
 
 	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz); 
-	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_104Hz);
+	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_104Hz);
 	
 	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
 	lsm6dso_gy_power_mode_set(&imu_dev_ctx, LSM6DSO_GY_NORMAL);
@@ -475,7 +475,13 @@ void imu_sensor_init(void)
 	// route wrist tilt to INT1 pin
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
+	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+	
+#ifdef CONFIG_STEP_SUPPORT
+	//Enable step counts algorithm
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ); // LSM6DSO_PEDO_BASE_MODE 虚假步数抑制高级模式
+#endif
 	
 	// route tap and activity to INT2 pin
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
@@ -484,72 +490,17 @@ void imu_sensor_init(void)
 	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
 
 	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
-}
-#else
-void imu_sensor_init(void)
-{
-	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_reset_get(&imu_dev_ctx, &rst);
 
-	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
-
-	lsm6dso_xl_full_scale_set(&imu_dev_ctx, LSM6DSO_2g);
-	//lsm6dso_gy_full_scale_set(&imu_dev_ctx, LSM6DSO_250dps);
-	lsm6dso_block_data_update_set(&imu_dev_ctx, PROPERTY_ENABLE);
-
-	lsm6dso_fifo_watermark_set(&imu_dev_ctx, 104);
-	lsm6dso_fifo_stop_on_wtm_set(&imu_dev_ctx, PROPERTY_ENABLE);
-
-	lsm6dso_fifo_mode_set(&imu_dev_ctx, LSM6DSO_STREAM_TO_FIFO_MODE);
-
-	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_BATCHED_AT_26Hz);
-	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_NOT_BATCHED);
-
-	lsm6dso_xl_power_mode_set(&imu_dev_ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
-
-  	lsm6dso_xl_data_rate_set(&imu_dev_ctx, LSM6DSO_XL_ODR_26Hz);
-  	lsm6dso_gy_data_rate_set(&imu_dev_ctx, LSM6DSO_GY_ODR_OFF);
-
-	lsm6dso_int_notification_set(&imu_dev_ctx, LSM6DSO_BASE_PULSED_EMB_LATCHED);
-	
-	/*Tilt enable */
-	lsm6dso_long_cnt_int_value_set(&imu_dev_ctx, 0x0000U);
-	lsm6dso_fsm_start_address_set(&imu_dev_ctx, LSM6DSO_START_FSM_ADD);
-	lsm6dso_fsm_number_of_programs_set(&imu_dev_ctx, 1);
-	lsm6dso_fsm_enable_get(&imu_dev_ctx, &fsm_enable);
-	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_ENABLE;
-	lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);  
-	lsm6dso_fsm_data_rate_set(&imu_dev_ctx, LSM6DSO_ODR_FSM_26Hz);
-	fsm_addr = LSM6DSO_START_FSM_ADD;
-
-	lsm6dso_ln_pg_write(&imu_dev_ctx, fsm_addr, 
-						(uint8_t*)lsm6so_prg_wrist_tilt, 
-						sizeof(lsm6so_prg_wrist_tilt));
-	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
-	
-	/* route wrist tilt to INT1 pin*/
-	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
-	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
-	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
-
-	// Activity enable
-	// Set duration for Activity detection to 38 ms (= 1 * 1 / ODR_XL) where ODR_XL = 26Hz
-	lsm6dso_wkup_dur_set(&imu_dev_ctx, 0x01);
-	// Set duration for Inactivity detection to 19.69 s (= 1 * 512 / ODR_XL) where ODR_XL = 26Hz
-	lsm6dso_act_sleep_dur_set(&imu_dev_ctx, 0x01);
-	// Set Activity/Inactivity threshold to 31.25 mg (= 1 * FS_XL / 2^6) where FS_XL = 2g (most sensitive threshold)
-	lsm6dso_wkup_threshold_set(&imu_dev_ctx, 0x01);
-	// Inactivity configuration: XL to 12.5 in LP, gyro to Power-Down
-	lsm6dso_act_mode_set(&imu_dev_ctx, LSM6DSO_XL_12Hz5_GY_PD);
-	
-	// route inactivity to INT2 pin
-	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
-	int1_route.md1_cfg.int1_sleep_change = PROPERTY_ENABLE;
-	lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_route);
-
-	lsm6dso_timestamp_set(&imu_dev_ctx, 1);
-}
+#ifdef CONFIG_STEP_SUPPORT
+	// 启用LPF2滤波器
+    lsm6dso_xl_filter_lp2_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	// 启用快速稳定模式（上电时滤波器快速稳定）
+    lsm6dso_xl_fast_settling_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	// 高通滤波
+	lsm6dso_xl_hp_path_internal_set(&imu_dev_ctx, LSM6DSO_USE_HPF);
+	lsm6dso_xl_hp_path_on_out_set(&imu_dev_ctx, LSM6DSO_HP_ODR_DIV_100);
 #endif
+}
 
 /**
  * @brief  LSM6DSO进入休眠模式，最小化电流消耗
@@ -623,13 +574,18 @@ static bool sensor_init(void)
 		return false;
 
 	imu_sensor_init();
+
+#ifdef CONFIG_STEP_SUPPORT
+	lsm6dso_steps_reset(&imu_dev_ctx);
+#endif
+
 	return true;
 }
 
 /*@brief Get real time X/Y/Z reading in mg
 *
 */
-/*void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
+void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 {
 	uint8_t reg;
 
@@ -638,15 +594,15 @@ static bool sensor_init(void)
 	{
 		memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
 		lsm6dso_acceleration_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-		acceleration_mg[0] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-		acceleration_mg[1] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-		acceleration_mg[2] = lsm6dso_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
+		acceleration_mg[0] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[0]);
+		acceleration_mg[1] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[1]);
+		acceleration_mg[2] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[2]);
 	}
 
 	*sensor_x = acceleration_mg[0];
 	*sensor_y = acceleration_mg[1];
 	*sensor_z = acceleration_mg[2];
-}*/
+}
 
 #ifdef CONFIG_STEP_SUPPORT
 void ReSetImuSteps(void)
@@ -684,7 +640,7 @@ void UpdateIMUData(void)
 
 	g_steps = steps+g_last_steps;
 	g_distance = 0.7*g_steps;
-	g_calorie = (0.8214*60*g_distance)/1000;
+	g_calorie = (0.75*65*g_distance)/1000;
 
 #ifdef IMU_DEBUG
 	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
@@ -714,6 +670,24 @@ void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 	if(distance != NULL)
 		*distance = g_distance;
 }
+
+/*@Set Sensor sensitivity
+*/
+void lsm6dso_sensitivity(void)
+{ 
+	//Set the debounce steps典型值为 0x00（默认）到 0x07，对应连续检测 1~8次 有效步态信号后才会计步。若 buff = 0x03，表示需连续检测到 4次 有效步态信号才会触发一次步数增加。
+	uint8_t deb_step = 10; // 10
+	lsm6dso_pedo_debounce_steps_set(&imu_dev_ctx, &deb_step);
+
+	//Set the sensitivity of the sensor,该函数用于设置两次有效步之间的最小时间间隔（单位：毫秒），避免因高频振动或快速动作导致单次动作被误判为多步。
+	uint8_t delay_time[10] = {0x14, 0x00}; // 32U
+	//Lower Limit is 0 and Upper Limit is 50(32 in Hex), the delay time is 320ms
+	// 建议改为 0x000F(~300ms) 或 0x0014(~400ms)，能有效过滤手持抖动等误触发，同时不漏计正常步行。
+	// 加速度ODR为26Hz：300ms对应值为15(0x0F),400ms对应值为20(0x14)
+	// 加速度ODR为52Hz: 300ms对应值为30(0x1E),400ms对应值为41(0x29)
+	// 加速度ODR为104Hz: 300ms对应值为61(0x3D),400ms对应值为81(0x51)
+	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
+}
 #endif
 
 uint8_t IMU_GetID(void)
@@ -722,40 +696,6 @@ uint8_t IMU_GetID(void)
 	
 	lsm6dso_device_id_get(&imu_dev_ctx, &sensor_id);
 	return sensor_id;
-}
-
-void IMU_init(struct k_work_q *work_q)
-{
-#ifdef IMU_DEBUG
-	LOGD("IMU_init");
-#endif
-
-#ifdef CONFIG_STEP_SUPPORT
-	get_cur_sport_from_record(&last_sport);
-#ifdef IMU_DEBUG
-	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
-#endif
-	StepsDataInit(false);
-#endif
-
-	imu_work_q = work_q;
-
-	if(init_i2c() != 0)
-		return;
-	
-	init_gpio();
-
-	imu_dev_ctx.write_reg = platform_write;
-	imu_dev_ctx.read_reg = platform_read;
-	imu_dev_ctx.handle = i2c_imu;
-
-	imu_check_ok = sensor_init();
-	if(!imu_check_ok)
-		return;
-
-#ifdef IMU_DEBUG
-	LOGD("IMU_init done!");
-#endif
 }
 
 /*@brief Check if a wrist tilt happend
@@ -777,6 +717,7 @@ bool is_tilt(void)
 	return ret;
 }
 
+#ifdef CONFIG_FALL_DETECT_SUPPORT
 bool is_tap(void)
 {
 	bool ret = false;
@@ -805,6 +746,61 @@ static void fall_scc_confirm_timerout(struct k_timer *timer_id)
 		SCC_check_ok = true;
 	}
 }
+#endif
+
+void IMU_init(struct k_work_q *work_q)
+{
+#ifdef IMU_DEBUG
+	LOGD("IMU_init");
+#endif
+
+	get_cur_sport_from_record(&last_sport);
+#ifdef IMU_DEBUG
+	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
+#endif
+
+#ifdef CONFIG_STEP_SUPPORT
+	StepsDataInit(false);
+#endif
+
+	imu_work_q = work_q;
+
+	if(init_i2c() != 0)
+		return;
+
+	init_gpio();
+
+	imu_dev_ctx.write_reg = platform_write;
+	imu_dev_ctx.read_reg = platform_read;
+	imu_dev_ctx.handle = i2c_imu;
+
+	imu_check_ok = sensor_init();
+	if(!imu_check_ok)
+		return;
+
+#ifdef CONFIG_STEP_SUPPORT
+	lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
+	lsm6dso_sensitivity();
+
+#endif
+
+#ifdef IMU_DEBUG
+	LOGD("IMU_init done!");
+#endif
+}
+
+#ifdef CONFIG_STEP_SUPPORT
+void IMURedrawSteps(void)
+{
+	if(screen_id == SCREEN_ID_STEPS 
+		|| screen_id == SCREEN_ID_SLEEP
+		|| screen_id == SCREEN_ID_IDLE)
+	{
+		scr_msg[screen_id].para |= SCREEN_EVENT_UPDATE_SPORT;
+		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
+	}
+}
+#endif
 
 void IMUMsgProcess(void)
 {
@@ -844,14 +840,49 @@ void IMUMsgProcess(void)
 				lcd_sleep_out = true;
 			}
 		}
+	#ifdef CONFIG_STEP_SUPPORT	
+		else
+		{
+		#ifdef IMU_DEBUG	
+			LOGD("steps trigger!");
+		#endif	
+			UpdateIMUData();
+			imu_redraw_steps_flag = true;
+		}
+	#endif
 	}
 
-	#ifdef CONFIG_FALL_DETECT_SUPPORT
-	if(int2_event && global_settings.fall_check) //fall
+#ifdef CONFIG_STEP_SUPPORT	
+	if(reset_steps)
+	{
+		reset_steps = false;
+
+		if(!imu_check_ok)
+			return;
+
+		ReSetImuSteps(); 
+		imu_redraw_steps_flag = true;
+	}
+
+	if(imu_redraw_steps_flag)
+	{
+		imu_redraw_steps_flag = false;
+
+		if(!imu_check_ok)
+			return;
+
+		IMURedrawSteps();
+	}
+#endif
+
+#ifdef CONFIG_FALL_DETECT_SUPPORT
+	if (int2_event && global_settings.fall_check) //fall
 	{
 	#ifdef IMU_DEBUG
 		LOGD("int2 evt!");
 	#endif
+
+		int2_event = false;
 
 		if(!imu_check_ok || !is_wearing())
 			return;
@@ -866,11 +897,11 @@ void IMUMsgProcess(void)
 				tap_detection();
 			}
 		#else
+			fall_check_flag = true;
 			fall_detection();
+			fall_check_flag = false;
 		#endif
 		}
-
-		int2_event = false;
 	}
 
 	if(RUN_FD_FLAG)
@@ -882,9 +913,8 @@ void IMUMsgProcess(void)
 	if(fall_result)
 	{
 		fall_result = false;
-		//LOGD("Checking for activity");
 
-		#if 0 // Activity detection
+	#if 0 // Activity detection
 		k_timer_start(&imu_activity_timer, K_SECONDS(3), K_NO_WAIT);
 
 		while(1)
@@ -903,14 +933,14 @@ void IMUMsgProcess(void)
 				break;
 			}
 		}
-		#else
-		#if 1 // SCC detections
+	#else
+	  #if 1 // SCC detections
 		StartSCC();
 		k_timer_start(&fall_scc_timer, K_SECONDS(9), K_NO_WAIT);
-		#else
+	  #else
 		FallTrigger();
-		#endif
-		#endif
+	  #endif
+	#endif
 	}
 	
 	if(SCC_check_ok)
@@ -919,11 +949,11 @@ void IMUMsgProcess(void)
 
 		FallTrigger();
 	}
-
-	//if(fall_check_flag)
-	//{
+	
+	if(fall_check_flag)
+	{
 		//k_sleep(K_MSEC(3));
-	//}
+	}
 #endif
 }
 #endif/*CONFIG_IMU_SUPPORT*/

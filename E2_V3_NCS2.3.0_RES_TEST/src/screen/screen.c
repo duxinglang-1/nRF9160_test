@@ -3339,7 +3339,7 @@ void BPUpdateStatus(void)
 	uint16_t x,y,w,h;
 	uint8_t tmpbuf[128] = {0};
 	uint8_t strbuf[64] = {0};
-	uint32_t img_anima[3] = {IMG_ID_BP_ICON_ANI_1,IMG_ID_BP_ICON_ANI_2,IMG_ID_BP_ICON_ANI_3};
+	uint32_t img_anima[3] = {IMG_ID_BP_BIG_ICON_1,IMG_ID_BP_BIG_ICON_2,IMG_ID_BP_BIG_ICON_3};
 	uint8_t i,count1=1,count2=1;
 	bpt_data bpt = {0};
 	uint16_t str_id;

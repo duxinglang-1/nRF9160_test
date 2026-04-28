@@ -88,4 +88,9 @@ extern bool int1_event;
 // imu off
 extern void imu_sensor_off(void);
 
+#ifdef CONFIG_SLEEP_SUPPORT
+extern void Set_Gsensor_data(signed short x, signed short y, signed short z, int step, int hr, int hour, int minute, int charging);
+extern int get_light_sleep_time(void); //return light sleep time in minutes
+extern int get_deep_sleep_time(void); //return deep sleep time in minutes
+#endif
 #endif/*CONFIG_IMU_SUPPORT*/

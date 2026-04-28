@@ -350,7 +350,7 @@ void StepsDataInit(bool reset_flag)
 		{
 			g_steps -= g_last_steps;
 			g_distance = 0.7*g_steps;
-			g_calorie = (0.8214*60*g_distance)/1000;
+			g_calorie = (0.55*60*g_distance)/1000;
 			g_last_steps = 0;
 
 			imu_redraw_steps_flag = true;

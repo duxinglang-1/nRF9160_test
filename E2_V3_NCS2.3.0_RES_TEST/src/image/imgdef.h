@@ -1,7 +1,7 @@
 /****************************************Copyright (c)************************************************
 ** File name:			    imgdef.h
 ** Created by:				Biao.X
-** Created date:			2026-04-22 16:20:39
+** Created date:			2026-04-29 17:32:44
 ******************************************************************************************************/
 #ifndef __IMGDEF_H__
 #define __IMGDEF_H__
@@ -236,16 +236,9 @@ typedef enum
 	IMG_ID_SIG_2,
 	IMG_ID_SIG_3,
 	IMG_ID_SIG_4,
-	IMG_ID_SLEEP_ANI_1,
-	IMG_ID_SLEEP_ANI_2,
-	IMG_ID_SLEEP_ANI_3,
-	IMG_ID_SLEEP_BEGIN,
-	IMG_ID_SLEEP_BIG_H,
-	IMG_ID_SLEEP_BIG_M,
 	IMG_ID_SLEEP_DEEP_ICON,
-	IMG_ID_SLEEP_END,
 	IMG_ID_SLEEP_H,
-	IMG_ID_SLEEP_HOUR,
+	IMG_ID_SLEEP_HR,
 	IMG_ID_SLEEP_ICON,
 	IMG_ID_SLEEP_LIGHT_ICON,
 	IMG_ID_SLEEP_LINE,

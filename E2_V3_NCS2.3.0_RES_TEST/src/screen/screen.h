@@ -102,40 +102,40 @@ extern "C" {
 #define IDLE_SIGNAL_Y		34
 
 //idle circle bg
-#define IDLE_CIRCLE_BG_W	192
-#define IDLE_CIRCLE_BG_H	95
-#define IDLE_CIRCLE_BG_X	24
-#define IDLE_CIRCLE_BG_Y	140
+#define IDLE_CIRCLE_BG_W	200
+#define IDLE_CIRCLE_BG_H	110
+#define IDLE_CIRCLE_BG_X	((LCD_WIDTH-IDLE_CIRCLE_BG_W)/2)
+#define IDLE_CIRCLE_BG_Y	130
 
 //idle hr
 #define IDLE_HR_BG_W		66
 #define IDLE_HR_BG_H		66
-#define IDLE_HR_BG_X		88
-#define IDLE_HR_BG_Y		128
+#define IDLE_HR_BG_X		87
+#define IDLE_HR_BG_Y		130
 #define IDLE_HR_ICON_W		22
 #define IDLE_HR_ICON_H		20
 #define IDLE_HR_ICON_X		110
-#define IDLE_HR_ICON_Y		136
-#define IDLE_HR_STR_W		36
+#define IDLE_HR_ICON_Y		140
+#define IDLE_HR_STR_W		38
 #define IDLE_HR_STR_H		20
 #define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
-#define IDLE_HR_STR_Y		161
+#define IDLE_HR_STR_Y		165
 #define IDLE_HR_NUM_W		12
 #define IDLE_HR_NUM_H		20
 
 //idle spo2
 #define IDLE_SPO2_BG_W		66
 #define IDLE_SPO2_BG_H		66
-#define IDLE_SPO2_BG_X		157//153
-#define IDLE_SPO2_BG_Y		135//134
+#define IDLE_SPO2_BG_X		154
+#define IDLE_SPO2_BG_Y		139
 #define IDLE_SPO2_ICON_W	18
 #define IDLE_SPO2_ICON_H	24
-#define IDLE_SPO2_ICON_X	181//177
-#define IDLE_SPO2_ICON_Y	140//138
-#define IDLE_SPO2_STR_W		55
+#define IDLE_SPO2_ICON_X	178
+#define IDLE_SPO2_ICON_Y	144
+#define IDLE_SPO2_STR_W		58
 #define IDLE_SPO2_STR_H		20
 #define IDLE_SPO2_STR_X		(IDLE_SPO2_BG_X+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2)
-#define IDLE_SPO2_STR_Y		166
+#define IDLE_SPO2_STR_Y		170
 #define IDLE_SPO2_NUM_W		12
 #define IDLE_SPO2_NUM_H		20
 #define IDLE_SPO2_PERC_W	19
@@ -150,8 +150,8 @@ extern "C" {
 #define IDLE_STEPS_ICON_H	24
 #define IDLE_STEPS_ICON_X	82
 #define IDLE_STEPS_ICON_Y	209
-#define IDLE_STEPS_STR_W	55
-#define IDLE_STEPS_STR_H	23
+#define IDLE_STEPS_STR_W	62
+#define IDLE_STEPS_STR_H	20
 #define IDLE_STEPS_STR_X	101
 #define IDLE_STEPS_STR_Y	210
 #define IDLE_STEPS_NUM_W	12
@@ -160,16 +160,16 @@ extern "C" {
 //idle temp
 #define IDLE_TEMP_BG_W		66
 #define IDLE_TEMP_BG_H		66
-#define IDLE_TEMP_BG_X		19//21
-#define IDLE_TEMP_BG_Y		135//134
+#define IDLE_TEMP_BG_X		20
+#define IDLE_TEMP_BG_Y		139
 #define IDLE_TEMP_ICON_W	18
 #define IDLE_TEMP_ICON_H	22
-#define IDLE_TEMP_ICON_X	43//45
-#define IDLE_TEMP_ICON_Y	142//141
-#define IDLE_TEMP_STR_W		54
+#define IDLE_TEMP_ICON_X	44
+#define IDLE_TEMP_ICON_Y	146
+#define IDLE_TEMP_STR_W		56
 #define IDLE_TEMP_STR_H		20
 #define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
-#define IDLE_TEMP_STR_Y		166
+#define IDLE_TEMP_STR_Y		170
 #define IDLE_TEMP_NUM_W		12
 #define IDLE_TEMP_NUM_H		20
 #define IDLE_TEMP_DOT_W		6
@@ -188,10 +188,8 @@ extern "C" {
 #define IMU_STEP_ICON_H				38
 #define IMU_STEP_ICON_X				45
 #define IMU_STEP_ICON_Y				66
-#define IMU_STEP_UNIT_W				35
-#define IMU_STEP_UNIT_H				15
-#define IMU_STEP_UNIT_X				184
-#define IMU_STEP_UNIT_Y				82
+#define IMU_STEP_UNIT_W				41
+#define IMU_STEP_UNIT_H				18
 #define IMU_STEP_STR_W				105
 #define IMU_STEP_STR_H				38
 #define IMU_STEP_STR_X				81
@@ -201,10 +199,8 @@ extern "C" {
 #define IMU_DIS_ICON_H				38
 #define IMU_DIS_ICON_X				45
 #define IMU_DIS_ICON_Y				113
-#define IMU_DIS_UNIT_W				21
-#define IMU_DIS_UNIT_H				14
-#define IMU_DIS_UNIT_X				182
-#define IMU_DIS_UNIT_Y				186
+#define IMU_DIS_UNIT_W				15
+#define IMU_DIS_UNIT_H				16
 #define IMU_DIS_STR_W				105
 #define IMU_DIS_STR_H				38
 #define IMU_DIS_STR_X				81
@@ -214,39 +210,15 @@ extern "C" {
 #define IMU_CAL_ICON_H				38
 #define IMU_CAL_ICON_X				45
 #define IMU_CAL_ICON_Y				160
-#define IMU_CAL_UNIT_W				29
-#define IMU_CAL_UNIT_H				14
-#define IMU_CAL_UNIT_X				163
-#define IMU_CAL_UNIT_Y				134
+#define IMU_CAL_UNIT_W				32
+#define IMU_CAL_UNIT_H				16
 #define IMU_CAL_STR_W				105
 #define IMU_CAL_STR_H				38
 #define IMU_CAL_STR_X				81
 #define IMU_CAL_STR_Y				160
 
 //sleep
-//total
-//sleep
-#define IMU_SLEEP_ICON_W			30
-#define IMU_SLEEP_ICON_H			33
-#define IMU_SLEEP_ICON_X			40
-#define IMU_SLEEP_ICON_Y			166
-#define IMU_SLEEP_H_UNIT_W			9
-#define IMU_SLEEP_H_UNIT_H			14
-#define IMU_SLEEP_H_UNIT_X			122
-#define IMU_SLEEP_H_UNIT_Y			185
-#define IMU_SLEEP_M_UNIT_W			13
-#define IMU_SLEEP_M_UNIT_H			14
-#define IMU_SLEEP_M_UNIT_X			177
-#define IMU_SLEEP_M_UNIT_Y			185
-#define IMU_SLEEP_H_STR_W			43
-#define IMU_SLEEP_H_STR_H			38
-#define IMU_SLEEP_H_STR_X			77
-#define IMU_SLEEP_H_STR_Y			163
-#define IMU_SLEEP_M_STR_W			43
-#define IMU_SLEEP_M_STR_H			38
-#define IMU_SLEEP_M_STR_X			132
-#define IMU_SLEEP_M_STR_Y			163
-
+//total sleep
 #define SLEEP_SEP_LINE_W			123
 #define SLEEP_SEP_LINE_H			1
 #define SLEEP_SEP_LINE_X			((LCD_WIDTH-SLEEP_SEP_LINE_W)/2)
@@ -255,10 +227,18 @@ extern "C" {
 #define SLEEP_TOTAL_ICON_H			40
 #define SLEEP_TOTAL_ICON_X			((LCD_WIDTH-SLEEP_TOTAL_ICON_W)/2)
 #define SLEEP_TOTAL_ICON_Y			56
-#define SLEEP_TOTAL_UNIT_HR_W		13
-#define SLEEP_TOTAL_UNIT_HR_H		20
+#define SLEEP_TOTAL_UNIT_H_W		10
+#define SLEEP_TOTAL_UNIT_H_H		16
+#define SLEEP_TOTAL_UNIT_H_X		105
+#define SLEEP_TOTAL_UNIT_H_Y		120
+#define SLEEP_TOTAL_UNIT_HR_W		17
+#define SLEEP_TOTAL_UNIT_HR_H		16
 #define SLEEP_TOTAL_UNIT_HR_X		104
 #define SLEEP_TOTAL_UNIT_HR_Y		116
+#define SLEEP_TOTAL_UNIT_M_W		16
+#define SLEEP_TOTAL_UNIT_M_H		17
+#define SLEEP_TOTAL_UNIT_M_X		164
+#define SLEEP_TOTAL_UNIT_M_Y		120
 #define SLEEP_TOTAL_UNIT_MIN_W		19
 #define SLEEP_TOTAL_UNIT_MIN_H		20
 #define SLEEP_TOTAL_UNIT_MIN_X		163
@@ -267,59 +247,38 @@ extern "C" {
 #define SLEEP_TOTAL_NUM_H			38
 #define SLEEP_TOTAL_STR_HR_W		44
 #define SLEEP_TOTAL_STR_HR_H		38
-#define SLEEP_TOTAL_STR_HR_X		59
+#define SLEEP_TOTAL_STR_HR_X		60
 #define SLEEP_TOTAL_STR_HR_Y		100
 #define SLEEP_TOTAL_STR_MIN_W		44		
 #define SLEEP_TOTAL_STR_MIN_H		38
-#define SLEEP_TOTAL_STR_MIN_X		118
+#define SLEEP_TOTAL_STR_MIN_X		119
 #define SLEEP_TOTAL_STR_MIN_Y		100
 //light sleep
 #define SLEEP_LIGHT_ICON_W			28
 #define SLEEP_LIGHT_ICON_H			28
 #define SLEEP_LIGHT_ICON_X			151
 #define SLEEP_LIGHT_ICON_Y			145
-#define SLEEP_LIGHT_UNIT_HR_W		9
-#define SLEEP_LIGHT_UNIT_HR_H		14
-#define SLEEP_LIGHT_UNIT_HR_X		162
-#define SLEEP_LIGHT_UNIT_HR_Y		187
-#define SLEEP_LIGHT_UNIT_MIN_W		13
-#define SLEEP_LIGHT_UNIT_MIN_H		14
-#define SLEEP_LIGHT_UNIT_MIN_X		189
-#define SLEEP_LIGHT_UNIT_MIN_Y		187
 #define SLEEP_LIGHT_NUM_W			14
 #define SLEEP_LIGHT_NUM_H			24
-#define SLEEP_LIGHT_STR_HR_W		28
-#define SLEEP_LIGHT_STR_HR_H		24
-#define SLEEP_LIGHT_STR_HR_X		135
-#define SLEEP_LIGHT_STR_HR_Y		178
-#define SLEEP_LIGHT_STR_MIN_W		28		
-#define SLEEP_LIGHT_STR_MIN_H		24
-#define SLEEP_LIGHT_STR_MIN_X		170
-#define SLEEP_LIGHT_STR_MIN_Y		178
+#define SLEEP_LIGHT_COLON_W			7
+#define SLEEP_LIGHT_COLON_H			24
+#define SLEEP_LIGHT_STR_W			63
+#define SLEEP_LIGHT_STR_H			24
+#define SLEEP_LIGHT_STR_X			132
+#define SLEEP_LIGHT_STR_Y			181
 //deep sleep
 #define SLEEP_DEEP_ICON_W			28
 #define SLEEP_DEEP_ICON_H			28
 #define SLEEP_DEEP_ICON_X			61
 #define SLEEP_DEEP_ICON_Y			145
-#define SLEEP_DEEP_UNIT_HR_W		9
-#define SLEEP_DEEP_UNIT_HR_H		14
-#define SLEEP_DEEP_UNIT_HR_X		72
-#define SLEEP_DEEP_UNIT_HR_Y		187
-#define SLEEP_DEEP_UNIT_MIN_W		13
-#define SLEEP_DEEP_UNIT_MIN_H		14
-#define SLEEP_DEEP_UNIT_MIN_X		100
-#define SLEEP_DEEP_UNIT_MIN_Y		187
 #define SLEEP_DEEP_NUM_W			14
 #define SLEEP_DEEP_NUM_H			24
-#define SLEEP_DEEP_STR_HR_W			28
-#define SLEEP_DEEP_STR_HR_H			24
-#define SLEEP_DEEP_STR_HR_X			45
-#define SLEEP_DEEP_STR_HR_Y			178
-#define SLEEP_DEEP_STR_MIN_W		28		
-#define SLEEP_DEEP_STR_MIN_H		24
-#define SLEEP_DEEP_STR_MIN_X		80
-#define SLEEP_DEEP_STR_MIN_Y		178
-
+#define SLEEP_DEEP_COLON_W			7
+#define SLEEP_DEEP_COLON_H			24
+#define SLEEP_DEEP_STR_W			63
+#define SLEEP_DEEP_STR_H			24
+#define SLEEP_DEEP_STR_X			42
+#define SLEEP_DEEP_STR_Y			181
 
 #ifdef UI_STYLE_HEALTH_BAR
 //heart rate

@@ -731,10 +731,17 @@ void IdleShowNetMode(void)
 	}
 }
 
+#ifdef CONFIG_PPG_SUPPORT||(defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT))||CONFIG_TEMP_SUPPORT
+void IdleShowCircleBg(void)
+{
+	LCD_ShowImage(IDLE_CIRCLE_BG_X, IDLE_CIRCLE_BG_Y, IMG_ID_IDLE_CIRCLE_BG);
+}
+#endif
+
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 void IdleUpdateSportData(void)
 {
-	uint16_t bg_color = 0x028f;
+	uint16_t bg_color = 0x0189;
 	uint8_t i,count=1;
 	uint16_t steps_show;
 	uint32_t divisor=10;
@@ -769,7 +776,7 @@ void IdleUpdateSportData(void)
 
 void IdleShowSportData(void)
 {
-	uint16_t bg_color = 0x028f;
+	uint16_t bg_color = 0x0189;
 	uint8_t i,count=1;
 	uint16_t steps_show;
 	uint32_t divisor=10;
@@ -778,7 +785,6 @@ void IdleShowSportData(void)
 
 	steps_show = last_sport.step_rec.steps;
 	
-	LCD_ShowImage(IDLE_STEPS_BG_X, IDLE_STEPS_BG_Y, IMG_ID_IDLE_STEP_BG);
 	LCD_ShowImage(IDLE_STEPS_ICON_X, IDLE_STEPS_ICON_Y, IMG_ID_IDLE_STEP_ICON);
 
 	while(1)
@@ -849,7 +855,6 @@ void IdleShowHrData(void)
 
 	hr_show = last_health.hr_rec.hr;
 
-	LCD_ShowImage(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_ID_IDLE_HR_BG);
 	LCD_ShowImageTrans(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, bg_color, IMG_ID_IDLE_HR_ICON);
 
 	while(1)
@@ -919,7 +924,6 @@ void IdleShowSPO2Data(void)
 
 	spo2_show = last_health.spo2_rec.spo2;
 
-	LCD_ShowImage(IDLE_SPO2_BG_X, IDLE_SPO2_BG_Y, IMG_ID_IDLE_SPO2_BG);
 	LCD_ShowImageTrans(IDLE_SPO2_ICON_X, IDLE_SPO2_ICON_Y, bg_color, IMG_ID_IDLE_SPO2_ICON);
 
 	while(1)
@@ -1025,7 +1029,6 @@ void IdleShowTempData(void)
 	uint32_t img_num[10] = {IMG_ID_FONT_20_NUM_0,IMG_ID_FONT_20_NUM_1,IMG_ID_FONT_20_NUM_2,IMG_ID_FONT_20_NUM_3,IMG_ID_FONT_20_NUM_4,
 							IMG_ID_FONT_20_NUM_5,IMG_ID_FONT_20_NUM_6,IMG_ID_FONT_20_NUM_7,IMG_ID_FONT_20_NUM_8,IMG_ID_FONT_20_NUM_9};
 
-	LCD_ShowImage(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_ID_IDLE_TEMP_BG);
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_ShowImageTrans(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, bg_color, IMG_ID_IDLE_TEMP_C_ICON);
@@ -1099,7 +1102,10 @@ void IdleScreenProcess(void)
 		IdleShowDateTime();
 	#ifdef CONFIG_BLE_SUPPORT	
 		IdleShowBleStatus();
-	#endif	
+	#endif
+	#ifdef CONFIG_PPG_SUPPORT||(defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT))||CONFIG_TEMP_SUPPORT
+		IdleShowCircleBg();
+	#endif
 	#ifdef CONFIG_PPG_SUPPORT
 		IdleShowHrData();
 		IdleShowSPO2Data();
@@ -5609,15 +5615,15 @@ void SleepUpdateStatus(void)
 	LCD_ShowImage(SLEEP_TOTAL_STR_MIN_X+0*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)/10]);
 	LCD_ShowImage(SLEEP_TOTAL_STR_MIN_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)%10]);
 
-	LCD_ShowImage(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)/10]);
-	LCD_ShowImage(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)%10]);
-	LCD_ShowImage(SLEEP_DEEP_STR_MIN_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
-	LCD_ShowImage(SLEEP_DEEP_STR_MIN_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)%10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep/60)/10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep/60)%10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+2*SLEEP_DEEP_NUM_W+SLEEP_DEEP_COLON_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep%60)/10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+3*SLEEP_DEEP_NUM_W+SLEEP_DEEP_COLON_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep%60)%10]);
 
-	LCD_ShowImage(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)/10]);
-	LCD_ShowImage(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)%10]);
-	LCD_ShowImage(SLEEP_LIGHT_STR_MIN_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
-	LCD_ShowImage(SLEEP_LIGHT_STR_MIN_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)%10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep/60)/10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep/60)%10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+2*SLEEP_LIGHT_NUM_W+SLEEP_LIGHT_COLON_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep%60)/10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+3*SLEEP_LIGHT_NUM_W+SLEEP_LIGHT_COLON_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep%60)%10]);	
 }
 
 void SleepShowStatus(void)
@@ -5630,13 +5636,13 @@ void SleepShowStatus(void)
 							IMG_ID_FONT_24_NUM_5,IMG_ID_FONT_24_NUM_6,IMG_ID_FONT_24_NUM_7,IMG_ID_FONT_24_NUM_8,IMG_ID_FONT_24_NUM_9};
 
 	
-	LCD_ShowImage(SLEEP_TOTAL_ICON_X, SLEEP_TOTAL_ICON_Y, IMG_ID_SLEEP_ANI_3);
-	LCD_ShowImage(SLEEP_TOTAL_UNIT_HR_X, SLEEP_TOTAL_UNIT_HR_Y, IMG_ID_SLEEP_BIG_H);
-	LCD_ShowImage(SLEEP_TOTAL_UNIT_MIN_X, SLEEP_TOTAL_UNIT_MIN_Y, IMG_ID_SLEEP_BIG_M);
+	LCD_ShowImage(SLEEP_TOTAL_ICON_X, SLEEP_TOTAL_ICON_Y, IMG_ID_SLEEP_ICON);
+	LCD_ShowImage(SLEEP_TOTAL_UNIT_H_X, SLEEP_TOTAL_UNIT_H_Y, IMG_ID_SLEEP_H);
+	LCD_ShowImage(SLEEP_TOTAL_UNIT_M_X, SLEEP_TOTAL_UNIT_M_Y, IMG_ID_SLEEP_M);
 	LCD_ShowImage(SLEEP_SEP_LINE_X, SLEEP_SEP_LINE_Y, IMG_ID_SLEEP_LINE);
 
-	LCD_ShowImage(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, IMG_ID_SLEEP_BEGIN);
-	LCD_ShowImage(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, IMG_ID_SLEEP_END);
+	LCD_ShowImage(SLEEP_DEEP_ICON_X, SLEEP_DEEP_ICON_Y, IMG_ID_SLEEP_DEEP_ICON);
+	LCD_ShowImage(SLEEP_LIGHT_ICON_X, SLEEP_LIGHT_ICON_Y, IMG_ID_SLEEP_LIGHT_ICON);
 
 	GetSleepTimeData(&deep_sleep, &light_sleep);
 	total_sleep = deep_sleep+light_sleep;
@@ -5646,17 +5652,17 @@ void SleepShowStatus(void)
 	LCD_ShowImage(SLEEP_TOTAL_STR_MIN_X+0*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)/10]);
 	LCD_ShowImage(SLEEP_TOTAL_STR_MIN_X+1*SLEEP_TOTAL_NUM_W, SLEEP_TOTAL_STR_MIN_Y, img_big_num[(total_sleep%60)%10]);
 
-	LCD_ShowImage(SLEEP_DEEP_STR_HR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)/10]);
-	LCD_ShowImage(SLEEP_DEEP_STR_HR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_HR_Y, img_num[(deep_sleep/60)%10]);
-	LCD_ShowImage(SLEEP_DEEP_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_ID_FONT_24_COLON);
-	LCD_ShowImage(SLEEP_DEEP_STR_MIN_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)/10]);
-	LCD_ShowImage(SLEEP_DEEP_STR_MIN_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_MIN_Y, img_num[(deep_sleep%60)%10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+0*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep/60)/10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+1*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep/60)%10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+2*SLEEP_DEEP_NUM_W, SLEEP_DEEP_STR_Y, IMG_ID_FONT_24_COLON);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+2*SLEEP_DEEP_NUM_W+SLEEP_DEEP_COLON_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep%60)/10]);
+	LCD_ShowImage(SLEEP_DEEP_STR_X+3*SLEEP_DEEP_NUM_W+SLEEP_DEEP_COLON_W, SLEEP_DEEP_STR_Y, img_num[(deep_sleep%60)%10]);
 
-	LCD_ShowImage(SLEEP_LIGHT_STR_HR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)/10]);
-	LCD_ShowImage(SLEEP_LIGHT_STR_HR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_HR_Y, img_num[(light_sleep/60)%10]);
-	LCD_ShowImage(SLEEP_LIGHT_UNIT_HR_X, SLEEP_DEEP_STR_HR_Y, IMG_ID_FONT_24_COLON);
-	LCD_ShowImage(SLEEP_LIGHT_STR_MIN_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)/10]);
-	LCD_ShowImage(SLEEP_LIGHT_STR_MIN_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_MIN_Y, img_num[(light_sleep%60)%10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+0*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep/60)/10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+1*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep/60)%10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+2*SLEEP_LIGHT_NUM_W, SLEEP_LIGHT_STR_Y, IMG_ID_FONT_24_COLON);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+2*SLEEP_LIGHT_NUM_W+SLEEP_LIGHT_COLON_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep%60)/10]);
+	LCD_ShowImage(SLEEP_LIGHT_STR_X+3*SLEEP_LIGHT_NUM_W+SLEEP_LIGHT_COLON_W, SLEEP_LIGHT_STR_Y, img_num[(light_sleep%60)%10]);
 }
 
 void SleepScreenProcess(void)
@@ -5792,7 +5798,7 @@ void SportShowNumWithUnitByImg(uint16_t x, uint16_t y, uint16_t w, uint16_t h, u
 		divisor = divisor/10;
 	}
 	LCD_MeasureImage(unit_img_addr, &unit_img_w, &unit_img_h);
-	LCD_ShowImage(x+(w-count*num_img_w)/2+i*num_img_w, y+num_img_h-unit_img_h, unit_img_addr);
+	LCD_ShowImage(x+(w-count*num_img_w)/2+i*num_img_w, y+num_img_h-unit_img_h-3, unit_img_addr);
 }
 
 void StepUpdateStatus(void)

@@ -107,6 +107,24 @@ extern "C" {
 #define IDLE_CIRCLE_BG_X	((LCD_WIDTH-IDLE_CIRCLE_BG_W)/2)
 #define IDLE_CIRCLE_BG_Y	130
 
+//idle temp
+#define IDLE_TEMP_BG_W		66
+#define IDLE_TEMP_BG_H		66
+#define IDLE_TEMP_BG_X		20
+#define IDLE_TEMP_BG_Y		139
+#define IDLE_TEMP_ICON_W	18
+#define IDLE_TEMP_ICON_H	22
+#define IDLE_TEMP_ICON_X	44
+#define IDLE_TEMP_ICON_Y	143
+#define IDLE_TEMP_STR_W		54
+#define IDLE_TEMP_STR_H		20
+#define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
+#define IDLE_TEMP_STR_Y		167
+#define IDLE_TEMP_NUM_W		12
+#define IDLE_TEMP_NUM_H		20
+#define IDLE_TEMP_DOT_W		6
+#define IDLE_TEMP_DOT_H		20
+
 //idle hr
 #define IDLE_HR_BG_W		66
 #define IDLE_HR_BG_H		66
@@ -115,11 +133,11 @@ extern "C" {
 #define IDLE_HR_ICON_W		22
 #define IDLE_HR_ICON_H		20
 #define IDLE_HR_ICON_X		110
-#define IDLE_HR_ICON_Y		140
+#define IDLE_HR_ICON_Y		137
 #define IDLE_HR_STR_W		36
 #define IDLE_HR_STR_H		20
 #define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
-#define IDLE_HR_STR_Y		165
+#define IDLE_HR_STR_Y		162
 #define IDLE_HR_NUM_W		12
 #define IDLE_HR_NUM_H		20
 
@@ -131,11 +149,11 @@ extern "C" {
 #define IDLE_SPO2_ICON_W	18
 #define IDLE_SPO2_ICON_H	24
 #define IDLE_SPO2_ICON_X	178
-#define IDLE_SPO2_ICON_Y	144
+#define IDLE_SPO2_ICON_Y	143
 #define IDLE_SPO2_STR_W		55
 #define IDLE_SPO2_STR_H		20
 #define IDLE_SPO2_STR_X		(IDLE_SPO2_BG_X+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2)
-#define IDLE_SPO2_STR_Y		170
+#define IDLE_SPO2_STR_Y		167
 #define IDLE_SPO2_NUM_W		12
 #define IDLE_SPO2_NUM_H		20
 #define IDLE_SPO2_PERC_W	19
@@ -156,24 +174,6 @@ extern "C" {
 #define IDLE_STEPS_STR_Y	210
 #define IDLE_STEPS_NUM_W	12
 #define IDLE_STEPS_NUM_H	20
-
-//idle temp
-#define IDLE_TEMP_BG_W		66
-#define IDLE_TEMP_BG_H		66
-#define IDLE_TEMP_BG_X		20
-#define IDLE_TEMP_BG_Y		139
-#define IDLE_TEMP_ICON_W	18
-#define IDLE_TEMP_ICON_H	22
-#define IDLE_TEMP_ICON_X	44
-#define IDLE_TEMP_ICON_Y	146
-#define IDLE_TEMP_STR_W		42
-#define IDLE_TEMP_STR_H		20
-#define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
-#define IDLE_TEMP_STR_Y		170
-#define IDLE_TEMP_NUM_W		12
-#define IDLE_TEMP_NUM_H		20
-#define IDLE_TEMP_DOT_W		6
-#define IDLE_TEMP_DOT_H		20
 
 //notify
 #define NOTIFY_IMG_MAX_COUNT	10

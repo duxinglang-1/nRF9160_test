@@ -881,7 +881,7 @@ void IdleShowHrData(void)
 
 void IdleUpdateSPO2Data(void)
 {
-	uint16_t bg_color = 0x1820;
+	uint16_t bg_color = 0x00c3;
 	uint8_t i,spo2_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_ID_FONT_20_NUM_0,IMG_ID_FONT_20_NUM_1,IMG_ID_FONT_20_NUM_2,IMG_ID_FONT_20_NUM_3,IMG_ID_FONT_20_NUM_4,
@@ -916,7 +916,7 @@ void IdleUpdateSPO2Data(void)
 
 void IdleShowSPO2Data(void)
 {
-	uint16_t bg_color = 0x1820;
+	uint16_t bg_color = 0x00c3;
 	uint8_t i,spo2_show,count=1;
 	uint32_t divisor=10;
 	uint32_t img_num[10] = {IMG_ID_FONT_20_NUM_0,IMG_ID_FONT_20_NUM_1,IMG_ID_FONT_20_NUM_2,IMG_ID_FONT_20_NUM_3,IMG_ID_FONT_20_NUM_4,

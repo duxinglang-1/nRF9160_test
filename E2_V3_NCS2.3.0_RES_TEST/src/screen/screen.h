@@ -116,7 +116,7 @@ extern "C" {
 #define IDLE_HR_ICON_H		20
 #define IDLE_HR_ICON_X		110
 #define IDLE_HR_ICON_Y		140
-#define IDLE_HR_STR_W		38
+#define IDLE_HR_STR_W		36
 #define IDLE_HR_STR_H		20
 #define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
 #define IDLE_HR_STR_Y		165
@@ -132,7 +132,7 @@ extern "C" {
 #define IDLE_SPO2_ICON_H	24
 #define IDLE_SPO2_ICON_X	178
 #define IDLE_SPO2_ICON_Y	144
-#define IDLE_SPO2_STR_W		58
+#define IDLE_SPO2_STR_W		55
 #define IDLE_SPO2_STR_H		20
 #define IDLE_SPO2_STR_X		(IDLE_SPO2_BG_X+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2)
 #define IDLE_SPO2_STR_Y		170
@@ -166,7 +166,7 @@ extern "C" {
 #define IDLE_TEMP_ICON_H	22
 #define IDLE_TEMP_ICON_X	44
 #define IDLE_TEMP_ICON_Y	146
-#define IDLE_TEMP_STR_W		56
+#define IDLE_TEMP_STR_W		42
 #define IDLE_TEMP_STR_H		20
 #define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
 #define IDLE_TEMP_STR_Y		170

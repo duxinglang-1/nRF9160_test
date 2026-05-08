@@ -389,10 +389,18 @@ void IdleShowSystemDate(void)
 		LCD_FillColor(x, y, w, h, BLACK);
 		if(date_time.month > 9)
 		{
+		#ifdef CONFIG_STEP_SUPPORT
 			LCD_ShowImage(x, y+2, img_20_num[date_time.month/10]);
+		#else
+			LCD_ShowImage(x, y+2, img_24_num[date_time.month/10]);
+		#endif
 			x += IDLE_DATE_NUM_CN_W;
 		}
+	#ifdef CONFIG_STEP_SUPPORT	
 		LCD_ShowImage(x, y+2, img_20_num[date_time.month%10]);
+	#else
+		LCD_ShowImage(x, y+2, img_24_num[date_time.month%10]);
+	#endif
 
 		x += IDLE_DATE_NUM_CN_W;
 		LCD_ShowUniString(x, y, str_m);
@@ -401,10 +409,18 @@ void IdleShowSystemDate(void)
 		x += w;
 		if(date_time.day > 9)
 		{
+		#ifdef CONFIG_STEP_SUPPORT
 			LCD_ShowImage(x, y+2, img_20_num[date_time.day/10]);
+		#else
+			LCD_ShowImage(x, y+2, img_24_num[date_time.day/10]);
+		#endif
 			x += IDLE_DATE_NUM_CN_W;
 		}
+	#ifdef CONFIG_STEP_SUPPORT	
 		LCD_ShowImage(x, y+2, img_20_num[date_time.day%10]);
+	#else
+		LCD_ShowImage(x, y+2, img_24_num[date_time.day%10]);
+	#endif
 		
 		x += IDLE_DATE_NUM_CN_W;
 		LCD_ShowUniString(x, y, str_d);
@@ -413,8 +429,13 @@ void IdleShowSystemDate(void)
 	
 	default:
 		x = IDLE_DATE_DAY_EN_X;
+	#ifdef CONFIG_STEP_SUPPORT
 		LCD_ShowImage(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day/10]);
 		LCD_ShowImage(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day%10]);
+	#else
+		LCD_ShowImage(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day/10]);
+		LCD_ShowImage(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day%10]);
+	#endif
 
 		LCD_MeasureUniStr(str_mon[date_time.month-1], &str_w, &str_h);
 	#ifdef LANGUAGE_AR_ENABLE	
@@ -462,10 +483,19 @@ void IdleShowSystemDate(void)
 void IdleShowSystemTime(void)
 {
 	uint8_t dis_hour;
-	uint16_t str_w,str_h;
+	static uint8_t last_dis_hour = 0;
+	uint16_t str_x,str_y,str_w,str_h;
 	static bool flag = false;
+#ifdef CONFIG_STEP_SUPPORT	
 	uint32_t img_num[10] = {IMG_ID_FONT_53_NUM_0,IMG_ID_FONT_53_NUM_1,IMG_ID_FONT_53_NUM_2,IMG_ID_FONT_53_NUM_3,IMG_ID_FONT_53_NUM_4,
 							IMG_ID_FONT_53_NUM_5,IMG_ID_FONT_53_NUM_6,IMG_ID_FONT_53_NUM_7,IMG_ID_FONT_53_NUM_8,IMG_ID_FONT_53_NUM_9};
+#else
+	uint32_t img_num[10] = {IMG_ID_FONT_60_NUM_0,IMG_ID_FONT_60_NUM_1,IMG_ID_FONT_60_NUM_2,IMG_ID_FONT_60_NUM_3,IMG_ID_FONT_60_NUM_4,
+							IMG_ID_FONT_60_NUM_5,IMG_ID_FONT_60_NUM_6,IMG_ID_FONT_60_NUM_7,IMG_ID_FONT_60_NUM_8,IMG_ID_FONT_60_NUM_9};
+#endif
+
+	LCD_SetFontSize(FONT_SIZE_28);
+	LCD_MeasureUniStr(STR_ID_PM, &str_w, &str_h);
 
 	flag = !flag;
 
@@ -478,27 +508,69 @@ void IdleShowSystemTime(void)
 			dis_hour = date_time.hour+12;
 	}
 	
-
-	LCD_ShowImage(IDLE_TIME_X+0*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[dis_hour/10]);
-	LCD_ShowImage(IDLE_TIME_X+1*IDLE_TIME_NUM_W, IDLE_TIME_Y, img_num[dis_hour%10]);
-	
-	if(flag)
-		LCD_ShowImage(IDLE_TIME_X+2*IDLE_TIME_NUM_W, IDLE_TIME_Y, IMG_ID_FONT_53_COLON);
-	else
-		LCD_Fill(IDLE_TIME_X+2*IDLE_TIME_NUM_W, IDLE_TIME_Y, IDLE_TIME_COLON_W, IDLE_TIME_COLON_H, BLACK);
-	
-	LCD_ShowImage(IDLE_TIME_X+2*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y, img_num[date_time.minute/10]);
-	LCD_ShowImage(IDLE_TIME_X+3*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y, img_num[date_time.minute%10]);
 	if(global_settings.time_format == TIME_FORMAT_12)
 	{
-		LCD_SetFontSize(FONT_SIZE_28);
-		LCD_MeasureUniStr(STR_ID_PM, &str_w, &str_h);
-		
-		if(date_time.hour >= 12)
-			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+IDLE_TIME_NUM_H-str_h, STR_ID_PM);
+		if(dis_hour > 9)
+		{
+			str_x = IDLE_TIME_X;
+		}
 		else
-			LCD_ShowUniStr(IDLE_TIME_X+4*IDLE_TIME_NUM_W+IDLE_TIME_COLON_W, IDLE_TIME_Y+IDLE_TIME_NUM_H-str_h, STR_ID_AM);
+		{
+			str_x = ((LCD_WIDTH-3*IDLE_TIME_NUM_W-IDLE_TIME_COLON_W)/2);
+			if(last_dis_hour > 9)
+			{
+				LCD_Fill(IDLE_TIME_X, IDLE_TIME_Y, IDLE_TIME_X-str_x, IDLE_TIME_NUM_H, BLACK);
+				LCD_Fill(IDLE_TIME_X+IDLE_TIME_W, IDLE_TIME_Y, str_w, IDLE_TIME_NUM_H, BLACK);
+			}
+		}
+		str_y = IDLE_TIME_Y;
+
+		if(dis_hour > 9)
+		{
+			LCD_ShowImage(str_x, IDLE_TIME_Y, img_num[dis_hour/10]);
+			str_x += IDLE_TIME_NUM_W;
+		}
+		LCD_ShowImage(str_x, IDLE_TIME_Y, img_num[dis_hour%10]);
+		str_x += IDLE_TIME_NUM_W;
 	}
+	else
+	{
+		str_x = IDLE_TIME_X;
+		str_y = IDLE_TIME_Y;
+		
+		LCD_ShowImage(str_x, IDLE_TIME_Y, img_num[dis_hour/10]);
+		str_x += IDLE_TIME_NUM_W;
+		LCD_ShowImage(str_x, IDLE_TIME_Y, img_num[dis_hour%10]);
+		str_x += IDLE_TIME_NUM_W;
+	}
+	
+	if(flag)
+	{
+	#ifdef CONFIG_STEP_SUPPORT
+		LCD_ShowImage(str_x, IDLE_TIME_Y, IMG_ID_FONT_53_COLON);
+	#else
+		LCD_ShowImage(str_x, IDLE_TIME_Y, IMG_ID_FONT_60_COLON);
+	#endif
+	}
+	else
+	{
+		LCD_Fill(str_x, IDLE_TIME_Y, IDLE_TIME_COLON_W, IDLE_TIME_COLON_H, BLACK);
+	}
+	str_x += IDLE_TIME_COLON_W;
+	
+	LCD_ShowImage(str_x, IDLE_TIME_Y, img_num[date_time.minute/10]);
+	str_x += IDLE_TIME_NUM_W;
+	LCD_ShowImage(str_x, IDLE_TIME_Y, img_num[date_time.minute%10]);
+	str_x += IDLE_TIME_NUM_W;
+	if(global_settings.time_format == TIME_FORMAT_12)
+	{
+		if(date_time.hour >= 12)
+			LCD_ShowUniStr(str_x, IDLE_TIME_Y+IDLE_TIME_NUM_H-str_h, STR_ID_PM);
+		else
+			LCD_ShowUniStr(str_x, IDLE_TIME_Y+IDLE_TIME_NUM_H-str_h, STR_ID_AM);
+	}
+
+	last_dis_hour = dis_hour;
 }
 
 void IdleShowSystemWeek(void)
@@ -855,6 +927,9 @@ void IdleShowHrData(void)
 
 	hr_show = last_health.hr_rec.hr;
 
+#ifndef CONFIG_STEP_SUPPORT
+	LCD_ShowImage(IDLE_HR_BG_X, IDLE_HR_BG_Y, IMG_ID_IDLE_HR_BG);
+#endif
 	LCD_ShowImageTrans(IDLE_HR_ICON_X, IDLE_HR_ICON_Y, bg_color, IMG_ID_IDLE_HR_ICON);
 
 	while(1)
@@ -924,6 +999,9 @@ void IdleShowSPO2Data(void)
 
 	spo2_show = last_health.spo2_rec.spo2;
 
+#ifndef CONFIG_STEP_SUPPORT
+	LCD_ShowImage(IDLE_SPO2_BG_X, IDLE_SPO2_BG_Y, IMG_ID_IDLE_SPO2_BG);
+#endif
 	LCD_ShowImageTrans(IDLE_SPO2_ICON_X, IDLE_SPO2_ICON_Y, bg_color, IMG_ID_IDLE_SPO2_ICON);
 
 	while(1)
@@ -1029,6 +1107,9 @@ void IdleShowTempData(void)
 	uint32_t img_num[10] = {IMG_ID_FONT_20_NUM_0,IMG_ID_FONT_20_NUM_1,IMG_ID_FONT_20_NUM_2,IMG_ID_FONT_20_NUM_3,IMG_ID_FONT_20_NUM_4,
 							IMG_ID_FONT_20_NUM_5,IMG_ID_FONT_20_NUM_6,IMG_ID_FONT_20_NUM_7,IMG_ID_FONT_20_NUM_8,IMG_ID_FONT_20_NUM_9};
 
+#ifndef CONFIG_STEP_SUPPORT
+	LCD_ShowImage(IDLE_TEMP_BG_X, IDLE_TEMP_BG_Y, IMG_ID_IDLE_TEMP_BG);
+#endif
 	if(global_settings.temp_unit == TEMP_UINT_C)
 	{
 		LCD_ShowImageTrans(IDLE_TEMP_ICON_X, IDLE_TEMP_ICON_Y, bg_color, IMG_ID_IDLE_TEMP_C_ICON);
@@ -1103,7 +1184,7 @@ void IdleScreenProcess(void)
 	#ifdef CONFIG_BLE_SUPPORT	
 		IdleShowBleStatus();
 	#endif
-	#ifdef CONFIG_PPG_SUPPORT||(defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT))||CONFIG_TEMP_SUPPORT
+	#if (defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT))&&(defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT))
 		IdleShowCircleBg();
 	#endif
 	#ifdef CONFIG_PPG_SUPPORT

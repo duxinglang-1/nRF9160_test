@@ -32,42 +32,80 @@ extern "C" {
 #define PWRON_LOGO_Y	((LCD_HEIGHT-PWRON_LOGO_H)/2)
 
 //date&time
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_TIME_W				132
 #define IDLE_TIME_H				53
+#else
+#define IDLE_TIME_W				153
+#define IDLE_TIME_H				60
+#endif
 #define IDLE_TIME_X				((LCD_WIDTH-IDLE_TIME_W)/2)
 #define IDLE_TIME_Y				48
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_TIME_NUM_W			30
 #define IDLE_TIME_NUM_H			53
 #define IDLE_TIME_COLON_W		12
 #define IDLE_TIME_COLON_H		49
+#else
+#define IDLE_TIME_NUM_W			34
+#define IDLE_TIME_NUM_H			60
+#define IDLE_TIME_COLON_W		17
+#define IDLE_TIME_COLON_H		60
+#endif
 #define IDLE_DATE_MON_EN_W		65
 #define IDLE_DATE_MON_EN_H		26
 #define IDLE_DATE_MON_EN_X		142
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_DATE_MON_EN_Y		100
+#else
+#define IDLE_DATE_MON_EN_Y		106
+#endif
 #define IDLE_DATE_DAY_EN_W		24
 #define IDLE_DATE_DAY_EN_H		20
 #define IDLE_DATE_DAY_EN_X		115
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_DATE_DAY_EN_Y		102
+#else
+#define IDLE_DATE_DAY_EN_Y		105
+#endif
 #define IDLE_DATE_NUM_EN_W		12
 #define IDLE_DATE_NUM_EN_H		20
 #define IDLE_DATE_MON_CN_W		100
 #define IDLE_DATE_MON_CN_H		26
 #define IDLE_DATE_MON_CN_X		46
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_DATE_MON_CN_Y		100
+#else
+#define IDLE_DATE_MON_CN_Y		106
+#endif
 #define IDLE_DATE_DAY_CN_W		24
 #define IDLE_DATE_DAY_CN_H		20
 #define IDLE_DATE_DAY_CN_X		63
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_DATE_DAY_CN_Y		100
 #define IDLE_DATE_NUM_CN_W		12
 #define IDLE_DATE_NUM_CN_H		20
+#else
+#define IDLE_DATE_DAY_CN_Y		110
+#define IDLE_DATE_NUM_CN_W		14
+#define IDLE_DATE_NUM_CN_H		24
+#endif
 #define IDLE_WEEK_EN_W			50
 #define IDLE_WEEK_EN_H			26
 #define IDLE_WEEK_EN_X			50
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_WEEK_EN_Y			100
+#else
+#define IDLE_WEEK_EN_Y			106
+#endif
 #define IDLE_WEEK_CN_W			45
 #define IDLE_WEEK_CN_H			26
 #define IDLE_WEEK_CN_X			150
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_WEEK_CN_Y			100
+#else
+#define IDLE_WEEK_CN_Y			106
+#endif
 
 //ble
 #define IDLE_BLE_W		50
@@ -110,16 +148,30 @@ extern "C" {
 //idle temp
 #define IDLE_TEMP_BG_W		66
 #define IDLE_TEMP_BG_H		66
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_TEMP_BG_X		20
 #define IDLE_TEMP_BG_Y		139
+#else
+#define IDLE_TEMP_BG_X		21
+#define IDLE_TEMP_BG_Y		134
+#endif
 #define IDLE_TEMP_ICON_W	18
 #define IDLE_TEMP_ICON_H	22
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_TEMP_ICON_X	44
 #define IDLE_TEMP_ICON_Y	143
+#else
+#define IDLE_TEMP_ICON_X	45
+#define IDLE_TEMP_ICON_Y	141
+#endif
 #define IDLE_TEMP_STR_W		54
 #define IDLE_TEMP_STR_H		20
 #define IDLE_TEMP_STR_X		(IDLE_TEMP_BG_X+(IDLE_TEMP_BG_W-IDLE_TEMP_STR_W)/2)
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_TEMP_STR_Y		167
+#else
+#define IDLE_TEMP_STR_Y		163
+#endif
 #define IDLE_TEMP_NUM_W		12
 #define IDLE_TEMP_NUM_H		20
 #define IDLE_TEMP_DOT_W		6
@@ -128,32 +180,60 @@ extern "C" {
 //idle hr
 #define IDLE_HR_BG_W		66
 #define IDLE_HR_BG_H		66
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_HR_BG_X		87
 #define IDLE_HR_BG_Y		130
+#else
+#define IDLE_HR_BG_X		87
+#define IDLE_HR_BG_Y		167
+#endif
 #define IDLE_HR_ICON_W		22
 #define IDLE_HR_ICON_H		20
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_HR_ICON_X		110
 #define IDLE_HR_ICON_Y		137
+#else
+#define IDLE_HR_ICON_X		109
+#define IDLE_HR_ICON_Y		177
+#endif
 #define IDLE_HR_STR_W		36
 #define IDLE_HR_STR_H		20
 #define IDLE_HR_STR_X		(IDLE_HR_BG_X+(IDLE_HR_BG_W-IDLE_HR_STR_W)/2)
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_HR_STR_Y		162
+#else
+#define IDLE_HR_STR_Y		202
+#endif
 #define IDLE_HR_NUM_W		12
 #define IDLE_HR_NUM_H		20
 
 //idle spo2
 #define IDLE_SPO2_BG_W		66
 #define IDLE_SPO2_BG_H		66
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_SPO2_BG_X		154
 #define IDLE_SPO2_BG_Y		139
+#else
+#define IDLE_SPO2_BG_X		153
+#define IDLE_SPO2_BG_Y		134
+#endif
 #define IDLE_SPO2_ICON_W	18
 #define IDLE_SPO2_ICON_H	24
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_SPO2_ICON_X	178
 #define IDLE_SPO2_ICON_Y	143
+#else
+#define IDLE_SPO2_ICON_X	177
+#define IDLE_SPO2_ICON_Y	138
+#endif
 #define IDLE_SPO2_STR_W		55
 #define IDLE_SPO2_STR_H		20
 #define IDLE_SPO2_STR_X		(IDLE_SPO2_BG_X+(IDLE_SPO2_BG_W-IDLE_SPO2_STR_W)/2)
+#ifdef CONFIG_STEP_SUPPORT
 #define IDLE_SPO2_STR_Y		167
+#else
+#define IDLE_SPO2_STR_Y		163
+#endif
 #define IDLE_SPO2_NUM_W		12
 #define IDLE_SPO2_NUM_H		20
 #define IDLE_SPO2_PERC_W	19

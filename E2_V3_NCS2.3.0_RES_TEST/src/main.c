@@ -683,7 +683,9 @@ void system_init(void)
 #ifdef CONFIG_DATA_DOWNLOAD_SUPPORT
 	dl_init();
 #endif
+#ifdef TEST_DEBUG
 	LogInit();
+#endif
 
 	NB_init(&nb_work_q);
 	GPS_init(&gps_work_q);
@@ -803,7 +805,9 @@ int main(void)
 	#ifdef CONFIG_FACTORY_TEST_SUPPORT
 		FactoryTestProccess();
 	#endif
+	#ifdef TEST_DEBUG
 		LogMsgProcess();
+	#endif
 		system_init_completed();
 		k_cpu_idle();
 	}

@@ -38,6 +38,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
+//#define PPG_UPGRADE_TEST
+
 #define PPG_REPORT_SIZE            18
 #define ACCEL_REPORT_SIZE          6
 #define ALGO_REPORT_SIZE           24 //56//24

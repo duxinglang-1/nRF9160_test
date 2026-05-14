@@ -17,6 +17,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(E2, CONFIG_LOG_DEFAULT_LEVEL);
 
+#ifdef TEST_DEBUG
+
 typedef struct
 {
 	uint32_t addr;
@@ -47,7 +49,6 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 	uint8_t buf[LOG_BUFF_SIZE] = {0};
 	va_list args;
 
-#ifdef TEST_DEBUG
 	timemap = (k_uptime_get()%1000);
 	va_start(args, fmt);
 	sprintf(buf, "[%04d-%02d-%02d %02d:%02d:%02d:%03d]..%s>>", 
@@ -83,7 +84,6 @@ void LOGDD(const char *fun_name, const char *fmt, ...)
 		
 		LOG_INF("%s", buf);
 	}
-#endif	
 }
 
 void log_write_data_to_flash(uint8_t *data, uint32_t len)
@@ -122,7 +122,6 @@ bool SendLogData(void)
 	static uint32_t j=0;
 	static uint32_t addr=LOG_DATA_BEGIN_ADDR;
 
-#ifdef TEST_DEBUG
 	if((inforbuf.count == 0) || (inforbuf.count == 0xffffffff))
 		return false;
 
@@ -170,7 +169,6 @@ bool SendLogData(void)
 		addr += SPIFlash_SECTOR_SIZE;
 		return true;
 	}
-#endif
 
 	return false;
 }
@@ -180,7 +178,6 @@ void log_read_from_flash(void)
 	uint32_t i,j=0,k=0,addr = LOG_DATA_BEGIN_ADDR;
 	uint8_t buf[LOG_BUFF_SIZE] = {0};
 
-#ifdef TEST_DEBUG
 	if((inforbuf.count == 0) || (inforbuf.count == 0xffffffff))
 		return;
 
@@ -227,7 +224,6 @@ void log_read_from_flash(void)
 
 		addr += SPIFlash_SECTOR_SIZE;
 	}
-#endif	
 }
 
 void LOGDM(const char *fun_name, const char *fmt, ...)
@@ -238,7 +234,6 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 	uint8_t buf[LOG_BUFF_SIZE] = {0};
 	va_list args;
 
-#ifdef TEST_DEBUG
 	timemap = (k_uptime_get()%1000);
 	va_start(args, fmt);
 	sprintf(buf, "[%04d-%02d-%02d %02d:%02d:%02d:%03d]..%s>>", 
@@ -275,7 +270,6 @@ void LOGDM(const char *fun_name, const char *fmt, ...)
 
 		LogWriteData(buf, n, DATA_TRANSFER);
 	}
-#endif	
 }
 
 static void LogSaveDataCallBack(struct k_timer *timer)
@@ -349,7 +343,7 @@ void LogInit(void)
 	if(inforbuf.count == 0xffffffff)
 		inforbuf.count = 0;
 
-#ifdef TEST_DEBUG
 	log_read_from_flash();
-#endif	
 }
+
+#endif/*TEST_DEBUG*/

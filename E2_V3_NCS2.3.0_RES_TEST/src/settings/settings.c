@@ -700,7 +700,9 @@ void ResetFactoryDefault(void)
 	ResetHealthData();
 	ResetSportData();
 
+#ifdef TEST_DEBUG
 	LogClear();
+#endif
 
 	if((screen_id == SCREEN_ID_SETTINGS) && (settings_menu.id == SETTINGS_MENU_FACTORY_RESET))
 	{

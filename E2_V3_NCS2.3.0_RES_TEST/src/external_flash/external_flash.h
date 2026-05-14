@@ -40,6 +40,8 @@
 #define	W25Q128JW_ID	0xEF17
 //旺宏Flash ID
 #define MX25R6435F_ID	0xC217
+//瑞萨
+#define AT25SL0641C_ID	0x1F68
 
 //SPI Flash命令定义
 #define	SPIFlash_WriteEnable	0x06  //写使能命令

@@ -80,12 +80,6 @@ void Spi_WriteOneByte(uint8_t Dat)
 		LOGD("SPI error: %d", err);
 	#endif
 	}
-	else
-	{
-	#ifdef FLASH_DEBUG
-		LOGD("ok");
-	#endif
-	}
 }
 /*****************************************************************************
 ** Ãè  Êö£ºÐ´Ê¹ÄÜ
@@ -165,8 +159,6 @@ uint16_t SpiFlash_ReadID(void)
 		LOGD("flash ID: %x", dat);
 	#endif
 	}
-
-
 
 	return dat;
 }

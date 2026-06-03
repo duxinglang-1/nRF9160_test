@@ -386,8 +386,8 @@ void LCD_SleepOut(void)
 
 	//gpio_pin_set(gpio_lcd, EN, 1);
 	
-	WriteComm(0x11);//Sleep out	
-	Delay(120);     
+	WriteComm(0x11);//Sleep out
+	Delay(120);
 	WriteComm(0x29);//Display on
 	
 	LOGD("lcd sleep out!");

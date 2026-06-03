@@ -1,0 +1,161 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl
+{
+	uart0_default: uart0_default
+	{
+		group1
+		{
+			psels = <NRF_PSEL(UART_TX, 0, 12)>;
+		};
+		group2
+		{
+			psels = <NRF_PSEL(UART_RX, 0, 11)>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_sleep: uart0_sleep
+	{
+		group1
+		{
+			psels = <NRF_PSEL(UART_TX, 0, 12)>,
+							<NRF_PSEL(UART_RX, 0, 11)>;
+			low-power-enable;
+		};
+	};
+	
+	uart2_default: uart2_default
+	{
+		group1
+		{
+			psels = <NRF_PSEL(UART_TX, 0, 18)>,
+							<NRF_PSEL(UART_RX, 0, 19)>;
+		};
+	};
+
+	uart2_sleep: uart2_sleep
+	{
+		group1
+		{
+			psels = <NRF_PSEL(UART_TX, 0, 18)>,
+							<NRF_PSEL(UART_RX, 0, 19)>;
+			low-power-enable;
+		};
+	};
+	
+	spi2_default: spi2_default
+	{
+		group1
+		{
+			psels = <NRF_PSEL(SPIM_SCK,  0, 3)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 4)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
+		};
+	};
+
+	spi2_sleep: spi2_sleep
+	{
+		group1
+		{
+			psels = <NRF_PSEL(SPIM_SCK,  0, 3)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 4)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
+			low-power-enable;
+		};
+	};
+	
+	spi3_default: spi3_default
+	{
+		group1
+		{
+			psels = <NRF_PSEL(SPIM_SCK,  0, 22)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 20)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
+		};
+	};
+
+	spi3_sleep: spi3_sleep
+	{
+		group1
+		{
+			psels = <NRF_PSEL(SPIM_SCK,  0, 22)>,
+							<NRF_PSEL(SPIM_MOSI, 0, 20)>,
+							<NRF_PSEL(SPIM_MISO, 0, 5)>;
+			low-power-enable;
+		};
+	};
+	
+	i2c1_default: i2c1_default
+	{
+		group1
+		{
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+							<NRF_PSEL(TWIM_SCL, 0, 31)>;
+		};
+	};
+
+	i2c1_sleep: i2c1_sleep
+	{
+		group1
+		{
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+							<NRF_PSEL(TWIM_SCL, 0, 31)>;
+			low-power-enable;
+		};
+	};
+};
+
+
+&uart0{
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart2{
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi2{
+	compatible = "nordic,nrf-spim";
+	status = "disabled";
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3{
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1{
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c2{
+	compatible = "nordic,nrf-twim";
+	status = "disabled";
+};
+
+&interface_to_nrf52840{
+	compatible = "nordic,nrf9160dk-nrf52840-interface";
+	status = "disabled";
+};

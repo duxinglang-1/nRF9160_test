@@ -14,6 +14,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <modem/nrf_modem_lib.h>
 #include <dk_buttons_and_leds.h>
+//#include <lvgl.h>
 #include "lcd.h"
 #include "datetime.h"
 #include "font.h"
@@ -672,7 +673,12 @@ void test_show_lines(void)
 	LCD_DrawLine(260, 0, 260, LCD_HEIGHT-1);
 	LCD_DrawLine(320, 0, 320, LCD_HEIGHT-1);
 }
-			
+
+void test_show_lvgl(void)
+{
+	
+}
+
 void test_notify(void)
 {
 	notify_infor infor = {0};

@@ -742,7 +742,7 @@ int32_t sh_start_rawdata_mode(void* param)
 	}
 
 	//set output format: 10 00 07
-	///TODO:clean up output type
+	//TODO:clean up output type
 	status = sh_set_data_type(sh_param->FifoDataType, true);
 	if (status != SS_SUCCESS)
 	{
@@ -890,7 +890,7 @@ int32_t sh_start_rawdata_mode(void* param)
 	//set fifo callback function
 	sh_loadFifoParam(sh_param);
 
-	///TODO: set timer based on setting report rate
+	//TODO: set timer based on setting report rate
 	sh_start_polling_timer(sh_param->tmrPeriod_ms);
 
 	return 0;

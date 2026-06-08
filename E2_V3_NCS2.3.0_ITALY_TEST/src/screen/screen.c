@@ -372,8 +372,9 @@ void IdleShowSystemDate(void)
 			if(global_settings.step_is_on)
 				y = IDLE_DATE_MON_CN_EXT_Y;
 			else
+		#endif		
 				y = IDLE_DATE_MON_CN_Y;
-		#endif	
+	
 			w = IDLE_DATE_MON_CN_W;
 			h = IDLE_DATE_MON_CN_H;
 			str_m = str_mon_cn;
@@ -388,8 +389,9 @@ void IdleShowSystemDate(void)
 			if(global_settings.step_is_on)
 				y = IDLE_DATE_MON_CN_EXT_Y;
 			else
+		#endif		
 				y = IDLE_DATE_MON_CN_Y;
-		#endif	
+		
 			w = IDLE_DATE_MON_CN_W+10;
 			h = IDLE_DATE_MON_CN_H;
 			str_m = str_mon_kr;
@@ -495,8 +497,8 @@ void IdleShowSystemDate(void)
 			if(global_settings.step_is_on)
 				y = IDLE_DATE_MON_EN_EXT_Y;
 			else
+		#endif		
 				y = IDLE_DATE_MON_EN_Y;
-		#endif
 			LCD_FillColor(IDLE_DATE_MON_EN_X, y, IDLE_DATE_MON_EN_W, IDLE_DATE_MON_EN_H, BLACK);
 		
 			if(IDLE_DATE_MON_EN_W > str_w)
@@ -547,6 +549,7 @@ void IdleShowSystemTime(void)
 		p_img = img_53_num;
 	}
 	else
+#endif		
 	{
 		num_w = IDLE_TIME_NUM_W;
 		num_h = IDLE_TIME_NUM_H;
@@ -555,7 +558,7 @@ void IdleShowSystemTime(void)
 		time_w = IDLE_TIME_W;
 		p_img = img_60_num;
 	}
-#endif
+
 	if(global_settings.time_format == TIME_FORMAT_12)
 	{
 		if(dis_hour > 9)

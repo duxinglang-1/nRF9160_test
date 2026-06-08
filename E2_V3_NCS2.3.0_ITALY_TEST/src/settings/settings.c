@@ -223,8 +223,16 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 	true,					//wake screen by wrist
 	false,					//wrist off check
 	true,					//fall check
-	false,					//steps turn on
+#ifdef CONFIG_STEP_SUPPORT
+	true,					//steps turn on
+#else
+	false,					
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
 	true,					//sleep turn on
+#else
+	false,
+#endif
 	3,						//location type: 1:only wifi,2:only gps,3:wifi+gps,4:gps+wifi
 	0,						//target steps
 	60,						//health interval
@@ -254,7 +262,15 @@ const settings_menu_t SETTING_MAIN_MENU =
 {
 	SETTINGS_MENU_MAIN,
 	0,
+#if defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)
+ #if defined(CONFIG_STEP_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
 	10,
+ #else
+	9,
+ #endif
+#else
+	8,
+#endif	
 	{
 		STR_ID_LANGUAGES,
 		STR_ID_SCR_BRIGHT,
@@ -264,8 +280,12 @@ const settings_menu_t SETTING_MAIN_MENU =
 		STR_ID_CAREMATE_QR,
 		STR_ID_FACTORY_DEFAULT,
 		STR_ID_OTA,
+	#ifdef CONFIG_STEP_SUPPORT
 		STR_ID_STEP_COUNTING,
+	#endif
+	#ifdef CONFIG_SLEEP_SUPPORT
 		STR_ID_SLEEP_MONITORING,
+	#endif
 	},
 	{
 		//select proc func
@@ -277,8 +297,12 @@ const settings_menu_t SETTING_MAIN_MENU =
 		SettingsMainMenu6Proc,
 		SettingsMainMenu7Proc,
 		SettingsMainMenu8Proc,
+	#ifdef CONFIG_STEP_SUPPORT
 		SettingsMainMenu9Proc,
+	#endif
+	#ifdef CONFIG_SLEEP_SUPPORT
 		SettingsMainMenu10Proc,
+	#endif
 	},
 	{	
 		//page proc func
@@ -1110,6 +1134,9 @@ void SettingsMenuStep1Proc(void)
 	{
 		global_settings.step_is_on = false;
 		need_save_settings = true;
+	#ifdef CONFIG_STEP_SUPPORT
+		StepCountingStop();
+	#endif
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
@@ -1127,6 +1154,9 @@ void SettingsMenuStep2Proc(void)
 	{
 		global_settings.step_is_on = true;
 		need_save_settings = true;
+	#ifdef CONFIG_STEP_SUPPORT
+		StepCountingStart();
+	#endif	
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
@@ -1144,6 +1174,9 @@ void SettingsMenuSleep1Proc(void)
 	{
 		global_settings.sleep_is_on = false;
 		need_save_settings = true;
+	#ifdef CONFIG_SLEEP_SUPPORT
+		SleepMonitorStop();
+	#endif
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
@@ -1161,6 +1194,9 @@ void SettingsMenuSleep2Proc(void)
 	{
 		global_settings.sleep_is_on = true;
 		need_save_settings = true;
+	#ifdef CONFIG_SLEEP_SUPPORT
+		SleepMonitorStart();
+	#endif	
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));

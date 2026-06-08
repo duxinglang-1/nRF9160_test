@@ -723,10 +723,13 @@ void UpdateSystemTime(void)
 		#if !defined(NB_SIGNAL_TEST)
 		 #ifdef CONFIG_IMU_SUPPORT
 		  #ifdef CONFIG_STEP_SUPPORT
-			save_step_data_flag = true;
+		  	if(global_settings.step_is_on)
+				save_step_data_flag = true;
 		  #endif
 		  #ifdef CONFIG_SLEEP_SUPPORT
-			save_sleep_data_flag = true;
+		  	if(global_settings.sleep_is_on)
+				save_sleep_data_flag = true;
+			
 		  	if(date_time.hour == SLEEP_TIME_START)
 		  	{
 		  		reset_sleep_data = true;
@@ -975,7 +978,8 @@ void TimeMsgProcess(void)
 
 		TimeCheckSendHealthData();
 	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-		TimeCheckSendSportData();
+		if(global_settings.step_is_on || global_settings.sleep_is_on)
+			TimeCheckSendSportData();
 	#endif
 
 	#ifdef CONFIG_BLE_SUPPORT	
@@ -983,7 +987,8 @@ void TimeMsgProcess(void)
 		{
 			APP_get_cur_hour_health(date_time);
 		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-			APP_get_cur_hour_sport(date_time);
+			if((global_settings.step_is_on == true) || (global_settings.sleep_is_on == true))
+				APP_get_cur_hour_sport(date_time);
 		#endif
 		}
 	#endif

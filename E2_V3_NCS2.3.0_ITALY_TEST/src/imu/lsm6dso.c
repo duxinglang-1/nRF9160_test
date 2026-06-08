@@ -656,6 +656,16 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 }
 
 #ifdef CONFIG_STEP_SUPPORT
+void StepCountingStart(void)
+{
+
+}
+
+void StepCountingStop(void)
+{
+
+}
+
 void ReSetImuSteps(void)
 {
 	lsm6dso_steps_reset(&imu_dev_ctx);
@@ -1479,7 +1489,8 @@ void IMU_init(struct k_work_q *work_q)
 #endif
 
 #ifdef CONFIG_SLEEP_SUPPORT
-	StartSleepTimeMonitor();
+	if(global_settings.sleep_is_on)
+		StartSleepTimeMonitor();
 #endif
 
 #ifdef IMU_DEBUG

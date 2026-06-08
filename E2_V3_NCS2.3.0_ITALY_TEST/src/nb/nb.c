@@ -1187,10 +1187,12 @@ void GetModemDateTime(void)
 
 		#ifdef CONFIG_IMU_SUPPORT
 		#ifdef CONFIG_STEP_SUPPORT
-			StepsDataInit(true);
+			if(global_settings.step_is_on)
+				StepsDataInit(true);
 		#endif
 		#ifdef CONFIG_SLEEP_SUPPORT
-			SleepDataInit(true);
+			if(global_settings.sleep_is_on)
+				SleepDataInit(true);
 		#endif
 		#endif	
 		}
@@ -1449,7 +1451,7 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1468,7 +1470,7 @@ void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1487,7 +1489,7 @@ void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1506,7 +1508,7 @@ void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1525,7 +1527,7 @@ void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1541,7 +1543,7 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissHrData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1553,7 +1555,7 @@ void NBSendMissHrData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1565,7 +1567,7 @@ void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
 
 void NBSendMissBptData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1577,7 +1579,7 @@ void NBSendMissBptData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissTempData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1589,7 +1591,7 @@ void NBSendMissTempData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1612,7 +1614,7 @@ void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissSportData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[1024] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -2049,10 +2051,12 @@ void ParseData(uint8_t *data, uint32_t datalen)
 				
 			#ifdef CONFIG_IMU_SUPPORT
 			#ifdef CONFIG_STEP_SUPPORT
-				StepsDataInit(true);
+				if(global_settings.step_is_on)
+					StepsDataInit(true);
 			#endif
 			#ifdef CONFIG_SLEEP_SUPPORT
-				SleepDataInit(true);
+				if(global_settings.sleep_is_on)
+					SleepDataInit(true);
 			#endif
 			#endif
 			}
@@ -3273,8 +3277,9 @@ void NBMsgProcess(void)
 
 	if(mqtt_send_miss_data_flag)
 	{
-	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)) 
-		SendMissingSportData();
+	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
+		if(global_settings.step_is_on || global_settings.sleep_is_on)
+			SendMissingSportData();
 	#endif
 	#if defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT)
 		SendMissingHealthData();

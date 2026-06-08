@@ -666,7 +666,33 @@ void InitFactoryTestResults(void)
 
 void SaveSystemSettings(void)
 {
+	static bool step_sw = FACTORY_DEFAULT_SETTINGS.step_is_on;
+	static bool sleep_sw = FACTORY_DEFAULT_SETTINGS.sleep_is_on;
+	
 	SaveSettingsToInnerFlash(global_settings);
+
+#ifdef CONFIG_STEP_SUPPORT
+	if(global_settings.step_is_on != step_sw)
+	{
+		if(global_settings.step_is_on)
+			StepCountingStart();
+		else
+			StepCountingStop();
+
+		step_sw = global_settings.step_is_on;
+	}
+#endif
+#ifdef CONFIG_SLEEP_SUPPORT
+	if(global_settings.sleep_is_on != sleep_sw)
+	{
+		if(global_settings.sleep_is_on)
+			SleepMonitorStart();
+		else
+			SleepMonitorStop();
+
+		sleep_sw = global_settings.sleep_is_on;
+	}
+#endif
 }
 
 void ResetSystemSettings(void)
@@ -1134,9 +1160,6 @@ void SettingsMenuStep1Proc(void)
 	{
 		global_settings.step_is_on = false;
 		need_save_settings = true;
-	#ifdef CONFIG_STEP_SUPPORT
-		StepCountingStop();
-	#endif
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
@@ -1154,9 +1177,6 @@ void SettingsMenuStep2Proc(void)
 	{
 		global_settings.step_is_on = true;
 		need_save_settings = true;
-	#ifdef CONFIG_STEP_SUPPORT
-		StepCountingStart();
-	#endif	
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
@@ -1174,9 +1194,6 @@ void SettingsMenuSleep1Proc(void)
 	{
 		global_settings.sleep_is_on = false;
 		need_save_settings = true;
-	#ifdef CONFIG_SLEEP_SUPPORT
-		SleepMonitorStop();
-	#endif
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));
@@ -1194,9 +1211,6 @@ void SettingsMenuSleep2Proc(void)
 	{
 		global_settings.sleep_is_on = true;
 		need_save_settings = true;
-	#ifdef CONFIG_SLEEP_SUPPORT
-		SleepMonitorStart();
-	#endif	
 	}
 
 	memcpy(&settings_menu, &SETTING_MAIN_MENU, sizeof(settings_menu_t));

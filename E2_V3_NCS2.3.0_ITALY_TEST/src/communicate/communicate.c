@@ -193,7 +193,8 @@ void TimeCheckSendSportData(void)
 		strcpy(reply, "0,");
 	
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-	GetCurDayStepRecData(step_data);
+	if(global_settings.step_is_on)
+		GetCurDayStepRecData(step_data);
 #endif
 	for(i=0;i<24;i++)
 	{
@@ -217,7 +218,8 @@ void TimeCheckSendSportData(void)
 	}
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
-	GetCurDaySleepRecData((uint8_t*)&sleep);
+	if(global_settings.sleep_is_on)
+		GetCurDaySleepRecData((uint8_t*)&sleep);
 #endif
 	for(i=0;i<24;i++)
 	{
@@ -501,10 +503,12 @@ void SendMissingSportData(void)
 	uint8_t sleepbuf[SLEEP_REC2_DATA_SIZE] = {0};	
 
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
-	SpiFlash_Read(stepbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
+	if(global_settings.step_is_on)
+		SpiFlash_Read(stepbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
 #endif
 #if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
-	SpiFlash_Read(sleepbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
+	if(global_settings.sleep_is_on)
+		SpiFlash_Read(sleepbuf, SLEEP_REC2_DATA_ADDR, SLEEP_REC2_DATA_SIZE);
 #endif
 
 	for(i=0;i<7;i++)
@@ -982,10 +986,12 @@ void SyncSendHealthData(void)
 
 #ifdef CONFIG_IMU_SUPPORT
   #ifdef CONFIG_STEP_SUPPORT
-	GetSportData(&steps, &calorie, &distance);
+  	if(global_settings.step_is_on)
+		GetSportData(&steps, &calorie, &distance);
   #endif
   #ifdef CONFIG_SLEEP_SUPPORT
-	GetSleepTimeData(&deep_sleep, &light_sleep);
+  	if(global_settings.sleep_is_on)
+		GetSleepTimeData(&deep_sleep, &light_sleep);
   #endif
 #endif
 
@@ -1328,7 +1334,21 @@ void SendSettingsData(void)
 
 	sprintf(tmpbuf, ",%d", global_settings.time_format);
 	strcat(reply, tmpbuf);
-	
+
+#ifdef CONFIG_STEP_SUPPORT
+	sprintf(tmpbuf, ",%d", global_settings.step_is_on);
+#else
+	sprintf(tmpbuf, ",0");
+#endif
+	strcat(reply, tmpbuf);
+
+#ifdef CONFIG_SLEEP_SUPPORT
+	sprintf(tmpbuf, ",%d", global_settings.sleep_is_on);
+#else
+	sprintf(tmpbuf, ",0");
+#endif
+	strcat(reply, tmpbuf);
+
 	NBSendSettingsData(reply, strlen(reply));
 }
 

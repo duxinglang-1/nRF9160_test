@@ -442,7 +442,7 @@ void IdleShowSystemDate(void)
 		x = IDLE_DATE_DAY_EN_X;
 	#ifdef CONFIG_STEP_SUPPORT
 		if(global_settings.step_is_on)
-			y = IDLE_DATE_DAY_EN_Y+4;
+			y = IDLE_DATE_DAY_EN_EXT_Y;
 		else
 	#endif
 			y = IDLE_DATE_DAY_EN_Y;

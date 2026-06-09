@@ -1814,6 +1814,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 		}
 		else if(strcmp(strcmd, "S9") == 0)
 		{
+			bool step_sw;
 			uint8_t tmpbuf[8] = {0};
 
 			strcat(strdata, ",");
@@ -1840,11 +1841,19 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			GetStringInforBySepa(strdata, ",", 7, tmpbuf);
 			global_settings.bpt_is_on = atoi(tmpbuf);
 			//后台下发计步启闭设置
+			step_sw = global_settings.step_is_on;
 			GetStringInforBySepa(strdata, ",", 8, tmpbuf);
 			global_settings.step_is_on = atoi(tmpbuf);
 			//后台下发睡眠启闭设置
 			GetStringInforBySepa(strdata, ",", 9, tmpbuf);
-			global_settings.sleep_is_on = atoi(tmpbuf);			
+			global_settings.sleep_is_on = atoi(tmpbuf);
+
+			if(step_sw != global_settings.step_is_on)
+			{
+				IdleRedrawTimeAndHealth();
+				step_sw = global_settings.step_is_on;
+			}
+			
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S11") == 0)

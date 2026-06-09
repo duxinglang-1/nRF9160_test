@@ -1321,6 +1321,31 @@ void IdleShowTempData(void)
 }
 #endif
 
+void IdleRedrawTimeAndHealth(void)
+{
+	if(screen_id == SCREEN_ID_IDLE)
+	{
+		LCD_Fill(0, IDLE_TIME_Y, (LCD_WIDTH-1), (LCD_HEIGHT-1)-IDLE_TIME_Y, BLACK);
+		
+		IdleShowDateTime();
+	#if (defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT))&&(defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT))
+		if(global_settings.step_is_on)
+			IdleShowCircleBg();
+	#endif
+	#ifdef CONFIG_PPG_SUPPORT
+		IdleShowHrData();
+		IdleShowSPO2Data();
+	#endif
+	#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
+		if(global_settings.step_is_on)
+			IdleShowSportData();
+	#endif
+	#ifdef CONFIG_TEMP_SUPPORT
+		IdleShowTempData();
+	#endif
+	}
+}
+
 void IdleScreenProcess(void)
 {
 	switch(scr_msg[SCREEN_ID_IDLE].act)
@@ -1333,10 +1358,10 @@ void IdleScreenProcess(void)
 		IdleShowSignal();
 		IdleShowNetMode();
 		IdleShowBatSoc();
-		IdleShowDateTime();
 	#ifdef CONFIG_BLE_SUPPORT	
 		IdleShowBleStatus();
 	#endif
+		IdleShowDateTime();
 	#if (defined(CONFIG_PPG_SUPPORT)||defined(CONFIG_TEMP_SUPPORT))&&(defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT))
 		if(global_settings.step_is_on)
 			IdleShowCircleBg();

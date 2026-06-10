@@ -487,6 +487,10 @@ void UpdateSleepPara(void)
 		chg = 1;
 	
 	get_sensor_reading(&sensor_x, &sensor_y, &sensor_z);
+#ifdef CONFIG_STEP_SUPPORT
 	GetImuSteps(&steps);
+#else
+	steps = 0;
+#endif
 	Set_Gsensor_data((signed short)sensor_x, (signed short)sensor_x, (signed short)sensor_x, steps, 80, date_time.hour, date_time.minute, chg);
 }

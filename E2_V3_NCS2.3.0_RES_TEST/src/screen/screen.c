@@ -433,8 +433,8 @@ void IdleShowSystemDate(void)
 		LCD_ShowImage(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day/10]);
 		LCD_ShowImage(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day%10]);
 	#else
-		LCD_ShowImage(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day/10]);
-		LCD_ShowImage(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y+4, img_20_num[date_time.day%10]);
+		LCD_ShowImage(x+0*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day/10]);
+		LCD_ShowImage(x+1*IDLE_DATE_NUM_EN_W, IDLE_DATE_DAY_EN_Y, img_20_num[date_time.day%10]);
 	#endif
 
 		LCD_MeasureUniStr(str_mon[date_time.month-1], &str_w, &str_h);

@@ -66,7 +66,7 @@ extern "C" {
 #ifdef CONFIG_STEP_SUPPORT
 #define IDLE_DATE_DAY_EN_Y		102
 #else
-#define IDLE_DATE_DAY_EN_Y		105
+#define IDLE_DATE_DAY_EN_Y		109
 #endif
 #define IDLE_DATE_NUM_EN_W		12
 #define IDLE_DATE_NUM_EN_H		20

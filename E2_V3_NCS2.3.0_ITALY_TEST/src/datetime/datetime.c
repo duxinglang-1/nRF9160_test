@@ -703,6 +703,11 @@ void UpdateSystemTime(void)
 		#ifdef CONFIG_ALARM_SUPPORT	
 			AlarmRemindCheck(date_time);
 		#endif
+
+		#ifdef CONFIG_IMU_SUPPORT&&CONFIG_STEP_SUPPORT
+		  	if((date_time.hour == 23) && (date_time.minute == 59) && global_settings.step_is_on)
+				save_step_data_flag = true;
+		#endif
 			//TimeCheckSendLocationData();
 		}
 	#endif
@@ -941,6 +946,9 @@ void TimeMsgProcess(void)
 	{
 		SetCurDayStepRecData(g_steps);
 		save_step_data_flag = false;
+
+		if((date_time.hour == 23) && (date_time.minute == 59) && global_settings.step_is_on)
+			TimeCheckSendSportData();
 	}
 #endif
 #ifdef CONFIG_SLEEP_SUPPORT	

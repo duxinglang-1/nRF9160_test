@@ -1844,15 +1844,29 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			step_sw = global_settings.step_is_on;
 			GetStringInforBySepa(strdata, ",", 8, tmpbuf);
 			global_settings.step_is_on = atoi(tmpbuf);
-			//后台下发睡眠启闭设置
-			GetStringInforBySepa(strdata, ",", 9, tmpbuf);
-			global_settings.sleep_is_on = atoi(tmpbuf);
-
 			if(step_sw != global_settings.step_is_on)
 			{
 				IdleRedrawTimeAndHealth();
 				step_sw = global_settings.step_is_on;
 			}
+			//后台下发睡眠启闭设置
+			GetStringInforBySepa(strdata, ",", 9, tmpbuf);
+			global_settings.sleep_is_on = atoi(tmpbuf);
+			//后台下发用户性别
+			GetStringInforBySepa(strdata, ",", 10, tmpbuf);
+			global_settings.person.sex = atoi(tmpbuf);
+			//后台下发用户年龄
+			GetStringInforBySepa(strdata, ",", 11, tmpbuf);
+			global_settings.person.sex = atoi(tmpbuf);
+			//后台下发用户身高
+			GetStringInforBySepa(strdata, ",", 12, tmpbuf);
+			global_settings.person.height = atof(tmpbuf);
+			//后台下发用户体重
+			GetStringInforBySepa(strdata, ",", 13, tmpbuf);
+			global_settings.person.weight = atof(tmpbuf);
+			//后台下发用户步长
+			GetStringInforBySepa(strdata, ",", 14, tmpbuf);
+			global_settings.person.step_length = atof(tmpbuf);
 			
 			flag = true;
 		}

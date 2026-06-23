@@ -76,8 +76,6 @@ static void SettingsMainMenu5Proc(void);
 static void SettingsMainMenu6Proc(void);
 static void SettingsMainMenu7Proc(void);
 static void SettingsMainMenu8Proc(void);
-static void SettingsMainMenu9Proc(void);
-static void SettingsMainMenu10Proc(void);
 static void SettingsMenuLang1Proc(void);
 static void SettingsMenuLang2Proc(void);
 static void SettingsMenuLang3Proc(void);
@@ -256,21 +254,20 @@ const global_settings_t FACTORY_DEFAULT_SETTINGS =
 		{false,0,0,0},
 		{false,0,0,0},
 	},
+	{
+		1,
+		60,
+		165.0,
+		55.0,
+		65.0,
+	},
 };
 
 const settings_menu_t SETTING_MAIN_MENU = 
 {
 	SETTINGS_MENU_MAIN,
 	0,
-#if defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT)
- #if defined(CONFIG_STEP_SUPPORT)&&defined(CONFIG_SLEEP_SUPPORT)
-	10,
- #else
-	9,
- #endif
-#else
 	8,
-#endif	
 	{
 		STR_ID_LANGUAGES,
 		STR_ID_SCR_BRIGHT,
@@ -280,12 +277,6 @@ const settings_menu_t SETTING_MAIN_MENU =
 		STR_ID_CAREMATE_QR,
 		STR_ID_FACTORY_DEFAULT,
 		STR_ID_OTA,
-	#ifdef CONFIG_STEP_SUPPORT
-		STR_ID_STEP_COUNTING,
-	#endif
-	#ifdef CONFIG_SLEEP_SUPPORT
-		STR_ID_SLEEP_MONITORING,
-	#endif
 	},
 	{
 		//select proc func
@@ -297,12 +288,6 @@ const settings_menu_t SETTING_MAIN_MENU =
 		SettingsMainMenu6Proc,
 		SettingsMainMenu7Proc,
 		SettingsMainMenu8Proc,
-	#ifdef CONFIG_STEP_SUPPORT
-		SettingsMainMenu9Proc,
-	#endif
-	#ifdef CONFIG_SLEEP_SUPPORT
-		SettingsMainMenu10Proc,
-	#endif
 	},
 	{	
 		//page proc func
@@ -706,7 +691,6 @@ void InitSystemSettings(void)
 	int err;
 
 	ReadSettingsFromInnerFlash(&global_settings);
-
 	switch(global_settings.flag)
 	{
 	case SETTINGS_STATUS_INIT:
@@ -957,31 +941,6 @@ void SettingsMainMenu8Proc(void)
 		}
 	}
 }
-
-void SettingsMainMenu9Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_STEP, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
-void SettingsMainMenu10Proc(void)
-{
-	main_menu_index_bk = settings_menu.index;
-	
-	memcpy(&settings_menu, &SETTING_MENU_SLEEP, sizeof(settings_menu_t));
-
-	if(screen_id == SCREEN_ID_SETTINGS)
-	{
-		scr_msg[screen_id].act = SCREEN_ACTION_UPDATE;
-	}
-}
-
 
 void SettingsMenuLang1Proc(void)
 {

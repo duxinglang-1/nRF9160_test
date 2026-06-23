@@ -35,7 +35,7 @@
 #define MENU_OPT_STR_MAX	10
 #define MENU_NOTIFY_STR_MAX	32
 
-#define VERSION_STR	"3.8.0_60610"
+#define VERSION_STR	"3.8.0_60623"
 
 #ifdef FW_FOR_CN
 #define LANG_BRANCH	"C"
@@ -183,6 +183,15 @@ typedef struct
 
 typedef struct
 {
+	uint8_t sex;				//1:male 2:female
+	uint8_t age;
+	float height;
+	float weight;
+	float step_length;
+}personal_infor_t;
+
+typedef struct
+{
 	SETTINGS_STATUS flag;
 	bool temp_is_on;				//temp
 	bool hr_is_on;					//heart rate
@@ -207,6 +216,7 @@ typedef struct
 	location_interval_t dot_interval;
 	bp_calibra_t bp_calibra;
 	alarm_infor_t alarm[ALARM_MAX];
+	personal_infor_t person;
 }global_settings_t;
 
 extern bool need_save_time;

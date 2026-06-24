@@ -944,7 +944,10 @@ void TimeMsgProcess(void)
 #ifdef CONFIG_STEP_SUPPORT
 	if(save_step_data_flag)
 	{
-		SetCurDayStepRecData(g_steps);
+		//xb add 2026.06.24 When the step data is 0, there is no need to store it, only 24 pieces of data from 1 hour to 23:59 hours are stored
+		if(date_time.hour != 0)
+			SetCurDayStepRecData(g_steps);
+		
 		save_step_data_flag = false;
 
 		if((date_time.hour == 23) && (date_time.minute == 59) && global_settings.step_is_on)

@@ -1857,7 +1857,7 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			global_settings.person.sex = atoi(tmpbuf);
 			//后台下发用户年龄
 			GetStringInforBySepa(strdata, ",", 11, tmpbuf);
-			global_settings.person.sex = atoi(tmpbuf);
+			global_settings.person.age = atoi(tmpbuf);
 			//后台下发用户身高
 			GetStringInforBySepa(strdata, ",", 12, tmpbuf);
 			global_settings.person.height = atof(tmpbuf);

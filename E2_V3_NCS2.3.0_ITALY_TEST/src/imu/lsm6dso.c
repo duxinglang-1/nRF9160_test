@@ -221,6 +221,11 @@ void SetCurDayStepRecData(uint16_t data)
 	tmp_step.year = temp_date.year;
 	tmp_step.month = temp_date.month;
 	tmp_step.day = temp_date.day;
+	//xb add 2026.06.25 only 24 pieces of data from 1 hour to 23:59 hours are stored in the position of array[0]~array[23].
+	if((temp_date.hour == 23) && (temp_date.minute == 59))
+		temp_date.hour = 23;
+	else
+		temp_date.hour--;
 	tmp_step.steps[temp_date.hour] = data;
 
 	SpiFlash_Read(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);

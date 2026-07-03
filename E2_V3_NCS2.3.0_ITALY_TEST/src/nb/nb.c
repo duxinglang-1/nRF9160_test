@@ -19,6 +19,7 @@
 #include <modem/nrf_modem_lib.h>
 #include <modem/at_monitor.h>
 #include <nrf_modem_at.h>
+#include <math.h>
 #include "lcd.h"
 #include "font.h"
 #include "settings.h"
@@ -1756,6 +1757,48 @@ bool GetParaFromString(uint8_t *rece, uint32_t rece_len, uint8_t *cmd, uint8_t *
 	}
 }
 
+float Myatof(uint8_t *str)
+{
+	uint8_t p, sign = 0;
+	float num, ret = 0;
+
+	while(*str == '\0')
+		str++;
+
+	if(*str == '-')
+	{
+		sign = -1;
+		str++;
+	}
+	else
+	{
+		sign = 1;
+	}
+
+	while((*str >= '0') && (*str <= '9'))
+	{
+		ret = ret * 10 + (*str - '0');
+		str++;
+	}
+	
+	if(*str == '.')
+	{
+		str++;
+		p = 0;
+		while((*str >= '0') && (*str <= '9'))
+		{	 
+			p++;
+			ret = ret * 10 + (*str - '0');
+			str++;
+		}
+		
+		num = pow(10.0f, p);
+		return (ret * sign)/num;
+	} 
+	else
+		return ret * sign;
+}
+
 void ParseData(uint8_t *data, uint32_t datalen)
 {
 	bool ret = false;
@@ -1860,14 +1903,14 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			global_settings.person.age = atoi(tmpbuf);
 			//后台下发用户身高
 			GetStringInforBySepa(strdata, ",", 12, tmpbuf);
-			global_settings.person.height = atof(tmpbuf);
+			global_settings.person.height = Myatof(tmpbuf);
 			//后台下发用户体重
 			GetStringInforBySepa(strdata, ",", 13, tmpbuf);
-			global_settings.person.weight = atof(tmpbuf);
+			global_settings.person.weight = Myatof(tmpbuf);
 			//后台下发用户步长
 			GetStringInforBySepa(strdata, ",", 14, tmpbuf);
-			global_settings.person.step_length = atof(tmpbuf);
-			
+			global_settings.person.step_length = Myatof(tmpbuf);
+		
 			flag = true;
 		}
 		else if(strcmp(strcmd, "S11") == 0)

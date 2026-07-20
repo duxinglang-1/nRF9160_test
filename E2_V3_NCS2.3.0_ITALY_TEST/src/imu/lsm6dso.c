@@ -25,7 +25,9 @@
 #include "esp8266.h"
 #endif
 #include "logger.h"
+#ifdef CONFIG_PPG_SUPPORT
 #include "max32674.h" // SCC
+#endif
 
 //#define IMU_DEBUG
 //#define SOFTWARE_STEP
@@ -1452,7 +1454,11 @@ void tap_detection(void)
 
 static void fall_scc_confirm_timerout(struct k_timer *timer_id)
 {
-	if(CheckSCC())
+	if(1
+		#ifdef CONFIG_PPG_SUPPORT
+		 && CheckSCC()
+		#endif
+		)
 	{
 		SCC_check_ok = true;
 	}
@@ -1675,7 +1681,9 @@ void IMUMsgProcess(void)
 		}
 	#else
 	  #if 1 // SCC detections
+	  #ifdef CONFIG_PPG_SUPPORT
 		StartSCC();
+	  #endif
 		k_timer_start(&fall_scc_timer, K_SECONDS(9), K_NO_WAIT);
 	  #else
 		FallTrigger();

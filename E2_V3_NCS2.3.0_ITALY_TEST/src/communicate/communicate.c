@@ -187,7 +187,11 @@ void TimeCheckSendSportData(void)
 	memset(&reply, 0x00, sizeof(reply));
 	
 	//wrist
-	if(ppg_skin_contacted_flag)
+	if(1
+		#ifdef CONFIG_PPG_SUPPORT	
+			&& ppg_skin_contacted_flag
+		#endif	
+		)
 		strcpy(reply, "1,");
 	else
 		strcpy(reply, "0,");

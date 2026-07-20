@@ -384,6 +384,7 @@ void FallAlarmCancel(void)
 
 void FallChangrStatus(void)
 {
+	FallVibOn();
 	k_timer_start(&fall_timer, K_SECONDS(FALL_NOTIFY_TIMEOUT), K_NO_WAIT);
 }
 
@@ -407,7 +408,7 @@ void FallAlarmStart(void)
 	
 	EnterFallScreen();
 	
-	FallVibOn();
+	//FallVibOn();
 #ifdef CONFIG_AUDIO_SUPPORT	
 	if(global_settings.language == LANGUAGE_CN)
 		FallPlayAlarmCn();

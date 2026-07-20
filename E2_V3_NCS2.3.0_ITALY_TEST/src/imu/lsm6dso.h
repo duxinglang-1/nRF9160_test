@@ -70,6 +70,7 @@ extern void ReSetImuSteps(void);
 extern void UpdateIMUData(void);
 extern void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance);
 extern void lsm6dso_sensitivity(void);
+extern uint16_t getSoftwareStep(void);
 #endif
 
 extern void IMU_init(struct k_work_q *work_q);

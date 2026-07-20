@@ -11,6 +11,7 @@
 
 #define SLEEP_TIME_START	20
 #define SLEEP_TIME_END		8
+#define SLEEP_SCC_START	    19 //Arvin add 26.06.18
 
 extern bool update_sleep_parameter;
 extern bool reset_sleep_data;

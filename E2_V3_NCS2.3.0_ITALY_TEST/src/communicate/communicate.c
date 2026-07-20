@@ -209,8 +209,8 @@ void TimeCheckSendSportData(void)
 		if(step_data[i] == 0xffff)
 			step_data[i] = 0;
 
-		distance = 0.7*step_data[i];
-		calorie = (0.8214*60*distance)/1000;
+		distance = (global_settings.person.step_length*step_data[i])/100;
+		calorie = (0.8*global_settings.person.weight*distance)/1000;
 		sprintf(tmpbuf, "%d&%d&%d", step_data[i], distance, calorie);
 
 		if(i<23)
@@ -568,8 +568,8 @@ void SendMissingSportData(void)
 			if(step_data[j] == 0xffff)
 				step_data[j] = 0;
 
-			distance = 0.7*step_data[j];
-			calorie = (0.8214*60*distance)/1000;
+			distance = (global_settings.person.step_length*step_data[j])/100;
+			calorie = (0.8*global_settings.person.weight*distance)/1000;
 			sprintf(tmpbuf, "%d&%d&%d", step_data[j], distance, calorie);
 
 			if(j<23)

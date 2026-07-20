@@ -15,6 +15,9 @@
 #include "external_flash.h"
 #include "max20353.h"
 #include "logger.h"
+#ifdef CONFIG_PPG_SUPPORT
+#include "max32674.h"
+#endif
 
 uint16_t last_light_sleep = 0;
 uint16_t last_deep_sleep = 0;
@@ -33,9 +36,17 @@ static uint16_t watch_state = 0;
 static int waggle_flag = 0;
 static int sedentary_time_temp = 0;
 
+static bool SCC_sleep_check_ok = false;
+
 bool reset_sleep_data = false;
 bool update_sleep_parameter = false;
 static struct k_timer sleep_timer;
+static bool is_sleep_scc_second = true;
+static bool is_scc = true;
+static bool scc_second_buf = false;
+
+static void sleep_scc_confirm_timerout(struct k_timer *timer_id);
+K_TIMER_DEFINE(sleep_scc_timer, sleep_scc_confirm_timerout, NULL);
 
 void ClearAllSleepRecData(void)
 {
@@ -355,14 +366,6 @@ static void sleep_timer_handler(struct k_timer *timer)
 	update_sleep_parameter = true;
 }
 
-void SleepMonitorStart(void)
-{
-}
-
-void SleepMonitorStop(void)
-{
-}
-
 void SleepDataReset(void)
 {
 	move = 0;	 
@@ -462,12 +465,42 @@ void SleepDataInit(bool reset_flag)
 	}
 }
 
+static void sleep_scc_confirm_timerout(struct k_timer *timer_id)
+{
+	if(1
+		#ifdef CONFIG_PPG_SUPPORT
+		 && CheckSCC()
+		#endif
+		)
+	{
+		SCC_sleep_check_ok = true;
+	}
+	else // if(is_sleep_scc_second)
+	{
+		SCC_sleep_check_ok = false;
+		//is_sleep_scc_second = false;
+		// 十分钟后重新检测
+		//scc_second_buf = true;
+	}
+}
+
 void StartSleepTimeMonitor(void)
 {
 	SleepDataInit(false);
 
 	k_timer_init(&sleep_timer, sleep_timer_handler, NULL);
 	k_timer_start(&sleep_timer, K_MSEC(1000), K_MSEC(1000));
+}
+
+void SleepMonitorStart(void)
+{
+	StartSleepTimeMonitor();
+}
+
+void SleepMonitorStop(void)
+{
+	k_timer_stop(&sleep_timer);
+	SleepDataReset();
 }
 
 void GetSleepTimeData(uint16_t *deep_sleep, uint16_t *light_sleep)
@@ -485,6 +518,15 @@ void GetSleepInfor(void)
 	//LOGD("deep_sleep:%d, light_sleep:%d", deep_sleep, light_sleep);
 }
 
+void scc_detecion(void)
+{
+#ifdef CONFIG_PPG_SUPPORT
+	StartSCC();
+#endif
+
+	k_timer_start(&sleep_scc_timer, K_SECONDS(10), K_NO_WAIT);
+}
+
 void UpdateSleepPara(void)
 {
 	uint16_t steps;
@@ -496,9 +538,37 @@ void UpdateSleepPara(void)
 	
 	get_sensor_reading(&sensor_x, &sensor_y, &sensor_z);
 #ifdef CONFIG_STEP_SUPPORT
-	GetImuSteps(&steps);
+	steps = getSoftwareStep();
 #else
 	steps = 0;
 #endif
-	Set_Gsensor_data((signed short)sensor_x, (signed short)sensor_x, (signed short)sensor_x, steps, 80, date_time.hour, date_time.minute, chg);
+
+#if 1 // SCC detections
+	if (((date_time.hour>=SLEEP_SCC_START)||(date_time.hour<SLEEP_TIME_END))&&(date_time.minute==30))
+	{
+		is_scc = true;
+	}
+	
+	if(((date_time.hour>=SLEEP_SCC_START)||(date_time.hour<SLEEP_TIME_END))&&(date_time.minute==35) && is_scc)
+	{
+		is_scc = false;
+		//is_sleep_scc_second = true;
+		scc_detecion();
+	}
+	#if 0
+	if (((date_time.hour>=SLEEP_SCC_START)||(date_time.hour<SLEEP_TIME_END))&&(date_time.minute==41) && scc_second_buf)
+	{
+		scc_second_buf = false;
+		scc_detecion();
+	}
+	#endif
+	
+#endif
+
+#if 1
+	if(SCC_sleep_check_ok)
+	{
+		Set_Gsensor_data((signed short)sensor_x, (signed short)sensor_y, (signed short)sensor_z, steps, 80, date_time.hour, date_time.minute, chg);
+	}
+#endif
 }

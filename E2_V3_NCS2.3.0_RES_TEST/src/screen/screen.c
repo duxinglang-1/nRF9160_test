@@ -4582,67 +4582,22 @@ void NotifyUpdate(void)
 				text_len = mmi_ucs2strlen(notify_msg.text);
 				y = ((str_h-2*offset_h)-line_count*line_h)/2;
 				y += (str_y+offset_h);
-				while(line_no < line_count)
-				{
-					uint16_t tmpbuf[128] = {0};
-					uint8_t i=0;
 
-					tmpbuf[i++] = notify_msg.text[byte_no++];
-					LCD_MeasureUniString(tmpbuf, &w, &h);
-					while(w < (str_w-2*offset_w))
-					{
-						if(byte_no < text_len)
-						{
-							tmpbuf[i++] = notify_msg.text[byte_no++];
-							LCD_MeasureUniString(tmpbuf, &w, &h);
-						}
-						else
-							break;
-					}
-
-					if(w >= (str_w-2*offset_w))
-					{
-						i--;
-						byte_no--;
-						tmpbuf[i] = 0x00;
-
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-					#ifdef LANGUAGE_AR_ENABLE	
-						if(g_language_r2l)
-							x = str_x+(str_w+w)/2;
-						else
-					#endif		
-							x = str_x+(str_w-w)/2;
-						LCD_SmartShowUniString(x, y, tmpbuf);
-						
-						y += line_h;
-						line_no++;
-					}
-					else
-					{
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-					#ifdef LANGUAGE_AR_ENABLE	
-						if(g_language_r2l)
-							x = str_x+(str_w+w)/2;
-						else
-					#endif		
-							x = str_x+(str_w-w)/2;
-						LCD_SmartShowUniString(x, y, tmpbuf);
-						break;
-					}
-				}
+			#ifdef LANGUAGE_AR_ENABLE	
+				if(g_language_r2l)
+					LCD_AdaptShowUniStringRtoLInRect((str_x+str_w-offset_w), y, (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
+				else
+			#endif	
+					LCD_AdaptShowUniStringInRect((str_x+offset_w), y, (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
 			}
 			else if(w > 0)
 			{
 			#ifdef LANGUAGE_AR_ENABLE	
 				if(g_language_r2l)
-					x = str_x+(str_w+w)/2;
+					LCD_AdaptShowUniStringRtoLInRect((str_x+str_w-offset_w), (str_y+offset_h), (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
 				else
-			#endif		
-					x = str_x+(str_w-w)/2;
-				y = (h > (str_h-2*offset_h))? 0 : ((str_h-2*offset_h)-h)/2;
-				
-				LCD_SmartShowUniString(x, y, notify_msg.text);			
+			#endif	
+					LCD_AdaptShowUniStringInRect((str_x+offset_w), (str_y+offset_h), (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
 			}
 		}
 		break;
@@ -4650,10 +4605,10 @@ void NotifyUpdate(void)
 	case NOTIFY_ALIGN_BOUNDARY:
 	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
-			LCD_ShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+			LCD_AdaptShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text, SHOW_ALIGN_BOUNDARY);
 		else
 	#endif		
-			LCD_ShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+			LCD_AdaptShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text, SHOW_ALIGN_BOUNDARY);
 		break;
 	}
 }
@@ -4708,77 +4663,32 @@ void NotifyShow(void)
 			text_len = mmi_ucs2strlen(notify_msg.text);
 			y = ((str_h-2*offset_h)-line_count*line_h)/2;
 			y += (str_y+offset_h);
-			while(line_no < line_count)
-			{
-				uint16_t tmpbuf[128] = {0};
-				uint8_t i=0;
 
-				tmpbuf[i++] = notify_msg.text[byte_no++];
-				LCD_MeasureUniString(tmpbuf, &w, &h);
-				while(w < (str_w-2*offset_w))
-				{
-					if(byte_no < text_len)
-					{
-						tmpbuf[i++] = notify_msg.text[byte_no++];
-						LCD_MeasureUniString(tmpbuf, &w, &h);
-					}
-					else
-						break;
-				}
-
-				if(w >= (str_w-2*offset_w))
-				{
-					i--;
-					byte_no--;
-					tmpbuf[i] = 0x00;
-
-					LCD_MeasureUniString(tmpbuf, &w, &h);
-				#ifdef LANGUAGE_AR_ENABLE	
-					if(g_language_r2l)
-						x = str_x+(str_w+w)/2;
-					else
-				#endif		
-						x = str_x+(str_w-w)/2;
-					LCD_SmartShowUniString(x, y, tmpbuf);
-					
-					y += line_h;
-					line_no++;
-				}
-				else
-				{
-					LCD_MeasureUniString(tmpbuf, &w, &h);
-				#ifdef LANGUAGE_AR_ENABLE	
-					if(g_language_r2l)
-						x = str_x+(str_w+w)/2;
-					else
-				#endif		
-						x = str_x+(str_w-w)/2;
-					LCD_SmartShowUniString(x, y, tmpbuf);
-					break;
-				}
-			}
+		#ifdef LANGUAGE_AR_ENABLE	
+			if(g_language_r2l)
+				LCD_AdaptShowUniStringRtoLInRect((str_x+str_w-offset_w), y, (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
+			else
+		#endif	
+				LCD_AdaptShowUniStringInRect((str_x+offset_w), y, (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
 		}
 		else if(w > 0)
 		{
 		#ifdef LANGUAGE_AR_ENABLE	
 			if(g_language_r2l)
-				x = str_x+(str_w+w)/2;
+				LCD_AdaptShowUniStringRtoLInRect((str_x+str_w-offset_w), (str_y+offset_h), (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
 			else
-		#endif		
-				x = str_x+(str_w-w)/2;
-			y = (h > (str_h-2*offset_h))? 0 : ((str_h-2*offset_h)-h)/2;
-			
-			LCD_SmartShowUniString(x, y, notify_msg.text);
+		#endif	
+				LCD_AdaptShowUniStringInRect((str_x+offset_w), (str_y+offset_h), (str_w-2*offset_w), (str_h-2*offset_h), notify_msg.text, SHOW_ALIGN_CENTER);
 		}
 		break;
 		
 	case NOTIFY_ALIGN_BOUNDARY:
 	#ifdef LANGUAGE_AR_ENABLE	
 		if(g_language_r2l)
-			LCD_ShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+			LCD_AdaptShowUniStringRtoLInRect(notify_msg.x+notify_msg.w-offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text, SHOW_ALIGN_BOUNDARY);
 		else
 	#endif		
-			LCD_ShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text);
+			LCD_AdaptShowUniStringInRect(notify_msg.x+offset_w, notify_msg.y+offset_h, (notify_msg.w-2*offset_w), (notify_msg.h-2*offset_h), notify_msg.text, SHOW_ALIGN_BOUNDARY);
 		break;
 	}
 }

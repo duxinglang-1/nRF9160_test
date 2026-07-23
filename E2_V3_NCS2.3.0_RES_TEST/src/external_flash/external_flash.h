@@ -12,7 +12,9 @@
 
 #include <stdint.h>
 #include "font.h"
+#ifdef CONFIG_TEMP_SUPPORT
 #include "temp.h"
+#endif
 
 //SPI引脚定义
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)
@@ -140,37 +142,69 @@
 #define PPG_BPT_CAL_DATA_END				(PPG_BPT_CAL_DATA_ADDR+PPG_BPT_CAL_DATA_SIZE)
 //单次测量(100组数据)
 #define PPG_HR_REC1_DATA_ADDR				(PPG_BPT_CAL_DATA_END)
+#ifdef CONFIG_PPG_SUPPORT
 #define PPG_HR_REC1_DATA_SIZE				(100*sizeof(ppg_hr_rec1_data))//800
+#else
+#define PPG_HR_REC1_DATA_SIZE				(100*8)//800
+#endif
 #define PPG_HR_REC1_DATA_END				(PPG_HR_REC1_DATA_ADDR+PPG_HR_REC1_DATA_SIZE)
 
 #define PPG_SPO2_REC1_DATA_ADDR				(PPG_HR_REC1_DATA_END)
+#ifdef CONFIG_PPG_SUPPORT
 #define PPG_SPO2_REC1_DATA_SIZE				(100*sizeof(ppg_spo2_rec1_data))//800
+#else
+#define PPG_SPO2_REC1_DATA_SIZE				(100*8)//800
+#endif
 #define PPG_SPO2_REC1_DATA_END				(PPG_SPO2_REC1_DATA_ADDR+PPG_SPO2_REC1_DATA_SIZE)
 
 #define PPG_BPT_REC1_DATA_ADDR				(PPG_SPO2_REC1_DATA_END)
+#ifdef CONFIG_PPG_SUPPORT
 #define PPG_BPT_REC1_DATA_SIZE				(100*sizeof(ppg_bpt_rec1_data))//900
+#else
+#define PPG_BPT_REC1_DATA_SIZE				(100*9)//900
+#endif
 #define PPG_BPT_REC1_DATA_END				(PPG_BPT_REC1_DATA_ADDR+PPG_BPT_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define PPG_HR_REC2_DATA_ADDR				(PPG_BPT_REC1_DATA_END)
+#ifdef CONFIG_PPG_SUPPORT
 #define PPG_HR_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(hr_rec2_nod))//4704
+#else
+#define PPG_HR_REC2_DATA_SIZE				(4*24*7*7)//4704
+#endif
 #define PPG_HR_REC2_DATA_END				(PPG_HR_REC2_DATA_ADDR+PPG_HR_REC2_DATA_SIZE)
 
 #define PPG_SPO2_REC2_DATA_ADDR				(PPG_HR_REC2_DATA_END)
+#ifdef CONFIG_PPG_SUPPORT
 #define PPG_SPO2_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(spo2_rec2_nod))//4704
+#else
+#define PPG_SPO2_REC2_DATA_SIZE				(4*24*7*7)//4704
+#endif
 #define PPG_SPO2_REC2_DATA_END				(PPG_SPO2_REC2_DATA_ADDR+PPG_SPO2_REC2_DATA_SIZE)
 
 #define PPG_BPT_REC2_DATA_ADDR				(PPG_SPO2_REC2_DATA_END)
+#ifdef CONFIG_PPG_SUPPORT
 #define PPG_BPT_REC2_DATA_SIZE				(PPG_REC2_MAX_COUNT*sizeof(bpt_rec2_nod))//5376
+#else
+#define PPG_BPT_REC2_DATA_SIZE				(4*24*7*8)//5376
+#endif
 #define PPG_BPT_REC2_DATA_END				(PPG_BPT_REC2_DATA_ADDR+PPG_BPT_REC2_DATA_SIZE)
 
 //TEMP DATA
 //单次测量(100组数据)
 #define TEMP_REC1_DATA_ADDR					(PPG_BPT_REC2_DATA_END)
+#ifdef CONFIG_TEMP_SUPPORT
 #define TEMP_REC1_DATA_SIZE					(100*sizeof(temp_rec1_data))//900
+#else
+#define TEMP_REC1_DATA_SIZE					(100*9)//900
+#endif
 #define TEMP_REC1_DATA_END					(TEMP_REC1_DATA_ADDR+TEMP_REC1_DATA_SIZE)
 //整点测量(7天数据)
 #define TEMP_REC2_DATA_ADDR					(TEMP_REC1_DATA_END)
+#ifdef CONFIG_TEMP_SUPPORT
 #define TEMP_REC2_DATA_SIZE					(TEMP_REC2_MAX_COUNT*sizeof(temp_rec2_nod))//5376
+#else
+#define TEMP_REC2_DATA_SIZE					(4*24*7*8)//5376
+#endif
 #define TEMP_REC2_DATA_END					(TEMP_REC2_DATA_ADDR+TEMP_REC2_DATA_SIZE)
 
 //IMU DATA

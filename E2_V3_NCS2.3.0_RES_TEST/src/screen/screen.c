@@ -576,7 +576,6 @@ void IdleShowSystemTime(void)
 void IdleShowSystemWeek(void)
 {
 	uint16_t x,y,w,h,str_w,str_h;
-#ifdef FONTMAKER_UNICODE_FONT	
 	uint16_t str_week[7] = {
 								STR_ID_WEEK_SUN,
 								STR_ID_WEEK_MON,
@@ -586,14 +585,10 @@ void IdleShowSystemWeek(void)
 								STR_ID_WEEK_FRI,
 								STR_ID_WEEK_SAT,
 							};
-#else
-	uint8_t str_week[128] = {0};
-#endif
-	
+
 	POINT_COLOR=WHITE;
 	BACK_COLOR=BLACK;
 
-#ifdef FONTMAKER_UNICODE_FONT
 	LCD_SetFontSize(FONT_SIZE_28);
 
 	switch(global_settings.language)
@@ -656,11 +651,6 @@ void IdleShowSystemWeek(void)
 		else
 			LCD_ShowUniStr(x, y, str_week[date_time.week]);
 	}
-#else
-	LCD_SetFontSize(FONT_SIZE_32);
-	GetSystemWeekStrings(str_week);
-	LCD_ShowString(IDLE_WEEK_EN_X, IDLE_WEEK_EN_Y, str_week);
-#endif
 }
 
 void IdleShowDateTime(void)

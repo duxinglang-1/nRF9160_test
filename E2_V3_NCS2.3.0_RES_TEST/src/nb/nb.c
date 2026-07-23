@@ -1877,6 +1877,8 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t strtmp[256] = {0};
 			uint32_t copylen = 0;
 
+			strcat(strdata, ",");
+
 			//后台下发最新版本信息
 			//project dir
 			ptr = strstr(strdata, ",");
@@ -1953,9 +1955,8 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
-				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_str_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_str_ver);
-			else
-				copylen = (ptr1-ptr) < sizeof(g_new_str_ver) ? (ptr1-ptr) : sizeof(g_new_str_ver);
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_str_ver) ? (ptr1-ptr) : sizeof(g_new_str_ver);
 			memset(g_new_str_ver, 0x00, sizeof(g_new_str_ver));
 			memcpy(g_new_str_ver, ptr, copylen);
 		}

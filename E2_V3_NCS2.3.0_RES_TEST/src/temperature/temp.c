@@ -263,7 +263,7 @@ void GetGivenDayTempRecData(sys_date_timer_t date, uint8_t *databuf)
 	memset(&rec2buf, 0x00, sizeof(rec2buf));
 	SpiFlash_Read(rec2buf, TEMP_REC2_DATA_ADDR, TEMP_REC2_DATA_SIZE);
 	p_temp = (temp_rec2_nod*)rec2buf;
-	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(hr_rec2_nod);i++)
+	for(i=0;i<TEMP_REC2_DATA_SIZE/sizeof(temp_rec2_nod);i++)
 	{
 		if((p_temp->year == 0xffff || p_temp->year == 0x0000)
 			||(p_temp->month == 0xff || p_temp->month == 0x00)
@@ -611,6 +611,7 @@ void TempMsgProcess(void)
 		if((g_temp_trigger&TEMP_TRIGGER_BY_HOURLY) != 0)
 		{
 			g_temp_trigger = g_temp_trigger&(~TEMP_TRIGGER_BY_HOURLY);
+		#ifdef CONFIG_PPG_SUPPORT	
 			if(!ppg_skin_contacted_flag)
 			{
 			#ifdef CONFIG_PPG_SUPPORT
@@ -627,6 +628,7 @@ void TempMsgProcess(void)
 				SetCurDayTempRecData(g_health_check_time, 254.0);
 			}
 			else
+		#endif		
 			{
 				g_temp_hourly = g_temp_body;
 				

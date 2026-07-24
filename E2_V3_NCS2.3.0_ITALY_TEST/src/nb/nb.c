@@ -1452,7 +1452,7 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1471,7 +1471,7 @@ void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1490,7 +1490,7 @@ void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1509,7 +1509,7 @@ void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1528,7 +1528,7 @@ void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1544,7 +1544,7 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissHrData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1556,7 +1556,7 @@ void NBSendMissHrData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1568,7 +1568,7 @@ void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
 
 void NBSendMissBptData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1580,7 +1580,7 @@ void NBSendMissBptData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissTempData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1592,7 +1592,7 @@ void NBSendMissTempData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");

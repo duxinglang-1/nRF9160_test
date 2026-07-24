@@ -1615,7 +1615,7 @@ void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissSportData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[1024] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");

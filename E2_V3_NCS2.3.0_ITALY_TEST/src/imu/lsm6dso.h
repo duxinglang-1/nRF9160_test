@@ -51,13 +51,18 @@ typedef struct
 	sleep_data sleep[24];
 }sleep_rec2_data;
 
+void sensor_reset_init(void);
+
 #ifdef CONFIG_FALL_DETECT_SUPPORT
 extern bool fall_wait_gps;
-extern bool fall_result; //fall_result = true when fall happens
+extern volatile bool fall_result; //fall_result = true when fall happens
 extern void fall_detection(void); //fall detection algorithm, if a fall happens, bool fall_result = true;
 #endif
 
 #ifdef CONFIG_STEP_SUPPORT
+void StepCountingStart(void);
+void StepCountingStop(void);
+
 extern bool reset_steps;
 extern sport_record_t last_sport;
 extern uint16_t g_last_steps;
@@ -65,12 +70,11 @@ extern uint16_t g_steps;
 extern uint16_t g_calorie;
 extern uint16_t g_distance;
 
-extern void GetImuSteps(uint16_t *steps);
+//extern void GetImuSteps(uint16_t *steps);
 extern void ReSetImuSteps(void);
 extern void UpdateIMUData(void);
 extern void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance);
 extern void lsm6dso_sensitivity(void);
-extern uint16_t getSoftwareStep(void);
 #endif
 
 extern void IMU_init(struct k_work_q *work_q);

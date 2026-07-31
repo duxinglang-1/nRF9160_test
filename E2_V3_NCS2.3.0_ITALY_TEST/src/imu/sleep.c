@@ -537,11 +537,11 @@ void UpdateSleepPara(void)
 		chg = 1;
 	
 	get_sensor_reading(&sensor_x, &sensor_y, &sensor_z);
-#ifdef CONFIG_STEP_SUPPORT
-	steps = getSoftwareStep();
-#else
-	steps = 0;
-#endif
+//#ifdef CONFIG_STEP_SUPPORT
+//	steps = getSoftwareStep();
+//#else
+//	steps = 0;
+//#endif
 
 #if 1 // SCC detections
 	if (((date_time.hour>=SLEEP_SCC_START)||(date_time.hour<SLEEP_TIME_END))&&(date_time.minute==30))

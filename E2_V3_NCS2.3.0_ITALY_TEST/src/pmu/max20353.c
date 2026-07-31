@@ -782,7 +782,7 @@ bool pmu_interrupt_proc(void)
 	#endif
 		if((status1&0x08) == 0x08) //USB OK   
 		{
-		#ifdef PMU_DEBUG
+		#if 1//def PMU_DEBUG
 			LOGD("charger push in!");
 		#endif	
 			charger_is_connected = true;
@@ -796,7 +796,7 @@ bool pmu_interrupt_proc(void)
 		}
 		else
 		{		
-		#ifdef PMU_DEBUG
+		#if 1//def PMU_DEBUG
 			LOGD("charger push out!");
 		#endif
 			charger_is_connected = false;
@@ -838,6 +838,7 @@ bool pmu_interrupt_proc(void)
 	#endif
 
 	#ifdef CONFIG_IMU_SUPPORT
+		UpdateIMUData();
 		MAX20353_LDO1Disable();
 		MAX20353_LDO1Config();
 		imu_sensor_init();

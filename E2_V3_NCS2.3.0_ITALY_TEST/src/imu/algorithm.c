@@ -5,6 +5,7 @@
 #include <math.h>
 //#include <stdbool.h>
 #include "algorithm.h"
+#include "lsm6dso.h"
 #include "logger.h"
 
 //#define IMU_DEBUG

@@ -30,7 +30,6 @@
 #endif
 
 //#define IMU_DEBUG
-#define SOFTWARE_STEP
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 #define IMU_DEV DT_NODELABEL(i2c1)
@@ -143,83 +142,48 @@ static axis3bit16_t data_raw_acceleration;
 static float acceleration_mg[3];
 
 #ifdef CONFIG_STEP_SUPPORT
-#ifdef SOFTWARE_STEP
-typedef struct {
-    float x;
-    float y;
-    float z;
-} AccelData_t;
-
-typedef struct {
-    float x;
-    float y;
-    float z;
-} GyroData_t;
-
-AccelData_t raw_accel;
-GyroData_t raw_gyro;
-static axis3bit16_t data_raw_angular_rate;
-static float angular_rate_mdps[3];
-//uint64_t last_sample_time = 0;
-static float variance_history[20] = {0};
-static uint8_t var_index = 0;
-
-static bool step_miscalculation = false;
-
-//static uint16_t last_step_num_imu = 0; // imu上一次的步数
-static uint16_t total_step_count = 0;       // 总步数 Total steps
-//static uint16_t miscounting_steps = 0; // 误计步
-static float threshold = 0;              // 动态阈值
-static float acc_mean_square = 0;
-static float ang_variance = 0;
-uint32_t last_step_time = 0;
-uint32_t min_step_interval = 200; //最小步频时间间隔(ms),Minimum step frequency time interval (ms)
-uint32_t max_step_interval = 2500; //最大步频时间间隔(ms),Maximum step frequency time interval (ms)
-static uint16_t debounce_steps = 0; 
-static bool debounce_steps_buf = true;
-#define STEP_DEBOUNCE_BASE 8 // 消抖步数，Dampening steps
-uint64_t current_time = 0;
-
-static float threshold_history[10] = {0};
-static uint8_t threshold_index = 0;
-
-static float angular_history[10] = {0};
-static uint8_t angular_index = 0;
-
-static float step_history[50] = {0};
-static uint8_t step_index = 0;
-
-static float difference_history[20] = {0};
-static uint8_t difference_index = 0;
-
-static float step_frequency_history[100] = {0};
-static uint8_t step_frequency_index = 0;
-
-static float valid_amplitude = 0; // 最小峰谷差值系数门限
-//static bool is_amplitude = false;
-static bool amplitude_threshold = true;
-//static bool peak_buf = false;
-//static bool step_peak = false;
-static int step_status = 0;
-static float current_peak = 0;
-static float current_wave = 0;
-//static bool wave_buf = false;
-static float frequency_buf = 0;
-//static bool is_frequency = false;
-static bool frequency_threshold = true;
-#endif
-
+/*
+ * Step-count data flow:
+ *
+ *   LSM6DSO 16-bit counter -> cadence/burst filter -> daily totals -> flash/UI
+ *
+ * The sensor remains the only source of steps. The software filter does not
+ * detect steps from acceleration samples; it only decides whether changes in
+ * the hardware counter belong to a plausible walking session.
+ */
 bool reset_steps = false;
 bool imu_redraw_steps_flag = true;
+/* Total restored before the current hardware-counter session started. */
 uint16_t g_last_steps = 0;
+/* Public daily totals derived from the restored and newly accepted steps. */
 uint16_t g_steps = 0;
 uint16_t g_calorie = 0;
 uint16_t g_distance = 0;
+/* Runtime state for validating changes in the 16-bit hardware counter. */
+static bool hardware_step_enabled = false;
+static bool hardware_walk_confirmed = false;
+static bool hardware_step_filter_initialized = false;
+static uint16_t hardware_last_raw_steps = 0;
+static uint16_t hardware_accepted_steps = 0;
+static uint16_t hardware_pending_steps = 0;
+static uint32_t hardware_last_step_time = 0;
 
-static float prev_acceleration[3] = {0};
-static int arm_swing_counter = 0;
-static bool detected_walking = false;
+/* Candidate hardware steps required before a walking session is confirmed. */
+#define HARDWARE_STEP_CONFIRM_STEPS      8
+/* Allowed average time per step. Values outside this range reset candidates. */
+#define HARDWARE_STEP_MIN_INTERVAL_MS    400
+#define HARDWARE_STEP_MAX_INTERVAL_MS    2200
+/* A longer gap ends the candidate/confirmed walking session. */
+#define HARDWARE_STEP_RESET_INTERVAL_MS  3000
+/* Larger fast counter jumps are treated as vibration or movement bursts. */
+#define HARDWARE_STEP_MAX_BURST_DELTA    3
+static void ResetHardwareStepFilter(void);
+static bool ReadHardwareSteps(uint16_t *steps);
 
+/**
+ * Clear the live daily totals, reset the sensor/filter, and invalidate all
+ * persisted hourly step history.
+ */
 void ClearAllStepRecData(void)
 {
 	uint8_t tmpbuf[STEP_REC2_DATA_SIZE] = {0xff};
@@ -228,12 +192,8 @@ void ClearAllStepRecData(void)
 	g_steps = 0;
 	g_distance = 0;
 	g_calorie = 0;
-
-	#ifdef SOFTWARE_STEP
-	total_step_count = 0;
-	#endif
-	//miscounting_steps = 0;
-	//last_step_num_imu = 0;
+	lsm6dso_steps_reset(&imu_dev_ctx);
+    ResetHardwareStepFilter();
 		
 	SpiFlash_Write(tmpbuf, STEP_REC2_DATA_ADDR, STEP_REC2_DATA_SIZE);
 }
@@ -517,10 +477,6 @@ void imu_sensor_init(void)
 						sizeof(lsm6so_prg_wrist_tilt));
 	fsm_addr += sizeof(lsm6so_prg_wrist_tilt);
 
-#ifdef CONFIG_STEP_SUPPORT
-	//Enable step counts algorithm
-	//lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ_ADV_MODE); // LSM6DSO_PEDO_BASE_MODE 虚假步数抑制高级模式
-#endif
 
 	sensor_reset_init();
 
@@ -537,8 +493,41 @@ void imu_sensor_init(void)
 
 void sensor_reset_init(void)
 {
-	lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
-	lsm6dso_reset_get(&imu_dev_ctx, &rst);
+	uint8_t attempt;
+#ifdef CONFIG_STEP_SUPPORT
+	bool restart_step_counting = hardware_step_enabled;
+
+	/*
+	 * A software reset disables the hardware pedometer. Keep the software
+	 * state synchronized so IMUMsgProcess() can retry if restoration fails.
+	 */
+	hardware_step_enabled = false;
+	hardware_walk_confirmed = false;
+	hardware_pending_steps = 0;
+#endif
+	//lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE);
+	//lsm6dso_reset_get(&imu_dev_ctx, &rst);
+	if(lsm6dso_reset_set(&imu_dev_ctx, PROPERTY_ENABLE) != 0)
+		return;
+
+	rst = PROPERTY_ENABLE;
+
+	for(attempt = 0; attempt < 100; attempt++)
+	{
+		if(lsm6dso_reset_get(&imu_dev_ctx, &rst) != 0)
+			return;
+
+		if(rst == PROPERTY_DISABLE)
+			break;
+
+		k_sleep(K_MSEC(1));
+	}
+
+	if(rst != PROPERTY_DISABLE)
+	{
+		/* Reset did not complete within 100 ms. */
+		return;
+	}
 
 	lsm6dso_i3c_disable_set(&imu_dev_ctx, LSM6DSO_I3C_DISABLE);
 
@@ -578,8 +567,19 @@ void sensor_reset_init(void)
 	// route wrist tilt to INT1 pin
 	lsm6dso_pin_int1_route_get(&imu_dev_ctx, &int1_route);
 	int1_route.fsm_int1_a.int1_fsm1 = PROPERTY_ENABLE;
-	//int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
+	int1_route.emb_func_int1.int1_step_detector = PROPERTY_ENABLE;
 	lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_route);
+
+#ifdef CONFIG_STEP_SUPPORT
+	/*
+	 * StepCountingStart() restores debounce, advanced false-step rejection,
+	 * interrupt mode and the software step filter. It also preserves g_steps.
+	 */
+	if(restart_step_counting && global_settings.step_is_on)
+	{
+		StepCountingStart();
+	}
+#endif
 	
 	// route tap and activity to INT2 pin
 	lsm6dso_pin_int2_route_get(&imu_dev_ctx, &int2_route);
@@ -599,6 +599,11 @@ void imu_sensor_off(void)
     // 禁用计步器
     lsm6dso_pedo_md_t pedo_mode = LSM6DSO_PEDO_DISABLE;
     lsm6dso_pedo_sens_set(&imu_dev_ctx, pedo_mode);
+#ifdef CONFIG_STEP_SUPPORT
+	hardware_step_enabled = false;
+	hardware_walk_confirmed = false;
+	hardware_pending_steps = 0;
+#endif
     
     // 禁用倾斜检测
     uint8_t tilt_enable = 0;
@@ -657,6 +662,7 @@ static bool sensor_init(void)
 	imu_sensor_init();
 
 #ifdef CONFIG_STEP_SUPPORT
+	/* Start from a known raw counter before the user setting enables it. */
 	lsm6dso_steps_reset(&imu_dev_ctx);
 #endif
 
@@ -686,98 +692,44 @@ void get_sensor_reading(float *sensor_x, float *sensor_y, float *sensor_z)
 }
 
 #ifdef CONFIG_STEP_SUPPORT
+/**
+ * Start a new hardware-counter session without losing the restored daily total.
+ *
+ * The LSM6DSO advanced mode enables false-positive rejection and low-energy
+ * gait adaptation. Resetting the sensor counter prevents old raw counts from
+ * being added again; g_last_steps preserves the total already shown to users.
+ */
 void StepCountingStart(void)
 {
-
+	lsm6dso_sensitivity();
+	lsm6dso_pedo_int_mode_set(&imu_dev_ctx, LSM6DSO_EVERY_STEP);
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_FALSE_STEP_REJ_ADV_MODE);
+	lsm6dso_steps_reset(&imu_dev_ctx);
+	ResetHardwareStepFilter();
+	g_last_steps = g_steps;
+	hardware_step_enabled = true;
 }
 
+/**
+ * Disable hardware step detection and discard any unconfirmed candidate steps.
+ * Accepted daily totals remain available through GetSportData().
+ */
 void StepCountingStop(void)
 {
-
+	lsm6dso_pedo_sens_set(&imu_dev_ctx, LSM6DSO_PEDO_DISABLE);
+	hardware_step_enabled = false;
+	hardware_walk_confirmed = false;
+	hardware_pending_steps = 0;
 }
 
-void ReSetImuSteps(void)
+/**
+ * Persist the current aggregate totals and their timestamp as the latest sport
+ * record. Hourly history is maintained separately by SetCurDayStepRecData().
+ */
+static void SaveStepSportData(void)
 {
-	lsm6dso_steps_reset(&imu_dev_ctx);
-
-	g_last_steps = 0;
-	g_steps = 0;
-	g_distance = 0;
-	g_calorie = 0;
-
-	#ifdef SOFTWARE_STEP
-	total_step_count = 0;
-	#endif
-	//miscounting_steps = 0;
-	//last_step_num_imu = 0;
-	
 	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
-	last_sport.step_rec.timestamp.day = date_time.day;
-	last_sport.step_rec.timestamp.hour = date_time.hour;
-	last_sport.step_rec.timestamp.minute = date_time.minute;
-	last_sport.step_rec.timestamp.second = date_time.second;
-	last_sport.step_rec.timestamp.week = date_time.week;
-	last_sport.step_rec.steps = g_steps;
-	last_sport.step_rec.distance = g_distance;
-	last_sport.step_rec.calorie = g_calorie;
-	save_cur_sport_to_record(&last_sport);	
-}
-
-void GetImuSteps(uint16_t *steps)
-{
-	lsm6dso_number_of_steps_get(&imu_dev_ctx, steps);
-}
-
-void UpdateIMUData(void)
-{
-	uint16_t steps = 0,temporary_steps = 0;
-	GetImuSteps(&steps);
-	
-	//LOGD("steps:%d", steps);
-#if 0
-	if (steps >= last_step_num_imu)
-	{
-		if (step_miscalculation)
-		{ 
-			temporary_steps = steps - last_step_num_imu;
-			uint32_t time_diff = current_time - last_step_time;
-
-			if ((temporary_steps > 5) && (time_diff < min_step_interval))
-			{
-				total_step_count += 4;
-			}
-			else
-			{
-				total_step_count += (steps - last_step_num_imu);
-			}
-
-			last_step_time = current_time;
-		}
-		else
-		{
-			miscounting_steps += (steps - last_step_num_imu);
-		}
-	}
-
-	last_step_num_imu = steps;
-#endif
-
-	//LOGD("total_step_%d",total_step_count);
-	//LOGD("miscounting_steps_%d",miscounting_steps);
-
-	//g_steps = total_step_count+g_last_steps;
-	//LOGD("g_steps:%d", g_steps);
-	
-	g_distance = (global_settings.person.step_length*g_steps)/100;
-	g_calorie = (0.8*global_settings.person.weight*g_distance)/1000;
-
-#ifdef IMU_DEBUG
-	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
-#endif
-
-	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
+	last_sport.step_rec.timestamp.month = date_time.month;
 	last_sport.step_rec.timestamp.day = date_time.day;
 	last_sport.step_rec.timestamp.hour = date_time.hour;
 	last_sport.step_rec.timestamp.minute = date_time.minute;
@@ -787,12 +739,207 @@ void UpdateIMUData(void)
 	last_sport.step_rec.distance = g_distance;
 	last_sport.step_rec.calorie = g_calorie;
 	save_cur_sport_to_record(&last_sport);
-	
-	//StepCheckSendLocationData(g_steps);
+}
+
+/**
+ * Return the cadence filter to an empty, uninitialized state.
+ *
+ * The next successful raw-counter read becomes a baseline and is deliberately
+ * not counted. hardware_accepted_steps is relative to the current sensor
+ * counter session, so callers preserve any earlier total in g_last_steps.
+ */
+static void ResetHardwareStepFilter(void)
+{
+	hardware_walk_confirmed = false;
+	hardware_step_filter_initialized = false;
+	hardware_last_raw_steps = 0;
+	hardware_accepted_steps = 0;
+	hardware_pending_steps = 0;
+	hardware_last_step_time = k_uptime_get();
+}
+
+void ReSetImuSteps(void)
+{
+	lsm6dso_steps_reset(&imu_dev_ctx);
+	ResetHardwareStepFilter();
+
+	g_last_steps = 0;
+	g_steps = 0;
+	g_distance = 0;
+	g_calorie = 0;
+	SaveStepSportData();
+}
+
+static bool ReadHardwareSteps(uint16_t *steps)
+{
+	uint8_t step_raw[2] = {0};
+
+	if(steps == NULL)
+		return false;
+
+	*steps = 0;
+	if(lsm6dso_number_of_steps_get(&imu_dev_ctx, step_raw) != 0)
+		return false;
+
+	*steps = (uint16_t)step_raw[0] | ((uint16_t)step_raw[1] << 8);
+	return true;
+}
+
+/**
+ * Validate a new raw hardware-counter value.
+ *
+ * The filter rejects counter resets, long gaps, implausible cadence, and fast
+ * multi-step bursts. Valid changes are buffered until a walking session reaches
+ * HARDWARE_STEP_CONFIRM_STEPS; the complete buffer is then accepted so startup
+ * steps are not lost.
+ *
+ * Returns true only when hardware_accepted_steps increased.
+ */
+static bool AcceptHardwareStepDelta(uint16_t hardware_steps)
+{
+	uint16_t delta;
+	uint32_t now = k_uptime_get();
+	uint32_t elapsed;
+	uint32_t interval;
+
+	/* Establish a baseline; raw counts that predate this read are not owned here. */
+	if(!hardware_step_filter_initialized)
+	{
+		hardware_last_raw_steps = hardware_steps;
+		hardware_last_step_time = now;
+		hardware_step_filter_initialized = true;
+		return false;
+	}
+
+	/* A lower value means the 16-bit sensor counter was reset or wrapped. */
+	if(hardware_steps < hardware_last_raw_steps)
+	{
+		hardware_last_raw_steps = hardware_steps;
+		hardware_walk_confirmed = false;
+		hardware_pending_steps = 0;
+		hardware_last_step_time = now;
+		return false;
+	}
+
+	delta = hardware_steps - hardware_last_raw_steps;
+	if(delta == 0)
+		return false;
+
+	hardware_last_raw_steps = hardware_steps;
+	elapsed = now - hardware_last_step_time;
+
+	/* End the previous session and discard its first isolated post-gap event. */
+	if(elapsed > HARDWARE_STEP_RESET_INTERVAL_MS)
+	{
+		hardware_walk_confirmed = false;
+		hardware_pending_steps = 0;
+		hardware_last_step_time = now;
+		return false;
+	}
+
+	/* Polling may observe several hardware steps, so use their average interval. */
+	interval = elapsed / delta;
+	/* Reject a large, rapid counter jump typical of vibration or hand movement. */
+	if((delta > HARDWARE_STEP_MAX_BURST_DELTA) && (interval < 700))
+	{
+		hardware_walk_confirmed = false;
+		hardware_pending_steps = 0;
+		hardware_last_step_time = now;
+		return false;
+	}
+
+	/* Reject movement outside the supported walking cadence. */
+	if((interval < HARDWARE_STEP_MIN_INTERVAL_MS) || (interval > HARDWARE_STEP_MAX_INTERVAL_MS))
+	{
+		hardware_walk_confirmed = false;
+		hardware_pending_steps = 0;
+		hardware_last_step_time = now;
+		return false;
+	}
+
+	hardware_last_step_time = now;
+	if(!hardware_walk_confirmed)
+	{
+		/* Hold candidates until enough consecutive hardware steps confirm walking. */
+		hardware_pending_steps += delta;
+		if(hardware_pending_steps < HARDWARE_STEP_CONFIRM_STEPS)
+			return false;
+
+		hardware_accepted_steps += hardware_pending_steps;
+		hardware_pending_steps = 0;
+		hardware_walk_confirmed = true;
+		return true;
+	}
+
+	/* Once confirmed, accept each subsequent cadence-valid hardware delta. */
+	hardware_accepted_steps += delta;
+	return true;
+}
+
+void UpdateIMUData(void)
+{
+	uint16_t hardware_steps = 0;
+	uint16_t previous_steps = g_steps;
+	bool day_changed = !((last_sport.step_rec.timestamp.year == date_time.year)
+		&&(last_sport.step_rec.timestamp.month == date_time.month)
+		&&(last_sport.step_rec.timestamp.day == date_time.day));
+
+#ifdef IMU_DEBUG
+	LOGD("day_changed:%d", day_changed);
+#endif
+
+	if(day_changed)
+	{
+		g_last_steps = 0;
+		lsm6dso_steps_reset(&imu_dev_ctx);
+		ResetHardwareStepFilter();
+	}
+	else
+	{
+		if(!ReadHardwareSteps(&hardware_steps))
+		{
+		#ifdef IMU_DEBUG
+			LOGD("read hardware steps false!");
+		#endif
+			return;
+		}
+
+		if(!AcceptHardwareStepDelta(hardware_steps))
+		{
+		#ifdef IMU_DEBUG
+			LOGD("accept hardware steps false!");
+		#endif
+			return;
+		}
+	}
+
+
+	g_steps = g_last_steps + hardware_accepted_steps;
+	g_distance = (global_settings.person.step_length*g_steps)/100;
+	g_calorie = (0.8*global_settings.person.weight*g_distance)/1000;
+
+#ifdef IMU_DEBUG
+	LOGD("hardware_accepted_steps:%d, g_steps:%d, previous_steps:%d", hardware_accepted_steps, g_steps, previous_steps);
+#endif
+
+	if(!day_changed && (g_steps == previous_steps))
+		return;
+
+#ifdef IMU_DEBUG
+	LOGD("g_steps:%d,g_distance:%d,g_calorie:%d", g_steps, g_distance, g_calorie);
+#endif
+
+	SaveStepSportData();
+	imu_redraw_steps_flag = true;
 }
 
 void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 {
+	if(hardware_step_enabled && imu_check_ok)
+	{
+		UpdateIMUData();
+	}
+
 	if(steps != NULL)
 		*steps = g_steps;
 	if(calorie != NULL)
@@ -801,527 +948,18 @@ void GetSportData(uint16_t *steps, uint16_t *calorie, uint16_t *distance)
 		*distance = g_distance;
 }
 
-/*@Set Sensor sensitivity
-// 参数换算表（针对不同ODR）
-104Hz ODR参数换算：
-- 采样间隔：1/104 ≈ 9.6ms
-- 300ms = 300/9.6 ≈ 31 个采样点
-- 400ms = 400/9.6 ≈ 41 个采样点  
-- 500ms = 500/9.6 ≈ 52 个采样点
-- 600ms = 600/9.6 ≈ 62 个采样点
-
-推荐参数：
-- deb_step: 15-25 (对应144-240ms)
-- delay_time: 30-60 (对应288-576ms，建议52即500ms)
-*/
+/*@Set hardware pedometer sensitivity*/
 void lsm6dso_sensitivity(void)
-{ 
-	//Set the debounce steps典型值为 0x00（默认）到 0x07，对应连续检测 1~8次 有效步态信号后才会计步。若 buff = 0x03，表示需连续检测到 4次 有效步态信号才会触发一次步数增加。
-	uint8_t deb_step = 10;
+{
+	uint8_t deb_step = 3;//6;
+	uint8_t delay_time[2] = {0x00, 0x00};
+	//uint8_t delay_time[2] = {0x29, 0x00};
+	//uint8_t delay_time[2] = {0x34, 0x00};
+	//uint8_t delay_time[2] = {0x3D, 0x00};
+
 	lsm6dso_pedo_debounce_steps_set(&imu_dev_ctx, &deb_step);
-
-	//Set the sensitivity of the sensor,该函数用于设置两次有效步之间的最小时间间隔（单位：毫秒），避免因高频振动或快速动作导致单次动作被误判为多步。
-	uint8_t delay_time[10] = {0x62, 0x00}; // 62
-	//Lower Limit is 0 and Upper Limit is 50(32 in Hex), the delay time is 320ms
-	// 建议改为 0x000F(~300ms) 或 0x0014(~400ms)，能有效过滤手持抖动等误触发，同时不漏计正常步行。
-	// 加速度ODR为26Hz：300ms对应值为15(0x0F),400ms对应值为20(0x14)
-	// 加速度ODR为52Hz: 300ms对应值为30(0x1E),400ms对应值为41(0x29)
-	// 加速度ODR为104Hz: 300ms对应值为61(0x3D),400ms对应值为81(0x51)
-	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, &delay_time);
+	lsm6dso_pedo_steps_period_set(&imu_dev_ctx, delay_time);
 }
-#endif
-
-#ifdef CONFIG_STEP_SUPPORT
-#ifdef SOFTWARE_STEP
-/**
- * 读取加速度计数据_Read the data from the accelerometer
- */
-bool LSM6DSO_ReadAcceleration(AccelData_t *accel) {
-   uint8_t reg;
-
-	lsm6dso_xl_flag_data_ready_get(&imu_dev_ctx, &reg);
-	if(reg)
-	{
-		memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
-		lsm6dso_acceleration_raw_get(&imu_dev_ctx, data_raw_acceleration.u8bit);
-		acceleration_mg[0] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[0]); // 2g
-		acceleration_mg[1] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[1]);
-		acceleration_mg[2] = lsm6dso_from_fs4_to_mg(data_raw_acceleration.i16bit[2]);
-
-		accel->x = acceleration_mg[0]/1000;
-    	accel->y = acceleration_mg[1]/1000;
-   		accel->z = acceleration_mg[2]/1000;
-
-		/*accel->x = acceleration_mg[0];
-    	accel->y = acceleration_mg[1];
-   		accel->z = acceleration_mg[2];*/
-
-		/*accel->x = acceleration_mg[0];
-    	accel->y = acceleration_mg[1];
-   		accel->z = acceleration_mg[2];
-		
-		accel->x = (accel->x < 0) ? -accel->x : accel->x;
-		accel->y = (accel->y < 0) ? -accel->y : accel->y;
-		accel->z = (accel->z < 0) ? -accel->z : accel->z;
-		
-		// 计算合成加速度的平方和 (归一化处理)
-		accel->x /= 10.0f;
-		accel->y /= 10.0f;
-		accel->z /= 10.0f;*/
-
-		//LOGD(acceleration_mg[0],"X:%d");
-		 return true;
-	}
-	else 
-	{
-		return false;
-	}
-}
-// 角速度数据
-bool LSM6DSO_ReadAngular(GyroData_t *gyro)
-{
-	 uint8_t reg;
-	lsm6dso_gy_flag_data_ready_get(&imu_dev_ctx, &reg);
-	if (reg)
-	{
-		memset(data_raw_angular_rate.u8bit, 0x00, 3*sizeof(int16_t));
-		lsm6dso_angular_rate_raw_get(&imu_dev_ctx, data_raw_angular_rate.u8bit);
-		angular_rate_mdps[0] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[0]);
-		angular_rate_mdps[1] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[1]);
-		angular_rate_mdps[2] = lsm6dso_from_fs250_to_mdps(data_raw_angular_rate.i16bit[2]);
-
-		gyro->x = angular_rate_mdps[0]/1000;
-		gyro->y = angular_rate_mdps[1]/1000;
-		gyro->z = angular_rate_mdps[2]/1000;
-
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-
-}
-
-
-/**
- * 计算合加速度并去重力
- */
-float CalculateMagnitude(AccelData_t *accel) {
-
-	#if 0
-		float x = 0, y = 0, z = 0;
-
-		x = accel->x / 1000;
-		y = accel->y / 1000;
-		z = accel->z / 1000;
-		
-		float magnitude = sqrtf(x*x + y*y + z*z);
-   		return magnitude; //fabsf(magnitude);
-	#endif
-
-	float magnitude = sqrtf(accel->x*accel->x + accel->y*accel->y + accel->z*accel->z);
-   	return magnitude;
-}
-
-/**
- * 过滤
- */
-bool ContextAwareFilter(float magnitude) {
-
-	#if 0
-		float x = 0, y = 0, z = 0;
-		x = sensor_x / 1000;
-		y = sensor_y / 1000;
-		z = sensor_z / 1000;
-	#endif
-
-    //float delta_mag = sqrtf(x*x + y*y + z*z);
-    //LOGD("222_%f",delta_mag);
-    // 更新方差历史_Update variance history
-    variance_history[var_index] = magnitude;
-    var_index = (var_index + 1) % 20;
-    
-    // 计算加速度方差_Calculate the variance of acceleration
-    float mean = 0, variance = 0;
-    for (int i = 0; i < 20; i++) {
-        mean += variance_history[i];
-    }
-    mean /= 20.0f;
-    
-    for (int i = 0; i < 20; i++) {
-        float diff = variance_history[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= 20.0f;
-
-    //LOGD("variance_%f",variance);
-    if (variance < 0.005) { // 0.015
-        // 变化太小，可能静止或车辆匀速行驶_The change is too small, possibly resulting in a stationary state or vehicle movement.
-		
-        return false;
-    }
-    
-    if (variance > 2.0f) { // 1.0f
-        // 变化太大，可能是剧烈振动或冲击_The change is too significant. It might be due to intense vibration or impact.
-		
-         return false;
-    }
-    
-    return true;
-}
-
-void update_threshold(float magnitude) {
-	// 计算均值 Calculate the mean value
-    threshold_history[threshold_index] = magnitude;
-    threshold_index = (threshold_index + 1) % 10;
-    
-    float mean1 = 0, variance = 0;
-    for (int i = 0; i < 10; i++) {
-        mean1 += threshold_history[i];
-    }
-    mean1 /= 10.0f;
-
-#if 0
-	//标准差
-	 for (int i = 0; i < 10; i++) {
-        float diff = threshold_history[i] - mean1;
-        variance += diff * diff;
-    }
-    variance /= 10.0f;
-	//LOGD("variance_%f",variance);
-#endif
-
-	//均方根 Root Mean Square
-	float sum_sq1 = 0;
-	for (int i = 0; i < 10; i++) {
-		sum_sq1 += threshold_history[i] * threshold_history[i];
-	}
-	acc_mean_square = sqrtf(sum_sq1 / 10.0f);
-
-	//LOGD("mean1_%f",mean1);
-	threshold = mean1; //mean1 - mean1 * 0.3; //mean1; //+ 0.3 * variance; // 0.5~1.0
-
-}
-// 角速度均方根 Root mean square of angular velocity
-float update_angular_root_mean_square(void)
-{
-	float angular_mag = sqrtf(raw_gyro.x*raw_gyro.x + raw_gyro.y*raw_gyro.y + raw_gyro.z*raw_gyro.z);
-	//LOGD("angu_%f",angular_mag);
-	angular_history[angular_index] = angular_mag;
-	angular_index = (angular_index + 1) % 10;
-
-	// 均方根 RMS = √(Σ(xi2) / N)
-	float sum_sq = 0;
-	for (int i = 0; i < 10; i++) {
-		sum_sq += angular_history[i] * angular_history[i];
-	}
-	float rms = sqrtf(sum_sq / 10.0f);
-
-	// 角速度方差 Angular velocity variance
-    float mean = 0, variance = 0;
-    for (int i = 0; i < 10; i++) {
-        mean += angular_history[i];
-    }
-    mean /= 10.0f;
-    
-    for (int i = 0; i < 10; i++) {
-        float diff = angular_history[i] - mean;
-        variance += diff * diff;
-    }
-     variance /= 10.0f;
-	 ang_variance = variance / 10000;
-
-	return rms;
-}
-
-void stepCountDataUpdated(void)
-{
-	g_steps = total_step_count+g_last_steps;;
-	g_distance = (global_settings.person.step_length*g_steps)/100;
-	g_calorie = (0.8*global_settings.person.weight*g_distance)/1000;
-
-	last_sport.step_rec.timestamp.year = date_time.year;
-	last_sport.step_rec.timestamp.month = date_time.month; 
-	last_sport.step_rec.timestamp.day = date_time.day;
-	last_sport.step_rec.timestamp.hour = date_time.hour;
-	last_sport.step_rec.timestamp.minute = date_time.minute;
-	last_sport.step_rec.timestamp.second = date_time.second;
-	last_sport.step_rec.timestamp.week = date_time.week;
-	last_sport.step_rec.steps = g_steps;
-	last_sport.step_rec.distance = g_distance;
-	last_sport.step_rec.calorie = g_calorie;
-	save_cur_sport_to_record(&last_sport);
-
-	imu_redraw_steps_flag = true;
-}
-
-// 峰谷差值系数门限
-void PeakValleyDifferenceComparison(float difference_value)
-{
-	difference_history[difference_index] = difference_value;
-	difference_index = (difference_index + 1) % 20;
-
-	float min_dif = 0,difference = 0;
-	for (int i = 0; i < 20; i++)
-	{
-		difference = difference_history[i];
-
-		if (difference > 0)
-		{
-			min_dif = (difference < min_dif) ? difference : min_dif;
-		}
-	}
-
-	valid_amplitude = min_dif * 0.5;
-}
-
-// 2秒（200个采样）平均间隔步频门限
-#if 1
-void averageStepFrequencyThreshold(uint32_t time_diff)
-{
-	step_frequency_history[step_frequency_index] = time_diff;
-	step_frequency_index = (step_frequency_index + 1) % 100;
-
-	float average_interval = 0, toal_value = 0, avg_freq= 0, instant_freq = 0;
-	for (int i = 0; i < 100; i++)
-	{
-		toal_value += step_frequency_history[i];
-	}
-	average_interval = toal_value / 100.0f;
-
-	avg_freq = 60 / average_interval;
-	instant_freq = 60 / (float)time_diff;
-	frequency_buf = fabs(instant_freq - avg_freq);
-
-	//frequency_buf = fabs(((float)time_diff - average_interval) / average_interval);
-	//LOGD("frequency_buf_%f",frequency_buf);
-}
-#endif
-
-void softwareStepAlgorithm(float magnitude,uint32_t timestamp)
-{
-	step_history[step_index] = magnitude;
-    step_index = (step_index + 1) % 50;
-	
-	uint8_t n = step_index;
-	if (n >= 2)
-	{
-		#if 1
-		// 波峰
-		if ((step_history[n-2] > step_history[n-3]) && (step_history[n-2] > step_history[n-1]))
-		{
-			current_peak = step_history[n-2];
-
-			#if 1
-			switch (step_status)
-			{
-			case 0:
-				step_status = 1;
-				break;
-
-			case 1:
-				step_status = 2;
-				break;
-			
-			default:
-				step_status = 1;
-				break;
-			}
-			#endif
-		}
-		#endif
-
-		#if 1
-		// 波谷
-		if ((step_history[n-2] < step_history[n-3]) && (step_history[n-2] < step_history[n-1]))
-		{
-			current_wave = step_history[n-2];
-
-			switch (step_status)
-			{
-			case 0:
-				step_status = 1;
-				break;
-
-			case 1:
-				step_status = 2;
-				break;
-			
-			default:
-				step_status = 1;
-				break;
-			}
-		}
-		#endif
-	}
-
-	if (step_status == 2)
-	{
-		float difference_value = current_peak - current_wave;
-
-		if (last_step_time ==0)
-		{
-			last_step_time = timestamp;
-		}
-		uint32_t time_diff = timestamp - last_step_time;
-		//LOGD("time_%d",time_diff);
-
-		averageStepFrequencyThreshold(time_diff);
-
-		if ((time_diff > max_step_interval*6))
-		{
-			debounce_steps_buf = true;
-			debounce_steps = 0;
-			last_step_time = timestamp;
-		}
-
-		// 峰谷差值系数门限
-		if (debounce_steps > STEP_DEBOUNCE_BASE)
-		{
-			amplitude_threshold = (difference_value > valid_amplitude) ? true : false;
-		}
-		else
-		{
-			amplitude_threshold = true;
-		}
-		
-		// 平均步频门限
-		#if 1
-		if (debounce_steps > STEP_DEBOUNCE_BASE)
-		{
-			frequency_threshold = (frequency_buf < 0.5) ? true : false;
-			//LOGD("frequency_buf2_%f",frequency_buf);
-		}
-		else
-		{
-			frequency_threshold = true;
-		}
-		#endif
-		
-		// 步伐时间门限+峰谷差值系数门限+平均步频门限
-		if ((time_diff > min_step_interval) && (time_diff < max_step_interval))
-		{
-			last_step_time = timestamp;
-
-			if(amplitude_threshold && frequency_threshold)
-			{
-				debounce_steps ++;
-				if (debounce_steps > STEP_DEBOUNCE_BASE)
-				{
-					if (debounce_steps_buf)
-					{
-						debounce_steps_buf = false;
-						total_step_count = total_step_count + debounce_steps;
-					}
-
-					total_step_count ++;
-
-					stepCountDataUpdated();
-				}
-			}
-			// 更新门限阈值
-			PeakValleyDifferenceComparison(difference_value);
-		}
-		
-	}
-}
-
-/**
- * 主计步处理函数——Main step counting processing function
- * 检测到有效步伐返回true,If a valid step is detected, return true.
- */
-bool StepCounter_Process(uint32_t timestamp) {
-
-    float magnitude = 0;
-
-    // 读取原始加速度数据_Read the original acceleration data
-    if (!LSM6DSO_ReadAcceleration(&raw_accel)) {
-        return false;
-    }
-
-    // 计算合加速度_Calculate the resultant acceleration
-    magnitude = CalculateMagnitude(&raw_accel);
-    //LOGD("heACC:%f",magnitude);
-
-	// 滤波
-    //magnitude = Biquad_Filter(&g_bp_filter, magnitude);
-	//LOGD("KmACC:%f",magnitude);
-	
-	if (!ContextAwareFilter(magnitude)) {
-      	return false;
-  	}
-
-#if 1
-	// 更新阈值（使用滑动平均）Update threshold (using moving average)
-    update_threshold(magnitude);
-
-	 // 检测步数：当前值超过阈值+基础阈值时认为是一步 
-	 // Number of steps detected: When the current value exceeds the threshold plus the base threshold, it is considered as one step.
-	 //LOGD("threshold:%f",threshold);
-
-	// 角速度R
-    if (!LSM6DSO_ReadAngular(&raw_gyro)) {
-         return false;
-    }
-	
-	//角速度均方根
-	float ang_square = update_angular_root_mean_square();
-	//LOGD("ang_square_%f",ang_square);
-	//LOGD("acc_square_%f",acc_mean_square);
-
-	// Z轴稳定性验证：行走时垂直方向相对稳定
-	float z_stability = fabsf(raw_accel.z);
-	//LOGD("z_stability_%f",z_stability);
-	// 角速度方差
-	//LOGD("ang_variance_%f",ang_variance);
-
-	// 过滤异常
-	float ratio = ang_square / (acc_mean_square * 50.0f);
-	//LOGD("ratio_%f",ratio);
-	if ((ratio > 6.0f) || (ratio < 0.6f))
-	{
-		return false;
-	}
-	
-	if ((ang_square < 290) && (z_stability <= 0.6f) && (acc_mean_square > 0.9) /*&& (magnitude >= threshold)/*&& (ang_variance < 1.5)*/)
-	{
-		softwareStepAlgorithm(magnitude,timestamp);
-		
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-#endif
-
-    return false;
-}
-
-//开始计步循环调用_Start the step-counting loop call
-void update_step_loop(void) {
-   
-   current_time = k_uptime_get();//毫秒_Millisecond
-   //uint32_t time2 = (date_time.second + date_time.minute*60 +date_time.hour*60*60) * 1000;
-    
-    // 52Hz采样
-    if (1) //(current_time - last_sample_time >= (1000/52)) 
-	{
-        //last_sample_time = current_time + (1000/52);
-
-        // 计步算法
-		step_miscalculation = StepCounter_Process(current_time);
-    }
-
-}
-
-uint16_t getSoftwareStep(void)
-{
-	return g_steps;
-}
-#endif
-
 #endif
 
 uint8_t IMU_GetID(void)
@@ -1395,7 +1033,7 @@ void IMU_init(struct k_work_q *work_q)
 #ifdef CONFIG_STEP_SUPPORT
 	get_cur_sport_from_record(&last_sport);
 #ifdef IMU_DEBUG
-	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.timestamp.year,last_sport.timestamp.month,last_sport.timestamp.day,last_sport.steps);
+	LOGD("%04d/%02d/%02d last_steps:%d", last_sport.step_rec.timestamp.year,last_sport.step_rec.timestamp.month,last_sport.step_rec.timestamp.day,last_sport.step_rec.steps);
 #endif
 	StepsDataInit(false);
 #endif
@@ -1416,13 +1054,21 @@ void IMU_init(struct k_work_q *work_q)
 		return;
 
 #ifdef CONFIG_STEP_SUPPORT
-	//lsm6dso_steps_reset(&imu_dev_ctx); //reset step counter
-	//lsm6dso_sensitivity();
+	if(global_settings.step_is_on)
+	{
+		StepCountingStart();
+	}
+	else
+	{
+		StepCountingStop();
+	}
 #endif
 
 #ifdef CONFIG_SLEEP_SUPPORT
 	if(global_settings.sleep_is_on)
+	{
 		StartSleepTimeMonitor();
+	}
 #endif
 
 #ifdef IMU_DEBUG
@@ -1460,15 +1106,25 @@ void IMUMsgProcess(void)
 		return;
 	}
 
-#ifdef SOFTWARE_STEP
-	if (global_settings.step_is_on)
+#ifdef CONFIG_STEP_SUPPORT
+	if(global_settings.step_is_on && !hardware_step_enabled)
 	{
-		update_step_loop(); // 计步算法_Step counting algorithm
+		StepCountingStart();
+	}
+	else if(!global_settings.step_is_on && hardware_step_enabled)
+	{
+		StepCountingStop();
 	}
 #endif
 
-	if(int1_event)	//tilt
+	if(int1_event)	//tilt or step
 	{
+		bool tilt_detected = false;
+	#ifdef CONFIG_STEP_SUPPORT
+		bool step_detected = false;
+		lsm6dso_all_sources_t status;
+	#endif
+
 	#ifdef IMU_DEBUG
 		LOGD("int1 evt!");
 	#endif
@@ -1477,7 +1133,20 @@ void IMUMsgProcess(void)
 		if(!imu_check_ok || !is_wearing())
 			return;
 
-		if(is_tilt())
+	#ifdef CONFIG_STEP_SUPPORT
+		if(lsm6dso_all_sources_get(&imu_dev_ctx, &status) == 0)
+		{
+			tilt_detected = status.fsm_status_a.is_fsm1;
+			if(global_settings.step_is_on)
+			{
+				step_detected = status.emb_func_status.is_step_det;
+			}
+		}
+	#else
+		tilt_detected = is_tilt();
+	#endif
+
+		if(tilt_detected)
 		{
 		#ifdef IMU_DEBUG
 			LOGD("tilt trigger!");
@@ -1488,14 +1157,13 @@ void IMUMsgProcess(void)
 				lcd_sleep_out = true;
 			}
 		}
-	#ifdef CONFIG_STEP_SUPPORT	
-		else
+	#ifdef CONFIG_STEP_SUPPORT
+		if(step_detected)
 		{
-		#ifdef IMU_DEBUG	
+		#ifdef IMU_DEBUG
 			LOGD("steps trigger!");
-		#endif	
-			//UpdateIMUData();
-			//imu_redraw_steps_flag = true;
+		#endif
+			UpdateIMUData();
 		}
 	#endif
 	}

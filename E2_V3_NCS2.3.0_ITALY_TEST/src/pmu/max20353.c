@@ -782,7 +782,7 @@ bool pmu_interrupt_proc(void)
 	#endif
 		if((status1&0x08) == 0x08) //USB OK   
 		{
-		#if 1//def PMU_DEBUG
+		#ifdef PMU_DEBUG
 			LOGD("charger push in!");
 		#endif	
 			charger_is_connected = true;
@@ -796,7 +796,7 @@ bool pmu_interrupt_proc(void)
 		}
 		else
 		{		
-		#if 1//def PMU_DEBUG
+		#ifdef PMU_DEBUG
 			LOGD("charger push out!");
 		#endif
 			charger_is_connected = false;

@@ -67,6 +67,7 @@ static bool save_step_data_flag = false;
 #ifdef CONFIG_SLEEP_SUPPORT
 static bool save_sleep_data_flag = false;
 #endif
+static bool send_sport_data_flag = false;
 #endif
 
 uint8_t date_time_changed = 0;//通过位来判断日期时间是否有变化，从第6位算起，分表表示年月日时分秒
@@ -748,6 +749,8 @@ void UpdateSystemTime(void)
 				SyncSendHealthData();
 			}
 		}
+
+		send_sport_data_flag = true;
 	}
 
 	if((date_time_changed&0x08) != 0)
@@ -878,6 +881,17 @@ void TimeMsgProcess(void)
 		save_sleep_data_flag = false;
 	}
 #endif
+
+	if(send_sport_data_flag)
+	{
+		if(global_settings.step_is_on || global_settings.sleep_is_on)
+			TimeCheckSendSportData();
+	#ifdef CONFIG_BLE_SUPPORT	
+		if(g_ble_connected && (global_settings.step_is_on == true || global_settings.sleep_is_on == true))
+			APP_get_cur_hour_sport(date_time);
+	#endif
+		send_sport_data_flag = false;
+	}
 #endif
 
 	if(send_timing_data_flag)
@@ -901,20 +915,10 @@ void TimeMsgProcess(void)
 	#endif
 
 		TimeCheckSendHealthData();
-	#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-		if(global_settings.step_is_on || global_settings.sleep_is_on)
-			TimeCheckSendSportData();
-	#endif
 
 	#ifdef CONFIG_BLE_SUPPORT	
 		if(g_ble_connected)
-		{
 			APP_get_cur_hour_health(date_time);
-		#if defined(CONFIG_IMU_SUPPORT)&&(defined(CONFIG_STEP_SUPPORT)||defined(CONFIG_SLEEP_SUPPORT))
-			if((global_settings.step_is_on == true) || (global_settings.sleep_is_on == true))
-				APP_get_cur_hour_sport(date_time);
-		#endif
-		}
 	#endif
 		send_timing_data_flag = false;
 	}

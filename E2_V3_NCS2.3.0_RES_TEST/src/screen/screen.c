@@ -5026,7 +5026,7 @@ void DlUpdateStatus(void)
 
 			k_timer_stop(&mainmenu_timer);
 			k_timer_start(&mainmenu_timer, K_SECONDS(5), K_NO_WAIT);
-			}
+		}
 		break;
 		
 	case DL_STATUS_ERROR:

@@ -366,6 +366,9 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 		h = LCD_HEIGHT - y;
 	//BlockWrite(x0,y0,w,h);	//设置刷新位置
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		goto font_err;
+	
 	for(t=0;t<csize;t++)
 	{		
 		uint8_t point_c[2] = {(POINT_COLOR>>8)&0xff, POINT_COLOR&0xff};
@@ -434,6 +437,7 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 		}
 	}
 
+font_err:
 	return cbyte;
 }
 
@@ -502,6 +506,9 @@ uint8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t 
 	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		goto font_err;
+
 	for(t=0;t<csize;t++)
 	{		
 		temp = fontbuf[t];
@@ -567,6 +574,7 @@ uint8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t 
 		}
 	}
 
+font_err:
 	return cbyte;
 }
 
@@ -659,6 +667,9 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		goto font_err;
+
 	for(t=0;t<csize;t++)
 	{
 		temp = fontbuf[t];
@@ -724,6 +735,7 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 		} 
 	} 
 
+font_err:
 	return cbyte;
 }
 #else
@@ -1043,6 +1055,9 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 		h = LCD_HEIGHT - y;
 	BlockWrite(x,y,w,h); 	//设置刷新位置
 #endif
+
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		return;
 
 	for(t=0;t<csize;t++)
 	{

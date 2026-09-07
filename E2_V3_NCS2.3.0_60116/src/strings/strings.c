@@ -50,6 +50,9 @@ uint16_t *GetStrDataFromFlashByID(RES_STRINGS_ID str_id)
 	for(i=0;i<global_settings.language;i++)
 		ptr_index++;
 	
+	if((ptr_index->addr >= STR_END_ADDR) || (ptr_index->addr+ptr_index->len >= STR_END_ADDR))
+		return NULL;
+
 	ptr_data = k_malloc(ptr_index->len+2);
 	if(ptr_data)
 	{

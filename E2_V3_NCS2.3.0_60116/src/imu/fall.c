@@ -453,12 +453,10 @@ bool FallIsRunning(void)
 {
 	if(fall_state > FALL_STATUS_IDLE)
 	{
-		LOGD("true");
 		return true;
 	}
 	else
 	{
-		LOGD("false");
 		return false;
 	}
 }

@@ -163,7 +163,15 @@ static void AgingStartTest(void)
 static void AgingTestPreExit(void)
 {
 	AgingStopTest();
+
+#ifdef CONFIG_QRCODE_SUPPORT
 	EnterFTAssemResultsScreen();
+#else
+	if(!FactorySmtTestFinished())
+		EnterFactorySmtTest();
+	else
+		EnterFactoryAssemTest();
+#endif
 }
 
 static void AgingTestNextExit(void)
@@ -329,15 +337,12 @@ void FTAgingTestProcess(void)
 	
 		case AGING_GPS:
 			FTStopWifi();
-			FTMenuGPSInit();
-			SetModemTurnOn();
 			FTStartGPS();
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;
 	
 		case AGING_VIB:
 			FTStopGPS();
-			SetModemTurnOff();
 			vibrate_on(VIB_RHYTHMIC, 1000, 1000);
 			k_timer_start(&ft_aging_change_timer, K_SECONDS(60), K_NO_WAIT);
 			break;

@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/fs/nvs.h>
 #include <dk_buttons_and_leds.h>
 #include "screen.h"

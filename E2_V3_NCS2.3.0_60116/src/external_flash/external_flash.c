@@ -80,12 +80,6 @@ void Spi_WriteOneByte(uint8_t Dat)
 		LOGD("SPI error: %d", err);
 	#endif
 	}
-	else
-	{
-	#ifdef FLASH_DEBUG
-		LOGD("ok");
-	#endif
-	}
 }
 /*****************************************************************************
 ** Ãè  Êö£ºĞ´Ê¹ÄÜ
@@ -165,8 +159,6 @@ uint16_t SpiFlash_ReadID(void)
 		LOGD("flash ID: %x", dat);
 	#endif
 	}
-
-
 
 	return dat;
 }
@@ -628,7 +620,7 @@ void SPI_Flash_Init(void)
 	if (!spi_flash) 
 	{
 	#ifdef FLASH_DEBUG
-		LOGD("Could not get %s device", FLASH_DEVICE);
+		LOGD("Could not get device");
 	#endif
 		return;
 	}
@@ -668,8 +660,6 @@ void test_flash_write_and_read(uint8_t *buf, uint32_t len)
 	uint32_t PageByteRemain,addr=0;
 	uint32_t date_len = len;
 		
-	LOGD("len:%d", len);
-	
 	addr = IMG_DATA_ADDR;
 	cur_index = addr/SPIFlash_SECTOR_SIZE;
 	if(cur_index > last_index)

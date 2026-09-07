@@ -389,7 +389,7 @@ void FTNetStatusUpdate(uint8_t rssp)
 	}
 }
 
-void IsFTNetTesting(void)
+bool IsFTNetTesting(void)
 {
 	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_NET))
 		return true;

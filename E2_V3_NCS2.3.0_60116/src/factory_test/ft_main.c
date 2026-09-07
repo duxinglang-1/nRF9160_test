@@ -524,9 +524,6 @@ static void FactoryTestMainShow(void)
 	register_touch_event_handle(TP_EVENT_MOVING_LEFT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestNextExit);
 	register_touch_event_handle(TP_EVENT_MOVING_RIGHT, 0, LCD_WIDTH, 0, LCD_HEIGHT, FactoryTestPreExit);	
 #endif		
-
-	//xb add 2023-03-15 Turn off the modem after entering the ft menu to prevent jamming.
-	FTPreReadyNet();
 }
 
 static void FactoryTestMainProcess(void)
@@ -575,7 +572,17 @@ static void FactoryTestNextExit(void)
 	}
 	
 	SetModemTurnOn();
+
+#ifdef CONFIG_IMU_SUPPORT
+	// Arvin_add_2026.03.12
+	imu_sensor_init();
+#endif
+
+#ifdef CONFIG_QRCODE_SUPPORT	
 	EnterFTSmtResultsScreen();
+#else
+	EnterFTAgingTest();
+#endif
 }
 
 void EnterFactoryTestScreen(void)
@@ -594,6 +601,9 @@ void EnterFactoryTestScreen(void)
 #ifdef CONFIG_WIFI_SUPPORT
 	if(wifi_is_working())
 		MenuStopWifi();
+#endif
+#ifdef CONFIG_IMU_SUPPORT
+	imu_sensor_off();//Arvin add 2026-03-12
 #endif
 
 	LCD_Set_BL_Mode(LCD_BL_ALWAYS_ON);

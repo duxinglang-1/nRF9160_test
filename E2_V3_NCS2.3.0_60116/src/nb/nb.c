@@ -936,13 +936,6 @@ void FTStartNet(void)
 {
 	test_nb_on = true;
 }
-
-void FTPreReadyNet(void)
-{
-	struct k_work_sync work_sync;
-
-	//SetModemTurnOff();
-}
 #endif
 
 void NBGetNetMode(uint8_t *at_mode_set)
@@ -1456,7 +1449,7 @@ void NBSendTimelyHealthData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1475,7 +1468,7 @@ void NBSendTimelyHrData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1494,7 +1487,7 @@ void NBSendTimelySpo2Data(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1513,7 +1506,7 @@ void NBSendTimelyBptData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1532,7 +1525,7 @@ void NBSendTimelyTempData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1548,7 +1541,7 @@ void NBSendMissHealthData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissHrData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1560,7 +1553,7 @@ void NBSendMissHrData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1572,7 +1565,7 @@ void NBSendMissSpo2Data(uint8_t *data, uint32_t datalen)
 
 void NBSendMissBptData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1584,7 +1577,7 @@ void NBSendMissBptData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissTempData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
 	strcat(buf, g_imei);
@@ -1596,7 +1589,7 @@ void NBSendMissTempData(uint8_t *data, uint32_t datalen)
 
 void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1619,7 +1612,7 @@ void NBSendTimelySportData(uint8_t *data, uint32_t datalen)
 
 void NBSendMissSportData(uint8_t *data, uint32_t datalen)
 {
-	uint8_t buf[3072] = {0};
+	uint8_t buf[2048] = {0};
 	uint8_t tmpbuf[32] = {0};
 	
 	strcpy(buf, "{1:1:0:0:");
@@ -1884,6 +1877,8 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			uint8_t strtmp[256] = {0};
 			uint32_t copylen = 0;
 
+			strcat(strdata, ",");
+
 			//后台下发最新版本信息
 			//project dir
 			ptr = strstr(strdata, ",");
@@ -1960,9 +1955,8 @@ void ParseData(uint8_t *data, uint32_t datalen)
 			ptr = ptr1+1;
 			ptr1 = strstr(ptr, ",");
 			if(ptr1 == NULL)
-				copylen = (datalen-(ptr-strdata)) < sizeof(g_new_str_ver) ? (datalen-(ptr-strdata)) : sizeof(g_new_str_ver);
-			else
-				copylen = (ptr1-ptr) < sizeof(g_new_str_ver) ? (ptr1-ptr) : sizeof(g_new_str_ver);
+				return;
+			copylen = (ptr1-ptr) < sizeof(g_new_str_ver) ? (ptr1-ptr) : sizeof(g_new_str_ver);
 			memset(g_new_str_ver, 0x00, sizeof(g_new_str_ver));
 			memcpy(g_new_str_ver, ptr, copylen);
 		}

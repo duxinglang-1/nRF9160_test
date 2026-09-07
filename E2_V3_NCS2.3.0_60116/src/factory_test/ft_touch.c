@@ -240,8 +240,6 @@ static void FTMenuTouchUpdate(void)
 
 	if(ft_tp_testing)
 	{
-		ft_menu_checked[ft_main_menu_index] = false;
-		
 		if(!update_show_flag)
 		{
 			update_show_flag = true;

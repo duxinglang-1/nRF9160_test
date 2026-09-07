@@ -6,20 +6,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/spm.conf")
-  set(spm_CONF_FILE
-    prj.conf
-    ${CMAKE_CURRENT_LIST_DIR}/spm.conf
-  )
-endif()
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.conf")
-  set(mcuboot_CONF_FILE
-    prj.conf
-    ${CMAKE_CURRENT_LIST_DIR}/mcuboot.conf
-  )
-endif()
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(E2)
 zephyr_compile_definitions(PROJECT_NAME=${PROJECT_NAME})

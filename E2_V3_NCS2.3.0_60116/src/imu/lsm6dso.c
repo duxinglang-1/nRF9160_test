@@ -556,6 +556,62 @@ void imu_sensor_init(void)
 }
 #endif
 
+/**
+ * @brief  LSM6DSO进入休眠模式，最小化电流消耗
+ */
+void imu_sensor_off(void)
+{
+    //  禁用所有嵌入式功能（必须在关闭传感器前）
+    // 禁用计步器
+    lsm6dso_pedo_md_t pedo_mode = LSM6DSO_PEDO_DISABLE;
+    lsm6dso_pedo_sens_set(&imu_dev_ctx, pedo_mode);
+    
+    // 禁用倾斜检测
+    uint8_t tilt_enable = 0;
+    lsm6dso_tilt_sens_set(&imu_dev_ctx, tilt_enable);
+    
+    // 禁用FSM（有限状态机）
+    lsm6dso_emb_fsm_enable_t fsm_enable = {0};
+	fsm_enable.fsm_enable_a.fsm1_en = PROPERTY_DISABLE;
+    lsm6dso_fsm_enable_set(&imu_dev_ctx, &fsm_enable);
+    
+    //  禁用所有中断
+    // 禁用嵌入式功能中断
+	lsm6dso_pin_int1_route_t int1_config = {0};
+    lsm6dso_pin_int1_route_set(&imu_dev_ctx, &int1_config);
+    
+    lsm6dso_pin_int2_route_t int2_config = {0};
+    lsm6dso_pin_int2_route_set(&imu_dev_ctx, &int2_config);
+    
+    // 关闭FIFO
+	lsm6dso_fifo_xl_batch_set(&imu_dev_ctx, LSM6DSO_XL_NOT_BATCHED);
+	lsm6dso_fifo_gy_batch_set(&imu_dev_ctx, LSM6DSO_GY_NOT_BATCHED);
+
+	lsm6dso_fifo_mode_t fifo_mode = LSM6DSO_BYPASS_MODE;
+    lsm6dso_fifo_mode_set(&imu_dev_ctx, fifo_mode);
+    
+    // 关键：关闭传感器（最大程度省电）**
+    
+    // 关闭加速度计（设置ODR为OFF）
+    lsm6dso_odr_xl_t xl_odr = LSM6DSO_XL_ODR_OFF;
+    lsm6dso_xl_data_rate_set(&imu_dev_ctx, xl_odr);
+    
+    // 关闭陀螺仪（设置ODR为OFF）
+    lsm6dso_odr_g_t gy_odr = LSM6DSO_GY_ODR_OFF;
+    lsm6dso_gy_data_rate_set(&imu_dev_ctx, gy_odr);
+    
+    // 启用陀螺仪睡眠模式
+    uint8_t gy_sleep_mode = PROPERTY_ENABLE;
+    lsm6dso_gy_sleep_mode_set(&imu_dev_ctx, gy_sleep_mode);
+    
+    // 设置超低功耗模式
+    lsm6dso_xl_hm_mode_t xl_power_mode = LSM6DSO_ULTRA_LOW_POWER_MD;
+    lsm6dso_xl_power_mode_set(&imu_dev_ctx, xl_power_mode);
+    
+    lsm6dso_g_hm_mode_t gy_power_mode = LSM6DSO_GY_HIGH_PERFORMANCE;
+    lsm6dso_gy_power_mode_set(&imu_dev_ctx, gy_power_mode);
+}
+
 static bool sensor_init(void)
 {
 	lsm6dso_device_id_get(&imu_dev_ctx, &whoamI);

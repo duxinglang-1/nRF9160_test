@@ -17,6 +17,7 @@
 #include "settings.h"
 #include "key.h"
 #include "gps.h"
+#include "logger.h"
 #include "ft_main.h"
 #include "ft_gps.h"
 				
@@ -97,37 +98,17 @@ static void FTMenuGPSSle2Hander(void)
 	ft_gps_exit_flag = true;
 }
 
-void FTMenuGPSInit(void)
-{
-	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-}
-
-void FTMenuGPSUnint(void)
-{
-#ifdef CONFIG_LTE_NETWORK_MODE_NBIOT_GPS
-	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_NBIOT_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-#elif defined(CONFIG_LTE_NETWORK_MODE_LTE_M_GPS)
-	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-#else
-	lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM_NBIOT_GPS, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-#endif
-}
-
 static void FTMenuGPSStopTest(void)
 {
 	ft_gps_checking = false;
 	k_timer_stop(&gps_test_timer);
 	FTStopGPS();
-	SetModemTurnOff();
-	FTMenuGPSUnint();
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
 }
 
 static void FTMenuGPSStartTest(void)
 {
 	ft_gps_checking = true;
-	FTMenuGPSInit();
-	SetModemTurnOn();
 	FTStartGPS();
 	k_timer_start(&gps_test_timer, K_SECONDS(FT_GPS_TEST_TIMEROUT), K_NO_WAIT);
 	scr_msg[SCREEN_ID_FACTORY_TEST].act = SCREEN_ACTION_UPDATE;
@@ -296,14 +277,14 @@ void FTGPSStatusUpdate(bool flag)
 {
 	static uint8_t count = 0;
 
-	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_GPS))
+	if((screen_id == SCREEN_ID_FACTORY_TEST)&&(ft_menu.id == FT_GPS)&&ft_gps_checking)
 	{
 		ft_gps_fixed = flag;
 
 		if(flag)
 		{
 			count++;
-			if(count > 3)
+			if(count > 1)
 			{
 				count = 0;
 				ft_gps_check_ok = true;
@@ -322,8 +303,7 @@ void ExitFTMenuGPS(void)
 	ft_gps_check_ok = false;
 	k_timer_stop(&gps_test_timer);
 	FTStopGPS();
-	SetModemTurnOff();
-	FTMenuGPSUnint();
+
 	ReturnFTMainMenu();
 }
 

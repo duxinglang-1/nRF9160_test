@@ -387,6 +387,21 @@ void IdleShowSystemDate(void)
 		}
 
 		LCD_FillColor(x, y, w, h, BLACK);
+		LCD_MeasureUniString(str_m, &str_w, &str_h);
+		if((date_time.month > 9) && (date_time.day > 9))
+		{
+			str_w = 2*str_w + IDLE_DATE_NUM_CN_W*4;
+		}
+		else if((date_time.month > 9) || (date_time.day > 9))
+		{
+			str_w = 2*str_w + IDLE_DATE_NUM_CN_W*3;
+		}
+		else
+		{
+			str_w = 2*str_w + IDLE_DATE_NUM_CN_W*2;
+		}
+		if(w > str_w)
+			x += (w - str_w)/2;
 		if(date_time.month > 9)
 		{
 		#ifdef CONFIG_STEP_SUPPORT

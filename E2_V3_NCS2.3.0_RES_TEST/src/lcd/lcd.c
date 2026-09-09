@@ -393,16 +393,32 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 		csize = ((cbyte+7)/8)*uni_infor.head.not_fixed.bbx.height;
 		SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize+sizeof(sbn_glyph_t));
 		memcpy((sbn_glyph_t*)&sbn_glyph, fontbuf, sizeof(sbn_glyph_t));
-		w = sbn_glyph.bbx.width;
-		h = sbn_glyph.bbx.height;
-		cbyte = w;
-		csize = sbn_glyph.bytes;
+		// 针对空格特殊处理
+		if(num == 0x0020)
+		{
+			w = sbn_glyph.dwidth;			
+			h = uni_infor.head.not_fixed.bbx.height;	
+			sbn_glyph.bytes = (w * uni_infor.head.not_fixed.bpp + 7) / 8 * h;
+			memset(&fontbuf[7], 0, sbn_glyph.bytes);
+			cbyte = w;
+			csize = sbn_glyph.bytes;
+		}
+		else
+		{
+			w = sbn_glyph.bbx.width;
+			h = sbn_glyph.bbx.height;
+			cbyte = w;
+			csize = sbn_glyph.bytes;
+		}
 
 		p_font = &fontbuf[7];
 		if(fixed_type == FONT_NOT_FIXED)
 		{
-			x = x + sbn_glyph.bbx.x_offset;
-			y = y + (uni_infor.head.not_fixed.bbx.height - sbn_glyph.bbx.height) + (uni_infor.head.not_fixed.bbx.y_offset - sbn_glyph.bbx.y_offset);
+			if(num != 0x0020)
+			{
+				x = x + sbn_glyph.bbx.x_offset;
+				y = y + (uni_infor.head.not_fixed.bbx.height - sbn_glyph.bbx.height) + (uni_infor.head.not_fixed.bbx.y_offset - sbn_glyph.bbx.y_offset);
+			}
 		}
 		else if(fixed_type == FONT_NOT_FIXED_EXT)
 		{

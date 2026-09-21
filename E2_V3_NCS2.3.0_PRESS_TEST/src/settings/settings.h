@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include "strdef.h"
 
-//#define FW_FOR_CN	//中文版本
+#define FW_FOR_CN	//中文版本
 
 #ifdef FW_FOR_CN
 #define LANGUAGE_CN_ENABLE		//Chinese

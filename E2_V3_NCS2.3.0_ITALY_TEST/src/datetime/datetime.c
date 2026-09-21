@@ -705,7 +705,7 @@ void UpdateSystemTime(void)
 			AlarmRemindCheck(date_time);
 		#endif
 
-		#ifdef CONFIG_IMU_SUPPORT&&CONFIG_STEP_SUPPORT
+		#if defined(CONFIG_IMU_SUPPORT)&&defined(CONFIG_STEP_SUPPORT)
 		  	if((date_time.hour == 23) && (date_time.minute == 59) && global_settings.step_is_on)
 				save_step_data_flag = true;
 		#endif

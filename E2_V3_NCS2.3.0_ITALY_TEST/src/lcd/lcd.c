@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <nrf9160.h>
 #include <zephyr/kernel.h>
 #include <math.h>
 #include "lcd.h"
@@ -82,6 +81,13 @@ bool sleep_out_by_wrist = false;
 font_uni_infor uni_infor = {0};
 #endif
 
+#ifndef IMG_FONT_FROM_FLASH
+void LCD_ShowImg_From_Flash(uint16_t x, uint16_t y, uint32_t img_addr){};
+void LCD_MeasureUniString(uint16_t *p, uint16_t *width, uint16_t *height){};
+void LCD_ShowUniString(uint16_t x, uint16_t y, uint16_t *p){};
+void LCD_ShowUniStringInRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t *p){};
+void LCD_get_pic_size_from_flash(uint32_t pic_addr, uint16_t *width, uint16_t *height){};
+#endif
 //快速画点
 //x,y:坐标
 //color:颜色
@@ -387,16 +393,32 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 		csize = ((cbyte+7)/8)*uni_infor.head.not_fixed.bbx.height;
 		SpiFlash_Read(fontbuf, font_addr+uni_infor.index.font_addr, csize+sizeof(sbn_glyph_t));
 		memcpy((sbn_glyph_t*)&sbn_glyph, fontbuf, sizeof(sbn_glyph_t));
-		w = sbn_glyph.bbx.width;
-		h = sbn_glyph.bbx.height;
-		cbyte = w;
-		csize = sbn_glyph.bytes;
+		// 针对空格特殊处理
+		if(num == 0x0020)
+		{
+			w = sbn_glyph.dwidth;			
+			h = uni_infor.head.not_fixed.bbx.height;	
+			sbn_glyph.bytes = (w * uni_infor.head.not_fixed.bpp + 7) / 8 * h;
+			memset(&fontbuf[7], 0, sbn_glyph.bytes);
+			cbyte = w;
+			csize = sbn_glyph.bytes;
+		}
+		else
+		{
+			w = sbn_glyph.bbx.width;
+			h = sbn_glyph.bbx.height;
+			cbyte = w;
+			csize = sbn_glyph.bytes;
+		}
 
 		p_font = &fontbuf[7];
 		if(fixed_type == FONT_NOT_FIXED)
 		{
-			x = x + sbn_glyph.bbx.x_offset;
-			y = y + (uni_infor.head.not_fixed.bbx.height - sbn_glyph.bbx.height) + (uni_infor.head.not_fixed.bbx.y_offset - sbn_glyph.bbx.y_offset);
+			if(num != 0x0020)
+			{
+				x = x + sbn_glyph.bbx.x_offset;
+				y = y + (uni_infor.head.not_fixed.bbx.height - sbn_glyph.bbx.height) + (uni_infor.head.not_fixed.bbx.y_offset - sbn_glyph.bbx.y_offset);
+			}
 		}
 		else if(fixed_type == FONT_NOT_FIXED_EXT)
 		{
@@ -414,6 +436,9 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 		h = LCD_HEIGHT - y;
 	BlockWrite(x,y,w,h);
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		goto font_err;
+	
 	for(i=0,t=0;t<csize;t++)
 	{		
 		temp = p_font[t];
@@ -457,6 +482,7 @@ uint8_t LCD_Show_Uni_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, uint8
 		}
 	}
 
+font_err:
 	switch(fixed_type)
 	{
 	case FONT_HEIGHT_FIXED:
@@ -536,6 +562,9 @@ uint8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t 
 	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		goto font_err;
+
 	for(t=0;t<csize;t++)
 	{		
 		temp = fontbuf[t];
@@ -601,6 +630,7 @@ uint8_t LCD_Show_Mbcs_Char_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t 
 		}
 	}
 
+font_err:
 	return cbyte;
 }
 
@@ -693,6 +723,9 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 	BlockWrite(x,y,w,h);	//设置刷新位置
 #endif
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		goto font_err;
+
 	for(t=0;t<csize;t++)
 	{
 		temp = fontbuf[t];
@@ -758,6 +791,7 @@ uint8_t LCD_Show_Mbcs_CJK_Char_from_flash(uint16_t x, uint16_t y, uint16_t num, 
 		} 
 	} 
 
+font_err:
 	return cbyte;
 }
 #else
@@ -966,6 +1000,9 @@ void LCD_ShowChar_from_flash(uint16_t x,uint16_t y,uint8_t num,uint8_t mode)
 	BlockWrite(x,y,w,h); 	//设置刷新位置
 #endif
 
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		return;
+
 	for(t=0;t<csize;t++)
 	{		
 		temp = fontbuf[t];
@@ -1077,6 +1114,9 @@ void LCD_ShowChineseChar_from_flash(uint16_t x,uint16_t y,uint16_t num,uint8_t m
 		h = LCD_HEIGHT - y;
 	BlockWrite(x,y,w,h); 	//设置刷新位置
 #endif
+
+	if((cbyte == 0) || (csize >= sizeof(databuf)/2))
+		return;
 
 	for(t=0;t<csize;t++)
 	{

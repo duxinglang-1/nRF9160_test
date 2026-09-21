@@ -650,11 +650,7 @@ void flash_init(void)
 
 	SPI_Flash_Init();
 
-	SpiFlash_ReadID();
 	SPIFlash_Read_DataVer(g_ui_ver, g_font_ver, g_str_ver, g_ppg_algo_ver);
-#ifdef FLASH_DEBUG
-	LOGD("g_ui_ver:%s, g_font_ver:%s, g_str_ver:%s, g_ppg_algo_ver:%s", g_ui_ver, g_font_ver, g_str_ver, g_ppg_algo_ver);
-#endif	
 }
 
 void test_flash_write_and_read(uint8_t *buf, uint32_t len)

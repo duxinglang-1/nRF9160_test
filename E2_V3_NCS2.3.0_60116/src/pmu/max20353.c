@@ -645,6 +645,12 @@ void pmu_status_update(void)
 			g_chg_status = BAT_CHARGING_PROGRESS;
 			pmu_battery_stop_shutdown();
 			InitCharger();
+
+		#ifdef CONFIG_IMU_SUPPORT
+			MAX20353_LDO1Disable();
+			MAX20353_LDO1Config();
+			imu_sensor_init();
+		#endif
 		}
 
 	#ifdef BATTERY_SOC_GAUGE	

@@ -84,7 +84,7 @@ dps368_settings_t dps368_settings =
 				// 0100 - 16 times (Standard).
 				// 0101 - 32 times.
 				// 0110 - 64 times (High Precision).
-				// 0111 - 128 times.						
+				// 0111 - 128 times.
 	0b010,		//PM_RATE:	
 				// 000 - 1 measurements pr. sec.
 				// 001 - 2 measurements pr. sec.

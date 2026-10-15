@@ -63,7 +63,7 @@ void PressureStop(void)
 
 bool GetPressure(float *psr)
 {
-	//LOGD("pressure_check_ok:%d", pressure_check_ok);
+	LOGD("pressure_check_ok:%d", pressure_check_ok);
 	if(!pressure_check_ok || psr == NULL)
 		return false;
 
@@ -175,8 +175,8 @@ void PressureMsgProcess(void)
 
 	//GetPressure(&pre_1); // Obtain barometric value
 	
-	#if 1
-	if (prs_check >= 3)
+#if 0
+	if(prs_check >= 3)
 	{
 		//if(fall_check_flag)
 			//return;
@@ -185,19 +185,16 @@ void PressureMsgProcess(void)
 
 		GetPressure(&pre_1); // Obtain barometric value
 	}
-	prs_check ++;
-	#endif
-	
+	prs_check++;
+#endif
 
-	#if 0
-
+#if 0
 	if (fall_pre_check)
 	{
 		fall_pre_check = false;
 		GetPressure(&fall_prs); 
 		fall_result_pre_flag = true;
 	}
-	#endif
-
+#endif
 }
 

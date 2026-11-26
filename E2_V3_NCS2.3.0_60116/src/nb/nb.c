@@ -135,6 +135,7 @@ static bool mqtt_connected = false;
 
 /* Net Reconnect count*/
 static uint32_t net_retry_count = 0;
+static uint32_t mqtt_retry_count = 0;
 
 /* File descriptor */
 static struct pollfd fds;
@@ -399,6 +400,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 		LOGD("MQTT client connected!"); 	
 	#endif
 
+		mqtt_retry_count = 0;
 		mqtt_connected = true;
 		mqtt_connecting_flag = false;
 		mqtt_disconnect_req_flag = false;
@@ -677,7 +679,8 @@ static void mqtt_link(struct k_work_q *work_q)
 		return;
 
 	mqtt_connecting_flag = true;
-	//k_timer_start(&mqtt_connect_timer, K_SECONDS(3*60), K_NO_WAIT);
+	mqtt_disconnect_req_flag = false;
+	k_timer_start(&mqtt_connect_timer, K_SECONDS(30), K_NO_WAIT);
 
 	client_init(&client);
 
@@ -3303,8 +3306,8 @@ void NBMsgProcess(void)
 			)
 			return;
 
-		//if(mqtt_connecting_flag)
-		//	mqtt_unlink();
+		if(mqtt_connecting_flag)
+			mqtt_unlink();
 
 		if(!nb_connecting_flag)
 		{
@@ -3339,9 +3342,22 @@ void NBMsgProcess(void)
 		if(!mqtt_connecting_flag)
 		{
 		#ifdef NB_DEBUG
-			LOGD("mqtt_reconnect_flag 001");
+			LOGD("mqtt_reconnect_flag 001, mqtt_retry_count:%d", mqtt_retry_count);
 		#endif
-			k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+
+			mqtt_retry_count++;
+			if(mqtt_retry_count > 3)
+			{
+				mqtt_retry_count = 0;
+
+				SetModemTurnOff();
+				lte_lc_deinit();
+				k_work_schedule_for_queue(app_work_q, &modem_init_work, K_NO_WAIT);
+			}
+			else
+			{
+				k_work_schedule_for_queue(app_work_q, &mqtt_link_work, K_SECONDS(2));
+			}
 		}
 		else
 		{
@@ -3358,7 +3374,11 @@ void NBMsgProcess(void)
 		LOGD("mqtt_connect_timeout_flag begin");
 	#endif
 		mqtt_connect_timeout_flag = false;
+
+		k_work_cancel_delayable(&mqtt_link_work);
 		mqtt_unlink();
+
+		k_timer_start(&mqtt_reconnect_timer, K_SECONDS(10), K_NO_WAIT);
 	}
 	
 	if(mqtt_act_wait_timeout_flag)

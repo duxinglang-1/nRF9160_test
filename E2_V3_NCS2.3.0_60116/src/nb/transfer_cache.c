@@ -72,9 +72,21 @@ bool add_data_into_cache(CacheInfo *data_cache, uint8_t *data, uint32_t len, DAT
 			}
 		}
 
-		pnew = k_malloc(sizeof(DataNode));
-		if(pnew == NULL) 
-			return false;
+		while(1)
+		{
+			pnew = k_malloc(sizeof(DataNode));
+			if(pnew == NULL)
+			{
+				if(data_cache->count > 0)
+					delete_data_from_cache(data_cache);
+				else
+					return false;
+			}
+			else
+			{
+				break;
+			}
+		}
 
 		memset(pnew, 0, sizeof(DataNode));
 		pnew->data = k_malloc(len+1);

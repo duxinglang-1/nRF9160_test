@@ -688,7 +688,7 @@ void TempMsgProcess(void)
 			g_temp_skin = temp_1;
 			if(temp_2 >= TEMP_MIN/10.0)
 			{
-				g_temp_body = temp_2;
+				g_temp_body = (float)round(temp_2*10.0)/10.0;//xb add 2026.11.26 Prevent rounding errors caused by zooming in by 10 times when saving data.
 				if(ret)
 				{
 					temp_stop_flag = true;
